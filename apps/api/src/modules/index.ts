@@ -11,6 +11,10 @@ import { rulesRoutes } from './rules/routes';
 import { backofficeAuthRoutes } from './backoffice/auth';
 import { leaveRoutes } from './leave/routes';
 import { timeRoutes } from './time/routes';
+import { payrollRoutes } from './payroll/routes';
+import { payslipRoutes } from './payslips/routes';
+import { itRoutes } from './it/routes';
+import { assetRoutes } from './assets/routes';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -25,4 +29,9 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(backofficeAuthRoutes);
   await app.register(leaveRoutes);
   await app.register(timeRoutes);
+  // Phase 6: payroll handoff, payslips, joiner/leaver IT automation and the asset register
+  await app.register(payrollRoutes);
+  await app.register(payslipRoutes);
+  await app.register(itRoutes);
+  await app.register(assetRoutes);
 }
