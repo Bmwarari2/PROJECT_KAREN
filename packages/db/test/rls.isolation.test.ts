@@ -117,6 +117,24 @@ describe('catalog-wide isolation checks', () => {
       WHERE p.polname <> 'tenant_isolation' ORDER BY 1`);
     expect(rows.map((r) => r.policy)).toEqual(['app.support_grants:backoffice_grants_read', 'app.users:lookup_by_email']);
   });
+
+  it('SECURITY DEFINER functions (which run with owner rights) are limited to the reviewed allowlist', async () => {
+    const { rows } = await owner.query<{ fn: string; public: boolean }>(`
+      SELECT n.nspname || '.' || p.proname AS fn, has_function_privilege('public', p.oid, 'EXECUTE') AS public
+      FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1`);
+    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'audit.seal_pending']);
+    // statistics refresh after bulk imports: the application role only, nobody else
+    expect(rows.find((r) => r.fn === 'app.analyze_core_hr')!.public).toBe(false);
+    const roles = await owner.query<{ app: boolean; backoffice: boolean }>(
+      `SELECT has_function_privilege('thapsus_app', 'app.analyze_core_hr()', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'app.analyze_core_hr()', 'EXECUTE') AS backoffice`,
+    );
+    expect(roles.rows[0]).toEqual({ app: true, backoffice: false });
+    await withTenant(router, tenantA, (tx) => tx.query('SELECT app.analyze_core_hr()'));
+    // the role itself still cannot maintain (ANALYZE, VACUUM, REINDEX…) the shared tables
+    const maintain = await owner.query<{ m: boolean }>(`SELECT has_table_privilege('thapsus_app', 'app.employees', 'MAINTAIN') AS m`);
+    expect(maintain.rows[0]!.m).toBe(false);
+  });
 });
 
 describe('cross-tenant access is impossible', () => {

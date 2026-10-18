@@ -9,13 +9,16 @@ import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { objectKey } from '../../lib/object-store';
 import { registerJob } from '../../jobs/registry';
 import { FIELDS } from '../employees/model';
-import { applyEmployeeChange, applySectionChange, employeeAsOf, refreshCurrent, setManager } from '../employees/service';
+import { applyEmployeeChange, applySectionChange, employeeAsOf, refreshCurrent, refreshCurrentMany, setManager } from '../employees/service';
 import { readTable, suggestMapping, validateRow, IMPORT_TARGETS, type RowError } from './parse';
+import { bulkCreatable, bulkCreateEmployees, bulkLinkManagers, currentSectionValues, sameValue } from './bulk';
 import type { Deps } from '../../deps';
 
 const MAX_IMPORT_BYTES = 60 * 1024 * 1024;
 /** Rows per transaction (and per progress update) in the import job; tests lower it to see progress. */
 export const importTuning = { chunkSize: 500 };
+/** Created rows after which the job refreshes table statistics (see migration 0007i). */
+const ANALYZE_AFTER_CREATES = 1000;
 
 async function refMaps(tx: Tx) {
   const m = async (sql: string) => new Map((await tx.query<{ name: string; id: string }>(sql)).map((r) => [r.name.toLowerCase(), r.id]));
@@ -144,14 +147,18 @@ registerJob('imports.employees', async (ctx) => {
   const refs = await ctx.tx(refMaps);
   const stats = { created: 0, updated: 0, unchanged: 0, failed: 0 };
   const errors: RowError[] = [];
-  const managerLinks: Array<[string, string, string]> = [];
+  const managerLinks: Array<{ row: number; employee: string; manager: string; date: string }> = [];
+  /** People whose records this run wrote: their current values are refreshed at the end. */
+  const touched = new Set<string>();
   const CHUNK = importTuning.chunkSize;
+  const today = new Date().toISOString().slice(0, 10);
   await ctx.progress(0, table.rows.length);
   for (let start = 0; start < table.rows.length; start += CHUNK) {
     const rows = table.rows.slice(start, start + CHUNK).map((row, i) => ({ n: start + i + 2, ...validateRow(mapRow(table.headers, row, batch.mapping), start + i + 2, refs) }));
     await ctx.tx(async (tx) => {
       const numbers = rows.filter((r) => !r.errors.length).map((r) => String(r.values.employeeNumber));
       const existing = new Map((await tx.query<{ employee_number: string; id: string }>('SELECT employee_number, id FROM app.employees WHERE employee_number = ANY($1)', [numbers])).map((e) => [e.employee_number, e.id]));
+      const valid: typeof rows = [];
       for (const r of rows) {
         if (r.errors.length) {
           errors.push(...r.errors);
@@ -159,8 +166,59 @@ registerJob('imports.employees', async (ctx) => {
           continue;
         }
         const v = r.values;
-        if (v.managerEmployeeNumber) managerLinks.push([String(v.employeeNumber), String(v.managerEmployeeNumber), String(v.effectiveDate ?? v.startDate ?? new Date().toISOString().slice(0, 10))]);
+        if (v.managerEmployeeNumber) managerLinks.push({ row: r.n, employee: String(v.employeeNumber), manager: String(v.managerEmployeeNumber), date: String(v.effectiveDate ?? v.startDate ?? today) });
         delete v.managerEmployeeNumber;
+        valid.push(r);
+      }
+      // 1. new people, in bulk (first occurrence of each number; the rest take the per-row path)
+      const seen = new Set<string>();
+      const bulkNew = valid.filter((r) => {
+        const num = String(r.values.employeeNumber);
+        const ok = !existing.has(num) && !seen.has(num) && bulkCreatable(r.values);
+        seen.add(num);
+        return ok;
+      });
+      let perRow = valid.filter((r) => !bulkNew.includes(r));
+      if (bulkNew.length) {
+        if (dryRun) stats.created += bulkNew.length;
+        else {
+          await tx.exec('SAVEPOINT bulk');
+          try {
+            for (const [num, id] of await bulkCreateEmployees(tx, bulkNew.map((r) => r.values), ctx.job.created_by)) {
+              existing.set(num, id);
+              touched.add(id);
+            }
+            await tx.exec('RELEASE SAVEPOINT bulk');
+            stats.created += bulkNew.length;
+          } catch {
+            // a constraint failed somewhere in the chunk: fall back to one row at a time for exact errors
+            await tx.exec('ROLLBACK TO SAVEPOINT bulk');
+            perRow = valid;
+          }
+        }
+      }
+      // 2. people who already exist: compare with the values in force (bulk read), apply only real changes
+      const known = perRow.filter((r) => existing.has(String(r.values.employeeNumber)) && !bulkNew.includes(r));
+      const byDate = new Map<string, typeof known>();
+      for (const r of known) {
+        const d = String(r.values.effectiveDate ?? today);
+        (byDate.get(d) ?? byDate.set(d, []).get(d)!).push(r);
+      }
+      const unchanged = new Set<(typeof rows)[number]>();
+      for (const [d, group] of byDate) {
+        const current = await currentSectionValues(tx, group.map((r) => existing.get(String(r.values.employeeNumber))!), d);
+        for (const r of group) {
+          const cur = current.get(existing.get(String(r.values.employeeNumber))!)!;
+          const changed = Object.entries(r.values).filter(([k, val]) => k in FIELDS && FIELDS[k]!.section !== 'core' && !sameValue(k, cur[k], val));
+          if (!changed.length) unchanged.add(r);
+          else r.values = { ...Object.fromEntries(changed), employeeNumber: r.values.employeeNumber, effectiveDate: d };
+        }
+      }
+      stats.unchanged += unchanged.size;
+      // 3. everything else, one row at a time
+      for (const r of perRow) {
+        if (unchanged.has(r) || (bulkNew.includes(r) && perRow !== valid)) continue;
+        const v = r.values;
         try {
           await tx.exec('SAVEPOINT row');
           const id = existing.get(String(v.employeeNumber));
@@ -173,16 +231,18 @@ registerJob('imports.employees', async (ctx) => {
                 if (Object.keys(sv).length) await applySectionChange(tx, e.id, s, String(v.startDate), sv, ctx.job.created_by);
               }
               existing.set(String(v.employeeNumber), e.id);
+              touched.add(e.id);
             }
             stats.created++;
           } else {
-            const date = String(v.effectiveDate ?? new Date().toISOString().slice(0, 10));
+            const date = String(v.effectiveDate ?? today);
             const current = await employeeAsOf(tx, id, date);
-            const changed = Object.fromEntries(Object.entries(v).filter(([k, val]) => k in FIELDS && FIELDS[k]!.section !== 'core' && String(current[k] ?? '') !== String(val)));
+            const changed = Object.fromEntries(Object.entries(v).filter(([k, val]) => k in FIELDS && FIELDS[k]!.section !== 'core' && !sameValue(k, current[k], val)));
             // Re-importing the same file changes nothing (idempotent): only real differences are applied.
             if (!Object.keys(changed).length) stats.unchanged++;
             else {
               if (!dryRun) await applyEmployeeChange(tx, id, { ...changed, effectiveDate: date }, ctx.job.created_by);
+              touched.add(id);
               stats.updated++;
             }
           }
@@ -196,24 +256,42 @@ registerJob('imports.employees', async (ctx) => {
     });
     await ctx.progress(Math.min(start + CHUNK, table.rows.length), table.rows.length);
   }
+  // many new rows in one tenant: refresh planner statistics before the set-based steps below join on them
+  if (!dryRun && stats.created >= ANALYZE_AFTER_CREATES) await ctx.tx((tx) => tx.query('SELECT app.analyze_core_hr()'));
   if (!dryRun && managerLinks.length) {
-    for (let i = 0; i < managerLinks.length; i += 1000) {
+    for (let i = 0; i < managerLinks.length; i += 5000) {
       await ctx.tx(async (tx) => {
-        for (const [emp, mgr, date] of managerLinks.slice(i, i + 1000)) {
-          const ids = await tx.query<{ employee_number: string; id: string; manager_id: string | null }>('SELECT employee_number, id, manager_id FROM app.employees WHERE employee_number = ANY($1)', [[emp, mgr]]);
-          const e = ids.find((x) => x.employee_number === emp);
-          const m = ids.find((x) => x.employee_number === mgr);
-          if (!e || !m) {
-            errors.push({ row: 0, column: 'managerEmployeeNumber', message: `manager ${mgr} not found for ${emp}` });
-            continue;
+        const chunk = managerLinks.slice(i, i + 5000);
+        const people = new Map(
+          (await tx.query<{ employee_number: string; id: string; manager_id: string | null }>('SELECT employee_number, id, manager_id FROM app.employees WHERE employee_number = ANY($1)', [[...new Set(chunk.flatMap((l) => [l.employee, l.manager]))]])).map((p) => [p.employee_number, p]),
+        );
+        const todo: Array<{ employeeId: string; managerId: string; date: string; row: number }> = [];
+        for (const l of chunk) {
+          const e = people.get(l.employee);
+          const m = people.get(l.manager);
+          if (!e || !m) errors.push({ row: l.row, column: 'managerEmployeeNumber', message: `manager ${l.manager} not found for ${l.employee}` });
+          else if (e.manager_id !== m.id) todo.push({ employeeId: e.id, managerId: m.id, date: l.date, row: l.row }); // unchanged links are skipped
+        }
+        const { rest } = await bulkLinkManagers(tx, todo, ctx.job.created_by);
+        for (const l of todo) touched.add(l.employeeId);
+        for (const l of rest as typeof todo) {
+          await tx.exec('SAVEPOINT link');
+          try {
+            await setManager(tx, l.employeeId, l.managerId, l.date, 'solid', ctx.job.created_by);
+            // the next link's cycle check walks current managers: keep this person's up to date
+            await refreshCurrent(tx, l.employeeId);
+            await tx.exec('RELEASE SAVEPOINT link');
+          } catch (err) {
+            await tx.exec('ROLLBACK TO SAVEPOINT link');
+            errors.push({ row: l.row, column: 'managerEmployeeNumber', message: (err as Error).message.slice(0, 200) });
           }
-          if (e.manager_id === m.id) continue;
-          await setManager(tx, e.id, m.id, date, 'solid', ctx.job.created_by).catch((err: Error) => errors.push({ row: 0, column: 'managerEmployeeNumber', message: err.message }));
         }
       });
     }
-    await ctx.tx((tx) => refreshCurrent(tx, null));
-  } else if (!dryRun) await ctx.tx((tx) => refreshCurrent(tx, null));
+  }
+  // denormalised current values (lists, search, org chart) for the people this run wrote, in short batches
+  const ids = [...touched];
+  for (let i = 0; i < ids.length; i += 2000) await ctx.tx((tx) => refreshCurrentMany(tx, ids.slice(i, i + 2000)));
   let errorKey: string | null = null;
   if (errors.length) {
     errorKey = objectKey(ctx.tenantId, 'imports', '.csv');

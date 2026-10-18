@@ -513,6 +513,11 @@ export async function refreshCurrent(tx: Tx, employeeId: string | null) {
   await tx.query('SELECT app.refresh_employee_current($1)', [employeeId]);
 }
 
+/** Refreshes the current values of many employees (one linear statement; keep batches to a few thousand). */
+export async function refreshCurrentMany(tx: Tx, employeeIds: string[]) {
+  if (employeeIds.length) await tx.query('SELECT app.refresh_employees_current($1::uuid[])', [employeeIds]);
+}
+
 export async function recordChangeEvent(tx: Tx, employeeId: string, topic: string, payload: Record<string, unknown>) {
   await emitEvent(tx, topic, { employeeId, ...payload }, { type: 'employee', id: employeeId });
 }
