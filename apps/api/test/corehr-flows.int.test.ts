@@ -418,6 +418,80 @@ describe('approvals', () => {
   });
 });
 
+describe('bulk approvals and bulk edit', () => {
+  let noticePolicy = false;
+  async function noticePeriodPolicy() {
+    if (noticePolicy) return;
+    noticePolicy = true;
+    // only matches changes to the notice period, so other tests' changes are unaffected
+    await api('POST', '/v1/approval-policies', { subject: 'employee.change', name: 'Notice period approval', priority: 5, condition: { field: 'noticePeriodDays', op: 'present' }, steps: [{ approver: { type: 'manager' } }] });
+  }
+
+  it('bulk approve decides only requests where the caller is an approver on the current step', async () => {
+    await noticePeriodPolicy();
+    const mgrA = await hire({ legalFirstName: 'Bulk', legalLastName: 'Approver' });
+    const mgrB = await hire({ legalFirstName: 'Other', legalLastName: 'Approver' });
+    const a = await login(mgrA, 'manager', { type: 'own_team' });
+    await login(mgrB, 'manager', { type: 'own_team' });
+    const e1 = await hire({ managerId: mgrA });
+    const e2 = await hire({ managerId: mgrA });
+    const e3 = await hire({ managerId: mgrB });
+    const request = async (emp: string) => {
+      const res = await api('POST', `/v1/employees/${emp}/changes`, { effectiveDate: '2026-12-01', noticePeriodDays: 60 });
+      expect(res.statusCode).toBe(202);
+      return res.json().approvalRequestId as string;
+    };
+    const [r1, r2, r3] = [await request(e1), await request(e2), await request(e3)];
+    const bulk = (await api('POST', '/v1/approvals/bulk', { ids: [r1, r2, r3], decision: 'approve', comment: 'Agreed' }, a.cookie)).json();
+    expect(bulk.succeeded.sort()).toEqual([r1, r2].sort());
+    expect(bulk.failed).toEqual([{ id: r3, code: 'forbidden' }]);
+    // approved changes are applied; the forbidden one is untouched and still pending
+    expect((await api('GET', `/v1/employees/${e1}?asOf=2026-12-01`)).json().employee.noticePeriodDays).toBe(60);
+    expect((await api('GET', `/v1/employees/${e2}?asOf=2026-12-01`)).json().employee.noticePeriodDays).toBe(60);
+    expect((await api('GET', `/v1/employees/${e3}?asOf=2026-12-01`)).json().employee.noticePeriodDays).toBeNull();
+    const statuses = await tx((t) => t.query<{ id: string; status: string }>(`SELECT id, status FROM app.approval_requests WHERE id = ANY($1::uuid[])`, [[r1, r2, r3]]));
+    expect(Object.fromEntries(statuses.map((r) => [r.id, r.status]))).toEqual({ [r1]: 'approved', [r2]: 'approved', [r3]: 'pending' });
+    const audit = await tx((t) => t.query<{ target_id: string; actor_id: string; action: string }>(`SELECT target_id, actor_id, action FROM audit.events WHERE action LIKE 'approval.%' AND target_id = ANY($1::text[]) ORDER BY id`, [[r1, r2, r3]]));
+    expect(audit.map((x) => [x.target_id, x.actor_id, x.action])).toEqual([[r1, a.userId, 'approval.approved'], [r2, a.userId, 'approval.approved']]);
+    // deciding again is a conflict, reported per item
+    expect((await api('POST', '/v1/approvals/bulk', { ids: [r1], decision: 'reject' }, a.cookie)).json()).toEqual({ succeeded: [], failed: [{ id: r1, code: 'conflict' }] });
+  });
+
+  it('bulk edit refuses people outside the caller scope and routes changes needing approval', async () => {
+    await noticePeriodPolicy();
+    const mgrEmp = await hire({ legalFirstName: 'Team', legalLastName: 'Editor' });
+    const report = await hire({ managerId: mgrEmp });
+    const outsider = await hire({ legalFirstName: 'Outside' });
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    // a built-in manager cannot bulk edit at all
+    expect((await api('POST', '/v1/employees/bulk-change', { employeeIds: [report], effectiveDate: '2026-11-01', values: { weeklyHours: 30 } }, mgr.cookie)).statusCode).toBe(403);
+    // grant team editing of working hours only
+    await tx(async (t) => {
+      await t.exec(`INSERT INTO app.roles (tenant_id, key, name, permissions, field_access) VALUES (app.current_tenant(), 'team_hours_editor', 'Team hours editor', '{employees.read,employees.update}', '{"employee.*":"read","employee.pay.*":"none","employee.weeklyHours":"write"}')`);
+      await assignRole(t, mgr.userId, 'team_hours_editor', { type: 'own_team' });
+    });
+    const res = (await api('POST', '/v1/employees/bulk-change', { employeeIds: [report, outsider], effectiveDate: '2026-11-01', values: { weeklyHours: 30 } }, mgr.cookie)).json();
+    expect(res).toEqual({ updated: 1, pendingApproval: 0, forbidden: [outsider], failed: [] });
+    expect((await api('GET', `/v1/employees/${report}?asOf=2026-11-01`)).json().employee.weeklyHours).toBe('30.00');
+    expect((await api('GET', `/v1/employees/${outsider}?asOf=2026-11-01`)).json().employee.weeklyHours).toBeNull();
+    // fields the role cannot write are refused for every person
+    const pay = (await api('POST', '/v1/employees/bulk-change', { employeeIds: [report], effectiveDate: '2026-11-01', values: { payAmountMinor: 1 } }, mgr.cookie)).json();
+    expect(pay).toEqual({ updated: 0, pendingApproval: 0, forbidden: [report], failed: [] });
+
+    // a change covered by an approval policy is not applied but sent for approval, per person
+    const e1 = await hire({ managerId: mgrEmp });
+    const e2 = await hire({ managerId: mgrEmp });
+    const pending = (await api('POST', '/v1/employees/bulk-change', { employeeIds: [e1, e2], effectiveDate: '2026-12-01', values: { noticePeriodDays: 90 } })).json();
+    expect(pending).toEqual({ updated: 0, pendingApproval: 2, forbidden: [], failed: [] });
+    expect((await api('GET', `/v1/employees/${e1}?asOf=2026-12-01`)).json().employee.noticePeriodDays).toBeNull();
+    const inbox = (await api('GET', '/v1/approvals', undefined, mgr.cookie)).json() as Array<{ id: string; payload: { noticePeriodDays: number }; subjectName: string }>;
+    const forMine = inbox.filter((r) => r.payload.noticePeriodDays === 90);
+    expect(forMine).toHaveLength(2);
+    expect((await api('POST', '/v1/approvals/bulk', { ids: forMine.map((r) => r.id), decision: 'approve' }, mgr.cookie)).json().succeeded).toHaveLength(2);
+    expect((await api('GET', `/v1/employees/${e2}?asOf=2026-12-01`)).json().employee.noticePeriodDays).toBe(90);
+  });
+});
+
 describe('automation rules', () => {
   it('runs on record events idempotently, with dry-run and an execution log', async () => {
     const hooks: string[] = [];
