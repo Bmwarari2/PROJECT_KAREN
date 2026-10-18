@@ -49,13 +49,28 @@ export async function userForEmployee(tx: Tx, employeeId: string | null | undefi
 
 export async function createTask(
   tx: Tx,
-  t: { source: string; sourceId?: string | null; title: string; description?: string; subjectEmployeeId?: string | null; assigneeUserId?: string | null; assigneeRole?: string | null; dueOn?: string | null; link?: string; dedupeKey?: string },
+  t: {
+    source: string;
+    sourceId?: string | null;
+    title: string;
+    description?: string;
+    subjectEmployeeId?: string | null;
+    assigneeUserId?: string | null;
+    assigneeRole?: string | null;
+    /** The person the task is for, kept so it can be handed to their sign-in once they have one. */
+    assigneeEmployeeId?: string | null;
+    dueOn?: string | null;
+    /** Days before dueOn to send the "due soon" reminder (null = the default lead time). */
+    reminderDaysBefore?: number | null;
+    link?: string;
+    dedupeKey?: string;
+  },
 ): Promise<string | undefined> {
   const row = await tx.maybe<{ id: string }>(
-    `INSERT INTO app.tasks (tenant_id, source, source_id, title, description, subject_employee_id, assignee_user_id, assignee_role, due_on, link, dedupe_key)
-     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO app.tasks (tenant_id, source, source_id, title, description, subject_employee_id, assignee_user_id, assignee_role, due_on, link, dedupe_key, assignee_employee_id, reminder_days_before)
+     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      ON CONFLICT (tenant_id, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING RETURNING id`,
-    [t.source, t.sourceId ?? null, t.title, t.description ?? null, t.subjectEmployeeId ?? null, t.assigneeUserId ?? null, t.assigneeRole ?? null, t.dueOn ?? null, t.link ?? null, t.dedupeKey ?? null],
+    [t.source, t.sourceId ?? null, t.title, t.description ?? null, t.subjectEmployeeId ?? null, t.assigneeUserId ?? null, t.assigneeRole ?? null, t.dueOn ?? null, t.link ?? null, t.dedupeKey ?? null, t.assigneeEmployeeId ?? null, t.reminderDaysBefore ?? null],
   );
   return row?.id;
 }

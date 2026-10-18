@@ -247,6 +247,116 @@ describe('workflows', () => {
   });
 });
 
+describe('workflow due dates, assignees and reminders', () => {
+  const runReminders = (date: string) =>
+    jobHandlers['tasks.reminders']!({ tenantId: owner.tenantId, job: { id: 'r', tenant_id: owner.tenantId, kind: 'tasks.reminders', idempotency_key: date, input: { date }, attempts: 1, created_by: null }, deps: ctx.deps, tx: (fn) => tx(fn), progress: async () => undefined });
+
+  it('assigns tasks to a named person and reminds them at the lead time set on each task, then once when overdue', async () => {
+    const assigneeEmp = await hire({ legalFirstName: 'Remy', legalLastName: 'Assignee' });
+    const assignee = await login(assigneeEmp, 'employee');
+    const tpl = (await api('POST', '/v1/workflow-templates', {
+      kind: 'custom',
+      name: 'Reminder lead times',
+      autoStart: false,
+      tasks: [
+        { key: 'early', title: 'Early reminder task', assignee: { type: 'user', value: assignee.userId }, dueOffsetDays: 10, reminderDaysBefore: 5 },
+        { key: 'late', title: 'Late reminder task', assignee: { type: 'user', value: assignee.userId }, dueOffsetDays: 10, reminderDaysBefore: 1 },
+        { key: 'default', title: 'Default reminder task', assignee: { type: 'user', value: assignee.userId }, dueOffsetDays: 10 },
+      ],
+    })).json().id;
+    const subject = await hire({ legalFirstName: 'Reminded' });
+    expect((await api('POST', '/v1/workflows', { templateId: tpl, employeeId: subject, anchorDate: '2027-03-01' })).statusCode).toBe(201);
+    const mine = ((await api('GET', '/v1/tasks', undefined, assignee.cookie)).json() as Array<{ title: string; dueOn: string; subjectEmployeeId: string }>).filter((t) => t.subjectEmployeeId === subject);
+    expect(mine.map((t) => [t.title, t.dueOn]).sort()).toEqual([['Default reminder task', '2027-03-11'], ['Early reminder task', '2027-03-11'], ['Late reminder task', '2027-03-11']]);
+    // nobody else gets a person-assigned task
+    expect(((await api('GET', '/v1/tasks')).json() as Array<{ subjectEmployeeId: string; title: string }>).filter((t) => t.subjectEmployeeId === subject && t.title.endsWith('reminder task'))).toEqual([]);
+    const stored = await tx((t) => t.query<{ title: string; reminder_days_before: number | null }>(`SELECT title, reminder_days_before FROM app.tasks WHERE subject_employee_id = $1 AND source = 'workflow' ORDER BY title`, [subject]));
+    expect(stored.map((r) => [r.title, r.reminder_days_before])).toEqual([['Default reminder task', null], ['Early reminder task', 5], ['Late reminder task', 1]]);
+
+    const reminded = async () =>
+      (await tx((t) => t.query<{ title_key: string; title: string }>(`SELECT title_key, params->>'title' AS title FROM app.notifications WHERE user_id = $1 AND kind IN ('task.due', 'task.overdue') AND params->>'title' LIKE '%reminder task' ORDER BY created_at, title`, [assignee.userId]))).map((n) => `${n.title_key}:${n.title}`);
+    await runReminders('2027-03-05');
+    expect(await reminded()).toEqual([]);
+    await runReminders('2027-03-06'); // 5 days before
+    expect(await reminded()).toEqual(['notify.taskDueSoon:Early reminder task']);
+    await runReminders('2027-03-09'); // the default lead time (2 days)
+    expect(await reminded()).toEqual(['notify.taskDueSoon:Early reminder task', 'notify.taskDueSoon:Default reminder task']);
+    await runReminders('2027-03-10');
+    await runReminders('2027-03-10'); // idempotent
+    expect(await reminded()).toHaveLength(3);
+    expect((await reminded()).at(-1)).toBe('notify.taskDueSoon:Late reminder task');
+    // completed tasks are not chased
+    const early = mine.find((t) => t.title === 'Early reminder task') as unknown as { id: string };
+    await api('POST', `/v1/tasks/${early.id}/complete`, undefined, assignee.cookie);
+    await runReminders('2027-03-12');
+    await runReminders('2027-03-13');
+    expect((await reminded()).filter((r) => r.startsWith('notify.taskOverdue')).sort()).toEqual(['notify.taskOverdue:Default reminder task', 'notify.taskOverdue:Late reminder task']);
+    // reminders are emailed through the delivery job
+    const delivery = await tx((t) => t.one<{ n: number }>(`SELECT count(*)::int AS n FROM app.jobs j JOIN app.notifications n ON n.id::text = j.idempotency_key WHERE j.kind = 'notifications.deliver' AND n.user_id = $1 AND n.kind = 'task.overdue'`, [assignee.userId]));
+    expect(delivery.n).toBe(2);
+  });
+
+  it('starts offboarding automatically on termination with due dates relative to the leave date', async () => {
+    await api('POST', '/v1/workflow-templates', {
+      kind: 'offboarding',
+      name: 'Leaver checklist',
+      tasks: [
+        { key: 'equipment', title: 'Collect equipment', assignee: { type: 'manager' }, dueOffsetDays: -3, reminderDaysBefore: 7 },
+        { key: 'exit', title: 'Exit interview', assignee: { type: 'role', value: 'hr_admin' }, dueOffsetDays: -1 },
+        { key: 'access', title: 'Remove access', assignee: { type: 'role', value: 'hr_admin' }, dueOffsetDays: 1 },
+      ],
+    });
+    const mgrEmp = await hire({ legalFirstName: 'Leaving', legalLastName: 'Manager' });
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    const emp = await hire({ legalFirstName: 'Leaving', managerId: mgrEmp });
+    await drain();
+    expect((await api('GET', `/v1/workflows?employeeId=${emp}`)).json().map((w: { kind: string }) => w.kind)).not.toContain('offboarding');
+    expect((await api('POST', `/v1/employees/${emp}/terminate`, { endDate: '2027-02-26', reason: 'Resignation' })).statusCode).toBe(200);
+    await drain();
+    const wf = ((await api('GET', `/v1/workflows?employeeId=${emp}`)).json() as Array<{ id: string; kind: string; anchorDate: string; taskCount: number; templateName: string }>).find((w) => w.kind === 'offboarding');
+    expect(wf).toMatchObject({ anchorDate: '2027-02-26', taskCount: 3, templateName: 'Leaver checklist' });
+    const tasks = await tx((t) => t.query<{ title: string; due_on: string; assignee_user_id: string | null; assignee_role: string | null; reminder_days_before: number | null }>(`SELECT title, due_on, assignee_user_id, assignee_role, reminder_days_before FROM app.tasks WHERE source = 'workflow' AND source_id = $1 ORDER BY due_on`, [wf!.id]));
+    expect(tasks.map((r) => [r.title, r.due_on, r.assignee_user_id, r.assignee_role, r.reminder_days_before])).toEqual([
+      ['Collect equipment', '2027-02-23', mgr.userId, null, 7],
+      ['Exit interview', '2027-02-25', null, 'hr_admin', null],
+      ['Remove access', '2027-02-27', null, 'hr_admin', null],
+    ]);
+    // the same termination event redelivered does not start a second offboarding
+    await tx((t) => t.exec(`UPDATE app.outbox SET published_at = NULL WHERE aggregate_id = $1 AND topic = 'employee.terminated'`, [emp]));
+    await drain();
+    expect(((await api('GET', `/v1/workflows?employeeId=${emp}`)).json() as Array<{ kind: string }>).filter((w) => w.kind === 'offboarding')).toHaveLength(1);
+  });
+
+  it('a transfer changes location and job with effective dating and dates its tasks from the transfer date', async () => {
+    const leeds = (await api('POST', '/v1/org/locations', { name: 'Fictional Leeds office', entityId: entity, country: 'GB', regionCode: 'GB-ENG', timeZone: 'Europe/London' })).json().id;
+    const glasgow = (await api('POST', '/v1/org/locations', { name: 'Fictional Glasgow office', entityId: entity, country: 'GB', regionCode: 'GB-SCT', timeZone: 'Europe/London' })).json().id;
+    await api('POST', '/v1/workflow-templates', {
+      kind: 'transfer',
+      name: 'Relocation checklist',
+      tasks: [
+        { key: 'desk', title: 'Book a desk at the new site', assignee: { type: 'employee' }, dueOffsetDays: -7 },
+        { key: 'induction', title: 'Run the site induction', assignee: { type: 'manager' }, dueOffsetDays: 2 },
+      ],
+    });
+    const mgrEmp = await hire({ legalFirstName: 'Site', legalLastName: 'Manager' });
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    const emp = await hire({ legalFirstName: 'Mover', locationId: leeds, managerId: mgrEmp });
+    const self = await login(emp, 'employee');
+    expect((await api('POST', `/v1/employees/${emp}/transfer`, { effectiveDate: '2027-04-05', locationId: glasgow, jobTitle: 'Site lead', reason: 'Relocation' })).statusCode).toBe(200);
+    await drain();
+    expect((await api('GET', `/v1/employees/${emp}?asOf=2027-04-04`)).json().employee).toMatchObject({ locationId: leeds, location: 'Fictional Leeds office', jobTitle: 'Analyst' });
+    expect((await api('GET', `/v1/employees/${emp}?asOf=2027-04-05`)).json().employee).toMatchObject({ locationId: glasgow, location: 'Fictional Glasgow office', jobTitle: 'Site lead', entityId: entity });
+    const jobs = (await api('GET', `/v1/employees/${emp}/history`)).json().job as Array<{ location_id: string; valid_from: string; valid_to: string | null }>;
+    expect(jobs.map((j) => [j.location_id, j.valid_from, j.valid_to])).toEqual([[leeds, '2026-03-02', '2027-04-05'], [glasgow, '2027-04-05', null]]);
+    const wf = ((await api('GET', `/v1/workflows?employeeId=${emp}`)).json() as Array<{ kind: string; anchorDate: string; templateName: string }>).find((w) => w.templateName === 'Relocation checklist');
+    expect(wf).toMatchObject({ kind: 'transfer', anchorDate: '2027-04-05' });
+    expect(((await api('GET', '/v1/tasks', undefined, self.cookie)).json() as Array<{ title: string; dueOn: string }>).find((t) => t.title === 'Book a desk at the new site')?.dueOn).toBe('2027-03-29');
+    expect(((await api('GET', '/v1/tasks', undefined, mgr.cookie)).json() as Array<{ title: string; dueOn: string; subjectEmployeeId: string }>).find((t) => t.title === 'Run the site induction' && t.subjectEmployeeId === emp)?.dueOn).toBe('2027-04-07');
+    const audit = await tx((t) => t.one<{ diff: { changes: Record<string, { from: unknown; to: unknown }> } }>(`SELECT diff FROM audit.events WHERE action = 'employee.transferred' AND target_id = $1`, [emp]));
+    expect(audit.diff.changes).toMatchObject({ locationId: { from: leeds, to: glasgow }, jobTitle: { from: 'Analyst', to: 'Site lead' } });
+  });
+});
+
 describe('approvals', () => {
   it('multi-step conditional approval with delegation, then applies the change', async () => {
     const mgrEmp = await hire({ legalFirstName: 'Approver' });

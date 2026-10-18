@@ -8,7 +8,7 @@ import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { notify } from '../../lib/notify';
 import { loadTarget } from '../employees/service';
 import { periodic, registerJob, subscribe } from '../../jobs/registry';
-import { autoStart, maybeCompleteInstance, startWorkflow } from './service';
+import { autoStart, DEFAULT_REMINDER_DAYS_BEFORE, maybeCompleteInstance, startWorkflow } from './service';
 
 const TaskDef = Type.Object({
   key: Type.String({ pattern: '^[a-z0-9_-]{1,40}$' }),
@@ -143,17 +143,32 @@ registerJob('workflows.autostart', async (ctx) => {
   return { started: started.length };
 });
 
-// ---- reminders: due soon and overdue (deduplicated per task and day) ----------------------------------
+// ---- reminders: one "due soon" reminder per task at its own lead time, one "overdue" reminder ----------
 registerJob('tasks.reminders', async (ctx) => {
   const date = String(ctx.job.input.date);
   return ctx.tx(async (tx) => {
-    const due = await tx.query<{ id: string; title: string; assignee_user_id: string }>(
-      `SELECT id, title, assignee_user_id FROM app.tasks WHERE status = 'open' AND assignee_user_id IS NOT NULL AND due_on IS NOT NULL AND due_on <= ($1::date + 2)`,
-      [date],
+    // reminder_days_before comes from the workflow template task (persisted on the task); NULL = default
+    const due = await tx.query<{ id: string; title: string; assignee_user_id: string; overdue: boolean }>(
+      `SELECT id, title, assignee_user_id, due_on < $1::date AS overdue FROM app.tasks
+        WHERE status = 'open' AND assignee_user_id IS NOT NULL AND due_on IS NOT NULL
+          AND due_on - coalesce(reminder_days_before, $2::int) <= $1::date`,
+      [date, DEFAULT_REMINDER_DAYS_BEFORE],
     );
     let sent = 0;
-    for (const t of due) sent += (await notify(tx, { userIds: [t.assignee_user_id], kind: 'task.due', titleKey: 'notify.taskDueSoon', params: { title: t.title }, link: '/app/tasks', dedupeKey: `due:${t.id}:${date}` })).length;
-    return { date, sent };
+    let overdue = 0;
+    for (const t of due) {
+      const ids = await notify(tx, {
+        userIds: [t.assignee_user_id],
+        kind: t.overdue ? 'task.overdue' : 'task.due',
+        titleKey: t.overdue ? 'notify.taskOverdue' : 'notify.taskDueSoon',
+        params: { title: t.title },
+        link: '/app/tasks',
+        dedupeKey: t.overdue ? `overdue:${t.id}` : `due:${t.id}`,
+      });
+      sent += ids.length;
+      if (t.overdue) overdue += ids.length;
+    }
+    return { date, sent, overdue };
   });
 });
 periodic.push(async (tx, now) => {

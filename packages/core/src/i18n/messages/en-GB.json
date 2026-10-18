@@ -382,7 +382,8 @@
     "automation": "{title}",
     "leaveApproved": "Your time off was approved",
     "leaveRejected": "Your time off request was declined",
-    "absenceTrigger": "Absence review suggested ({trigger}, score {score})"
+    "absenceTrigger": "Absence review suggested ({trigger}, score {score})",
+    "taskOverdue": "Task overdue: {title}"
   },
   "people": {
     "title": "People",
