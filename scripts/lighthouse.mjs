@@ -23,7 +23,7 @@ const WEB = 3200;
 const API = 4200;
 const base = `http://127.0.0.1:${WEB}`;
 const THRESHOLDS = { performance: 90, accessibility: 95 };
-const PAGES = [
+const ALL_PAGES = [
   { path: '/', label: 'Marketing home' },
   { path: '/signin', label: 'Sign in' },
   { path: '/signup', label: 'Sign up' },
@@ -34,6 +34,8 @@ const PAGES = [
   { path: '/app/reports', label: 'Reports catalogue (signed in)', auth: true },
   { path: '/app/reports/builder', label: 'Report builder (signed in)', auth: true },
 ];
+// LIGHTHOUSE_ONLY=/app/me,/signin limits a run to some pages (debugging); verify always runs them all.
+const PAGES = process.env.LIGHTHOUSE_ONLY ? ALL_PAGES.filter((p) => process.env.LIGHTHOUSE_ONLY.split(',').includes(p.path)) : ALL_PAGES;
 
 async function resetDb() {
   const admin = new pg.Client({ connectionString: `${OWNER}/postgres` });
@@ -64,7 +66,8 @@ const env = {
 
 const procs = [];
 const start = (cmd, cwd) => {
-  const p = spawn(cmd, { cwd, shell: true, env, stdio: 'ignore' });
+  // Own process group, so stopAll ends npm, next-server and tsx too (killing only the shell left them running).
+  const p = spawn(cmd, { cwd, shell: true, env, stdio: 'ignore', detached: process.platform !== 'win32' });
   procs.push(p);
 };
 const waitFor = async (url) => {
@@ -81,7 +84,13 @@ const waitFor = async (url) => {
 const stopAll = () => {
   for (const p of procs) {
     if (process.platform === 'win32') spawn('taskkill', ['/pid', String(p.pid), '/t', '/f'], { stdio: 'ignore' });
-    else p.kill('SIGTERM');
+    else {
+      try {
+        process.kill(-p.pid, 'SIGTERM');
+      } catch {
+        // already gone
+      }
+    }
   }
 };
 
@@ -105,6 +114,11 @@ mkdirSync('.verify', { recursive: true });
 let failed = false;
 const report = [];
 try {
+  // A server left on these ports (e.g. by another checkout) would be audited instead of this build.
+  for (const port of [WEB, API]) {
+    const busy = await fetch(`http://127.0.0.1:${port}/`).then(() => true, () => false);
+    if (busy) throw new Error(`port ${port} is already in use; stop the server on it and run again`);
+  }
   await resetDb();
   start('npx tsx src/main.ts', 'apps/api');
   start(`npx next start -p ${WEB}`, 'apps/web');
@@ -127,6 +141,11 @@ try {
           extraHeaders: p.auth ? { Cookie: cookie } : undefined,
           disableStorageReset: false,
         });
+        if (res.lhr.runtimeError) throw new Error(`Lighthouse could not audit ${p.path}: ${res.lhr.runtimeError.code} ${res.lhr.runtimeError.message}`);
+        for (const id of ['largest-contentful-paint', 'cumulative-layout-shift', 'total-blocking-time']) {
+          const a = res.lhr.audits[id];
+          if (typeof a?.numericValue !== 'number') throw new Error(`Lighthouse audit ${id} failed on ${p.path}: ${a?.errorMessage ?? 'no value'}`);
+        }
         const c = res.lhr.categories;
         scores.push({ performance: Math.round(c.performance.score * 100), accessibility: Math.round(c.accessibility.score * 100), bestPractices: Math.round(c['best-practices'].score * 100), lcp: res.lhr.audits['largest-contentful-paint'].numericValue, cls: res.lhr.audits['cumulative-layout-shift'].numericValue, tbt: res.lhr.audits['total-blocking-time'].numericValue });
       }
