@@ -12,7 +12,7 @@ const CODE = /^(EU|[A-Z]{2}(-[A-Z0-9]{1,3}){0,2})$/;
  * Official-source allow-list. Add only government, parliament, official-gazette or EU-institution
  * domains, each with a comment saying whose site it is:
  * - gesetze-bayern.de: BAYERN.RECHT, the Bavarian State Chancellery's official consolidated Land law (added 2026-10-18, ADR-0023).
- * - bundesarbeitsgericht.de: the German Federal Labour Court (BAG), for its 2022 working-time recording decision.
+ * - bundesarbeitsgericht.de: the German Federal Labour Court's official site (added 2026-10-18, ADR-0035).
  * - inps.it: INPS, Istituto Nazionale della Previdenza Sociale, the Italian public social security institute (added 2026-10-18, ADR-0052).
  * - nidirect.gov.uk (Northern Ireland government) and eures.europa.eu (European Commission EURES portal) are covered by the existing .gov.uk / europa.eu patterns.
  */

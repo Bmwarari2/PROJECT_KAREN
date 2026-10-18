@@ -158,3 +158,34 @@ export async function escalateOverdue(tx: Tx, now: Date): Promise<number> {
   }
   return overdue.length;
 }
+
+export interface ApprovalView {
+  id: string;
+  subject: string;
+  status: string;
+  policy: string;
+  subjectName: string | null;
+  requestedAt: string;
+  currentStep: number;
+  payload: Record<string, unknown>;
+}
+
+/** Approval requests for a view: mine (awaiting my decision), requested (by me) or all. Shared by the list and export. */
+export async function listApprovals(tx: Tx, userId: string, view: string, limit = 500): Promise<ApprovalView[]> {
+  const rows = await tx.query<Record<string, unknown>>(
+    `SELECT r.id, r.subject, r.status, p.name AS policy, e.display_name AS subject_name, r.created_at, r.current_step, r.payload
+       FROM app.approval_requests r JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
+       LEFT JOIN app.employees e ON e.tenant_id = r.tenant_id AND e.id = r.subject_employee_id
+      WHERE CASE $2
+              WHEN 'mine' THEN r.status = 'pending' AND EXISTS (SELECT 1 FROM app.approval_steps s WHERE s.request_id = r.id AND s.step_index = r.current_step AND $1 = ANY(s.approver_user_ids))
+              WHEN 'requested' THEN r.requested_by = $1
+              ELSE true END
+      ORDER BY r.created_at DESC LIMIT ${Math.trunc(limit)}`,
+    [userId, view],
+  );
+  return rows.map((r) => {
+    const { __steps: _s, ...payload } = r.payload as Record<string, unknown>;
+    void _s;
+    return { id: r.id as string, subject: r.subject as string, status: r.status as string, policy: r.policy as string, subjectName: r.subject_name as string | null, requestedAt: r.created_at as string, currentStep: r.current_step as number, payload };
+  });
+}

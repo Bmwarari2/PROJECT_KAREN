@@ -97,6 +97,68 @@ Dated records of implementation choices, especially where they differ from the d
 
 **Consequences.** Visual runs are deterministic and offline-capable. Baselines are unchanged.
 
+## ADR-0013 — Lettered migrations; USAGE (not CREATE) on schema public (2026-10-18)
+
+**Context.** Phase 1 fixes need migrations after `0007` but before Phase 2's `0008`. The loader only accepted `\d{4}_name.sql`, so a file named `0007b_…` would have been skipped without any error. Separately, trigram word similarity (`<%`) failed for the application role: extensions live in schema `public`, on which 0001 revoked everything from PUBLIC, so extension operators did not resolve. `citext` comparisons from the app role were silently falling back to case-sensitive `text` equality for the same reason.
+
+**Decision.** The loader accepts an optional lowercase letter after the number (`0007b_…`); ASCII order puts it between `0007_…` and `0008_…`. A unit test proves both the order and that every repository migration is loaded and passes the expand-and-contract lint. Migration 0007g grants `USAGE` (never `CREATE`) on `public` to the three application roles. The isolation suite asserts USAGE without CREATE, and that `schema_migrations` stays unreadable. Where a migration must fix data in a table with forced RLS, it lifts `FORCE` only inside its own transaction, which holds an exclusive lock. Only the owner is affected, because the application role never owns tables.
+
+**Consequences.** Email lookups through `citext` columns are now case-insensitive for the app role, as the schema intended. Later lettered files must keep the `\d{4}[a-z]?_` shape.
+
+## ADR-0014 — Emergency contacts are effective-dated by priority slot (2026-10-18)
+
+**Decision.** Each contact row has `[valid_from, valid_to)`. An exclusion constraint on (employee, priority, period) means each slot (1, 2, …) holds one contact on any date, so "the list on date D" is well defined. `PUT /v1/employees/:id/emergency-contacts?effectiveDate=D` replaces the list in force from D. Contacts that cover D are closed on D, or replaced if they start on D. The new list runs until the next future-dated list, which is kept. `GET` takes `?asOf=`, and `/history` includes contacts. Rows from before this change start at `-infinity`. Earlier releases allowed duplicate priorities, so 0007b renumbers them before adding the constraint.
+
+## ADR-0015 — Document folder visibility rules (2026-10-18)
+
+**Decision.** Folder visibility controls lists and downloads in exactly the same way. A shared SQL predicate and a matching row check implement it, and one test exercises both against every visibility.
+
+| Folder | Document about a person | Company document |
+| --- | --- | --- |
+| none | the person, and whoever may read their documents (managers, HR) | HR (`documents.manage`) |
+| `employee` | the person, managers, HR | everyone signed in |
+| `managers` | managers and HR, **not** the person (e.g. manager notes) | anyone with `documents.read`/`manage` |
+| `hr` | HR who manage that person's documents only | HR |
+| `everyone` | everyone signed in | everyone signed in |
+
+Without HR rights, a person may only file their own upload in no folder, an `employee` folder or an `everyone` folder, so they can still see it afterwards.
+
+## ADR-0016 — Exports of list views (2026-10-18)
+
+**Decision.** `/v1/exports/{employees,tasks,approvals,documents}?format=csv|xlsx` uses the same query functions as the list endpoints (`employeeListWhere`, `listTasks`, `listApprovals`, `listDocuments`), so an export contains exactly the rows the list shows the caller. The people export accepts the same filters as the list and blanks any column the caller cannot read, row by row. Approval exports name the changed fields but never their values; approvers see values in the app, but a file can travel. Exports need `exports.run` because bulk data leaves the product. They are capped at 10,000 rows (beyond that: a background report) and audited as `export.<list>`. List rows now carry the full manager chain for team-scoped callers, as `loadTarget` does, so a skip-level manager sees the same fields in the list, the export and the profile.
+
+## ADR-0017 — Pre-start portal, invitations and person-assigned tasks (2026-10-18)
+
+**Decision.**
+- `POST /v1/employees/:id/invite` (`users.invite`, in scope) gives a person a self-service sign-in linked to their employee record. The address defaults to work email, then personal email. The optional extra role is limited to `manager`; admin roles are assigned through role settings, which require MFA. The person is emailed a one-time link from the home region, valid for 7 days, using the magic-link mechanism. When the tenant enforces SSO, the email points to the sign-in page instead. Re-inviting sends a new link and keeps the account.
+- Workflow tasks for the joiner or their manager record `assignee_employee_id` (migration 0007e). Tasks created before the person can sign in are handed to them when they are invited. `GET /v1/me/onboarding` and `/app/welcome` show documents to sign, two built-in forms (personal details, emergency contact) and the joiner's own checklist, with progress. Before the start date, form answers are effective from the start date, because the records begin then.
+- Each task stores `reminder_days_before` from its template. Previously the field was accepted and then ignored. The reminder job sends one due-soon reminder at that lead time (default 2 days) and one overdue reminder.
+- `MAIL_TRANSPORT=file` writes emails as JSON files for local development and e2e tests (to follow links). It is refused outside `dev` and `test`.
+
+**Consequences.** Configurable portal forms (beyond the two built-ins) are future work. The e2e stack runs no worker, so the portal e2e test starts the workflow explicitly.
+
+## ADR-0018 — Dispatching "call integration" automation actions (2026-10-18)
+
+**Decision.** The action emits `integration.requested` to the outbox, as before. A subscriber now records an `app.integration_calls` row, one per event, which is the execution log. It also enqueues an idempotent `integrations.dispatch` job, which runs the handler registered for that integration id and stores the result (`GET /v1/automation/integration-calls`). Later phases register connectors in the same registry. Two handlers are built in:
+- `log` makes no external call.
+- `http` POSTs identifiers only (rule, event, employee id, date) as JSON to a public `https` URL. It is signed with a per-tenant HMAC key derived from `INTEGRATION_SIGNING_KEY`. If that key is not configured, the handler refuses to run rather than signing with a placeholder (webhooks still do).
+
+Rules are validated when saved. Unknown integrations are rejected, as are non-https, loopback, private, link-local and internal targets (for webhooks too). Redirects are not followed. External calls are mocked in tests.
+
+**Consequences.** Infrastructure must generate `INTEGRATION_SIGNING_KEY` per cell in Secrets Manager and inject it into the API and worker. Customers need a way to see their derived key, and webhook signing should move to the same key; both are follow-ups. The customer endpoint is chosen by the controller and receives no personal data beyond identifiers, so it is not a Thapsus sub-processor.
+
+## ADR-0019 — Bulk import at 200,000 rows (2026-10-18)
+
+**Context.** The import job made about 15 sequential statements per row and 5 per manager link: 2,000 rows took 55 s. It ended with a tenant-wide refresh whose `UPDATE … FROM` self-join planned as a quadratic nested loop: 20,000 people took 160 s, above the 30 s statement timeout. Right after a bulk insert, planner statistics still describe the tenant as tiny, so set-based joins picked whole-table scans per row.
+
+**Decision.**
+- New people are created per 500-row chunk with one `INSERT … SELECT FROM unnest` per table, grouped by the set of fields present. Existing people are compared with a bulk read of the values in force; numbers compare numerically, so `30` equals `30.00` and re-imports stay idempotent. Any constraint failure in a chunk rolls back to a savepoint and replays that chunk row by row, which gives exact row errors. Duplicate numbers in a file, updates, and rows without required fields always take the row-by-row path.
+- Manager links for people without a reporting line are inserted in bulk. The current manager is kept up to date as links are written. An in-memory check plus a SQL check (both covering links to existing people) send any cycle to the per-row path, which rejects it with a row error. This also fixes a gap where two rows naming each other could create a cycle, because `assertNoCycle` reads current managers that the import had not refreshed.
+- `app.refresh_employees_current(ids[])` (0007h) is a correlated per-row UPDATE and runs in linear time. `refresh_employee_current` keeps its contract on top of it. The job refreshes only the people it wrote, 2,000 at a time.
+- After 1,000 or more creates, the job calls `app.analyze_core_hr()` (0007i). It is a parameterless `SECURITY DEFINER` function with a fixed table list, executable only by the app role. The isolation suite allow-lists definer functions.
+
+**Consequences.** See `docs/PERFORMANCE.md` for 200,000-row timings. The validation preview still reads the whole file in the request (a few seconds at 200,000 rows). Moving the preview to a job is future work if files grow further.
+
 ## ADR-0020 — Every rule version must have a golden vector (2026-10-18)
 
 **Context.** The audit of phase 2 found 24 rule versions with no golden vector dated inside their effective period, so "every rule has golden tests" was a convention, not a check. ADR-0010 also noted that the US rule goldens only repeated the pack values.
@@ -144,6 +206,192 @@ Dated records of implementation choices, especially where they differ from the d
 **Decision.** The generator adds a verification log with one row per rule version (jurisdiction, key, effective period, regions, `verifiedOn`, source URL), a per-pack summary of holiday verification dates, and, for packs with subdivisions, a table of which nations each rule answers for. The existing staleness test keeps the file in step with the packs.
 
 **Consequences.** COVERAGE.md is longer (one row per rule version) and changes whenever any value is re-verified.
+
+## ADR-0027 — Statutory sick pay uses the rule version in force on each day (2026-10-18)
+
+**Context.** UK SSP changed on 6 April 2026 (no waiting days, one-day PIW, no lower earnings limit, lower of £123.25 and 80% of NWE). The engine read only the post-April shape, so a 2025-26 rule (flat rate, three waiting days, four-day PIW, LEL) produced `NaN`. Spells and periods of entitlement often span the change, and S.I. 2026/373 regs. 3–6 govern that.
+
+**Decision.** `ukSsp` takes a function returning the GB `sick_pay.statutory` version for a date and applies it per qualifying day. A spell is a PIW if it meets the shortest `minPeriodOfIncapacityDays` among the versions in force during it. PIWs separated by no more than `linkingPeriodWeeks` (gap of days between them, s.152(3)) link. Waiting days are served once per period of entitlement. Days below a version's LEL are not payable. The pack's `transitional` protected rate (reg. 4) applies to the spell that began before the change, continues after it and already had SSP paid before it, for NWE inside the protected band. This reproduces regs. 3 and 5 (post-6 April days payable; sub-LEL earners paid from 6 April). Payment is grouped by weekly rate: whole weeks at the weekly rate, odd days at weekly ÷ qualifying days rounded up to the penny.
+
+**Consequences.** Pre- and post-April vectors are golden-tested against the real pack. Not modelled: the reg. 5/6 Schedule 11 exclusion (continuous sickness from 21 September 2025), Northern Ireland, and NWE derivation from the eight-week pay history (the route uses current pay or an explicit `normalWeeklyEarningsMinor`). Listed in HUMAN_TODO 3.4.
+
+## ADR-0028 — EU employer sick-pay shapes and their assumptions (2026-10-18)
+
+**Context.** The member-state packs hold different `sick_pay.statutory` shapes. The engine only read DE/NL (percent and weeks) and IE (days per year), so FR, ES and PL returned meaningless numbers.
+
+**Decision.** `employerContinuedPay(rule, input)` detects the shape and returns a common result (scheme, eligibility, paid days and basis, percent, amounts, bands, notes):
+- **DE/NL:** percentage for the first N weeks of the incapacity, counted from the first sick day, once the qualifying service is served. Paid working days × daily pay (weekly pay ÷ working days).
+- **IE:** days per calendar year at a percentage with a daily cap, after the qualifying service. Earlier spells in the year count.
+- **ES:** the employer window is days `from`–`to` of the incapacity (calendar days). The benefit percentage is not in the pack, so no amount is computed.
+- **FR:** the employer complement after `minServiceYears`, `waitingDays` per stoppage (none for listed causes), then the service band's 90% and 66.66% durations, treated as calendar days. Days paid in the previous 12 months are deducted. The employer amount is the guaranteed percentage of gross daily pay (weekly ÷ 7) less the IJSS estimated at the pack's 50% from its own waiting period.
+- **PL:** calendar days per calendar year at 80% (100% for the pack's listed causes), at weekly pay ÷ 7.
+
+Values the pack does not hold are flagged in `notes`, never invented: NL minimum-wage floor and wage cap, FR IJSS daily cap, ES benefit percentage, and the PL age-50 limit when the caller does not supply `age50Plus`. The route does not read date of birth, so the limit is flagged `assumedUnder50`.
+
+**Consequences.** Golden tests per held member state (DE, ES, FR, IE, NL, PL) against pack values. Interpretations needing legal review are in HUMAN_TODO 3.4.
+
+## ADR-0029 — Leave-year entitlement is summed over policy and FTE periods (2026-10-18)
+
+**Context.** `balanceFor` used only the policy in force on the balance date and ignored assignment dates. So a mid-year policy change or FTE change re-rated the whole year.
+
+**Decision.** The service splits the leave year at every assignment boundary, default-policy validity boundary and job-record (FTE) boundary. It resolves the policy for each slice (assignment first, then entity → country → any default) and the engine sums unrounded entitlement per slice. Rounding is applied once, using the policy in force on the balance date, which also supplies unit, carry-over, cap, waiting period and negative allowance. Future-dated assignments are included, so the whole-year figure is the same before and after the change date. Policy day amounts are full-time days (five-day week), pro-rated by FTE. For hours-unit policies they are converted at the full-time day length, (weekly hours ÷ FTE) ÷ 5. So 5.6 weeks becomes 5.6 × weekly hours however the part-time week is shaped. Adjustments, carry-over, caps and the negative allowance are in the policy unit. Requests, public holidays and balance checks use hours for hours-unit policies.
+
+**Consequences.** Every slice is assumed to share the leave-year start of the policy in force on the balance date. Monthly accrual counts whole months within each slice.
+
+## ADR-0030 — Source of hours worked (2026-10-18)
+
+**Context.** Per-hour-worked accrual, FMLA's 1,250-hour test and US paid sick leave need actual hours. Timesheets arrive with phase 4 (`app.timesheets`, weekly minutes), which is not on this branch.
+
+**Decision.** `hoursWorked(employee, from, to)` uses this precedence:
+1. Approved timesheets whose week starts in the range, if `app.timesheets` exists (checked with `to_regclass`, so no code change is needed when phase 4 merges).
+2. Otherwise `app.worked_hours`: new table, forced RLS, recorded by HR via `POST /v1/leave/worked-hours` (audited), pro-rated by days for partial overlaps.
+3. Otherwise, for FMLA and US sick leave only, an estimate from the contracted working pattern over the days employed. Leave accrual never estimates: no recorded hours means nothing accrued.
+
+For FMLA, an HR-provided `hoursPrior12Months` takes precedence. Every result reports its `hoursSource` (`provided`, `timesheets`, `recorded`, `estimated` or `none`). Where no accurate hours record exists, the employer must show the hours (29 CFR 825.110(c)), so an estimate is labelled as one.
+
+**Consequences.** This code depends on phase 4's column names (`regular_minutes`, `overtime_minutes`, `double_minutes`, `status = 'approved'`, `week_start`). Re-check them at merge time.
+
+## ADR-0031 — US state paid sick leave modelling (2026-10-18)
+
+**Context.** `usSickAccrual` ignored annual and 12-month caps, employer-size paid thresholds and the dates when use may begin. A locality (city or county) layer is being added on another branch.
+
+**Decision.**
+- **Accrual period:** the calendar year to the balance date.
+- **Accrual:** whole increments of `hoursEarned` per `perHoursWorked`.
+- **Caps:** the lowest of the balance cap (CA, greater or lesser of hours and days × hours per day), `annualCapHours` (CO, MA, OR), `capHoursPer12Months` (IL) and the NY size tier.
+- **Paid or unpaid:** paid unless `paidIfEmployeesAtLeast` (tenant active headcount) or a `paidIf<State>EmployeesAtLeast` key (active employees whose region is the state) is not met.
+- **When use may begin:** "after N days" (`useBeginsAfterDays`, `useBeginsCalendarDay`, CA `employmentPeriodDaysBeforeUse`) means start date + N. This follows the official wording: DIR "90-day employment period before", L&I "90 calendar days after your first day", IL "after 90 days". "Until the Nth calendar day of employment" (`useMayBeDeferredUntilCalendarDay`, OR) means start date + N − 1.
+- **CA 30-day rule:** working days in the last 365 days.
+- **Localities:** keys that depend on one (`…Location`, `…ordinance…`) are returned in `notEvaluated`, and the result is computed without them.
+
+**Consequences.** Usage, carry-over and front-loading are not tracked yet (the result is an accrual figure). Employer-defined 12-month periods (IL/NY alternatives) are not configurable yet.
+
+## ADR-0032 — FMLA leave years, coverage, worksite and usage (2026-10-18)
+
+**Context.** The route enum used `rolling_backward` while the pack says `rolling_backward_from_leave_date`. The window maths lived in the route and used 365-day years. Coverage counted today's headcount instead of the "50 employees in 20+ workweeks" test.
+
+**Decision.**
+- **Leave-year method:** validated against `family_leave.fmla.leaveYearMethods`. The database only checks the format (migration `0009b`), and the legacy value is read as the pack name. The pack's `leaveYearMethodMustBeUniform` is enforced against the company setting (`PUT /v1/settings/absence`, `fmla.leaveYearMethod`) and existing cases. `fmlaLeaveYear` in the engine computes the window for the four pack methods using calendar months (DOL Fact Sheet #28H). A fixed 12-month year starts on the company `fixedYearStart`, else the hire anniversary. Military caregiver leave uses its single 12-month period.
+- **Coverage:** for each ISO workweek of the current and preceding calendar year, count US employees employed for the whole week (29 CFR 825.105 payroll method, as a conservative reading). All US employees in the tenant are treated as one employer. Public agencies are covered when the company setting says so.
+- **Worksite:** active employees at locations within the pack's `radiusMiles` of the employee's location, using geofence coordinates. Without coordinates only the same location counts.
+- **Usage:** approved (and, for the booking check, pending) leave requests carrying `fmlaCaseId`, in hours. The leave type can be any type, because paid leave may run concurrently. Usage is attributed by request start date. Part-day requests need an intermittent case. A request that exceeds the remaining hours is refused. Usage is summed across the employee's cases; caregiver usage is kept separate.
+
+**Consequences.** Not modelled: the combined 26-week caregiver period including other FMLA leave, the 60-day notice to change method, and joint or integrated employer tests across tenants. Listed for legal review in HUMAN_TODO 3.4.
+
+## ADR-0033 — Sensitive absence visibility, medical detail and calendar tokens (2026-10-18)
+
+**Context.** Masking of sensitive leave types used "has absence.read anywhere". So a manager with any absence permission saw sickness for everyone they could see on the calendar. There was no way to read medical detail. A user could "revoke" another user's ICS token: the request got a 204 and a false audit row.
+
+**Decision.**
+- Calendar and request lists compute, per row, whether the viewer has `absence.read` in scope for that employee (the same scope predicate as reads). Otherwise sickness, family and FMLA show as "away" with no note.
+- `GET /v1/sickness` lists dates and status only.
+- `GET /v1/sickness/:id/medical` decrypts reason, fit note name and return-to-work answers only with `vault.read:sickness` (HR), or for the employee's own record (self-disclosure). Managers are refused. The refusal is audited in a committed transaction, and each decrypted field is audit-logged.
+- `DELETE /v1/leave/ics-tokens/:id` returns 404 unless the token belongs to the caller.
+- A token naming an unknown or other tenant is 404.
+
+This work also fixed `scopePredicate`: an all-scope grant after a narrower grant left unused SQL parameters behind, which caused a 500.
+
+**Consequences.** Absence settings (fit-note threshold, FMLA) live in `tenants.features.absence`.
+
+## ADR-0034 — Rota grid: own windowing over keyset pages, no virtualisation dependency (2026-10-18)
+
+**Context.** The rota must stay responsive for 10,000+ shift workers in one tenant on low-cost phones (brief §6.3). Rendering every employee × day cell is out of the question, and the API must page by keyset rather than offset.
+
+**Decision.** The grid (`apps/web/app/app/rota/rota-grid.tsx`) renders only the rows in view plus an overscan, using a small in-repo hook (`apps/web/lib/use-virtual.ts`: fixed 48 px rows, passive scroll listener coalesced to one update per animation frame, `ResizeObserver`). We did not add `@tanstack/react-virtual`: fixed-height rows need about 40 lines of code and no new dependency. Rows are memoised. `GET /v1/rota` returns employees ordered by `(display_name, id)` with their week of shifts, the total on the first page and open shifts. The client sizes the scroll area from the total, shows skeleton rows for pages not yet loaded, and fetches keyset pages in order until the window is covered (so a jump to row 5,000 loads 25 pages of 200 in sequence). The grid uses ARIA grid semantics (`aria-rowcount`, `aria-rowindex`) so screen readers announce the full size. Intl formatters are cached in `@thapsus/core/i18n` (constructing them per cell cost ~100 ms per frame).
+
+**Consequences.** Only ~27 rows are ever in the DOM (proved by `apps/web/e2e/rota-bench.spec.ts`). A far jump costs one request per 200 rows skipped. Variable-height rows (more than one shift per day are shown as "+n") would need measured heights.
+
+## ADR-0035 — Working-time checks: statutory findings follow the tenant setting; cost and policy signals only warn (2026-10-18)
+
+**Context.** Brief §6.3 and PROGRESS 4.3 ask for working-time rules from the packs, surfaced as warnings or blocks per tenant configuration, with the UK 48-hour opt-out and daily time recording where a country requires it.
+
+**Decision.**
+- Statutory limits from the packs (daily rest, weekly rest, rest breaks, the averaged maximum week) are *violations*. With `features.time.enforcement = 'block'` a shift that adds one is refused with 422 and the violations. With `'warn'` (the default) it is saved and they come back as warnings. Each finding carries the rule's official source URL.
+- Only findings the change *adds* are reported, so an existing breach does not block unrelated edits. The averaged maximum is the exception: a shift inside the reference window always adds to it.
+- Projected overtime (US FLSA weekly, state daily and seventh-day tiers) and availability conflicts are always warnings. Overtime is a cost, not a breach.
+- Claims and swaps are re-checked when the manager approves. A block then refuses the approval and the request stays pending. Applying a template leaves a slot open (and reports it) rather than assigning a blocked person.
+- The 48-hour opt-out is honoured only where the pack's `working_time.max_weekly_hours.optOutAvailable` is true. Records can be created only where `working_time.opt_out.permitted` is true (GB), and notice is capped by `maxAgreedTerminationNoticeMonths`.
+- Daily time recording: Spain (Estatuto de los Trabajadores art. 34.9, from 12 May 2019) and Germany (BAG 1 ABR 22/21) now have employer-level rules. `bundesarbeitsgericht.de`, the Federal Labour Court's official site, was added to the validator's allow-list (gesetze-im-internet.de returned 503 during research). Other member states resolve to the EU baseline (CJEU C-55/18), and the timesheet shows which jurisdiction the flag came from. Scheduled days with no recorded time are flagged.
+
+**Consequences.** Tenants choose strictness without code changes. The legal review of these rules is tracked in HUMAN_TODO 3.13.
+
+## ADR-0036 — PWA clock: device-side queue with client event ids and idempotent batch sync (2026-10-18)
+
+**Decision.** Punches are written to `localStorage` (per user) before any network call. They are sent in batches of up to 200 to `POST /v1/clock/events` with a client-generated `clientEventId`, and the insert is `ON CONFLICT (tenant_id, employee_id, client_event_id) DO NOTHING`. The response reports `created`, `duplicate` or `rejected` per event, and every answered event leaves the queue. Sync runs on load, on the `online` event, after each punch and from a "Sync now" button. We do not use the Background Sync API (not supported in Safari/iOS), and the service worker still never caches API responses. Events from the future (beyond a 5-minute clock skew) or older than the tenant's `clock.maxOfflineHours` (default 72) are rejected and shown to the worker. The kiosk does not queue offline because its PIN must be checked by the server.
+
+**Consequences.** Lost responses and retries never duplicate punches (`apps/web/e2e/clock.spec.ts` replays a queue). The queue holds only the worker's own punches on their own device.
+
+## ADR-0037 — Geofencing is opt-in per country, with notice, and location is otherwise never collected (2026-10-18)
+
+**Decision.** Geofencing is off by default. A tenant enables it per country (`features.time.geofence.countries`). Enabling a country requires notice text (per locale) that workers see on the clock screen; the API refuses the setting without it. The browser asks for location only when the worker's country is enabled *and* their location has a fence. The server stores coordinates (rounded to 4 decimal places, about 11 m) and `within_geofence` only in that case. Coordinates sent in any other case are discarded before the insert. Coordinates are never logged, never written to the audit trail and never returned by the API: only the within/outside flag is.
+
+**Consequences.** This meets workplace-monitoring expectations (UK GDPR/ICO, EU works-council rules) by default. Outside-the-fence punches are recorded and flagged on the timesheet, not refused, because offline punches cannot be refused at the time they happen.
+
+## ADR-0038 — Shared kiosk: hashed device token plus employee number and Argon2id PIN, lockout without enumeration (2026-10-18)
+
+**Decision.**
+- A kiosk is registered by a time manager and receives a `kio_<tenant>.<secret>` token. The token is shown once as a pairing link and only its SHA-256 is stored. It can be revoked.
+- The kiosk sends `Authorization: Kiosk <token>` to the public `POST /v1/kiosk/clock`, together with the employee number and PIN. PINs are 4–8 digits, Argon2id-hashed (the password parameters), and trivial sequences are refused.
+- Throttles: per IP (120/min) and per kiosk (`kiosk.attemptsPerMinute`, default 30).
+- After `kiosk.maxFailedAttempts` failures (default 5) the PIN locks for `kiosk.lockoutMinutes`. Failures for real employees are counted in `kiosk_pins`. Failures for unknown numbers are counted in the rate limiter under the same thresholds, and both paths burn an Argon2 verification. Unknown numbers and wrong PINs therefore get identical answers (401, then 423), and timing is similar.
+- The transaction always commits the counters, and the error is raised after the commit. Every success and failure is audited as a system actor with the kiosk id.
+
+**Consequences.** A stolen kiosk token alone cannot clock anyone in. Lockout state is per employee, not per kiosk.
+
+## ADR-0039 — Timesheet snapshots and the payroll export feed (2026-10-18)
+
+**Decision.** A timesheet is computed live: recorded time from clock events not superseded by a manager correction, compared day by day with the published rota. Variances beyond `timesheets.varianceToleranceMinutes` (default 15) are flagged. Overtime and findings come from the packs. Submitting freezes a snapshot (days, totals, findings, sources) and starts a `timesheet` approval, using a manager policy created on first use as for leave. While a week is submitted or approved, corrections to it are refused. A manager can reopen a week only if it has not been exported. `GET /v1/timesheets/export` returns the approved snapshots of a week as CSV:
+- ordered by employee number;
+- hours with two decimals, derived from integer minutes;
+- spreadsheet formula injection neutralised.
+
+Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, which is also returned as `X-Content-SHA256`. The export sets `exported_at` and is audited.
+
+**Consequences.** Re-exporting a closed week returns identical bytes. Phase 6's payroll connectors can consume the same snapshot.
+
+## ADR-0040 — Letter-suffixed migration names (2026-10-18)
+
+**Context.** Phases are developed on stacked branches. A follow-up migration for Phase 4 must not take the number another phase may already use (`0011_…`). The loader's `^\d{4}_` pattern would have silently ignored a file named `0010b_…`.
+
+**Decision.** Migration names may carry one letter after the number (`NNNNx_slug.sql`) and sort between their neighbours (`0010_` < `0010b_` < `0011_`). A unit test (`packages/db/test/migrate.test.ts`) asserts that every `.sql` file in the folder is loaded and passes the expand-and-contract lint.
+
+**Consequences.** Branches can add migrations without renumbering. Applied names never change.
+
+## ADR-0041 — Prettier enforced once the stacked phase branches are merged (2026-10-18)
+
+**Context.** Prettier is configured (`.prettierrc.json`, `pnpm format`), but 147 files on the Phase 0 branch were never formatted. Phases 1–4 are stacked branches that touch most of those files, and several of them were being finished in parallel.
+
+**Decision.** The repository is formatted in one commit, and `prettier --check .` is added to the verify lint step, right after Phases 0–4 are merged to `main`. That way no phase branch has to absorb a whole-repository reformat in the middle of a merge.
+
+**Consequences.** Until then ESLint (including the hard-coded UI string rule) is the enforced style gate. After that commit, every later phase is formatted on every run.
+
+## ADR-0042 — Shared configuration lives at the repository root (2026-10-18)
+
+**Context.** PROGRESS 0.1 mentions "shared config packages". The shared TypeScript settings (`tsconfig.base.json`, strict mode, extended by every package), ESLint (`eslint.config.mjs` plus the custom rule in `tools/eslint`), Prettier (`.prettierrc.json`) and Vitest (`vitest.config.ts`, one config with named projects) are each defined once at the root.
+
+**Decision.** Keep them at the root instead of wrapping each one in a `packages/config-*` workspace. A wrapper package would add indirection without a second consumer: every workspace already lives in this repository.
+
+**Consequences.** One place to change each tool. If an external package ever needs them, they can be published as a `@thapsus/config` package then.
+
+## ADR-0043 — Per-region GitHub OIDC deploy roles and a single deploy script (2026-10-18)
+
+**Context.** The deploy workflow called a `scripts/deploy.mjs` that did not exist, and the OIDC stack that HUMAN_TODO told the owner to deploy did not exist either. The global stack and the UK cell both created a secret named `thapsus-hr/<env>/internal-token` in eu-west-2, so the second deploy would have failed (synth cannot catch that).
+
+**Decision.**
+- `ThapsusHr-<env>-ci` creates the GitHub OIDC provider and one role per deploy region. Each role is trusted only for `repo:<owner>/<repo>:environment:<staging|production>`. It may only assume that region's CDK bootstrap roles and, in cell regions, run the post-deploy steps.
+- The single documented cross-region permission is reading the global internal service token, which is not personal data.
+- `scripts/deploy.mjs` (planner in `scripts/deploy-plan.ts`, unit-tested) deploys in dependency order and runs the post-deploy steps. It refuses us-east-1 and us-west-2, refuses credentials for the wrong region, and refuses production without explicit approval.
+- Cells now keep their copy of the token as `thapsus-hr/<env>/<cell>/internal-token`. An infra test fails if two stacks create a same-named secret in one region.
+
+**Consequences.** CI needs only `AWS_ACCOUNT_<env>` variables. Deploys are repeatable from a workstation with `--dry-run` first.
+
+## ADR-0044 — `pnpm dev` passes the caller's environment through Turborepo (2026-10-18)
+
+**Context.** Turborepo 2 runs tasks in strict environment mode, so variables set by the caller (for example a different `DATABASE_URL`) were silently dropped, and the apps fell back to `.env`.
+
+**Decision.** The dev script runs `turbo run dev --env-mode=loose`. Builds and other cached tasks keep strict mode.
+
+**Consequences.** Local dev and the dev smoke check (`scripts/dev-smoke.mjs`, a verify step) honour explicit environment overrides.
 
 ## ADR-0050 — Compliance centre: one module, shared status calculations, one idempotent daily job (2026-10-18)
 

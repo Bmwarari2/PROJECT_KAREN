@@ -33,20 +33,29 @@
   "timeOff": {
     "kind": {
       "annual": "Vacation"
+    },
+    "hoursAvailable": "hours available",
+    "sickness": {
+      "title": "Record sick leave",
+      "employee": "Employee",
+      "firstDay": "First day off",
+      "lastDay": "Last day off (if known)",
+      "submit": "Record sick leave",
+      "recorded": "Sick leave recorded.",
+      "fitNoteRequired": "Sick leave recorded. A doctor's note is needed for an absence this long.",
+      "recent": "Recent sick leave",
+      "none": "No sick leave recorded.",
+      "ongoing": "ongoing",
+      "rtw": {
+        "due": "Return-to-work due",
+        "completed": "Return-to-work done",
+        "not_required": "Still out"
+      }
     }
   },
   "notify": {
     "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
-    "shiftChanged": "Your shift on {date} has changed",
-    "shiftCancelled": "Your shift on {date} was cancelled",
-    "swapOffered": "A colleague asked you to swap a shift on {date}",
-    "swapDeclined": "Your shift swap was declined",
-    "swapApproved": "Your shift swap on {date} was approved",
-    "swapRejected": "Your shift swap was not approved",
-    "shiftClaimApproved": "You have the open shift on {date}",
-    "shiftClaimRejected": "Your open shift request was not approved",
-    "timesheetApproved": "Your timesheet for the week of {week} was approved",
-    "timesheetRejected": "Your timesheet for the week of {week} was returned"
+    "shiftCancelled": "Your shift on {date} was canceled"
   },
   "compliance": {
     "title": "Compliance center",
@@ -65,5 +74,37 @@
         "certificate_of_registration_or_naturalisation_british_citizen_with_ni_number_document": "Certificate of registration or naturalization as a British citizen with a National Insurance number document"
       }
     }
+  },
+  "app": {
+    "nav": {
+      "rota": "Schedule",
+      "clock": "Time clock"
+    }
+  },
+  "rota": {
+    "title": "Schedule",
+    "tabTeam": "Team schedule",
+    "gridLabel": "Schedule for the week of {date}",
+    "legend": "Dashed shifts are drafts that employees can’t see until you publish the week.",
+    "status": {
+      "cancelled": "Canceled"
+    },
+    "swapStatus": {
+      "cancelled": "Canceled"
+    },
+    "requestCancelled": "Request canceled."
+  },
+  "clock": {
+    "title": "Time clock"
+  },
+  "kiosk": {
+    "invalid": "Employee number or PIN not recognized."
+  },
+  "timesheets": {
+    "scheduled": "Scheduled"
+  },
+  "onboarding": {
+    "addressPostcode": "ZIP code",
+    "addressCity": "City"
   }
 }

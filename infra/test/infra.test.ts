@@ -46,10 +46,11 @@ const asArray = <T>(v: T | T[] | undefined): T[] => (v === undefined ? [] : Arra
 
 describe('app topology', () => {
   it('12. never creates a stack in us-east-1 or us-west-2, and every stack is in its permitted region', () => {
-    expect(stackRegions.size).toBe(ENVS.length * (1 + HOME_REGIONS.length + HOME_REGIONS.filter((c) => REGIONS[c].backupRegion).length));
+    // per environment: global, CI (OIDC deploy roles), three cells and the permitted backup-copy vaults
+    expect(stackRegions.size).toBe(ENVS.length * (2 + HOME_REGIONS.length + HOME_REGIONS.filter((c) => REGIONS[c].backupRegion).length));
     for (const [name, region] of stackRegions) {
       expect(FORBIDDEN_STACK_REGIONS as readonly string[]).not.toContain(region);
-      if (name.endsWith('-global')) expect(region).toBe(GLOBAL_REGION);
+      if (name.endsWith('-global') || name.endsWith('-ci')) expect(region).toBe(GLOBAL_REGION);
     }
   });
 
@@ -196,6 +197,52 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     if (env === 'prod') expect(cfg.natGateways).toBe(3);
   });
 
+  it('the rest of the cell: autoscaling, SQS with DLQs, event bus, scheduler group, SES configuration set, budget alarm, 3 AZs, TLS certificate', () => {
+    // web, api and worker scale automatically
+    const targets = resources(t, 'AWS::ApplicationAutoScaling::ScalableTarget');
+    expect(targets.length).toBe(3);
+    for (const [, r] of targets) expect(r.Properties!.MaxCapacity).toBeGreaterThan(r.Properties!.MinCapacity);
+    expect(resources(t, 'AWS::ApplicationAutoScaling::ScalingPolicy').length).toBeGreaterThanOrEqual(3);
+    // every work queue has a dead-letter queue; every queue is KMS-encrypted
+    const queues = resources(t, 'AWS::SQS::Queue');
+    const work = queues.filter(([, q]) => q.Properties!.RedrivePolicy);
+    expect(work.length).toBeGreaterThanOrEqual(2);
+    expect(queues.length).toBe(work.length * 2);
+    for (const [, q] of work) expect(q.Properties!.RedrivePolicy.maxReceiveCount).toBe(5);
+    for (const [, q] of queues) expect(q.Properties!.KmsMasterKeyId).toBeDefined();
+    tpl.hasResourceProperties('AWS::Events::EventBus', { Name: `thapsus-hr-${env}` });
+    expect(resources(t, 'AWS::Scheduler::ScheduleGroup').length).toBe(1);
+    expect(resources(t, 'AWS::SES::ConfigurationSet').length).toBe(1);
+    // a cost budget with alert notifications per cell
+    const budgets = resources(t, 'AWS::Budgets::Budget');
+    expect(budgets.length).toBe(1);
+    expect(asArray(budgets[0]![1].Properties!.NotificationsWithSubscribers).length).toBeGreaterThan(0);
+    // the VPC spans three availability zones (public, private and isolated subnets)
+    const azs = new Set(resources(t, 'AWS::EC2::Subnet').map(([, r]) => JSON.stringify(r.Properties!.AvailabilityZone)));
+    expect(azs.size).toBe(3);
+    // the HTTPS listener presents a certificate
+    const https = resources(t, 'AWS::ElasticLoadBalancingV2::Listener').filter(([, l]) => l.Properties!.Protocol === 'HTTPS');
+    expect(https.length).toBeGreaterThan(0);
+    for (const [, l] of https) expect(asArray(l.Properties!.Certificates).length).toBe(1);
+  });
+
+  it('the web server reaches the api privately over Service Connect (server-rendered app pages)', () => {
+    const [, ns] = resources(t, 'AWS::ServiceDiscovery::HttpNamespace')[0]!;
+    expect(String(ns.Properties!.Name)).toMatch(/\.internal$/);
+    const svc = (suffix: string) => resources(t, 'AWS::ECS::Service').find(([, r]) => String(r.Properties!.ServiceName).endsWith(suffix))![1];
+    const apiSc = svc('-api').Properties!.ServiceConnectConfiguration as Json;
+    expect(apiSc.Enabled).toBe(true);
+    expect((apiSc.Services as Json[]).map((x) => (x.ClientAliases as Json[])[0])).toEqual([{ DnsName: 'api', Port: 4000 }]);
+    const webSc = svc('-web').Properties!.ServiceConnectConfiguration as Json;
+    expect(webSc.Enabled).toBe(true);
+    expect(webSc.Services).toBeUndefined();
+    const [, webTask] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-web'))!;
+    const webApp = (webTask.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
+    expect((webApp.Environment as Json[]).find((e) => e.Name === 'API_INTERNAL_URL')?.Value).toBe('http://api:4000');
+    const ingress = resources(t, 'AWS::EC2::SecurityGroupIngress').map(([, r]) => r.Properties!);
+    expect(ingress.some((r) => r.FromPort === 4000 && r.ToPort === 4000 && r.Description === 'web to api (Service Connect)')).toBe(true);
+  });
+
   it('services receive the documented configuration', () => {
     const [, apiTask] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-api'))!;
     const app = (apiTask.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
@@ -207,7 +254,7 @@ describe.each(combos)('%s cell %s', (env, cell) => {
       'OTEL_EXPORTER_OTLP_ENDPOINT', 'BACKUP_VAULT_ARN', 'DIRECTORY_TABLE', 'DIRECTORY_REGION',
     ]) expect(envNames, n).toContain(n);
     expect((app.Secrets as Json[]).map((s) => s.Name)).toEqual(
-      expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
+      expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'INTEGRATION_SIGNING_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
     );
     expect((apiTask.Properties!.ContainerDefinitions as Json[]).map((c) => c.Name)).toContain('otel-collector');
     const [, migrator] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-migrator'))!;
@@ -272,6 +319,77 @@ describe.each(ENVS)('%s global stack', (env) => {
     expect(resources(t, 'AWS::SecretsManager::Secret').map(([, r]) => r.Properties!.Name)).toEqual(
       expect.arrayContaining([names.internalTokenSecret(env), `thapsus-hr/${env}/stripe`]),
     );
+  });
+});
+
+describe.each(ENVS)('%s CI stack (GitHub OIDC, no long-lived keys)', (env) => {
+  let t: Json;
+  const cfg = loadConfig(env);
+  beforeAll(() => {
+    t = templates.get(names.stack(env, 'ci'))!;
+  });
+
+  it('creates one deploy role per region this environment deploys to, assumable only from this repo and GitHub environment', () => {
+    const envRegions = [...stackRegions].filter(([n]) => n.startsWith(`ThapsusHr-${env}-`)).map(([, r]) => r);
+    const roles = resources(t, 'AWS::IAM::Role');
+    expect(roles.map(([, r]) => r.Properties!.RoleName).sort()).toEqual([...new Set(envRegions)].map((r) => `thapsus-hr-${env}-deploy-${r}`).sort());
+    for (const [, r] of roles) {
+      const stmt = asArray(r.Properties!.AssumeRolePolicyDocument.Statement as Json[]);
+      expect(stmt).toHaveLength(1);
+      expect(stmt[0]!.Action).toBe('sts:AssumeRoleWithWebIdentity');
+      expect(stmt[0]!.Condition.StringEquals).toEqual({
+        'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+        'token.actions.githubusercontent.com:sub': `repo:${cfg.ci.githubRepository}:environment:${cfg.ci.githubEnvironment}`,
+      });
+    }
+    if (env === 'prod') expect(cfg.ci.githubEnvironment).toBe('production');
+  });
+
+  it('each role can only reach its own region, through the CDK bootstrap roles', () => {
+    expectLeastPrivilege(t);
+    const policies = resources(t, 'AWS::IAM::Policy');
+    expect(policies.length).toBe(resources(t, 'AWS::IAM::Role').length);
+    for (const [id, p] of policies) {
+      const own = allRegions.find((r) => id.startsWith(`Deploy${r.replace(/-/g, '')}`));
+      expect(own, id).toBeDefined();
+      const statements = asArray(p.Properties!.PolicyDocument.Statement as Json[]);
+      // the one documented exception: cells read the env's internal service token from the global layer
+      const crossRegion = statements.filter((st) => /^ReadGlobalInternalToken/.test(st.Sid));
+      for (const st of crossRegion) {
+        expect(JSON.stringify(st.Resource)).toMatch(new RegExp(`:${GLOBAL_REGION}:`));
+        expect(asArray(st.Action as string[]).every((a) => a === 'secretsmanager:GetSecretValue' || a === 'kms:Decrypt'), st.Sid).toBe(true);
+      }
+      const text = JSON.stringify(statements.filter((st) => !crossRegion.includes(st)));
+      expect(text).toMatch(new RegExp(`[:-]${own}(?![0-9])`));
+      for (const r of allRegions.filter((x) => x !== own)) expect(new RegExp(`[:-]${r}(?![0-9])`).test(text), `${id} must not reach ${r}`).toBe(false);
+      for (const stmt of statements) {
+        if (asArray(stmt.Action as string[]).includes('sts:AssumeRole')) for (const res of asArray(stmt.Resource as string[])) expect(JSON.stringify(res)).toMatch(/:role\/cdk-hnb659fds-(deploy|file-publishing|image-publishing|lookup)-role-/);
+      }
+    }
+  });
+
+  it('only cell regions get post-deploy permissions (migrator, restart, own secrets)', () => {
+    for (const [id, p] of resources(t, 'AWS::IAM::Policy')) {
+      const sids = asArray(p.Properties!.PolicyDocument.Statement as Json[]).map((st) => st.Sid);
+      const cellRegion = HOME_REGIONS.some((c) => id.startsWith(`Deploy${REGIONS[c].awsRegion.replace(/-/g, '')}`));
+      expect(sids.includes('RunMigrator'), id).toBe(cellRegion);
+    }
+  });
+
+  it('no two stacks create a secret with the same name in the same region', () => {
+    const seen = new Map<string, string>();
+    for (const [name, tpl] of templates) {
+      if (!name.startsWith(`ThapsusHr-${env}-`)) continue;
+      for (const [, r] of resources(tpl, 'AWS::SecretsManager::Secret')) {
+        const key = `${stackRegions.get(name)}:${JSON.stringify(r.Properties!.Name)}`;
+        expect(seen.get(key), `${key} in ${name}`).toBeUndefined();
+        seen.set(key, name);
+      }
+    }
+  });
+
+  it('no stack in any environment creates IAM users or access keys', () => {
+    for (const [name, tpl] of templates) expect(resources(tpl).filter(([, r]) => r.Type === 'AWS::IAM::User' || r.Type === 'AWS::IAM::AccessKey'), name).toEqual([]);
   });
 });
 

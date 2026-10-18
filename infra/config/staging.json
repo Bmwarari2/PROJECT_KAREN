@@ -30,5 +30,6 @@
     "eu": { "certificateArn": null, "monthlyBudgetUsd": 400 },
     "us": { "certificateArn": null, "monthlyBudgetUsd": 400 }
   },
-  "billingConfigLocation": "builtin:billing-config-v1"
+  "billingConfigLocation": "builtin:billing-config-v1",
+  "ci": { "githubRepository": "Bmwarari2/PROJECT_KAREN", "githubEnvironment": "staging", "oidcProviderArn": null }
 }
