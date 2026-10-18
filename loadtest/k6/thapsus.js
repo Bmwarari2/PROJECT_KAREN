@@ -95,12 +95,18 @@ export function paginatedLists(data) {
   const cookie = data.adminCookie;
   let cursor = '';
   for (let page = 0; page < 5; page++) {
-    const r = http.get(`${BASE}/v1/employees?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`, params(cookie, { type: 'list', name: 'GET /v1/employees (page)' }));
+    const r = http.get(
+      `${BASE}/v1/employees?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
+      params(cookie, { type: 'list', name: 'GET /v1/employees (page)' }),
+    );
     if (!check(r, { 'list 200': (x) => x.status === 200 })) return;
     cursor = r.json('nextCursor');
     if (!cursor) break;
   }
-  const s = http.get(`${BASE}/v1/employees?limit=50&q=${['smith', 'garc', 'mül', 'nguyen'][Math.floor(Math.random() * 4)]}`, params(cookie, { type: 'list', name: 'GET /v1/employees?q (search)' }));
+  const s = http.get(
+    `${BASE}/v1/employees?limit=50&q=${['smith', 'garc', 'mül', 'nguyen'][Math.floor(Math.random() * 4)]}`,
+    params(cookie, { type: 'list', name: 'GET /v1/employees?q (search)' }),
+  );
   check(s, { 'search 200': (x) => x.status === 200 });
   sleep(2);
 }
@@ -109,9 +115,18 @@ export function clockIn() {
   // a distinct employee for every iteration, above the read users' range (needs SYNTH_USERS ≥ VUS + CLOCK_INS)
   const n = ((VUS + exec.scenario.iterationInTest) % USERS) + 1;
   const { cookie } = login(n);
-  const body = JSON.stringify({ events: [{ clientEventId: `lt:${n}:${uuidish()}`, kind: 'in', occurredAt: new Date().toISOString() }] });
-  const r = http.post(`${BASE}/v1/clock/events`, body, params(cookie, { type: 'clock', name: 'POST /v1/clock/events' }));
-  const ok = check(r, { 'clock 200': (x) => x.status === 200, 'clock created': (x) => x.status === 200 && x.json('results.0.status') !== 'rejected' });
+  const body = JSON.stringify({
+    events: [{ clientEventId: `lt:${n}:${uuidish()}`, kind: 'in', occurredAt: new Date().toISOString() }],
+  });
+  const r = http.post(
+    `${BASE}/v1/clock/events`,
+    body,
+    params(cookie, { type: 'clock', name: 'POST /v1/clock/events' }),
+  );
+  const ok = check(r, {
+    'clock 200': (x) => x.status === 200,
+    'clock created': (x) => x.status === 200 && x.json('results.0.status') !== 'rejected',
+  });
   if (ok) clockIns.add(1);
 }
 
@@ -125,7 +140,10 @@ function addDays(d, n) {
 }
 
 export function handleSummary(data) {
-  return { stdout: textSummary(data), [__ENV.SUMMARY_FILE || 'loadtest-summary.json']: JSON.stringify(data, null, 2) };
+  return {
+    stdout: textSummary(data),
+    [__ENV.SUMMARY_FILE || 'loadtest-summary.json']: JSON.stringify(data, null, 2),
+  };
 }
 function textSummary(data) {
   const m = data.metrics;

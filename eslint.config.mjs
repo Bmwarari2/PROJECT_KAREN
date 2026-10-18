@@ -36,6 +36,11 @@ export default tseslint.config(
     rules: { 'thapsus/no-hardcoded-ui-strings': 'error' },
   },
   {
+    // k6 scripts run in k6's JavaScript runtime, not Node
+    files: ['loadtest/k6/**'],
+    languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly' } },
+  },
+  {
     files: ['**/test/**', '**/*.test.ts', 'apps/web/e2e/**', 'scripts/**', 'tools/**'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },

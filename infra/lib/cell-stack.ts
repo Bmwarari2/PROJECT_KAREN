@@ -425,6 +425,8 @@ export class CellStack extends Stack {
       SCHEDULE_GROUP_NAME: scheduleGroup.name!,
       SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
       ...(mockIdpAllowed ? { MOCK_IDP_ENABLED: 'true' } : {}),
+      // Until a domain and a trusted certificate exist the API reaches its own mock IdP in-task.
+      ...(mockIdpAllowed && !cfg.domain ? { MOCK_IDP_ISSUER_URL: 'http://127.0.0.1:4000/__mock-idp' } : {}),
       ...(cfg.loadTest ? { IP_THROTTLE_MULTIPLIER: String(cfg.loadTest.ipThrottleMultiplier) } : {}),
     };
     const backendSecrets: Record<string, ecs.Secret> = {

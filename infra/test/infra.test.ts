@@ -164,6 +164,8 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     const containers = resources(t, 'AWS::ECS::TaskDefinition').flatMap(([, r]) => r.Properties!.ContainerDefinitions as Json[]);
     const mockEnv = containers.flatMap((c) => asArray(c.Environment as Json[]).filter((e) => e.Name === 'MOCK_IDP_ENABLED'));
     const mockSecrets = containers.flatMap((c) => asArray(c.Secrets as Json[]).filter((s) => String(s.Name).startsWith('MOCK_IDP')));
+    const issuerEnv = containers.flatMap((c) => asArray(c.Environment as Json[]).filter((e) => e.Name === 'MOCK_IDP_ISSUER_URL'));
+    if (env === 'prod' || env === 'loadtest') expect(issuerEnv).toEqual([]);
     if (env === 'prod' || env === 'loadtest') {
       expect(mockEnv).toEqual([]);
       expect(mockSecrets).toEqual([]);

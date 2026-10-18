@@ -48,7 +48,10 @@ export async function mockIdpKeys(): Promise<MockIdpKeys> {
 const escapeXml = (s: string) => s.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' })[c]!);
 
 export async function mockIdpPlugin(app: FastifyInstance, opts: { baseUrl: string; keys: MockIdpKeys }) {
-  const issuer = `${opts.baseUrl}/__mock-idp`;
+  // MOCK_IDP_ISSUER_URL: staging without a domain serves a self-signed certificate the API cannot verify
+  // when it calls the IdP; there the issuer is the in-task address (http://127.0.0.1:4000/__mock-idp)
+  // and only the browser leg goes through the public URL (scripts/smoke-staging.mjs). Never in prod.
+  const issuer = process.env.MOCK_IDP_ISSUER_URL ?? `${opts.baseUrl}/__mock-idp`;
   const key = await importPKCS8(opts.keys.privateKeyPem, 'RS256');
   const jwk = { ...(await exportJWK((await import('node:crypto')).createPublicKey(opts.keys.privateKeyPem))), kid: 'mock-1', alg: 'RS256', use: 'sig' };
   const codes = new Map<string, { email: string; nonce?: string; clientId: string; challenge?: string }>();
