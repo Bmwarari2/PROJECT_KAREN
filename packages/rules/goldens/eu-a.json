@@ -18,10 +18,7 @@
         "2026-12-25",
         "2026-12-26"
       ],
-      "packGaps": [
-        "2026-01-06"
-      ],
-      "source": "Official BALM 2026 list (balm.bund.de) for all dates except 6 Jan; Epiphany from Bayerisches Feiertagsgesetz Art. 1(1) (https://www.gesetze-bayern.de/Content/Document/BayFTG-1), a domain not on the validator allow-list, so it is not yet in the pack (packGaps). Assumption (15 Aug) excluded: only in predominantly Catholic municipalities."
+      "source": "Official BALM 2026 list (balm.bund.de) for all dates except 6 Jan; Epiphany from Bayerisches Feiertagsgesetz Art. 1(1) Nr. 1 (https://www.gesetze-bayern.de/Content/Document/BayFTG-1, fetched 2026-10-18). Assumption (15 Aug) excluded: only in predominantly Catholic municipalities."
     },
     {
       "jurisdiction": "DE",
@@ -344,6 +341,52 @@
     },
     {
       "jurisdiction": "EU",
+      "key": "working_time.weekly_rest",
+      "date": "2026-06-01",
+      "expect": {
+        "minUninterruptedHours": 24,
+        "plusDailyRestHours": 11,
+        "perDays": 7,
+        "referencePeriodMaxDays": 14,
+        "reducedMinimumHoursIfJustified": 24
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32003L0088",
+      "notes": "Derived from the Directive text (same source as the pack, re-read 2026-10-18): Art. 5 \"per each seven-day period ... a minimum uninterrupted rest period of 24 hours plus the 11 hours' daily rest\"; \"a minimum rest period of 24 hours may be applied\" if justified; Art. 16(a) reference period \"not exceeding 14 days\"."
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.rest_break",
+      "date": "2026-06-01",
+      "expect": {
+        "triggerWorkingDayHoursOver": 6,
+        "durationSetBy": "collective_agreement_or_national_law"
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32003L0088",
+      "notes": "Derived from the Directive text: Art. 4 \"where the working day is longer than six hours ... a rest break, the details of which ... shall be laid down in collective agreements ... or, failing that, by national legislation\"."
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.time_recording",
+      "date": "2019-05-14",
+      "expectPath": {
+        "required": true,
+        "scope": "daily_working_time_each_worker"
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:62018CJ0055",
+      "notes": "Operative part of C-55/18 (14 May 2019): the Directive precludes national law that \"does not require employers to set up a system enabling the duration of time worked each day by each worker to be measured\"."
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "working_time.weekly_rest",
+      "date": "2026-06-01",
+      "expectJurisdiction": "EU",
+      "expectPath": {
+        "minUninterruptedHours": 24
+      },
+      "notes": "No German pack value: Germany falls back to the EU baseline."
+    },
+    {
+      "jurisdiction": "EU",
       "key": "reporting.pay_transparency",
       "date": "2026-10-18",
       "expectPath": {
@@ -619,7 +662,7 @@
       }
     }
   ],
-  "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack because the source domain is not on the validator allow-list.",
+  "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack (none at present).",
   "sources": [
     {
       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
