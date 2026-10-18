@@ -8,6 +8,7 @@ const isWin = process.platform === 'win32';
 const steps = [
   { id: 'deps', name: 'Local services (Postgres, Valkey, S3, SQS, mail)', cmd: 'docker compose up -d --wait' },
   { id: 'lint', name: 'Lint (ESLint + i18n hard-coded string rule)', cmd: 'pnpm exec eslint . --max-warnings=0' },
+  { id: 'hygiene', name: 'No merge-conflict markers', cmd: 'node scripts/conflict-markers.mjs' },
   { id: 'typecheck', name: 'Typecheck (tsc strict, all packages)', cmd: 'pnpm -r --workspace-concurrency=1 run typecheck' },
   { id: 'unit', name: 'Unit tests', cmd: 'pnpm exec vitest run --project unit' },
   { id: 'integration', name: 'Integration tests (real PostgreSQL)', cmd: 'pnpm exec vitest run --project integration' },
