@@ -25,6 +25,7 @@ function defaults(props: Record<string, Prop>, zone: string): Record<string, str
     else if (k === 'from') out[k] = `${d.slice(0, 4)}-01-01`;
     else if (k === 'year') out[k] = d.slice(0, 4);
     else if (p.default !== undefined) out[k] = String(p.default);
+    else if (p.anyOf?.[0]?.const) out[k] = p.anyOf[0].const;
     else out[k] = '';
   }
   return out;

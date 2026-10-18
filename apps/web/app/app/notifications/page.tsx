@@ -102,12 +102,20 @@ function Preferences() {
   const toast = useToast();
   const prefs = useApi<Prefs>('/v1/me/notification-preferences');
   async function save(body: { email?: boolean; push?: boolean; categories?: Record<string, { email?: boolean; push?: boolean }> }) {
+    // optimistic: the checkbox reflects the choice at once; the server's answer then replaces it
+    prefs.setData((cur) => {
+      if (!cur) return cur;
+      const categories = { ...cur.categories };
+      for (const [c, v] of Object.entries(body.categories ?? {})) categories[c] = { ...(categories[c] ?? { email: true, push: true }), ...v };
+      return { ...cur, ...(body.email !== undefined ? { email: body.email } : {}), ...(body.push !== undefined ? { push: body.push } : {}), categories };
+    });
     try {
       const next = await api<Omit<Prefs, 'available' | 'pushConfigured'>>('/v1/me/notification-preferences', { method: 'PUT', json: body });
       prefs.setData((cur) => (cur ? { ...cur, ...next } : cur));
       toast({ title: t('ess.notifications.prefsSaved'), tone: 'success' });
     } catch {
       toast({ title: t('common.error'), tone: 'danger' });
+      prefs.reload();
     }
   }
   if (!prefs.data) return <Skeleton className="h-40 w-full" />;
