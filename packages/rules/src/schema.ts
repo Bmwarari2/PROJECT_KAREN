@@ -17,6 +17,12 @@ export interface RuleVersion<V = unknown> {
   verifiedOn: string; // YYYY-MM-DD the value was checked against the source
   reviewer: string;
   notes?: string;
+  /**
+   * ISO 3166-2 subdivisions this version was verified for (e.g. ["GB-ENG", "GB-WLS", "GB-SCT"]). Omitted =
+   * the whole jurisdiction. Required in packs that declare `subdivisions`; a lookup for a subdivision
+   * not listed here does not get this version (it falls through or fails) — never silently inherited.
+   */
+  regions?: string[];
 }
 
 export interface Rule<V = unknown> {
@@ -53,10 +59,19 @@ export interface HolidayDefinition {
 }
 
 export interface JurisdictionPack {
-  /** ISO 3166-1 alpha-2 country ("GB", "DE"), "EU" for the EU baseline, or ISO 3166-2 for a US state ("US-CA"). */
+  /**
+   * ISO 3166-1 alpha-2 country ("GB", "DE"), "EU" for the EU baseline, ISO 3166-2 for a state or nation
+   * ("US-CA", "GB-NIR"), or a locality below it as `<ISO 3166-2>-<code>` ("US-NY-NYC").
+   */
   jurisdiction: string;
-  /** Parent in layered resolution: member state → "EU"; US state → "US"; UK nation → "GB". */
+  /** Parent in layered resolution: locality → state; member state → "EU"; US state → "US"; UK nation → "GB". */
   parent: string | null;
+  /**
+   * ISO 3166-2 subdivisions with their own law (e.g. the UK nations). When set, every rule version in
+   * this pack must state the `regions` it was verified for, so a subdivision never inherits a rule by
+   * accident (ADR-0022).
+   */
+  subdivisions?: string[];
   name: string;
   /** Pack version: bump on every data change (edits create new versions, never overwrite). */
   version: number;
