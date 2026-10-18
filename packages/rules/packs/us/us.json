@@ -2,7 +2,7 @@
   "jurisdiction": "US",
   "parent": null,
   "name": "United States",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -280,6 +280,99 @@
           "notes": "DOL: \"Currently, there are no federal legal requirements for paid sick leave.\" FMLA requires unpaid leave. Federal contractor paid sick leave (EO 13706) not modelled. State and local laws apply via state packs."
         }
       ]
+    },
+    {
+      "key": "retention.payroll_records",
+      "description": "FLSA payroll records preserved 3 years (29 CFR 516.5)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P3Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.5",
+            "title": "29 CFR 516.5 — Records to be preserved 3 years"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "'Each employer shall preserve for at least 3 years: (a) Payroll records. From the last date of entry ...'. Text verified through the eCFR API (up to date as of 2026-10-15). Modelling baseline; earlier history not modelled."
+        }
+      ]
+    },
+    {
+      "key": "retention.time_records",
+      "description": "FLSA basic time and earnings records preserved 2 years (29 CFR 516.6)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P2Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.6",
+            "title": "29 CFR 516.6 — Records to be preserved 2 years"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "516.6(a)(1): 'basic time and earning cards or sheets on which are entered the daily starting and stopping time of individual employees' preserved at least 2 years 'From the date of last entry'. Verified through the eCFR API. Modelling baseline."
+        }
+      ]
+    },
+    {
+      "key": "retention.leave_records",
+      "description": "FMLA records kept no less than 3 years (29 CFR 825.500)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P3Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/part-825/subpart-E/section-825.500",
+            "title": "29 CFR 825.500 — Recordkeeping requirements"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "825.500(b): 'employers must keep the records specified by these regulations for no less than three years'. Applies to FMLA leave and related medical certification records (kept as confidential medical records). Verified through the eCFR API. Modelling baseline."
+        }
+      ]
+    },
+    {
+      "key": "retention.personnel_records",
+      "description": "Title VII / ADA / GINA personnel records preserved 1 year (29 CFR 1602.14)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P1Y",
+            "from": "later_of_record_and_employment_end",
+            "statutoryMinimum": true,
+            "legalReview": "pending",
+            "afterEmploymentEnds": "P1Y"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1602/subpart-C/section-1602.14",
+            "title": "29 CFR 1602.14 — Preservation of records made or kept"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Personnel or employment records preserved 'for a period of one year from the date of the making of the record or the personnel action involved, whichever occurs later'; on involuntary termination 'one year from the date of termination'; records relevant to a charge kept until final disposition (use a legal hold). Verified through the eCFR API. Modelling baseline."
+        }
+      ]
     }
   ],
   "holidays": [
@@ -541,7 +634,8 @@
       "Federal contractor paid sick leave (EO 13706) and contractor minimum wage",
       "FMLA history before 2008 and military-family amendments (2009, 2013)",
       "EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM",
-      "COBRA, WARN Act, PWFA, PUMP Act"
+      "COBRA, WARN Act, PWFA, PUMP Act",
+      "privacy: federal sector-specific breach rules (e.g. HIPAA) are not modelled; no federal employee data-subject-request law"
     ],
     "notes": "Federal holidays follow 5 U.S.C. 6103(a); weekend observance per OPM (Saturday -> preceding Friday, Sunday -> following Monday). Note: when 1 Jan falls on a Saturday the observed day is 31 Dec of the previous year (e.g. New Year 2028 -> Fri 31 Dec 2027); OPM lists it under the following year. FLSA exempt salary: 2024 rule vacated; 2019 levels ($684/wk, HCE $107,432) enforced and restored in the CFR on 15 May 2026."
   }

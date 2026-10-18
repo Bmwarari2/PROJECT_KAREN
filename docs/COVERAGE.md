@@ -7,9 +7,9 @@
 
 | Jurisdiction | Parent | Priority | Pack version | Rules | Holiday definitions | Latest verification |
 | --- | --- | --- | --- | --- | --- | --- |
-| GB — United Kingdom | — | high | 1 | 17 | 21 | 2026-10-18 |
-| EU — European Union | — | baseline | 1 | 7 | 0 | 2026-10-18 |
-| US — United States | — | high | 1 | 8 | 11 | 2026-10-18 |
+| GB — United Kingdom | — | high | 2 | 23 | 21 | 2026-10-18 |
+| EU — European Union | — | baseline | 2 | 9 | 0 | 2026-10-18 |
+| US — United States | — | high | 2 | 12 | 11 | 2026-10-18 |
 | AT — Austria | EU | medium | 1 | 2 | 13 | 2026-10-18 |
 | BE — Belgium | EU | medium | 1 | 2 | 10 | 2026-10-18 |
 | BG — Bulgaria | EU | medium | 1 | 2 | 14 | 2026-10-18 |
@@ -37,69 +37,69 @@
 | SE — Sweden | EU | medium | 1 | 2 | 13 | 2026-10-18 |
 | SI — Slovenia | EU | medium | 1 | 2 | 15 | 2026-10-18 |
 | SK — Slovakia | EU | medium | 1 | 2 | 17 | 2026-10-18 |
-| US-CA — California | US | high | 1 | 4 | 0 | 2026-10-18 |
-| US-CO — Colorado | US | high | 1 | 4 | 0 | 2026-10-18 |
-| US-FL — Florida | US | high | 1 | 1 | 0 | 2026-10-18 |
-| US-GA — Georgia | US | high | 1 | 1 | 0 | 2026-10-18 |
-| US-IL — Illinois | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-MA — Massachusetts | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-NY — New York | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-OR — Oregon | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-TX — Texas | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-WA — Washington | US | high | 1 | 3 | 0 | 2026-10-18 |
+| US-CA — California | US | high | 2 | 6 | 0 | 2026-10-18 |
+| US-CO — Colorado | US | high | 2 | 5 | 0 | 2026-10-18 |
+| US-FL — Florida | US | high | 2 | 2 | 0 | 2026-10-18 |
+| US-GA — Georgia | US | high | 2 | 1 | 0 | 2026-10-18 |
+| US-IL — Illinois | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-MA — Massachusetts | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-NY — New York | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-OR — Oregon | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-TX — Texas | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-WA — Washington | US | high | 2 | 4 | 0 | 2026-10-18 |
 
 ## Rules by jurisdiction
 
-| Jurisdiction | `leave.statutory_annual_minimum` | `leave.irregular_hours_accrual` | `leave.carry_over` | `working_time.max_weekly_hours` | `working_time.daily_rest` | `working_time.weekly_rest` | `working_time.rest_break` | `working_time.opt_out` | `working_time.time_recording` | `overtime.weekly` | `overtime.daily` | `overtime.seventh_day` | `overtime.exempt_salary_threshold` | `sick_pay.statutory` | `sick_pay.paid_sick_leave_accrual` | `family_leave.fmla` | `family_leave.maternity` | `family_leave.paternity` | `right_to_work.document_rules` | `right_to_work.retention` | `i9.retention` | `i9.reverification` | `employment.unfair_dismissal_qualifying_period` | `employment.probation` | `employment.notice_period` | `reporting.gender_pay_gap` | `reporting.eeo1` | `reporting.pay_transparency` | `minimum_wage.rates` |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GB | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |  |  |  |  |  | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  |  | ✔ |  | ✔ | ✔ |  |  | ✔ |
-| EU | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| US |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  | ✔ | ✔ |  |  |  |  | ✔ | ✔ |  |  |  |  | ✔ |  | ✔ |
-| AT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| BE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| BG | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| CY | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| CZ | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| DE | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| DK | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| EE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| ES | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| FI | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| FR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| GR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| HR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| HU | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| IE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| IT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| LT |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| LU | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| LV | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| MT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| NL | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| PL | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| PT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| RO |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| SE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| SI | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| SK | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| US-CA |  |  |  |  |  |  |  |  |  |  | ✔ | ✔ |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-CO |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-FL |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-GA |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-IL |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-MA |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-NY |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-OR |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-TX |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-WA |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| Jurisdiction | `privacy.dsr_deadline` | `privacy.breach_notification` | `retention.time_records` | `retention.payroll_records` | `retention.minimum_wage_records` | `retention.leave_records` | `retention.personnel_records` | `leave.statutory_annual_minimum` | `leave.irregular_hours_accrual` | `leave.carry_over` | `working_time.max_weekly_hours` | `working_time.daily_rest` | `working_time.weekly_rest` | `working_time.rest_break` | `working_time.opt_out` | `working_time.time_recording` | `overtime.weekly` | `overtime.daily` | `overtime.seventh_day` | `overtime.exempt_salary_threshold` | `sick_pay.statutory` | `sick_pay.paid_sick_leave_accrual` | `family_leave.fmla` | `family_leave.maternity` | `family_leave.paternity` | `right_to_work.document_rules` | `right_to_work.retention` | `i9.retention` | `i9.reverification` | `employment.unfair_dismissal_qualifying_period` | `employment.probation` | `employment.notice_period` | `reporting.gender_pay_gap` | `reporting.eeo1` | `reporting.pay_transparency` | `minimum_wage.rates` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GB | ✔ | ✔ | ✔ | ✔ | ✔ |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |  |  |  |  |  | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  |  | ✔ |  | ✔ | ✔ |  |  | ✔ |
+| EU | ✔ | ✔ |  |  |  |  |  | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| US |  |  | ✔ | ✔ |  | ✔ | ✔ |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  | ✔ | ✔ |  |  |  |  | ✔ | ✔ |  |  |  |  | ✔ |  | ✔ |
+| AT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| BE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| BG |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| CY |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| CZ |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| DE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| DK |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| EE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| ES |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| FI |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| FR |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| GR |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| HR |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| HU |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| IE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| IT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| LT |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| LU |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| LV |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| MT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| NL |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| PL |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| PT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| RO |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| SE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| SI |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| SK |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| US-CA | ✔ | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ | ✔ |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-CO |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-FL |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-GA |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-IL |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-MA |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-NY |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-OR |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-TX |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-WA |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
 
 ✔ = modelled in this pack. Blank cells fall back to the parent layer (EU baseline, US federal) or are not yet modelled.
 
 ## Deeper rules to do (prioritised)
 
-- **GB** (high): Northern Ireland employment rules (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, NI SSP/paternity differences); Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026); Statutory Adoption Pay; SMP/SPP rates before 2025-26; Accommodation offset and NMW rates before April 2025; Right to work: full List A / List B document catalogue from the Employer's guide (1 Oct 2026 PDF), civil penalty amounts, extended liability detail; Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9); Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave; Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap; Statutory redundancy pay; flexible working; guaranteed hours / zero-hours (ERA 2025); fire-and-rehire; ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties; Bank holidays before 2019 and future proclaimed holidays; SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full — UK pack: bank holidays for England & Wales, Scotland and Northern Ireland (2019 onwards, checked against gov.uk/bank-holidays.json) and core GB employment rules verified on legislation.gov.uk / gov.uk on 2026-10-18. Includes Employment Rights Act 2025 changes in force (SSP from 6 April 2026; day-one paternity leave from 6 April 2026) and commenced-but-future (unfair dismissal 6 months from 1 January 2027, S.I. 2026/559). Employment rules modelled are GB (England, Scotland, Wales); Northern Ireland has separate employment legislation — NI-specific rules are a TODO. Pending legal review.
-- **EU** (baseline): leave.carry_over; working_time.opt_out — EU minimums only; member-state packs override. No holidays at EU level.
-- **US** (high): Inauguration Day (5 U.S.C. 6103(c), DC-area federal employees only, every 4 years) — not modelled; Tipped cash wage and tip credit (FLSA 3(m)); Territories salary levels ($455/wk PR, Guam, USVI, CNMI; $380/wk American Samoa); Federal contractor paid sick leave (EO 13706) and contractor minimum wage; FMLA history before 2008 and military-family amendments (2009, 2013); EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM; COBRA, WARN Act, PWFA, PUMP Act — Federal holidays follow 5 U.S.C. 6103(a); weekend observance per OPM (Saturday -> preceding Friday, Sunday -> following Monday). Note: when 1 Jan falls on a Saturday the observed day is 31 Dec of the previous year (e.g. New Year 2028 -> Fri 31 Dec 2027); OPM lists it under the following year. FLSA exempt salary: 2024 rule vacated; 2019 levels ($684/wk, HCE $107,432) enforced and restored in the CFR on 15 May 2026.
+- **GB** (high): Northern Ireland employment rules (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, NI SSP/paternity differences); Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026); Statutory Adoption Pay; SMP/SPP rates before 2025-26; Accommodation offset and NMW rates before April 2025; Right to work: full List A / List B document catalogue from the Employer's guide (1 Oct 2026 PDF), civil penalty amounts, extended liability detail; Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9); Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave; Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap; Statutory redundancy pay; flexible working; guaranteed hours / zero-hours (ERA 2025); fire-and-rehire; ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties; Bank holidays before 2019 and future proclaimed holidays; SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full; privacy: Northern Ireland and Scottish limitation periods for the suggested personnel-records default — UK pack: bank holidays for England & Wales, Scotland and Northern Ireland (2019 onwards, checked against gov.uk/bank-holidays.json) and core GB employment rules verified on legislation.gov.uk / gov.uk on 2026-10-18. Includes Employment Rights Act 2025 changes in force (SSP from 6 April 2026; day-one paternity leave from 6 April 2026) and commenced-but-future (unfair dismissal 6 months from 1 January 2027, S.I. 2026/559). Employment rules modelled are GB (England, Scotland, Wales); Northern Ireland has separate employment legislation — NI-specific rules are a TODO. Pending legal review.
+- **EU** (baseline): leave.carry_over; working_time.opt_out; privacy: member-state retention periods (time, payroll, personnel records) and national breach-notification additions — EU minimums only; member-state packs override. No holidays at EU level.
+- **US** (high): Inauguration Day (5 U.S.C. 6103(c), DC-area federal employees only, every 4 years) — not modelled; Tipped cash wage and tip credit (FLSA 3(m)); Territories salary levels ($455/wk PR, Guam, USVI, CNMI; $380/wk American Samoa); Federal contractor paid sick leave (EO 13706) and contractor minimum wage; FMLA history before 2008 and military-family amendments (2009, 2013); EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM; COBRA, WARN Act, PWFA, PUMP Act; privacy: federal sector-specific breach rules (e.g. HIPAA) are not modelled; no federal employee data-subject-request law — Federal holidays follow 5 U.S.C. 6103(a); weekend observance per OPM (Saturday -> preceding Friday, Sunday -> following Monday). Note: when 1 Jan falls on a Saturday the observed day is 31 Dec of the previous year (e.g. New Year 2028 -> Fri 31 Dec 2027); OPM lists it under the following year. FLSA exempt salary: 2024 rule vacated; 2019 levels ($684/wk, HCE $107,432) enforced and restored in the CFR on 15 May 2026.
 - **AT** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; leave: persönlicher Feiertag (ARG § 7a)
 - **BE** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation — emploi.belgique.be (SPF Emploi, official) confirmed the list and replacement rule but is not on the validator allow-list; SPF BOSA (belgium.be) cited instead.
 - **BG** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: one-off non-working days declared by the Council of Ministers (чл. 154(3)) — 1 November (Ден на народните будители) is listed in чл. 154(1) as non-attendance only for educational establishments — intentionally not modelled as a general holiday.
@@ -127,13 +127,13 @@
 - **SE** (medium): Midsummer Eve, Christmas Eve and New Year's Eve: not allmänna helgdagar under Lag 1989:253 (customarily days off via collective agreements) — not modelled; leave.carry_over (sparade semesterdagar); sick_pay.statutory (sjuklön 80% days 2–14, karensavdrag); employment.notice_period (LAS 11 §); family_leave.*; working_time.max_weekly_hours — All Sundays are also allmänna helgdagar (Lag 1989:253, 1 §).
 - **SI** (medium): State holidays that are not days off (8 Jun, 17 Aug, 15 Sep, 23 Sep, 25 Oct, 10 Nov, 23 Nov) — not modelled as holidays; sick_pay.statutory; employment.notice_period (ZDR-1 94. člen); family_leave.*; minimum_wage.rates — Only state holidays and other holidays that are dela prosti dnevi (non-working days) are modelled.
 - **SK** (medium): 28 October is a state holiday but not a day of rest (not modelled as a holiday); Days-of-rest history before 2023; sick_pay.statutory (employer náhrada príjmu days 1–10); employment.notice_period (ZP § 62); family_leave.*; minimum_wage.rates — Holidays = days of rest (dni pracovného pokoja) under Act 241/1993; modelled from the 2023-01-01 version onwards.
-- **US-CA** (high): State holidays (not modelled yet); CA exempt salary threshold (2x state minimum wage for full-time); Meal and rest periods; Alternative workweek schedules — Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks.
+- **US-CA** (high): State holidays (not modelled yet); CA exempt salary threshold (2x state minimum wage for full-time); Meal and rest periods; Alternative workweek schedules; privacy: Civ. Code 1798.82 notification timing (SB 446, 2025) and processor duty — leginfo blocked automated access; CCPA regulations (11 CCR 7021) confirmation-of-receipt timing — Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks.
 - **US-CO** (high): State holidays (not modelled yet); Colorado FAMLI; Meal and rest periods (COMPS Rule 5) — Local ordinances not yet modelled: Denver minimum wage (and Denver civil wage theft ordinance), Edgewater, Boulder County and City of Boulder minimum wages; Colorado FAMLI paid family leave.
 - **US-FL** (high): State holidays (not modelled yet); Verify Florida local-preemption statute for leave mandates — No statewide paid sick leave law; no official Florida source stating this explicitly was found, so sick_pay.paid_sick_leave_accrual is omitted (federal rule: none). Local preemption of employee-benefit mandates not verified. No daily overtime.
-- **US-GA** (high): State holidays (not modelled yet); Georgia Family Care Act — No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime.
-- **US-IL** (high): State holidays (not modelled yet); Illinois state holidays; Day and Temporary Labor Services Act; Illinois Equal Pay registration certificates — Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA).
+- **US-GA** (high): State holidays (not modelled yet); Georgia Family Care Act; privacy: O.C.G.A. 10-1-912 breach notification — the official Georgia Code is published on a non-government host (not allow-listed); not modelled, legal review required — No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime.
+- **US-IL** (high): State holidays (not modelled yet); Illinois state holidays; Day and Temporary Labor Services Act; Illinois Equal Pay registration certificates; privacy: 815 ILCS 530/10 Attorney General notice and processor duty — ilga.gov did not respond to automated requests — Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA).
 - **US-MA** (high): State holidays (not modelled yet); Massachusetts PFML; Pay transparency law — Local ordinances: none identified for sick leave or minimum wage (not verified). Massachusetts Paid Family and Medical Leave (PFML) and the Sunday/holiday premium pay phase-out (blue laws) are not modelled. No daily overtime.
-- **US-NY** (high): State holidays (not modelled yet); NY exempt salary thresholds (executive/administrative) by region; NY Paid Family Leave; NY Paid Prenatal Leave — Local ordinances not yet modelled: NYC Earned Safe and Sick Time Act (incl. 2024 amendments), Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited).
+- **US-NY** (high): State holidays (not modelled yet); NY exempt salary thresholds (executive/administrative) by region; NY Paid Family Leave; NY Paid Prenatal Leave; privacy: GBL 899-aa duty of a person maintaining data it does not own — Local ordinances not yet modelled: NYC Earned Safe and Sick Time Act (incl. 2024 amendments), Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited).
 - **US-OR** (high): State holidays (not modelled yet); Oregon Paid Leave; Oregon predictive scheduling; Region (county) mapping for minimum wage — Local ordinances not yet modelled: Portland-area paid sick time threshold is modelled in the rule; Oregon Paid Leave (paid family and medical leave), predictive scheduling, and manufacturing/agriculture overtime rules not modelled.
 - **US-TX** (high): State holidays (not modelled yet) — No statewide paid sick leave. City paid sick leave ordinances (Austin, Dallas, San Antonio) — legal status not verified; not modelled. No daily overtime.
 - **US-WA** (high): State holidays (not modelled yet); WA Paid Family and Medical Leave; Exempt salary threshold for 2025 and 2028+; Computer professional hourly threshold — Local ordinances not yet modelled: Seattle minimum wage and Paid Sick and Safe Time, Tacoma Paid Sick Leave, SeaTac, Tukwila, Renton, Bellingham, Everett, Burien, unincorporated King County minimum wages; WA Paid Family and Medical Leave. No state daily overtime (FLSA weekly rule inherited).
