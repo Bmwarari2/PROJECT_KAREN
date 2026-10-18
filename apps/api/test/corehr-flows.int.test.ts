@@ -6,6 +6,7 @@ import { assignRole } from '../src/modules/authz/principal';
 import { hashPassword } from '../src/modules/auth/tokens';
 import { jobHandlers, eventSubscribers } from '../src/worker';
 import type { MemoryObjectStore } from '../src/lib/object-store';
+import { pdfPageTexts, pdfText } from './pdf-text';
 
 let ctx: TestContext;
 let owner: Awaited<ReturnType<typeof ownerSession>>;
@@ -91,24 +92,93 @@ describe('documents', () => {
     expect(tpl.json().mergeFields).toEqual(['employee.firstName', 'employee.jobTitle', 'company.name', 'employee.salary']);
     const gen = await api('POST', `/v1/document-templates/${tpl.json().id}/generate`, { employeeId: emp, requireSignature: true });
     expect(gen.statusCode).toBe(201);
+    // the merged values are really in the rendered PDF (not just the template)
+    const store = ctx.deps.objects as MemoryObjectStore;
+    const generated = await tx((t) => t.one<{ file_key: string; sha256: string }>('SELECT file_key, sha256 FROM app.documents WHERE id = $1', [gen.json().documentId]));
+    const generatedText = await pdfText(store.objects.get(generated.file_key)!.body);
+    expect(generatedText).toContain('Offer letter');
+    expect(generatedText).toContain('Dear Signe,');
+    expect(generatedText).toContain(`Your title is Analyst at Fictional ${owner.slug} Ltd on £30,000.00.`);
+    expect(generatedText).not.toContain('{{');
     const pending = (await api('GET', '/v1/signature-requests', undefined, signer.cookie)).json();
     expect(pending).toHaveLength(1);
-    const sign = await api('POST', `/v1/signature-requests/${pending[0].id}/sign`, { consent: true, typedName: 'Signe Example' }, signer.cookie);
+    expect(pending[0]).toMatchObject({ status: 'pending', signedAt: null });
+    const expectedSignedAt = ctx.deps.now().toISOString();
+    const sign = await ctx.app.inject({ method: 'POST', url: `/v1/signature-requests/${pending[0].id}/sign`, payload: { consent: true, typedName: 'Signe Example' }, headers: { cookie: signer.cookie, 'user-agent': 'FictionalBrowser/1.0' }, remoteAddress: '10.77.1.23' });
     expect(sign.statusCode, sign.body).toBe(200);
     const { documentSha256, signedSha256, signedDocumentId } = sign.json();
+    // the hash is of the exact document that was generated and shown to the signer
+    expect(documentSha256).toBe(generated.sha256);
     // signed PDF = original + certificate page
-    const store = ctx.deps.objects as MemoryObjectStore;
     const signedRow = await tx((t) => t.one<{ file_key: string }>('SELECT file_key FROM app.documents WHERE id = $1', [signedDocumentId]));
     const signedPdf = await PDFDocument.load(store.objects.get(signedRow.file_key)!.body);
     expect(signedPdf.getPageCount()).toBe(2);
+    const [page1, certificate] = (await pdfPageTexts(store.objects.get(signedRow.file_key)!.body)).map((p) => p.replace(/\s+/g, ' '));
+    expect(page1).toContain('Dear Signe,');
+    for (const evidence of ['Signe Example', expectedSignedAt, '10.77.1.23', 'FictionalBrowser/1.0', documentSha256, pending[0].id]) expect(certificate, evidence).toContain(evidence);
     const verify = (await api('GET', `/v1/signature-requests/${pending[0].id}/verify`)).json();
     expect(verify).toMatchObject({ valid: true, signerName: 'Signe Example', documentSha256, signedSha256 });
-    const sr = await tx((t) => t.one<{ signer_ip: string; signed_at: string }>('SELECT host(signer_ip) AS signer_ip, signed_at FROM app.signature_requests WHERE id = $1', [pending[0].id]));
-    expect(sr.signer_ip).toBeTruthy();
+    expect(new Date(verify.signedAt).toISOString()).toBe(expectedSignedAt);
+    const sr = await tx((t) => t.one<{ signer_ip: string; signed_at: string; signer_user_id: string; signer_user_agent: string; status: string }>('SELECT host(signer_ip) AS signer_ip, signed_at, signer_user_id, signer_user_agent, status FROM app.signature_requests WHERE id = $1', [pending[0].id]));
+    expect(sr).toMatchObject({ signer_ip: '10.77.1.23', signer_user_id: signer.userId, signer_user_agent: 'FictionalBrowser/1.0', status: 'signed' });
+    expect(new Date(sr.signed_at).toISOString()).toBe(expectedSignedAt);
+    const signedList = (await api('GET', '/v1/signature-requests', undefined, signer.cookie)).json();
+    expect(new Date(signedList[0].signedAt).toISOString()).toBe(expectedSignedAt);
+    const audit = await tx((t) => t.one<{ actor_id: string; diff: { documentSha256: string } }>(`SELECT actor_id, diff FROM audit.events WHERE action = 'document.signed' AND target_id = $1`, [pending[0].id]));
+    expect(audit).toMatchObject({ actor_id: signer.userId, diff: { documentSha256 } });
     expect((await api('POST', `/v1/signature-requests/${pending[0].id}/sign`, { consent: true, typedName: 'Again' }, signer.cookie)).statusCode).toBe(409);
     // tampering with the stored signed file breaks verification
     store.objects.get(signedRow.file_key)!.body = Buffer.concat([store.objects.get(signedRow.file_key)!.body, Buffer.from('x')]);
     expect((await api('GET', `/v1/signature-requests/${pending[0].id}/verify`)).json().valid).toBe(false);
+  });
+
+  it('folder permissions decide who sees and downloads each document', async () => {
+    const folder = async (visibility: string) => (await api('POST', '/v1/document-folders', { name: `Folder ${visibility}`, visibility })).json().id as string;
+    const folders = { hr: await folder('hr'), managers: await folder('managers'), employee: await folder('employee'), everyone: await folder('everyone') };
+    const mgrEmp = await hire({ legalFirstName: 'Folder', legalLastName: 'Manager' });
+    const emp = await hire({ legalFirstName: 'Folder', legalLastName: 'Owner', managerId: mgrEmp });
+    const colleague = await hire({ legalFirstName: 'Folder', legalLastName: 'Colleague' });
+    const insert = (title: string, folderId: string | null, employeeId: string | null) =>
+      tx((t) => t.one<{ id: string }>(`INSERT INTO app.documents (tenant_id, folder_id, employee_id, title, file_key, file_name, content_type, status) VALUES (app.current_tenant(), $1, $2, $3, $4, 'f.pdf', 'application/pdf', 'ready') RETURNING id`, [folderId, employeeId, title, `${owner.tenantId}/test/${title}`])).then((r) => r.id);
+    const docs: Record<string, string> = {};
+    for (const [vis, id] of Object.entries(folders)) {
+      docs[`person-${vis}`] = await insert(`person-${vis}`, id, emp);
+      docs[`company-${vis}`] = await insert(`company-${vis}`, id, null);
+    }
+    docs['person-none'] = await insert('person-none', null, emp);
+    docs['company-none'] = await insert('company-none', null, null);
+
+    const self = await login(emp, 'employee');
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    const other = await login(colleague, 'employee');
+    const titles = async (cookie: string, query = '') => ((await api('GET', `/v1/documents${query}`, undefined, cookie)).json() as Array<{ title: string }>).map((d) => d.title).filter((t) => t.startsWith('person-') || t.startsWith('company-')).sort();
+    const expectSeen = {
+      owner: ['company-employee', 'company-everyone', 'company-hr', 'company-managers', 'company-none', 'person-employee', 'person-everyone', 'person-hr', 'person-managers', 'person-none'],
+      self: ['company-employee', 'company-everyone', 'person-employee', 'person-everyone', 'person-none'],
+      manager: ['company-employee', 'company-everyone', 'company-managers', 'person-employee', 'person-everyone', 'person-managers', 'person-none'],
+      colleague: ['company-employee', 'company-everyone', 'person-everyone'],
+    };
+    expect(await titles(owner.cookie)).toEqual(expectSeen.owner);
+    expect(await titles(self.cookie)).toEqual(expectSeen.self);
+    expect(await titles(mgr.cookie)).toEqual(expectSeen.manager);
+    expect(await titles(other.cookie)).toEqual(expectSeen.colleague);
+    // the per-person view applies the same folder rules
+    expect(await titles(self.cookie, `?employeeId=${emp}`)).toEqual(['person-employee', 'person-everyone', 'person-none']);
+    expect(await titles(mgr.cookie, `?employeeId=${emp}`)).toEqual(['person-employee', 'person-everyone', 'person-managers', 'person-none']);
+    expect((await api('GET', `/v1/documents?employeeId=${emp}`, undefined, other.cookie)).statusCode).toBe(403);
+    expect(await titles(owner.cookie, `?folderId=${folders.hr}`)).toEqual(['company-hr', 'person-hr']);
+    // downloads follow exactly the same rules as the lists
+    const all = Object.keys(docs);
+    for (const [who, cookie] of [['owner', owner.cookie], ['self', self.cookie], ['manager', mgr.cookie], ['colleague', other.cookie]] as const) {
+      for (const title of all) {
+        const res = await api('GET', `/v1/documents/${docs[title]}/download`, undefined, cookie);
+        expect(res.statusCode, `${who} downloads ${title}`).toBe(expectSeen[who].includes(title) ? 200 : 403);
+      }
+    }
+    // only HR can create folders; a person may not file their own document where they could not see it
+    expect((await api('POST', '/v1/document-folders', { name: 'Mine', visibility: 'everyone' }, mgr.cookie)).statusCode).toBe(403);
+    expect((await api('POST', '/v1/documents', { title: 'Own note', fileName: 'n.pdf', contentType: 'application/pdf', sizeBytes: 10, employeeId: emp, folderId: folders.hr }, self.cookie)).statusCode).toBe(403);
+    expect((await api('POST', '/v1/documents', { title: 'Own note', fileName: 'n.pdf', contentType: 'application/pdf', sizeBytes: 10, employeeId: emp, folderId: folders.employee }, self.cookie)).statusCode).toBe(201);
   });
 
   it('bulk-sends to a filtered set as a background job with progress', async () => {
