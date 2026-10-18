@@ -616,9 +616,79 @@
         "required": true,
         "scope": "daily_start_and_end_each_worker"
       }
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectPath": {
+        "days": 20,
+        "sixDayWeekDays": 24,
+        "excludesPublicHolidays": true,
+        "oneUnbrokenPartMinDays": 10
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-lithuania_en",
+      "notes": "Same source as the pack (EURES); the primary Labour Code text could not be fetched, so this vector is not independent."
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-17",
+      "expectJurisdiction": "EU",
+      "expectPath": {
+        "weeks": 4
+      },
+      "notes": "Before the verification date Lithuania falls back to the EU baseline."
+    },
+    {
+      "jurisdiction": "RO",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectPath": {
+        "days": 20,
+        "dayUnit": "working_days",
+        "additionalDaysMin": 3
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-romania_en",
+      "notes": "Same source as the pack (EURES); the primary Labour Code text could not be fetched, so this vector is not independent."
+    },
+    {
+      "jurisdiction": "IT",
+      "key": "employment.notice_period",
+      "date": "2026-10-18",
+      "expectJurisdiction": "IT",
+      "expectPath": {
+        "statutoryMinimum": null,
+        "setBy": "collective_agreement",
+        "fixedTermContracts": "no_notice_period"
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-italy_en",
+      "notes": "Derived from the same EURES page as the pack (primary text on normattiva.it not reachable): notice per collective agreements under Civil Code art. 2118."
+    },
+    {
+      "jurisdiction": "IT",
+      "key": "employment.notice_period",
+      "date": "2026-10-17",
+      "expect": null,
+      "notes": "Modelled from the verification date only (ADR-0023)."
+    },
+    {
+      "jurisdiction": "IT",
+      "key": "sick_pay.statutory",
+      "date": "2026-10-18",
+      "expectJurisdiction": "IT",
+      "expectPath": {
+        "benefitFromDay": 4,
+        "bands[0].percentOfAverageDailyPay": 50,
+        "bands[1].fromDay": 21,
+        "bands[1].percentOfAverageDailyPay": 66.66,
+        "maxDaysPerCalendarYear": 180
+      },
+      "source": "https://www.inps.it/it/it/dettaglio-approfondimento.schede-informative.indennit--di-malattia-e-visite-mediche-di-controllo.html",
+      "notes": "Derived from the same INPS page as the pack (updated 21 September 2026): 50% days 4-20, 66.66% days 21-180, at most 180 days in the calendar year."
     }
   ],
-  "notes": "EU part B (IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE). expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). Holiday vectors list holiday dates (ordinary Sundays excluded). RO and LT have no holiday vectors: no official statutory text could be fetched (see packs coverage). Weekend-observance moves: none occur in 2026 for LV (4 May Mon, 18 Nov Wed).",
+  "notes": "EU part B (IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE). expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). Holiday vectors list holiday dates (ordinary Sundays excluded). RO and LT have no holiday vectors: no official statutory text could be fetched (see packs coverage); their annual leave comes from EURES. Weekend-observance moves: none occur in 2026 for LV (4 May Mon, 18 Nov Wed).",
   "sources": [
     {
       "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",

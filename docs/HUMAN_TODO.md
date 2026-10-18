@@ -33,19 +33,42 @@ Things only a person with the right accounts or authority can do. The build runs
   - the UK Employment Rights Act 2025 commencement items (SSP from 6 April 2026; unfair dismissal 6 months from 1 January 2027, applied by effective date of termination);
   - the status of the vacated 2024 US exempt salary rule;
   - the EU Pay Transparency transposition statuses;
-  - Massachusetts values that could only be confirmed through search results.
+  - Massachusetts values that could only be confirmed through search results;
+  - Colorado 2026 exempt salary ($57,784): the adopted 2026 PAY CALC Order says "effective February 1, 2026" while the pack applies it from 1 January 2026 (CDLE INFO #1) — decide which date applies;
+  - the UK nation extents (ADR-0022): each GB rule's `regions`, and the new Northern Ireland pack `packages/rules/packs/gb/gb-nir.json`;
+  - the New York City Protected Time Off rule (`packages/rules/packs/us/localities/us-ny-nyc.json`), which is modelled from 22 February 2026 only.
   
   Replace the reviewer field via a back-office rule version when confirmed.
-- [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example Romania and Lithuania holidays and leave, Cyprus holidays, German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually.
+- [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually. These were re-tried on 2026-10-18 and still need a person:
+  1. **Lithuania holidays.** Open the Labour Code (Darbo kodeksas) consolidated text on https://www.e-tar.lt (the agent got HTTP 403) or https://e-seimas.lrs.lt (JavaScript only). Copy the list in art. 123(1) and the date of the current wording, then add them as holiday definitions in `packages/rules/packs/eu/lt.json` with that URL, plus a holiday vector in `packages/rules/goldens/eu-b.json`. Check in particular whether 2 November (All Souls' Day) is still listed; the EURES page has two lists that disagree.
+  2. **Lithuania annual leave.** In the same text check art. 126(1): the pack uses the EURES summary (20 working days on a 5-day week, 24 on a 6-day week). If it matches, add a back-office rule version with the e-tar.lt URL and the date that wording took effect.
+  3. **Romania holidays.** Open Codul muncii (Legea 53/2003, republished) on https://legislatie.just.ro (refused connections from the agent). Copy art. 139(1) (the agent saw secondary reports that 6 and 7 January were added; EURES omits them) and note which Easter/Pentecost dates follow the Orthodox calendar. Add them to `packages/rules/packs/eu/ro.json` (`"calendar": "orthodox"` for those) with a holiday vector.
+  4. **Romania annual leave.** Check Codul muncii art. 145(1) (EURES says at least 20 working days) and art. 147 (3 additional days); confirm or correct the pack value through a back-office rule version.
+  5. **Cyprus holidays.** Ask the Department of Labour Relations (https://www.mlsi.gov.cy/mlsi/dlr/dlr.nsf) whether there is an official public-holiday list for private-sector employment. If there is, add it to `packages/rules/packs/eu/cy.json`; if holidays are only by collective agreement, record that in the pack's coverage note.
+  6. **Colorado and other CDLE documents.** cdle.colorado.gov returned HTTP 403 to automated fetches without a browser user agent; when updating Colorado values, download the current INFO #1 and PAY CALC Order manually.
 - [ ] 3.3 Review the DPA, privacy notice templates, DPIA template, records of processing, sub-processor notice period and retention defaults in `docs/legal/`.
-- [ ] 3.4 Review the Phase 4 working-time rules and how they are used (ADR-0035):
+- [ ] 3.4 **Northern Ireland family leave and pay.** NI maternity, paternity and irregular-hours rules and an NI gender pay gap duty are not modelled, so `GB-NIR` lookups for them fail on purpose (COVERAGE.md "Subdivision extent — GB"). A reviewer should:
+  1. Check the Maternity and Parental Leave etc. Regulations (Northern Ireland) 1999, the Paternity and Adoption Leave Regulations (Northern Ireland) 2002 and the NI SMP/SPP rates on https://www.legislation.gov.uk and https://www.nidirect.gov.uk.
+  2. Add the verified versions to `packages/rules/packs/gb/gb-nir.json` (bump `version`, run `pnpm --filter @thapsus/rules manifest -- --write` and `coverage-doc`), with a golden vector each.
+  3. Confirm whether the 2025-26 NI Statutory Sick Pay version (£118.75, three waiting days, lower earnings limit) should be added, and the NI lower earnings limit amount.
+
+- [ ] 3.5 **Italy: notice and sick pay (phase 5).** `packages/rules/packs/eu/it.json` takes notice from EURES (normattiva.it reset the connection) and sick pay from the INPS information page:
+  1. Open Civil Code art. 2118 on https://www.normattiva.it (search "codice civile art. 2118") and confirm that notice is set by collective agreements with no statutory minimum. If so, add a back-office rule version with the normattiva URL and the in-force date; if not, correct the value.
+  2. On https://www.inps.it check the INPS indemnity bands (50% days 4-20, 66.66% days 21-180, 180 days a year) and the fixed-term and sector exceptions; confirm `effectiveFrom` (set to the verification date 2026-10-18).
+- [ ] 3.6 **Gender pay gap: which sex/gender classification to record.** GOV.UK "Making your calculations" (updated 21 May 2026) gives no rule. Decide what the `PUT /v1/compliance/demographics/{employeeId}` value should represent for UK reporting and EU pay transparency, and update the help text (`compliance.gpg.intro`) and SECURITY/privacy notices accordingly.
+- [ ] 3.7 **EEO-1 instructions.** The current Component 1 instruction booklet is on eeocdata.org (not an allow-listed domain). Confirm the ten job categories, seven race/ethnicity categories, male/female columns and the 1 October-31 December workforce snapshot in `packages/rules/packs/us/us.json` (`reporting.eeo1`), and whether observer identification should be offered when an employee declines. Track the outcome of the EEOC's July 2026 proposal to rescind EEO-1 reporting.
+- [ ] 3.8 **Right to work (phase 5 additions).** Check the document catalogue ids and follow-up rules added to `right_to_work.document_rules` (List A, List B Groups 1 and 2, online results) against the Employer's guide of 1 October 2026, in particular that a List B Group 2 follow-up is due the day before six months from the PVN date and that pre-settled EUSS status needs no follow-up.
+- [ ] 3.9 **US exemptions.** Confirm the California exempt salary rule (two times the state minimum wage for 40 hours, applied from 2024-01-01 in `us-ca.json`) on https://leginfo.legislature.ca.gov (Labor Code 515(a),(c); the agent got HTTP 403), and the duties-test summaries in `overtime.exempt_duties_tests` (DOL Fact Sheet #17A). Add teachers, practitioners of law or medicine (no salary test) and the New York exempt thresholds when reviewed.
+- [ ] 3.10 **EU Pay Transparency interpretations (ADR-0055).** Confirm, per member state as each transposes the Directive: whether the gap in complementary or variable components is over all workers or recipients, how quartile remainders are allocated, and the categories of workers. Re-check the transposition statuses on the EUR-Lex national-measures page (it needs a browser; the agent could not re-read it on 2026-10-18) and update the member-state packs.
+- [ ] 3.11 **Compliance defaults (ADR-0051).** Review the default reminder lead times (90/30/7/0 days for right to work and I-9, 60/30/7/0 for the matrix, 14 days for probation, 30 days for the unfair dismissal qualifying date) and the EEO-1 small-cell threshold of 5.
+- [ ] 3.12 Review the Phase 4 working-time rules and how they are used (ADR-0035):
   - Spain `working_time.time_recording` (Estatuto de los Trabajadores art. 34.9 via RDL 8/2019, from 12 May 2019).
   - Germany `working_time.time_recording` (BAG 13 September 2022, 1 ABR 22/21). Re-read § 3 ArbSchG on gesetze-im-internet.de, which returned HTTP 503 during research, and check whether an ArbZG amendment on recording has since come into force.
   - Whether other member states should keep resolving to the EU baseline (CJEU C-55/18) until national rules are researched.
   - The GB opt-out notice cap (WTR reg. 5(3)).
   
   Confirm by adding a back-office rule version with your name as reviewer.
-- [ ] 3.5 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
+- [ ] 3.13 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
 
 ## 4. Payments, partners and integrations
 
