@@ -62,14 +62,46 @@ export function t(locale: Locale, key: string, vars: Record<string, string | num
   return template.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? `{${name}}`));
 }
 
+// Intl formatters are expensive to construct; long lists (e.g. a 10,000-row rota) reuse cached ones.
+const dtfCache = new Map<string, Intl.DateTimeFormat>();
+const nfCache = new Map<string, Intl.NumberFormat>();
+export function dateTimeFormat(locale: Locale, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${locale}|${JSON.stringify(opts)}`;
+  let f = dtfCache.get(key);
+  if (!f) dtfCache.set(key, (f = new Intl.DateTimeFormat(locale, opts)));
+  return f;
+}
+export function numberFormat(locale: Locale, opts: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
+  const key = `${locale}|${JSON.stringify(opts)}`;
+  let f = nfCache.get(key);
+  if (!f) nfCache.set(key, (f = new Intl.NumberFormat(locale, opts)));
+  return f;
+}
+
 export function formatDate(date: string, locale: Locale, style: 'short' | 'medium' | 'long' = 'medium'): string {
   // Calendar dates are formatted in UTC so the civil date never shifts.
   const d = new Date(`${date}T00:00:00Z`);
-  return new Intl.DateTimeFormat(locale, { dateStyle: style, timeZone: 'UTC' }).format(d);
+  return dateTimeFormat(locale, { dateStyle: style, timeZone: 'UTC' }).format(d);
 }
 
 export function formatDateTime(instant: string, locale: Locale, timeZone: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(instant));
+  return dateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(instant));
+}
+
+/** Formats a wall-clock time 'HH:MM' for the locale (24-hour in en-GB, 12-hour in en-US). */
+export function formatTimeOfDay(time: string, locale: Locale): string {
+  const [h, m] = time.split(':').map(Number);
+  return dateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(new Date(Date.UTC(2000, 0, 1, h ?? 0, m ?? 0)));
+}
+
+/** Formats an instant's local time of day in a zone. */
+export function formatInstantTime(instant: string, locale: Locale, timeZone: string): string {
+  return dateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone }).format(new Date(instant));
+}
+
+/** Integer minutes as hours with up to two decimals (display only). */
+export function formatHours(minutes: number, locale: Locale): string {
+  return numberFormat(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(minutes / 60);
 }
 
 export function formatNumber(value: number, locale: Locale, opts: Intl.NumberFormatOptions = {}): string {

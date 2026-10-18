@@ -14,7 +14,7 @@ import { createLogger } from '../src/logger';
 import { scrubSpanAttributes } from '../src/tracing';
 import * as time from '../src/time';
 import { money, add, multiplyRatio, allocate, parseDecimal, toDecimalString } from '../src/money';
-import { CATALOGUES, flatten, formatMoney, formatDate, resolveLocale, t } from '../src/i18n';
+import { CATALOGUES, flatten, formatMoney, formatDate, formatHours, formatTimeOfDay, resolveLocale, t } from '../src/i18n';
 
 describe('residency map', () => {
   it('pins each home region to the brief', () => {
@@ -203,5 +203,11 @@ describe('i18n', () => {
   it('formats dates per locale without zone drift', () => {
     expect(formatDate('2027-07-04', 'en-US', 'short')).toBe('7/4/27');
     expect(formatDate('2027-07-04', 'en-GB', 'short')).toBe('04/07/2027');
+  });
+  it('formats wall-clock times and hours per locale', () => {
+    expect(formatTimeOfDay('17:30', 'en-GB')).toBe('17:30');
+    expect(formatTimeOfDay('17:30', 'en-US').replace(/\s/g, ' ')).toBe('5:30 PM');
+    expect(formatHours(450, 'en-GB')).toBe('7.5');
+    expect(formatHours(20, 'en-US')).toBe('0.33');
   });
 });
