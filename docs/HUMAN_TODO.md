@@ -57,7 +57,18 @@ Things only a person with the right accounts or authority can do. The build runs
   5. **Cyprus holidays.** Ask the Department of Labour Relations (https://www.mlsi.gov.cy/mlsi/dlr/dlr.nsf) whether there is an official public-holiday list for private-sector employment. If there is, add it to `packages/rules/packs/eu/cy.json`; if holidays are only by collective agreement, record that in the pack's coverage note.
   6. **Colorado and other CDLE documents.** cdle.colorado.gov returned HTTP 403 to automated fetches without a browser user agent; when updating Colorado values, download the current INFO #1 and PAY CALC Order manually.
 - [ ] 3.3 Review the DPA, privacy notice templates, DPIA template, records of processing, sub-processor notice period and retention defaults in `docs/legal/`.
-- [ ] 3.4 **Northern Ireland family leave and pay.** NI maternity, paternity and irregular-hours rules and an NI gender pay gap duty are not modelled, so `GB-NIR` lookups for them fail on purpose (COVERAGE.md "Subdivision extent — GB"). A reviewer should:
+- [ ] 3.4 Review the time-off and absence calculation interpretations (ADR-0027 to ADR-0032), which a person must confirm against the law:
+  1. **UK SSP:** the per-day application across 6 April 2026, the S.I. 2026/373 reg. 4 protected rate condition, and the reg. 5/6 Schedule 11 exclusion, which is not modelled.
+  2. **France:** the employer complement durations treated as calendar days; the IJSS daily cap (not in the pack).
+  3. **Spain:** the IT benefit percentages, which are not in the ES pack. Add them with the BOE source once confirmed.
+  4. **Poland:** the age-50 limit (14 days) start rule and whether the route may use date of birth.
+  5. **Netherlands:** the statutory minimum wage floor and the art. 17 Wfsv daily wage cap. Add them to the NL pack if confirmed.
+  6. **Germany:** whether the six weeks run from the first sick day or from the end of the four-week waiting period when sickness starts during it.
+  7. **US paid sick leave:** the "use may begin" day for each state (CA Labor Code "90th day" vs DIR "90-day employment period"); the Massachusetts values, which were confirmed only via search results.
+  8. **FMLA:** the payroll-method headcount interpretation (whole workweeks), treating all US employees of a tenant as one employer, and the combined 26-week caregiver period.
+
+  Record each confirmation as a back-office rule version or an ADR update.
+- [ ] 3.5 **Northern Ireland family leave and pay.** NI maternity, paternity and irregular-hours rules and an NI gender pay gap duty are not modelled, so `GB-NIR` lookups for them fail on purpose (COVERAGE.md "Subdivision extent — GB"). A reviewer should:
   1. Check the Maternity and Parental Leave etc. Regulations (Northern Ireland) 1999, the Paternity and Adoption Leave Regulations (Northern Ireland) 2002 and the NI SMP/SPP rates on https://www.legislation.gov.uk and https://www.nidirect.gov.uk.
   2. Add the verified versions to `packages/rules/packs/gb/gb-nir.json` (bump `version`, run `pnpm --filter @thapsus/rules manifest -- --write` and `coverage-doc`), with a golden vector each.
   3. Confirm whether the 2025-26 NI Statutory Sick Pay version (£118.75, three waiting days, lower earnings limit) should be added, and the NI lower earnings limit amount.

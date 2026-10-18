@@ -591,7 +591,7 @@
     "to": "To",
     "note": "Note (optional)",
     "send": "Send request",
-    "requested": "Request sent for approval ({days} days).",
+    "requested": "Request sent for approval ({amount}).",
     "mine": "My requests",
     "dates": "Dates",
     "days": "Days",
@@ -614,7 +614,25 @@
       "fmla": "FMLA leave",
       "away": "Away"
     },
-    "bookedToast": "Booked ({days} days)."
+    "bookedToast": "Booked ({amount}).",
+    "hoursAvailable": "hours available",
+    "sickness": {
+      "title": "Record sickness",
+      "employee": "Employee",
+      "firstDay": "First day off",
+      "lastDay": "Last day off (if known)",
+      "submit": "Record sickness",
+      "recorded": "Sickness recorded.",
+      "fitNoteRequired": "Sickness recorded. A fit note is needed for an absence this long.",
+      "recent": "Recent sickness",
+      "none": "No sickness recorded.",
+      "ongoing": "ongoing",
+      "rtw": {
+        "due": "Return-to-work due",
+        "completed": "Return-to-work done",
+        "not_required": "Still off"
+      }
+    }
   },
   "onboarding": {
     "inviteSubject": "Your sign-in for {company} on Thapsus-HR",

@@ -43,6 +43,7 @@ export async function loadTarget(tx: Tx, employeeId: string): Promise<Target & {
  */
 export function scopePredicate(p: Principal, action: string, params: unknown[]): string {
   const ors: string[] = [];
+  const firstParam = params.length;
   const add = (v: unknown) => {
     params.push(v);
     return `$${params.length}`;
@@ -52,6 +53,8 @@ export function scopePredicate(p: Principal, action: string, params: unknown[]):
     const vals = g.scope.values ?? [];
     switch (g.scope.type) {
       case 'all':
+        // Drop parameters added for narrower grants: unused placeholders make the query fail.
+        params.length = firstParam;
         return 'true';
       case 'entity':
         ors.push(`e.entity_id = ANY(${add(vals)}::uuid[])`);
