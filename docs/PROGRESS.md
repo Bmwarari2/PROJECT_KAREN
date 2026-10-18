@@ -16,7 +16,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
-| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [ ] |
+| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
 | 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [ ] |
 | 8 | Privacy and trust (6.9) | `phase-8-privacy` | [ ] |
 | 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [ ] |
@@ -260,19 +260,24 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 6 — Payroll handoff and IT automation (6.5, 6.6)
 
-- [ ] **6.1 Payroll connector framework**
+- [x] **6.1 Payroll connector framework**
   - Per-tenant field mapping; pay-period exports of hours, absences, sick pay data, pay changes, starters and leavers; delivery by download, SFTP or API.
   - Exports are reproducible for a closed period and audit-logged.
-- [ ] **6.2 First payroll connectors**
+  - _Evidence:_ `apps/api/test/payroll.int.test.ts` ("validates the mapping…"; "a generic CSV connector with a per-tenant mapping exports hours, absences, sick pay, pay changes, starters and leavers"; "re-exporting a closed period is byte-identical (same SHA-256) even after live data changes"; "snapshots are append-only and closed periods cannot be reopened or moved"; "every export and download is audited and the download is in the delivery log"; permissions by role); delivery by SFTP in `payroll-sftp.int.test.ts` and by API in the Xero tests; rendering and determinism in `phase6-units.test.ts`; `apps/web/e2e/phase6.spec.ts` downloads an export and checks its SHA-256.
+- [x] **6.2 First payroll connectors**
   - Generic CSV/Excel, SFTP and Xero Payroll (UK) connectors, tested against mocks.
   - Documented stubs for ADP, Workday, UKG, Gusto and DATEV; partner-programme steps in HUMAN_TODO.md.
-- [ ] **6.3 Payslip and year-end document upload**
+  - _Evidence:_ CSV and Excel connectors in `payroll.int.test.ts` ("an Excel connector writes one typed sheet per section, reproducibly", "a single enabled section gives a plain CSV with a formula-injection guard"); SFTP in `payroll-sftp.int.test.ts` against an in-process ssh2 server (exact bytes to the pinned host, host-key mismatch refused, wrong credentials, SSRF guard); Xero Payroll UK against a mock of the official API shapes ("connects with OAuth 2.0…", "pushes timesheets per earnings rate and leave…", unmapped items reported, not offered to EU workspaces); ADP, Workday, UKG, Gusto and DATEV stubs ("documented stubs": 501 with a docs anchor) documented in `docs/integrations.md`; partner-programme steps in HUMAN_TODO 4.4.
+- [x] **6.3 Payslip and year-end document upload**
   - Bulk upload with employee matching, employee self-service access and notifications.
-- [ ] **6.4 Microsoft 365 and Google Workspace joiner/leaver automation**
+  - _Evidence:_ `apps/api/test/payslips.int.test.ts` (matching a zip and loose PDFs by employee number; year-end documents by file-name pattern with ambiguous names flagged; only payroll roles upload; hand matching; publishing notifies each employee once; employees list and download only their own documents and every download is audited; withdrawal and discard); `apps/web/e2e/phase6.spec.ts` (an employee sees and downloads their own payslip, axe in light and dark).
+- [x] **6.4 Microsoft 365 and Google Workspace joiner/leaver automation**
   - Joiners: create accounts, assign licences and groups. Leavers: block sign-in, revoke sessions, remove licences.
   - Per-customer admin consent, least-privilege scopes, dry-run preview, audit log; tested against mocked Graph and Admin SDK APIs.
-- [ ] **6.5 Asset register**
+  - _Evidence:_ `apps/api/test/it-automation.int.test.ts` against mocked Microsoft Graph and Google Admin SDK / Licensing endpoints (request shapes cited in `it/plan.ts`): per-customer admin consent with the secret sealed; "the dry run shows the exact Graph calls without calling Graph"; joiner jobs at the configured lead time; idempotent re-runs, failure and retry; safe adoption of existing accounts; backdated imports not provisioned; the leaver job "blocks sign-in, revokes sessions and removes licences"; Google domain-wide delegation with an RS256 JWT and least-privilege scopes; executions audited (`it.joiner_executed`); app registration steps in HUMAN_TODO 4.2 and 4.3; `apps/web/e2e/phase6.spec.ts` (integrations dry run).
+- [x] **6.5 Asset register**
   - Assets with assignment, handover sign-off and a return checklist tied to offboarding.
+  - _Evidence:_ `apps/api/test/assets.int.test.ts` (cost in minor units with a default return checklist per type; assignment with an acknowledgement request; only the employee can sign the handover, recording who, when and which statement; the offboarding workflow creates one return task per issued asset; a return needs every checklist item; lost assets close their task and the workflow completes); `apps/web/e2e/phase6.spec.ts` (asset acknowledgement, axe in light and dark).
 
 ---
 
