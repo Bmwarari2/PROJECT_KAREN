@@ -7,7 +7,7 @@ import { t } from '@thapsus/core/i18n';
 import { ApiError } from '../../http/errors';
 import { Problem } from '../../http/schemas';
 import { requireAuth } from '../../http/context';
-import { burnPasswordCheck, composeToken, hashPassword, hashToken, newToken, parseToken, passwordProblems, verifyPassword } from './tokens';
+import { burnPasswordCheck, composeToken, hashPassword, hashToken, MAGIC_PREFIX, newToken, parseToken, passwordProblems, verifyPassword } from './tokens';
 import { assertPasswordlessAllowed, recordFailure, resolveTenantSlug, startSession, throttle } from './common';
 import { loadSecurity, revokeUserSessions, SESSION_COOKIE } from './sessions';
 import { seal, open, type Envelope } from '../../lib/kms';
@@ -19,7 +19,7 @@ const SessionInfo = Type.Object({
   mfaEnrollmentRequired: Type.Boolean(),
 });
 
-export const MAGIC_PREFIX = 'm_';
+export { MAGIC_PREFIX };
 
 export async function authRoutes(app: FastifyInstance) {
   const deps = app.deps;

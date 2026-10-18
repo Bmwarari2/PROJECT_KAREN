@@ -2,13 +2,13 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, Bell, CalendarClock, CalendarDays, ClipboardList, Clock, FileText, Home, Inbox, Laptop, ListChecks, LogOut, Menu, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, UserRound, Users, Wallet, Zap } from 'lucide-react';
+import { BarChart3, Bell, CalendarClock, CalendarDays, ClipboardList, Clock, DoorOpen, FileText, Home, Inbox, Laptop, ListChecks, LogOut, Menu, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, UserRound, Users, Wallet, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
-import type { ThemeChoice } from '@/lib/i18n';
+import type { ThemeChoice } from '@/lib/i18n-shared';
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
@@ -24,6 +24,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
   const items: Array<NavItem & { show: boolean }> = [
     { href: '/app', label: t('app.nav.home'), icon: <Home aria-hidden />, show: true },
     { href: '/app/me', label: t('app.nav.me'), icon: <UserRound aria-hidden />, show: !!s.employeeId },
+    { href: '/app/welcome', label: t('app.nav.onboarding'), icon: <DoorOpen aria-hidden />, show: !!s.employeeId },
     { href: '/app/people', label: t('app.nav.people'), icon: <Users aria-hidden />, show: has('employees.read') },
     { href: '/app/org-chart', label: t('app.nav.orgChart'), icon: <Network aria-hidden />, show: true },
     { href: '/app/time-off', label: t('app.nav.timeOff'), icon: <CalendarDays aria-hidden />, show: true },
@@ -48,17 +49,19 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
   return items.filter((i) => i.show).map(({ show: _show, ...i }) => ({ ...i, active: i.href === '/app' ? path === '/app' : path.startsWith(i.href) }));
 }
 
-export function AppShell({ children, theme }: { children: React.ReactNode; theme: ThemeChoice }) {
+export function AppShell({ children, theme, initialSession = null }: { children: React.ReactNode; theme: ThemeChoice; initialSession?: SessionInfo | null }) {
   const t = useT();
   const router = useRouter();
   const path = usePathname();
-  const [session, setSession] = React.useState<SessionInfo | null>(null);
+  // Rendered on the server when it could read the session, so the first HTML already has the page.
+  const [session, setSession] = React.useState<SessionInfo | null>(initialSession);
+  // Admins must complete MFA before using anything but the security page.
+  const mfaSetupPending = !!session?.isAdmin && !session.mfaVerified && !path.startsWith('/app/security');
 
   React.useEffect(() => {
     api<SessionInfo>('/v1/auth/session')
       .then((s) => {
         setSession(s);
-        // Admins must complete MFA before using anything but the security page.
         if (s.isAdmin && !s.mfaVerified && !path.startsWith('/app/security')) router.replace('/app/security?setup=1');
       })
       .catch((err) => {
@@ -116,7 +119,7 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
             </div>
           </TopBar>
           <main id="main" className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8">
-            {session ? children : <Skeleton className="h-64 w-full" />}
+            {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
           </main>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { readerUrl, testRouter, TEST_DBS } from '@thapsus/db/testing';
 import { buildSpec } from '../src/openapi';
 import { closeDb, startTestApp, type TestContext } from './helpers';
 import { widgets, type Widgets } from './reports-fixtures';
-import { transports } from '../src/modules/exports/routes';
+import { transports } from '../src/modules/data-export/routes';
 
 /** Phase 7 contract tests: real responses of the reports, data export and self-service endpoints validate against the published spec. */
 type Spec = { paths: Record<string, Record<string, { responses: Record<string, { content?: Record<string, { schema: unknown }> }> }>>; components?: { schemas?: Record<string, unknown> } };
@@ -70,20 +70,20 @@ describe('reports, exports and self-service match the spec', () => {
   });
 
   it('data exports', async () => {
-    const d = await w.api('POST', '/v1/exports/destinations', { name: 'Contract bucket', kind: 's3', s3: { bucket: 'fictional-contract-bucket', region: 'eu-west-2', roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-export-contract' } });
-    check('post', '/v1/exports/destinations', d);
-    check('post', '/v1/exports/destinations', await w.api('POST', '/v1/exports/destinations', { name: 'Elsewhere', kind: 's3', s3: { bucket: 'fictional-contract-bucket', region: 'us-east-2', roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-export-contract' } }));
-    check('get', '/v1/exports/destinations', await w.api('GET', '/v1/exports/destinations'));
-    check('post', '/v1/exports/destinations/{id}/test', await w.api('POST', `/v1/exports/destinations/${d.json().id}/test`));
-    const e = await w.api('POST', '/v1/exports', { name: 'Contract export', destinationId: d.json().id, datasets: [{ dataset: 'employees', fields: ['employeeNumber', 'startDate'] }], format: 'jsonl', frequency: 'daily', timeOfDay: '01:15', timeZone: 'Europe/London' });
-    check('post', '/v1/exports', e);
-    check('get', '/v1/exports', await w.api('GET', '/v1/exports'));
-    check('patch', '/v1/exports/{id}', await w.api('PATCH', `/v1/exports/${e.json().id}`, { enabled: false }));
-    check('post', '/v1/exports/{id}/run', await w.api('POST', `/v1/exports/${e.json().id}/run`));
+    const d = await w.api('POST', '/v1/data-exports/destinations', { name: 'Contract bucket', kind: 's3', s3: { bucket: 'fictional-contract-bucket', region: 'eu-west-2', roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-export-contract' } });
+    check('post', '/v1/data-exports/destinations', d);
+    check('post', '/v1/data-exports/destinations', await w.api('POST', '/v1/data-exports/destinations', { name: 'Elsewhere', kind: 's3', s3: { bucket: 'fictional-contract-bucket', region: 'us-east-2', roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-export-contract' } }));
+    check('get', '/v1/data-exports/destinations', await w.api('GET', '/v1/data-exports/destinations'));
+    check('post', '/v1/data-exports/destinations/{id}/test', await w.api('POST', `/v1/data-exports/destinations/${d.json().id}/test`));
+    const e = await w.api('POST', '/v1/data-exports', { name: 'Contract export', destinationId: d.json().id, datasets: [{ dataset: 'employees', fields: ['employeeNumber', 'startDate'] }], format: 'jsonl', frequency: 'daily', timeOfDay: '01:15', timeZone: 'Europe/London' });
+    check('post', '/v1/data-exports', e);
+    check('get', '/v1/data-exports', await w.api('GET', '/v1/data-exports'));
+    check('patch', '/v1/data-exports/{id}', await w.api('PATCH', `/v1/data-exports/${e.json().id}`, { enabled: false }));
+    check('post', '/v1/data-exports/{id}/run', await w.api('POST', `/v1/data-exports/${e.json().id}/run`));
     await w.drain();
-    check('get', '/v1/exports/{id}/deliveries', await w.api('GET', `/v1/exports/${e.json().id}/deliveries`));
-    check('delete', '/v1/exports/destinations/{id}', await w.api('DELETE', `/v1/exports/destinations/${d.json().id}`));
-    check('delete', '/v1/exports/{id}', await w.api('DELETE', `/v1/exports/${e.json().id}`));
+    check('get', '/v1/data-exports/{id}/deliveries', await w.api('GET', `/v1/data-exports/${e.json().id}/deliveries`));
+    check('delete', '/v1/data-exports/destinations/{id}', await w.api('DELETE', `/v1/data-exports/destinations/${d.json().id}`));
+    check('delete', '/v1/data-exports/{id}', await w.api('DELETE', `/v1/data-exports/${e.json().id}`));
   });
 
   it('self-service', async () => {

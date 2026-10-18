@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { REGIONS, regionPairs } from '@thapsus/core';
 import { assertCellResidency } from '@thapsus/core/residency';
 import { ResidencyViolationError } from '@thapsus/core/aws';
-import { DestinationError, guardedAwsClients, S3Destination, validateS3Config, type AwsClients } from '../src/modules/exports/destination';
+import { DestinationError, guardedAwsClients, S3Destination, validateS3Config, type AwsClients } from '../src/modules/data-export/destination';
 import { closeDb, ownerSession, randomIp, startTestApp } from './helpers';
 
 /**
@@ -47,7 +47,7 @@ describe.each(regionPairs())('data export and reporting residency (%s → %s)', 
     const ctx = await startTestApp({ cell: home, listen: false });
     try {
       const o = await ownerSession(ctx);
-      const r = await ctx.app.inject({ method: 'POST', url: '/v1/exports/destinations', headers: { cookie: o.cookie }, remoteAddress: randomIp(), payload: { name: 'Elsewhere', kind: 's3', s3: { bucket: 'fictional-bucket', region: otherRegion, roleArn: ROLE } } });
+      const r = await ctx.app.inject({ method: 'POST', url: '/v1/data-exports/destinations', headers: { cookie: o.cookie }, remoteAddress: randomIp(), payload: { name: 'Elsewhere', kind: 's3', s3: { bucket: 'fictional-bucket', region: otherRegion, roleArn: ROLE } } });
       expect(r.statusCode).toBe(422);
       expect(r.json()).toMatchObject({ code: 'regionNotAllowed' });
     } finally {

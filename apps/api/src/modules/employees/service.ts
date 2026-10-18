@@ -77,17 +77,72 @@ export function grantScopeSql(p: Principal, g: RoleGrant, add: (v: unknown) => s
  */
 export function scopePredicate(p: Principal, action: string, params: unknown[]): string {
   const ors: string[] = [];
+  const firstParam = params.length;
   const add = (v: unknown) => {
     params.push(v);
     return `$${params.length}`;
   };
   for (const g of p.grants) {
     if (!g.permissions.some((perm) => actionMatches(perm, action))) continue;
-    if (g.scope.type === 'all') return 'true';
+    if (g.scope.type === 'all') {
+      // Drop parameters added for narrower grants: unused placeholders make the query fail.
+      params.length = firstParam;
+      return 'true';
+    }
     const sql = grantScopeSql(p, g, add);
     if (sql !== 'false') ors.push(sql);
   }
   return ors.length ? `(${ors.join(' OR ')})` : 'false';
+}
+
+export interface EmployeeListFilter {
+  q?: string;
+  status?: string;
+  entityId?: string;
+  departmentId?: string;
+  locationId?: string;
+  managerId?: string;
+  country?: string;
+}
+
+/** WHERE clauses (alias `e`) shared by the people list and its export: scope for `action`, then filters. */
+export function employeeListWhere(p: Principal, action: string, f: EmployeeListFilter, params: unknown[]): string[] {
+  const where: string[] = [scopePredicate(p, action, params)];
+  const add = (v: unknown) => (params.push(v), `$${params.length}`);
+  if (!f.status || f.status !== 'all') where.push(`e.status = ${add(f.status ?? 'active')}`);
+  if (f.entityId) where.push(`e.entity_id = ${add(f.entityId)}`);
+  if (f.departmentId) where.push(`e.department_id = ${add(f.departmentId)}`);
+  if (f.locationId) where.push(`e.location_id = ${add(f.locationId)}`);
+  if (f.managerId) where.push(`e.manager_id = ${add(f.managerId)}`);
+  if (f.country) where.push(`e.country = ${add(f.country)}`);
+  if (f.q) {
+    const term = f.q.trim();
+    // Full-text (words, number, email, title), substring, and trigram word similarity so a misspelt
+    // name still matches (`<%` uses the gin_trgm_ops index on display_name).
+    const t = add(term);
+    where.push(`(e.search @@ plainto_tsquery('simple', ${t}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${t} OR ${t} <% e.display_name)`);
+  }
+  return where;
+}
+
+/**
+ * SQL array (alias `e`) of the person's managers for field-level checks on list rows: the whole solid
+ * line up plus current dotted/matrix managers — the same chain loadTarget builds for one person — so
+ * lists, exports and profiles agree. Only team-scoped grants need it; otherwise the direct manager.
+ */
+export function managerChainSql(p: Principal): string {
+  if (!p.grants.some((g) => g.scope.type === 'own_team')) return `ARRAY[e.manager_id]`;
+  return `ARRAY(WITH RECURSIVE up AS (
+              SELECT m.id, m.manager_id, 1 AS d FROM app.employees m WHERE m.id = e.manager_id
+              UNION ALL SELECT x.id, x.manager_id, up.d + 1 FROM app.employees x JOIN up ON x.id = up.manager_id WHERE up.d < 50)
+            SELECT id FROM up
+            UNION SELECT r.manager_id FROM app.reporting_lines r WHERE r.employee_id = e.id AND r.kind <> 'solid'
+              AND r.valid_from <= current_date AND (r.valid_to IS NULL OR r.valid_to > current_date))`;
+}
+
+/** Field-level target for a list row selected with managerChainSql AS chain. */
+export function rowTarget(r: { id: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; chain: Array<string | null> | null }): Target & { employeeId: string } {
+  return { employeeId: r.id, entityId: r.entity_id, country: r.country, departmentId: r.department_id, locationId: r.location_id, managerChain: (r.chain ?? []).filter((m): m is string => !!m) };
 }
 
 // ---- Reading -------------------------------------------------------------------------------
@@ -102,28 +157,31 @@ export interface EmployeeView {
 
 /** Full employee record as of a date (null-safe), BEFORE field-level filtering. */
 export async function employeeAsOf(tx: Tx, id: string, asOf: string): Promise<EmployeeView> {
-  const e = await tx.maybe<Record<string, unknown>>(
-    `SELECT e.*, d.name AS department_name, l.name AS location_name, le.name AS entity_name, m.display_name AS manager_name
-       FROM app.employees e
-       LEFT JOIN app.departments d ON d.tenant_id = e.tenant_id AND d.id = e.department_id
-       LEFT JOIN app.locations l ON l.tenant_id = e.tenant_id AND l.id = e.location_id
-       LEFT JOIN app.legal_entities le ON le.tenant_id = e.tenant_id AND le.id = e.entity_id
-       LEFT JOIN app.employees m ON m.tenant_id = e.tenant_id AND m.id = e.manager_id
-      WHERE e.id = $1`,
-    [id],
-  );
+  const e = await tx.maybe<Record<string, unknown>>(`SELECT e.* FROM app.employees e WHERE e.id = $1`, [id]);
   if (!e) throw new ApiError('notFound');
-  const [personal, job, pay, contract, manager] = await Promise.all([
-    tx.maybe(asOfRow('app.employee_personal'), [id, asOf]),
-    tx.maybe(asOfRow('app.employee_jobs'), [id, asOf]),
-    tx.maybe(asOfRow('app.employee_pay'), [id, asOf]),
-    tx.maybe(asOfRow('app.employee_contracts'), [id, asOf]),
-    tx.maybe<{ manager_id: string; display_name: string }>(
-      `SELECT r.manager_id, m.display_name FROM app.reporting_lines r JOIN app.employees m ON m.tenant_id = r.tenant_id AND m.id = r.manager_id
-        WHERE r.employee_id = $1 AND r.kind = 'solid' AND r.valid_from <= $2 AND (r.valid_to IS NULL OR r.valid_to > $2)`,
-      [id, asOf],
-    ),
-  ]);
+  // Sequential on purpose: one transaction = one connection (concurrent queries on a client are deprecated in pg).
+  const personal = await tx.maybe(asOfRow('app.employee_personal'), [id, asOf]);
+  // Names of the job's reference data come from the record in force on the as-of date, not today's.
+  const job = await tx.maybe<Record<string, unknown>>(
+    `SELECT j.*, d.name AS department_name, l.name AS location_name, le.name AS entity_name, coalesce(l.country, le.country) AS as_of_country,
+            p.title AS position_title, g.name AS grade_name, cc.name AS cost_centre_name
+       FROM app.employee_jobs j
+       LEFT JOIN app.departments d ON d.tenant_id = j.tenant_id AND d.id = j.department_id
+       LEFT JOIN app.locations l ON l.tenant_id = j.tenant_id AND l.id = j.location_id
+       LEFT JOIN app.legal_entities le ON le.tenant_id = j.tenant_id AND le.id = j.entity_id
+       LEFT JOIN app.positions p ON p.tenant_id = j.tenant_id AND p.id = j.position_id
+       LEFT JOIN app.grades g ON g.tenant_id = j.tenant_id AND g.id = j.grade_id
+       LEFT JOIN app.cost_centres cc ON cc.tenant_id = j.tenant_id AND cc.id = j.cost_centre_id
+      WHERE j.employee_id = $1 AND j.valid_from <= $2 AND (j.valid_to IS NULL OR j.valid_to > $2) LIMIT 1`,
+    [id, asOf],
+  );
+  const pay = await tx.maybe(asOfRow('app.employee_pay'), [id, asOf]);
+  const contract = await tx.maybe(asOfRow('app.employee_contracts'), [id, asOf]);
+  const manager = await tx.maybe<{ manager_id: string; display_name: string }>(
+    `SELECT r.manager_id, m.display_name FROM app.reporting_lines r JOIN app.employees m ON m.tenant_id = r.tenant_id AND m.id = r.manager_id
+      WHERE r.employee_id = $1 AND r.kind = 'solid' AND r.valid_from <= $2 AND (r.valid_to IS NULL OR r.valid_to > $2)`,
+    [id, asOf],
+  );
   const view: EmployeeView = {
     id,
     employeeNumber: e.employee_number,
@@ -135,10 +193,13 @@ export async function employeeAsOf(tx: Tx, id: string, asOf: string): Promise<Em
     displayName: personal ? `${(personal.preferred_name as string) || personal.legal_first_name} ${personal.legal_last_name}` : e.display_name,
     managerId: manager?.manager_id ?? null,
     manager: manager ? { id: manager.manager_id, displayName: manager.display_name } : null,
-    department: e.department_name ?? null,
-    location: e.location_name ?? null,
-    entity: e.entity_name ?? null,
-    country: e.country,
+    department: job?.department_name ?? null,
+    location: job?.location_name ?? null,
+    entity: job?.entity_name ?? null,
+    country: job ? (job.as_of_country ?? null) : e.country,
+    position: job?.position_title ?? null,
+    grade: job?.grade_name ?? null,
+    costCentre: job?.cost_centre_name ?? null,
   };
   const sectionRows: Record<string, Record<string, unknown> | undefined> = { personal, job, pay, contract };
   for (const [field, def] of Object.entries(FIELDS)) {
@@ -182,7 +243,53 @@ export async function history(tx: Tx, id: string) {
     `SELECT r.*, m.display_name AS manager_name FROM app.reporting_lines r JOIN app.employees m ON m.tenant_id = r.tenant_id AND m.id = r.manager_id WHERE r.employee_id = $1 ORDER BY valid_from`,
     [id],
   );
+  out.emergencyContacts = await tx.query(
+    `SELECT id, name, relationship, phone, email, priority, CASE WHEN valid_from = '-infinity' THEN NULL ELSE valid_from END AS valid_from, valid_to
+       FROM app.emergency_contacts WHERE employee_id = $1 ORDER BY valid_from, priority`,
+    [id],
+  );
   return out;
+}
+
+// ---- Emergency contacts (effective-dated list; each priority slot holds one contact at a time) --------
+
+export interface ContactInput {
+  name: string;
+  relationship?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  priority?: number;
+}
+
+const CONTACT_COLUMNS = `id, name, relationship, phone, email, priority,
+  CASE WHEN valid_from = '-infinity' THEN NULL ELSE valid_from END AS "validFrom", valid_to AS "validTo"`;
+
+export async function contactsAsOf(tx: Tx, employeeId: string, date: string) {
+  return tx.query(
+    `SELECT ${CONTACT_COLUMNS} FROM app.emergency_contacts
+      WHERE employee_id = $1 AND valid_from <= $2 AND (valid_to IS NULL OR valid_to > $2) ORDER BY priority`,
+    [employeeId, date],
+  );
+}
+
+/**
+ * Replaces the contact list in force from `date`: contacts covering `date` are closed on it (or
+ * replaced when they start on it), the new list runs until the next future-dated list, if any.
+ */
+export async function replaceContacts(tx: Tx, employeeId: string, date: string, contacts: ContactInput[], actor: string | null) {
+  const rows = contacts.map((c, i) => ({ ...c, priority: c.priority ?? i + 1 }));
+  const priorities = rows.map((r) => r.priority);
+  if (new Set(priorities).size !== priorities.length) throw new ApiError('validation', 'Each contact needs a different priority');
+  const next = await tx.maybe<{ valid_from: string | null }>(`SELECT min(valid_from)::text AS valid_from FROM app.emergency_contacts WHERE employee_id = $1 AND valid_from > $2`, [employeeId, date]);
+  await tx.exec(`DELETE FROM app.emergency_contacts WHERE employee_id = $1 AND valid_from = $2`, [employeeId, date]);
+  await tx.exec(`UPDATE app.emergency_contacts SET valid_to = $2 WHERE employee_id = $1 AND valid_from < $2 AND (valid_to IS NULL OR valid_to > $2)`, [employeeId, date]);
+  for (const c of rows) {
+    await tx.exec(
+      `INSERT INTO app.emergency_contacts (tenant_id, employee_id, name, relationship, phone, email, priority, valid_from, valid_to, created_by)
+       VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [employeeId, c.name, c.relationship ?? null, c.phone ?? null, c.email ?? null, c.priority, date, next?.valid_from ?? null, actor],
+    );
+  }
 }
 
 // ---- Writing -------------------------------------------------------------------------------
@@ -308,6 +415,11 @@ export async function setCustomFields(tx: Tx, employeeId: string, values: Record
     );
     if (!def) throw new ApiError('validation', `Unknown custom field ${key}`);
     validateCustomValue(def, value, key);
+    if (def.field_type === 'file' && value) {
+      // A file field points at an uploaded document about this person (or a company-wide document).
+      const doc = await tx.maybe(`SELECT 1 FROM app.documents WHERE id = $1 AND status = 'ready' AND (employee_id = $2 OR employee_id IS NULL)`, [(value as { documentId: string }).documentId, employeeId]);
+      if (!doc) throw new ApiError('validation', `Invalid value for ${key}`);
+    }
     const from = def.effective_dated ? date : '-infinity';
     await tx.exec(`DELETE FROM app.custom_field_values WHERE field_id = $1 AND record_id = $2 AND valid_from = $3::date`, [def.id, employeeId, from]);
     if (def.effective_dated) {
@@ -360,7 +472,7 @@ export function validateCustomValue(
       break;
     }
     case 'file':
-      if (typeof value !== 'object' || !(value as { documentId?: string }).documentId) bad();
+      if (typeof value !== 'object' || !UUID.test(String((value as { documentId?: unknown }).documentId ?? ''))) bad();
       break;
   }
 }
@@ -399,12 +511,22 @@ export async function applyEmployeeChange(tx: Tx, id: string, b: ChangeInput, ac
   const after = await employeeAsOf(tx, id, b.effectiveDate);
   const diff: Record<string, { from: unknown; to: unknown }> = {};
   for (const k of [...fields, 'managerId']) if (JSON.stringify(before[k]) !== JSON.stringify(after[k])) diff[k] = { from: before[k] ?? null, to: after[k] ?? null };
+  const customBefore = (before.custom ?? {}) as Record<string, unknown>;
+  const customAfter = (after.custom ?? {}) as Record<string, unknown>;
+  for (const k of Object.keys(b.custom ?? {})) {
+    if (JSON.stringify(customBefore[k]) !== JSON.stringify(customAfter[k])) diff[`custom.${k}`] = { from: customBefore[k] ?? null, to: customAfter[k] ?? null };
+  }
   await recordChangeEvent(tx, id, topic, { effectiveDate: b.effectiveDate, fields: Object.keys(diff) });
   return diff;
 }
 
 export async function refreshCurrent(tx: Tx, employeeId: string | null) {
   await tx.query('SELECT app.refresh_employee_current($1)', [employeeId]);
+}
+
+/** Refreshes the current values of many employees (one linear statement; keep batches to a few thousand). */
+export async function refreshCurrentMany(tx: Tx, employeeIds: string[]) {
+  if (employeeIds.length) await tx.query('SELECT app.refresh_employees_current($1::uuid[])', [employeeIds]);
 }
 
 export async function recordChangeEvent(tx: Tx, employeeId: string, topic: string, payload: Record<string, unknown>) {

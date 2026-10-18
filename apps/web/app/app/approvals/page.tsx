@@ -6,6 +6,7 @@ import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { ExportLinks } from '@/components/export-links';
 
 interface Approval {
   id: string;
@@ -38,6 +39,7 @@ export default function ApprovalsPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto text-title-2">{t('approvals.title')}</h1>
+        <ExportLinks list="approvals" params={{ view: 'mine' }} />
         <Button size="sm" disabled={!selected.size} loading={busy} onClick={() => bulk('approve')}>
           {t('approvals.approveSelected')}
         </Button>

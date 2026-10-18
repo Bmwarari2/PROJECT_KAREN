@@ -92,7 +92,7 @@ function DestinationForm({ homeRegion, rolePrefix, onDone }: { homeRegion: strin
             },
           };
     try {
-      await api('/v1/exports/destinations', { method: 'POST', json: body });
+      await api('/v1/data-exports/destinations', { method: 'POST', json: body });
       toast({ title: t('reports.exports.destinationAdded'), tone: 'success' });
       onDone();
     } catch (err) {
@@ -191,7 +191,7 @@ function ExportForm({ catalogue, destinations, onDone }: { catalogue: Catalogue;
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await api('/v1/exports', {
+      await api('/v1/data-exports', {
         method: 'POST',
         json: {
           name: form.name,
@@ -317,7 +317,7 @@ function DeliveryLog({ exp }: { exp: DataExport }) {
   const locale = useLocale();
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const log = useApi<Delivery[]>(`/v1/exports/${exp.id}/deliveries`);
+  const log = useApi<Delivery[]>(`/v1/data-exports/${exp.id}/deliveries`);
   if (!log.data) return <Skeleton className="h-24 w-full" />;
   if (!log.data.length) return <p className="text-callout text-text-secondary">{t('reports.exports.noDeliveries')}</p>;
   const n = (v: number | null) => (v === null ? '—' : numberFormat(locale).format(v));
@@ -373,8 +373,8 @@ export default function ExportsPage() {
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const catalogue = useApi<Catalogue>('/v1/reports/catalogue');
-  const dests = useApi<Destinations>('/v1/exports/destinations');
-  const exports = useApi<DataExport[]>('/v1/exports');
+  const dests = useApi<Destinations>('/v1/data-exports/destinations');
+  const exports = useApi<DataExport[]>('/v1/data-exports');
   const [destOpen, setDestOpen] = React.useState(false);
   const [expOpen, setExpOpen] = React.useState(false);
 
@@ -479,11 +479,11 @@ export default function ExportsPage() {
                   </dl>
                   {d.s3 ? <p className="text-footnote text-text-secondary">{t('reports.exports.trustHint')}</p> : null}
                   <div className="mt-auto flex flex-wrap gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => act(() => api(`/v1/exports/destinations/${d.id}/test`, { method: 'POST' }), 'reports.exports.testOk', errorText)}>
+                    <Button size="sm" variant="secondary" onClick={() => act(() => api(`/v1/data-exports/destinations/${d.id}/test`, { method: 'POST' }), 'reports.exports.testOk', errorText)}>
                       <PlugZap aria-hidden className="h-4 w-4 stroke-[1.5]" />
                       {t('reports.exports.test')}
                     </Button>
-                    <Button size="sm" variant="ghost" aria-label={t('reports.exports.deleteNamed', { name: d.name })} onClick={() => act(() => api(`/v1/exports/destinations/${d.id}`, { method: 'DELETE' }), 'reports.exports.deleted')}>
+                    <Button size="sm" variant="ghost" aria-label={t('reports.exports.deleteNamed', { name: d.name })} onClick={() => act(() => api(`/v1/data-exports/destinations/${d.id}`, { method: 'DELETE' }), 'reports.exports.deleted')}>
                       <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
                     </Button>
                   </div>
@@ -533,14 +533,14 @@ export default function ExportsPage() {
                     {when(x)} · {destName(x.destinationId)} · <span className="uppercase">{x.format}</span> · {x.datasets.map((d) => t(`reports.dataset.${d.dataset}`)).join(', ')}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => act(() => api(`/v1/exports/${x.id}/run`, { method: 'POST' }), 'reports.exports.runQueued')}>
+                    <Button size="sm" variant="secondary" onClick={() => act(() => api(`/v1/data-exports/${x.id}/run`, { method: 'POST' }), 'reports.exports.runQueued')}>
                       <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
                       {t('reports.exports.runNow')}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => act(() => api(`/v1/exports/${x.id}`, { method: 'PATCH', json: { enabled: !x.enabled } }), x.enabled ? 'reports.schedules.paused' : 'reports.schedules.resumed')}>
+                    <Button size="sm" variant="ghost" onClick={() => act(() => api(`/v1/data-exports/${x.id}`, { method: 'PATCH', json: { enabled: !x.enabled } }), x.enabled ? 'reports.schedules.paused' : 'reports.schedules.resumed')}>
                       {t(x.enabled ? 'reports.schedules.pause' : 'reports.schedules.resume')}
                     </Button>
-                    <Button size="sm" variant="ghost" aria-label={t('reports.exports.deleteNamed', { name: x.name })} onClick={() => act(() => api(`/v1/exports/${x.id}`, { method: 'DELETE' }), 'reports.exports.deleted')}>
+                    <Button size="sm" variant="ghost" aria-label={t('reports.exports.deleteNamed', { name: x.name })} onClick={() => act(() => api(`/v1/data-exports/${x.id}`, { method: 'DELETE' }), 'reports.exports.deleted')}>
                       <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
                     </Button>
                   </div>

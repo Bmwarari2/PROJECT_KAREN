@@ -1,7 +1,7 @@
 // Rota benchmark: 10,000 fictional shift workers and a week of 50,000 shifts in one tenant, on a
 // dedicated throwaway database. Measures the rota API the virtualised grid uses (keyset pages) and
 // a whole-week publish. Results → .verify/bench-rota.json (see docs/PERFORMANCE.md "Rota (Phase 4)").
-// Run: TEST_PG_OWNER_URL=postgres://thapsus_owner:…@127.0.0.1:5437 BENCH_DB=thapsus_bench_rota npx tsx scripts/bench-rota.ts
+// Run: TEST_PG_OWNER_URL=postgres://thapsus_owner:…@127.0.0.1:5432 BENCH_DB=thapsus_bench_rota npx tsx scripts/bench-rota.ts
 import { mkdirSync, writeFileSync } from 'node:fs';
 import pg from 'pg';
 import { closeAllPools, migrate, TenantRouter, withTenant } from '../packages/db/src/index';
@@ -14,9 +14,10 @@ import { MemoryRateLimiter } from '../apps/api/src/lib/rate-limit';
 import { MemoryObjectStore } from '../apps/api/src/lib/object-store';
 import { totpCode } from '../apps/api/test/helpers';
 
-const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5437';
+const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 const DB = process.env.BENCH_DB ?? 'thapsus_bench_rota';
 const APP_PW = 'local_dev_only_password'; // local Docker Postgres only (same as the test suites)
+const PASSWORD = process.env.BENCH_PASSWORD ?? 'Correct-Horse-Battery-9'; // fictional bench tenant only
 const WORKERS = Number(process.env.BENCH_WORKERS ?? 10_000);
 const WEEK = '2030-01-07'; // a fixed Monday, so the benchmark never depends on today's date
 const host = new URL(OWNER).host;
@@ -53,7 +54,7 @@ await app.ready();
 
 // ---- fictional tenant with 10,000 shift workers and 50,000 draft shifts ---------------------------------
 const cookieOf = (r: { headers: Record<string, unknown> }) => String(([] as string[]).concat((r.headers['set-cookie'] as string[] | string) ?? [])[0] ?? '').split(';')[0]!;
-const signup = await app.inject({ method: 'POST', url: '/v1/signup', remoteAddress: '10.201.0.1', payload: { companyName: 'Fictional Bench Retail Ltd', slug: 'bench-rota', region: 'uk', ownerName: 'Olive Owner', ownerEmail: 'owner@bench-rota.example.test', password: 'Correct-Horse-Battery-9', acceptDpa: true } });
+const signup = await app.inject({ method: 'POST', url: '/v1/signup', remoteAddress: '10.201.0.1', payload: { companyName: 'Fictional Bench Retail Ltd', slug: 'bench-rota', region: 'uk', ownerName: 'Olive Owner', ownerEmail: 'owner@bench-rota.example.test', password: PASSWORD, acceptDpa: true } });
 if (signup.statusCode !== 201) throw new Error(`signup failed: ${signup.body}`);
 const tenantId = signup.json().tenantId as string;
 const cookie = cookieOf(signup);

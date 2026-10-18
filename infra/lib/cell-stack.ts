@@ -15,6 +15,7 @@ import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
 import * as ses from 'aws-cdk-lib/aws-ses';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
@@ -356,9 +357,16 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- Secrets for the services
     const internalToken = new secretsmanager.Secret(this, 'InternalToken', {
-      // Same name in every region of this env. The global stack and every cell each create their own
-      // copy; scripts/sync-internal-token copies the global value into each cell after deploy.
-      secretName: names.internalTokenSecret(env),
+      // The cell's own copy of the global internal token (no cross-region references); scripts/deploy.mjs
+      // copies the global value into it after each cell deploy. A distinct name per cell, because the UK
+      // cell shares eu-west-2 with the global stack's source secret.
+      secretName: names.cellInternalTokenSecret(env, cell),
+      encryptionKey: dataKey,
+      generateSecretString: { excludePunctuation: true, passwordLength: 64 },
+    });
+    const integrationKey = new secretsmanager.Secret(this, 'IntegrationSigningKey', {
+      // Master key for the per-tenant HMAC keys that sign outbound integration calls (ADR-0018).
+      secretName: `thapsus-hr/${env}/integration-signing-key`,
       encryptionKey: dataKey,
       generateSecretString: { excludePunctuation: true, passwordLength: 64 },
     });
@@ -381,7 +389,14 @@ export class CellStack extends Stack {
     // ---------------------------------------------------------------- ECS cluster
     const clusterName = prefix;
     encryptedLogGroup(this, 'ContainerInsightsLogs', dataKey, cfg, `/aws/ecs/containerinsights/${clusterName}/performance`);
-    const ecsCluster = new ecs.Cluster(this, 'Cluster', { vpc, clusterName, containerInsightsV2: ecs.ContainerInsights.ENABLED });
+    // A private HTTP namespace for ECS Service Connect: the web server reads the session from the api
+    // inside the VPC (server-rendered app pages), never through the public load balancer.
+    const ecsCluster = new ecs.Cluster(this, 'Cluster', {
+      vpc,
+      clusterName,
+      containerInsightsV2: ecs.ContainerInsights.ENABLED,
+      defaultCloudMapNamespace: { name: `${prefix}.internal`, type: servicediscovery.NamespaceType.HTTP, useForServiceConnect: true },
+    });
 
     const directoryTableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${this.account}:table/${names.directoryTable(env)}`;
     const regionalUrls = (kind: 'api' | 'app') => {
@@ -435,6 +450,7 @@ export class CellStack extends Stack {
       REPORTING_DATABASE_SECRET: ecs.Secret.fromSecretsManager(reportingDbSecret),
       VALKEY_AUTH_TOKEN: ecs.Secret.fromSecretsManager(valkeyAuth),
       INTERNAL_TOKEN: ecs.Secret.fromSecretsManager(internalToken),
+      INTEGRATION_SIGNING_KEY: ecs.Secret.fromSecretsManager(integrationKey),
       VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY'),
       VAPID_PRIVATE_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PRIVATE_KEY'),
       ...(mockIdp
@@ -447,7 +463,7 @@ export class CellStack extends Stack {
 
     const service = (
       name: 'api' | 'worker' | 'web',
-      opts: { size: ServiceSize; sg: ec2.SecurityGroup; port?: number; environment: Record<string, string>; secrets: Record<string, ecs.Secret>; otel: boolean },
+      opts: { size: ServiceSize; sg: ec2.SecurityGroup; port?: number; environment: Record<string, string>; secrets: Record<string, ecs.Secret>; otel: boolean; serviceConnect?: 'server' | 'client' },
     ) => {
       const logGroup = encryptedLogGroup(this, `${name}Logs`, dataKey, cfg, `/thapsus-hr/${env}/${cell}/${name}`);
       const task = new ecs.FargateTaskDefinition(this, `${name}Task`, {
@@ -461,7 +477,7 @@ export class CellStack extends Stack {
         essential: true,
         environment: { ...opts.environment, SERVICE_NAME: `thapsus-${name}`, ...(opts.port ? { PORT: String(opts.port) } : {}) },
         secrets: opts.secrets,
-        portMappings: opts.port ? [{ containerPort: opts.port }] : [],
+        portMappings: opts.port ? [{ containerPort: opts.port, name: 'http' }] : [],
         logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: name }),
         stopTimeout: Duration.seconds(30),
       });
@@ -478,6 +494,15 @@ export class CellStack extends Stack {
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
         propagateTags: ecs.PropagatedTagSource.SERVICE,
+        ...(opts.serviceConnect
+          ? {
+              serviceConnectConfiguration: {
+                namespace: ecsCluster.defaultCloudMapNamespace!.namespaceArn,
+                services: opts.serviceConnect === 'server' && opts.port ? [{ portMappingName: 'http', dnsName: name, port: opts.port }] : undefined,
+                logDriver: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: `${name}-service-connect` }),
+              },
+            }
+          : {}),
       });
       const scaling = svc.autoScaleTaskCount({ minCapacity: opts.size.minCapacity, maxCapacity: opts.size.maxCapacity });
       scaling.scaleOnCpuUtilization('Cpu', { targetUtilizationPercent: 60, scaleOutCooldown: Duration.seconds(60), scaleInCooldown: Duration.seconds(180) });
@@ -493,16 +518,21 @@ export class CellStack extends Stack {
 
     const topic = alertTopic(this, dataKey, cfg);
 
-    const api = service('api', { size: cfg.services.api, sg: apiSg, port: 4000, environment: backendEnv, secrets: backendSecrets, otel: true });
+    const api = service('api', { size: cfg.services.api, sg: apiSg, port: 4000, environment: backendEnv, secrets: backendSecrets, otel: true, serviceConnect: 'server' });
     const worker = service('worker', { size: cfg.services.worker, sg: workerSg, environment: backendEnv, secrets: backendSecrets, otel: true });
     const web = service('web', {
       size: cfg.services.web,
       sg: webSg,
       port: 3000,
-      environment: { ...commonEnv, SITE_MODE: 'app' },
+      environment: { ...commonEnv, SITE_MODE: 'app', API_INTERNAL_URL: 'http://api:4000' },
       secrets: { VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY') },
       otel: false,
+      serviceConnect: 'client',
     });
+    // the web server reads sessions from the api over Service Connect (server-rendered app pages)
+    api.svc.node.addDependency(ecsCluster.defaultCloudMapNamespace!);
+    web.svc.node.addDependency(api.svc);
+    apiSg.addIngressRule(webSg, ec2.Port.tcp(4000), 'web to api (Service Connect)');
 
     // ---------------------------------------------------------------- Least-privilege task roles
     for (const { task } of [api, worker]) {

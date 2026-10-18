@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- ambient ssh2 typings must reach the worker build, which compiles this file outside apps/api/tsconfig
-/// <reference path="../../types/ssh2.d.ts" />
 import { createHash } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';

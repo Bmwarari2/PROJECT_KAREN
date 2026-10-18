@@ -9,13 +9,19 @@ import { FIELDS } from './model';
 import {
   applySectionChange,
   assertWritable,
+  contactsAsOf,
+  replaceContacts,
+  type ContactInput,
   employeeAsOf,
+  employeeListWhere,
+  managerChainSql,
+  rowTarget,
+  type EmployeeListFilter,
   filterFields,
   history,
   loadTarget,
   recordChangeEvent,
   refreshCurrent,
-  scopePredicate,
   sectionsOf,
   setCustomFields,
   setManager,
@@ -67,29 +73,19 @@ export async function employeeRoutes(app: FastifyInstance) {
     },
     async (req) => {
       const auth = authorizeSome(req, 'employees.read');
-      const q = req.query as { q?: string; status?: string; entityId?: string; departmentId?: string; locationId?: string; managerId?: string; country?: string; cursor?: string; limit?: number };
+      const q = req.query as EmployeeListFilter & { cursor?: string; limit?: number };
       const params: unknown[] = [];
-      const where: string[] = [scopePredicate(auth.principal, 'employees.read', params)];
+      const where = employeeListWhere(auth.principal, 'employees.read', q, params);
       const add = (v: unknown) => (params.push(v), `$${params.length}`);
-      if (!q.status || q.status !== 'all') where.push(`e.status = ${add(q.status ?? 'active')}`);
-      if (q.entityId) where.push(`e.entity_id = ${add(q.entityId)}`);
-      if (q.departmentId) where.push(`e.department_id = ${add(q.departmentId)}`);
-      if (q.locationId) where.push(`e.location_id = ${add(q.locationId)}`);
-      if (q.managerId) where.push(`e.manager_id = ${add(q.managerId)}`);
-      if (q.country) where.push(`e.country = ${add(q.country)}`);
-      if (q.q) {
-        const term = q.q.trim();
-        where.push(`(e.search @@ plainto_tsquery('simple', ${add(term)}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${add(term)})`);
-      }
       const after = decodeCursor<[string, string]>(q.cursor);
       if (after) where.push(`(e.display_name, e.id) > (${add(after[0])}, ${add(after[1])}::uuid)`);
       const limit = q.limit ?? 50;
       const rows = await app.tenantTx(
         req,
         (tx) =>
-          tx.query<Record<string, string | null>>(
+          tx.query<Record<string, string | null> & { chain: Array<string | null> | null }>(
             `SELECT e.id, e.employee_number, e.display_name, e.job_title, e.status, e.manager_id, e.work_email, e.start_date, e.country,
-                    e.entity_id, e.department_id, e.location_id, d.name AS department, l.name AS location
+                    e.entity_id, e.department_id, e.location_id, d.name AS department, l.name AS location, ${managerChainSql(auth.principal)} AS chain
                FROM app.employees e
                LEFT JOIN app.departments d ON d.tenant_id = e.tenant_id AND d.id = e.department_id
                LEFT JOIN app.locations l ON l.tenant_id = e.tenant_id AND l.id = e.location_id
@@ -101,9 +97,8 @@ export async function employeeRoutes(app: FastifyInstance) {
       );
       const page = rows.slice(0, limit);
       const data = page.map((r) => {
-        const target = { employeeId: r.id, entityId: r.entity_id, country: r.country, departmentId: r.department_id, locationId: r.location_id, managerChain: r.manager_id ? [r.manager_id] : [] };
         const full = { id: r.id!, employeeNumber: r.employee_number, displayName: r.display_name, jobTitle: r.job_title, department: r.department, location: r.location, country: r.country, status: r.status, managerId: r.manager_id, workEmail: r.work_email, startDate: r.start_date };
-        return filterFields(auth.principal, full, target, ['displayName']);
+        return filterFields(auth.principal, full, rowTarget(r as Parameters<typeof rowTarget>[0]), ['displayName']);
       });
       return { data, nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.display_name, page.at(-1)!.id]) : null };
     },
@@ -179,6 +174,9 @@ export async function employeeRoutes(app: FastifyInstance) {
           // Field access map so the UI shows exactly what the API allows (identical enforcement).
           const access: Record<string, string> = {};
           for (const k of Object.keys(FIELDS)) access[k] = fieldAccess(auth.principal, 'employee', FIELDS[k]!.perm, target);
+          for (const k of ['emergencyContacts', 'manager']) access[k] = fieldAccess(auth.principal, 'employee', k, target);
+          const customKeys = await tx.query<{ key: string }>(`SELECT key FROM app.custom_field_definitions WHERE entity_type = 'employee' AND NOT archived`);
+          for (const { key } of customKeys) access[`custom.${key}`] = fieldAccess(auth.principal, 'employee', `custom.${key}`, target);
           return { employee: filtered, asOf, access };
         },
         { readOnly: true },
@@ -201,6 +199,7 @@ export async function employeeRoutes(app: FastifyInstance) {
           // strip sections the caller cannot read
           if (fieldAccess(auth.principal, 'employee', 'pay.amount', target) === 'none') delete h.pay;
           if (fieldAccess(auth.principal, 'employee', 'dateOfBirth', target) === 'none') delete h.personal;
+          if (fieldAccess(auth.principal, 'employee', 'emergencyContacts', target) === 'none') delete h.emergencyContacts;
           return h;
         },
         { readOnly: true },
@@ -359,37 +358,47 @@ export async function employeeRoutes(app: FastifyInstance) {
 
   // ---- emergency contacts -------------------------------------------------------------------------
   const Contact = Type.Object({ id: Type.Optional(Uuid), name: Type.String({ minLength: 1, maxLength: 120 }), relationship: Type.Optional(Nullable(Type.String({ maxLength: 60 }))), phone: Type.Optional(Nullable(Type.String({ maxLength: 40 }))), email: Type.Optional(Nullable(Type.String({ maxLength: 254 }))), priority: Type.Optional(Type.Integer({ minimum: 1, maximum: 9 })) });
+  const ContactOut = Type.Object({ ...Contact.properties, validFrom: Type.Optional(Nullable(Type.String())), validTo: Type.Optional(Nullable(Type.String())) });
   app.put(
     '/v1/employees/:id/emergency-contacts',
-    { config: { selfAudited: true }, schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), body: Type.Array(Contact, { maxItems: 9 }), response: { 200: Type.Array(Contact), 403: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['employees'],
+        summary: 'Replace the emergency contact list in force from a date (default today); later future-dated lists are kept',
+        params: Type.Object({ id: Uuid }),
+        querystring: Type.Object({ effectiveDate: Type.Optional(CivilDate) }),
+        body: Type.Array(Contact, { maxItems: 9 }),
+        response: { 200: Type.Array(ContactOut), 400: Problem, 403: Problem },
+      },
+    },
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
-      const body = req.body as Array<{ name: string; relationship?: string | null; phone?: string | null; email?: string | null; priority?: number }>;
+      const date = (req.query as { effectiveDate?: string }).effectiveDate ?? today(zoneOf(req));
+      const body = req.body as ContactInput[];
       return app.tenantTx(req, async (tx) => {
         const target = await loadTarget(tx, id);
         if (fieldAccess(auth.principal, 'employee', 'emergencyContacts', target) !== 'write') throw new ApiError('forbidden');
-        await tx.exec('DELETE FROM app.emergency_contacts WHERE employee_id = $1', [id]);
-        for (const [i, c] of body.entries()) {
-          await tx.exec(`INSERT INTO app.emergency_contacts (tenant_id, employee_id, name, relationship, phone, email, priority) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6)`, [id, c.name, c.relationship ?? null, c.phone ?? null, c.email ?? null, c.priority ?? i + 1]);
-        }
-        await app.audit(tx, req, { action: 'employee.emergency_contacts_updated', targetType: 'employee', targetId: id, diff: { count: body.length } });
-        return tx.query('SELECT id, name, relationship, phone, email, priority FROM app.emergency_contacts WHERE employee_id = $1 ORDER BY priority', [id]);
+        await replaceContacts(tx, id, date, body, auth.userId);
+        await app.audit(tx, req, { action: 'employee.emergency_contacts_updated', targetType: 'employee', targetId: id, diff: { effectiveDate: date, count: body.length } });
+        return contactsAsOf(tx, id, date);
       });
     },
   );
   app.get(
     '/v1/employees/:id/emergency-contacts',
-    { schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), response: { 200: Type.Array(Contact), 403: Problem } } },
+    { schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), querystring: Type.Object({ asOf: Type.Optional(CivilDate) }), response: { 200: Type.Array(ContactOut), 403: Problem } } },
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
+      const asOf = (req.query as { asOf?: string }).asOf ?? today(zoneOf(req));
       return app.tenantTx(
         req,
         async (tx) => {
           const target = await loadTarget(tx, id);
           if (fieldAccess(auth.principal, 'employee', 'emergencyContacts', target) === 'none') throw new ApiError('forbidden');
-          return tx.query('SELECT id, name, relationship, phone, email, priority FROM app.emergency_contacts WHERE employee_id = $1 ORDER BY priority', [id]);
+          return contactsAsOf(tx, id, asOf);
         },
         { readOnly: true },
       );

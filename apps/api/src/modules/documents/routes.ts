@@ -27,20 +27,77 @@ export const ALLOWED_TYPES: Record<string, string> = {
 export const MAX_BYTES = 25 * 1024 * 1024;
 
 const Doc = Type.Object({ id: Uuid, title: Type.String(), category: Type.String(), employeeId: Nullable(Type.String()), folderId: Nullable(Type.String()), fileName: Type.String(), contentType: Type.String(), sizeBytes: Nullable(Type.String()), sha256: Nullable(Type.String()), status: Type.String(), expiresOn: Nullable(Type.String()), createdAt: Type.String() });
-type DocRow = { id: string; title: string; category: string; employee_id: string | null; folder_id: string | null; file_name: string; content_type: string; size_bytes: string | null; sha256: string | null; status: string; expires_on: string | null; created_at: string; file_key: string };
-const mapDoc = (r: DocRow) => ({ id: r.id, title: r.title, category: r.category, employeeId: r.employee_id, folderId: r.folder_id, fileName: r.file_name, contentType: r.content_type, sizeBytes: r.size_bytes, sha256: r.sha256, status: r.status, expiresOn: r.expires_on, createdAt: r.created_at });
+export type DocRow = { employee_name?: string | null; id: string; title: string; category: string; employee_id: string | null; folder_id: string | null; file_name: string; content_type: string; size_bytes: string | null; sha256: string | null; status: string; expires_on: string | null; created_at: string; file_key: string };
+export const mapDoc = (r: DocRow) => ({ id: r.id, title: r.title, category: r.category, employeeId: r.employee_id, folderId: r.folder_id, fileName: r.file_name, contentType: r.content_type, sizeBytes: r.size_bytes, sha256: r.sha256, status: r.status, expiresOn: r.expires_on, createdAt: r.created_at });
 
-/** Can the principal read this document? Own documents, HR scope, or a folder open to everyone. */
-async function canReadDoc(tx: Tx, principal: Parameters<typeof can>[0], doc: DocRow) {
+type Principal = Parameters<typeof can>[0];
+
+/**
+ * Folder permissions. For a document about a person:
+ *  - no folder / `employee`: the person (documents.read_own) and whoever may read their documents (managers, HR);
+ *  - `managers`: whoever may read the person's documents, but not the person (e.g. manager notes);
+ *  - `hr`: only HR who manage the person's documents;
+ *  - `everyone`: every signed-in user.
+ * For a company document: no folder / `hr` → HR; `managers` → managers and HR; `employee` / `everyone` → everyone.
+ */
+async function canReadDoc(tx: Tx, principal: Principal, doc: DocRow) {
+  const visibility = doc.folder_id ? ((await tx.maybe<{ visibility: string }>('SELECT visibility FROM app.document_folders WHERE id = $1', [doc.folder_id]))?.visibility ?? 'hr') : null;
+  if (visibility === 'everyone') return true;
   if (doc.employee_id) {
-    if (principal.employeeId === doc.employee_id) return can(principal, 'documents.read_own', { employeeId: doc.employee_id });
-    return can(principal, 'documents.read', await loadTarget(tx, doc.employee_id));
+    const target = await loadTarget(tx, doc.employee_id);
+    const own = principal.employeeId === doc.employee_id && can(principal, 'documents.read_own', { employeeId: doc.employee_id });
+    if (visibility === 'hr') return can(principal, 'documents.manage', target);
+    if (visibility === 'managers') return can(principal, 'documents.read', target);
+    return own || can(principal, 'documents.read', target);
   }
-  if (doc.folder_id) {
-    const f = await tx.maybe<{ visibility: string }>('SELECT visibility FROM app.document_folders WHERE id = $1', [doc.folder_id]);
-    if (f?.visibility === 'everyone') return true;
-  }
+  if (visibility === 'employee') return true;
+  if (visibility === 'managers') return canSome(principal, 'documents.read') || canSome(principal, 'documents.manage');
   return canSome(principal, 'documents.manage');
+}
+
+/** The same rules as canReadDoc, as SQL over documents `d`, folders `f` and the person `e`. */
+function docVisibilitySql(principal: Principal, params: unknown[]): string {
+  const read = scopePredicate(principal, 'documents.read', params);
+  const manage = scopePredicate(principal, 'documents.manage', params);
+  let own = 'false';
+  if (principal.employeeId && can(principal, 'documents.read_own', { employeeId: principal.employeeId })) {
+    params.push(principal.employeeId);
+    own = `d.employee_id = $${params.length}::uuid`;
+  }
+  const companyManagers = canSome(principal, 'documents.read') || canSome(principal, 'documents.manage');
+  return `(f.visibility = 'everyone'
+    OR (d.employee_id IS NOT NULL AND (
+         (f.visibility = 'hr' AND ${manage})
+      OR (f.visibility = 'managers' AND ${read})
+      OR (coalesce(f.visibility, 'employee') = 'employee' AND (${own} OR ${read}))))
+    OR (d.employee_id IS NULL AND (
+         (coalesce(f.visibility, 'hr') = 'hr' AND ${canSome(principal, 'documents.manage')})
+      OR (f.visibility = 'managers' AND ${companyManagers})
+      OR f.visibility = 'employee')))`;
+}
+
+/** Documents the principal may see (folder permissions applied), optionally for one person or folder. */
+export async function listDocuments(tx: Tx, principal: Principal, q: { employeeId?: string; folderId?: string }, limit = 500): Promise<DocRow[]> {
+  if (q.employeeId) {
+    // asking for someone's documents at all needs access to them (403 rather than an empty list)
+    const own = principal.employeeId === q.employeeId;
+    const ok = own ? can(principal, 'documents.read_own', { employeeId: q.employeeId }) : can(principal, 'documents.read', await loadTarget(tx, q.employeeId));
+    if (!ok) throw new ApiError('forbidden');
+  }
+  const params: unknown[] = [];
+  const visible = docVisibilitySql(principal, params);
+  params.push(q.folderId ?? null);
+  const folder = `$${params.length}::uuid`;
+  params.push(q.employeeId ?? null);
+  const employee = `$${params.length}::uuid`;
+  return tx.query<DocRow>(
+    `SELECT d.*, e.display_name AS employee_name FROM app.documents d LEFT JOIN app.employees e ON e.tenant_id = d.tenant_id AND e.id = d.employee_id
+       LEFT JOIN app.document_folders f ON f.tenant_id = d.tenant_id AND f.id = d.folder_id
+      WHERE d.status = 'ready' AND (${folder} IS NULL OR d.folder_id = ${folder}) AND (${employee} IS NULL OR d.employee_id = ${employee})
+        AND ${visible}
+      ORDER BY d.created_at DESC LIMIT ${Math.trunc(limit)}`,
+    params,
+  );
 }
 
 export async function mergeValuesFor(tx: Tx, employeeId: string, locale: Locale): Promise<Record<string, string>> {
@@ -119,26 +176,7 @@ export async function documentRoutes(app: FastifyInstance) {
       const q = req.query as { employeeId?: string; folderId?: string };
       return app.tenantTx(
         req,
-        async (tx) => {
-          if (q.employeeId) {
-            const own = auth.principal.employeeId === q.employeeId;
-            const ok = own ? can(auth.principal, 'documents.read_own', { employeeId: q.employeeId }) : can(auth.principal, 'documents.read', await loadTarget(tx, q.employeeId));
-            if (!ok) throw new ApiError('forbidden');
-            return (await tx.query<DocRow>(`SELECT * FROM app.documents WHERE employee_id = $1 AND status = 'ready' ORDER BY created_at DESC`, [q.employeeId])).map(mapDoc);
-          }
-          const params: unknown[] = [];
-          const scope = scopePredicate(auth.principal, 'documents.read', params);
-          params.push(q.folderId ?? null);
-          const rows = await tx.query<DocRow>(
-            `SELECT d.* FROM app.documents d LEFT JOIN app.employees e ON e.tenant_id = d.tenant_id AND e.id = d.employee_id
-               LEFT JOIN app.document_folders f ON f.tenant_id = d.tenant_id AND f.id = d.folder_id
-              WHERE d.status = 'ready' AND ($${params.length}::uuid IS NULL OR d.folder_id = $${params.length})
-                AND ((d.employee_id IS NOT NULL AND ${scope}) OR f.visibility = 'everyone' OR (d.employee_id IS NULL AND ${canSome(auth.principal, 'documents.manage')}))
-              ORDER BY d.created_at DESC LIMIT 500`,
-            params,
-          );
-          return rows.map(mapDoc);
-        },
+        async (tx) => (await listDocuments(tx, auth.principal, q)).map(mapDoc),
         { readOnly: true },
       );
     },
@@ -165,6 +203,13 @@ export async function documentRoutes(app: FastifyInstance) {
           const own = auth.principal.employeeId === b.employeeId;
           if (!(own ? can(auth.principal, 'documents.upload_own', { employeeId: b.employeeId }) || can(auth.principal, 'self.read', { employeeId: b.employeeId }) : can(auth.principal, 'documents.manage', await loadTarget(tx, b.employeeId)))) throw new ApiError('forbidden');
         } else if (!canSome(auth.principal, 'documents.manage')) throw new ApiError('forbidden');
+        if (b.folderId) {
+          const folder = await tx.maybe<{ visibility: string }>('SELECT visibility FROM app.document_folders WHERE id = $1', [b.folderId]);
+          if (!folder) throw new ApiError('validation', 'Unknown folder');
+          // without HR rights a person may only file their own document where they can still see it
+          const hr = b.employeeId ? can(auth.principal, 'documents.manage', await loadTarget(tx, b.employeeId)) : true;
+          if (!hr && folder.visibility !== 'employee' && folder.visibility !== 'everyone') throw new ApiError('forbidden');
+        }
         const tenant = auth.tenantId;
         const key = objectKey(tenant, b.employeeId ? `employees/${b.employeeId}` : 'company', ALLOWED_TYPES[b.contentType]);
         const r = await tx.one<{ id: string }>(

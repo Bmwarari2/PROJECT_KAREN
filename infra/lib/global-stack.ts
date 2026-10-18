@@ -101,8 +101,8 @@ export class GlobalStack extends Stack {
 
     // ---------------------------------------------------------------- Secrets + billing placeholders
     const internalToken = new secretsmanager.Secret(this, 'InternalToken', {
-      // Source of truth for INTERNAL_TOKEN in this env. Each cell stack creates a secret with the same
-      // name in its own region (no cross-region references); the deploy script copies this value there.
+      // Source of truth for INTERNAL_TOKEN in this env. Each cell stack creates its own copy
+      // (names.cellInternalTokenSecret, no cross-region references); scripts/deploy.mjs copies this value there.
       secretName: names.internalTokenSecret(env),
       encryptionKey: key,
       generateSecretString: { excludePunctuation: true, passwordLength: 64 },

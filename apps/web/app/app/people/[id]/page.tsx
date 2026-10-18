@@ -1,13 +1,14 @@
 'use client';
 import * as React from 'react';
 import { useParams } from 'next/navigation';
-import { FileText, History, Pencil } from 'lucide-react';
+import { FileText, History, Pencil, Send } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, Dialog, DialogContent, DialogTrigger, EmptyState, Field, Input, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, useToast } from '@thapsus/ui';
 import { formatDate, formatMoney, type Locale } from '@thapsus/core/i18n';
-import { money } from '@thapsus/core/money';
+import { money, parseDecimal } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { useSession } from '../../shell';
 
 interface ProfileResponse {
   employee: Record<string, unknown> & { id: string; displayName?: string };
@@ -43,6 +44,9 @@ export default function EmployeePage() {
   const [values, setValues] = React.useState<Record<string, string>>({});
   const [effectiveDate, setEffectiveDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = React.useState(false);
+  const [inviting, setInviting] = React.useState(false);
+  const session = useSession();
+  const canInvite = session?.permissions.some((p) => p === '*' || p === 'users.*' || p === 'users.invite');
 
   if (error) return <EmptyState title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
   if (!data) return <Skeleton className="h-96 w-full" />;
@@ -53,11 +57,12 @@ export default function EmployeePage() {
     ev.preventDefault();
     setSaving(true);
     const body: Record<string, unknown> = { effectiveDate };
-    for (const [k, v] of Object.entries(values)) {
-      if (v === '') continue;
-      body[k] = ['weeklyHours', 'fte', 'noticePeriodDays'].includes(k) ? Number(v) : k === 'payAmountMinor' ? Math.round(Number(v) * 100) : v;
-    }
     try {
+      for (const [k, v] of Object.entries(values)) {
+        if (v === '') continue;
+        // money: decimal input → integer minor units for the person's pay currency (no floating point)
+        body[k] = ['weeklyHours', 'fte', 'noticePeriodDays'].includes(k) ? Number(v) : k === 'payAmountMinor' ? Number(parseDecimal(v, String(e.payCurrency ?? 'GBP')).amountMinor) : v;
+      }
       const res = await fetch(`/v1/employees/${id}/changes`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) throw new ApiProblem(res.status, 'error', (await res.json()).title, {});
       toast({ title: res.status === 202 ? t('people.changePending') : t('people.changeSaved'), tone: 'success' });
@@ -85,6 +90,27 @@ export default function EmployeePage() {
           </p>
           {e.status ? <Badge className="mt-2" tone={e.status === 'active' ? 'success' : 'neutral'}>{t(`people.status.${e.status}`)}</Badge> : null}
         </div>
+        {canInvite ? (
+          <Button
+            variant="secondary"
+            className="self-end"
+            loading={inviting}
+            onClick={async () => {
+              setInviting(true);
+              try {
+                await api(`/v1/employees/${id}/invite`, { method: 'POST', json: {} });
+                toast({ title: t('people.invited'), tone: 'success' });
+              } catch (err) {
+                toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
+              } finally {
+                setInviting(false);
+              }
+            }}
+          >
+            <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('people.invite')}
+          </Button>
+        ) : null}
         <label className="flex flex-col gap-1 text-footnote text-text-secondary">
           {t('people.asOf')}
           <Input type="date" value={asOf || data.asOf} onChange={(ev) => setAsOf(ev.target.value)} className="w-44" />
