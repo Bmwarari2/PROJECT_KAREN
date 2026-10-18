@@ -1,3 +1,5 @@
+// Type-only: brings the schema.hide augmentation into every consumer (e.g. the worker typecheck).
+import type {} from '@fastify/swagger';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { REGIONS } from '@thapsus/core';
