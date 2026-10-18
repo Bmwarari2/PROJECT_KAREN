@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CalendarClock, CalendarDays, ClipboardList, Clock, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
+import { Bell, CalendarClock, CalendarDays, ClipboardList, Clock, DoorOpen, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
@@ -23,6 +23,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
   const has = (p: string) => hasPermission(s, p);
   const items: Array<NavItem & { show: boolean }> = [
     { href: '/app', label: t('app.nav.home'), icon: <Home aria-hidden />, show: true },
+    { href: '/app/welcome', label: t('app.nav.onboarding'), icon: <DoorOpen aria-hidden />, show: !!s.employeeId },
     { href: '/app/people', label: t('app.nav.people'), icon: <Users aria-hidden />, show: has('employees.read') },
     { href: '/app/org-chart', label: t('app.nav.orgChart'), icon: <Network aria-hidden />, show: true },
     { href: '/app/time-off', label: t('app.nav.timeOff'), icon: <CalendarDays aria-hidden />, show: true },

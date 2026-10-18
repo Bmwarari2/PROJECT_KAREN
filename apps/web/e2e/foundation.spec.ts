@@ -30,6 +30,53 @@ test.describe('public pages', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en-US');
   });
 
+  test('theme switch: light and dark apply immediately and persist; system follows the OS setting', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    const group = page.getByRole('radiogroup', { name: 'Theme' });
+    await group.getByRole('radio', { name: 'Light' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(group.getByRole('radio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await group.getByRole('radio', { name: 'System' }).click();
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+    // with no explicit choice the OS dark preference wins (body background follows the dark tokens)
+    const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    await page.emulateMedia({ colorScheme: 'light' });
+    const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(dark).not.toBe(light);
+  });
+
+  test('locale switch control reloads the page in the chosen locale', async ({ page }) => {
+    await page.goto('/');
+    const select = page.getByRole('combobox', { name: 'Language' });
+    await select.selectOption('en-GB');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB');
+    await expect(page.getByRole('heading', { name: 'People and organisation' })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Language' }).selectOption('en-US');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en-US');
+    await expect(page.getByRole('heading', { name: 'People and organization' })).toBeVisible();
+  });
+
+  test('scroll reveals: content starts hidden and fades in on scroll, but is never hidden under reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    const pending = page.locator('[data-reveal="pending"]');
+    await expect.poll(() => pending.count()).toBeGreaterThan(0);
+    const before = await pending.count();
+    for (let i = 0; i < 12; i++) {
+      await page.mouse.wheel(0, 600);
+      await page.waitForTimeout(100);
+    }
+    await expect.poll(() => page.locator('[data-reveal="shown"]').count()).toBeGreaterThan(0);
+    expect(await pending.count()).toBeLessThan(before);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.reload();
+    await page.mouse.wheel(0, 4000);
+    expect(await page.locator('[data-reveal]').count()).toBe(0);
+  });
+
   test('theme preference is applied server-side without a flash', async ({ page, context }) => {
     await context.addCookies([{ name: 'thr_theme', value: 'dark', url: 'http://127.0.0.1:3100' }]);
     const res = await page.goto('/');

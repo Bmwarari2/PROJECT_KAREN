@@ -2,16 +2,16 @@ import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { lintMigration, loadMigrations, MIGRATION_NAME, MIGRATIONS_DIR } from '../src/migrate';
+import { lintMigration, loadMigrations, MIGRATION_FILE, MIGRATIONS_DIR } from '../src/migrate';
 
 const dir = mkdtempSync(join(tmpdir(), 'thapsus-migrations-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 describe('migration files', () => {
   it('accepts NNNN_ and NNNNx_ names and orders a letter suffix between its neighbours', () => {
-    expect(MIGRATION_NAME.test('0010_rotas_time.sql')).toBe(true);
-    expect(MIGRATION_NAME.test('0010b_rotas_time_ext.sql')).toBe(true);
-    expect(MIGRATION_NAME.test('10_bad.sql')).toBe(false);
+    expect(MIGRATION_FILE.test('0010_rotas_time.sql')).toBe(true);
+    expect(MIGRATION_FILE.test('0010b_rotas_time_ext.sql')).toBe(true);
+    expect(MIGRATION_FILE.test('10_bad.sql')).toBe(false);
     expect(['0011_next.sql', '0010b_mid.sql', '0010_first.sql'].sort()).toEqual(['0010_first.sql', '0010b_mid.sql', '0011_next.sql']);
   });
 

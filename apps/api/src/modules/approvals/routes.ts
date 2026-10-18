@@ -9,7 +9,7 @@ import { periodic, registerJob } from '../../jobs/registry';
 import { applyEmployeeChange, assertWritable, loadTarget } from '../employees/service';
 import { FIELDS } from '../employees/model';
 import { loadPrincipal } from '../authz/principal';
-import { approvalHandlers, decide, escalateOverdue } from './service';
+import { approvalHandlers, decide, escalateOverdue, listApprovals } from './service';
 
 const Approver = Type.Object({ type: Type.Union(['manager', 'skip_level', 'role', 'user'].map((t) => Type.Literal(t))), value: Type.Optional(Type.String()) });
 const Condition = Type.Object({ field: Type.String({ maxLength: 60 }), op: Type.Union(['present', 'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in'].map((t) => Type.Literal(t))), value: Type.Optional(Type.Any()) });
@@ -49,27 +49,7 @@ export async function approvalRoutes(app: FastifyInstance) {
       const auth = requireAuth(req);
       const view = (req.query as { view?: string }).view ?? 'mine';
       if (view === 'all') authorizeSome(req, 'approvals.manage');
-      const rows = await app.tenantTx(
-        req,
-        (tx) =>
-          tx.query<Record<string, unknown>>(
-            `SELECT r.id, r.subject, r.status, p.name AS policy, e.display_name AS subject_name, r.created_at, r.current_step, r.payload
-               FROM app.approval_requests r JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
-               LEFT JOIN app.employees e ON e.tenant_id = r.tenant_id AND e.id = r.subject_employee_id
-              WHERE CASE $2
-                      WHEN 'mine' THEN r.status = 'pending' AND EXISTS (SELECT 1 FROM app.approval_steps s WHERE s.request_id = r.id AND s.step_index = r.current_step AND $1 = ANY(s.approver_user_ids))
-                      WHEN 'requested' THEN r.requested_by = $1
-                      ELSE true END
-              ORDER BY r.created_at DESC LIMIT 500`,
-            [auth.userId, view],
-          ),
-        { readOnly: true },
-      );
-      return rows.map((r) => {
-        const { __steps: _s, ...payload } = r.payload as Record<string, unknown>;
-        void _s;
-        return { id: r.id as string, subject: r.subject as string, status: r.status as string, policy: r.policy as string, subjectName: r.subject_name as string | null, requestedAt: r.created_at as string, currentStep: r.current_step as number, payload };
-      });
+      return app.tenantTx(req, (tx) => listApprovals(tx, auth.userId, view), { readOnly: true });
     },
   );
 
