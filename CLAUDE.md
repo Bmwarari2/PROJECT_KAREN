@@ -1,6 +1,6 @@
-# CLAUDE.md — ROCHE (an HR platform by Thapsus)
+# CLAUDE.md — Thapsus-HR (an HR platform by Thapsus)
 
-ROCHE is a production-grade, multi-tenant HR platform for UK, EU and US employers of every size (10 to 200,000+ employees). This file holds the rules that apply to every change. The full brief is `docs/BUILD_BRIEF.md` (source of truth for scope); delivery status and acceptance criteria are in `docs/PROGRESS.md`.
+Thapsus-HR is a production-grade, multi-tenant HR platform for UK, EU and US employers of every size (10 to 200,000+ employees). This file holds the rules that apply to every change. The full brief is `docs/BUILD_BRIEF.md` (source of truth for scope); delivery status and acceptance criteria are in `docs/PROGRESS.md`.
 
 ## How to work in this repo
 
@@ -18,7 +18,7 @@ Out of scope — do not build: running payroll or filing payroll taxes, global p
 ## Non-negotiables
 
 ### Privacy and data residency
-- Comply with EU GDPR, UK GDPR + Data Protection Act 2018 (as amended by the Data (Use and Access) Act 2025), and US state privacy laws covering employee data (e.g. CCPA/CPRA). ROCHE is the **processor**; customers are **controllers**.
+- Comply with EU GDPR, UK GDPR + Data Protection Act 2018 (as amended by the Data (Use and Access) Act 2025), and US state privacy laws covering employee data (e.g. CCPA/CPRA). Thapsus-HR is the **processor**; customers are **controllers**.
 - Each tenant picks a home region at sign-up: **UK = eu-west-2 (London)**, **EU = eu-central-1 (Frankfurt)**, **US = us-east-2 (Ohio)**. All of that tenant's personal data, files, backups, logs, search indexes, caches, queues and emails stay in that region.
 - Backup copies only within the same jurisdiction: **EU → eu-west-1**, **US → us-west-2**, **UK → none** (London only, across AZs). This map lives in one config module and is enforced by tests.
 - The global layer (marketing site, tenant directory mapping tenant ID/slug → region, billing) holds **no employee personal data**.
@@ -56,7 +56,7 @@ Out of scope — do not build: running payroll or filing payroll taxes, global p
 - **New tenant-scoped table checklist**: `tenant_id uuid not null`, RLS enabled + forced, tenant policy, index leading with `tenant_id`, audit coverage. The isolation test suite enumerates every table and fails if any is missing a policy.
 - **Effective dating** for core HR data: `valid_from` / `valid_to` (half-open) with exclusion constraints preventing overlaps; future-dated changes are first-class.
 - **Money**: integer minor units + ISO 4217 code; never floating point. **Time**: instants as `timestamptz` (UTC); calendar dates as `date` interpreted with an explicit IANA zone; use the shared time utilities, no ad-hoc `Date` arithmetic.
-- **Nothing configurable is hardcoded**: employment rules (jurisdiction packs), prices/bands/discounts (billing config), feature flags, the product domain (`ROCHE_DOMAIN` env/config — not yet chosen).
+- **Nothing configurable is hardcoded**: employment rules (jurisdiction packs), prices/bands/discounts (billing config), feature flags, the product domain (`THAPSUS_HR_DOMAIN` env/config — not yet chosen).
 - **API**: OpenAPI 3.1 first. Route schemas are the source of the spec; the spec is published and contract-tested; public API is versioned (`/v1`).
 - **Events**: write domain events to the transactional outbox in the same transaction as the change; background jobs must be idempotent (idempotency key per job).
 - **Migrations**: expand-and-contract only (no destructive change in the same release that stops using a column); every migration runs in CI against real Postgres.

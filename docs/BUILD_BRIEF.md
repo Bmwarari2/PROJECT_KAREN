@@ -1,20 +1,21 @@
-# BUILD BRIEF: ROCHE, an HR platform by Thapsus
+# BUILD BRIEF: Thapsus-HR, an HR platform by Thapsus
 
 > Source of truth for scope and requirements. Saved verbatim from the product owner on 2026-10-17.
 > Changes to this brief are made only by the product owner; implementation choices that differ from its defaults are recorded in docs/DECISIONS.md.
+> Product renamed from "ROCHE" to "Thapsus-HR" by the product owner on 2026-10-18.
 
-You are the lead engineer building ROCHE, a production-ready, multi-tenant HR platform built by Thapsus. It must serve companies of every size, from 10 employees to multinational enterprises with hundreds of thousands of employees, across the United Kingdom, the European Union and the United States.
+You are the lead engineer building Thapsus-HR, a production-ready, multi-tenant HR platform built by Thapsus. It must serve companies of every size, from 10 employees to multinational enterprises with hundreds of thousands of employees, across the United Kingdom, the European Union and the United States.
 
 First: save this brief as docs/BUILD_BRIEF.md, create CLAUDE.md containing the non-negotiables and engineering rules, create docs/PROGRESS.md listing every phase and feature with acceptance criteria, then show me your plan for Phase 0 and wait. I will start the build with /goal.
 
 ## 1. Product position
-- ROCHE is a simpler, fairer alternative to all-in-one platforms such as Rippling: transparent pricing on self-serve plans, no lock-in on monthly plans, responsive human support, compliance rules kept current per country, deep configurability, and customers can export all of their data at any time.
+- Thapsus-HR is a simpler, fairer alternative to all-in-one platforms such as Rippling: transparent pricing on self-serve plans, no lock-in on monthly plans, responsive human support, compliance rules kept current per country, deep configurability, and customers can export all of their data at any time.
 - Out of scope: running payroll or filing payroll taxes ourselves, global payroll, Employer of Record, PEO, benefits brokerage, device management (MDM) or buying/shipping hardware, corporate cards and spend management, acting as an identity provider for other apps, and native iOS/Android apps (build an installable PWA instead).
 
 ## 2. Non-negotiables
 
 Privacy and data residency
-- Comply with EU GDPR, UK GDPR and the Data Protection Act 2018 (as amended by the Data (Use and Access) Act 2025), and US state privacy laws that cover employee data (for example California's CCPA/CPRA). ROCHE is the processor; customers are the controllers.
+- Comply with EU GDPR, UK GDPR and the Data Protection Act 2018 (as amended by the Data (Use and Access) Act 2025), and US state privacy laws that cover employee data (for example California's CCPA/CPRA). Thapsus-HR is the processor; customers are the controllers.
 - Every customer chooses a home region at sign-up: UK (AWS eu-west-2, London), EU (AWS eu-central-1, Frankfurt) or US (AWS us-east-2, Ohio). All of that customer's personal data, files, backups, logs, search indexes, caches, queues and emails stay in that region. Backups may only be copied to another region in the same jurisdiction (EU to eu-west-1, US to us-west-2); UK backups stay in London across availability zones.
 - The global layer (marketing site, the tenant directory that maps a tenant to its region, billing) holds no employee personal data.
 - Authenticated pages and API responses are served from the home region and never cached on an edge network.
@@ -39,7 +40,7 @@ Design (look and feel inspired by Apple.com)
 - Layout: generous white space, centred content at a comfortable reading width, full-width sections that alternate in tone, large rounded cards, pill-shaped buttons and subtle shadows.
 - Navigation: a slim sticky top bar with a translucent blurred background on the marketing site; a clean sidebar and simple top bar inside the app.
 - Motion: smooth, subtle scroll-triggered reveals and sticky scrolling feature showcases on the marketing site; quick, gentle transitions in the app; 60fps; fully respects prefers-reduced-motion.
-- Imagery: crisp screenshots and device mock-ups of ROCHE itself, optimised (AVIF/WebP, responsive sizes, lazy loading), and an open-source icon set with a consistent thin line style.
+- Imagery: crisp screenshots and device mock-ups of Thapsus-HR itself, optimised (AVIF/WebP, responsive sizes, lazy loading), and an open-source icon set with a consistent thin line style.
 - Inside the app, keep the same calm style but put clarity and speed first: dense tables and dashboards must stay readable at enterprise scale.
 - Performance: Lighthouse scores of 90+ for performance and 95+ for accessibility on key marketing pages and app screens, measured on mobile.
 - Write docs/DESIGN.md (design tokens, type scale, spacing, components, motion rules) before building screens, and build every screen from those tokens.
@@ -63,7 +64,7 @@ Design (look and feel inspired by Apple.com)
 - Environments: dev, staging and production, in separate AWS accounts where possible. GitHub Actions CI/CD with OIDC to AWS.
 - Testing: Vitest (unit and integration against real Postgres in Docker), contract tests against the OpenAPI spec, Playwright end-to-end tests on mobile and desktop, k6 load tests, and golden tests for every jurisdiction rule.
 - Local dev: docker compose (Postgres, Valkey, S3 emulator, SQS emulator, mail catcher), a seed script with a small demo company, and a generator for a 200,000-employee synthetic enterprise.
-- The ROCHE domain name will be provided later; keep it in configuration.
+- The Thapsus-HR domain name will be provided later; keep it in configuration.
 
 ## 5. Users and roles
 Thapsus super-admin (back office), company owner, HR admin, country or entity HR admin, payroll admin, manager (own team, with delegation), employee (self-service). Custom roles with field-level permissions scoped by entity, country, department or location. Thapsus support can access a customer account only when the customer grants it, time-limited and audit-logged.
@@ -100,7 +101,7 @@ Thapsus super-admin (back office), company owner, HR admin, country or entity HR
 - Compliance matrix for licences, certifications, background checks and training, with expiry tracking and reminders.
 - Law-changes feed maintained in the back office that shows customers what changed and what to do.
 
-6.5 Payroll handoff (ROCHE never runs payroll)
+6.5 Payroll handoff (Thapsus-HR never runs payroll)
 - Connector framework with per-tenant field mapping, pay-period exports (hours, absences, sick pay data, pay changes, starters, leavers), and delivery by download, SFTP or API.
 - First connectors: generic CSV/Excel, SFTP, and Xero Payroll (UK). Documented stubs for ADP, Workday, UKG, Gusto and DATEV, with the partner-programme steps listed in docs/HUMAN_TODO.md.
 - Payslip and year-end document upload for employee self-service.

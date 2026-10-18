@@ -1,4 +1,4 @@
-# ROCHE delivery progress
+# Thapsus-HR delivery progress
 
 Status of every phase and feature in `docs/BUILD_BRIEF.md`, with acceptance criteria (AC). A feature is ticked only when **all** of its AC are proven by automated tests or checks in `pnpm verify`, or, for steps only a human can do, are listed in `docs/HUMAN_TODO.md` with the build running against mocks or test mode.
 
