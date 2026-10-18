@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import type { Locale } from '@thapsus/core/i18n';
-import { translate } from './i18n';
+import { translate } from './i18n-shared';
 
 interface I18nValue {
   locale: Locale;
