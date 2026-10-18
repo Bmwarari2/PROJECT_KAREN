@@ -7,7 +7,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "turbo run dev --parallel --filter=@thapsus/web --filter=@thapsus/api --filter=@thapsus/worker",
+    "dev": "turbo run dev --env-mode=loose --parallel --filter=@thapsus/web --filter=@thapsus/api --filter=@thapsus/worker",
     "build": "turbo run build",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "turbo run typecheck",

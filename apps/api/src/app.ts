@@ -24,6 +24,9 @@ import { registerModules } from './modules';
 
 export const API_VERSION = '1.0.0';
 
+/** Random per process start: lets ops and the dev smoke check see that a process restarted (no other meaning). */
+const BOOT_ID = crypto.randomUUID();
+
 export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({
     loggerInstance: opts.logger === false ? undefined : (createLogger({ name: `api-${deps.serviceRole}` }) as never),
@@ -76,7 +79,7 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
   await app.register(contextPlugin, { deps });
 
   for (const path of ['/health', '/health/api']) {
-    app.get(path, { config: { auth: 'public' }, schema: { hide: true } }, async () => ({ ok: true, region: deps.config.cell, role: deps.serviceRole }));
+    app.get(path, { config: { auth: 'public' }, schema: { hide: true } }, async () => ({ ok: true, region: deps.config.cell, role: deps.serviceRole, bootId: BOOT_ID }));
   }
 
   if (deps.serviceRole === 'global') {

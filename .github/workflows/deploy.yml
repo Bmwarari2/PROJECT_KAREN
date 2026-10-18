@@ -31,12 +31,12 @@ jobs:
       matrix:
         # Order matters: backup copy vaults, then the global stack, then the cells.
         target:
-          - { stacks: 'backupcopy', region: 'eu-west-1' }
-          - { stacks: 'backupcopy', region: 'us-west-1' }
-          - { stacks: 'global', region: 'eu-west-2' }
-          - { stacks: 'cell-uk', region: 'eu-west-2' }
-          - { stacks: 'cell-eu', region: 'eu-central-1' }
-          - { stacks: 'cell-us', region: 'us-east-2' }
+          - { stacks: 'backupcopy', region: 'eu-west-1', params: 'DEPLOY_PARAMS_BACKUPCOPY' }
+          - { stacks: 'backupcopy', region: 'us-west-1', params: 'DEPLOY_PARAMS_BACKUPCOPY' }
+          - { stacks: 'global', region: 'eu-west-2', params: 'DEPLOY_PARAMS_GLOBAL' }
+          - { stacks: 'cell-uk', region: 'eu-west-2', params: 'DEPLOY_PARAMS_CELL_UK' }
+          - { stacks: 'cell-eu', region: 'eu-central-1', params: 'DEPLOY_PARAMS_CELL_EU' }
+          - { stacks: 'cell-us', region: 'us-east-2', params: 'DEPLOY_PARAMS_CELL_US' }
     env:
       TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
     steps:
@@ -49,9 +49,17 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # One deploy role per environment and region (infra/lib/ci-stack.ts), assumable only from this
+      # repository's matching GitHub environment. No AWS keys are stored anywhere.
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars[format('AWS_DEPLOY_ROLE_{0}', env.TARGET_ENV)] }}
+          role-to-assume: arn:aws:iam::${{ vars[format('AWS_ACCOUNT_{0}', env.TARGET_ENV)] }}:role/thapsus-hr-${{ env.TARGET_ENV }}-deploy-${{ matrix.target.region }}
           aws-region: ${{ matrix.target.region }}
       - name: Deploy ${{ matrix.target.stacks }} (${{ env.TARGET_ENV }})
-        run: node scripts/deploy.mjs --env "$TARGET_ENV" --only "${{ matrix.target.stacks }}"
+        env:
+          DEPLOY_ENVIRONMENT: ${{ env.TARGET_ENV == 'prod' && 'production' || env.TARGET_ENV }}
+          SELF_SIGNED: ${{ vars.STAGING_SELF_SIGNED_TLS == 'true' && env.TARGET_ENV != 'prod' && '--self-signed-tls' || '' }}
+          # CloudFormation parameters while no domain/certificates are configured, e.g.
+          # "CertificateArn=arn:aws:acm:...,GlobalBaseUrl=https://..." (GitHub environment variables)
+          DEPLOY_PARAMS: ${{ vars[matrix.target.params] }}
+        run: node --import tsx scripts/deploy.mjs --env "$TARGET_ENV" --only "${{ matrix.target.stacks }}" $SELF_SIGNED
