@@ -13,7 +13,8 @@ import { objectKey } from '../../lib/object-store';
 import { periodic, registerJob } from '../../jobs/registry';
 import { throttle } from '../auth/common';
 import { sha256 } from '../documents/pdf';
-import { aiAssistantEnabled, aiSources, setAiAssistantEnabled, setAiSources, type AiSources } from './flags';
+import { requireFeature } from '../../lib/features';
+import { aiAssistantEnabled, aiAssistantEntitled, aiConfig, aiSources, updateAiConfig, type AiSources } from './flags';
 import { COLLEAGUE_PERSONAL_TOPIC, guardAnswer, guardQuestion, normaliseQuestion, type RefusalReason } from './guard';
 import { buildUserTurn, parseModelAnswer, SYSTEM_PROMPT, type Excerpt } from './prompt';
 import { redactPeople } from './redact';
@@ -40,10 +41,12 @@ const AskOut = Type.Object({
   aiGenerated: Type.Literal(true),
   model: Nullable(Type.String()),
 });
-const StatusOut = Type.Object({ enabled: Type.Boolean(), available: Type.Boolean(), canAsk: Type.Boolean(), disclosure: Type.String() });
+const StatusOut = Type.Object({ enabled: Type.Boolean(), available: Type.Boolean(), entitled: Type.Boolean(), canAsk: Type.Boolean(), disclosure: Type.String() });
 const SettingsOut = Type.Object({
   enabled: Type.Boolean(),
   available: Type.Boolean(),
+  entitled: Type.Boolean(),
+  customerEnabled: Type.Boolean(),
   region: Type.String(),
   awsRegion: Type.String(),
   model: Nullable(Type.Object({ name: Type.String(), id: Type.String(), provider: Type.String() })),
@@ -71,17 +74,22 @@ export async function aiRoutes(app: FastifyInstance) {
 
   const disclosure = (locale: Locale) => t(locale, 'askHr.disclosure');
   const enabledFor = async (tx: Tx) => available && (await aiAssistantEnabled(tx));
+  /** 403 featureDisabled unless the platform flag, the region and the customer's opt-in all allow it. */
+  const requireAssistant = async (tx: Tx) => {
+    await requireFeature(tx, 'aiAssistant');
+    if (!(await enabledFor(tx))) throw new ApiError('forbidden', 'featureDisabled', { feature: 'aiAssistant' });
+  };
 
   app.get('/v1/ai/status', { schema: { tags: ['ai'], response: { 200: StatusOut, 401: Problem } } }, async (req) => {
     const auth = requireAuth(req);
-    const enabled = await app.tenantTx(req, enabledFor, { readOnly: true });
-    return { enabled, available, canAsk: enabled && canSome(auth.principal, 'ai.ask'), disclosure: disclosure(req.ctx.locale) };
+    const [enabled, entitled] = await app.tenantTx(req, async (tx) => [await enabledFor(tx), await aiAssistantEntitled(tx)], { readOnly: true });
+    return { enabled, available, entitled, canAsk: enabled && canSome(auth.principal, 'ai.ask'), disclosure: disclosure(req.ctx.locale) };
   });
 
   // ---- admin settings -----------------------------------------------------------------------------------
   async function settingsView(tx: Tx, req: FastifyRequest) {
     const auth = requireAuth(req);
-    const [flag, src] = [await aiAssistantEnabled(tx), await aiSources(tx)];
+    const [entitled, src] = [await aiAssistantEntitled(tx), await aiConfig(tx)];
     const folders = await tx.query<{ id: string; name: string; visibility: string }>(`SELECT id, name, visibility FROM app.document_folders ORDER BY name, id LIMIT 500`);
     const candidates = await tx.query<{ id: string; title: string; folder_id: string | null }>(
       `SELECT d.id, d.title, d.folder_id FROM app.documents d JOIN app.document_folders f ON f.tenant_id = d.tenant_id AND f.id = d.folder_id
@@ -99,8 +107,10 @@ export async function aiRoutes(app: FastifyInstance) {
          FROM app.ai_questions WHERE created_at >= now() - interval '30 days'`,
     );
     return {
-      enabled: flag && available,
+      enabled: entitled && src.enabled && available,
       available,
+      entitled,
+      customerEnabled: src.enabled,
       region: cell,
       awsRegion: model.awsRegion,
       model: model.available ? { name: model.modelName, id: model.modelId, provider: 'Amazon Bedrock' } : null,
@@ -147,14 +157,16 @@ export async function aiRoutes(app: FastifyInstance) {
       // A region without an in-region model can never turn the assistant on (data must not leave the region).
       if (b.enabled === true && !available) throw new ApiError('unprocessable', 'aiNotAvailableInRegion');
       return app.tenantTx(req, async (tx) => {
-        const before = { enabled: await aiAssistantEnabled(tx), ...(await aiSources(tx)) };
+        // Turning it on needs the staff-managed entitlement (plan or contract) first.
+        if (b.enabled === true) await requireFeature(tx, 'aiAssistant');
+        const before = await aiConfig(tx);
         const next: AiSources = { policyFolderIds: b.policyFolderIds ?? before.policyFolderIds, policyDocumentIds: b.policyDocumentIds ?? before.policyDocumentIds };
         if (sourcesChanged) {
           const problem = await invalidSources(tx, next);
           if (problem) throw new ApiError('unprocessable', problem);
-          await setAiSources(tx, next);
+          await updateAiConfig(tx, next);
         }
-        if (b.enabled !== undefined) await setAiAssistantEnabled(tx, b.enabled);
+        if (b.enabled !== undefined) await updateAiConfig(tx, { enabled: b.enabled });
         const job = sourcesChanged ? await enqueueJob(tx, 'ai.index_policies', `sources:${req.id}`, {}, { createdBy: auth.userId }) : null;
         await app.audit(tx, req, { action: 'ai.settings_updated', targetType: 'tenant', targetId: auth.tenantId, diff: { before, after: { enabled: b.enabled ?? before.enabled, ...next }, indexJobId: job?.id ?? null } });
         return settingsView(tx, req);
@@ -216,7 +228,7 @@ export async function aiRoutes(app: FastifyInstance) {
       schema: {
         tags: ['ai'],
         body: Type.Object({ question: Type.String({ minLength: 3, maxLength: QUESTION_MAX }) }, { additionalProperties: false }),
-        response: { 200: AskOut, 403: Problem, 404: Problem, 429: Problem },
+        response: { 200: AskOut, 403: Problem, 429: Problem },
       },
     },
     async (req) => {
@@ -233,7 +245,7 @@ export async function aiRoutes(app: FastifyInstance) {
       const prepared = await app.tenantTx(
         req,
         async (tx): Promise<Prepared> => {
-          if (!(await enabledFor(tx))) throw new ApiError('notFound');
+          await requireAssistant(tx);
           const guard = guardQuestion(question);
           if (!guard.allowed) return { kind: 'refused', reason: guard.reason, rule: guard.rule };
           const red = await redactPeople(tx, [question], auth.principal.employeeId ?? null);
@@ -327,7 +339,7 @@ export async function aiRoutes(app: FastifyInstance) {
         tags: ['ai'],
         params: Type.Object({ id: Uuid }),
         body: Type.Object({ rating: Type.Union([Type.Literal('helpful'), Type.Literal('not_helpful')]), reason: Type.Optional(Type.Union(['wrong', 'unclear', 'missing_source', 'other'].map((v) => Type.Literal(v)))) }, { additionalProperties: false }),
-        response: { 204: Type.Null(), 404: Problem },
+        response: { 204: Type.Null(), 403: Problem, 404: Problem },
       },
     },
     async (req, reply) => {
@@ -335,7 +347,7 @@ export async function aiRoutes(app: FastifyInstance) {
       const { id } = req.params as { id: string };
       const b = req.body as { rating: 'helpful' | 'not_helpful'; reason?: string };
       await app.tenantTx(req, async (tx) => {
-        if (!(await enabledFor(tx))) throw new ApiError('notFound');
+        await requireAssistant(tx);
         const n = await tx.exec(`UPDATE app.ai_questions SET feedback = $2, feedback_reason = $3, feedback_at = now() WHERE id = $1 AND user_id = $4`, [id, b.rating, b.rating === 'not_helpful' ? (b.reason ?? null) : null, auth.userId]);
         if (!n) throw new ApiError('notFound');
         await app.audit(tx, req, { action: 'ai.feedback_given', targetType: 'ai_question', targetId: id, diff: { rating: b.rating, reason: b.reason ?? null } });

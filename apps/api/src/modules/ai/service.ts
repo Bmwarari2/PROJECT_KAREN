@@ -113,6 +113,18 @@ export interface RetrievedChunk {
 }
 
 export const MAX_EXCERPTS = 5;
+const FUZZY_THRESHOLD = 0.5;
+const STOPWORDS = new Set('a about all am an and any are as at be can could do does for from get got have how i if in is it its me my of on or our should so that the their there they this to us was we what when where which who why will with would you your'.split(' '));
+
+/** The question without stop words and placeholders, for the trigram fallback (null when nothing is left). */
+export function significantWords(question: string): string | null {
+  const words = question
+    .toLowerCase()
+    .replace(/\[(?:person|employee number|redacted)\]/gi, ' ')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+  return words.length ? words.join(' ') : null;
+}
 const MAX_PER_DOCUMENT = 3;
 const MAX_EXCERPT_CHARS = 8_000;
 
@@ -135,17 +147,20 @@ export async function retrieve(tx: Tx, question: string, src: AiSources): Promis
          FROM unnest(tsvector_to_array(to_tsvector('english', $4))) AS l
      )
      SELECT c.document_id, d.title, c.heading, c.page, c.content, c.ordinal,
-            (ts_rank_cd(c.tsv, q.query, 32) + 0.25 * word_similarity($4, c.content))::float8 AS score
+            (ts_rank_cd(c.tsv, q.query, 32) + 0.25 * app.trgm_word_similarity($4, c.content))::float8 AS score
        ${base.replace('FROM app.ai_policy_chunks c', 'FROM q, app.ai_policy_chunks c')} AND q.query IS NOT NULL AND c.tsv @@ q.query
       ORDER BY score DESC, c.document_id, c.ordinal LIMIT 20`,
     params,
   );
-  if (!rows.length) {
-    await tx.query(`SELECT set_config('pg_trgm.word_similarity_threshold', '0.35', true)`);
+  const fuzzy = significantWords(question);
+  if (!rows.length && fuzzy) {
+    // Misspelt questions: trigram word similarity of the question's significant words, over this
+    // tenant's eligible policy chunks only (a bounded scan; policy corpora are small).
     rows = await tx.query<RetrievedChunk>(
-      `SELECT c.document_id, d.title, c.heading, c.page, c.content, c.ordinal, word_similarity($4, c.content)::float8 AS score
-         ${base} AND $4 <% c.content ORDER BY score DESC, c.document_id, c.ordinal LIMIT 10`,
-      params,
+      `SELECT * FROM (
+         SELECT c.document_id, d.title, c.heading, c.page, c.content, c.ordinal, app.trgm_word_similarity($4, c.content)::float8 AS score ${base}
+       ) x WHERE x.score >= $5 ORDER BY x.score DESC, x.document_id, x.ordinal LIMIT 10`,
+      [...params.slice(0, 3), fuzzy, FUZZY_THRESHOLD],
     );
   }
   const picked: RetrievedChunk[] = [];

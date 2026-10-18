@@ -1,39 +1,50 @@
-import type { Tx } from '@thapsus/db';
+import { featureEnabled, type Tx } from '@thapsus/db';
 
 /**
- * Feature flag and settings storage for "Ask HR" (off by default).
+ * "Ask HR" switches (ADR-0112). Two keys, both off by default:
  *
- * Kept in this one small file so it can be swapped for the platform flag registry when that lands:
- * until then the flag is `app.tenants.features->'flags'->>'ai_assistant'` and the policy sources are
- * `app.tenants.features->'ai'`. Both reads run inside the caller's tenant transaction (RLS applies).
+ *  1. the platform feature flag `aiAssistant` (packages/core/src/features.ts) — staff-managed, the
+ *     plan/contract entitlement, checked with `featureEnabled` / `requireFeature`;
+ *  2. the customer's own opt-in, `app.tenants.features->'ai'->'enabled'`, set by the account owner in
+ *     Settings → Ask HR. As controller, the customer decides when employee questions go to the
+ *     sub-processor; staff enabling the entitlement never turns the assistant on by itself.
+ *
+ * The policy sources live next to the opt-in in `features->'ai'`. All reads run in the caller's tenant
+ * transaction (RLS applies).
  */
-export async function aiAssistantEnabled(tx: Tx): Promise<boolean> {
-  const row = await tx.maybe<{ on: string | null }>(`SELECT features->'flags'->>'ai_assistant' AS on FROM app.tenants`);
-  return row?.on === 'true';
-}
+export const aiAssistantEntitled = (tx: Tx) => featureEnabled(tx, 'aiAssistant');
 
-export async function setAiAssistantEnabled(tx: Tx, on: boolean): Promise<void> {
-  await tx.exec(
-    `UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{flags}', coalesce(features->'flags', '{}'::jsonb) || jsonb_build_object('ai_assistant', $1::boolean))`,
-    [on],
-  );
-}
-
-export interface AiSources {
+export interface AiConfig {
+  enabled: boolean;
   policyFolderIds: string[];
   policyDocumentIds: string[];
 }
+export type AiSources = Omit<AiConfig, 'enabled'>;
 
-export async function aiSources(tx: Tx): Promise<AiSources> {
-  const row = await tx.maybe<{ ai: Partial<AiSources> | null }>(`SELECT features->'ai' AS ai FROM app.tenants`);
+export async function aiConfig(tx: Tx): Promise<AiConfig> {
+  const row = await tx.maybe<{ ai: Partial<AiConfig> | null }>(`SELECT features->'ai' AS ai FROM app.tenants`);
+  const ai = row?.ai ?? {};
   return {
-    policyFolderIds: Array.isArray(row?.ai?.policyFolderIds) ? row!.ai!.policyFolderIds!.map(String) : [],
-    policyDocumentIds: Array.isArray(row?.ai?.policyDocumentIds) ? row!.ai!.policyDocumentIds!.map(String) : [],
+    enabled: ai.enabled === true,
+    policyFolderIds: Array.isArray(ai.policyFolderIds) ? ai.policyFolderIds.map(String) : [],
+    policyDocumentIds: Array.isArray(ai.policyDocumentIds) ? ai.policyDocumentIds.map(String) : [],
   };
 }
 
-export async function setAiSources(tx: Tx, sources: AiSources): Promise<void> {
-  await tx.exec(`UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{ai}', $1::jsonb)`, [
-    JSON.stringify({ policyFolderIds: [...new Set(sources.policyFolderIds)], policyDocumentIds: [...new Set(sources.policyDocumentIds)] }),
-  ]);
+export const aiSources = async (tx: Tx): Promise<AiSources> => {
+  const { policyFolderIds, policyDocumentIds } = await aiConfig(tx);
+  return { policyFolderIds, policyDocumentIds };
+};
+
+/** Merges the given keys into features->'ai' (other keys are kept). */
+export async function updateAiConfig(tx: Tx, patch: Partial<AiConfig>): Promise<void> {
+  const clean: Partial<AiConfig> = { ...patch };
+  if (clean.policyFolderIds) clean.policyFolderIds = [...new Set(clean.policyFolderIds)];
+  if (clean.policyDocumentIds) clean.policyDocumentIds = [...new Set(clean.policyDocumentIds)];
+  await tx.exec(`UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{ai}', coalesce(features->'ai', '{}'::jsonb) || $1::jsonb)`, [JSON.stringify(clean)]);
+}
+
+/** Entitled by Thapsus and switched on by the customer (region availability is checked by the caller). */
+export async function aiAssistantEnabled(tx: Tx): Promise<boolean> {
+  return (await aiAssistantEntitled(tx)) && (await aiConfig(tx)).enabled;
 }

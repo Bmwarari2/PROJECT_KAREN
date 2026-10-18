@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { FEATURE_FLAGS, isFeatureKey, type FeatureKey } from '@thapsus/core/features';
+import { inRegionModel } from '@thapsus/core/ai-models';
 import { setFeatureFlag, withTenant, writeAudit } from '@thapsus/db';
 import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
@@ -87,6 +88,8 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
       const { enabled } = req.body as { enabled: boolean | null };
       if (!isFeatureKey(key)) throw new ApiError('notFound');
       await registryEntry(tenantId);
+      // Ask HR may only be entitled where a model runs inside the cell's own region (ADR-0110).
+      if (key === 'aiAssistant' && enabled === true && !inRegionModel(deps.config.cell)) throw new ApiError('unprocessable', 'aiNotAvailableInRegion');
       const list = await withTenant(deps.router, tenantId, async (tx) => {
         const before = await setFeatureFlag(tx, key as FeatureKey, enabled);
         await writeAudit(tx, { actorType: 'support', actorId: req.staff!.staffId, action: 'feature.flag_changed', targetType: 'feature_flag', targetId: key, diff: { from: before, to: enabled, managedBy: FEATURE_FLAGS[key].managedBy, by: 'thapsus-staff' }, ip: req.ctx.ip, requestId: req.id });

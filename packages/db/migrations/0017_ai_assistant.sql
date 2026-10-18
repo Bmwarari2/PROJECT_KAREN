@@ -22,7 +22,7 @@ CREATE TABLE app.ai_policy_chunks (
   FOREIGN KEY (tenant_id, document_id) REFERENCES app.documents (tenant_id, id) ON DELETE CASCADE
 );
 CREATE INDEX ai_policy_chunks_tsv ON app.ai_policy_chunks USING gin (tsv);
-CREATE INDEX ai_policy_chunks_trgm ON app.ai_policy_chunks USING gin (content gin_trgm_ops);
+CREATE INDEX ai_policy_chunks_document ON app.ai_policy_chunks (tenant_id, document_id);
 SELECT app.enable_tenant_rls('app.ai_policy_chunks');
 
 -- One row per policy document: makes indexing idempotent (unchanged sha256 = skip) and shows the admin
@@ -66,3 +66,12 @@ CREATE TABLE app.ai_questions (
 CREATE INDEX ai_questions_created ON app.ai_questions (tenant_id, created_at);
 CREATE INDEX ai_questions_user ON app.ai_questions (tenant_id, user_id, created_at);
 SELECT app.enable_tenant_rls('app.ai_questions');
+
+-- pg_trgm lives in the public schema, which the application role cannot use (0001 revokes it). This
+-- pinned-search-path wrapper exposes only the pure word_similarity() function to the app role; it reads
+-- nothing and runs under the caller's RLS context like any expression.
+CREATE OR REPLACE FUNCTION app.trgm_word_similarity(a text, b text) RETURNS real
+  LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE SECURITY DEFINER SET search_path = pg_catalog, public AS
+$$ SELECT public.word_similarity(a, b) $$;
+REVOKE ALL ON FUNCTION app.trgm_word_similarity(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION app.trgm_word_similarity(text, text) TO thapsus_app;
