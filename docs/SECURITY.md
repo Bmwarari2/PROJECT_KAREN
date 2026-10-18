@@ -19,6 +19,8 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Transport and headers | TLS 1.2+ at the ALB; HSTS (preload); CSP; `frame-ancestors 'none'`; `nosniff`; strict referrer policy; `Cache-Control: private, no-store` on all API responses and authenticated pages | `auth.int.test.ts`, e2e |
 | Logging | Shared logger and tracer scrub emails, phone numbers, NI numbers, SSNs, tokens and known personal fields; request bodies are never logged | `packages/core/test/core.test.ts` |
 | Secrets | AWS Secrets Manager in AWS; git-ignored `.env` locally; secret scan in `pnpm verify`; GitHub OIDC for deploys (no long-lived keys) | `scripts/secret-scan.mjs`, `.github/workflows/deploy.yml` |
+| Shared kiosks | Device token shown once, only its SHA-256 stored, revocable; employee number + Argon2id PIN; per-IP and per-kiosk throttles; lockout after N failures with identical answers and similar timing for unknown numbers; every attempt audited (ADR-0038) | `apps/api/test/time.int.test.ts`, `apps/web/e2e/kiosk.spec.ts` |
+| Location data | Geofencing off by default, per country, only with worker notice; coordinates kept (4 dp) only when it applies, discarded otherwise, never logged or returned by the API (ADR-0037) | `apps/api/test/time.int.test.ts`, `apps/web/e2e/clock.spec.ts` |
 | Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI | verify `security` step |
 | Infrastructure | WAF (AWS managed rules plus a rate limit) on every ALB; KMS everywhere; S3 public access blocked; no `*` action on `*` resource in IAM | `infra/test` |
 

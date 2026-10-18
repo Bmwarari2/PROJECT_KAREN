@@ -38,6 +38,14 @@ Things only a person with the right accounts or authority can do. The build runs
   Replace the reviewer field via a back-office rule version when confirmed.
 - [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example Romania and Lithuania holidays and leave, Cyprus holidays, German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually.
 - [ ] 3.3 Review the DPA, privacy notice templates, DPIA template, records of processing, sub-processor notice period and retention defaults in `docs/legal/`.
+- [ ] 3.4 Review the Phase 4 working-time rules and how they are used (ADR-0035):
+  - Spain `working_time.time_recording` (Estatuto de los Trabajadores art. 34.9 via RDL 8/2019, from 12 May 2019).
+  - Germany `working_time.time_recording` (BAG 13 September 2022, 1 ABR 22/21). Re-read § 3 ArbSchG on gesetze-im-internet.de, which returned HTTP 503 during research, and check whether an ArbZG amendment on recording has since come into force.
+  - Whether other member states should keep resolving to the EU baseline (CJEU C-55/18) until national rules are researched.
+  - The GB opt-out notice cap (WTR reg. 5(3)).
+  
+  Confirm by adding a back-office rule version with your name as reviewer.
+- [ ] 3.5 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
 
 ## 4. Payments, partners and integrations
 
