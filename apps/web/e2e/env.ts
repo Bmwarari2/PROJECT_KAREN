@@ -21,6 +21,8 @@ export function e2eEnv(): Record<string, string> {
     GLOBAL_BASE_URL: origin,
     DATABASE_URL: `postgres://thapsus_app:${E2E_APP_PASSWORD}@${host}/${E2E_DB}`,
     BACKOFFICE_DATABASE_URL: `postgres://thapsus_backoffice:${E2E_APP_PASSWORD}@${host}/${E2E_DB}`,
+    // reports run on the read-only reporting role, as on the Aurora reader in a cell (ADR-0071)
+    REPORTING_DATABASE_URL: `postgres://thapsus_reporting:${E2E_APP_PASSWORD}@${host}/${E2E_DB}`,
     MIGRATOR_DATABASE_URL: `${OWNER}/${E2E_DB}`,
     LOCAL_KMS_KEY: '22'.repeat(32),
     MOCK_IDP_ENABLED: 'true',

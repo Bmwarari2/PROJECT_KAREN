@@ -27,6 +27,10 @@ const PAGES = [
   { path: '/signup', label: 'Sign up' },
   { path: '/app', label: 'App home (signed in)', auth: true },
   { path: '/app/security', label: 'App security (signed in)', auth: true },
+  { path: '/app/me', label: 'Me hub (signed in)', auth: true },
+  { path: '/app/notifications', label: 'Notifications and preferences (signed in)', auth: true },
+  { path: '/app/reports', label: 'Reports catalogue (signed in)', auth: true },
+  { path: '/app/reports/builder', label: 'Report builder (signed in)', auth: true },
 ];
 
 async function resetDb() {
