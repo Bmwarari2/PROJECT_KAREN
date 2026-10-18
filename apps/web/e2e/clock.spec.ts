@@ -58,10 +58,13 @@ test.describe('clock in/out (PWA offline queue)', () => {
     await expect(page.getByTestId('geofence-notice')).toContainText('Fictional Shops checks you are at the store');
     expect(await page.evaluate(() => (window as unknown as { __geoCalls: number }).__geoCalls)).toBe(0);
     await page.getByRole('button', { name: 'Clock in' }).click();
+    // "all synced" also shows while the location is read and before the punch is queued, so wait for the new state
+    await expect(page.getByTestId('clock-state')).toContainText('Clocked in since');
     await expect(page.getByTestId('clock-synced')).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { __geoCalls: number }).__geoCalls)).toBe(1);
-    const row = (await sql<{ within_geofence: boolean; lat: string }>('SELECT within_geofence, lat FROM app.clock_events WHERE employee_id = $1', [co.staff[0]]))[0]!;
-    expect(row).toEqual({ within_geofence: true, lat: '51.5001' });
+    await expect
+      .poll(async () => (await sql<{ within_geofence: boolean; lat: string }>('SELECT within_geofence, lat FROM app.clock_events WHERE employee_id = $1', [co.staff[0]]))[0])
+      .toEqual({ within_geofence: true, lat: '51.5001' });
     await expectAccessible(page);
   });
 });
