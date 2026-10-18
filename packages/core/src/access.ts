@@ -50,8 +50,11 @@ export const PERMISSION_CATALOGUE: PermissionArea[] = [
   { area: 'support', permissions: [p('support.ticket')] },
   { area: 'help', permissions: [p('help.read')] },
   { area: 'ai', permissions: [p('ai.ask')] },
-  // Reserved areas: granted by area wildcard in built-in roles; their keys arrive with their features.
-  { area: 'compliance', permissions: [] },
+  {
+    area: 'compliance',
+    permissions: [p('compliance.read'), p('compliance.record', true), p('compliance.reports', true), p('compliance.reports_exact', true), p('compliance.law_changes', true), p('compliance.manage', true)],
+  },
+  // Reserved area: granted by area wildcard in built-in roles; its keys arrive with the feature.
   { area: 'assets', permissions: [] },
 ];
 

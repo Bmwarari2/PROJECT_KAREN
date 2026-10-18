@@ -1108,6 +1108,14 @@
       },
       "ai": {
         "ask": "Ask the AI assistant"
+      },
+      "compliance": {
+        "read": "View compliance status",
+        "record": "Record compliance checks",
+        "reports": "View compliance reports",
+        "reports_exact": "See exact small numbers in equality reports",
+        "law_changes": "Review law changes",
+        "manage": "Manage compliance requirements"
       }
     },
     "section": {
