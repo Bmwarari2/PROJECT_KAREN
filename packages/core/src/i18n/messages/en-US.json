@@ -47,5 +47,45 @@
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned"
+  },
+  "platform": {
+    "errors": {
+      "unknownEventType": "One of the event types is not recognized.",
+      "insufficientContrast": "That color does not meet the contrast requirements."
+    },
+    "scopes": {
+      "org_read": "Read the organization structure",
+      "org_write": "Manage the organization structure"
+    },
+    "links": {
+      "branding": {
+        "body": "Your logo and an accent color that stays accessible."
+      }
+    },
+    "api": {
+      "secretRotated": "New client secret (the previous one keeps working for 24 hours)"
+    },
+    "sandbox": {
+      "copied": "Copied: settings, roles, organization structure, custom fields, policies, workflows, approval chains, time off types and policies, schedule templates and branding.",
+      "notCopied": "Never copied: people, users, documents, absences, timesheets, the audit log, sign-in methods, API keys, webhooks and audit streams."
+    },
+    "flags": {
+      "customBranding": {
+        "description": "Your logo and accent color in the app."
+      }
+    },
+    "branding": {
+      "lead": "Show your logo and use your accent color for links and buttons.",
+      "resetDone": "Accent color reset to the default.",
+      "saved": "Accent color saved.",
+      "accentTitle": "Accent color",
+      "accentBody": "To keep the app readable for everyone, the color must meet WCAG 2.2 AA contrast on every background, in light and dark mode.",
+      "accentLight": "Accent color (light mode)",
+      "accentDark": "Accent color (dark mode)",
+      "separateDark": "Use a different color in dark mode",
+      "rejected": "This color was not saved because it does not have enough contrast:",
+      "save": "Save color",
+      "reset": "Use the default color"
+    }
   }
 }

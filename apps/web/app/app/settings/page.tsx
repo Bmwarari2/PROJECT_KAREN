@@ -5,6 +5,7 @@ import { Globe } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
+import { PlatformSettingsLinks } from './platform-links';
 
 interface Domain {
   id: string;
@@ -48,6 +49,7 @@ export default function SettingsPage() {
       <Link href="/app/settings/organisation" className="text-callout">
         {t('app.settings.organisationLink')}
       </Link>
+      <PlatformSettingsLinks />
       <Card>
         <CardTitle>{t('app.settings.domainsTitle')}</CardTitle>
         <p className="mt-2 text-callout text-text-secondary">{t('app.settings.domainsBody')}</p>
