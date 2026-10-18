@@ -20,6 +20,7 @@ const SELF_SERVICE = [
   'time.clock',
   'rota.view_own',
   'rota.swap_request',
+  'rota.availability',
   'documents.read_own',
   'documents.sign',
   'payslips.read_own',
@@ -68,7 +69,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
     isAdmin: true,
     defaultScope: 'all',
     permissions: [
-      'employees.read', 'payroll.*', 'leave.read', 'absence.read', 'time.read', 'reports.read', 'reports.run',
+      'employees.read', 'payroll.*', 'leave.read', 'absence.read', 'time.read', 'time.export', 'reports.read', 'reports.run',
       'exports.*', 'payslips.*', ...SELF_SERVICE,
     ],
     fieldAccess: { 'employee.*': 'read', 'employee.pay.*': 'write', 'employee.bank.*': 'write' },
@@ -80,7 +81,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
     defaultScope: 'own_team',
     permissions: [
       'employees.read', 'leave.read', 'leave.approve', 'absence.read', 'absence.record', 'rota.*', 'time.read',
-      'time.approve', 'approvals.act', 'reports.read_team', 'documents.read', 'workflows.tasks', ...SELF_SERVICE,
+      'time.approve', 'time.correct', 'approvals.act', 'reports.read_team', 'documents.read', 'workflows.tasks', ...SELF_SERVICE,
     ],
     fieldAccess: {
       'employee.*': 'none',

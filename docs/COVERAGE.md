@@ -16,10 +16,10 @@
 | BG — Bulgaria | EU | medium | 1 | 2 | 14 | 2026-10-18 |
 | CY — Cyprus | EU | medium | 2 | 2 | 0 | 2026-10-18 |
 | CZ — Czechia | EU | medium | 1 | 2 | 13 | 2026-10-18 |
-| DE — Germany | EU | high | 2 | 4 | 14 | 2026-10-18 |
+| DE — Germany | EU | high | 3 | 5 | 14 | 2026-10-18 |
 | DK — Denmark | EU | medium | 1 | 2 | 10 | 2026-10-18 |
 | EE — Estonia | EU | medium | 1 | 2 | 12 | 2026-10-18 |
-| ES — Spain | EU | high | 1 | 4 | 18 | 2026-10-18 |
+| ES — Spain | EU | high | 2 | 5 | 18 | 2026-10-18 |
 | FI — Finland | EU | medium | 1 | 2 | 16 | 2026-10-18 |
 | FR — France | EU | high | 1 | 4 | 13 | 2026-10-18 |
 | GR — Greece | EU | medium | 1 | 2 | 9 | 2026-10-18 |
@@ -63,10 +63,10 @@
 | BG | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
 | CY | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
 | CZ | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| DE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| DE | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
 | DK | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
 | EE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| ES | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| ES | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
 | FI | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
 | FR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
 | GR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
@@ -110,10 +110,10 @@
 - **BG** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: one-off non-working days declared by the Council of Ministers (чл. 154(3)) — 1 November (Ден на народните будители) is listed in чл. 154(1) as non-attendance only for educational establishments — intentionally not modelled as a general holiday.
 - **CY** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: not modelled — Cyprus has no single statutory public-holiday list for private-sector employment on an allow-listed source (holidays arise by law, established practice or agreement per the MLSI guide). EURES Cyprus (checked 2026-10-18) only says official holidays "varies from 14 to 17 annually" and refers to the Department of Labour Relations; no official gov.cy list for 2026 was found
 - **CZ** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation
-- **DE** (high): family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; working_time.time_recording; minimum_wage.rates; leave.carry_over; holidays: Epiphany (DE-BW/DE-ST), Repentance Day (DE-SN), World Children's Day (DE-TH), Women's Day (DE-MV), Assumption (DE-SL; Catholic municipalities of DE-BY), Augsburg Peace Festival — Land-law portals other than gesetze-bayern.de are not on the validator allow-list yet — Epiphany (6 Jan) in Bavaria is modelled from BayFTG Art. 1 on gesetze-bayern.de (allow-listed 2026-10-18, ADR-0023).
+- **DE** (high): family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; leave.carry_over; holidays: Epiphany (DE-BW/DE-ST), Repentance Day (DE-SN), World Children's Day (DE-TH), Women's Day (DE-MV), Assumption (DE-SL; Catholic municipalities of DE-BY), Augsburg Peace Festival — Land-law portals other than gesetze-bayern.de are not on the validator allow-list yet — Epiphany (6 Jan) in Bavaria is modelled from BayFTG Art. 1 on gesetze-bayern.de (allow-listed 2026-10-18, ADR-0023).
 - **DK** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: Store Bededag before 2024; Grundlovsdag and Christmas Eve (shop-closing days, not helligdage)
 - **EE** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; working_time: shortened working day before holidays (Töö- ja puhkeaja / TLS)
-- **ES** (high): Autonomous-community holidays for the other 15 communities and Ceuta/Melilla (annual BOE resolution) and for ES-MD/ES-CT beyond 2026 (BOE-A-2026-21254 for 2027 published 13 Oct 2026); Local (municipal) holidays — up to 2 per municipality; Canary Islands island holidays (Decreto 61/2025); sick_pay.statutory benefit percentages (60%/75%); family_leave.maternity / paternity (nacimiento y cuidado de menor); working_time.max_weekly_hours; working_time.time_recording; minimum_wage.rates (SMI) — National ["*"] holidays are the fixed national list in RD 2001/1983 art. 45.1 a)–c). Autonomous-community holidays are modelled only for ES-MD and ES-CT for 2026 from the BOE 2026 calendar.
+- **ES** (high): Autonomous-community holidays for the other 15 communities and Ceuta/Melilla (annual BOE resolution) and for ES-MD/ES-CT beyond 2026 (BOE-A-2026-21254 for 2027 published 13 Oct 2026); Local (municipal) holidays — up to 2 per municipality; Canary Islands island holidays (Decreto 61/2025); sick_pay.statutory benefit percentages (60%/75%); family_leave.maternity / paternity (nacimiento y cuidado de menor); working_time.max_weekly_hours; minimum_wage.rates (SMI) — National ["*"] holidays are the fixed national list in RD 2001/1983 art. 45.1 a)–c). Autonomous-community holidays are modelled only for ES-MD and ES-CT for 2026 from the BOE 2026 calendar.
 - **FI** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation — Finnish holiday set = days excluded from arkipäivät by Vuosilomalaki 4 § (church holidays per Kirkkolaki + named secular days). Pay for holidays is mostly by collective agreement.
 - **FR** (high): family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; leave.carry_over; holidays: overseas departments abolition-of-slavery days; sick_pay.statutory: IJ daily cap and eligibility thresholds — legifrance.gouv.fr returned HTTP 403 to the fetcher; Service-Public (DILA, official) used instead.
 - **GR** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: optional/customary days (Clean Monday, Good Friday, Whit Monday) and up to 5 extra days per year by ministerial decision; regional holidays
@@ -240,6 +240,7 @@ Every rule version with the date it was last checked against its official source
 | DE | `leave.statutory_annual_minimum` | 2026-01-01 | — | all | 2026-10-18 | https://www.gesetze-im-internet.de/burlg/__3.html |
 | DE | `reporting.pay_transparency` | 2026-06-07 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
 | DE | `sick_pay.statutory` | 2026-01-01 | — | all | 2026-10-18 | https://www.gesetze-im-internet.de/entgfg/__3.html |
+| DE | `working_time.time_recording` | 2022-09-13 | — | all | 2026-10-18 | https://www.bundesarbeitsgericht.de/entscheidung/1-abr-22-21/ |
 | DK | `leave.statutory_annual_minimum` | 2026-01-01 | — | all | 2026-10-18 | https://www.borger.dk/arbejde-dagpenge-ferie/Oversigt-ferie/loenmodtager-og-ferie |
 | DK | `reporting.pay_transparency` | 2026-06-07 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
 | EE | `leave.statutory_annual_minimum` | 2026-01-01 | — | all | 2026-10-18 | https://www.riigiteataja.ee/akt/TLS |
@@ -248,6 +249,7 @@ Every rule version with the date it was last checked against its official source
 | ES | `leave.statutory_annual_minimum` | 2020-01-01 | — | all | 2026-10-18 | https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430 |
 | ES | `reporting.pay_transparency` | 2023-06-06 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
 | ES | `sick_pay.statutory` | 2020-01-01 | — | all | 2026-10-18 | https://www.boe.es/buscar/act.php?id=BOE-A-2015-11724 |
+| ES | `working_time.time_recording` | 2019-05-12 | — | all | 2026-10-18 | https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430 |
 | FI | `leave.statutory_annual_minimum` | 2026-01-01 | — | all | 2026-10-18 | https://www.finlex.fi/fi/laki/ajantasa/2005/20050162 |
 | FI | `reporting.pay_transparency` | 2026-06-07 | — | all | 2026-10-18 | https://finlex.fi/fi/hallituksen-esitykset/2026/129 |
 | FR | `employment.notice_period` | 2026-01-01 | — | all | 2026-10-18 | https://www.service-public.gouv.fr/particuliers/vosdroits/F2855 |

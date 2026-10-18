@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CalendarDays, DoorOpen, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
+import { Bell, CalendarClock, CalendarDays, ClipboardList, Clock, DoorOpen, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
@@ -13,15 +13,23 @@ import type { ThemeChoice } from '@/lib/i18n-shared';
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
 
+/** True when one of the session's grants covers the action (scope is enforced by the API). */
+export function hasPermission(s: SessionInfo | null | undefined, p: string): boolean {
+  return !!s?.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
+}
+
 /** Navigation entries; each feature phase adds its own (permission-filtered). */
 export function navItems(t: (k: string) => string, s: SessionInfo, path: string): NavItem[] {
-  const has = (p: string) => s.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
+  const has = (p: string) => hasPermission(s, p);
   const items: Array<NavItem & { show: boolean }> = [
     { href: '/app', label: t('app.nav.home'), icon: <Home aria-hidden />, show: true },
     { href: '/app/welcome', label: t('app.nav.onboarding'), icon: <DoorOpen aria-hidden />, show: !!s.employeeId },
     { href: '/app/people', label: t('app.nav.people'), icon: <Users aria-hidden />, show: has('employees.read') },
     { href: '/app/org-chart', label: t('app.nav.orgChart'), icon: <Network aria-hidden />, show: true },
     { href: '/app/time-off', label: t('app.nav.timeOff'), icon: <CalendarDays aria-hidden />, show: true },
+    { href: '/app/rota', label: t('app.nav.rota'), icon: <CalendarClock aria-hidden />, show: has('rota.view') || has('rota.view_own') },
+    { href: '/app/clock', label: t('app.nav.clock'), icon: <Clock aria-hidden />, show: has('time.clock') || has('time.manage') },
+    { href: '/app/timesheets', label: t('app.nav.timesheets'), icon: <ClipboardList aria-hidden />, show: has('time.clock') || has('time.read') },
     { href: '/app/tasks', label: t('app.nav.tasks'), icon: <ListChecks aria-hidden />, show: true },
     { href: '/app/approvals', label: t('app.nav.approvals'), icon: <Inbox aria-hidden />, show: true },
     { href: '/app/documents', label: t('app.nav.documents'), icon: <FileText aria-hidden />, show: true },

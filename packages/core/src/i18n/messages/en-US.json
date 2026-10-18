@@ -53,6 +53,38 @@
       }
     }
   },
+  "notify": {
+    "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
+    "shiftCancelled": "Your shift on {date} was canceled"
+  },
+  "app": {
+    "nav": {
+      "rota": "Schedule",
+      "clock": "Time clock"
+    }
+  },
+  "rota": {
+    "title": "Schedule",
+    "tabTeam": "Team schedule",
+    "gridLabel": "Schedule for the week of {date}",
+    "legend": "Dashed shifts are drafts that employees can’t see until you publish the week.",
+    "status": {
+      "cancelled": "Canceled"
+    },
+    "swapStatus": {
+      "cancelled": "Canceled"
+    },
+    "requestCancelled": "Request canceled."
+  },
+  "clock": {
+    "title": "Time clock"
+  },
+  "kiosk": {
+    "invalid": "Employee number or PIN not recognized."
+  },
+  "timesheets": {
+    "scheduled": "Scheduled"
+  },
   "onboarding": {
     "addressPostcode": "ZIP code",
     "addressCity": "City"

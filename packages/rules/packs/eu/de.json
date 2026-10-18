@@ -2,7 +2,7 @@
   "jurisdiction": "DE",
   "parent": "EU",
   "name": "Germany",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -133,6 +133,30 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "EUR-Lex lists no national transposition measures for Germany (checked 2026-10-18). The existing Entgelttransparenzgesetz (2017) remains in force but is not a notified transposition. Press/official reports (Bundestag Drs. 21/7026, 8 July 2026 — bundestag.de not on the allow-list) say the ministry draft was still in preparation."
+        }
+      ]
+    },
+    {
+      "key": "working_time.time_recording",
+      "description": "BAG 1 ABR 22/21: employers must record the start and end of daily working time (§ 3 Abs. 2 Nr. 1 ArbSchG read with the Working Time Directive)",
+      "versions": [
+        {
+          "effectiveFrom": "2022-09-13",
+          "effectiveTo": null,
+          "value": {
+            "required": true,
+            "scope": "daily_start_and_end_each_worker",
+            "employerObligation": true,
+            "basis": "§ 3 Abs. 2 Nr. 1 ArbSchG as interpreted by BAG 13.09.2022 – 1 ABR 22/21",
+            "excludes": "workers covered by national derogations under Art. 17(1) Directive 2003/88/EC"
+          },
+          "source": {
+            "url": "https://www.bundesarbeitsgericht.de/entscheidung/1-abr-22-21/",
+            "title": "Bundesarbeitsgericht, Beschluss vom 13. September 2022 – 1 ABR 22/21 (Arbeitszeiterfassung)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Leitsatz 1: \"Arbeitgeber sind nach § 3 Abs. 2 Nr. 1 ArbSchG verpflichtet, Beginn und Ende der täglichen Arbeitszeit ... zu erfassen\"; the duty does not apply to workers for whom the legislature made derogating rules under Art. 17(1) WTD. effectiveFrom is the decision date (the court read existing law; earlier dates resolve to the EU baseline). A statutory ArbZG amendment on the form of recording was not in force when verified. gesetze-im-internet.de returned HTTP 503 on 2026-10-18, so § 3 ArbSchG itself was not re-read in this pass."
         }
       ]
     }
@@ -483,7 +507,6 @@
       "family_leave.maternity",
       "family_leave.paternity",
       "working_time.max_weekly_hours",
-      "working_time.time_recording",
       "minimum_wage.rates",
       "leave.carry_over",
       "holidays: Epiphany (DE-BW/DE-ST), Repentance Day (DE-SN), World Children's Day (DE-TH), Women's Day (DE-MV), Assumption (DE-SL; Catholic municipalities of DE-BY), Augsburg Peace Festival — Land-law portals other than gesetze-bayern.de are not on the validator allow-list yet"

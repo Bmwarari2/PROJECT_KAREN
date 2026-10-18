@@ -600,6 +600,24 @@
       }
     },
     {
+      "jurisdiction": "ES",
+      "key": "working_time.time_recording",
+      "date": "2019-05-12",
+      "expectPath": {
+        "required": true,
+        "retentionYears": 4
+      }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "working_time.time_recording",
+      "date": "2026-06-01",
+      "expectPath": {
+        "required": true,
+        "scope": "daily_start_and_end_each_worker"
+      }
+    },
+    {
       "jurisdiction": "LT",
       "key": "leave.statutory_annual_minimum",
       "date": "2026-10-18",
@@ -825,6 +843,16 @@
     {
       "url": "https://legislation.mt/eli/ln/2026/173/eng",
       "title": "L.N. 173 of 2026 — Equal Pay (Transparency and Reporting) Regulations, 2026",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+      "title": "Estatuto de los Trabajadores, art. 34.9 (BOE consolidated text)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2019-3481",
+      "title": "Real Decreto-ley 8/2019, disposición final sexta.4 (BOE)",
       "verifiedOn": "2026-10-18"
     }
   ]

@@ -4,7 +4,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildSpec } from '../src/openapi';
+import { addMinutes } from '@thapsus/core/time';
 import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
+import { timeCompany } from './time-fixtures';
 
 /**
  * Contract tests: the published spec (packages/sdk/openapi.json) is current, is valid OpenAPI 3.1,
@@ -85,5 +87,34 @@ describe('implementation matches the spec', () => {
     const unauth = await ctx.app.inject({ method: 'GET', url: '/v1/settings/domains' });
     expect(unauth.headers['content-type']).toContain('application/problem+json');
     check('post', '/v1/auth/login', 401, (await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', payload: { tenant: o.slug, email: o.email, password: 'wrong-password-123' }, remoteAddress: '10.99.0.1' })).json());
+  });
+});
+
+describe('rota, clock and timesheet endpoints match the spec', () => {
+  it('settings, shifts (201 and 422), grid, publish, clock sync, kiosk, timesheet and opt-out', async () => {
+    const c = await timeCompany(ctx);
+    const emp = await c.hire(c.london);
+    const me = await c.login(emp);
+    check('get', '/v1/settings/time', 200, (await c.api('GET', '/v1/settings/time', undefined, me)).json());
+    const created = await c.api('POST', '/v1/shifts', { employeeId: emp, date: '2030-01-07', start: '14:00', end: '23:00', breakMinutes: 30 });
+    check('post', '/v1/shifts', 201, created.json());
+    check('put', '/v1/settings/time', 200, (await c.api('PUT', '/v1/settings/time', { enforcement: 'block' })).json());
+    const blocked = await c.api('POST', '/v1/shifts', { employeeId: emp, date: '2030-01-08', start: '07:00', end: '15:00', breakMinutes: 30 });
+    expect(blocked.statusCode).toBe(422);
+    check('post', '/v1/shifts', 422, blocked.json());
+    check('get', '/v1/rota', 200, (await c.api('GET', '/v1/rota?weekStart=2030-01-07')).json());
+    check('get', '/v1/shifts', 200, (await c.api('GET', '/v1/shifts?from=2030-01-07&to=2030-01-13')).json());
+    check('post', '/v1/rota/publish', 200, (await c.api('POST', '/v1/rota/publish', { from: '2030-01-07', to: '2030-01-13' })).json());
+    check('get', '/v1/me/shifts', 200, (await c.api('GET', '/v1/me/shifts?from=2030-01-07&to=2030-01-13', undefined, me)).json());
+    check('get', '/v1/shifts/open', 200, (await c.api('GET', '/v1/shifts/open?from=2030-01-07&to=2030-01-13', undefined, me)).json());
+    const sync = await c.api('POST', '/v1/clock/events', { events: [{ clientEventId: 'contract-0001', kind: 'in', occurredAt: addMinutes(ctx.clock.now.toISOString(), -5) }] }, me);
+    check('post', '/v1/clock/events', 200, sync.json());
+    check('get', '/v1/clock/status', 200, (await c.api('GET', '/v1/clock/status', undefined, me)).json());
+    const kiosk = await c.api('POST', '/v1/kiosks', { name: 'Contract kiosk' });
+    check('post', '/v1/kiosks', 201, kiosk.json());
+    const tap = await ctx.app.inject({ method: 'POST', url: '/v1/kiosk/clock', headers: { authorization: `Kiosk ${kiosk.json().token}` }, payload: { employeeNumber: 'NOBODY', pin: '4826', kind: 'in', clientEventId: 'contract-0002' } });
+    check('post', '/v1/kiosk/clock', 401, tap.json());
+    check('get', '/v1/timesheets/employees/{employeeId}/weeks/{weekStart}', 200, (await c.api('GET', `/v1/timesheets/employees/${emp}/weeks/2030-01-07`, undefined, me)).json());
+    check('post', '/v1/working-time/opt-outs', 201, (await c.api('POST', '/v1/working-time/opt-outs', { employeeId: emp, validFrom: '2030-01-01' })).json());
   });
 });

@@ -51,6 +51,11 @@
         "version": 2,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:7c0da691ff00dc7a88a7180a52c5b9d92b3a9922f965cd8cf97f6a24530c6634"
+      },
+      {
+        "version": 3,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:b53de3cb071d9f8f580b88b3f81c5098f348618f9996d1ac1ef7047de9409704"
       }
     ],
     "DK": [
@@ -72,6 +77,11 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:1023abcf8ac816d66cda1c5f309a3f10b53933e22d0694ec89dfd5f755cf2b9e"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:e69f5da9af9e928af4d31e1a7f337c37a5486e39eac4068a57a369e2a1d92665"
       }
     ],
     "EU": [

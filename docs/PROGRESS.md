@@ -14,7 +14,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
 | 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h] |
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
-| 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [ ] |
+| 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [ ] |
 | 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [ ] |
 | 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [ ] |
@@ -211,19 +211,22 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 4 — Rotas and time tracking (6.3)
 
-- [ ] **4.1 Rota builder**
+- [x] **4.1 Rota builder**
   - Rota templates, availability, open shifts, shift swaps with approval, publish and notify (email + web push).
   - Rota view for 10,000+ shift workers in one tenant stays responsive (virtualised grid; benchmark recorded).
-- [ ] **4.2 Clock in and out**
+  - _Evidence:_ `apps/api/test/rota.int.test.ts` (templates: create and apply; availability self-service; published and open shifts for employees; claims and swaps with manager approval, declines and a working-time re-check on approval; publish notifies each affected employee once by email and web push; permission refusals and tenant isolation; the grid pages employees by keyset); `apps/web/e2e/rota.spec.ts`; `apps/web/e2e/rota-bench.spec.ts` and `scripts/bench-rota.ts` (10,000 workers, 50,000 shifts: grid page p95 80 ms, 27 rows in the DOM, `docs/PERFORMANCE.md` §2.4).
+- [x] **4.2 Clock in and out**
   - Clock in/out from the PWA with an offline queue that syncs idempotently.
   - Optional geofence: off by default, configurable per country, with notice text shown to workers.
   - Shared kiosk mode with per-employee PIN (rate-limited, hashed).
-- [ ] **4.3 Working-time rules**
+  - _Evidence:_ `apps/api/test/time.int.test.ts` (the same offline batch twice gives no duplicates; geofence off by default with coordinates discarded, enabled per country with notice; kiosk token shown once and hashed, Argon2id PIN, lockout without enumeration, per-kiosk rate limit, own-tenant only; audited manager corrections); `apps/web/e2e/clock.spec.ts` (offline punches queued and replayed idempotently; location requested only when geofencing is on); `apps/web/e2e/kiosk.spec.ts`.
+- [x] **4.3 Working-time rules**
   - From pack data: US FLSA weekly overtime and state daily overtime; EU Working Time Directive limits and rest periods; UK 48-hour week with opt-out records; daily time recording where a country requires it.
   - Golden tests for every rule; violations surfaced as warnings/blocks per tenant configuration.
-- [ ] **4.4 Timesheets**
+  - _Evidence:_ `apps/api/test/rota.int.test.ts` (warn 201 or block 422 per tenant setting, citing the official source; the GB 48-hour average unless the worker opted out; projected US-CA daily overtime); `apps/api/test/timesheets.int.test.ts` (48-hour flag and opt-out records, CA 13-hour day, daily recording for Spain and Germany); golden vectors for every working-time and overtime rule version in `packages/rules/goldens/*.json` (enforced by the golden coverage test); `apps/api/test/time-engine.test.ts` (FLSA weekly and state daily overtime, shifts across zones and DST).
+- [x] **4.4 Timesheets**
   - Timesheets compared with the rota (variances highlighted), overtime calculation, approvals and payroll export feed.
-
+  - _Evidence:_ `apps/api/test/timesheets.int.test.ts` (rota vs recorded time with variances and overtime; the employee submits and the manager approves; the payroll export feed is reproducible, audited and permission-checked); `apps/web/e2e/timesheets.spec.ts`.
 ---
 
 ## Phase 5 — Compliance centre content (rest of 6.4)
