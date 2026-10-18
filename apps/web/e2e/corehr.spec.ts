@@ -181,7 +181,7 @@ test.describe('pre-start portal', () => {
     await jp.getByLabel('Type your full name').fill('Nova Joiner');
     await jp.getByLabel('I have read this document and agree to sign it electronically.').check();
     await jp.getByRole('button', { name: 'Sign document' }).click();
-    await expect(jp.getByText('Document signed.')).toBeVisible();
+    await expect(jp.getByText('Document signed.', { exact: true })).toBeVisible();
     await jp.goto('/app/welcome');
     await expect(jp.getByText('4 of 5 steps complete')).toBeVisible();
     await expect(jp.getByText(/^Signed on /)).toBeVisible();
