@@ -149,7 +149,7 @@ export async function ensureLeaveDefaults(tx: Tx, book: RuleBook) {
   }
   // Statutory minimums come from the jurisdiction packs, never from code.
   const today = new Date().toISOString().slice(0, 10);
-  let days = 25;
+  let days: number;
   let includesPublicHolidays = false;
   if (t.home_region === 'uk') {
     const r = book.tryResolve<{ capDays: number }>('GB', 'leave.statutory_annual_minimum', today);

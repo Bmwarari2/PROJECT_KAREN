@@ -105,7 +105,7 @@ try {
   await waitFor(`http://127.0.0.1:${API}/health`);
   await waitFor(`${base}/health`);
   const cookie = await sessionCookie();
-  const chrome = await chromeLauncher.launch({ chromePath: chromium.executablePath(), chromeFlags: ['--headless=new', '--no-sandbox'] });
+  const chrome = await chromeLauncher.launch({ chromePath: process.env.PW_CHROMIUM_PATH ?? chromium.executablePath(), chromeFlags: ['--headless=new', '--no-sandbox'] });
   try {
     for (const p of PAGES) {
       await fetch(base + p.path).catch(() => undefined); // warm the server

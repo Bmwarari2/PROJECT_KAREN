@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { addDays, dayOfWeek } from '@thapsus/core/time';
 import { withTenant } from '@thapsus/db';
 import { closeDb, cookieFrom, ownerSession, PASSWORD, startTestApp, type TestContext } from './helpers';
 import { assignRole } from '../src/modules/authz/principal';
@@ -11,6 +12,11 @@ let entity: string;
 let annual: string;
 let sickness: string;
 const api = (method: string, url: string, payload?: unknown, cookie = owner.cookie) => ctx.app.inject({ method: method as 'GET', url, payload: payload as object, headers: { cookie } });
+const firstMondayOfJuly = (y: number) => {
+  let d = `${y}-07-01`;
+  while (dayOfWeek(d) !== 1) d = addDays(d, 1);
+  return d;
+};
 const tx = <T>(fn: Parameters<typeof withTenant<T>>[2]) => withTenant(ctx.deps.router, owner.tenantId, fn);
 
 async function hire(v: Record<string, unknown> = {}) {
@@ -52,7 +58,9 @@ describe('policies and balances', () => {
   });
 
   it('warns when a policy is below the statutory minimum', async () => {
-    const res = await api('POST', '/v1/leave/policies', { name: 'Too little', leaveTypeId: annual, country: 'GB', config: { accrual: { method: 'annual_upfront', days: 20 }, unit: 'days', yearStart: '01-01', proRata: true, includesPublicHolidays: true, waitingDays: 0, allowNegativeDays: 0, rounding: 'none' } });
+    // Scoped to its own entity so it does not become the GB default for the employees hired by later tests.
+    const other = (await api('POST', '/v1/org/legal-entities', { name: 'Fictional Policy Test Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' })).json().id;
+    const res = await api('POST', '/v1/leave/policies', { name: 'Too little', leaveTypeId: annual, entityId: other, country: 'GB', config: { accrual: { method: 'annual_upfront', days: 20 }, unit: 'days', yearStart: '01-01', proRata: true, includesPublicHolidays: true, waitingDays: 0, allowNegativeDays: 0, rounding: 'none' } });
     expect(res.json().warnings).toEqual(['belowStatutoryMinimum:28']);
   });
 });
@@ -63,20 +71,22 @@ describe('requests, approval chain, cancellation and adjustments', () => {
     const emp = await hire({ managerId: mgrEmp });
     const me = await login(emp, 'employee');
     const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
-    // Mon 6 Jul – Fri 10 Jul 2026
-    const req = await api('POST', '/v1/leave/requests', { leaveTypeId: annual, startDate: '2026-07-06', endDate: '2026-07-10' }, me);
+    // A Monday–Friday week next July, so the employee can still cancel it (always in the future).
+    const y = new Date().getUTCFullYear() + 1;
+    const mon = firstMondayOfJuly(y);
+    const req = await api('POST', '/v1/leave/requests', { leaveTypeId: annual, startDate: mon, endDate: addDays(mon, 4) }, me);
     expect(req.statusCode, req.body).toBe(201);
     expect(req.json()).toMatchObject({ status: 'pending', amountDays: 5 });
-    expect((await api('POST', '/v1/leave/requests', { leaveTypeId: annual, startDate: '2026-07-08', endDate: '2026-07-08' }, me)).statusCode).toBe(409);
+    expect((await api('POST', '/v1/leave/requests', { leaveTypeId: annual, startDate: addDays(mon, 2), endDate: addDays(mon, 2) }, me)).statusCode).toBe(409);
     const inbox = (await api('GET', '/v1/approvals', undefined, mgr)).json();
     const ar = inbox.find((a: { payload: { leaveRequestId: string } }) => a.payload.leaveRequestId === req.json().id);
     expect((await api('POST', `/v1/approvals/${ar.id}/decide`, { decision: 'approve' }, mgr)).json().status).toBe('approved');
-    const bal = (await api('GET', `/v1/leave/balances/${emp}?asOf=2026-06-01`, undefined, me)).json().find((b: { leaveType: string }) => b.leaveType === 'annual');
+    const bal = (await api('GET', `/v1/leave/balances/${emp}?asOf=${y}-06-01`, undefined, me)).json().find((b: { leaveType: string }) => b.leaveType === 'annual');
     expect(bal.booked).toBe(5);
     expect(bal.available).toBe(28 - 8 - 5);
     // the employee can cancel future approved leave; balance is restored
     expect((await api('POST', `/v1/leave/requests/${req.json().id}/cancel`, undefined, me)).json().status).toBe('cancelled');
-    expect((await api('GET', `/v1/leave/balances/${emp}?asOf=2026-06-01`, undefined, me)).json().find((b: { leaveType: string }) => b.leaveType === 'annual').booked).toBe(0);
+    expect((await api('GET', `/v1/leave/balances/${emp}?asOf=${y}-06-01`, undefined, me)).json().find((b: { leaveType: string }) => b.leaveType === 'annual').booked).toBe(0);
   });
 
   it('rejection is applied to the request; insufficient balance is refused', async () => {

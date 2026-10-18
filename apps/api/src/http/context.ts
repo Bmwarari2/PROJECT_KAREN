@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+// Type-only: brings the req.cookies / reply.setCookie augmentation into every consumer (e.g. the worker).
+import type {} from '@fastify/cookie';
 import fp from 'fastify-plugin';
 import { resolveLocale, isLocale, type Locale } from '@thapsus/core/i18n';
 import { can, canSome, type Target } from '@thapsus/core/permissions';
