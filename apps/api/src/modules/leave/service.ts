@@ -1,8 +1,8 @@
 import type { Tx } from '@thapsus/db';
-import { addDays, dateParts, dayOfWeek, eachDay } from '@thapsus/core/time';
+import { addDays, compareDates, dateParts, dayOfWeek, daysBetween, eachDay, maxDate, minDate, today } from '@thapsus/core/time';
 import type { RuleBook } from '@thapsus/rules';
 import { ApiError } from '../../http/errors';
-import { computeBalance, dailyHours, leaveYearFor, requestAmount, type LeavePolicy, type WorkPattern } from './engine';
+import { computeBalance, dailyHours, fmlaLeaveYear, leaveYearFor, requestAmount, type FmlaRule, type LeavePolicy, type PolicyPeriod, type WorkPattern } from './engine';
 
 export interface LeaveContext {
   employeeId: string;
@@ -86,15 +86,91 @@ export async function policyFor(tx: Tx, ctx: LeaveContext, leaveTypeId: string, 
   );
 }
 
-export async function balanceFor(tx: Tx, book: RuleBook, employeeId: string, leaveTypeId: string, asOf: string, depth = 0): Promise<ReturnType<typeof computeBalance> & { policy: string; year: [string, string] } | undefined> {
+/**
+ * The leave year split wherever the applicable policy (assignment or default) or the employee's FTE
+ * changes, so entitlement is summed over each part (ADR-0029).
+ */
+export async function policyPeriods(tx: Tx, ctx: LeaveContext, leaveTypeId: string, ys: string, ye: string): Promise<Array<{ from: string; to: string; row: PolicyRow; fte: number }>> {
+  const cuts = new Set([ys, ye]);
+  const add = (d: string | null) => {
+    if (d && d > ys && d < ye) cuts.add(d);
+  };
+  const ranges = [
+    ...(await tx.query<{ f: string; t: string | null }>(`SELECT valid_from AS f, valid_to AS t FROM app.leave_policy_assignments WHERE employee_id = $1 AND leave_type_id = $2 AND valid_from < $4 AND (valid_to IS NULL OR valid_to > $3)`, [ctx.employeeId, leaveTypeId, ys, ye])),
+    ...(await tx.query<{ f: string; t: string | null }>(`SELECT effective_from AS f, effective_to AS t FROM app.leave_policies WHERE leave_type_id = $1 AND effective_from < $3 AND (effective_to IS NULL OR effective_to > $2)`, [leaveTypeId, ys, ye])),
+  ];
+  const jobs = await tx.query<{ f: string; t: string | null; fte: string }>(`SELECT valid_from AS f, valid_to AS t, fte FROM app.employee_jobs WHERE employee_id = $1 AND valid_from < $3 AND (valid_to IS NULL OR valid_to > $2) ORDER BY valid_from`, [ctx.employeeId, ys, ye]);
+  for (const r of [...ranges, ...jobs]) {
+    add(r.f);
+    add(r.t);
+  }
+  const points = [...cuts].sort();
+  const out: Array<{ from: string; to: string; row: PolicyRow; fte: number }> = [];
+  for (let k = 0; k < points.length - 1; k++) {
+    const [from, to] = [points[k]!, points[k + 1]!];
+    const row = await policyFor(tx, ctx, leaveTypeId, from);
+    if (!row) continue;
+    const job = jobs.find((j) => j.f <= from && (j.t === null || j.t > from));
+    const fte = job ? Number(job.fte) : ctx.fte;
+    const prev = out.at(-1);
+    if (prev && prev.row.id === row.id && prev.fte === fte && prev.to === from) prev.to = to;
+    else out.push({ from, to, row, fte });
+  }
+  return out;
+}
+
+export type HoursSource = 'timesheets' | 'recorded' | 'estimated' | 'none';
+
+/**
+ * Hours worked in [from, to): approved timesheets when the time-tracking module's table exists and has
+ * weeks in the range; else hours recorded in app.worked_hours (pro-rated by days for partial overlaps);
+ * else, only when `estimate` is given, the working pattern over the days employed; else none (ADR-0030).
+ */
+export async function hoursWorked(tx: Tx, employeeId: string, from: string, to: string, estimate?: { pattern: WorkPattern; startDate: string; endDate: string | null }): Promise<{ hours: number; source: HoursSource }> {
+  if (compareDates(from, to) >= 0) return { hours: 0, source: 'none' };
+  const hasTimesheets = (await tx.one<{ ok: boolean }>(`SELECT to_regclass('app.timesheets') IS NOT NULL AS ok`)).ok;
+  if (hasTimesheets) {
+    const t = await tx.one<{ n: number; m: string | null }>(
+      `SELECT count(*)::int AS n, sum(regular_minutes + overtime_minutes + double_minutes) AS m FROM app.timesheets WHERE employee_id = $1 AND status = 'approved' AND week_start >= $2 AND week_start < $3`,
+      [employeeId, from, to],
+    );
+    if (t.n > 0) return { hours: Math.round(Number(t.m ?? 0) / 0.6) / 100, source: 'timesheets' };
+  }
+  const rows = await tx.query<{ period_start: string; period_end: string; minutes: number }>(`SELECT period_start, period_end, minutes FROM app.worked_hours WHERE employee_id = $1 AND period_start < $3 AND period_end > $2`, [employeeId, from, to]);
+  if (rows.length) {
+    let minutes = 0;
+    for (const r of rows) {
+      const overlap = daysBetween(maxDate(r.period_start, from), minDate(r.period_end, to));
+      minutes += (r.minutes * overlap) / daysBetween(r.period_start, r.period_end);
+    }
+    return { hours: Math.round(minutes / 0.6) / 100, source: 'recorded' };
+  }
+  if (!estimate) return { hours: 0, source: 'none' };
+  const a = maxDate(from, estimate.startDate);
+  const b = estimate.endDate ? minDate(to, addDays(estimate.endDate, 1)) : to;
+  if (compareDates(a, b) >= 0) return { hours: 0, source: 'estimated' };
+  let hours = 0;
+  for (const d of eachDay(a, addDays(b, -1))) hours += estimate.pattern[dayOfWeek(d) as 1] ?? 0;
+  return { hours: Math.round(hours * 100) / 100, source: 'estimated' };
+}
+
+export async function balanceFor(tx: Tx, book: RuleBook, employeeId: string, leaveTypeId: string, asOf: string, depth = 0): Promise<(ReturnType<typeof computeBalance> & { policy: string; year: [string, string] }) | undefined> {
   const ctx = await leaveContext(tx, employeeId, asOf);
   const policy = await policyFor(tx, ctx, leaveTypeId, asOf);
   if (!policy) return undefined;
   const [ys, ye] = leaveYearFor(asOf, policy.config.yearStart);
   const year = dateParts(ys).year;
+  const segments = await policyPeriods(tx, ctx, leaveTypeId, ys, ye);
+  const periods: PolicyPeriod[] = [];
+  for (const s of segments) {
+    let worked: number | undefined;
+    if (s.row.config.accrual.method === 'per_hour_worked') worked = (await hoursWorked(tx, employeeId, s.from, minDate(s.to, addDays(asOf, 1)))).hours;
+    periods.push({ from: s.from, to: s.to, policy: s.row.config, fte: s.fte, hoursWorked: worked });
+  }
   const holidays = await holidaysFor(tx, book, ctx, ys, ye);
-  const requests = await tx.query<{ start_date: string; end_date: string; status: 'approved' | 'pending'; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null }>(
-    `SELECT start_date, end_date, status, start_half, end_half FROM app.leave_requests WHERE employee_id = $1 AND leave_type_id = $2 AND status IN ('pending', 'approved') AND start_date < $4 AND end_date >= $3`,
+  const requests = await tx.query<{ start_date: string; end_date: string; status: 'approved' | 'pending'; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null; hours: string | null }>(
+    `SELECT start_date, end_date, status, start_half, end_half, CASE WHEN start_date = end_date AND explicit_hours THEN amount_hours END AS hours
+       FROM app.leave_requests WHERE employee_id = $1 AND leave_type_id = $2 AND status IN ('pending', 'approved') AND start_date < $4 AND end_date >= $3`,
     [employeeId, leaveTypeId, ys, ye],
   );
   const adjustments = await tx.query<{ amount: string; effective_date: string }>(
@@ -109,22 +185,43 @@ export async function balanceFor(tx: Tx, book: RuleBook, employeeId: string, lea
   }
   const b = computeBalance({
     policy: policy.config,
+    periods,
     employee: { startDate: ctx.startDate, endDate: ctx.endDate, fte: ctx.fte },
     year,
     asOf,
     pattern: ctx.pattern,
     holidays,
-    requests: requests.map((r) => ({ start: r.start_date, end: r.end_date, status: r.status, startHalf: r.start_half ?? undefined, endHalf: r.end_half ?? undefined })),
+    requests: requests.map((r) => ({ start: r.start_date, end: r.end_date, status: r.status, startHalf: r.start_half ?? undefined, endHalf: r.end_half ?? undefined, hours: r.hours === null ? undefined : Number(r.hours) })),
     adjustments: adjustments.map((a) => ({ days: Number(a.amount), effectiveDate: a.effective_date })),
     carriedIn,
   });
   return { ...b, policy: policy.name, year: [ys, ye] };
 }
 
-export async function amountFor(tx: Tx, book: RuleBook, employeeId: string, start: string, end: string, startHalf?: 'am' | 'pm', endHalf?: 'am' | 'pm') {
+export async function amountFor(tx: Tx, book: RuleBook, employeeId: string, start: string, end: string, startHalf?: 'am' | 'pm', endHalf?: 'am' | 'pm', hours?: number) {
   const ctx = await leaveContext(tx, employeeId, start);
   const holidays = await holidaysFor(tx, book, ctx, start, end);
-  return requestAmount({ start, end, pattern: ctx.pattern, holidays, startHalf, endHalf });
+  return requestAmount({ start, end, pattern: ctx.pattern, holidays, startHalf, endHalf, hours });
+}
+
+const DEFAULT_TYPES: Array<[key: string, name: string, category: string, paid: boolean, approval: boolean]> = [
+  ['annual', 'Annual leave', 'annual', true, true],
+  ['sickness', 'Sickness', 'sickness', true, false],
+  ['unpaid', 'Unpaid leave', 'unpaid', false, true],
+  ['family', 'Family leave', 'family', true, true],
+  ['toil', 'Time off in lieu', 'toil', true, true],
+  ['fmla', 'FMLA leave', 'fmla', false, true],
+];
+
+/** Creates a built-in leave type if missing (e.g. FMLA for a non-US tenant with US employees). */
+export async function ensureLeaveType(tx: Tx, key: string): Promise<string> {
+  const has = await tx.maybe<{ id: string }>('SELECT id FROM app.leave_types WHERE key = $1', [key]);
+  if (has) return has.id;
+  const [, name, category, paid, approval] = DEFAULT_TYPES.find((t) => t[0] === key)!;
+  return (await tx.one<{ id: string }>(
+    `INSERT INTO app.leave_types (tenant_id, key, name, category, paid, requires_approval, deducts_balance) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) RETURNING id`,
+    [key, JSON.stringify({ 'en-GB': name, 'en-US': name === 'Annual leave' ? 'Vacation' : name }), category, paid, approval, key === 'annual' || key === 'toil'],
+  )).id;
 }
 
 /** Default leave types and an annual policy based on the tenant's home-region statutory minimum. */
@@ -132,31 +229,18 @@ export async function ensureLeaveDefaults(tx: Tx, book: RuleBook) {
   const has = await tx.maybe('SELECT 1 FROM app.leave_types LIMIT 1');
   if (has) return;
   const t = await tx.one<{ home_region: string }>('SELECT home_region FROM app.tenants');
-  const types: Array<[string, string, string, boolean, boolean]> = [
-    ['annual', 'Annual leave', 'annual', true, true],
-    ['sickness', 'Sickness', 'sickness', true, false],
-    ['unpaid', 'Unpaid leave', 'unpaid', false, true],
-    ['family', 'Family leave', 'family', true, true],
-    ['toil', 'Time off in lieu', 'toil', true, true],
-  ];
-  if (t.home_region === 'us') types.push(['fmla', 'FMLA leave', 'fmla', false, true]);
   const ids: Record<string, string> = {};
-  for (const [key, name, category, paid, approval] of types) {
-    ids[key] = (await tx.one<{ id: string }>(
-      `INSERT INTO app.leave_types (tenant_id, key, name, category, paid, requires_approval, deducts_balance) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) RETURNING id`,
-      [key, JSON.stringify({ 'en-GB': name, 'en-US': name === 'Annual leave' ? 'Vacation' : name }), category, paid, approval, key === 'annual' || key === 'toil'],
-    )).id;
-  }
+  for (const [key] of DEFAULT_TYPES) if (key !== 'fmla' || t.home_region === 'us') ids[key] = await ensureLeaveType(tx, key);
   // Statutory minimums come from the jurisdiction packs, never from code.
-  const today = new Date().toISOString().slice(0, 10);
+  const now = today('UTC');
   let days: number;
   let includesPublicHolidays = false;
   if (t.home_region === 'uk') {
-    const r = book.tryResolve<{ capDays: number }>('GB', 'leave.statutory_annual_minimum', today);
+    const r = book.tryResolve<{ capDays: number }>('GB', 'leave.statutory_annual_minimum', now);
     days = r?.value.capDays ?? 28;
     includesPublicHolidays = true;
   } else if (t.home_region === 'eu') {
-    const r = book.tryResolve<{ weeks: number }>('EU', 'leave.statutory_annual_minimum', today);
+    const r = book.tryResolve<{ weeks: number }>('EU', 'leave.statutory_annual_minimum', now);
     days = (r?.value.weeks ?? 4) * 5;
   } else {
     days = 15; // no US federal statutory minimum: a common company default, editable
@@ -192,4 +276,78 @@ export async function coverProblems(tx: Tx, ctx: LeaveContext, start: string, en
     }
   }
   return problems;
+}
+
+// ---- FMLA ---------------------------------------------------------------------------------------------
+
+/** Methods stored before the pack names were adopted. */
+const LEGACY_FMLA_METHODS: Record<string, string> = { rolling_backward: 'rolling_backward_from_leave_date' };
+export const fmlaMethod = (m: string) => LEGACY_FMLA_METHODS[m] ?? m;
+
+export interface FmlaSettings {
+  /** Leave-year method used for every employee (the pack requires one uniform method). */
+  leaveYearMethod?: string;
+  /** MM-DD start of a fixed 12-month leave year; defaults to the employee's hire anniversary. */
+  fixedYearStart?: string;
+  publicAgency?: boolean;
+}
+
+export interface AbsenceSettings {
+  fitNoteAfterCalendarDays?: number;
+  fmla?: FmlaSettings;
+}
+
+export async function absenceSettings(tx: Tx): Promise<AbsenceSettings> {
+  return (await tx.one<{ absence: AbsenceSettings | null }>("SELECT features->'absence' AS absence FROM app.tenants")).absence ?? {};
+}
+
+/** US headcount on the payroll for each whole ISO workweek from `from` to `to` (29 CFR 825.105). */
+export async function usWeeklyHeadcounts(tx: Tx, from: string, to: string) {
+  const rows = await tx.query<{ week_start: string; n: number }>(
+    `SELECT w::date::text AS week_start,
+            (SELECT count(*)::int FROM app.employees e WHERE e.country = 'US' AND e.start_date <= w::date AND (e.end_date IS NULL OR e.end_date >= w::date + 6)) AS n
+       FROM generate_series(date_trunc('week', $1::timestamp), $2::timestamp, interval '7 days') AS w`,
+    [from, to],
+  );
+  return rows.map((r) => ({ weekStart: r.week_start, employees: r.n }));
+}
+
+export interface FmlaCaseRow {
+  id: string;
+  employee_id: string;
+  reason: string;
+  leave_year_method: string;
+  start_date: string;
+  intermittent: boolean;
+  entitlement_hours: string;
+  eligibility: { eligible: boolean; failed?: string[] };
+  status: string;
+}
+
+/** Hours of FMLA leave (approved, or the given statuses) in the 12-month period that applies on `asOf` for the case's method. */
+export async function fmlaStatus(tx: Tx, book: RuleBook, c: FmlaCaseRow, asOf: string, opts: { excludeRequestId?: string; statuses?: string[] } = {}) {
+  const rule = book.resolve<FmlaRule>('US', 'family_leave.fmla', asOf).value;
+  const settings = (await absenceSettings(tx)).fmla ?? {};
+  const emp = await tx.one<{ start_date: string }>('SELECT start_date FROM app.employees WHERE id = $1', [c.employee_id]);
+  // Usage counts across the employee's FMLA cases (the entitlement is per employee, not per case).
+  const usage = await tx.query<{ id: string; start_date: string; amount_hours: string; reason: string }>(
+    `SELECT l.id, l.start_date, l.amount_hours, f.reason FROM app.leave_requests l JOIN app.fmla_cases f ON f.tenant_id = l.tenant_id AND f.id = l.fmla_case_id
+      WHERE f.employee_id = $1 AND l.status = ANY($3::text[]) AND ($2::uuid IS NULL OR l.id <> $2) ORDER BY l.start_date`,
+    [c.employee_id, opts.excludeRequestId ?? null, opts.statuses ?? ['approved']],
+  );
+  const caregiver = c.reason === 'military_caregiver';
+  const relevant = usage.filter((u) => (u.reason === 'military_caregiver') === caregiver);
+  const window = fmlaLeaveYear({
+    method: fmlaMethod(c.leave_year_method),
+    asOf,
+    usageDates: relevant.map((u) => u.start_date),
+    fixedYearStart: settings.fixedYearStart ?? emp.start_date.slice(5),
+    reason: c.reason,
+    militaryCaregiverPeriod: rule.militaryCaregiverPeriod,
+    allowedMethods: rule.leaveYearMethods,
+  });
+  const inWindow = relevant.filter((u) => u.start_date >= window[0] && u.start_date < window[1]);
+  const usedHours = Math.round(inWindow.reduce((s, u) => s + Number(u.amount_hours), 0) * 100) / 100;
+  const entitlement = Number(c.entitlement_hours);
+  return { leaveYear: window, usedHours, remainingHours: Math.max(0, Math.round((entitlement - usedHours) * 100) / 100), entitlementHours: entitlement, requests: inWindow.length };
 }
