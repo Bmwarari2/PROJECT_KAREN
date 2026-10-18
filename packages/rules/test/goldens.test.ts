@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { RuleBook } from '../src/engine';
+import { RuleBook, RuleNotFoundError } from '../src/engine';
 
 /**
  * Golden tests: expected values were copied from official sources (gov.uk, OPM, BALM, Service-Public,
@@ -117,6 +117,24 @@ describe('layered resolution', () => {
     expect(book.resolve('US-CA', 'overtime.daily', '2026-06-01').jurisdiction).toBe('US-CA');
     expect(book.resolve('DE', 'working_time.daily_rest', '2026-06-01').jurisdiction).toBe('EU');
     expect(book.resolve('GB-SCT', 'leave.statutory_annual_minimum', '2026-06-01').jurisdiction).toBe('GB');
+  });
+  it('UK nations: Scotland, Wales and England get GB law; Northern Ireland never inherits a GB rule not verified for it', () => {
+    for (const nation of ['GB-SCT', 'GB-WLS', 'GB-ENG']) {
+      expect(book.resolve(nation, 'leave.statutory_annual_minimum', '2026-06-01').jurisdiction).toBe('GB');
+      expect(book.resolve(nation, 'employment.unfair_dismissal_qualifying_period', '2027-01-01').value).toMatchObject({ qualifyingPeriod: 'P6M' });
+    }
+    expect(book.chain('GB-NIR')).toEqual(['GB-NIR', 'GB']);
+    expect(book.resolve('GB-NIR', 'employment.unfair_dismissal_qualifying_period', '2027-01-01')).toMatchObject({ jurisdiction: 'GB-NIR', value: { qualifyingPeriod: 'P1Y' } });
+    expect(book.resolve('GB-NIR', 'minimum_wage.rates', '2026-06-01')).toMatchObject({ jurisdiction: 'GB', regions: expect.arrayContaining(['GB-NIR']) });
+    expect(() => book.resolve('GB-NIR', 'reporting.gender_pay_gap', '2026-06-01')).toThrow(RuleNotFoundError);
+    // every GB rule answered for GB-NIR comes from the NI pack or from a GB version that lists GB-NIR
+    const gb = book.pack('GB')!;
+    for (const rule of gb.rules) {
+      for (const v of rule.versions) {
+        const r = book.tryResolve('GB-NIR', rule.key, v.effectiveFrom);
+        if (r?.jurisdiction === 'GB') expect(r.regions, `${rule.key} @ ${v.effectiveFrom}`).toContain('GB-NIR');
+      }
+    }
   });
   it('is effective-dated: the UK unfair dismissal period changes on 1 January 2027', () => {
     const before = book.resolve('GB', 'employment.unfair_dismissal_qualifying_period', '2026-12-31');

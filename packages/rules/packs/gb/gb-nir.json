@@ -1,0 +1,321 @@
+{
+  "jurisdiction": "GB-NIR",
+  "parent": "GB",
+  "name": "Northern Ireland",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Statutory paid annual leave (Northern Ireland): 4 weeks (reg. 15) + 1.6 weeks additional (reg. 16) = 5.6 weeks, capped at 28 days.",
+      "versions": [
+        {
+          "effectiveFrom": "2016-02-28",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 5.6,
+            "capDays": 28,
+            "components": {
+              "reg15Weeks": 4,
+              "reg16Weeks": 1.6
+            },
+            "bankHolidaysMayCountTowardsEntitlement": true,
+            "payInLieuOnlyOnTermination": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/16",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 16 (entitlement to additional annual leave)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 15(1): four weeks' annual leave in each leave year (https://www.legislation.gov.uk/nisr/2016/49/regulation/15); reg. 16(1): 1.6 weeks additional leave; reg. 16(2): aggregate of regs. 15(1) and 16(1) subject to a maximum of 28 days; regs. 15(5)(b) and 16(5): no payment in lieu except on termination. nidirect (https://www.nidirect.gov.uk/articles/holiday-entitlements): \"a minimum of 5.6 weeks paid annual leave\" and bank and public holidays \"can be included in your minimum entitlement\". The Regulations came into operation on 28 February 2016 (reg. 1, https://www.legislation.gov.uk/nisr/2016/49/regulation/1); earlier Northern Ireland working time legislation is not modelled. Current revised text on legislation.gov.uk verified."
+        }
+      ]
+    },
+    {
+      "key": "leave.carry_over",
+      "description": "Carry-over of untaken statutory leave (Northern Ireland, reg. 15 four weeks vs reg. 16 additional 1.6 weeks).",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "reg15FourWeeks": {
+              "defaultCarryOver": false,
+              "statutoryFamilyLeave": {
+                "carryOver": true,
+                "limit": "following_leave_year"
+              },
+              "sickLeave": {
+                "carryOver": true,
+                "mustBeTakenWithinMonthsOfLeaveYearEnd": 18
+              },
+              "employerFailedToGiveOpportunityOrInform": {
+                "carryOver": true,
+                "limit": "end_of_first_full_leave_year_after_failure_ceases"
+              }
+            },
+            "reg16OnePointSixWeeks": {
+              "defaultCarryOver": false,
+              "byRelevantAgreement": {
+                "carryOver": true,
+                "limit": "following_leave_year"
+              },
+              "statutoryFamilyLeave": {
+                "carryOver": true,
+                "limit": "following_leave_year"
+              }
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/15",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 15 (entitlement to annual leave)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 15(5)(a): reg. 15 leave may only be taken in the leave year in which it is due, subject to paras (6), (7), (10), (11) and (13). 15(10): statutory leave -> following leave year; 15(11): sick leave -> taken by the end of 18 months from the end of the leave year; 15(12)-(14): employer failure to recognise the right, give a reasonable opportunity/encourage, or inform -> carry forward, not beyond the end of the first full leave year in which para (13) does not apply. Paras (10)-(14) inserted 1.1.2024 by S.R. 2023/223. Reg. 16(6): a relevant agreement may carry reg. 16 leave into the following leave year; 16(7) (inserted 1.1.2024 by S.R. 2023/223): statutory leave carry-forward (https://www.legislation.gov.uk/nisr/2016/49/regulation/16). Coronavirus carry-over (15(6)-(9), two leave years) not modelled; rules before 1 January 2024 not modelled."
+        }
+      ]
+    },
+    {
+      "key": "working_time.max_weekly_hours",
+      "description": "Average weekly working time limit (Northern Ireland).",
+      "versions": [
+        {
+          "effectiveFrom": "2016-02-28",
+          "effectiveTo": null,
+          "value": {
+            "maxAverageHours": 48,
+            "perDays": 7,
+            "includesOvertime": true,
+            "referencePeriodWeeks": 17,
+            "extendedReferencePeriodWeeks": 26,
+            "extendedReferencePeriodNote": "reg. 4(5): workers excluded from certain provisions by reg. 25 use 26 weeks",
+            "optOutAvailable": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/4",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 4 (maximum weekly working time)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 4(1): working time including overtime shall not exceed an average of 48 hours for each seven days unless the worker has agreed in writing; reg. 4(3): successive 17-week periods under a relevant agreement or any 17-week period; reg. 4(5): 26 weeks for workers excluded by reg. 25. Reference periods extended under reg. 27(b) agreements not encoded. nidirect (https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week): average of 48 hours a week \"calculated over a 17-week period\". The Regulations came into operation on 28 February 2016 (reg. 1, https://www.legislation.gov.uk/nisr/2016/49/regulation/1); earlier Northern Ireland working time legislation is not modelled. Current revised text on legislation.gov.uk verified."
+        }
+      ]
+    },
+    {
+      "key": "working_time.opt_out",
+      "description": "Individual written opt-out from the 48-hour average (Northern Ireland).",
+      "versions": [
+        {
+          "effectiveFrom": "2016-02-28",
+          "effectiveTo": null,
+          "value": {
+            "permitted": true,
+            "mustBeInWriting": true,
+            "mayBeFixedTermOrIndefinite": true,
+            "workerMayTerminate": true,
+            "defaultTerminationNoticeDays": 7,
+            "maxAgreedTerminationNoticeMonths": 3,
+            "employerMustKeepUpToDateRecordsOfOptedOutWorkers": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/5",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 5 (agreement to exclude the maximum)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 4(1) (worker's agreement in writing) and 4(2) (up-to-date records of workers who agreed), reg. 5(1)(a) (specified period or indefinite), 5(1)(b) (terminable on not less than seven days' written notice unless the agreement provides otherwise), 5(2) (agreed notice must not exceed three months). The Regulations came into operation on 28 February 2016 (reg. 1, https://www.legislation.gov.uk/nisr/2016/49/regulation/1); earlier Northern Ireland working time legislation is not modelled. Current revised text on legislation.gov.uk verified."
+        }
+      ]
+    },
+    {
+      "key": "working_time.daily_rest",
+      "description": "Minimum daily rest (Northern Ireland).",
+      "versions": [
+        {
+          "effectiveFrom": "2016-02-28",
+          "effectiveTo": null,
+          "value": {
+            "adult": {
+              "consecutiveHours": 11,
+              "per": "24h"
+            },
+            "youngWorker": {
+              "consecutiveHours": 12,
+              "per": "24h"
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/12",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 12 (daily rest period)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 12(1): not less than eleven consecutive hours in each 24-hour period; 12(2): young worker twelve consecutive hours (may be interrupted for split or short work, 12(3)). Exceptions in later regulations not encoded. The Regulations came into operation on 28 February 2016 (reg. 1, https://www.legislation.gov.uk/nisr/2016/49/regulation/1); earlier Northern Ireland working time legislation is not modelled. Current revised text on legislation.gov.uk verified."
+        }
+      ]
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "description": "Minimum weekly rest (Northern Ireland).",
+      "versions": [
+        {
+          "effectiveFrom": "2016-02-28",
+          "effectiveTo": null,
+          "value": {
+            "adult": {
+              "uninterruptedHours": 24,
+              "perDays": 7,
+              "employerAlternatives": [
+                {
+                  "periods": 2,
+                  "hoursEach": 24,
+                  "perDays": 14
+                },
+                {
+                  "periods": 1,
+                  "hoursEach": 48,
+                  "perDays": 14
+                }
+              ]
+            },
+            "youngWorker": {
+              "hours": 48,
+              "perDays": 7,
+              "mayBeReducedToHours": 36
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/13",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 13 (weekly rest period)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 13(1): uninterrupted 24 hours in each seven-day period; 13(2): if the employer so determines, two 24-hour periods or one 48-hour period in each 14-day period instead; 13(3): young worker 48 hours in each seven-day period, which 13(8)(b) allows to be reduced for technical or organisation reasons but not below 36 consecutive hours; 13(6): a week starts at midnight between Sunday and Monday. The Regulations came into operation on 28 February 2016 (reg. 1, https://www.legislation.gov.uk/nisr/2016/49/regulation/1); earlier Northern Ireland working time legislation is not modelled. Current revised text on legislation.gov.uk verified."
+        }
+      ]
+    },
+    {
+      "key": "working_time.rest_break",
+      "description": "Minimum in-work rest break (Northern Ireland).",
+      "versions": [
+        {
+          "effectiveFrom": "2016-02-28",
+          "effectiveTo": null,
+          "value": {
+            "adult": {
+              "whenDailyWorkingTimeExceedsHours": 6,
+              "minUninterruptedMinutes": 20
+            },
+            "youngWorker": {
+              "whenDailyWorkingTimeExceedsHours": 4.5,
+              "minMinutes": 30
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisr/2016/49/regulation/14",
+            "title": "Working Time Regulations (Northern Ireland) 2016 (S.R. 2016/49), reg. 14 (rest breaks)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 14(1)/(3): more than six hours -> uninterrupted break of not less than 20 minutes (subject to collective or workforce agreement, 14(2)); 14(4): young worker more than four and a half hours -> at least 30 minutes. nidirect (https://www.nidirect.gov.uk/articles/rest-breaks) gives the same figures. The Regulations came into operation on 28 February 2016 (reg. 1, https://www.legislation.gov.uk/nisr/2016/49/regulation/1); earlier Northern Ireland working time legislation is not modelled. Current revised text on legislation.gov.uk verified."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Statutory Sick Pay (Northern Ireland) parameters.",
+      "versions": [
+        {
+          "effectiveFrom": "2026-04-06",
+          "effectiveTo": null,
+          "value": {
+            "weeklyRate": {
+              "amountMinor": 12325,
+              "currency": "GBP"
+            },
+            "calculation": "lower_of_flat_rate_and_percent_of_normal_weekly_earnings",
+            "percentOfNormalWeeklyEarnings": 80,
+            "waitingDays": 0,
+            "minPeriodOfIncapacityDays": 1,
+            "lowerEarningsLimitWeekly": null,
+            "maxWeeks": 28,
+            "linkingPeriodWeeks": 8,
+            "paidFor": "qualifying_days"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/ukpga/1992/7/section/153",
+            "title": "Social Security Contributions and Benefits (Northern Ireland) Act 1992, s.153 (rate of payment)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "IN FORCE 6 April 2026 in Northern Ireland as well: Employment Rights Act 2025 ss.12-13 amend the NI Act (commenced by S.I. 2026/373 reg. 2(c),(d)). s.153(1): weekly rate is the lower of £123.25 (sum substituted 6.4.2026 by S.R. 2026/59) and 80% of normal weekly earnings; s.151(1) (first three qualifying days) omitted 6.4.2026 (https://www.legislation.gov.uk/ukpga/1992/7/section/151); s.151(4): entitlement limit 28 times the weekly rate; s.148(2): period of incapacity is one day or more, and 148(3) links periods separated by not more than 8 weeks (https://www.legislation.gov.uk/ukpga/1992/7/section/148); Sch. 11 para. 2(c) (earnings below the lower earnings limit) omitted 6.4.2026 (https://www.legislation.gov.uk/ukpga/1992/7/schedule/11/paragraph/2); s.153(3): paid for qualifying days. Transitional provisions (S.I. 2026/373 regs. 3, 4, 6) not encoded. The 2025-26 NI version (£118.75, three waiting days, lower earnings limit) is not modelled because the NI lower earnings limit amount was not verified."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Statutory minimum notice (Employment Rights (Northern Ireland) Order 1996, art. 118).",
+      "versions": [
+        {
+          "effectiveFrom": "2006-01-01",
+          "effectiveTo": null,
+          "value": {
+            "minServiceToApply": "P1M",
+            "employer": {
+              "underTwoYearsWeeks": 1,
+              "fromTwoYears": {
+                "weeksPerYearOfContinuousEmployment": 1
+              },
+              "maxWeeks": 12
+            },
+            "employee": {
+              "weeks": 1
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisi/1996/1919/article/118",
+            "title": "Employment Rights (Northern Ireland) Order 1996, art. 118 (rights of employer and employee to minimum notice)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 118(1): employee continuously employed one month or more: (a) under two years -> one week; (b) two to under twelve years -> one week per year; (c) twelve years or more -> twelve weeks; 118(2): employee gives not less than one week. Text identical at legislation.gov.uk's Northern Ireland basedate (https://www.legislation.gov.uk/nisi/1996/1919/article/118/2006-01-01); effectiveFrom 2006-01-01 is that basedate, earlier history not modelled."
+        }
+      ]
+    },
+    {
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "description": "Continuous employment required for ordinary unfair dismissal protection (Employment Rights (Northern Ireland) Order 1996, art. 140), tested at the effective date of termination.",
+      "versions": [
+        {
+          "effectiveFrom": "2006-01-01",
+          "effectiveTo": null,
+          "value": {
+            "qualifyingPeriod": "P1Y",
+            "measuredTo": "effective_date_of_termination"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/nisi/1996/1919/article/140",
+            "title": "Employment Rights (Northern Ireland) Order 1996, art. 140 (qualifying period of employment)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 140(1): Article 126 (right not to be unfairly dismissed) does not apply unless the employee has been continuously employed for not less than one year ending with the effective date of termination (\"one year\" substituted by S.R. 1999/277); 140(3) lists the automatically unfair reasons with no qualifying period (not encoded). Same text at the NI basedate (https://www.legislation.gov.uk/nisi/1996/1919/article/140/2006-01-01). The Great Britain change to six months (Employment Rights Act 2025 s.25, from 1 January 2027) amends the GB Act only; legislation.gov.uk shows no amendment to art. 140(1) on 2026-10-18."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "notes": "Northern Ireland employment law from Northern Ireland legislation on legislation.gov.uk (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, Social Security Contributions and Benefits (NI) Act 1992), cross-checked with nidirect.gov.uk. GB-NIR lookups also get the UK-wide GB rules (minimum wage, right to work); all other GB rules are NOT returned for GB-NIR. Bank holidays for Northern Ireland stay in the GB pack (region GB-NIR). Pending legal review.",
+    "deeperRulesTodo": [
+      "family_leave.maternity and family_leave.paternity for Northern Ireland (Maternity and Parental Leave etc. Regulations (NI) 1999, Paternity and Adoption Leave Regulations (NI) 2002, NI SMP/SPP rates) — not verified, so GB-NIR lookups fail",
+      "sick_pay.statutory before 6 April 2026 (NI lower earnings limit amount not verified)",
+      "leave.irregular_hours_accrual — no Northern Ireland equivalent of GB reg. 15B found in the WTR (NI) 2016; not modelled, GB-NIR lookups fail",
+      "reporting.gender_pay_gap — no commenced Northern Ireland duty verified; GB-NIR lookups fail",
+      "Working time records (reg. 11: records kept for two years), night work (regs. 6-8), young-worker weekly limits"
+    ]
+  }
+}

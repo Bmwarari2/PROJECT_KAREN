@@ -545,6 +545,252 @@
       },
       "source": "https://www.legislation.gov.uk/uksi/2002/2818/regulation/2/2025-04-06",
       "notes": "SPP weekly rate: smaller of £187.18 and 90% of normal weekly earnings (Statutory Paternity Pay and Statutory Adoption Pay (Weekly Rates) Regulations 2002 reg. 2 as at 6 April 2025). Leave: PAL Regs 2002 reg. 4(2)(a) 26 weeks' service and reg. 5(1)-(2) one or two weeks within 52 weeks of birth, as at 6 April 2025 (https://www.legislation.gov.uk/uksi/2002/2788/regulation/4/2025-04-06, /regulation/5/2025-04-06)."
+    },
+    {
+      "jurisdiction": "GB-WLS",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB",
+      "expect": {
+        "weeks": 5.6,
+        "capDays": 28
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A",
+      "notes": "WTR 1998 extent E+W+S."
+    },
+    {
+      "jurisdiction": "GB-SCT",
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "date": "2027-01-01",
+      "expectJurisdiction": "GB",
+      "expect": {
+        "qualifyingPeriod": "P6M"
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1996/18/section/108",
+      "notes": "ERA 1996 s.108 extent E+W+S."
+    },
+    {
+      "jurisdiction": "GB-ENG",
+      "key": "reporting.gender_pay_gap",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB",
+      "expectPath": {
+        "employeeThreshold": 250
+      },
+      "source": "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report"
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "weeks": 5.6,
+        "capDays": 28,
+        "bankHolidaysMayCountTowardsEntitlement": true
+      },
+      "source": "https://www.nidirect.gov.uk/articles/holiday-entitlements",
+      "notes": "nidirect (independent of the WTR (NI) 2016 pack source): \"a minimum of 5.6 weeks paid annual leave (28 days for someone working five days a week)\"; bank and public holidays \"can be included\". The 28-day cap is from reg. 16(2) (statute)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "maxAverageHours": 48,
+        "referencePeriodWeeks": 17
+      },
+      "source": "https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week",
+      "notes": "nidirect: \"an average of 48 hours a week\" \"calculated over a 17-week period\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.opt_out",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "mustBeInWriting": true,
+        "defaultTerminationNoticeDays": 7,
+        "maxAgreedTerminationNoticeMonths": 3
+      },
+      "source": "https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week",
+      "notes": "nidirect: opt-out \"must be voluntary and in writing\"; cancel with \"between one week and three months' notice\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.daily_rest",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "adult": {
+          "consecutiveHours": 11,
+          "per": "24h"
+        },
+        "youngWorker": {
+          "consecutiveHours": 12,
+          "per": "24h"
+        }
+      },
+      "source": "https://www.nidirect.gov.uk/articles/rest-breaks",
+      "notes": "nidirect: \"at least 11 hours between working days\"; young workers \"at least 12 hours\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.weekly_rest",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "adult.uninterruptedHours": 24,
+        "adult.employerAlternatives[1].hoursEach": 48,
+        "adult.employerAlternatives[1].perDays": 14,
+        "youngWorker.hours": 48
+      },
+      "source": "https://www.nidirect.gov.uk/articles/rest-breaks",
+      "notes": "nidirect: \"24 hours clear of work each week or 48 hours clear each fortnight\"; young workers \"at least 48 hours clear of work every week\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.rest_break",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "adult": {
+          "whenDailyWorkingTimeExceedsHours": 6,
+          "minUninterruptedMinutes": 20
+        },
+        "youngWorker": {
+          "whenDailyWorkingTimeExceedsHours": 4.5,
+          "minMinutes": 30
+        }
+      },
+      "source": "https://www.nidirect.gov.uk/articles/rest-breaks",
+      "notes": "nidirect: 20 minutes for more than six hours; young workers 30 minutes for more than four and a half hours."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "leave.carry_over",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "reg15FourWeeks.sickLeave.mustBeTakenWithinMonthsOfLeaveYearEnd": 18,
+        "reg15FourWeeks.statutoryFamilyLeave.carryOver": true,
+        "reg16OnePointSixWeeks.byRelevantAgreement.carryOver": true
+      },
+      "source": "https://www.legislation.gov.uk/nisr/2016/49/regulation/15",
+      "notes": "Derived from statute (same source as the pack): WTR (NI) 2016 reg. 15(10)-(11) and reg. 16(6), in force 1 January 2024. No independent official summary found."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "sick_pay.statutory",
+      "date": "2026-05-01",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "weeklyRate": {
+          "amountMinor": 12325,
+          "currency": "GBP"
+        },
+        "percentOfNormalWeeklyEarnings": 80,
+        "waitingDays": 0,
+        "lowerEarningsLimitWeekly": null,
+        "maxWeeks": 28
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1992/7/section/153",
+      "notes": "Derived from statute (same source as the pack): SSCB (NI) Act 1992 s.153(1) £123.25 / 80% NWE, s.151(1) omitted, Sch. 11 para. 2(c) omitted, all from 6 April 2026. nidirect's SSP page gives no rate."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "sick_pay.statutory",
+      "date": "2025-12-01",
+      "expect": null,
+      "source": "https://www.legislation.gov.uk/ukpga/1992/7/section/153/2025-04-06",
+      "notes": "2025-26 NI SSP not modelled (NI lower earnings limit not verified): must fail rather than inherit the GB (E+W+S) version."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "employment.notice_period",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "minServiceToApply": "P1M",
+        "employer": {
+          "underTwoYearsWeeks": 1,
+          "fromTwoYears": {
+            "weeksPerYearOfContinuousEmployment": 1
+          },
+          "maxWeeks": 12
+        },
+        "employee": {
+          "weeks": 1
+        }
+      },
+      "source": "https://www.legislation.gov.uk/nisi/1996/1919/article/118",
+      "notes": "Derived from statute (same source as the pack); nidirect's unfair dismissal page only says there is \"a minimum notice period\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "date": "2027-01-01",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "qualifyingPeriod": "P1Y",
+        "measuredTo": "effective_date_of_termination"
+      },
+      "source": "https://www.legislation.gov.uk/nisi/1996/1919/article/140",
+      "notes": "Derived from statute: ERO 1996 art. 140(1) \"one year\". On 1 January 2027 GB moves to six months; Northern Ireland must stay at one year."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "minimum_wage.rates",
+      "date": "2026-04-01",
+      "expectJurisdiction": "GB",
+      "expectPath": {
+        "hourly.age21Plus": {
+          "amountMinor": 1271,
+          "currency": "GBP"
+        }
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1998/39/section/1",
+      "notes": "National Minimum Wage Act 1998 extends to the UK, so the GB rate answers GB-NIR (rate from https://www.gov.uk/national-minimum-wage-rates)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "right_to_work.retention",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB",
+      "expectPath": {
+        "retainAfterEmploymentEnds": "P2Y"
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/2006/13/section/15",
+      "notes": "Immigration, Asylum and Nationality Act 2006 extends to the UK."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "reporting.gender_pay_gap",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "GB gender pay gap regulations are E+W+S only; no NI duty verified: must fail explicitly (COVERAGE.md to-do)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "family_leave.maternity",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "NI maternity law not verified yet: must fail explicitly (COVERAGE.md to-do)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "family_leave.paternity",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "NI paternity law not verified yet: must fail explicitly (COVERAGE.md to-do)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "leave.irregular_hours_accrual",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "GB reg. 15B is E+W+S; no NI equivalent found: must fail explicitly."
     }
   ],
   "sources": [
