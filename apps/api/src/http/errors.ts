@@ -20,6 +20,7 @@ export type ErrorCode =
   | 'tenantUnavailable'
   | 'gone'
   | 'unprocessable'
+  | 'notImplemented'
   | 'internal';
 
 const STATUS: Record<ErrorCode, number> = {
@@ -37,6 +38,7 @@ const STATUS: Record<ErrorCode, number> = {
   lockedOut: 423,
   unprocessable: 422,
   rateLimited: 429,
+  notImplemented: 501,
   tenantUnavailable: 503,
   internal: 500,
 };
