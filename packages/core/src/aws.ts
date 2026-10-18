@@ -19,7 +19,8 @@ export interface AwsClientOptions {
   [key: string]: unknown;
 }
 
-type ClientCtor<C> = new (config: AwsClientOptions) => C;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ClientCtor<C> = new (config: any) => C;
 
 export interface GuardedFactoryOptions {
   cell: HomeRegion;

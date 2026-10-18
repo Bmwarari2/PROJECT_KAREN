@@ -20,7 +20,8 @@ Out of scope — do not build: running payroll or filing payroll taxes, global p
 ### Privacy and data residency
 - Comply with EU GDPR, UK GDPR + Data Protection Act 2018 (as amended by the Data (Use and Access) Act 2025), and US state privacy laws covering employee data (e.g. CCPA/CPRA). Thapsus-HR is the **processor**; customers are **controllers**.
 - Each tenant picks a home region at sign-up: **UK = eu-west-2 (London)**, **EU = eu-central-1 (Frankfurt)**, **US = us-east-2 (Ohio)**. All of that tenant's personal data, files, backups, logs, search indexes, caches, queues and emails stay in that region.
-- Backup copies only within the same jurisdiction: **EU → eu-west-1**, **US → us-west-2**, **UK → none** (London only, across AZs). This map lives in one config module and is enforced by tests.
+- Backup copies only within the same jurisdiction: **EU → eu-west-1**, **US → us-west-1**, **UK → none** (London only, across AZs). This map lives in one config module and is enforced by tests.
+- **AWS region allow-list (org SCP):** workloads only in eu-west-2, eu-central-1, us-east-2, eu-west-1, us-west-1. Never deploy CloudFormation stacks to us-east-1 or us-west-2; the global stack lives in eu-west-2. Anything that genuinely needs us-east-1 (e.g. a CloudFront ACM certificate) goes in HUMAN_TODO.md — never work around the SCP.
 - The global layer (marketing site, tenant directory mapping tenant ID/slug → region, billing) holds **no employee personal data**.
 - Authenticated pages and API responses are served from the home region with `Cache-Control: private, no-store` and are **never cached at an edge/CDN**.
 - No personal data goes to a third party unless it is listed in `docs/SUBPROCESSORS.md` (purpose + location, per region). Add the entry *before* writing the integration.

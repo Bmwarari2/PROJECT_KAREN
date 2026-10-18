@@ -13,7 +13,9 @@
     "./logger": "./src/logger.ts",
     "./aws": "./src/aws.ts",
     "./tracing": "./src/tracing.ts",
-    "./config": "./src/config.ts"
+    "./config": "./src/config.ts",
+    "./permissions": "./src/permissions.ts",
+    "./roles": "./src/roles.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

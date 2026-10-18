@@ -25,7 +25,7 @@ describe('residency map', () => {
   it('allows backup copies only within the same jurisdiction', () => {
     expect(REGIONS.uk.backupRegion).toBeNull();
     expect(REGIONS.eu.backupRegion).toBe('eu-west-1');
-    expect(REGIONS.us.backupRegion).toBe('us-west-2');
+    expect(REGIONS.us.backupRegion).toBe('us-west-1');
     expect(allowedAwsRegions('uk', 'backup')).toEqual(['eu-west-2']);
   });
   it('enumerates all six ordered region pairs', () => {

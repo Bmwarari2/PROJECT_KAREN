@@ -42,7 +42,7 @@ export const REGIONS: Readonly<Record<HomeRegion, RegionSpec>> = Object.freeze({
   us: {
     code: 'us',
     awsRegion: 'us-east-2',
-    backupRegion: 'us-west-2',
+    backupRegion: 'us-west-1',
     jurisdiction: 'US',
     defaultLocale: 'en-US',
     defaultCurrency: 'USD',

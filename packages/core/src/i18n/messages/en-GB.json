@@ -36,7 +36,10 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
-  "locales": { "en-GB": "English (UK)", "en-US": "English (US)" },
+  "locales": {
+    "en-GB": "English (UK)",
+    "en-US": "English (US)"
+  },
   "regions": {
     "uk": "United Kingdom (London)",
     "eu": "European Union (Frankfurt)",
@@ -53,6 +56,21 @@
     "ssoRequired": "Your organisation requires single sign-on.",
     "wrongRegion": "This workspace is hosted in another region.",
     "conflict": "That change conflicts with an existing record.",
-    "offline": "You are offline. We will sync when you reconnect."
+    "offline": "You are offline. We will sync when you reconnect.",
+    "invalidCredentials": "That email and password combination did not work.",
+    "mfaEnrollmentRequired": "Administrators must set up two-step verification before continuing.",
+    "tenantUnavailable": "This workspace is temporarily unavailable.",
+    "gone": "This is no longer available.",
+    "unprocessable": "We could not process that request.",
+    "internal": "Something went wrong on our side. Please try again."
+  },
+  "auth": {
+    "magicLinkSubject": "Your sign-in link for Thapsus-HR",
+    "magicLinkBody": "Use this link to sign in. It expires in 15 minutes and can be used once:\n\n{link}\n\nIf you did not ask for it, you can ignore this email.",
+    "findWorkspaceSubject": "Your Thapsus-HR workspaces",
+    "findWorkspaceBody": "You asked us to find your workspaces. Sign in here:\n\n{list}\n\nIf you did not ask for this, you can ignore this email."
+  },
+  "push": {
+    "testBody": "Notifications are working on this device."
   }
 }

@@ -1,0 +1,107 @@
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import { t, type Locale } from '@thapsus/core/i18n';
+import { TenantNotFoundError, TenantUnavailableError } from '@thapsus/db';
+import { ResidencyViolationError } from '@thapsus/core';
+
+/** Error codes map to message catalogue keys errors.<code> where one exists. */
+export type ErrorCode =
+  | 'validation'
+  | 'unauthorised'
+  | 'forbidden'
+  | 'notFound'
+  | 'conflict'
+  | 'rateLimited'
+  | 'lockedOut'
+  | 'mfaRequired'
+  | 'mfaEnrollmentRequired'
+  | 'ssoRequired'
+  | 'wrongRegion'
+  | 'invalidCredentials'
+  | 'tenantUnavailable'
+  | 'gone'
+  | 'unprocessable'
+  | 'internal';
+
+const STATUS: Record<ErrorCode, number> = {
+  validation: 400,
+  unauthorised: 401,
+  invalidCredentials: 401,
+  forbidden: 403,
+  mfaRequired: 403,
+  mfaEnrollmentRequired: 403,
+  ssoRequired: 403,
+  notFound: 404,
+  conflict: 409,
+  wrongRegion: 421,
+  gone: 410,
+  lockedOut: 423,
+  unprocessable: 422,
+  rateLimited: 429,
+  tenantUnavailable: 503,
+  internal: 500,
+};
+
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(
+    readonly code: ErrorCode,
+    message?: string,
+    readonly extra: Record<string, unknown> = {},
+  ) {
+    super(message ?? code);
+    this.status = STATUS[code];
+  }
+}
+
+export const notFound = () => new ApiError('notFound');
+export const forbidden = (detail?: string) => new ApiError('forbidden', detail);
+
+function title(locale: Locale, code: ErrorCode) {
+  const key = `errors.${code}`;
+  const msg = t(locale, key);
+  return msg === key ? t(locale, 'common.error') : msg;
+}
+
+export function problem(req: FastifyRequest, reply: FastifyReply, code: ErrorCode, extra: Record<string, unknown> = {}, detail?: string) {
+  const status = STATUS[code];
+  return reply
+    .status(status)
+    .type('application/problem+json')
+    .send({ type: `about:blank#${code}`, title: title(req.ctx?.locale ?? 'en-GB', code), status, code, detail, requestId: req.id, ...extra });
+}
+
+export function errorHandler(err: FastifyError & { code?: string }, req: FastifyRequest, reply: FastifyReply) {
+  if (err instanceof ApiError) {
+    if (err.status === 429 && err.extra.retryAfter) reply.header('Retry-After', String(err.extra.retryAfter));
+    return problem(req, reply, err.code, err.extra, err.message !== err.code ? err.message : undefined);
+  }
+  if (err.validation) {
+    return problem(req, reply, 'validation', {
+      errors: err.validation.map((v) => ({ path: v.instancePath || (v.params as { missingProperty?: string })?.missingProperty, message: v.message })),
+    });
+  }
+  if (err instanceof TenantNotFoundError) return problem(req, reply, 'notFound');
+  if (err instanceof TenantUnavailableError) return problem(req, reply, 'tenantUnavailable');
+  if (err instanceof ResidencyViolationError) {
+    req.log.error({ err }, 'residency violation');
+    return problem(req, reply, 'internal');
+  }
+  switch (err.code) {
+    case '23505':
+    case '23P01':
+      return problem(req, reply, 'conflict');
+    case '23503':
+    case '23514':
+    case '22007':
+    case '22008':
+      return problem(req, reply, 'unprocessable');
+    case '42501':
+      return problem(req, reply, 'forbidden');
+    case 'FST_ERR_CTP_INVALID_MEDIA_TYPE':
+    case 'FST_ERR_CTP_EMPTY_JSON_BODY':
+      return problem(req, reply, 'validation');
+  }
+  if (err.statusCode && err.statusCode < 500) return problem(req, reply, err.statusCode === 404 ? 'notFound' : 'validation');
+  req.log.error({ err }, 'unhandled error');
+  return problem(req, reply, 'internal');
+}

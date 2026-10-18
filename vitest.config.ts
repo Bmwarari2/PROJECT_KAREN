@@ -1,16 +1,17 @@
 import { defineConfig } from 'vitest/config';
 
 const special = ['**/*.int.test.ts', '**/*.isolation.test.ts', '**/*.residency.test.ts', '**/*.contract.test.ts'];
+const roots = (suffix: string) => ['{apps,packages}/*/{src,test}/**/*' + suffix, 'infra/test/**/*' + suffix, 'scripts/test/**/*' + suffix];
 const ignore = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/cdk.out/**', 'apps/web/e2e/**'];
 
 export default defineConfig({
   test: {
     projects: [
-      { test: { name: 'unit', include: ['**/*.test.ts'], exclude: [...ignore, ...special], environment: 'node' } },
+      { test: { name: 'unit', include: roots('.test.ts'), exclude: [...ignore, ...special], environment: 'node' } },
       {
         test: {
           name: 'integration',
-          include: ['**/*.int.test.ts'],
+          include: roots('.int.test.ts'),
           exclude: ignore,
           globalSetup: ['./tools/test/global-db-setup.ts'],
           testTimeout: 60_000,
@@ -21,7 +22,7 @@ export default defineConfig({
       {
         test: {
           name: 'isolation',
-          include: ['**/*.isolation.test.ts'],
+          include: roots('.isolation.test.ts'),
           exclude: ignore,
           globalSetup: ['./tools/test/global-db-setup.ts'],
           testTimeout: 60_000,
@@ -32,7 +33,7 @@ export default defineConfig({
       {
         test: {
           name: 'residency',
-          include: ['**/*.residency.test.ts'],
+          include: roots('.residency.test.ts'),
           exclude: ignore,
           globalSetup: ['./tools/test/global-db-setup.ts'],
           testTimeout: 60_000,
@@ -43,7 +44,7 @@ export default defineConfig({
       {
         test: {
           name: 'contract',
-          include: ['**/*.contract.test.ts'],
+          include: roots('.contract.test.ts'),
           exclude: ignore,
           globalSetup: ['./tools/test/global-db-setup.ts'],
           testTimeout: 60_000,

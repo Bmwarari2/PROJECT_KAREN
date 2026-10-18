@@ -3,6 +3,7 @@
 > Source of truth for scope and requirements. Saved verbatim from the product owner on 2026-10-17.
 > Changes to this brief are made only by the product owner; implementation choices that differ from its defaults are recorded in docs/DECISIONS.md.
 > Product renamed from "ROCHE" to "Thapsus-HR" by the product owner on 2026-10-18.
+> Updated by the product owner on 2026-10-18 to match the AWS organisation SCP: US backups copy to us-west-1 (not us-west-2); the global stack runs in eu-west-2; no CloudFormation stacks in us-east-1 or us-west-2 (see DECISIONS.md ADR-0001).
 
 You are the lead engineer building Thapsus-HR, a production-ready, multi-tenant HR platform built by Thapsus. It must serve companies of every size, from 10 employees to multinational enterprises with hundreds of thousands of employees, across the United Kingdom, the European Union and the United States.
 
@@ -16,7 +17,7 @@ First: save this brief as docs/BUILD_BRIEF.md, create CLAUDE.md containing the n
 
 Privacy and data residency
 - Comply with EU GDPR, UK GDPR and the Data Protection Act 2018 (as amended by the Data (Use and Access) Act 2025), and US state privacy laws that cover employee data (for example California's CCPA/CPRA). Thapsus-HR is the processor; customers are the controllers.
-- Every customer chooses a home region at sign-up: UK (AWS eu-west-2, London), EU (AWS eu-central-1, Frankfurt) or US (AWS us-east-2, Ohio). All of that customer's personal data, files, backups, logs, search indexes, caches, queues and emails stay in that region. Backups may only be copied to another region in the same jurisdiction (EU to eu-west-1, US to us-west-2); UK backups stay in London across availability zones.
+- Every customer chooses a home region at sign-up: UK (AWS eu-west-2, London), EU (AWS eu-central-1, Frankfurt) or US (AWS us-east-2, Ohio). All of that customer's personal data, files, backups, logs, search indexes, caches, queues and emails stay in that region. Backups may only be copied to another region in the same jurisdiction (EU to eu-west-1, US to us-west-1); UK backups stay in London across availability zones.
 - The global layer (marketing site, the tenant directory that maps a tenant to its region, billing) holds no employee personal data.
 - Authenticated pages and API responses are served from the home region and never cached on an edge network.
 - No personal data goes to any third party unless it is listed in docs/SUBPROCESSORS.md with its purpose and location, per region.
@@ -55,7 +56,7 @@ Design (look and feel inspired by Apple.com)
 ## 4. Architecture and stack (defaults: record any change and the reason in docs/DECISIONS.md)
 - TypeScript everywhere. pnpm + Turborepo monorepo: apps/web (Next.js App Router, Tailwind, shadcn/ui restyled to the design rules in section 2, Motion for animation, installable PWA with web push), apps/api (Fastify, OpenAPI 3.1 first, versioned public REST API), apps/worker (background jobs and schedules), packages/db (Drizzle ORM and migrations), packages/rules (jurisdiction packs), packages/ui, packages/sdk.
 - A per-region "cell" deployed with AWS CDK (TypeScript): ECS Fargate services (web, api, worker) with autoscaling behind an Application Load Balancer with ACM TLS and AWS WAF; Aurora PostgreSQL with Multi-AZ, read replicas for reporting, and RDS Proxy; ElastiCache (Valkey/Redis) for caching, rate limits and sessions; SQS and EventBridge for events; S3 (private, versioned, SSE-KMS) via presigned URLs; SES for email; EventBridge Scheduler; Secrets Manager; KMS; CloudWatch, X-Ray and OpenTelemetry with personal data scrubbed; AWS Backup; AWS Budgets alarms.
-- A global stack: Route 53, the tenant directory (tenant ID and slug to home region, no personal data), region-aware sign-in routing, marketing site and billing.
+- A global stack (deployed in eu-west-2, London): Route 53, the tenant directory (tenant ID and slug to home region, no personal data), region-aware sign-in routing, marketing site and billing.
 - Transactional outbox for reliable events and webhooks. Idempotent background jobs. Expand-and-contract database migrations for zero-downtime deploys.
 - Search with PostgreSQL full-text and trigram indexes; add a dedicated search service only if load tests prove it is needed.
 - Effective-dated records for all core HR data (full history and future-dated changes).
