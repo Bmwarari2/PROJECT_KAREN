@@ -40,7 +40,7 @@ export class StripeBillingProvider implements BillingProvider {
       business_name: c.legalName,
       individual_name: c.contactName,
       email: c.contactEmail,
-      address: { line1: c.address.line1, line2: c.address.line2 ?? undefined, city: c.address.city, state: c.address.region ?? undefined, postal_code: c.address.postalCode, country: c.address.country },
+      address: { line1: c.companyAddress.line1, line2: c.companyAddress.line2 ?? undefined, city: c.companyAddress.city, state: c.companyAddress.region ?? undefined, postal_code: c.companyAddress.postalCode, country: c.companyAddress.country },
       preferred_locales: [c.locale.toLowerCase()],
       invoice_settings: { custom_fields: c.poNumber ? [{ name: 'PO number', value: c.poNumber.slice(0, 140) }] : ('' as const) },
       metadata: { thapsus_tenant_id: c.tenantId, thapsus_billing_account_id: c.billingAccountId },

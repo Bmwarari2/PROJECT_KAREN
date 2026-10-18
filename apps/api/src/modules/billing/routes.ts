@@ -331,7 +331,7 @@ export async function billingRoutes(app: FastifyInstance) {
         if (!secret) throw new ApiError('tenantUnavailable', 'Webhooks are not configured');
         let event;
         try {
-          event = verifyWebhook(req.body as Buffer, req.headers['stripe-signature'] as string | undefined, secret, Math.floor(deps.now().getTime() / 1000));
+          event = verifyWebhook(req.body as Buffer, req.headers['stripe-signature'] as string | undefined, secret, deps.now().getTime());
         } catch (err) {
           if (err instanceof WebhookSignatureError) throw new ApiError('validation', 'Invalid signature');
           throw err;

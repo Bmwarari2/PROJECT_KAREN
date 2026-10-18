@@ -6,7 +6,7 @@ import type { HomeRegion } from '@thapsus/core';
 import { articlesForContext, helpArticle, helpArticles, searchHelp } from '@thapsus/core/help';
 import { can } from '@thapsus/core/permissions';
 import type { TenantRouter } from '@thapsus/db';
-import { authorize, requireAuth } from '../../http/context';
+import { authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { objectKey } from '../../lib/object-store';
@@ -88,7 +88,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/help/articles',
     { schema: { tags: ['support'], summary: 'Help centre articles: search (q), contextual (context = app path) or all', querystring: Type.Object({ q: Type.Optional(Type.String({ maxLength: 200 })), context: Type.Optional(Type.String({ maxLength: 300, pattern: '^/app' })) }), response: { 200: Type.Array(Article), 403: Problem } } },
     async (req) => {
-      authorize(req, 'help.read');
+      authorizeSome(req, 'help.read');
       const q = req.query as { q?: string; context?: string };
       const locale = req.ctx.locale;
       if (q.q?.trim()) return searchHelp(q.q, locale);
@@ -97,7 +97,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     },
   );
   app.get('/v1/help/articles/:slug', { schema: { tags: ['support'], params: Type.Object({ slug: Type.String({ pattern: '^[a-z0-9-]{1,80}$' }) }), response: { 200: Article, 403: Problem, 404: Problem } } }, async (req) => {
-    authorize(req, 'help.read');
+    authorizeSome(req, 'help.read');
     const a = helpArticle((req.params as { slug: string }).slug, req.ctx.locale);
     if (!a) throw new ApiError('notFound');
     return a;
@@ -108,7 +108,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/support/contact',
     { schema: { tags: ['support'], response: { 200: Type.Object({ planId: Type.String(), region: Type.String(), coverage: Type.String(), hours: Nullable(Type.Object({ timeZone: Type.String(), days: Type.Array(Type.Integer()), start: Type.String(), end: Type.String() })), channels: Type.Array(Type.Object({ kind: Type.String(), value: Type.Optional(Nullable(Type.String())), hours: Type.Optional(Type.String()) })), sla: Type.Record(Type.String(), Type.Object({ firstResponseMinutes: Type.Integer(), resolutionMinutes: Type.Integer() })) }), 403: Problem } } },
     async (req) => {
-      const auth = authorize(req, 'support.ticket');
+      const auth = authorizeSome(req, 'support.ticket');
       const cfg = billingConfig();
       const contract = await activeContract(deps.router, auth.tenantId);
       const planId = await app.tenantTx(req, (tx) => supportPlanId(tx, cfg, contract), { readOnly: true });
@@ -129,7 +129,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/support/tickets',
     { schema: { tags: ['support'], querystring: Type.Object({ scope: Type.Optional(Type.Union([Type.Literal('mine'), Type.Literal('all')])), status: Type.Optional(Type.Union([Type.Literal('open'), Type.Literal('closed')])) }), response: { 200: Type.Array(TicketT), 403: Problem } } },
     async (req) => {
-      const auth = authorize(req, 'support.ticket');
+      const auth = authorizeSome(req, 'support.ticket');
       const q = req.query as { scope?: 'mine' | 'all'; status?: 'open' | 'closed' };
       const all = q.scope === 'all';
       if (all && !isSupportAdmin(req)) throw new ApiError('forbidden');
@@ -158,7 +158,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/support/tickets',
     { config: { selfAudited: true }, schema: { tags: ['support'], summary: 'Raise a support ticket (stored in the home region; SLA targets from the plan)', body: NewTicket, response: { 201: TicketT, 400: Problem, 403: Problem } } },
     async (req, reply) => {
-      const auth = authorize(req, 'support.ticket');
+      const auth = authorizeSome(req, 'support.ticket');
       const b = req.body as Static<typeof NewTicket>;
       // Urgent (service unusable for the company) is reserved for admins.
       if (b.priority === 'urgent' && !isSupportAdmin(req)) throw new ApiError('forbidden', 'Only admins can raise urgent tickets');
@@ -191,7 +191,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
   }
 
   app.get('/v1/support/tickets/:id', { schema: { tags: ['support'], params: Type.Object({ id: Uuid }), response: { 200: ThreadT, 403: Problem, 404: Problem } } }, async (req) => {
-    authorize(req, 'support.ticket');
+    authorizeSome(req, 'support.ticket');
     const { id } = req.params as { id: string };
     return app.tenantTx(req, async (tx) => threadJson(tx, await loadOwnOrAdmin(req, tx, id), now()), { readOnly: true });
   });
@@ -200,7 +200,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/support/tickets/:id/messages',
     { config: { selfAudited: true }, schema: { tags: ['support'], params: Type.Object({ id: Uuid }), body: Type.Object({ body: Type.String({ minLength: 1, maxLength: 20000 }) }), response: { 201: Type.Object({ id: Uuid }), 403: Problem, 404: Problem, 409: Problem } } },
     async (req, reply) => {
-      const auth = authorize(req, 'support.ticket');
+      const auth = authorizeSome(req, 'support.ticket');
       const { id } = req.params as { id: string };
       const at = now();
       const { msg, t } = await app.tenantTx(req, async (tx) => {
@@ -221,7 +221,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/support/tickets/:id/close',
     { config: { selfAudited: true }, schema: { tags: ['support'], params: Type.Object({ id: Uuid }), response: { 204: Type.Null(), 403: Problem, 404: Problem } } },
     async (req, reply) => {
-      const auth = authorize(req, 'support.ticket');
+      const auth = authorizeSome(req, 'support.ticket');
       const { id } = req.params as { id: string };
       const at = now();
       const t = await app.tenantTx(req, async (tx) => {
@@ -242,7 +242,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
       '/v1/support/tickets/:id/attachments',
       { config: { selfAudited: true }, schema: { tags: ['support'], consumes: ['multipart/form-data'], params: Type.Object({ id: Uuid }), response: { 201: Type.Object({ id: Uuid }), 400: Problem, 403: Problem, 404: Problem, 413: Problem } } },
       async (req, reply) => {
-        const auth = authorize(req, 'support.ticket');
+        const auth = authorizeSome(req, 'support.ticket');
         const { id } = req.params as { id: string };
         const file = await req.file();
         if (!file || !ATTACHMENT_TYPES.has(file.mimetype)) throw new ApiError('validation', 'Attach a PNG, JPEG, PDF, text or CSV file');
@@ -273,7 +273,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     '/v1/support/tickets/:id/attachments/:attachmentId',
     { config: { selfAudited: true }, schema: { tags: ['support'], params: Type.Object({ id: Uuid, attachmentId: Uuid }), response: { 200: Type.Object({ url: Type.String() }), 403: Problem, 404: Problem } } },
     async (req) => {
-      authorize(req, 'support.ticket');
+      authorizeSome(req, 'support.ticket');
       const { id, attachmentId } = req.params as { id: string; attachmentId: string };
       return app.tenantTx(req, async (tx) => {
         await loadOwnOrAdmin(req, tx, id);

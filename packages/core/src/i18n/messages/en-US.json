@@ -46,7 +46,8 @@
     "shiftClaimApproved": "You have the open shift on {date}",
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
-    "timesheetRejected": "Your timesheet for the week of {week} was returned"
+    "timesheetRejected": "Your timesheet for the week of {week} was returned",
+    "supportReply": "Thapsus-HR support replied to ticket {reference}"
   },
   "app": {
     "nav": {
@@ -132,6 +133,18 @@
       "rejected": "This color was not saved because it does not have enough contrast:",
       "save": "Save color",
       "reset": "Use the default color"
+    }
+  },
+  "billing": {
+    "email": {
+      "paymentFailedSubject": "Payment failed for your Thapsus-HR invoice {number}",
+      "paymentFailedBody": "Hello,\n\nWe couldn't process the payment of {amount} for invoice {number} for {company}. It is due on {due}.\n\nPlease update your payment details on the billing page:\n{link}\n\nYour workspace stays available while you do this. If you've already paid, you can ignore this email.\n\nThapsus-HR billing"
+    }
+  },
+  "support": {
+    "email": {
+      "escalationSubject": "[{region}] SLA {state}: ticket {reference} ({priority})",
+      "escalationBody": "Support ticket {reference} is {state} on its {timer} target.\n\nPriority: {priority}\nPlan: {plan}\nDue: {due}\n\nOpen it in the back office:\n{link}"
     }
   }
 }

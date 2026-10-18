@@ -407,7 +407,8 @@
     "complianceExpired": "{requirement} for {name} expired on {date}",
     "probationEnding": "Probation for {name} ends on {date}",
     "qualifyingPeriodReached": "{name} gains unfair dismissal protection on {date}",
-    "lawChangePublished": "Law change ({jurisdiction}): {title}"
+    "lawChangePublished": "Law change ({jurisdiction}): {title}",
+    "supportReply": "Thapsus-HR support replied to ticket {reference}"
   },
   "people": {
     "title": "People",
@@ -1507,6 +1508,18 @@
     "flsa": {
       "title": "Exempt and non-exempt (US)",
       "overtimeEligible": "Overtime-eligible"
+    }
+  },
+  "billing": {
+    "email": {
+      "paymentFailedSubject": "Payment failed for your Thapsus-HR invoice {number}",
+      "paymentFailedBody": "Hello,\n\nWe could not take payment of {amount} for invoice {number} for {company}. It is due on {due}.\n\nPlease update your payment details on the billing page:\n{link}\n\nYour workspace stays available while you do this. If you have already paid, you can ignore this email.\n\nThapsus-HR billing"
+    }
+  },
+  "support": {
+    "email": {
+      "escalationSubject": "[{region}] SLA {state}: ticket {reference} ({priority})",
+      "escalationBody": "Support ticket {reference} is {state} on its {timer} target.\n\nPriority: {priority}\nPlan: {plan}\nDue: {due}\n\nOpen it in the back office:\n{link}"
     }
   }
 }

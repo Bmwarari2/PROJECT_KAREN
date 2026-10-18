@@ -26,7 +26,8 @@ export interface CustomerInput {
   /** Primary billing contact (the customer's own staff member, not an employee record). */
   contactName: string;
   contactEmail: string;
-  address: ProviderAddress;
+  /** The company's billing address (Stripe Tax location). */
+  companyAddress: ProviderAddress;
   companyTaxId?: { type: string; value: string } | null;
   poNumber?: string | null;
   locale: 'en-GB' | 'en-US';
@@ -213,10 +214,10 @@ const idOf = (v: unknown): string | null => (typeof v === 'string' ? v : v && ty
  * Verifies the `Stripe-Signature` header with the official SDK (HMAC-SHA256, 5-minute tolerance) and
  * reduces the event to the fields above. https://docs.stripe.com/webhooks#verify-events
  */
-export function verifyWebhook(rawBody: Buffer, signature: string | undefined, secret: string, nowSeconds?: number): BillingEvent {
+export function verifyWebhook(rawBody: Buffer, signature: string | undefined, secret: string, nowMs?: number): BillingEvent {
   let event: { id: string; type: string; data: { object: Record<string, unknown> } };
   try {
-    event = Stripe.webhooks.constructEvent(rawBody, signature ?? '', secret, undefined, undefined, nowSeconds) as never;
+    event = Stripe.webhooks.constructEvent(rawBody, signature ?? '', secret, undefined, undefined, nowMs) as never;
   } catch {
     throw new WebhookSignatureError();
   }

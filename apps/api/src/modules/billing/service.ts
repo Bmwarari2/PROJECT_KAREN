@@ -222,7 +222,7 @@ export async function syncCustomer(deps: Deps, tenantId: string, accountId: stri
     legalName: data.a.name,
     contactName: data.primary!.name,
     contactEmail: data.primary!.email,
-    address: { line1: addr.line1, line2: addr.line2 ?? null, city: addr.city, region: addr.region ?? null, postalCode: addr.postalCode, country: addr.country },
+    companyAddress: { line1: addr.line1, line2: addr.line2 ?? null, city: addr.city, region: addr.region ?? null, postalCode: addr.postalCode, country: addr.country },
     companyTaxId: data.a.company_tax_id && data.a.company_tax_id_type ? { type: data.a.company_tax_id_type, value: data.a.company_tax_id } : null,
     poNumber: data.a.po_number,
     locale: data.locale === 'en-US' ? 'en-US' : 'en-GB',
