@@ -14,7 +14,7 @@ export interface MigrationFile {
 
 export function loadMigrations(dir = MIGRATIONS_DIR): MigrationFile[] {
   return readdirSync(dir)
-    .filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f))
+    .filter((f) => /^\d{4}[a-z]?_[a-z0-9_]+\.sql$/.test(f))
     .sort()
     .map((name) => {
       const sql = readFileSync(join(dir, name), 'utf8');
