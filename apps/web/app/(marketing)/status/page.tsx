@@ -142,7 +142,9 @@ export default async function StatusPage() {
                     <summary className="cursor-pointer text-callout font-semibold text-accent">{t('statusPage.historyTitle', { count: s.history.length })}</summary>
                     <PostList posts={s.history} region={region} empty={t('statusPage.noHistory')} />
                   </details>
-                  <p className="mt-6 text-footnote text-text-secondary">{t('statusPage.updated', { time: when(s.generatedAt, region) })}</p>
+                  <p className="mt-6 text-footnote text-text-secondary" data-volatile>
+                    {t('statusPage.updated', { time: when(s.generatedAt, region) })}
+                  </p>
                 </>
               ) : (
                 <p className="mt-3 flex items-center gap-2 text-callout text-text-secondary" data-testid={`unavailable-${region}`}>

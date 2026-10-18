@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { signUpAndEnrol } from './helpers';
 
 /** Visual regression baselines: light/dark × phone/desktop (projects). Fictional data only. */
-const PAGES = ['/', '/signin', '/signup', '/design/gallery'];
+const PAGES = ['/', '/signin', '/signup', '/design/gallery', '/pricing', '/status'];
 
 for (const path of PAGES) {
   test(`page ${path}`, async ({ page }) => {
@@ -13,7 +13,7 @@ for (const path of PAGES) {
     await expect(page).toHaveScreenshot(`${path === '/' ? 'home' : path.slice(1).replace(/\//g, '-')}.png`, {
       fullPage: true,
       timeout: 300_000,
-      mask: [page.locator('footer p')],
+      mask: [page.locator('footer p'), page.locator('[data-volatile]')],
     });
   });
 }
