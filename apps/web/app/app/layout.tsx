@@ -1,4 +1,5 @@
 import { serverContext } from '@/lib/server';
+import { serverSession } from '@/lib/server-session';
 import { AppShell } from './shell';
 
 // Authenticated pages are always rendered per request and never cached (Cache-Control: private, no-store).
@@ -6,6 +7,10 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { theme } = await serverContext();
-  return <AppShell theme={theme}>{children}</AppShell>;
+  const [{ theme }, session] = await Promise.all([serverContext(), serverSession()]);
+  return (
+    <AppShell theme={theme} initialSession={session}>
+      {children}
+    </AppShell>
+  );
 }

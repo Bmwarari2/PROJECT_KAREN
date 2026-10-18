@@ -42,17 +42,19 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
   return items.filter((i) => i.show).map(({ show: _show, ...i }) => ({ ...i, active: i.href === '/app' ? path === '/app' : path.startsWith(i.href) }));
 }
 
-export function AppShell({ children, theme }: { children: React.ReactNode; theme: ThemeChoice }) {
+export function AppShell({ children, theme, initialSession = null }: { children: React.ReactNode; theme: ThemeChoice; initialSession?: SessionInfo | null }) {
   const t = useT();
   const router = useRouter();
   const path = usePathname();
-  const [session, setSession] = React.useState<SessionInfo | null>(null);
+  // Rendered on the server when it could read the session, so the first HTML already has the page.
+  const [session, setSession] = React.useState<SessionInfo | null>(initialSession);
+  // Admins must complete MFA before using anything but the security page.
+  const mfaSetupPending = !!session?.isAdmin && !session.mfaVerified && !path.startsWith('/app/security');
 
   React.useEffect(() => {
     api<SessionInfo>('/v1/auth/session')
       .then((s) => {
         setSession(s);
-        // Admins must complete MFA before using anything but the security page.
         if (s.isAdmin && !s.mfaVerified && !path.startsWith('/app/security')) router.replace('/app/security?setup=1');
       })
       .catch((err) => {
@@ -110,7 +112,7 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
             </div>
           </TopBar>
           <main id="main" className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8">
-            {session ? children : <Skeleton className="h-64 w-full" />}
+            {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
           </main>
         </div>
       </div>
