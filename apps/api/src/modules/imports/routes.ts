@@ -2,20 +2,20 @@ import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
 import { Type } from 'typebox';
-import ExcelJS from 'exceljs';
-import { canSome, fieldAccess } from '@thapsus/core/permissions';
 import { enqueueJob, type Tx } from '@thapsus/db';
 import { authorizeSome } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { objectKey } from '../../lib/object-store';
 import { registerJob } from '../../jobs/registry';
-import { FIELDS, permKeyFor } from '../employees/model';
-import { applyEmployeeChange, applySectionChange, employeeAsOf, refreshCurrent, scopePredicate, setManager } from '../employees/service';
+import { FIELDS } from '../employees/model';
+import { applyEmployeeChange, applySectionChange, employeeAsOf, refreshCurrent, setManager } from '../employees/service';
 import { readTable, suggestMapping, validateRow, IMPORT_TARGETS, type RowError } from './parse';
 import type { Deps } from '../../deps';
 
 const MAX_IMPORT_BYTES = 60 * 1024 * 1024;
+/** Rows per transaction (and per progress update) in the import job; tests lower it to see progress. */
+export const importTuning = { chunkSize: 500 };
 
 async function refMaps(tx: Tx) {
   const m = async (sql: string) => new Map((await tx.query<{ name: string; id: string }>(sql)).map((r) => [r.name.toLowerCase(), r.id]));
@@ -133,53 +133,6 @@ export async function importRoutes(app: FastifyInstance) {
     },
   );
 
-  // ---- export ------------------------------------------------------------------------------------------
-  app.get(
-    '/v1/exports/employees',
-    { config: { selfAudited: true }, schema: { tags: ['exports'], querystring: Type.Object({ format: Type.Union([Type.Literal('csv'), Type.Literal('xlsx')]), fields: Type.Optional(Type.String({ maxLength: 2000 })), status: Type.Optional(Type.String()) }), response: { 200: Type.Any(), 403: Problem, 413: Problem } } },
-    async (req, reply) => {
-      const auth = authorizeSome(req, 'exports.run');
-      const q = req.query as { format: 'csv' | 'xlsx'; fields?: string; status?: string };
-      const fields = (q.fields?.split(',') ?? ['employeeNumber', 'displayName', 'jobTitle', 'department', 'location', 'country', 'status', 'startDate', 'workEmail']).filter(Boolean);
-      const rows = await app.tenantTx(req, async (tx) => {
-        const params: unknown[] = [];
-        const scope = scopePredicate(auth.principal, 'employees.read', params);
-        params.push(q.status ?? 'active');
-        const ids = await tx.query<{ id: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; manager_id: string | null }>(
-          `SELECT id, entity_id, country, department_id, location_id, manager_id FROM app.employees e WHERE ${scope} AND ($${params.length} = 'all' OR e.status = $${params.length}) ORDER BY display_name, id LIMIT 10001`,
-          params,
-        );
-        if (ids.length > 10_000) throw new ApiError('unprocessable', 'More than 10,000 rows — use the report builder background export');
-        const today = new Date().toISOString().slice(0, 10);
-        const out: Array<Record<string, unknown>> = [];
-        for (const r of ids) {
-          const target = { employeeId: r.id, entityId: r.entity_id, country: r.country, departmentId: r.department_id, locationId: r.location_id, managerChain: r.manager_id ? [r.manager_id] : [] };
-          const view = await employeeAsOf(tx, r.id, today);
-          // field-level permissions: a column the caller cannot read is blank for that row
-          out.push(Object.fromEntries(fields.map((f) => [f, fieldAccess(auth.principal, 'employee', permKeyFor(f), target) === 'none' ? '' : (view[f] ?? '')])));
-        }
-        await app.audit(tx, req, { action: 'export.employees', diff: { format: q.format, rows: out.length, fields } });
-        return out;
-      });
-      const stamp = new Date().toISOString().slice(0, 10);
-      if (q.format === 'csv') {
-        const cell = (v: unknown) => {
-          const s = v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
-          return `"${(/^[=+\-@\t\r]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"`;
-        };
-        const csv = [fields.join(','), ...rows.map((r) => fields.map((f) => cell(r[f])).join(','))].join('\r\n');
-        return reply.type('text/csv; charset=utf-8').header('Content-Disposition', `attachment; filename="employees_${stamp}.csv"`).send(csv);
-      }
-      const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet('Employees');
-      ws.addRow(fields);
-      for (const r of rows) ws.addRow(fields.map((f) => (typeof r[f] === 'object' && r[f] !== null ? JSON.stringify(r[f]) : r[f])));
-      const buf = Buffer.from(await wb.xlsx.writeBuffer());
-      return reply.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').header('Content-Disposition', `attachment; filename="employees_${stamp}.xlsx"`).send(buf);
-    },
-  );
-
-  void canSome;
 }
 
 // ---- the import job: chunked, progress-reporting, idempotent ----------------------------------------------
@@ -192,7 +145,7 @@ registerJob('imports.employees', async (ctx) => {
   const stats = { created: 0, updated: 0, unchanged: 0, failed: 0 };
   const errors: RowError[] = [];
   const managerLinks: Array<[string, string, string]> = [];
-  const CHUNK = 500;
+  const CHUNK = importTuning.chunkSize;
   await ctx.progress(0, table.rows.length);
   for (let start = 0; start < table.rows.length; start += CHUNK) {
     const rows = table.rows.slice(start, start + CHUNK).map((row, i) => ({ n: start + i + 2, ...validateRow(mapRow(table.headers, row, batch.mapping), start + i + 2, refs) }));

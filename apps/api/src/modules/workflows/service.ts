@@ -102,3 +102,30 @@ export async function claimPersonTasks(tx: Tx, employeeId: string, userId: strin
   );
   return rows.length;
 }
+
+/** Role queues a user works from; company owners also see the HR admin queue. */
+export const taskRoles = (keys: string[]) => [...new Set([...keys, ...(keys.includes('owner') ? ['hr_admin'] : [])])];
+
+export interface TaskView {
+  id: string;
+  title: string;
+  description: string | null;
+  source: string;
+  status: string;
+  dueOn: string | null;
+  subjectEmployeeId: string | null;
+  subjectName: string | null;
+  assigneeRole: string | null;
+  link: string | null;
+}
+
+/** The caller's tasks: assigned to them, or to a role queue they work from. Shared by the list and export. */
+export async function listTasks(tx: Tx, userId: string, roleKeys: string[], status: string, limit = 500): Promise<TaskView[]> {
+  const rows = await tx.query<Record<string, string | null>>(
+    `SELECT k.*, e.display_name AS subject_name FROM app.tasks k LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
+      WHERE (k.assignee_user_id = $1 OR (k.assignee_user_id IS NULL AND k.assignee_role = ANY($2::text[])))
+        AND ($3 = 'all' OR k.status = $3) ORDER BY k.due_on NULLS LAST, k.created_at LIMIT ${Math.trunc(limit)}`,
+    [userId, taskRoles(roleKeys), status],
+  );
+  return rows.map((r) => ({ id: r.id!, title: r.title!, description: r.description ?? null, source: r.source!, status: r.status!, dueOn: r.due_on ?? null, subjectEmployeeId: r.subject_employee_id ?? null, subjectName: r.subject_name ?? null, assigneeRole: r.assignee_role ?? null, link: r.link ?? null }));
+}

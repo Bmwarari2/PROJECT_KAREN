@@ -84,6 +84,56 @@ export function scopePredicate(p: Principal, action: string, params: unknown[]):
   return ors.length ? `(${ors.join(' OR ')})` : 'false';
 }
 
+export interface EmployeeListFilter {
+  q?: string;
+  status?: string;
+  entityId?: string;
+  departmentId?: string;
+  locationId?: string;
+  managerId?: string;
+  country?: string;
+}
+
+/** WHERE clauses (alias `e`) shared by the people list and its export: scope for `action`, then filters. */
+export function employeeListWhere(p: Principal, action: string, f: EmployeeListFilter, params: unknown[]): string[] {
+  const where: string[] = [scopePredicate(p, action, params)];
+  const add = (v: unknown) => (params.push(v), `$${params.length}`);
+  if (!f.status || f.status !== 'all') where.push(`e.status = ${add(f.status ?? 'active')}`);
+  if (f.entityId) where.push(`e.entity_id = ${add(f.entityId)}`);
+  if (f.departmentId) where.push(`e.department_id = ${add(f.departmentId)}`);
+  if (f.locationId) where.push(`e.location_id = ${add(f.locationId)}`);
+  if (f.managerId) where.push(`e.manager_id = ${add(f.managerId)}`);
+  if (f.country) where.push(`e.country = ${add(f.country)}`);
+  if (f.q) {
+    const term = f.q.trim();
+    // Full-text (words, number, email, title), substring, and trigram word similarity so a misspelt
+    // name still matches (`<%` uses the gin_trgm_ops index on display_name).
+    const t = add(term);
+    where.push(`(e.search @@ plainto_tsquery('simple', ${t}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${t} OR ${t} <% e.display_name)`);
+  }
+  return where;
+}
+
+/**
+ * SQL array (alias `e`) of the person's managers for field-level checks on list rows: the whole solid
+ * line up plus current dotted/matrix managers — the same chain loadTarget builds for one person — so
+ * lists, exports and profiles agree. Only team-scoped grants need it; otherwise the direct manager.
+ */
+export function managerChainSql(p: Principal): string {
+  if (!p.grants.some((g) => g.scope.type === 'own_team')) return `ARRAY[e.manager_id]`;
+  return `ARRAY(WITH RECURSIVE up AS (
+              SELECT m.id, m.manager_id, 1 AS d FROM app.employees m WHERE m.id = e.manager_id
+              UNION ALL SELECT x.id, x.manager_id, up.d + 1 FROM app.employees x JOIN up ON x.id = up.manager_id WHERE up.d < 50)
+            SELECT id FROM up
+            UNION SELECT r.manager_id FROM app.reporting_lines r WHERE r.employee_id = e.id AND r.kind <> 'solid'
+              AND r.valid_from <= current_date AND (r.valid_to IS NULL OR r.valid_to > current_date))`;
+}
+
+/** Field-level target for a list row selected with managerChainSql AS chain. */
+export function rowTarget(r: { id: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; chain: Array<string | null> | null }): Target & { employeeId: string } {
+  return { employeeId: r.id, entityId: r.entity_id, country: r.country, departmentId: r.department_id, locationId: r.location_id, managerChain: (r.chain ?? []).filter((m): m is string => !!m) };
+}
+
 // ---- Reading -------------------------------------------------------------------------------
 
 const asOfRow = (table: string) =>

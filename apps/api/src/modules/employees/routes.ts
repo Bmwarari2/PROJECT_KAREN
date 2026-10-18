@@ -13,12 +13,15 @@ import {
   replaceContacts,
   type ContactInput,
   employeeAsOf,
+  employeeListWhere,
+  managerChainSql,
+  rowTarget,
+  type EmployeeListFilter,
   filterFields,
   history,
   loadTarget,
   recordChangeEvent,
   refreshCurrent,
-  scopePredicate,
   sectionsOf,
   setCustomFields,
   setManager,
@@ -70,32 +73,19 @@ export async function employeeRoutes(app: FastifyInstance) {
     },
     async (req) => {
       const auth = authorizeSome(req, 'employees.read');
-      const q = req.query as { q?: string; status?: string; entityId?: string; departmentId?: string; locationId?: string; managerId?: string; country?: string; cursor?: string; limit?: number };
+      const q = req.query as EmployeeListFilter & { cursor?: string; limit?: number };
       const params: unknown[] = [];
-      const where: string[] = [scopePredicate(auth.principal, 'employees.read', params)];
+      const where = employeeListWhere(auth.principal, 'employees.read', q, params);
       const add = (v: unknown) => (params.push(v), `$${params.length}`);
-      if (!q.status || q.status !== 'all') where.push(`e.status = ${add(q.status ?? 'active')}`);
-      if (q.entityId) where.push(`e.entity_id = ${add(q.entityId)}`);
-      if (q.departmentId) where.push(`e.department_id = ${add(q.departmentId)}`);
-      if (q.locationId) where.push(`e.location_id = ${add(q.locationId)}`);
-      if (q.managerId) where.push(`e.manager_id = ${add(q.managerId)}`);
-      if (q.country) where.push(`e.country = ${add(q.country)}`);
-      if (q.q) {
-        const term = q.q.trim();
-        // Full-text (words, number, email, title), substring, and trigram word similarity so a misspelt
-        // name still matches (`<%` uses the gin_trgm_ops index on display_name).
-        const t = add(term);
-        where.push(`(e.search @@ plainto_tsquery('simple', ${t}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${t} OR ${t} <% e.display_name)`);
-      }
       const after = decodeCursor<[string, string]>(q.cursor);
       if (after) where.push(`(e.display_name, e.id) > (${add(after[0])}, ${add(after[1])}::uuid)`);
       const limit = q.limit ?? 50;
       const rows = await app.tenantTx(
         req,
         (tx) =>
-          tx.query<Record<string, string | null>>(
+          tx.query<Record<string, string | null> & { chain: Array<string | null> | null }>(
             `SELECT e.id, e.employee_number, e.display_name, e.job_title, e.status, e.manager_id, e.work_email, e.start_date, e.country,
-                    e.entity_id, e.department_id, e.location_id, d.name AS department, l.name AS location
+                    e.entity_id, e.department_id, e.location_id, d.name AS department, l.name AS location, ${managerChainSql(auth.principal)} AS chain
                FROM app.employees e
                LEFT JOIN app.departments d ON d.tenant_id = e.tenant_id AND d.id = e.department_id
                LEFT JOIN app.locations l ON l.tenant_id = e.tenant_id AND l.id = e.location_id
@@ -107,9 +97,8 @@ export async function employeeRoutes(app: FastifyInstance) {
       );
       const page = rows.slice(0, limit);
       const data = page.map((r) => {
-        const target = { employeeId: r.id, entityId: r.entity_id, country: r.country, departmentId: r.department_id, locationId: r.location_id, managerChain: r.manager_id ? [r.manager_id] : [] };
         const full = { id: r.id!, employeeNumber: r.employee_number, displayName: r.display_name, jobTitle: r.job_title, department: r.department, location: r.location, country: r.country, status: r.status, managerId: r.manager_id, workEmail: r.work_email, startDate: r.start_date };
-        return filterFields(auth.principal, full, target, ['displayName']);
+        return filterFields(auth.principal, full, rowTarget(r as Parameters<typeof rowTarget>[0]), ['displayName']);
       });
       return { data, nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.display_name, page.at(-1)!.id]) : null };
     },

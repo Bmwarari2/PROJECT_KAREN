@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
+import ExcelJS from 'exceljs';
 import { withTenant, type JobRow } from '@thapsus/db';
 import { closeDb, cookieFrom, enrolTotp, ownerSession, PASSWORD, startTestApp, type TestContext } from './helpers';
 import { assignRole } from '../src/modules/authz/principal';
@@ -671,11 +672,88 @@ describe('automation triggers, actions and integrations', () => {
 });
 
 describe('bulk import and export', () => {
-  const upload = (name: string, body: string | Buffer) => {
+  const upload = (name: string, body: string | Buffer, type = 'text/csv') => {
     const boundary = '----thapsus' + Math.random().toString(16).slice(2);
-    const payload = Buffer.concat([Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: text/csv\r\n\r\n`), Buffer.from(body), Buffer.from(`\r\n--${boundary}--\r\n`)]);
+    const payload = Buffer.concat([Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: ${type}\r\n\r\n`), Buffer.from(body), Buffer.from(`\r\n--${boundary}--\r\n`)]);
     return ctx.app.inject({ method: 'POST', url: '/v1/imports', payload, headers: { cookie: owner.cookie, 'content-type': `multipart/form-data; boundary=${boundary}` } });
   };
+  const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const readXlsx = async (buf: Buffer) => {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf as unknown as ArrayBuffer);
+    const rows: unknown[][] = [];
+    wb.worksheets[0]!.eachRow((r) => rows.push((r.values as unknown[]).slice(1)));
+    return rows;
+  };
+
+  it('imports an Excel workbook with typed cells, minor-unit conversion per currency and a downloadable error report', async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('People');
+    ws.addRow(['Employee ID', 'First name', 'Last name', 'Start date', 'Job title', 'Entity', 'Salary', 'Currency', 'Pay frequency', 'Contract type']);
+    ws.addRow(['XLS001', 'Xena', 'Fictional', new Date(Date.UTC(2026, 0, 12)), 'Designer', 'Fictional Ltd', 52000.25, 'GBP', 'annual', 'permanent']);
+    ws.addRow(['XLS002', 'Yuri', 'Fictional', '2026-02-02', 'Designer', 'Fictional Ltd', 50000, 'EUR', 'annual', 'permanent']);
+    ws.addRow(['XLS003', 'Zed', 'Fictional', '2026-13-40', 'Designer', 'Fictional Ltd', 'lots', 'GBP', 'annual', 'permanent']);
+    ws.addRow(['XLS004', 'Ama', 'Fictional', '2026-02-02', 'Designer', 'Fictional Ltd', 50000.123, 'GBP', 'annual', 'permanent']);
+    const up = await upload('people.xlsx', Buffer.from(await wb.xlsx.writeBuffer()), XLSX);
+    expect(up.statusCode, up.body).toBe(201);
+    expect(up.json()).toMatchObject({ rowCount: 4, headers: ['Employee ID', 'First name', 'Last name', 'Start date', 'Job title', 'Entity', 'Salary', 'Currency', 'Pay frequency', 'Contract type'] });
+    const mapping = { ...up.json().suggestedMapping, 'Start date': 'startDate', 'Job title': 'jobTitle', 'Pay frequency': 'payFrequency', 'Contract type': 'contractType' };
+    const preview = (await api('POST', `/v1/imports/${up.json().id}/preview`, { mapping })).json();
+    expect(preview).toMatchObject({ rows: 4, valid: 2, creates: 2 });
+    expect(preview.errors.map((e: { row: number; column: string }) => `${e.row}:${e.column}`).sort()).toEqual(['4:payAmountMinor', '4:startDate', '5:payAmountMinor']);
+    // a dry run validates everything and writes nothing
+    expect((await api('POST', `/v1/imports/${up.json().id}/run`, { dryRun: true })).statusCode).toBe(202);
+    await drain();
+    expect(await tx((t) => t.maybe(`SELECT 1 FROM app.employees WHERE employee_number = 'XLS001'`))).toBeUndefined();
+    await api('POST', `/v1/imports/${up.json().id}/run`, {});
+    await drain();
+    const status = (await api('GET', `/v1/imports/${up.json().id}`)).json();
+    expect(status).toMatchObject({ status: 'completed', stats: { created: 2, failed: 2, errors: 3 } });
+    const pay = async (num: string) => (await api('GET', `/v1/employees/${(await tx((t) => t.one<{ id: string }>(`SELECT id FROM app.employees WHERE employee_number = $1`, [num]))).id}`)).json().employee;
+    expect(await pay('XLS001')).toMatchObject({ startDate: '2026-01-12', payAmountMinor: '5200025', payCurrency: 'GBP', jobTitle: 'Designer' });
+    expect(await pay('XLS002')).toMatchObject({ payAmountMinor: '5000000', payCurrency: 'EUR' });
+    // the error report lists every row-level error
+    const key = (await tx((t) => t.one<{ error_file_key: string }>(`SELECT error_file_key FROM app.import_batches WHERE id = $1`, [up.json().id]))).error_file_key;
+    const report = (ctx.deps.objects as MemoryObjectStore).objects.get(key)!.body.toString().split('\r\n');
+    expect(report[0]).toBe('row,column,message');
+    expect(report.slice(1).map((l) => l.split(',').slice(0, 2).join(':')).sort()).toEqual(['4:"payAmountMinor"', '4:"startDate"', '5:"payAmountMinor"']);
+    expect(status.errorReportUrl).toContain(encodeURIComponent(key).slice(0, 10));
+  });
+
+  it('reports progress as the background job works through the file in chunks', async () => {
+    const rows = ['Employee ID,First name,Last name,Start date,Job title,Entity,Salary,Currency,Pay frequency,Contract type'];
+    for (let i = 1; i <= 5; i++) rows.push(`PRG00${i},Prog${i},Fictional,2026-01-05,Tester,Fictional Ltd,30000,GBP,annual,permanent`);
+    const up = await upload('progress.csv', rows.join('\n'));
+    const mapping = { ...up.json().suggestedMapping, 'Start date': 'startDate', 'Job title': 'jobTitle', 'Pay frequency': 'payFrequency', 'Contract type': 'contractType' };
+    await api('POST', `/v1/imports/${up.json().id}/preview`, { mapping });
+    const { jobId } = (await api('POST', `/v1/imports/${up.json().id}/run`, {})).json();
+    expect((await api('GET', `/v1/jobs/${jobId}`)).json()).toMatchObject({ kind: 'imports.employees', status: 'queued', progressDone: '0' });
+    const { importTuning } = await import('../src/modules/imports/routes');
+    const seen: Array<[number, number | undefined]> = [];
+    const polled: string[] = [];
+    importTuning.chunkSize = 2;
+    try {
+      const job = await tx((t) => t.one<JobRow>(`UPDATE app.jobs SET status = 'running', attempts = attempts + 1 WHERE id = $1 RETURNING id, tenant_id, kind, idempotency_key, input, attempts, created_by`, [jobId]));
+      const result = await jobHandlers['imports.employees']!({
+        tenantId: owner.tenantId,
+        job,
+        deps: ctx.deps,
+        tx: (fn) => tx(fn),
+        // persist like the worker does, and poll the public job endpoint after each update
+        progress: async (done, total) => {
+          seen.push([done, total]);
+          await tx((t) => t.exec('UPDATE app.jobs SET progress_done = $2, progress_total = coalesce($3, progress_total) WHERE id = $1', [jobId, done, total ?? null]));
+          const j = (await api('GET', `/v1/jobs/${jobId}`)).json();
+          polled.push(`${j.progressDone}/${j.progressTotal}`);
+        },
+      });
+      expect(result).toMatchObject({ created: 5, failed: 0 });
+    } finally {
+      importTuning.chunkSize = 500;
+    }
+    expect(seen).toEqual([[0, 5], [2, 5], [4, 5], [5, 5]]);
+    expect(polled).toEqual(['0/5', '2/5', '4/5', '5/5']);
+  });
 
   it('previews with row-level errors, runs as a job with an error report, and re-running is idempotent', async () => {
     const csv = ['Employee ID,First name,Last name,Start date,Job title,Entity,Salary,Currency,Pay frequency,Contract type,Manager', 'IMP001,Ada,Fictional,2026-01-05,Engineer,Fictional Ltd,50000,GBP,annual,permanent,', 'IMP002,Bo,Fictional,2026-02-01,Engineer,Fictional Ltd,48000.50,GBP,annual,permanent,IMP001', 'IMP003,Cy,Fictional,not-a-date,Engineer,Nowhere Ltd,abc,GBP,annual,permanent,'].join('\n');
@@ -706,6 +784,73 @@ describe('bulk import and export', () => {
     expect((await api('GET', `/v1/imports/${again.json().id}`)).json().stats).toMatchObject({ created: 0, updated: 0, unchanged: 2 });
     const hist = (await api('GET', `/v1/employees/${bo.id}/history`)).json();
     expect(hist.job).toHaveLength(1);
+  });
+
+  it('exports every list view (people, tasks, approvals, documents) as CSV and Excel with the same rows the list shows', async () => {
+    const dept = (await api('POST', '/v1/org/departments', { name: 'Export dept' })).json().id;
+    const mgrEmp = await hire({ legalFirstName: 'List', legalLastName: 'Exporter' });
+    const lead = await hire({ legalFirstName: 'Team', legalLastName: 'Lead', managerId: mgrEmp, departmentId: dept });
+    const skip = await hire({ legalFirstName: 'Skip', legalLastName: 'Level', managerId: lead, departmentId: dept });
+    const outsider = await hire({ legalFirstName: 'Not', legalLastName: 'Mine', departmentId: dept });
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    // exporting is a separate permission from seeing a list
+    for (const list of ['employees', 'tasks', 'approvals', 'documents']) expect((await api('GET', `/v1/exports/${list}?format=csv`, undefined, mgr.cookie)).statusCode, list).toBe(403);
+    await tx(async (t) => {
+      await t.exec(`INSERT INTO app.roles (tenant_id, key, name, permissions, field_access) VALUES (app.current_tenant(), 'list_exporter', 'List exporter', '{exports.run}', '{}')`);
+      await assignRole(t, mgr.userId, 'list_exporter', { type: 'own_team' });
+    });
+    const csv = async (url: string, cookie = owner.cookie) => {
+      const res = await api('GET', url, undefined, cookie);
+      expect(res.statusCode, `${url} ${res.body.slice(0, 200)}`).toBe(200);
+      return res.body.split('\r\n').map((l) => l.split(',').map((c) => c.replace(/^"|"$/g, '')));
+    };
+
+    // people: the same filters as the list, field-level blanks per row, skip-level reports included with the same fields as the list
+    const people = await csv(`/v1/exports/employees?format=csv&departmentId=${dept}&fields=displayName,jobTitle,payAmountMinor`);
+    expect(people[0]).toEqual(['displayName', 'jobTitle', 'payAmountMinor']);
+    expect(people.slice(1).map((r) => r[0]).sort()).toEqual(['Not Mine', 'Skip Level', 'Team Lead']);
+    expect(people.slice(1).every((r) => r[2] === '3000000')).toBe(true);
+    const team = await csv(`/v1/exports/employees?format=csv&fields=displayName,jobTitle,payAmountMinor`, mgr.cookie);
+    expect(team.slice(1).map((r) => r.join('|')).sort()).toEqual(['Skip Level|Analyst|', 'Team Lead|Analyst|']);
+    const listed = (await api('GET', '/v1/employees', undefined, mgr.cookie)).json().data as Array<{ id: string; jobTitle?: string }>;
+    expect(listed.find((e) => e.id === skip)?.jobTitle).toBe('Analyst');
+    expect(listed.map((e) => e.id)).not.toContain(outsider);
+    const people2 = await readXlsx((await api('GET', `/v1/exports/employees?format=xlsx&q=${encodeURIComponent('Skip Level')}&fields=displayName,payAmountMinor`, undefined, mgr.cookie)).rawPayload);
+    expect(people2).toEqual([['displayName', 'payAmountMinor'], ['Skip Level', '']]);
+
+    // tasks: exactly my task list
+    const myTasks = (await api('GET', '/v1/tasks?status=all')).json() as Array<{ title: string }>;
+    const taskRows = await csv('/v1/exports/tasks?format=csv&status=all');
+    expect(taskRows[0]).toEqual(['title', 'status', 'dueOn', 'subjectName', 'assigneeRole', 'source']);
+    expect(taskRows.length - 1).toBe(myTasks.length);
+    const mgrTaskXlsx = await readXlsx((await api('GET', '/v1/exports/tasks?format=xlsx&status=all', undefined, mgr.cookie)).rawPayload);
+    expect(mgrTaskXlsx.length - 1).toBe(((await api('GET', '/v1/tasks?status=all', undefined, mgr.cookie)).json() as unknown[]).length);
+
+    // approvals: field names only, never values
+    await api('POST', '/v1/approval-policies', { subject: 'employee.change', name: 'FTE change approval', priority: 6, condition: { field: 'fte', op: 'present' }, steps: [{ approver: { type: 'manager' } }] });
+    const reqId = (await api('POST', `/v1/employees/${lead}/changes`, { effectiveDate: '2026-12-01', fte: 0.8 })).json().approvalRequestId;
+    const mine = await csv('/v1/exports/approvals?format=csv&view=mine', mgr.cookie);
+    expect(mine[0]).toEqual(['policy', 'subject', 'subjectName', 'status', 'requestedAt', 'currentStep', 'effectiveDate', 'fields']);
+    const row = mine.find((r) => r[0] === 'FTE change approval')!;
+    expect(row).toEqual(['FTE change approval', 'employee.change', 'Team Lead', 'pending', expect.any(String), '0', '2026-12-01', 'fte']);
+    expect(mine.flat()).not.toContain('0.8');
+    expect((await api('GET', '/v1/exports/approvals?format=csv&view=all', undefined, mgr.cookie)).statusCode).toBe(403);
+    expect((await csv('/v1/exports/approvals?format=csv&view=all')).some((r) => r[0] === 'FTE change approval')).toBe(true);
+    void reqId;
+
+    // documents: folder permissions apply
+    const hrFolder = (await api('POST', '/v1/document-folders', { name: 'Export HR', visibility: 'hr' })).json().id;
+    for (const [title, folder] of [['Export visible', null], ['Export HR only', hrFolder]] as const)
+      await tx((t) => t.exec(`INSERT INTO app.documents (tenant_id, folder_id, employee_id, title, file_key, file_name, content_type, status, size_bytes) VALUES (app.current_tenant(), $1, $2, $3, 'k', 'f.pdf', 'application/pdf', 'ready', 1234)`, [folder, lead, title]));
+    const hrDocs = await csv(`/v1/exports/documents?format=csv&employeeId=${lead}`);
+    expect(hrDocs.slice(1).map((r) => r[0]).sort()).toEqual(['Export HR only', 'Export visible']);
+    const mgrDocs = await readXlsx((await api('GET', `/v1/exports/documents?format=xlsx&employeeId=${lead}`, undefined, mgr.cookie)).rawPayload);
+    expect(mgrDocs[0]).toEqual(['title', 'category', 'employeeName', 'fileName', 'contentType', 'sizeBytes', 'expiresOn', 'createdAt']);
+    expect(mgrDocs.slice(1).map((r) => [r[0], r[2], r[5]])).toEqual([['Export visible', 'Team Lead', 1234]]);
+
+    // every export is audited with its size and columns
+    const audits = await tx((t) => t.query<{ action: string; diff: { rows: number; format: string } }>(`SELECT action, diff FROM audit.events WHERE actor_id = $1 AND action LIKE 'export.%' ORDER BY id`, [mgr.userId]));
+    expect(audits.map((a) => a.action)).toEqual(['export.employees', 'export.employees', 'export.tasks', 'export.approvals', 'export.documents']);
   });
 
   it('exports CSV and Excel respecting field-level permissions', async () => {

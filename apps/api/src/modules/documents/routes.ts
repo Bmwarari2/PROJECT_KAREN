@@ -27,7 +27,7 @@ export const ALLOWED_TYPES: Record<string, string> = {
 export const MAX_BYTES = 25 * 1024 * 1024;
 
 const Doc = Type.Object({ id: Uuid, title: Type.String(), category: Type.String(), employeeId: Nullable(Type.String()), folderId: Nullable(Type.String()), fileName: Type.String(), contentType: Type.String(), sizeBytes: Nullable(Type.String()), sha256: Nullable(Type.String()), status: Type.String(), expiresOn: Nullable(Type.String()), createdAt: Type.String() });
-export type DocRow = { id: string; title: string; category: string; employee_id: string | null; folder_id: string | null; file_name: string; content_type: string; size_bytes: string | null; sha256: string | null; status: string; expires_on: string | null; created_at: string; file_key: string };
+export type DocRow = { employee_name?: string | null; id: string; title: string; category: string; employee_id: string | null; folder_id: string | null; file_name: string; content_type: string; size_bytes: string | null; sha256: string | null; status: string; expires_on: string | null; created_at: string; file_key: string };
 export const mapDoc = (r: DocRow) => ({ id: r.id, title: r.title, category: r.category, employeeId: r.employee_id, folderId: r.folder_id, fileName: r.file_name, contentType: r.content_type, sizeBytes: r.size_bytes, sha256: r.sha256, status: r.status, expiresOn: r.expires_on, createdAt: r.created_at });
 
 type Principal = Parameters<typeof can>[0];
@@ -91,7 +91,7 @@ export async function listDocuments(tx: Tx, principal: Principal, q: { employeeI
   params.push(q.employeeId ?? null);
   const employee = `$${params.length}::uuid`;
   return tx.query<DocRow>(
-    `SELECT d.* FROM app.documents d LEFT JOIN app.employees e ON e.tenant_id = d.tenant_id AND e.id = d.employee_id
+    `SELECT d.*, e.display_name AS employee_name FROM app.documents d LEFT JOIN app.employees e ON e.tenant_id = d.tenant_id AND e.id = d.employee_id
        LEFT JOIN app.document_folders f ON f.tenant_id = d.tenant_id AND f.id = d.folder_id
       WHERE d.status = 'ready' AND (${folder} IS NULL OR d.folder_id = ${folder}) AND (${employee} IS NULL OR d.employee_id = ${employee})
         AND ${visible}
