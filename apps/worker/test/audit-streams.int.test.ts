@@ -67,7 +67,7 @@ beforeAll(async () => {
   aws = collect(awsHits, (h, res) => {
     if (h.method === 'POST' && h.body.includes('Action=AssumeRole')) {
       res.writeHead(200, { 'content-type': 'text/xml' });
-      res.end(`<AssumeRoleResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><AssumeRoleResult><Credentials><AccessKeyId>ASIAFICTIONAL0000001</AccessKeyId><SecretAccessKey>fictional-secret</SecretAccessKey><SessionToken>fictional-session</SessionToken><Expiration>2099-01-01T00:00:00Z</Expiration></Credentials><AssumedRoleUser><AssumedRoleId>AROAFICTIONAL:thapsus</AssumedRoleId><Arn>arn:aws:sts::123456789012:assumed-role/ThapsusAudit/thapsus</Arn></AssumedRoleUser></AssumeRoleResult><ResponseMetadata><RequestId>req-1</RequestId></ResponseMetadata></AssumeRoleResponse>`);
+      res.end(`<AssumeRoleResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><AssumeRoleResult><Credentials><AccessKeyId>FICTIONAL-TEMP-KEY-1</AccessKeyId><SecretAccessKey>fictional-secret</SecretAccessKey><SessionToken>fictional-session</SessionToken><Expiration>2099-01-01T00:00:00Z</Expiration></Credentials><AssumedRoleUser><AssumedRoleId>AROAFICTIONAL:thapsus</AssumedRoleId><Arn>arn:aws:sts::123456789012:assumed-role/ThapsusAudit/thapsus</Arn></AssumedRoleUser></AssumeRoleResult><ResponseMetadata><RequestId>req-1</RequestId></ResponseMetadata></AssumeRoleResponse>`);
       return;
     }
     if (h.method === 'PUT') {
@@ -82,7 +82,7 @@ beforeAll(async () => {
   siemUrl = await listen(siem);
   const awsUrl = await listen(aws);
   // The STS client in a cell uses the task role; tests use fictional static credentials.
-  process.env.AWS_ACCESS_KEY_ID ??= 'AKIAFICTIONAL0000000';
+  process.env.AWS_ACCESS_KEY_ID ??= 'fictional-test-key-id';
   process.env.AWS_SECRET_ACCESS_KEY ??= 'fictional-test-secret';
   ctx = await startTestApp({ listen: false, overrides: { outbound: { allowHttp: true, allowPrivateNetworks: true }, siemS3: new AwsCrossAccountS3('uk', { s3: awsUrl, sts: awsUrl }) } });
   ctx.clock.now = new Date(Date.now() + 120_000);
