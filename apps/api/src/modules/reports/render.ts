@@ -91,8 +91,10 @@ const csvCell = (v: unknown) => {
   return /[",\r\n]/.test(safe) || safe !== s ? `"${safe.replace(/"/g, '""')}"` : safe;
 };
 
-export function renderCsv(result: ReportResult, locale: Locale): Buffer {
-  const lines = [machineHeaders(locale, result.columns).map(csvCell).join(',')];
+/** CSV for people ('labels': localised headers) or for systems ('keys': stable column keys, `<key>_currency`, `<key>_hours`). */
+export function renderCsv(result: ReportResult, locale: Locale, headers: 'labels' | 'keys' = 'labels'): Buffer {
+  const head = headers === 'keys' ? result.columns.flatMap((c) => (c.type === 'money' ? [c.key, `${c.key}_currency`] : c.type === 'minutes' ? [`${c.key}_hours`] : [c.key])) : machineHeaders(locale, result.columns);
+  const lines = [head.map(csvCell).join(',')];
   for (const r of [...result.rows, ...(result.totals ?? [])]) lines.push(machineValues(result.columns, r).map(csvCell).join(','));
   return Buffer.from(`\ufeff${lines.join('\r\n')}\r\n`, 'utf8');
 }
