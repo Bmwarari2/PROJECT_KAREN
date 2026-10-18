@@ -2,7 +2,7 @@
   "jurisdiction": "US-CA",
   "parent": "US",
   "name": "California",
-  "version": 1,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -182,6 +182,100 @@
           "notes": "2027 rate not yet verified. Industry (fast food, health care) and local minimum wages are higher and not modelled."
         }
       ]
+    },
+    {
+      "key": "privacy.dsr_deadline",
+      "description": "CCPA/CPRA time to respond to requests to know, correct and delete (Civ. Code 1798.130, 1798.145(h))",
+      "versions": [
+        {
+          "effectiveFrom": "2023-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P45D",
+            "clockStartsAt": [
+              "request_received"
+            ],
+            "extension": {
+              "period": "P45D",
+              "grounds": "when reasonably necessary, taking into account the complexity and number of the requests",
+              "noticeBefore": "initial_deadline",
+              "reasonsRequired": true
+            },
+            "clockStopForClarification": null,
+            "appliesTo": [
+              "access",
+              "correction",
+              "deletion"
+            ],
+            "maxTotal": "P90D"
+          },
+          "source": {
+            "url": "https://cppa.ca.gov/regulations/pdf/ccpa_statute.pdf",
+            "title": "California Consumer Privacy Act (CPPA-published statute text, effective 1 January 2025), Civ. Code 1798.130(a)(2) and 1798.145(h)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "1798.130(a)(2)(A): disclose, correct or delete 'within 45 days of receiving a verifiable consumer request'; verification 'shall not extend' that duty; the period 'may be extended once by an additional 45 days when reasonably necessary, provided the consumer is provided notice of the extension within the first 45-day period'. 1798.145(h)(1): extension 'by up to a total of 90 days', informing the consumer within 45 days 'together with the reasons for the delay'. The employee-data exemption in 1798.145(m) became inoperative on 1 January 2023, hence effectiveFrom. leginfo.legislature.ca.gov refused automated access (bot challenge); text checked in the statute PDF published by the California Privacy Protection Agency."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "California security breach notification (Civ. Code 1798.82) — partially verified",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "regulator": {
+              "body": "California Attorney General",
+              "deadlineDays": null,
+              "standard": "electronically submit a single sample copy of the security breach notification, excluding personally identifiable information",
+              "minAffected": 501
+            },
+            "individuals": {
+              "deadlineDays": null,
+              "standard": "notify any California resident whose unencrypted personal information was, or is reasonably believed to have been, acquired by an unauthorized person"
+            },
+            "processorToController": null,
+            "unverified": [
+              "individuals.deadlineDays",
+              "regulator.deadlineDays",
+              "processorToController"
+            ]
+          },
+          "source": {
+            "url": "https://oag.ca.gov/privacy/databreach/reporting",
+            "title": "California Attorney General — Submit Data Security Breach (Civ. Code 1798.82(a), (f))"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Verified on the Attorney General's page: residents must be notified (1798.82(a)); a breach requiring notice to 'more than 500 California residents' requires a sample copy to the Attorney General (1798.82(f)). The statutory timing (including the 2025 amendment reported as SB 446) and the duty of a business maintaining data it does not own could not be verified: leginfo.legislature.ca.gov refused automated access. Legal review must confirm before relying on any deadline (HUMAN_TODO 3.16). Modelling baseline 2024-01-01."
+        }
+      ]
+    },
+    {
+      "key": "overtime.exempt_salary_threshold",
+      "description": "California executive, administrative and professional exemptions: monthly salary of at least two times the state minimum wage for full-time employment (40 hours a week)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "multipleOfMinimumWage": 2,
+            "fullTimeHoursPerWeek": 40,
+            "salaryPeriod": "monthly",
+            "minimumWageKey": "minimum_wage.rates"
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/IWC/WageOrders2024/IWCArticle04.pdf",
+            "title": "IWC Wage Order 4-2001 (IWC Form 1104, Rev. 11/2023), section 1(A)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Wage Order 4 s.1(A)(1)(f), (2)(g), (3)(d): the employee \"must also earn a monthly salary equivalent to no less than two (2) times the state minimum wage for full-time employment. Full-time employment is defined in Labor Code Section 515(c) as 40 hours per week.\" The amount follows the US-CA minimum_wage.rates in force (2026: 2 x $16.90 x 40 = $1,352.00 a week, derived). The DIR exemptions FAQ (https://www.dir.ca.gov/dlse/faq_overtimeexemptions.htm) states the same test. leginfo.legislature.ca.gov returned HTTP 403. Computer professional and physician hourly thresholds not modelled. effectiveFrom = the Rev. 11/2023 wage order edition in force from 2024."
+        }
+      ]
     }
   ],
   "holidays": [],
@@ -189,9 +283,10 @@
     "priority": "high",
     "deeperRulesTodo": [
       "State holidays (not modelled yet)",
-      "CA exempt salary threshold (2x state minimum wage for full-time)",
       "Meal and rest periods",
-      "Alternative workweek schedules"
+      "Alternative workweek schedules",
+      "privacy: Civ. Code 1798.82 notification timing (SB 446, 2025) and processor duty — leginfo blocked automated access; CCPA regulations (11 CCR 7021) confirmation-of-receipt timing",
+      "Computer professional hourly and physician exempt thresholds (Labor Code 515.5, 515.6)"
     ],
     "notes": "Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks."
   }

@@ -2,6 +2,7 @@ import webpush from 'web-push';
 import { enqueueJob } from '@thapsus/db';
 import { isLocale, t } from '@thapsus/core/i18n';
 import { periodic, registerJob } from './registry';
+import { channelEnabled, type NotificationPrefs } from '../lib/notification-prefs';
 
 // ---- Core HR: future-dated changes take effect on their date --------------------------------
 registerJob('employees.refresh_effective', async (ctx) => {
@@ -32,8 +33,8 @@ periodic.push(async (tx, now) => {
 registerJob('notifications.deliver', async (ctx) => {
   const id = String(ctx.job.input.notificationId);
   const n = await ctx.tx((tx) =>
-    tx.maybe<{ id: string; title_key: string; params: Record<string, string>; link: string | null; emailed_at: string | null; email: string; locale: string | null; user_id: string }>(
-      `SELECT n.id, n.title_key, n.params, n.link, n.emailed_at, u.email, u.locale, n.user_id FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE n.id = $1`,
+    tx.maybe<{ id: string; kind: string; title_key: string; params: Record<string, string>; link: string | null; emailed_at: string | null; email: string; locale: string | null; user_id: string; prefs: NotificationPrefs }>(
+      `SELECT n.id, n.kind, n.title_key, n.params, n.link, n.emailed_at, u.email, u.locale, n.user_id, u.notification_prefs AS prefs FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE n.id = $1`,
       [id],
     ),
   );
@@ -41,8 +42,11 @@ registerJob('notifications.deliver', async (ctx) => {
   const locale = isLocale(n.locale) ? n.locale : 'en-GB';
   const title = t(locale, n.title_key, n.params);
   const link = n.link ? `${ctx.deps.config.appBaseUrl}${n.link}` : ctx.deps.config.appBaseUrl;
-  await ctx.deps.mailer.send({ to: n.email, subject: title, text: `${title}\n\n${link}` });
-  if (ctx.deps.webPush) {
+  // the user's self-service preferences decide the channels (phase 7); the in-app notification always exists
+  const email = channelEnabled(n.prefs, n.kind, 'email');
+  const push = channelEnabled(n.prefs, n.kind, 'push');
+  if (email) await ctx.deps.mailer.send({ to: n.email, subject: title, text: `${title}\n\n${link}` });
+  if (ctx.deps.webPush && push) {
     const subs = await ctx.tx((tx) => tx.query<{ endpoint: string; p256dh: string; auth: string }>('SELECT endpoint, p256dh, auth FROM app.push_subscriptions WHERE user_id = $1', [n.user_id]));
     for (const s of subs) {
       await webpush
@@ -51,5 +55,5 @@ registerJob('notifications.deliver', async (ctx) => {
     }
   }
   await ctx.tx((tx) => tx.exec('UPDATE app.notifications SET emailed_at = now() WHERE id = $1', [id]));
-  return { delivered: true };
+  return { delivered: true, email, push };
 });

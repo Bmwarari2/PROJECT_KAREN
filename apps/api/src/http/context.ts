@@ -34,6 +34,11 @@ declare module 'fastify' {
     auth?: 'public' | 'user' | 'mfa-setup';
     /** Skip the fallback audit write (route records its own audit inside its transaction). */
     selfAudited?: boolean;
+    /**
+     * Public, unauthenticated and free of personal data, so the route may set its own shared
+     * Cache-Control (edge-cacheable). Only GET /v1/status uses this (ADR-0105).
+     */
+    edgeCacheable?: boolean;
   }
 }
 
@@ -99,16 +104,19 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
   });
 
   // Authenticated responses are never cacheable anywhere (no CDN/edge caching).
-  app.addHook('onSend', async (_req, reply, payload) => {
+  app.addHook('onSend', async (req, reply, payload) => {
+    if (req.routeOptions.config?.edgeCacheable && req.routeOptions.config.auth === 'public' && reply.statusCode < 400 && reply.getHeader('cache-control')) return payload;
     reply.header('Cache-Control', 'private, no-store');
     reply.header('Pragma', 'no-cache');
     return payload;
   });
 
-  // Safety net: every successful mutating call is audited even if the route forgot to.
-  app.addHook('onResponse', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return;
-    if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth) return;
+  // Safety net: every successful mutating call is audited even if the route forgot to. It runs before
+  // the response is sent, so a client never sees success for a change that has no audit entry yet.
+  app.addHook('onSend', async (req: FastifyRequest, reply: FastifyReply, payload) => {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return payload;
+    if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth) return payload;
+    req.auditWritten = true;
     await withTenant(opts.deps.router, req.auth.tenantId, (tx) =>
       writeAudit(tx, {
         actorType: actorTypeOf(req.auth),
@@ -119,6 +127,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
         requestId: req.id,
       }),
     ).catch((err) => req.log.error({ err }, 'fallback audit failed'));
+    return payload;
   });
 
   app.decorate('tenantTx', function <T>(req: FastifyRequest, fn: (tx: Tx) => Promise<T>, o: { readOnly?: boolean } = {}) {

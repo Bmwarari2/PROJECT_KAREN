@@ -15,7 +15,7 @@ These are on-demand list-price estimates (USD per month, about 730 hours, Octobe
 | Public IPv4 addresses | ~$15 |
 | AWS WAF (web ACL and 5 rules) | ~$10 |
 | CloudWatch logs, metrics, alarms and Container Insights | ~$10–25 |
-| Secrets Manager, KMS, Backup, S3, SQS, EventBridge, SES, SNS | ~$10 |
+| Secrets Manager, KMS, Backup, S3, SQS, EventBridge, SES, SNS (includes the per-cell Stripe key secret added in Phase 10, about $0.40) | ~$10 |
 | **Total per cell** | **~$350–400** |
 | **Budget alarm per cell** | **$400** |
 
@@ -52,3 +52,6 @@ The dev environment matches staging but is only deployed on demand. The default 
 
 There is no fixed cost. Bedrock bills per token through AWS Marketplace, and only for workspaces that are entitled and opted in. One question sends about 2,000–3,500 input tokens (system prompt plus up to 5 excerpts) and gets about 150–400 output tokens back. Check the current Claude Opus 5.5 rates for eu-west-2 on https://aws.amazon.com/bedrock/pricing/ before enabling it. The per-user limit (20 questions per 10 minutes) and the per-tenant limit (2,000 per hour) cap the spend. Enabling it for customers needs the product owner's approval (HUMAN_TODO 7).
 
+## Phase 10 additions
+
+- One Secrets Manager secret per cell for that region's Stripe test-mode keys (`thapsus-hr/<env>/stripe/<cell>`): about $0.40 a month each, $1.20 a month per environment, inside the existing "Secrets Manager, KMS, …" line. No other AWS resource was added. Stripe itself bills per transaction (Billing and Tax fees) only in live mode, which needs the product owner's approval (HUMAN_TODO 4.1).

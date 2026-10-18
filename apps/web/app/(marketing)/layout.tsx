@@ -36,7 +36,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
           <p>{t('marketing.footer.copyright', { year: new Date().getUTCFullYear() })}</p>
           <nav aria-label={t('marketing.footer.label')} className="flex flex-wrap gap-4">
             <Link href="/trust" className="text-text-secondary">{t('marketing.footer.trust')}</Link>
-            <Link href="/trust#subprocessors" className="text-text-secondary">{t('marketing.footer.subprocessors')}</Link>
+            <Link href="/trust/subprocessors" className="text-text-secondary">{t('marketing.footer.subprocessors')}</Link>
             <Link href="/status" className="text-text-secondary">{t('marketing.footer.status')}</Link>
           </nav>
           <div className="flex items-center gap-3">

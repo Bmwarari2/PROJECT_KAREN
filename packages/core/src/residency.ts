@@ -60,6 +60,9 @@ export function cellEndpointsFromEnv(env: NodeJS.ProcessEnv): Array<{ kind: Reso
   add('database', env.REPORTING_DATABASE_HOST);
   if (env.DEDICATED_DATABASE_HOSTS) for (const h of Object.values(JSON.parse(env.DEDICATED_DATABASE_HOSTS) as Record<string, string>)) add('database', h);
   add('database', env.REPORTING_DATABASE_URL);
+  // Read replicas used for reports and data exports (shared and dedicated databases).
+  if (env.READER_DATABASES) for (const url of Object.values(JSON.parse(env.READER_DATABASES) as Record<string, string>)) add('database', url);
+  if (env.DEDICATED_READER_HOSTS) for (const h of Object.values(JSON.parse(env.DEDICATED_READER_HOSTS) as Record<string, string>)) add('database', h);
   add('database', env.BACKOFFICE_DATABASE_URL);
   add('cache', env.VALKEY_URL);
   add('objectStorage', env.FILES_BUCKET);

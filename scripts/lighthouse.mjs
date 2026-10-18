@@ -10,7 +10,9 @@ import pg from 'pg';
 const require = createRequire(pathToFileURL(`${process.cwd()}/apps/web/package.json`));
 const lighthouse = (await import(pathToFileURL(require.resolve('lighthouse')).href)).default;
 const chromeLauncher = await import(pathToFileURL(require.resolve('chrome-launcher')).href);
-const { chromium } = await import(pathToFileURL(require.resolve('@playwright/test')).href);
+// @playwright/test is CommonJS: depending on the loader its exports arrive as named exports or only on `default`.
+const playwright = await import(pathToFileURL(require.resolve('@playwright/test')).href);
+const chromium = playwright.chromium ?? playwright.default.chromium;
 const OTPAuth = await import(pathToFileURL(createRequire(pathToFileURL(`${process.cwd()}/apps/api/package.json`)).resolve('otpauth')).href);
 const { migrate } = await import(pathToFileURL(`${process.cwd()}/packages/db/src/migrate.ts`).href).catch(() => ({ migrate: null }));
 
@@ -23,10 +25,16 @@ const base = `http://127.0.0.1:${WEB}`;
 const THRESHOLDS = { performance: 90, accessibility: 95 };
 const PAGES = [
   { path: '/', label: 'Marketing home' },
+  { path: '/pricing', label: 'Pricing' },
+  { path: '/status', label: 'Status page' },
   { path: '/signin', label: 'Sign in' },
   { path: '/signup', label: 'Sign up' },
   { path: '/app', label: 'App home (signed in)', auth: true },
   { path: '/app/security', label: 'App security (signed in)', auth: true },
+  { path: '/app/me', label: 'Me hub (signed in)', auth: true },
+  { path: '/app/notifications', label: 'Notifications and preferences (signed in)', auth: true },
+  { path: '/app/reports', label: 'Reports catalogue (signed in)', auth: true },
+  { path: '/app/reports/builder', label: 'Report builder (signed in)', auth: true },
 ];
 
 async function resetDb() {

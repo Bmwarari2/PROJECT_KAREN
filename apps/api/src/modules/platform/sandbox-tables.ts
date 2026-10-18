@@ -35,6 +35,10 @@ export const CONFIG_TABLES = [
   'app.cover_rules',
   'app.absence_triggers',
   'app.rota_templates',
+  'app.compliance_requirements',
+  'app.eeo_job_categories',
+  'app.retention_policies',
+  'app.privacy_notices',
 ] as const;
 
 const PERSONAL = [
@@ -77,6 +81,32 @@ const PERSONAL = [
   'app.ai_questions',
   'vault.records',
   'audit.events',
+  'app.worked_hours',
+  'app.rtw_checks',
+  'app.i9_records',
+  'app.flsa_attestations',
+  'app.compliance_records',
+  'app.pay_report_inputs',
+  'app.law_change_reads',
+  'app.pay_period_snapshots',
+  'app.payroll_exports',
+  'app.payslips',
+  'app.it_accounts',
+  'app.it_operations',
+  'app.integration_calls',
+  'app.asset_assignments',
+  'app.saved_reports',
+  'app.report_schedules',
+  'app.dsr_requests',
+  'app.legal_holds',
+  'app.incidents',
+  'app.subprocessor_subscriptions',
+  'app.i9_records',
+  // phase 10: support tickets (content submitted by people) and billing contacts
+  'app.support_tickets',
+  'app.support_ticket_messages',
+  'app.support_ticket_attachments',
+  'app.billing_contacts',
 ] as const;
 
 const OPERATIONAL = [
@@ -92,6 +122,22 @@ const OPERATIONAL = [
   'app.ai_policy_chunks',
   'app.ai_index_state',
   'audit.chain_heads',
+  'app.pay_periods',
+  'app.payroll_deliveries',
+  'app.payslip_batches',
+  'app.assets',
+  'app.report_runs',
+  'app.export_deliveries',
+  'app.account_closures',
+  'app.company_exports',
+  'app.retention_runs',
+  'app.dpa_acceptances',
+  // phase 10: billing state is never copied (a sandbox must never bill or reach the billing provider)
+  'app.billing_accounts',
+  'app.billing_account_entities',
+  'app.billing_subscriptions',
+  'app.billing_invoices',
+  'app.billing_webhook_events',
 ] as const;
 
 const SECRET = [
@@ -112,6 +158,13 @@ const SECRET = [
   'app.oauth_access_tokens',
   'app.webhook_endpoints',
   'app.audit_streams',
+  'app.payroll_connectors',
+  'app.integration_credentials',
+  'app.integration_oauth_states',
+  'app.it_connections',
+  'app.it_mapping_rules',
+  'app.data_exports',
+  'app.export_destinations',
 ] as const;
 
 export const TABLE_CLASSES: Readonly<Record<string, TableClass>> = Object.freeze({

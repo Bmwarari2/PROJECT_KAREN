@@ -12,12 +12,12 @@ export interface MigrationFile {
   checksum: string;
 }
 
-/** Migration file names: NNNN_slug.sql, or NNNNx_slug.sql (a letter suffix slots a migration between two numbers). */
-export const MIGRATION_NAME = /^\d{4}[a-z]?_[a-z0-9_]+\.sql$/;
+/** `0007_x.sql`, or `0007b_x.sql` for a migration inserted after 0007 and before 0008 (sorts that way in ASCII). */
+export const MIGRATION_FILE = /^\d{4}[a-z]?_[a-z0-9_]+\.sql$/;
 
 export function loadMigrations(dir = MIGRATIONS_DIR): MigrationFile[] {
   return readdirSync(dir)
-    .filter((f) => MIGRATION_NAME.test(f))
+    .filter((f) => MIGRATION_FILE.test(f))
     .sort()
     .map((name) => {
       const sql = readFileSync(join(dir, name), 'utf8');

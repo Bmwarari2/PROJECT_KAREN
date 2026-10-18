@@ -6,7 +6,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 
 const isWin = process.platform === 'win32';
 const steps = [
-  { id: 'deps', name: 'Local services (Postgres, Valkey)', cmd: 'docker compose up -d --wait postgres valkey' },
+  { id: 'deps', name: 'Local services (Postgres, Valkey, S3, SQS, mail)', cmd: 'docker compose up -d --wait' },
   { id: 'lint', name: 'Lint (ESLint + i18n hard-coded string rule)', cmd: 'pnpm exec eslint . --max-warnings=0' },
   { id: 'typecheck', name: 'Typecheck (tsc strict, all packages)', cmd: 'pnpm -r --workspace-concurrency=1 run typecheck' },
   { id: 'unit', name: 'Unit tests', cmd: 'pnpm exec vitest run --project unit' },
@@ -16,6 +16,7 @@ const steps = [
   { id: 'residency', name: 'Data residency (every region pair)', cmd: 'pnpm exec vitest run --project residency' },
   { id: 'build', name: 'Build (web, api, worker)', cmd: 'pnpm --filter @thapsus/web build && node scripts/bundle.mjs apps/api/src/main.ts apps/api/dist/main.mjs && node scripts/bundle.mjs apps/worker/src/main.ts apps/worker/dist/main.mjs' },
   { id: 'e2e', name: 'End-to-end + axe (Playwright)', cmd: 'pnpm --filter @thapsus/web exec playwright test --project functional' },
+  { id: 'dev', name: 'Local dev (migrate, seed, pnpm dev, hot reload)', cmd: 'node scripts/dev-smoke.mjs' },
   { id: 'visual', name: 'Visual regression (light/dark × phone/desktop)', cmd: 'node scripts/visual.mjs' },
   { id: 'lighthouse', name: 'Lighthouse (mobile: perf ≥90, a11y ≥95)', cmd: 'node --import tsx scripts/lighthouse.mjs' },
   { id: 'security', name: 'Security scan (pnpm audit high + secret scan)', cmd: 'pnpm audit --audit-level high --prod && node scripts/secret-scan.mjs' },

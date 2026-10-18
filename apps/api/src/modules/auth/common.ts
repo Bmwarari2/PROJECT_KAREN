@@ -4,9 +4,14 @@ import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
 import { createSession, loadSecurity, SESSION_COOKIE, type AuthMethod } from './sessions';
 
-/** Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. */
+/**
+ * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
+ * (`…:ip:…`) scale with the cell's ipThrottleMultiplier (1 outside the load-test environment).
+ */
 export async function throttle(deps: Deps, rules: Array<[key: string, limit: number, windowSeconds: number]>) {
-  for (const [key, limit, windowSeconds] of rules) {
+  const ipFactor = deps.config.ipThrottleMultiplier ?? 1;
+  for (const [key, base, windowSeconds] of rules) {
+    const limit = key.includes(':ip:') ? base * ipFactor : base;
     const { count, resetSeconds } = await deps.limiter.hit(key, windowSeconds);
     if (count > limit) throw new ApiError('rateLimited', undefined, { retryAfter: resetSeconds });
   }
