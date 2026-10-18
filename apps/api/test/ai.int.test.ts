@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '@thapsus/core/i18n';
-import { withTenant, type JobRow } from '@thapsus/db';
-import { closeDb, cookieFrom, ownerSession, PASSWORD, signup, startTestApp, uniq, type TestContext } from './helpers';
+import { enqueueJob, setFeatureFlag, withTenant, type JobRow } from '@thapsus/db';
+import * as OTPAuth from 'otpauth';
+import { closeDb, cookieFrom, enrolTotp, ownerSession, PASSWORD, randomIp, signup, startTestApp, totpCode, uniq, type TestContext } from './helpers';
+import { createStaff, STAFF_COOKIE } from '../src/modules/backoffice/auth';
 import { assignRole, loadPrincipal } from '../src/modules/authz/principal';
 import { hashPassword } from '../src/modules/auth/tokens';
 import { jobHandlers } from '../src/worker';
@@ -72,7 +74,9 @@ async function login(employeeId: string | null, role: string, tenant = owner) {
     return u.id;
   }, tenant.tenantId);
   const res = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', payload: { tenant: tenant.slug, email, password: PASSWORD }, remoteAddress: `10.71.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250) + 1}` });
-  return { cookie: cookieFrom(res), userId };
+  const cookie = cookieFrom(res);
+  if (role !== 'employee') await enrolTotp(ctx, cookie); // admins must complete MFA
+  return { cookie, userId };
 }
 
 async function folder(name: string, visibility: string, cookie = owner.cookie) {
@@ -120,18 +124,38 @@ afterAll(async () => {
   await ctx.close();
   await closeDb();
 });
+// The shared asker asks more than the per-user limit across the file; the limit itself is tested below.
+beforeEach(async () => {
+  if (asker) await ctx.deps.limiter.reset(`ai:user:${owner.tenantId}:${asker.userId}`);
+});
+
+const expectDisabled = (res: { statusCode: number; json(): { detail?: string; feature?: string } }) => {
+  expect(res.statusCode).toBe(403);
+  expect(res.json()).toMatchObject({ detail: 'featureDisabled', feature: 'aiAssistant' });
+};
 
 describe('feature flag (off by default)', () => {
-  it('is off for a new tenant: status says disabled and ask/feedback are 404', async () => {
+  it('is off for a new tenant: status says disabled and ask/feedback are refused (403 featureDisabled)', async () => {
     const status = await api('GET', '/v1/ai/status', undefined, asker.cookie);
     expect(status.statusCode).toBe(200);
-    expect(status.json()).toMatchObject({ enabled: false, available: true, canAsk: false });
+    expect(status.json()).toMatchObject({ enabled: false, entitled: false, available: true, canAsk: false });
     expect(status.json().disclosure).toBe(t('en-GB', 'askHr.disclosure'));
-    expect((await ask('How many days of annual leave do I get?')).statusCode).toBe(404);
-    expect((await api('POST', `/v1/ai/questions/${crypto.randomUUID()}/feedback`, { rating: 'helpful' }, asker.cookie)).statusCode).toBe(404);
+    expect((await api('GET', '/v1/tenant/experience', undefined, asker.cookie)).json().features.aiAssistant).toBe(false);
+    expectDisabled(await ask('How many days of annual leave do I get?'));
+    expectDisabled(await api('POST', `/v1/ai/questions/${crypto.randomUUID()}/feedback`, { rating: 'helpful' }, asker.cookie));
     expect(provider.calls).toHaveLength(0);
-    const flags = await tx((t) => t.one<{ f: unknown }>(`SELECT features->'flags'->'ai_assistant' AS f FROM app.tenants`));
-    expect(flags.f).toBeNull();
+    const stored = await tx((t) => t.one<{ f: unknown; ai: unknown }>(`SELECT features->'flags'->'aiAssistant' AS f, features->'ai' AS ai FROM app.tenants`));
+    expect(stored).toEqual({ f: null, ai: null });
+  });
+
+  it('needs both the staff-managed entitlement and the customer\'s own opt-in', async () => {
+    // The owner cannot switch on a staff-managed flag through the generic features settings…
+    expect((await api('PUT', '/v1/settings/features/aiAssistant', { enabled: true })).statusCode).toBe(403);
+    // …nor opt in before Thapsus has entitled the workspace.
+    expectDisabled(await api('PUT', '/v1/ai/settings', { enabled: true }));
+    await tx((t) => setFeatureFlag(t, 'aiAssistant', true)); // what the back office does (tested below)
+    expect((await api('GET', '/v1/ai/status', undefined, asker.cookie)).json()).toMatchObject({ enabled: false, entitled: true });
+    expectDisabled(await ask('How many days of annual leave do I get?'));
   });
 });
 
@@ -160,7 +184,7 @@ describe('permissions', () => {
   it('the owner turns the assistant on (audited)', async () => {
     const on = await api('PUT', '/v1/ai/settings', { enabled: true });
     expect(on.statusCode, on.body).toBe(200);
-    expect(on.json()).toMatchObject({ enabled: true, available: true, model: { name: 'Claude Opus 5.5', id: 'anthropic.claude-opus-5-5', provider: 'Amazon Bedrock' }, awsRegion: 'eu-west-2' });
+    expect(on.json()).toMatchObject({ enabled: true, entitled: true, customerEnabled: true, available: true, model: { name: 'Claude Opus 5.5', id: 'anthropic.claude-opus-5-5', provider: 'Amazon Bedrock' }, awsRegion: 'eu-west-2' });
     const audit = await tx((t) => t.query<{ action: string }>(`SELECT action FROM audit.events WHERE action = 'ai.settings_updated'`));
     expect(audit.length).toBeGreaterThanOrEqual(2);
     expect((await api('GET', '/v1/ai/status', undefined, asker.cookie)).json()).toMatchObject({ enabled: true, canAsk: true });
@@ -169,7 +193,10 @@ describe('permissions', () => {
 
 describe('indexing (idempotent job over policy documents only)', () => {
   it('indexes Markdown and PDF policies, skips unchanged versions, and never indexes personal or non-policy documents', async () => {
-    const leave = await writePolicy('Annual leave policy', `# Annual leave\nFull-time employees receive 25 days of annual leave plus bank holidays. Part-time employees receive a pro-rata amount.\n\n# Contacts\nFor questions contact Priya Kowalski (priya.kowalski@${owner.slug}.example.test, EMP-7781) on 020 7946 0991.`);
+    const leave = await writePolicy(
+      'Annual leave policy',
+      `# Annual leave\nFull-time employees receive 25 days of annual leave plus bank holidays. Part-time employees receive a pro-rata amount. For questions about annual leave contact Priya Kowalski (priya.kowalski@${owner.slug}.example.test, EMP-7781) on 020 7946 0991.\n\n# Carry over\nUp to five days can be carried over into the next holiday year.`,
+    );
     expect(leave).toMatchObject({ status: 'indexed' });
     expect(leave.chunks).toBeGreaterThanOrEqual(2);
     const pdf = await renderTextPdf('Sickness absence policy', '# Reporting sickness\nCall your line manager before 9am on the first day of sickness absence.\n\n# Fit notes\nA fit note is needed after seven calendar days.');
@@ -181,13 +208,15 @@ describe('indexing (idempotent job over policy documents only)', () => {
     expect(first[0]).toMatchObject({ indexed: 1, skipped: 1, failed: 0 });
     const chunksBefore = await tx((t) => t.query<{ id: string }>(`SELECT id FROM app.ai_policy_chunks ORDER BY id`));
     expect(await tx((t) => t.query(`SELECT 1 FROM app.ai_policy_chunks WHERE content ILIKE '%canary%'`))).toHaveLength(0);
-    // Running again changes nothing (idempotent per document version).
-    await tx((t) => t.exec(`SELECT 1`));
-    await api('POST', '/v1/ai/reindex');
-    await tx((t) => t.exec(`UPDATE app.jobs SET input = '{}'::jsonb WHERE kind = 'ai.index_policies' AND status = 'queued'`));
+    // Running again changes nothing (idempotent per document version)…
+    await tx((t) => enqueueJob(t, 'ai.index_policies', 'idempotency-check', {}));
     const second = await runJobs();
     expect(second[0]).toMatchObject({ indexed: 0, skipped: 2 });
     expect(await tx((t) => t.query<{ id: string }>(`SELECT id FROM app.ai_policy_chunks ORDER BY id`))).toEqual(chunksBefore);
+    // …while an explicit re-index rebuilds every policy document.
+    expect((await api('POST', '/v1/ai/reindex', undefined, hr.cookie)).statusCode).toBe(202);
+    expect((await runJobs())[0]).toMatchObject({ indexed: 2, skipped: 0 });
+    expect(await tx((t) => t.query(`SELECT 1 FROM app.ai_policy_chunks WHERE content ILIKE '%canary%'`))).toHaveLength(0);
     const settings = (await api('GET', '/v1/ai/settings')).json();
     expect(settings.documents.map((d: { title: string; status: string }) => [d.title, d.status]).sort()).toEqual([
       ['Annual leave policy', 'indexed'],
@@ -219,7 +248,7 @@ describe('ask: answers with citations and the AI disclosure', () => {
   });
 
   it('downgrades answers that cite an excerpt that was not sent (unknown documents)', async () => {
-    provider.reply = 'Employees get 30 days [4]. See the staff handbook [1][9].';
+    provider.reply = 'Employees get 30 days [41]. See the staff handbook [1][9].';
     const res = (await ask('How many days of annual leave do I get?')).json();
     expect(res).toMatchObject({ outcome: 'no_answer', answer: null, citations: [] });
     expect(res.message).toBe(t('en-GB', 'askHr.noAnswer'));
@@ -364,6 +393,7 @@ describe('tenant isolation (RLS) and rate limiting', () => {
     const other = await ownerSession(ctx, uniq('ai-b'));
     const h = { cookie: other.cookie };
     const f = (await ctx.app.inject({ method: 'POST', url: '/v1/document-folders', headers: h, payload: { name: 'B policies', visibility: 'everyone' } })).json().id;
+    await withTenant(ctx.deps.router, other.tenantId, (t) => setFeatureFlag(t, 'aiAssistant', true));
     expect((await ctx.app.inject({ method: 'PUT', url: '/v1/ai/settings', headers: h, payload: { enabled: true, policyFolderIds: [f, policyFolder] } })).statusCode).toBe(422);
     expect((await ctx.app.inject({ method: 'PUT', url: '/v1/ai/settings', headers: h, payload: { enabled: true, policyFolderIds: [f] } })).statusCode).toBe(200);
     provider.calls = [];
@@ -383,13 +413,11 @@ describe('tenant isolation (RLS) and rate limiting', () => {
 });
 
 describe('regions without an in-region model', () => {
-  it.each(['eu', 'us'] as const)('%s: the assistant cannot be enabled, and stays off even if the flag is forced', async (cell) => {
+  it.each(['eu', 'us'] as const)('%s: the assistant cannot be enabled by the customer or by staff, and stays off even if forced', async (cell) => {
     const c = await startTestApp({ cell, listen: false, overrides: { ai: provider } });
     try {
       const s = await signup(c, uniq(`ai-${cell}`), cell);
-      const enrol = await c.app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/enroll', headers: { cookie: s.cookie } });
-      const { secret } = enrol.json() as { secret: string };
-      const { totpCode } = await import('./helpers');
+      const { secret } = (await c.app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/enroll', headers: { cookie: s.cookie } })).json() as { secret: string };
       await c.app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/confirm', headers: { cookie: s.cookie }, payload: { code: totpCode(secret, c.clock.now) } });
       const h = { cookie: s.cookie };
       const settings = (await c.app.inject({ method: 'GET', url: '/v1/ai/settings', headers: h })).json();
@@ -398,10 +426,24 @@ describe('regions without an in-region model', () => {
       const on = await c.app.inject({ method: 'PUT', url: '/v1/ai/settings', headers: h, payload: { enabled: true } });
       expect(on.statusCode).toBe(422);
       expect(on.json().detail).toBe('aiNotAvailableInRegion');
-      await withTenant(c.deps.router, s.tenantId, (t) => t.exec(`UPDATE app.tenants SET features = jsonb_set(features, '{flags}', '{"ai_assistant": true}')`));
-      expect((await c.app.inject({ method: 'GET', url: '/v1/ai/status', headers: h })).json()).toMatchObject({ enabled: false, available: false });
+      // Thapsus staff cannot entitle the workspace either.
+      const email = `super.${Math.random().toString(36).slice(2, 6)}@thapsus.example.test`;
+      const staff = await createStaff(c.app, email, 'Fictional Staff', 'super_admin');
+      const login = await c.app.inject({ method: 'POST', url: '/v1/backoffice/auth/login', payload: { email, password: staff.password }, remoteAddress: randomIp() });
+      const staffCookie = `${STAFF_COOKIE}=${String(login.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
+      const code = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(staff.totpSecret), digits: 6, period: 30 }).generate({ timestamp: c.clock.now.getTime() });
+      expect((await c.app.inject({ method: 'POST', url: '/v1/backoffice/auth/totp', headers: { cookie: staffCookie }, payload: { code } })).statusCode).toBe(204);
+      const staffOn = await c.app.inject({ method: 'PUT', url: `/v1/backoffice/tenants/${s.tenantId}/features/aiAssistant`, headers: { cookie: staffCookie }, payload: { enabled: true }, remoteAddress: randomIp() });
+      expect(staffOn.statusCode, staffOn.body).toBe(422);
+      expect(staffOn.json().detail).toBe('aiNotAvailableInRegion');
+      // Even with both switches forced on in the database, nothing is sent anywhere.
+      await withTenant(c.deps.router, s.tenantId, async (t) => {
+        await setFeatureFlag(t, 'aiAssistant', true);
+        await t.exec(`UPDATE app.tenants SET features = jsonb_set(features, '{ai}', '{"enabled": true}')`);
+      });
+      expect((await c.app.inject({ method: 'GET', url: '/v1/ai/status', headers: h })).json()).toMatchObject({ enabled: false, available: false, entitled: true });
       provider.calls = [];
-      expect((await c.app.inject({ method: 'POST', url: '/v1/ai/ask', headers: h, payload: { question: 'How many days of annual leave do I get?' } })).statusCode).toBe(404);
+      expectDisabled(await c.app.inject({ method: 'POST', url: '/v1/ai/ask', headers: h, payload: { question: 'How many days of annual leave do I get?' } }));
       expect(provider.calls).toHaveLength(0);
     } finally {
       await c.close();
