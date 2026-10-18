@@ -312,6 +312,24 @@ importers:
         specifier: ^6.4.0
         version: 6.4.0
 
+  apps/worker:
+    dependencies:
+      '@aws-sdk/client-eventbridge':
+        specifier: ^3.1152.0
+        version: 3.1152.0
+      '@aws-sdk/client-sqs':
+        specifier: ^3.1152.0
+        version: 3.1152.0
+      '@thapsus/api':
+        specifier: workspace:*
+        version: link:../api
+      '@thapsus/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@thapsus/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+
   infra:
     dependencies:
       '@thapsus/core':
@@ -395,6 +413,10 @@ packages:
 
   '@aws-sdk/client-dynamodb@3.1152.0':
     resolution: {integrity: sha512-Dr3jy9vbi8ay9C9NBF508KYTYQyKOveBrY776M6tcJxz1rtDx58wgmUpbDJtVcTdrZEextPTQPdfkHEEUdjBeg==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-eventbridge@3.1152.0':
+    resolution: {integrity: sha512-cCUtfQWN3T54OF5fpiN4AyRuBODOxGZpdp1tLuRfWkKBDXmPpPgbrt7Z/YounPJeYBwMWw8fOkvn/Bys/egPog==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-kms@3.1152.0':
@@ -2611,6 +2633,18 @@ snapshots:
       '@aws-sdk/credential-provider-node': 3.972.86
       '@aws-sdk/dynamodb-codec': 3.973.48
       '@aws-sdk/middleware-endpoint-discovery': 3.972.32
+      '@aws-sdk/types': 3.974.6
+      '@smithy/core': 3.36.0
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.12.1
+      '@smithy/types': 4.19.0
+      tslib: 2.8.1
+
+  '@aws-sdk/client-eventbridge@3.1152.0':
+    dependencies:
+      '@aws-sdk/core': 3.978.3
+      '@aws-sdk/credential-provider-node': 3.972.86
+      '@aws-sdk/signature-v4-multi-region': 3.996.48
       '@aws-sdk/types': 3.974.6
       '@smithy/core': 3.36.0
       '@smithy/fetch-http-handler': 5.8.0

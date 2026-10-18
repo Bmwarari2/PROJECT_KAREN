@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts",
+    "./testing": "./test/helpers.ts"
   },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
