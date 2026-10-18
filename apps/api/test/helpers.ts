@@ -34,7 +34,9 @@ export interface TestContext {
   close(): Promise<void>;
 }
 
-export async function startTestApp(opts: { cell?: HomeRegion; directory?: InMemoryDirectory; listen?: boolean; overrides?: Partial<Deps> } = {}): Promise<TestContext> {
+export async function startTestApp(
+  opts: { cell?: HomeRegion; directory?: InMemoryDirectory; listen?: boolean; overrides?: Partial<Deps>; /** Registers extra (test-only) routes before the app is ready. */ extend?: (app: FastifyInstance) => void } = {},
+): Promise<TestContext> {
   const cell = opts.cell ?? 'uk';
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
@@ -66,6 +68,7 @@ export async function startTestApp(opts: { cell?: HomeRegion; directory?: InMemo
     ...opts.overrides,
   };
   const app = await buildApp(deps, { logger: process.env.TEST_LOG === '1' });
+  opts.extend?.(app);
   if (opts.listen !== false) await app.listen({ port, host: '127.0.0.1' });
   else await app.ready();
   return {

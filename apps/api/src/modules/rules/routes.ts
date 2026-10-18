@@ -28,12 +28,24 @@ export const invalidateRuleBook = () => {
   cache = undefined;
 };
 
-const Resolved = Type.Object({ jurisdiction: Type.String(), key: Type.String(), value: Type.Any(), effectiveFrom: Type.String(), effectiveTo: Nullable(Type.String()), source: Type.Object({ url: Type.String(), title: Type.String() }), verifiedOn: Type.String(), packVersion: Type.Integer() });
+/** "EU", ISO 3166-1 ("GB"), ISO 3166-2 ("US-NY", "GB-NIR") or a locality below it ("US-NY-NYC"); unknown codes resolve through their hyphen ancestors. */
+const JurisdictionCode = Type.String({ pattern: '^[A-Z]{2}(-[A-Z0-9]{1,3}){0,2}$', maxLength: 10 });
+const Resolved = Type.Object({
+  jurisdiction: Type.String(),
+  key: Type.String(),
+  value: Type.Any(),
+  effectiveFrom: Type.String(),
+  effectiveTo: Nullable(Type.String()),
+  source: Type.Object({ url: Type.String(), title: Type.String() }),
+  verifiedOn: Type.String(),
+  packVersion: Type.Integer(),
+  regions: Type.Optional(Type.Array(Type.String(), { description: 'Subdivisions the answering version was verified for (e.g. GB-ENG, GB-WLS, GB-SCT); absent = the whole jurisdiction' })),
+});
 
 export async function rulesRoutes(app: FastifyInstance) {
   app.get(
     '/v1/rules/:jurisdiction/:key',
-    { schema: { tags: ['rules'], params: Type.Object({ jurisdiction: Type.String({ pattern: '^[A-Z]{2}(-[A-Z0-9]{1,3})?$' }), key: Type.String({ maxLength: 80 }) }), querystring: Type.Object({ date: Type.Optional(CivilDate) }), response: { 200: Resolved, 404: Problem } } },
+    { schema: { tags: ['rules'], params: Type.Object({ jurisdiction: JurisdictionCode, key: Type.String({ maxLength: 80 }) }), querystring: Type.Object({ date: Type.Optional(CivilDate) }), response: { 200: Resolved, 404: Problem } } },
     async (req) => {
       requireAuth(req);
       const { jurisdiction, key } = req.params as { jurisdiction: string; key: string };
@@ -49,7 +61,7 @@ export async function rulesRoutes(app: FastifyInstance) {
 
   app.get(
     '/v1/rules/:jurisdiction',
-    { schema: { tags: ['rules'], params: Type.Object({ jurisdiction: Type.String({ pattern: '^[A-Z]{2}(-[A-Z0-9]{1,3})?$' }) }), querystring: Type.Object({ date: Type.Optional(CivilDate) }), response: { 200: Type.Array(Resolved) } } },
+    { schema: { tags: ['rules'], params: Type.Object({ jurisdiction: JurisdictionCode }), querystring: Type.Object({ date: Type.Optional(CivilDate) }), response: { 200: Type.Array(Resolved) } } },
     async (req) => {
       requireAuth(req);
       const { jurisdiction } = req.params as { jurisdiction: string };
@@ -89,7 +101,7 @@ export async function rulesRoutes(app: FastifyInstance) {
       preHandler: requireStaff(app, ['rules_editor']),
       schema: {
         tags: ['backoffice'],
-        params: Type.Object({ jurisdiction: Type.String({ pattern: '^[A-Z]{2}(-[A-Z0-9]{1,3})?$|^EU$' }), key: Type.String() }),
+        params: Type.Object({ jurisdiction: JurisdictionCode, key: Type.String() }),
         body: Type.Object({ effectiveFrom: CivilDate, effectiveTo: Type.Optional(Nullable(CivilDate)), value: Type.Any(), source: Type.Object({ url: Type.String({ pattern: '^https://' }), title: Type.String({ minLength: 3 }) }), verifiedOn: CivilDate, notes: Type.Optional(Type.String({ maxLength: 2000 })) }),
         response: { 201: Type.Object({ id: Type.String() }), 400: Problem, 403: Problem },
       },

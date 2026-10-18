@@ -1,4 +1,3 @@
-/// <reference path="../../types/ssh2.d.ts" />
 import { createHash } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
