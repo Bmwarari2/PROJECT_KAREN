@@ -34,3 +34,15 @@ These are services the customer contracts with directly and connects to Thapsus-
 | Xero Payroll (UK) | Payroll handoff | Pay-period export fields chosen in the connector mapping |
 | Customer SFTP or S3 | Scheduled data exports and payroll files | Fields chosen by the customer |
 | Customer SIEM (HTTPS or S3) | Audit log streaming | Audit events (sensitive values redacted) |
+| Customer webhook endpoints | Event notifications to the customer's systems | Event type, ids and names of changed fields (no field values) |
+| Customer API clients (API keys, OAuth clients) | The customer's own integrations reading or writing through the public API | Whatever the client's role and scopes allow |
+
+### Destinations the controller configures (webhooks, audit streaming, API clients)
+
+Webhook endpoints, SIEM streams (HTTPS endpoints and S3 buckets) and API clients are chosen and configured by the customer, who is the **controller**. They are not Thapsus sub-processors. Thapsus sends data only to destinations an admin of that workspace has configured, and stops as soon as the destination is disabled, deleted or revoked, or the feature is turned off.
+
+- **Origin:** every outbound call starts in the workspace's **home region**: London for UK workspaces, Frankfurt for EU and Ohio for US. Thapsus never relays it through another region.
+- **S3 audit streams:** these can only target a bucket in the home region. The residency-guarded AWS client factory refuses any other region, and this is tested for every region pair.
+- **What is sent:** webhook payloads carry identifiers and the names of changed fields only. Audit streams omit the values of sensitive changes.
+- **Safety:** destinations must be public `https://` addresses. Private, internal and cloud-metadata addresses are refused (SSRF protection).
+- **Sandboxes:** a sandbox copies no destinations. It gets no webhooks, audit streams or API keys from production.

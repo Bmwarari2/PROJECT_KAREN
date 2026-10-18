@@ -577,6 +577,341 @@
       "threshold": "A threshold is crossed"
     }
   },
+  "platform": {
+    "backToSettings": "Back to settings",
+    "secretOnce": {
+      "warning": "Copy this now. For your security it is shown only once and cannot be retrieved later.",
+      "copy": "Copy {label}",
+      "copyShort": "Copy",
+      "copied": "Copied",
+      "done": "I have saved it"
+    },
+    "featureOff": {
+      "title": "This feature is turned off",
+      "body": "An administrator can turn it on in Settings → Features, or Thapsus support can enable it for your plan.",
+      "action": "Manage features"
+    },
+    "status": {
+      "active": "Active",
+      "ready": "Ready",
+      "succeeded": "Delivered",
+      "delivered": "Delivered",
+      "pending": "Pending",
+      "creating": "Creating",
+      "retrying": "Retrying",
+      "paused": "Paused",
+      "disabled": "Disabled",
+      "revoked": "Revoked",
+      "failed": "Failed",
+      "requested": "Requested",
+      "running": "Running",
+      "cancelled": "Cancelled"
+    },
+    "errors": {
+      "featureDisabled": "This feature is turned off for your workspace.",
+      "apiClientNotAllowed": "API clients cannot use this endpoint.",
+      "exceedsYourPermissions": "That credential would have permissions you do not have yourself. Choose a smaller role or fewer scopes.",
+      "noEffectivePermissions": "That role and those scopes do not share any permission, so the credential could do nothing.",
+      "unsafeUrl": "That address cannot be used. Use a public https:// address without a user name or password.",
+      "unknownEventType": "One of the event types is not recognised.",
+      "regionNotAllowed": "The bucket must be in your workspace’s home region.",
+      "insufficientContrast": "That colour does not meet the contrast requirements.",
+      "staffManagedFeature": "This feature is managed by Thapsus support.",
+      "sandboxLimitReached": "You have reached the maximum number of sandboxes for your plan.",
+      "sandboxOfSandbox": "You cannot create a sandbox from a sandbox.",
+      "sandboxNotReady": "The sandbox is still being created.",
+      "idempotencyKeyReused": "That idempotency key was already used for a different request.",
+      "idempotencyKeyInProgress": "A request with that idempotency key is still in progress.",
+      "unknownScope": "One of the scopes is not recognised.",
+      "unknownRole": "That role does not exist.",
+      "scopeValuesRequired": "Choose at least one value for the limited scope."
+    },
+    "flags": {
+      "publicApi": {
+        "label": "Public API",
+        "description": "API keys and OAuth 2.0 clients for your own integrations."
+      },
+      "webhooks": {
+        "label": "Webhooks",
+        "description": "Signed event notifications to endpoints you choose."
+      },
+      "auditStreaming": {
+        "label": "Audit log streaming",
+        "description": "Send the audit log to your security information and event management (SIEM) system."
+      },
+      "sandboxes": {
+        "label": "Sandboxes",
+        "description": "Test workspaces built from your configuration with fictional people."
+      },
+      "customBranding": {
+        "label": "Custom branding",
+        "description": "Your logo and accent colour in the app."
+      },
+      "aiAssistant": {
+        "label": "Ask HR assistant",
+        "description": "Answers employee questions from your own policies. Off by default."
+      }
+    },
+    "scopes": {
+      "employees_read": "Read people records",
+      "employees_write": "Create and update people records",
+      "org_read": "Read the organisation structure",
+      "org_write": "Manage the organisation structure",
+      "leave_read": "Read time off and absence",
+      "leave_write": "Record and manage time off and absence",
+      "time_read": "Read rotas, clock events and timesheets",
+      "time_write": "Manage rotas and timesheets",
+      "documents_read": "Read documents",
+      "documents_write": "Manage documents",
+      "audit_read": "Read and export the audit log",
+      "webhooks_manage": "Manage webhook endpoints"
+    },
+    "links": {
+      "title": "Integrations and platform",
+      "api": {
+        "title": "API access",
+        "body": "API keys and OAuth 2.0 clients for the public REST API."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "body": "Signed event notifications, delivery log and replay."
+      },
+      "streams": {
+        "title": "Audit log streaming",
+        "body": "Stream the audit log to your SIEM over HTTPS or to your S3 bucket."
+      },
+      "sandbox": {
+        "title": "Sandboxes",
+        "body": "Try changes safely in a copy of your configuration with fictional people."
+      },
+      "branding": {
+        "title": "Branding",
+        "body": "Your logo and an accent colour that stays accessible."
+      },
+      "features": {
+        "title": "Features",
+        "body": "Turn features on or off for your workspace."
+      },
+      "developers": {
+        "title": "Developer documentation",
+        "body": "API reference, authentication, webhooks and the TypeScript SDK."
+      }
+    },
+    "api": {
+      "title": "API access",
+      "lead": "Credentials for your own integrations. Each one can do only what both its role and its scopes allow, and never more than you can.",
+      "docsLink": "Read the developer documentation",
+      "keyCreated": "API key created",
+      "apiKey": "API key",
+      "clientCreated": "OAuth client created",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "revoked": "Credential revoked.",
+      "secretRotated": "New client secret (the previous one keeps working for 24 hours)",
+      "createTitle": "Create a credential",
+      "kind": "Type",
+      "kind_key": "API key",
+      "kind_oauth": "OAuth 2.0 client (client credentials)",
+      "name": "Name",
+      "nameHint": "For example, the system that will use it.",
+      "role": "Role",
+      "roleHint": "The credential gets the permissions this role and the chosen scopes have in common.",
+      "scopes": "Scopes",
+      "scopesHint": "Grant only what the integration needs.",
+      "createKey": "Create API key",
+      "createClient": "Create OAuth client",
+      "keysTitle": "API keys",
+      "noKeys": "No API keys yet",
+      "identifier": "Identifier",
+      "lastUsed": "Last used",
+      "revokeNamed": "Revoke {name}",
+      "revoke": "Revoke",
+      "clientsTitle": "OAuth 2.0 clients",
+      "clientsBody": "Exchange the client ID and secret for a short-lived access token at /v1/oauth/token.",
+      "noClients": "No OAuth clients yet",
+      "rotateNamed": "Rotate the secret of {name}",
+      "rotate": "Rotate secret"
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "lead": "We send a signed HTTPS request to your endpoint when something happens. Failed deliveries are retried with increasing delays, and you can replay any delivery.",
+      "replayed": "Delivery queued again.",
+      "noDeliveries": "No deliveries yet.",
+      "logCaption": "Deliveries to {url}",
+      "event": "Event",
+      "attempts": "Attempts",
+      "response": "Response",
+      "duration": "Duration",
+      "createdAt": "Created",
+      "replay": "(replay)",
+      "ms": "{ms} ms",
+      "replayNamed": "Replay the {event} delivery",
+      "replayAction": "Replay",
+      "createdTitle": "Endpoint created — signing secret",
+      "rotated": "New signing secret (deliveries carry both signatures for 24 hours)",
+      "signingSecret": "Signing secret",
+      "createTitle": "Add an endpoint",
+      "url": "Endpoint URL",
+      "urlHint": "A public https:// address. Private and internal addresses are refused.",
+      "description": "Description",
+      "events": "Events",
+      "create": "Add endpoint",
+      "none": "No endpoints yet",
+      "noneBody": "Add an endpoint to receive events such as new starters and leavers.",
+      "secretCount": "Active signing secrets: {n}",
+      "ping": "Send test event",
+      "pinged": "Test event queued.",
+      "rotate": "Rotate secret",
+      "disable": "Disable",
+      "enable": "Enable",
+      "log": "Delivery log"
+    },
+    "streams": {
+      "title": "Audit log streaming",
+      "lead": "Stream your sealed audit log to your SIEM. Each batch is signed or written once per range, so retries never create duplicates. Sensitive events are sent without their values.",
+      "noBatches": "Nothing delivered yet.",
+      "logCaption": "Batches for {name}",
+      "range": "Sequence range",
+      "events": "Events",
+      "created": "Stream created — signing secret",
+      "createdS3": "Stream created — add this external ID to your IAM role’s trust policy",
+      "externalId": "External ID",
+      "region": "Bucket region",
+      "syncQueued": "Delivery queued.",
+      "createTitle": "Add a stream",
+      "destination": "Destination",
+      "kind_https": "HTTPS endpoint",
+      "kind_s3": "Amazon S3 bucket (cross-account role)",
+      "bucket": "Bucket",
+      "bucketHint": "Must be in your workspace’s home region.",
+      "prefix": "Key prefix",
+      "roleArn": "IAM role ARN",
+      "roleArnHint": "A role in your AWS account that allows s3:PutObject on the bucket.",
+      "actions": "Only these actions",
+      "actionsHint": "Optional, comma-separated prefixes such as auth., employee.",
+      "sensitiveOnly": "Only views and changes of sensitive data",
+      "backfill": "Include the existing audit history",
+      "create": "Add stream",
+      "none": "No streams yet",
+      "cursor": "Delivered up to #{seq}",
+      "lastDelivered": "last delivery {when}",
+      "lastError": "Last error: {error}",
+      "syncNow": "Deliver now",
+      "pause": "Pause",
+      "resume": "Resume"
+    },
+    "sandbox": {
+      "banner": "You are in a sandbox. It uses your company’s configuration with fictional people. Nothing here affects your live workspace.",
+      "title": "Sandboxes",
+      "lead": "A sandbox is a separate workspace for testing changes, integrations and training.",
+      "queued": "Your sandbox is being created.",
+      "whatTitle": "What a sandbox contains",
+      "copied": "Copied: settings, roles, organisation structure, custom fields, policies, workflows, approval chains, leave types and policies, rota templates and branding.",
+      "notCopied": "Never copied: people, users, documents, absences, timesheets, the audit log, sign-in methods, API keys, webhooks and audit streams.",
+      "synthetic": "People in a sandbox are generated and fictional.",
+      "region": "A sandbox stays in your home region.",
+      "people": "Fictional people",
+      "peopleHint": "Up to 200.",
+      "create": "Create sandbox",
+      "linkTitle": "One-time sign-in link (valid for 15 minutes)",
+      "linkLabel": "Sign-in link",
+      "ownerLabel": "Sandbox owner account",
+      "linkNote": "Opening the link signs this browser into the sandbox. Use a private window to stay signed in here.",
+      "none": "No sandboxes yet",
+      "meta": "{slug} · {people} fictional people · created {created}",
+      "signIn": "Get sign-in link"
+    },
+    "features": {
+      "title": "Features",
+      "lead": "Turn features on or off for everyone in your workspace. Some are managed by Thapsus support according to your plan.",
+      "turnedOn": "{name} is on.",
+      "turnedOff": "{name} is off.",
+      "staffManaged": "Managed by Thapsus support"
+    },
+    "branding": {
+      "logoAlt": "Company logo",
+      "preview_light": "Light mode",
+      "preview_dark": "Dark mode",
+      "sampleLink": "A link",
+      "sampleButton": "A button",
+      "sampleSelected": "A selected row",
+      "title": "Branding",
+      "lead": "Show your logo and use your accent colour for links and buttons.",
+      "resetDone": "Accent colour reset to the default.",
+      "saved": "Accent colour saved.",
+      "logoSaved": "Logo saved.",
+      "logoInvalid": "Upload a PNG, JPEG or WebP image of up to 512 KB.",
+      "accentTitle": "Accent colour",
+      "accentBody": "To keep the app readable for everyone, the colour must meet WCAG 2.2 AA contrast on every background, in light and dark mode.",
+      "accentLight": "Accent colour (light mode)",
+      "accentDark": "Accent colour (dark mode)",
+      "hexHint": "Six-digit hex, for example #1F3A8A.",
+      "separateDark": "Use a different colour in dark mode",
+      "rejected": "This colour was not saved because it does not have enough contrast:",
+      "failure": "{mode}: {pair} is {ratio}:1 (needs at least {required}:1)",
+      "mode_light": "Light mode",
+      "mode_dark": "Dark mode",
+      "save": "Save colour",
+      "reset": "Use the default colour",
+      "logoTitle": "Logo",
+      "logoBody": "Shown at the top of the navigation. Stored in your home region.",
+      "removeLogo": "Remove logo",
+      "logoFile": "Logo file",
+      "logoHint": "PNG, JPEG or WebP, up to 512 KB.",
+      "upload": "Upload logo"
+    }
+  },
+  "developers": {
+    "title": "Developer documentation",
+    "lead": "Build on Thapsus-HR with a versioned REST API, signed webhooks and a typed TypeScript SDK. Every call is served from your workspace’s home region and is never cached at the edge.",
+    "eyebrow": "API v{version}",
+    "download": "Download the OpenAPI 3.1 document",
+    "guideTitle": "Guides",
+    "guide": {
+      "authentication": {
+        "title": "Authentication",
+        "body": "Use a scoped API key (thr_sk_…) or an OAuth 2.0 client: POST /v1/oauth/token with grant_type=client_credentials and HTTP Basic authentication returns a bearer token (thr_at_…) valid for an hour. Send it as Authorization: Bearer <token>."
+      },
+      "scopes": {
+        "title": "Scopes and roles",
+        "body": "Each credential has a role and scopes. It can do only what both allow. Credentials never reach sign-in, settings or security endpoints."
+      },
+      "pagination": {
+        "title": "Pagination",
+        "body": "List endpoints take ?limit and ?cursor and return { data, nextCursor }. Pass nextCursor back until it is null. Cursors are opaque."
+      },
+      "idempotency": {
+        "title": "Idempotency",
+        "body": "Send an Idempotency-Key header on POST and PATCH. Repeating the same request with the same key returns the stored response (Idempotent-Replayed: true) for 24 hours; a different request with the same key is refused with 422."
+      },
+      "rateLimits": {
+        "title": "Rate limits",
+        "body": "Limits apply per workspace per minute. Every response carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset; over the limit you get 429 with Retry-After."
+      },
+      "webhooks": {
+        "title": "Webhooks and signatures",
+        "body": "Each delivery carries Thapsus-Signature: t=<time>,v1=<HMAC-SHA256 of \"t.body\">. Verify it with your signing secret, reject timestamps older than five minutes and de-duplicate on Thapsus-Event-Id. The SDK’s verifyWebhookSignature does this for you."
+      },
+      "versioning": {
+        "title": "Versioning",
+        "body": "The API is versioned in the path (/v1). Additive changes ship within a version. Deprecated operations send Deprecation, Sunset and Link headers at least six months before removal."
+      },
+      "residency": {
+        "title": "Data residency",
+        "body": "Call the API in your home region (api.uk, api.eu or api.us). Webhooks and audit streams are sent from your home region to destinations you choose."
+      }
+    },
+    "scopesTitle": "Scopes",
+    "referenceTitle": "API reference",
+    "referenceLead": "Generated from the published OpenAPI document. Operations marked for API clients accept API keys and OAuth tokens.",
+    "tag": "{tag} ({count})",
+    "apiClients": "API clients",
+    "deprecated": "Deprecated",
+    "params": "Parameters: {params}",
+    "body": "JSON body",
+    "responses": "Responses: {codes}",
+    "cta": "Create a workspace to get started"
+  },
   "orgSettings": {
     "title": "Organisation",
     "legal-entities": "Legal entities",

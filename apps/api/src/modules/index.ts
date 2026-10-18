@@ -16,6 +16,7 @@ import { billingRoutes } from './billing/routes';
 import { supportTicketRoutes } from './support/tickets';
 import { statusRoutes } from './status/routes';
 import { backofficeRoutes } from './backoffice/routes';
+import { platformRoutes } from './platform';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -35,4 +36,5 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(supportTicketRoutes);
   await app.register(statusRoutes);
   await app.register(backofficeRoutes);
+  await app.register(platformRoutes);
 }

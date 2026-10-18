@@ -21,6 +21,7 @@
     "@aws-sdk/client-s3": "^3.1152.0",
     "@aws-sdk/client-sesv2": "^3.1152.0",
     "@aws-sdk/client-sqs": "^3.1152.0",
+    "@aws-sdk/client-sts": "3.1152.0",
     "@aws-sdk/s3-request-presigner": "^3.1152.0",
     "@fastify/cookie": "^11.1.3",
     "@fastify/cors": "^11.3.1",
@@ -36,6 +37,7 @@
     "@thapsus/core": "workspace:*",
     "@thapsus/db": "workspace:*",
     "@thapsus/rules": "workspace:*",
+    "@thapsus/ui": "workspace:*",
     "csv-parse": "^7.0.3",
     "exceljs": "^4.4.0",
     "fastify": "^5.12.7",
@@ -54,6 +56,7 @@
   },
   "devDependencies": {
     "@peculiar/x509": "^2.2.0",
+    "@thapsus/sdk": "workspace:*",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/pg-copy-streams": "^1.2.5",
