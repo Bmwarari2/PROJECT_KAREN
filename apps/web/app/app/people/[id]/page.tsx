@@ -8,7 +8,9 @@ import { money, parseDecimal } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { useSession } from '../../shell';
+import { hasPermission, useSession } from '../../shell';
+import type { LeaveBalance } from '@/components/leave-balances';
+import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
 
 interface ProfileResponse {
   employee: Record<string, unknown> & { id: string; displayName?: string };
@@ -47,6 +49,7 @@ export default function EmployeePage() {
   const [inviting, setInviting] = React.useState(false);
   const session = useSession();
   const canInvite = session?.permissions.some((p) => p === '*' || p === 'users.*' || p === 'users.invite');
+  const balances = useApi<LeaveBalance[]>(`/v1/leave/balances/${id}`);
 
   if (error) return <EmptyState title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
   if (!data) return <Skeleton className="h-96 w-full" />;
@@ -89,6 +92,11 @@ export default function EmployeePage() {
             {[e.jobTitle, e.department, e.location].filter(Boolean).join(' · ')}
           </p>
           {e.status ? <Badge className="mt-2" tone={e.status === 'active' ? 'success' : 'neutral'}>{t(`people.status.${e.status}`)}</Badge> : null}
+          {typeof e.endDate === 'string' && e.status !== 'leaver' ? (
+            <Badge className="ml-2 mt-2" tone="warning" data-testid="leaving-on">
+              {t('admin.leaver.leavingOn', { date: formatDate(e.endDate, locale) })}
+            </Badge>
+          ) : null}
         </div>
         {canInvite ? (
           <Button
@@ -111,6 +119,8 @@ export default function EmployeePage() {
             {t('people.invite')}
           </Button>
         ) : null}
+        {hasPermission(session, 'employees.update') && e.status !== 'leaver' ? <TransferDialog employeeId={id} name={String(e.displayName ?? '')} onDone={() => (reload(), history.reload())} /> : null}
+        {hasPermission(session, 'employees.terminate') && e.status !== 'leaver' && !e.endDate ? <LeaverDialog employeeId={id} name={String(e.displayName ?? '')} onDone={reload} /> : null}
         <label className="flex flex-col gap-1 text-footnote text-text-secondary">
           {t('people.asOf')}
           <Input type="date" value={asOf || data.asOf} onChange={(ev) => setAsOf(ev.target.value)} className="w-44" />
@@ -147,6 +157,7 @@ export default function EmployeePage() {
           <TabsTrigger value="overview">{t('people.tab.overview')}</TabsTrigger>
           {history.data ? <TabsTrigger value="history">{t('people.tab.history')}</TabsTrigger> : null}
           <TabsTrigger value="documents">{t('people.tab.documents')}</TabsTrigger>
+          {balances.data ? <TabsTrigger value="time-off">{t('admin.balances.tab')}</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="overview" className="pt-5">
           <div className="grid gap-4 md:grid-cols-2">
@@ -184,6 +195,11 @@ export default function EmployeePage() {
             ))}
           </ol>
         </TabsContent>
+        {balances.data ? (
+          <TabsContent value="time-off" className="pt-5">
+            <BalancesPanel employeeId={id} name={String(e.displayName ?? '')} canAdjust={hasPermission(session, 'leave.adjust')} balances={balances.data} onChanged={balances.reload} />
+          </TabsContent>
+        ) : null}
         <TabsContent value="documents" className="pt-5">
           {docs.data?.length ? (
             <ul className="flex flex-col gap-2">
