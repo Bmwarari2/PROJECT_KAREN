@@ -37,6 +37,8 @@ test.describe('compliance centre', () => {
     const entity = await post(page, '/v1/org/legal-entities', { name: 'Fictional Compliance Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' });
     const employee = await post(page, '/v1/employees', { startDate: '2026-09-07', legalFirstName: 'Fiona', legalLastName: 'Fictional', jobTitle: 'Forklift Operator', entityId: entity.id, weeklyHours: 40, payAmountMinor: 3_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent', probationEndDate: '2027-03-07' });
     await post(page, '/v1/compliance/requirements', { kind: 'licence', name: 'Fictional forklift licence', appliesTo: { jobTitles: ['Forklift Operator'] }, validityMonths: 12 });
+    const us = await post(page, '/v1/org/legal-entities', { name: 'Fictional Compliance Inc', country: 'US', regionCode: 'US-CA', currency: 'USD', timeZone: 'America/Los_Angeles' });
+    await post(page, '/v1/employees', { startDate: '2026-02-02', legalFirstName: 'Sam', legalLastName: 'Fictional', jobTitle: 'Engineer', entityId: us.id, weeklyHours: 40, payAmountMinor: 6_000_000, payCurrency: 'USD', payFrequency: 'annual', contractType: 'permanent', flsaStatus: 'exempt' });
     expect(employee.id).toBeTruthy();
     await page.getByRole('link', { name: 'Compliance', exact: true }).first().click();
     await page.waitForURL(/\/app\/compliance$/);
@@ -44,6 +46,9 @@ test.describe('compliance centre', () => {
     await expect(page.getByRole('navigation', { name: 'Compliance sections' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Right to work (UK)' })).toBeVisible();
     await expect(page.getByText(/^Licen[cs]es, certificates and training$/)).toBeVisible(); // en-GB or en-US spelling (browser locale)
+    await expect(page.getByText('Statutory leave where you employ people')).toBeVisible();
+    await expect(page.getByText('Paid sick leave: US-CA rules apply')).toBeVisible();
+    await expect(page.getByText('Exempt and non-exempt (US)')).toBeVisible();
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
       await expect(page.getByRole('heading', { level: 1, name: /^Compliance cent(re|er)$/ })).toBeVisible();

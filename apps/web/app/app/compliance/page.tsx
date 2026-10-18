@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { AlarmClock, BadgeCheck, FileWarning, Landmark, Scale, ShieldCheck } from 'lucide-react';
+import { AlarmClock, BadgeCheck, CalendarHeart, FileWarning, Landmark, Scale, ShieldCheck, Timer } from 'lucide-react';
 import { Badge, Card, CardTitle, EmptyState, Skeleton } from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -21,6 +21,16 @@ interface Dashboard {
   lawChanges: { relevant: number; unacknowledged: number };
 }
 
+interface Coverage {
+  us: { paidSickLeave: Array<{ jurisdiction: string; employees: number; answeredBy: string | null; modelled: boolean; source: { url: string; title: string } | null }>; fmla: { usEmployees: number; coveredEmployer: boolean; minEmployees: number; openCases: number } | null };
+  eu: Array<{ country: string; employees: number; rules: Array<{ key: string; modelled: boolean; answeredBy: string | null }>; publicHolidays: number }>;
+}
+interface Flsa {
+  employeeId: string;
+  status: string;
+  overtimeEligible: boolean;
+}
+
 function Stat({ label, value, tone }: { label: string; value: number; tone?: 'success' | 'warning' | 'danger' }) {
   const locale = useLocale();
   const color = tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : tone === 'success' ? 'text-success' : 'text-text';
@@ -36,6 +46,8 @@ export default function ComplianceDashboard() {
   const t = useT();
   const locale = useLocale();
   const d = useApi<Dashboard>('/v1/compliance/dashboard');
+  const cov = useApi<Coverage>('/v1/compliance/leave-coverage');
+  const flsa = useApi<Flsa[]>('/v1/compliance/flsa');
   const period = (p: string | null) => (p ? t(`compliance.period.${p}`) : '');
 
   if (d.error) return <EmptyState icon={<ShieldCheck aria-hidden />} title={t('compliance.noAccess')} />;
@@ -133,6 +145,46 @@ export default function ComplianceDashboard() {
           </ul>
         </Card>
       </div>
+      {cov.data && (cov.data.us.paidSickLeave.length || cov.data.eu.length) ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarHeart aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
+              {t('compliance.coverage.title')}
+            </CardTitle>
+            <ul className="mt-3 flex flex-col gap-2 text-callout">
+              {cov.data.us.paidSickLeave.map((p) => (
+                <li key={p.jurisdiction} className="flex flex-wrap items-center gap-2">
+                  <Badge>{p.jurisdiction}</Badge>
+                  <span>{p.modelled ? t('compliance.coverage.psl', { answeredBy: p.answeredBy ?? p.jurisdiction }) : t('compliance.coverage.pslNone')}</span>
+                  <span className="ml-auto text-footnote text-text-secondary">{t('compliance.coverage.employees', { count: p.employees })}</span>
+                </li>
+              ))}
+              {cov.data.us.fmla ? <li>{cov.data.us.fmla.coveredEmployer ? t('compliance.coverage.fmlaCovered', { cases: cov.data.us.fmla.openCases }) : t('compliance.coverage.fmlaNotCovered', { count: cov.data.us.fmla.usEmployees, min: cov.data.us.fmla.minEmployees })}</li> : null}
+              {cov.data.eu.map((c) => (
+                <li key={c.country} className="flex flex-wrap items-center gap-2">
+                  <Badge>{c.country}</Badge>
+                  <span>{t('compliance.coverage.eu', { modelled: c.rules.filter((r) => r.modelled).length, total: c.rules.length, holidays: c.publicHolidays })}</span>
+                  <span className="ml-auto text-footnote text-text-secondary">{t('compliance.coverage.employees', { count: c.employees })}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          {flsa.data?.length ? (
+            <Card>
+              <CardTitle className="flex items-center gap-2">
+                <Timer aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
+                {t('compliance.flsa.title')}
+              </CardTitle>
+              <dl className="mt-3 grid grid-cols-3 gap-3">
+                <Stat label={t('compliance.status.exempt')} value={flsa.data.filter((f) => f.status === 'exempt').length} tone="success" />
+                <Stat label={t('compliance.status.exempt_at_risk')} value={flsa.data.filter((f) => f.status === 'exempt_at_risk').length} tone="warning" />
+                <Stat label={t('compliance.flsa.overtimeEligible')} value={flsa.data.filter((f) => f.overtimeEligible).length} />
+              </dl>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
       <Card>
         <CardTitle className="flex items-center gap-2">
           <Landmark aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />

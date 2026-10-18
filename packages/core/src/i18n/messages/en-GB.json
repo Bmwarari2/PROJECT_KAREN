@@ -943,6 +943,19 @@
       "i9Reverify": "Form I-9 reverification: {name}",
       "renew": "Renew {requirement}: {name}",
       "missing": "Record {requirement}: {name}"
+    },
+    "coverage": {
+      "title": "Statutory leave where you employ people",
+      "psl": "Paid sick leave: {answeredBy} rules apply",
+      "pslNone": "No state or local paid sick leave law modelled; federal rules only",
+      "employees": "{count} people",
+      "fmlaCovered": "FMLA applies to your company ({cases} open cases)",
+      "fmlaNotCovered": "FMLA: {count} US employees, below the {min}-employee coverage threshold",
+      "eu": "{modelled} of {total} statutory rules modelled, {holidays} public holidays this year"
+    },
+    "flsa": {
+      "title": "Exempt and non-exempt (US)",
+      "overtimeEligible": "Overtime-eligible"
     }
   }
 }
