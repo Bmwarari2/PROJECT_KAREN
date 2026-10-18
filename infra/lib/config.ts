@@ -74,6 +74,8 @@ const prefix = <T>(p: string, o: Record<string, T>) => Object.fromEntries(Object
 export const names = {
   directoryTable: (env: EnvName) => `thapsus-hr-${env}-tenant-directory`,
   internalTokenSecret: (env: EnvName) => `thapsus-hr/${env}/internal-token`,
+  /** Per-cell Stripe keys (one Stripe account per home region, ADR-0103); distinct from the global stack's name. */
+  stripeSecret: (env: EnvName, cell: HomeRegion) => `thapsus-hr/${env}/stripe/${cell}`,
   copyVault: (env: EnvName, cell: HomeRegion) => `thapsus-hr-${env}-${cell}-backup-copy`,
   stack: (env: EnvName, kind: string) => `ThapsusHr-${env}-${kind}`,
 };
