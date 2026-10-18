@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
+import { inRegionModel } from '@thapsus/core/ai-models';
 import { buildApp } from '../lib/app';
 import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvName } from '../lib/config';
 import { DIRECTORY_ATTRIBUTES } from '../lib/global-stack';
@@ -194,6 +195,15 @@ describe.each(combos)('%s cell %s', (env, cell) => {
       expect(cfg.valkey).toEqual({ nodeType: 'cache.t4g.micro', replicas: 1 });
     }
     if (env === 'prod') expect(cfg.natGateways).toBe(3);
+  });
+
+  it('13. Bedrock (Ask HR) only for the in-region foundation model, only in cells that have one', () => {
+    const statements = resources(t, 'AWS::IAM::Policy').flatMap(([, r]) => ((r.Properties!.PolicyDocument as Json).Statement as Json[]));
+    const bedrock = statements.filter((st) => [st.Action].flat().some((a) => String(a).startsWith('bedrock:')));
+    const model = inRegionModel(cell);
+    if (!model) return expect(bedrock).toEqual([]);
+    expect(model.awsRegion).toBe(spec.awsRegion);
+    expect(bedrock).toEqual([{ Sid: 'AskHrInRegionModel', Effect: 'Allow', Action: 'bedrock:InvokeModel', Resource: `arn:aws:bedrock:${spec.awsRegion}::foundation-model/${model.modelId}` }]);
   });
 
   it('services receive the documented configuration', () => {

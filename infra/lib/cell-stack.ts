@@ -19,6 +19,7 @@ import * as ses from 'aws-cdk-lib/aws-ses';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
+import { inRegionModel } from '@thapsus/core/ai-models';
 import { GLOBAL_REGION, names, type EnvConfig, type ServiceSize } from './config';
 import {
   addOtelSidecar,
@@ -557,6 +558,15 @@ export class CellStack extends Stack {
       }),
     );
     schedulerRole.grantPassRole(worker.task.taskRole);
+
+    // Ask HR (ADR-0110): only a cell with an in-region Claude model may call Bedrock, and only that
+    // foundation model (no inference profiles, which route to other regions).
+    const aiModel = inRegionModel(cell);
+    if (aiModel) {
+      api.task.taskRole.addToPrincipalPolicy(
+        new iam.PolicyStatement({ sid: 'AskHrInRegionModel', actions: ['bedrock:InvokeModel'], resources: [`arn:aws:bedrock:${this.region}::foundation-model/${aiModel.modelId}`] }),
+      );
+    }
 
     // ---------------------------------------------------------------- Routing
     const apiTg = https.addTargets('Api', {
