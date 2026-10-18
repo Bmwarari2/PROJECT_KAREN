@@ -24,6 +24,7 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Sandboxes | Configuration only, from a classified allow-list; synthetic people; no credentials, SSO, webhooks or streams copied; same home region (ADR-0096) | `apps/api/test/sandbox.int.test.ts`, `apps/api/test/enterprise.residency.test.ts` |
 | Branding | Accent accepted only within WCAG 2.2 AA contrast in both modes; hex-only CSS (no injection); logos content-sniffed (no SVG), served authenticated with `no-store` (ADR-0098) | `packages/ui/test/branding.test.ts`, `apps/api/test/tenant-platform.int.test.ts` |
 | Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI | verify `security` step |
+| AI assistant (Ask HR) | Off unless entitled by staff, opted into by the owner and served In-Region; deterministic guard against decision requests, prompt injection and sensitive disclosures; policy-only retrieval; people identifiers removed before the model call; post-model decision and citation checks; no question or answer text stored; per-user rate limit | `apps/api/test/ai-guard.test.ts`, `ai.int.test.ts`, `ai.residency.test.ts`, `infra/test` |
 | Infrastructure | WAF (AWS managed rules plus a rate limit) on every ALB; KMS everywhere; S3 public access blocked; no `*` action on `*` resource in IAM | `infra/test` |
 
 ## Accepted risks and follow-ups

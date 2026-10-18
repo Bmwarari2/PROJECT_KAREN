@@ -47,3 +47,8 @@ The global stack in production costs about $150. Production is not deployed unti
 ## Development
 
 The dev environment matches staging but is only deployed on demand. The default is local Docker, which costs nothing.
+
+## Optional: Ask HR (Amazon Bedrock, UK cell only)
+
+There is no fixed cost. Bedrock bills per token through AWS Marketplace, and only for workspaces that are entitled and opted in. One question sends about 2,000–3,500 input tokens (system prompt plus up to 5 excerpts) and gets about 150–400 output tokens back. Check the current Claude Opus 5.5 rates for eu-west-2 on https://aws.amazon.com/bedrock/pricing/ before enabling it. The per-user limit (20 questions per 10 minutes) and the per-tenant limit (2,000 per hour) cap the spend. Enabling it for customers needs the product owner's approval (HUMAN_TODO 7).
+

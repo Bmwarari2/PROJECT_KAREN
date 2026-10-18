@@ -21,7 +21,9 @@ The global layer runs in AWS eu-west-2. It holds the tenant directory (tenant id
 
 | Sub-processor | Purpose | UK tenants | EU tenants | US tenants | Personal data |
 | --- | --- | --- | --- | --- | --- |
-| Amazon Web Services (Amazon Bedrock, Anthropic Claude models) | "Ask HR" assistant (off by default) | eu-west-2 where the model is available, otherwise disabled. To be verified at enablement (Phase 11). | eu-central-1 | us-east-2 | The question asked and excerpts of the company's own policy documents. Never sensitive data or other employees' data. |
+| Amazon Web Services EMEA SARL / Amazon Web Services, Inc. (Amazon Bedrock, model by Anthropic: Claude Opus 5.5) | "Ask HR" assistant: answers employees' questions from the customer's own policy documents (off by default; needs the Thapsus entitlement and the customer's opt-in, ADR-0112) | **eu-west-2 (London) only**: In-Region inference on `bedrock-runtime`, never a cross-Region inference profile | **Not available.** No Claude model runs In-Region in eu-central-1 (checked 2026-10-18), so Ask HR cannot be turned on and nothing is sent | **Not available.** No Claude model runs In-Region in us-east-2 on `bedrock-runtime` (checked 2026-10-18), so Ask HR cannot be turned on and nothing is sent | The question, with emails, phone numbers, national identifiers and the names and employee numbers of people in the directory removed, plus up to 5 excerpts of the customer's designated policy documents, scrubbed the same way. **Never** sensitive (vault) data, HR records, personal documents or other employees' data. Thapsus keeps no question or answer text (only a hash, the length, the outcome and the cited document ids). |
+
+Availability per region is recorded with its AWS documentation sources in ADR-0110 and in `packages/core/src/ai-models.ts`. It is re-checked before any region is enabled (HUMAN_TODO 7.5). Model invocation logging in Bedrock stays off; if it is ever turned on, it must log only to the cell's own region.
 
 ## Customer-directed integrations
 
