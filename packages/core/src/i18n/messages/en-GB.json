@@ -730,7 +730,7 @@
       "followUp": "Follow-up due",
       "retainUntil": "Keep records until",
       "record": "Record check",
-      "recordFor": "Record a right-to-work check for {name}",
+      "recordFor": "Record check for {name}",
       "recordTitle": "Right-to-work check for {name}",
       "recordBody": "Record the check you carried out before employment started.",
       "method": "Check method",
