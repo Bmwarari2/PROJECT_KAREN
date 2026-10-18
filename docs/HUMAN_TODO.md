@@ -42,9 +42,36 @@ Things only a person with the right accounts or authority can do. The build runs
 ## 4. Payments, partners and integrations
 
 - [ ] 4.1 **Stripe:** create the account and enable Stripe Billing and Stripe Tax (UK VAT, EU OSS, US sales tax registrations as advised). Put the test-mode keys in Secrets Manager `thapsus-hr/<env>/stripe`. Switch to live mode only after approval.
-- [ ] 4.2 **Microsoft Entra app registration** (multi-tenant) for joiner/leaver automation. Application permissions `User.ReadWrite.All`, `Group.ReadWrite.All`, `Directory.Read.All`; per-customer admin consent. Put the client id and secret in Secrets Manager `thapsus-hr/<env>/m365`.
-- [ ] 4.3 **Google Cloud project + OAuth client** for Workspace Admin SDK (domain-wide delegation scopes `admin.directory.user`, `admin.directory.group`). Customers grant consent per domain. Credentials go in `thapsus-hr/<env>/google`.
-- [ ] 4.4 **Payroll partner programmes** (stubs exist in code; real access needs agreements): Xero (Xero App Partner, Payroll UK API scopes); ADP Marketplace partner; Workday (Workday Partner Network / customer-sponsored integration system user); UKG partner; Gusto embedded partner; DATEV Marktplatz partner. Record credentials in Secrets Manager `thapsus-hr/<env>/payroll-<partner>`.
+- [ ] 4.2 **Microsoft Entra app registration** (multi-tenant) for joiner/leaver automation (docs/integrations.md#microsoft-365).
+  1. Entra admin centre (Thapsus tenant) → App registrations → New registration → "Thapsus-HR directory automation", supported account types "Accounts in any organisational directory (multitenant)".
+  2. Redirect URI (Web): `https://app.<cell>.<domain>/v1/integrations/it/microsoft365/consent-callback` for each cell (uk, eu, us).
+  3. API permissions → Microsoft Graph → **Application** permissions, exactly: `User.Create`, `User.Read.All`, `User.EnableDisableAccount.All`, `User.RevokeSessions.All`, `LicenseAssignment.ReadWrite.All`, `GroupMember.ReadWrite.All`. Do not add `Directory.ReadWrite.All` or `User.ReadWrite.All`.
+  4. Certificates & secrets → New client secret (12 months). Put the client id and secret in Secrets Manager `thapsus-hr/<env>/m365` in each cell region, exposed to the API as `MS_GRAPH_CLIENT_ID` / `MS_GRAPH_CLIENT_SECRET`.
+  5. Complete Microsoft Partner Center publisher verification for the app, so customers' admins see a verified publisher on the consent screen.
+  6. Customers grant consent per tenant from /app/integrations. Customers that want privileged users disabled must also assign the app an Entra role themselves; this is documented and never requested by default.
+- [ ] 4.3 **Google Cloud project and service account** for Workspace Admin SDK automation (docs/integrations.md#google-workspace).
+  1. Create a Google Cloud project per environment.
+  2. Enable the Admin SDK API and the Enterprise License Manager API.
+  3. Create a service account "thapsus-hr-directory" with no project roles, and note its OAuth client id.
+  4. Customers either use their own service account (they paste its JSON key on /app/integrations), or Thapsus issues a key per customer from this project. Never reuse one key across customers.
+  5. Each customer's super admin goes to Admin console → Security → API controls → Domain-wide delegation, adds the client id with exactly these scopes, and names an admin for Thapsus-HR to act as:
+     - `https://www.googleapis.com/auth/admin.directory.user`
+     - `https://www.googleapis.com/auth/admin.directory.user.security`
+     - `https://www.googleapis.com/auth/admin.directory.group.member`
+     - `https://www.googleapis.com/auth/apps.licensing`
+- [ ] 4.4 **Payroll partner programmes.** Stubs exist in code (`apps/api/src/modules/payroll/connectors/stubs.ts`, docs/integrations.md). Real access needs agreements. Record every credential in Secrets Manager `thapsus-hr/<env>/payroll-<partner>`. Before switching a connector from stub to available, add it to docs/SUBPROCESSORS.md with its locations per region.
+  1. **Xero** (live connector; needs the app registration):
+     - developer.xero.com → My Apps → New app ("Web app").
+     - Redirect URI `https://app.uk.<domain>/v1/payroll/xero/callback`.
+     - Request the Payroll UK scopes `payroll.timesheets payroll.employees` and `offline_access`.
+     - Put the client id and secret in `thapsus-hr/<env>/xero` (env `XERO_CLIENT_ID` / `XERO_CLIENT_SECRET`, UK cell only).
+     - Apply to the Xero App Partner programme (certification is needed beyond 25 connected organisations).
+     - Confirm Xero's data hosting location for UK organisations and record it in SUBPROCESSORS.md (currently "reported as AWS in the United States").
+  2. **ADP**: apply at the ADP Marketplace partner programme (developers.adp.com). Sign the partner agreement, obtain sandbox API credentials and the mutual-TLS certificate, and request the Payroll Input / Worker Time APIs for Workforce Now (US) and iHCM (UK/EU).
+  3. **Workday**: join the Workday Partner Network (Software Partner), or, per customer, ask the customer to create an Integration System User with a security group granting Payroll Input web services. Obtain a tenant-specific endpoint and an OAuth client (API client for integrations).
+  4. **UKG**: apply to the UKG Partner Network. Request UKG Pro (and UKG Ready) developer access for the time and pay import APIs, plus sandbox tenants.
+  5. **Gusto**: apply to Gusto Embedded / the Gusto developer partner programme. Get sandbox OAuth credentials and production approval for the payroll and time-off endpoints (US tenants only).
+  6. **DATEV**: apply to the DATEV Marktplatz partner programme (DATEV eG). Sign the partner agreement and get access to the DATEVconnect / LODAS import interfaces (EU tenants with German entities only).
 
 ## 5. Accounts and access for staff
 

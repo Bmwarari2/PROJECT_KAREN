@@ -96,3 +96,123 @@ Dated records of implementation choices, especially where they differ from the d
 **Decision.** The visual script mounts the host's lockfile-pinned `playwright-core` read-only into the container and runs `node /opt/playwright-core/cli.js run-server`, so the container needs no network and the server always matches the client version. Screenshots are still rendered by the container's Chromium (ADR-0009 is unchanged). The functional e2e project and the Lighthouse script accept an optional `PW_CHROMIUM_PATH` to use a pre-installed Chromium; CI keeps using `playwright install`.
 
 **Consequences.** Visual runs are deterministic and offline-capable. Baselines are unchanged.
+
+---
+
+## ADR-0060 — Payroll connectors render one canonical, snapshotted input set (2026-10-18)
+
+**Context.** Brief §6.5 asks for exports of hours, absences, sick pay data, pay changes, starters and leavers through per-tenant field mappings, and for a closed period's export to be reproducible. Connectors differ (files, APIs), and live HR data keeps changing after payroll has run.
+
+**Decision.**
+- Every connector receives the same canonical `PayrollInputs` document, built in `apps/api/src/modules/payroll/inputs.ts`. Its arrays are sorted, it holds no timestamps of "now", and it contains only people who appear in a section.
+- Closing a pay period stores that document in the append-only `app.pay_period_snapshots` table, with the SHA-256 of its canonical JSON (keys sorted). A trigger blocks updates, and closed periods cannot be reopened or moved.
+- Exports of a closed period are rendered only from the snapshot, after an integrity check against that hash.
+- Renderers pin every archive timestamp to the period end. Zips and Excel workbooks are re-packed with fixed entry dates and order.
+- Each export records the file hash, the inputs hash and the connector configuration hash.
+- Field mapping is a validated, typed list of columns per section, with a closed field catalogue and a small transform set: date, number, hours or minutes, money, code map, boolean, case and fixed values.
+
+**Consequences.**
+- The same closed period with the same connector configuration produces byte-identical files, which the tests prove with SHA-256.
+- A changed mapping produces a different file, and its configuration hash shows why.
+- Corrections go into the next period rather than mutating a closed one.
+- No field outside the catalogue can leave through a connector.
+
+## ADR-0061 — Attribution of hours, absences and SSP to pay periods (2026-10-18)
+
+**Context.** Timesheets are weekly. Pay periods can be monthly, and leave can straddle a period boundary.
+
+**Decision.**
+- **Hours**: an approved timesheet belongs to the period that contains its week start. Weeks are never split.
+- **Absences**: approved leave of any type overlapping the period is clipped to the period. Working days are recalculated for the clipped part with the leave engine (pattern and public holidays).
+- **Sick pay**: UK SSP for the period is the difference between cumulative SSP to the period end and cumulative SSP to the day before the period start, using the GB pack rule `sick_pay.statutory` in force at the period end. The pack's pre-April-2026 flat-rate shape is adapted for the engine, and the lower earnings limit is applied when the pack has one. Other jurisdictions' sick pay is exported as absences only until their packs are modelled.
+
+**Consequences.** Payroll teams on monthly calendars get each week once, with no fractional weeks. SSP follows the pack's effective-dated values and source URL.
+
+## ADR-0062 — Delivery transports: presigned download, pinned-key SFTP (ssh2) and API push (2026-10-18)
+
+**Context.** Exports must be delivered by download, SFTP or API, safely and idempotently.
+
+**Decision.**
+- **Download** returns a five-minute presigned link to the home-region bucket and writes a delivery-log row.
+- **SFTP** uses `ssh2` 1.17.0 (MIT, maintained). Its optional native crypto builds are denied in `pnpm-workspace.yaml`, and minimal local typings replace `@types/ssh2` (which pulls `@types/node@18`).
+  - The server host key is always pinned with an OpenSSH `SHA256:` fingerprint.
+  - Private, loopback, link-local and CGNAT destinations are refused outside dev and test. The host is resolved once and connected by address.
+  - Files are written as `.name.part` and renamed into place.
+- **API push** goes through the connector's `push`. It sends a per-record `Idempotency-Key` and skips items an earlier delivery of the same export already completed.
+- All transports run as idempotent jobs keyed by the delivery id.
+- Permanent failures (host key, authentication, not connected) are recorded without retry. Transient ones throw, so the worker retries.
+
+**Consequences.** Re-deliveries never duplicate payroll records and never write half files. The SFTP path is tested against an in-process ssh2 server.
+
+## ADR-0063 — Integration secrets: one KMS envelope per integration, outbound host allow-list (2026-10-18)
+
+**Context.** OAuth refresh tokens, client secrets, service-account keys and SFTP credentials must never sit in plaintext columns or logs. Personal data may go only to destinations listed in SUBPROCESSORS.md.
+
+**Decision.**
+- **Secrets**:
+  - `app.integration_credentials` stores one sealed envelope per integration. It uses the existing envelope scheme (a fresh data key wrapped by the regional KMS key), with the AAD bound to tenant and owner.
+  - The API returns only the names of the configured secrets, and audit entries record names only.
+  - Rotated OAuth refresh tokens (Xero) are re-sealed on every use.
+  - Reporting roles cannot read the table.
+- **Outbound calls** go through `integrationRequest`, which:
+  - allows HTTPS only to an allow-list of hosts, each of which must appear in SUBPROCESSORS.md (a unit test checks this);
+  - never follows redirects and times out;
+  - reduces provider error bodies to an error code.
+- The customer-controlled SFTP host is the one exception, guarded as in ADR-0062.
+
+**Consequences.** A new integration cannot send data until it is listed in SUBPROCESSORS.md. Secrets cannot be exfiltrated through the API, the audit log or logs.
+
+## ADR-0064 — Payslips are restricted documents outside the document library (2026-10-18)
+
+**Context.** The general document library lets managers and HR read employee documents in scope. Payslips and year-end tax forms should be visible only to the employee and payroll.
+
+**Decision.**
+- Payslip batches and files live in their own tables (`app.payslip_batches`, `app.payslips`), not in `app.documents`.
+- Only the employee (`payslips.read_own`) and payroll roles (`payslips.read`, `payslips.manage`) can list or download them. Every download is audited as sensitive.
+- Matching uses whole employee-number tokens in file names, or a customer regex with an `employeeNumber` group. Several matches are "ambiguous" and are never guessed.
+- Zip entries are inflated with a hard byte limit, because zip header sizes can lie.
+
+**Consequences.** Managers and the document library never expose pay data. A mismatched file stays unpublished until someone matches it by hand.
+
+## ADR-0065 — Joiner and leaver automation: exact dry-run plan, idempotent per-call log, conservative matching (2026-10-18)
+
+**Context.** Brief §6.6 asks for Microsoft 365 and Google Workspace account automation with per-customer admin consent, least privilege, a dry-run preview and an audit log.
+
+**Decision.**
+- **Plans**: a pure plan builder (`apps/api/src/modules/it/plan.ts`) turns the employee and the customer's mapping rules into the exact provider calls. The dry run returns that plan. Execution stores the same calls, one row each in `app.it_operations` with an idempotency key, and runs them. Only the generated one-time password (never stored or logged) and the new account id are filled in at run time.
+- **Microsoft 365** uses Entra admin consent to a multi-tenant app, or the customer's own app, with the least-privilege application permissions listed per call.
+- **Google Workspace** uses domain-wide delegation for a service account with four narrow scopes, via an RS256 JWT bearer grant (`jose`).
+- **Triggers**: outbox events `employee.created` and `employee.terminated` schedule jobs:
+  - joiners run a configurable lead time before the start date (default 3 days);
+  - leavers run at the end of the last working day in the employee's zone, or immediately;
+  - hires backdated by more than 7 days are never provisioned automatically, which protects imports of existing staff.
+- **Safety**:
+  - Joiner chains stop at the first failure.
+  - Leaver steps each run regardless, so sign-in is blocked even if licence removal fails.
+  - An existing account is adopted only if it carries the same employee number.
+  - A leaver with no Thapsus-created account and no matching work email is skipped, not matched to a generated name.
+- **Attributes** (job title, department, country) are resolved as of the start date for future joiners.
+
+**Consequences.**
+- Previews are trustworthy: the tests assert that the executed requests equal the preview.
+- Re-runs never repeat completed calls.
+- Privileged-user disabling in Entra may also need an admin role on the app; this is documented, not granted by default.
+
+## ADR-0066 — Asset return tasks join the offboarding workflow through a start hook; dev downloads via signed local links (2026-10-18)
+
+**Context.** The asset return checklist must be tied to offboarding. Separate outbox subscribers for workflows and assets would race, because jobs created in the same transaction have equal timestamps. Separately, the in-memory object store used in dev and e2e returned `memory://` links that a browser cannot open.
+
+**Decision.**
+- **Return tasks**: `workflows/service.ts` gains `workflowStartHooks`, which run in the transaction that starts a workflow. The asset register adds one return task per issued asset to an offboarding instance:
+  - source `workflow`, so the instance completes when everything is done;
+  - deduplicated per assignment;
+  - assigned to `features.assets.returnAssigneeRole` (default `hr_admin`);
+  - due on the leave date.
+- **Return**: recording a return needs every checklist item ticked (or the asset marked lost) and completes the task.
+- **Handover sign-off**: the employee acknowledges in person. The record holds the server time, user, IP, user agent and the version key of the statement shown (`assets.ackStatement.v1`).
+- **Dev and test downloads**: the memory store can sign five-minute HMAC download links served by a hidden `/v1/dev/objects` route. The route is registered only in dev and test, and production keeps S3 presigned URLs.
+
+**Consequences.**
+- Return tasks appear whether the workflow starts automatically or by hand.
+- A sign-off can be proven later.
+- Browser downloads work in local dev and e2e without an S3 emulator.
