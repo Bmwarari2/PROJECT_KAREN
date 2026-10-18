@@ -7,13 +7,32 @@
   },
   "marketing": {
     "features": {
-      "people": { "title": "People and organization" },
+      "people": {
+        "title": "People and organization"
+      },
       "rota": {
         "title": "Schedules and time",
         "body": "Build schedules, swap shifts and clock in from any phone, with working-time rules built in."
       },
-      "compliance": { "title": "Compliance center" }
+      "compliance": {
+        "title": "Compliance center"
+      }
     },
-    "mock": { "rota": "Schedule" }
+    "mock": {
+      "rota": "Schedule"
+    }
+  },
+  "people": {
+    "field": {
+      "costCentreId": "Cost center"
+    }
+  },
+  "orgSettings": {
+    "title": "Organization"
+  },
+  "timeOff": {
+    "kind": {
+      "annual": "Vacation"
+    }
   }
 }

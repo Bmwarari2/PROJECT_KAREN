@@ -198,7 +198,7 @@ describe('i18n', () => {
     ['HUF', 'en-GB', 123456n, 'HUF 1,234.56'],
     ['RON', 'en-GB', 123456n, 'RON 1,234.56'],
   ] as const)('formats %s', (cur, locale, minor, expected) => {
-    expect(formatMoney(money(minor, cur), locale).replace(/ /g, ' ')).toBe(expected);
+    expect(formatMoney(money(minor, cur), locale).replace(/\s/g, ' ')).toBe(expected);
   });
   it('formats dates per locale without zone drift', () => {
     expect(formatDate('2027-07-04', 'en-US', 'short')).toBe('7/4/27');

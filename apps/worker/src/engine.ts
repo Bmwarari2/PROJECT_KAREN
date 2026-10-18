@@ -1,4 +1,4 @@
-import { withRegistry, withTenant, type EventSubscriber, type JobHandler, type JobRow, type OutboxEvent, type TenantRouter } from '@thapsus/db';
+import { withRegistry, withTenant, type EventSubscriber, type JobHandler, type JobRow, type OutboxEvent, type TenantRouter, type Tx } from '@thapsus/db';
 import type { Logger } from '@thapsus/core/logger';
 
 /** Publishes domain events beyond the cell database (SQS/EventBridge in AWS). Must tolerate redelivery. */
@@ -22,6 +22,8 @@ export interface EngineOptions<D> {
   log?: Pick<Logger, 'info' | 'warn' | 'error'>;
   maxAttempts?: number;
   now?: () => Date;
+  /** Idempotent enqueuers run for each tenant whenever it is processed (date-driven work). */
+  periodic?: Array<(tx: Tx, now: Date) => Promise<void>>;
 }
 
 /**
@@ -61,6 +63,12 @@ export class Engine<D> {
   }
 
   async processTenant(tenantId: string) {
+    if (this.o.periodic?.length) {
+      const now = this.o.now?.() ?? new Date();
+      await withTenant(this.o.router, tenantId, async (tx) => {
+        for (const p of this.o.periodic!) await p(tx, now);
+      });
+    }
     let more = true;
     let rounds = 0;
     while (more && rounds++ < 20) {

@@ -1,0 +1,206 @@
+import type { FastifyInstance } from 'fastify';
+import { Type } from 'typebox';
+import { can } from '@thapsus/core/permissions';
+import { enqueueJob } from '@thapsus/db';
+import { authorize, authorizeSome, requireAuth } from '../../http/context';
+import { ApiError } from '../../http/errors';
+import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
+import { periodic, registerJob } from '../../jobs/registry';
+import { applyEmployeeChange, assertWritable, loadTarget } from '../employees/service';
+import { FIELDS } from '../employees/model';
+import { loadPrincipal } from '../authz/principal';
+import { approvalHandlers, decide, escalateOverdue } from './service';
+
+const Approver = Type.Object({ type: Type.Union(['manager', 'skip_level', 'role', 'user'].map((t) => Type.Literal(t))), value: Type.Optional(Type.String()) });
+const Condition = Type.Object({ field: Type.String({ maxLength: 60 }), op: Type.Union(['present', 'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in'].map((t) => Type.Literal(t))), value: Type.Optional(Type.Any()) });
+
+// Approved employee changes are applied with the requester as the actor.
+approvalHandlers['employee.change'] = async (tx, r) => {
+  await applyEmployeeChange(tx, r.subject_employee_id!, r.payload as never, r.requested_by);
+};
+
+export async function approvalRoutes(app: FastifyInstance) {
+  app.post(
+    '/v1/approval-policies',
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['approvals'],
+        body: Type.Object({ subject: Type.String({ maxLength: 60 }), name: Type.String({ minLength: 1, maxLength: 120 }), condition: Type.Optional(Nullable(Condition)), priority: Type.Optional(Type.Integer()), steps: Type.Array(Type.Object({ approver: Approver, timeoutHours: Type.Optional(Type.Integer({ minimum: 1, maximum: 720 })), escalateTo: Type.Optional(Approver), condition: Type.Optional(Condition) }), { minItems: 1, maxItems: 10 }) }),
+        response: { 201: Type.Object({ id: Uuid }), 403: Problem },
+      },
+    },
+    async (req, reply) => {
+      authorize(req, 'approvals.manage');
+      const b = req.body as { subject: string; name: string; condition?: unknown; priority?: number; steps: unknown[] };
+      const row = await app.tenantTx(req, async (tx) => {
+        const r = await tx.one<{ id: string }>(`INSERT INTO app.approval_policies (tenant_id, subject, name, steps, condition, priority) VALUES (app.current_tenant(), $1, $2, $3, $4, $5) RETURNING id`, [b.subject, b.name, JSON.stringify(b.steps), b.condition ? JSON.stringify(b.condition) : null, b.priority ?? 100]);
+        await app.audit(tx, req, { action: 'approval_policy.created', targetType: 'approval_policy', targetId: r.id, diff: b });
+        return r;
+      });
+      return reply.status(201).send(row);
+    },
+  );
+
+  app.get(
+    '/v1/approvals',
+    { schema: { tags: ['approvals'], querystring: Type.Object({ view: Type.Optional(Type.Union([Type.Literal('mine'), Type.Literal('requested'), Type.Literal('all')])) }), response: { 200: Type.Array(Type.Object({ id: Uuid, subject: Type.String(), status: Type.String(), policy: Type.String(), subjectName: Nullable(Type.String()), requestedAt: Type.String(), currentStep: Type.Integer(), payload: Type.Any() })) } } },
+    async (req) => {
+      const auth = requireAuth(req);
+      const view = (req.query as { view?: string }).view ?? 'mine';
+      if (view === 'all') authorizeSome(req, 'approvals.manage');
+      const rows = await app.tenantTx(
+        req,
+        (tx) =>
+          tx.query<Record<string, unknown>>(
+            `SELECT r.id, r.subject, r.status, p.name AS policy, e.display_name AS subject_name, r.created_at, r.current_step, r.payload
+               FROM app.approval_requests r JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
+               LEFT JOIN app.employees e ON e.tenant_id = r.tenant_id AND e.id = r.subject_employee_id
+              WHERE CASE $2
+                      WHEN 'mine' THEN r.status = 'pending' AND EXISTS (SELECT 1 FROM app.approval_steps s WHERE s.request_id = r.id AND s.step_index = r.current_step AND $1 = ANY(s.approver_user_ids))
+                      WHEN 'requested' THEN r.requested_by = $1
+                      ELSE true END
+              ORDER BY r.created_at DESC LIMIT 500`,
+            [auth.userId, view],
+          ),
+        { readOnly: true },
+      );
+      return rows.map((r) => {
+        const { __steps: _s, ...payload } = r.payload as Record<string, unknown>;
+        void _s;
+        return { id: r.id as string, subject: r.subject as string, status: r.status as string, policy: r.policy as string, subjectName: r.subject_name as string | null, requestedAt: r.created_at as string, currentStep: r.current_step as number, payload };
+      });
+    },
+  );
+
+  app.post(
+    '/v1/approvals/:id/decide',
+    { config: { selfAudited: true }, schema: { tags: ['approvals'], params: Type.Object({ id: Uuid }), body: Type.Object({ decision: Type.Union([Type.Literal('approve'), Type.Literal('reject')]), comment: Type.Optional(Type.String({ maxLength: 1000 })) }), response: { 200: Type.Object({ id: Uuid, status: Type.String() }), 403: Problem, 404: Problem, 409: Problem } } },
+    async (req) => {
+      const auth = requireAuth(req);
+      const { id } = req.params as { id: string };
+      const b = req.body as { decision: 'approve' | 'reject'; comment?: string };
+      const status = await app.tenantTx(req, async (tx) => {
+        req.auditWritten = true;
+        return decide(tx, id, auth.userId, b.decision, b.comment);
+      });
+      return { id, status };
+    },
+  );
+
+  app.post(
+    '/v1/approvals/bulk',
+    { config: { selfAudited: true }, schema: { tags: ['approvals'], body: Type.Object({ ids: Type.Array(Uuid, { minItems: 1, maxItems: 500 }), decision: Type.Union([Type.Literal('approve'), Type.Literal('reject')]), comment: Type.Optional(Type.String({ maxLength: 1000 })) }), response: { 200: Type.Object({ succeeded: Type.Array(Uuid), failed: Type.Array(Type.Object({ id: Uuid, code: Type.String() })) }) } } },
+    async (req) => {
+      const auth = requireAuth(req);
+      const b = req.body as { ids: string[]; decision: 'approve' | 'reject'; comment?: string };
+      const succeeded: string[] = [];
+      const failed: Array<{ id: string; code: string }> = [];
+      for (const id of b.ids) {
+        try {
+          // each decision commits independently so one failure does not block the rest
+          await app.tenantTx(req, (tx) => decide(tx, id, auth.userId, b.decision, b.comment));
+          succeeded.push(id);
+        } catch (err) {
+          failed.push({ id, code: err instanceof ApiError ? err.code : 'internal' });
+        }
+      }
+      req.auditWritten = true;
+      return { succeeded, failed };
+    },
+  );
+
+  // ---- delegation (e.g. manager on holiday) ------------------------------------------------------------
+  app.post(
+    '/v1/delegations',
+    { config: { selfAudited: true }, schema: { tags: ['approvals'], body: Type.Object({ toUserId: Uuid, startsAt: Type.String({ format: 'date-time' }), endsAt: Type.String({ format: 'date-time' }) }), response: { 201: Type.Object({ id: Uuid }), 422: Problem } } },
+    async (req, reply) => {
+      const auth = requireAuth(req);
+      const b = req.body as { toUserId: string; startsAt: string; endsAt: string };
+      if (b.toUserId === auth.userId) throw new ApiError('unprocessable');
+      const row = await app.tenantTx(req, async (tx) => {
+        const r = await tx.one<{ id: string }>(`INSERT INTO app.delegations (tenant_id, from_user_id, to_user_id, starts_at, ends_at) VALUES (app.current_tenant(), $1, $2, $3, $4) RETURNING id`, [auth.userId, b.toUserId, b.startsAt, b.endsAt]);
+        await app.audit(tx, req, { action: 'delegation.created', targetType: 'delegation', targetId: r.id, diff: b });
+        return r;
+      });
+      return reply.status(201).send(row);
+    },
+  );
+
+  // ---- bulk edit -----------------------------------------------------------------------------------------
+  const valueProps: Record<string, ReturnType<typeof Type.Any>> = {};
+  for (const k of Object.keys(FIELDS)) valueProps[k] = Type.Optional(Type.Any());
+  app.post(
+    '/v1/employees/bulk-change',
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['employees'],
+        body: Type.Object({ employeeIds: Type.Array(Uuid, { minItems: 1, maxItems: 1000 }), effectiveDate: CivilDate, values: Type.Object({ ...valueProps, managerId: Type.Optional(Nullable(Uuid)) }, { additionalProperties: false }), reason: Type.Optional(Type.String({ maxLength: 200 })) }),
+        response: { 200: Type.Object({ updated: Type.Integer(), pendingApproval: Type.Integer(), forbidden: Type.Array(Uuid), failed: Type.Array(Type.Object({ id: Uuid, code: Type.String() })) }) },
+      },
+    },
+    async (req) => {
+      const auth = authorizeSome(req, 'employees.update');
+      const b = req.body as { employeeIds: string[]; effectiveDate: string; values: Record<string, unknown>; reason?: string };
+      const summary = { updated: 0, pendingApproval: 0, forbidden: [] as string[], failed: [] as Array<{ id: string; code: string }> };
+      for (const id of b.employeeIds) {
+        try {
+          await app.tenantTx(req, async (tx) => {
+            const target = await loadTarget(tx, id);
+            if (!can(auth.principal, 'employees.update', target)) throw new ApiError('forbidden');
+            assertWritable(auth.principal, [...Object.keys(b.values).filter((k) => k in FIELDS), ...(b.values.managerId !== undefined ? ['manager'] : [])], target);
+            const payload = { ...b.values, effectiveDate: b.effectiveDate, reason: b.reason };
+            const { requestApproval } = await import('./service');
+            if (await requestApproval(tx, 'employee.change', id, auth.userId, payload)) {
+              summary.pendingApproval++;
+              return;
+            }
+            const diff = await applyEmployeeChange(tx, id, payload, auth.userId);
+            await app.audit(tx, req, { action: 'employee.changed', targetType: 'employee', targetId: id, diff: { effectiveDate: b.effectiveDate, bulk: true, changes: diff } });
+            summary.updated++;
+          });
+        } catch (err) {
+          if (err instanceof ApiError && err.code === 'forbidden') summary.forbidden.push(id);
+          else summary.failed.push({ id, code: err instanceof ApiError ? err.code : 'internal' });
+        }
+      }
+      return summary;
+    },
+  );
+
+  // ---- transfer (job/entity/location change + transfer workflow) --------------------------------------------
+  app.post(
+    '/v1/employees/:id/transfer',
+    {
+      config: { selfAudited: true },
+      schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), body: Type.Object({ effectiveDate: CivilDate, entityId: Type.Optional(Uuid), locationId: Type.Optional(Uuid), departmentId: Type.Optional(Uuid), jobTitle: Type.Optional(Type.String()), managerId: Type.Optional(Uuid), reason: Type.Optional(Type.String({ maxLength: 200 })) }), response: { 200: Type.Object({ id: Uuid }), 403: Problem } },
+    },
+    async (req) => {
+      const auth = requireAuth(req);
+      const { id } = req.params as { id: string };
+      const b = req.body as Record<string, string> & { effectiveDate: string };
+      await app.tenantTx(req, async (tx) => {
+        const target = await loadTarget(tx, id);
+        if (!can(auth.principal, 'employees.update', target)) throw new ApiError('forbidden');
+        // HR must also be allowed to act in the destination entity
+        if (b.entityId) {
+          const ent = await tx.maybe<{ country: string }>('SELECT country FROM app.legal_entities WHERE id = $1', [b.entityId]);
+          if (!ent || !can(auth.principal, 'employees.update', { ...target, entityId: b.entityId, country: ent.country })) throw new ApiError('forbidden');
+        }
+        const diff = await applyEmployeeChange(tx, id, b, auth.userId, 'employee.transferred');
+        await app.audit(tx, req, { action: 'employee.transferred', targetType: 'employee', targetId: id, diff: { effectiveDate: b.effectiveDate, changes: diff } });
+      });
+      return { id };
+    },
+  );
+}
+
+registerJob('approvals.escalate', async (ctx) => ({ escalated: await ctx.tx((tx) => escalateOverdue(tx, new Date())) }));
+periodic.push(async (tx, now) => {
+  // one escalation sweep per tenant per 15 minutes
+  const slot = new Date(Math.floor(now.getTime() / 900_000) * 900_000).toISOString();
+  await enqueueJob(tx, 'approvals.escalate', slot, {});
+});
+
+export { loadPrincipal };

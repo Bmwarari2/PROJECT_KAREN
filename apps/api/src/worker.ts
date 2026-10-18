@@ -1,15 +1,5 @@
-import type { EventSubscriber, JobHandler } from '@thapsus/db';
-import type { Deps } from './deps';
+/** Worker entry for apps/worker: importing the modules registers their jobs, subscribers and schedules. */
+import './modules';
 
-/** Domain job handlers and outbox subscribers, run by apps/worker. Modules add entries per phase. */
-export const jobHandlers: Record<string, JobHandler<Deps>> = {};
-export const eventSubscribers: Record<string, EventSubscriber[]> = {};
-
-export function registerJob(kind: string, handler: JobHandler<Deps>) {
-  jobHandlers[kind] = handler;
-}
-export function subscribe(topic: string, subscriber: EventSubscriber) {
-  (eventSubscribers[topic] ??= []).push(subscriber);
-}
-
+export { jobHandlers, eventSubscribers, periodic, registerJob, subscribe } from './jobs/registry';
 export { depsFromEnv } from './deps';
