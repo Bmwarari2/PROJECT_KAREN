@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CalendarDays, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
+import { Bell, CalendarDays, FileText, Home, Inbox, ListChecks, LogOut, Menu, MessageCircleQuestionMark, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
 import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
@@ -29,8 +29,8 @@ export function useFeature(key: FeatureKey): boolean {
   return experience?.features[key] ?? FEATURE_FLAGS[key].default;
 }
 
-/** Navigation entries; each feature phase adds its own (permission-filtered). */
-export function navItems(t: (k: string) => string, s: SessionInfo, path: string): NavItem[] {
+/** Navigation entries; each feature phase adds its own (permission-filtered). `askHr`: Ask HR is on for this user. */
+export function navItems(t: (k: string) => string, s: SessionInfo, path: string, opts: { askHr?: boolean } = {}): NavItem[] {
   const has = (p: string) => s.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
   const items: Array<NavItem & { show: boolean }> = [
     { href: '/app', label: t('app.nav.home'), icon: <Home aria-hidden />, show: true },
@@ -40,6 +40,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/tasks', label: t('app.nav.tasks'), icon: <ListChecks aria-hidden />, show: true },
     { href: '/app/approvals', label: t('app.nav.approvals'), icon: <Inbox aria-hidden />, show: true },
     { href: '/app/documents', label: t('app.nav.documents'), icon: <FileText aria-hidden />, show: true },
+    { href: '/app/ask', label: t('app.nav.askHr'), icon: <MessageCircleQuestionMark aria-hidden />, show: !!opts.askHr },
     { href: '/app/imports', label: t('app.nav.imports'), icon: <Upload aria-hidden />, show: has('imports.run') },
     { href: '/app/automation', label: t('app.nav.automation'), icon: <Zap aria-hidden />, show: has('automation.read') },
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
@@ -77,12 +78,22 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
   }, [session, experienceTick]);
   const experienceValue = React.useMemo(() => ({ experience, reload: () => setExperienceTick((n) => n + 1) }), [experience]);
 
+  // Ask HR needs the platform flag, the region and the customer's opt-in; the API resolves all three.
+  const [askHr, setAskHr] = React.useState(false);
+  const aiFlag = !!experience?.features.aiAssistant;
+  React.useEffect(() => {
+    if (!aiFlag) return setAskHr(false);
+    api<{ canAsk: boolean }>('/v1/ai/status')
+      .then((s) => setAskHr(s.canAsk))
+      .catch(() => setAskHr(false));
+  }, [aiFlag, experienceTick, path]);
+
   const signOut = async () => {
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
     router.replace('/signin');
   };
 
-  const nav = session ? navItems(t, session, path) : [];
+  const nav = session ? navItems(t, session, path, { askHr }) : [];
   const renderLink = (item: NavItem, className: string, children: React.ReactNode) => (
     <Link href={item.href} className={`${className} no-underline`} aria-current={item.active ? 'page' : undefined}>
       {children}

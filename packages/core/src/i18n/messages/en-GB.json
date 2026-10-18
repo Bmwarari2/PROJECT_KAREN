@@ -682,6 +682,10 @@
       "developers": {
         "title": "Developer documentation",
         "body": "API reference, authentication, webhooks and the TypeScript SDK."
+      },
+      "askHr": {
+        "title": "Ask HR assistant",
+        "body": "The optional AI assistant that answers employees' questions from your policies."
       }
     },
     "api": {
@@ -997,8 +1001,6 @@
       "status": "Status",
       "on": "On",
       "off": "Off",
-      "turnOn": "Turn on Ask HR",
-      "turnOff": "Turn off Ask HR",
       "ownerOnly": "Only the account owner can turn Ask HR on or off.",
       "folders": "Policy folders",
       "foldersHint": "Ask HR reads company documents in these folders. Only folders visible to everyone can be used, and personal documents are never read.",
@@ -1036,7 +1038,20 @@
       "statRefused": "Declined",
       "statNoAnswer": "Not found",
       "statHelpful": "Helpful",
-      "statNotHelpful": "Not helpful"
+      "statNotHelpful": "Not helpful",
+      "switchLabel": "Ask HR for employees",
+      "notEntitled": "Ask HR is not available for this workspace yet. Contact Thapsus support to have it included in your plan."
+    },
+    "citation": "Source {n}",
+    "errors": {
+      "aiNotAvailableInRegion": "Ask HR can't be turned on in this region because no AI model runs inside it.",
+      "featureDisabled": "Ask HR is not available for this workspace.",
+      "policyFolderMustBeVisibleToEveryone": "Only folders visible to everyone can be policy folders.",
+      "policyFolderNotFound": "That folder no longer exists.",
+      "policyDocumentNotFound": "That document no longer exists.",
+      "personalDocumentNotAllowed": "Personal documents can never be used by Ask HR.",
+      "policyDocumentMustBeVisibleToEveryone": "Only documents visible to everyone can be used by Ask HR.",
+      "notAPolicyFolder": "Choose one of your policy folders."
     }
   }
 }
