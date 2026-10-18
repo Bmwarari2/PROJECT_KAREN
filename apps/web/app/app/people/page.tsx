@@ -1,12 +1,13 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { Download, Search, UserPlus, Users } from 'lucide-react';
+import { Search, UserPlus, Users } from 'lucide-react';
 import { Badge, Button, EmptyState, Input, Skeleton, Table, TD, TH, THead, TR, buttonVariants } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useDebounced } from '@/lib/use-api';
 import { useSession } from '../shell';
+import { ExportLinks } from '@/components/export-links';
 
 interface Row {
   id: string;
@@ -31,7 +32,6 @@ export default function PeoplePage() {
   const [cursor, setCursor] = React.useState<string | null>(null);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const canCreate = session?.permissions.some((p) => p === '*' || p === 'employees.*' || p === 'employees.create');
-  const canExport = session?.permissions.some((p) => p === '*' || p === 'exports.*' || p === 'exports.run');
 
   const load = React.useCallback(
     async (after: string | null) => {
@@ -53,12 +53,7 @@ export default function PeoplePage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto text-title-2">{t('people.title')}</h1>
-        {canExport ? (
-          <a href={`/v1/exports/employees?format=xlsx&status=${status}`} className={buttonVariants({ variant: 'secondary', size: 'sm' }) + ' no-underline'}>
-            <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
-            {t('people.export')}
-          </a>
-        ) : null}
+        <ExportLinks list="employees" params={{ status, q: query || undefined }} />
         {canCreate ? (
           <Link href="/app/people/new" className={buttonVariants({ size: 'sm' }) + ' no-underline'}>
             <UserPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />

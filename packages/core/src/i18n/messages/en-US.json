@@ -52,5 +52,9 @@
         "not_required": "Still out"
       }
     }
+  },
+  "onboarding": {
+    "addressPostcode": "ZIP code",
+    "addressCity": "City"
   }
 }

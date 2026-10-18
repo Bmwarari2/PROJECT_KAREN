@@ -97,6 +97,116 @@ Dated records of implementation choices, especially where they differ from the d
 
 **Consequences.** Visual runs are deterministic and offline-capable. Baselines are unchanged.
 
+## ADR-0013 — Lettered migrations; USAGE (not CREATE) on schema public (2026-10-18)
+
+**Context.** Phase 1 fixes need migrations after `0007` but before Phase 2's `0008`. The loader only accepted `\d{4}_name.sql`, so a file named `0007b_…` would have been skipped without any error. Separately, trigram word similarity (`<%`) failed for the application role: extensions live in schema `public`, on which 0001 revoked everything from PUBLIC, so extension operators did not resolve. `citext` comparisons from the app role were silently falling back to case-sensitive `text` equality for the same reason.
+
+**Decision.** The loader accepts an optional lowercase letter after the number (`0007b_…`); ASCII order puts it between `0007_…` and `0008_…`. A unit test proves both the order and that every repository migration is loaded and passes the expand-and-contract lint. Migration 0007g grants `USAGE` (never `CREATE`) on `public` to the three application roles. The isolation suite asserts USAGE without CREATE, and that `schema_migrations` stays unreadable. Where a migration must fix data in a table with forced RLS, it lifts `FORCE` only inside its own transaction, which holds an exclusive lock. Only the owner is affected, because the application role never owns tables.
+
+**Consequences.** Email lookups through `citext` columns are now case-insensitive for the app role, as the schema intended. Later lettered files must keep the `\d{4}[a-z]?_` shape.
+
+## ADR-0014 — Emergency contacts are effective-dated by priority slot (2026-10-18)
+
+**Decision.** Each contact row has `[valid_from, valid_to)`. An exclusion constraint on (employee, priority, period) means each slot (1, 2, …) holds one contact on any date, so "the list on date D" is well defined. `PUT /v1/employees/:id/emergency-contacts?effectiveDate=D` replaces the list in force from D. Contacts that cover D are closed on D, or replaced if they start on D. The new list runs until the next future-dated list, which is kept. `GET` takes `?asOf=`, and `/history` includes contacts. Rows from before this change start at `-infinity`. Earlier releases allowed duplicate priorities, so 0007b renumbers them before adding the constraint.
+
+## ADR-0015 — Document folder visibility rules (2026-10-18)
+
+**Decision.** Folder visibility controls lists and downloads in exactly the same way. A shared SQL predicate and a matching row check implement it, and one test exercises both against every visibility.
+
+| Folder | Document about a person | Company document |
+| --- | --- | --- |
+| none | the person, and whoever may read their documents (managers, HR) | HR (`documents.manage`) |
+| `employee` | the person, managers, HR | everyone signed in |
+| `managers` | managers and HR, **not** the person (e.g. manager notes) | anyone with `documents.read`/`manage` |
+| `hr` | HR who manage that person's documents only | HR |
+| `everyone` | everyone signed in | everyone signed in |
+
+Without HR rights, a person may only file their own upload in no folder, an `employee` folder or an `everyone` folder, so they can still see it afterwards.
+
+## ADR-0016 — Exports of list views (2026-10-18)
+
+**Decision.** `/v1/exports/{employees,tasks,approvals,documents}?format=csv|xlsx` uses the same query functions as the list endpoints (`employeeListWhere`, `listTasks`, `listApprovals`, `listDocuments`), so an export contains exactly the rows the list shows the caller. The people export accepts the same filters as the list and blanks any column the caller cannot read, row by row. Approval exports name the changed fields but never their values; approvers see values in the app, but a file can travel. Exports need `exports.run` because bulk data leaves the product. They are capped at 10,000 rows (beyond that: a background report) and audited as `export.<list>`. List rows now carry the full manager chain for team-scoped callers, as `loadTarget` does, so a skip-level manager sees the same fields in the list, the export and the profile.
+
+## ADR-0017 — Pre-start portal, invitations and person-assigned tasks (2026-10-18)
+
+**Decision.**
+- `POST /v1/employees/:id/invite` (`users.invite`, in scope) gives a person a self-service sign-in linked to their employee record. The address defaults to work email, then personal email. The optional extra role is limited to `manager`; admin roles are assigned through role settings, which require MFA. The person is emailed a one-time link from the home region, valid for 7 days, using the magic-link mechanism. When the tenant enforces SSO, the email points to the sign-in page instead. Re-inviting sends a new link and keeps the account.
+- Workflow tasks for the joiner or their manager record `assignee_employee_id` (migration 0007e). Tasks created before the person can sign in are handed to them when they are invited. `GET /v1/me/onboarding` and `/app/welcome` show documents to sign, two built-in forms (personal details, emergency contact) and the joiner's own checklist, with progress. Before the start date, form answers are effective from the start date, because the records begin then.
+- Each task stores `reminder_days_before` from its template. Previously the field was accepted and then ignored. The reminder job sends one due-soon reminder at that lead time (default 2 days) and one overdue reminder.
+- `MAIL_TRANSPORT=file` writes emails as JSON files for local development and e2e tests (to follow links). It is refused outside `dev` and `test`.
+
+**Consequences.** Configurable portal forms (beyond the two built-ins) are future work. The e2e stack runs no worker, so the portal e2e test starts the workflow explicitly.
+
+## ADR-0018 — Dispatching "call integration" automation actions (2026-10-18)
+
+**Decision.** The action emits `integration.requested` to the outbox, as before. A subscriber now records an `app.integration_calls` row, one per event, which is the execution log. It also enqueues an idempotent `integrations.dispatch` job, which runs the handler registered for that integration id and stores the result (`GET /v1/automation/integration-calls`). Later phases register connectors in the same registry. Two handlers are built in:
+- `log` makes no external call.
+- `http` POSTs identifiers only (rule, event, employee id, date) as JSON to a public `https` URL. It is signed with a per-tenant HMAC key derived from `INTEGRATION_SIGNING_KEY`. If that key is not configured, the handler refuses to run rather than signing with a placeholder (webhooks still do).
+
+Rules are validated when saved. Unknown integrations are rejected, as are non-https, loopback, private, link-local and internal targets (for webhooks too). Redirects are not followed. External calls are mocked in tests.
+
+**Consequences.** Infrastructure must generate `INTEGRATION_SIGNING_KEY` per cell in Secrets Manager and inject it into the API and worker. Customers need a way to see their derived key, and webhook signing should move to the same key; both are follow-ups. The customer endpoint is chosen by the controller and receives no personal data beyond identifiers, so it is not a Thapsus sub-processor.
+
+## ADR-0019 — Bulk import at 200,000 rows (2026-10-18)
+
+**Context.** The import job made about 15 sequential statements per row and 5 per manager link: 2,000 rows took 55 s. It ended with a tenant-wide refresh whose `UPDATE … FROM` self-join planned as a quadratic nested loop: 20,000 people took 160 s, above the 30 s statement timeout. Right after a bulk insert, planner statistics still describe the tenant as tiny, so set-based joins picked whole-table scans per row.
+
+**Decision.**
+- New people are created per 500-row chunk with one `INSERT … SELECT FROM unnest` per table, grouped by the set of fields present. Existing people are compared with a bulk read of the values in force; numbers compare numerically, so `30` equals `30.00` and re-imports stay idempotent. Any constraint failure in a chunk rolls back to a savepoint and replays that chunk row by row, which gives exact row errors. Duplicate numbers in a file, updates, and rows without required fields always take the row-by-row path.
+- Manager links for people without a reporting line are inserted in bulk. The current manager is kept up to date as links are written. An in-memory check plus a SQL check (both covering links to existing people) send any cycle to the per-row path, which rejects it with a row error. This also fixes a gap where two rows naming each other could create a cycle, because `assertNoCycle` reads current managers that the import had not refreshed.
+- `app.refresh_employees_current(ids[])` (0007h) is a correlated per-row UPDATE and runs in linear time. `refresh_employee_current` keeps its contract on top of it. The job refreshes only the people it wrote, 2,000 at a time.
+- After 1,000 or more creates, the job calls `app.analyze_core_hr()` (0007i). It is a parameterless `SECURITY DEFINER` function with a fixed table list, executable only by the app role. The isolation suite allow-lists definer functions.
+
+**Consequences.** See `docs/PERFORMANCE.md` for 200,000-row timings. The validation preview still reads the whole file in the request (a few seconds at 200,000 rows). Moving the preview to a job is future work if files grow further.
+
+## ADR-0020 — Every rule version must have a golden vector (2026-10-18)
+
+**Context.** The audit of phase 2 found 24 rule versions with no golden vector dated inside their effective period, so "every rule has golden tests" was a convention, not a check. ADR-0010 also noted that the US rule goldens only repeated the pack values.
+
+**Decision.** `packages/rules/test/goldens.test.ts` has a `golden coverage` suite. It resolves every rule vector that asserts a value and fails if any pack (jurisdiction, key, version) is not answered by at least one vector. It also fails when a pack with holidays has no holiday vector, or when a declared subdivision (GB-ENG, GB-WLS, GB-SCT, GB-NIR) has none. Vectors may assert the answering pack (`expectJurisdiction`) to prove layering, and carry `source` and `notes`. Expected values come from an official source independent of the pack where one exists: eCFR point-in-time text, the DOL WHD state minimum wage history table, WAC 296-128-545, the Colorado PAY CALC orders, gov.uk and nidirect guidance, legislation.gov.uk point-in-time versions. Where only the pack's own source exists, the vector's `notes` say it is derived from the same statute or page. The DOL history table is not used for states whose rates change mid-year (Florida, Oregon): its values there contradict the state schedules.
+
+**Consequences.** A new pack version cannot be merged without a vector. This supersedes the ADR-0010 remark that US rule goldens only repeat pack values: most now cite an independent official source.
+
+## ADR-0021 — Locality layer and hyphen-ancestor resolution (2026-10-18)
+
+**Context.** The engine reduced any unknown code straight to its country (`US-NY-NYC` → `US`), so a city lookup skipped state law, and the API rejected three-part codes. City ordinances (paid sick leave, minimum wage) are a large part of US coverage.
+
+**Decision.** Locality codes are `<ISO 3166-2>-<code>` with a 1–3 character alphanumeric code (`US-NY-NYC`); ISO 3166-2 has no city codes, so the suffix is ours and is documented per pack. Resolution starts at the most specific hyphen ancestor that has a pack and then follows `parent` (`US-NY-NYC` → `US-NY` → `US`; an unknown `US-NY-BUF` → `US-NY` → `US`). The validator requires a hyphenated pack's `parent` to be its hyphen ancestor and limits codes to three segments. The rules API accepts `^[A-Z]{2}(-[A-Z0-9]{1,3}){0,2}$`. The first locality pack is New York City (Protected Time Off Law, from the NYC DCWP site), modelled from 22 February 2026 only; earlier dates fall back to New York State.
+
+**Consequences.** `RuleBook.chain()` and `resolve()` keep their signatures; callers that pass a work-location code get locality law automatically. Leave and time modules should pass the most specific code they know for a work location. Holiday lookups are unchanged (country plus optional region).
+
+## ADR-0022 — UK nations: rule-version extent and a Northern Ireland pack (2026-10-18)
+
+**Context.** `GB-NIR` lookups silently returned Great Britain law, but Northern Ireland has its own employment legislation (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, its own social security Act). Some GB rules are UK-wide (minimum wage, right to work), most are not.
+
+**Decision.** A pack may declare `subdivisions`. Every rule version in such a pack must then list the `regions` it was verified for (validator-enforced). The extent comes from the legislation.gov.uk extent markers: WTR 1998, ERA 1996, SSCBA 1992 s.157 and the family-leave regulations are E+W+S; the National Minimum Wage Act 1998 and the Immigration, Asylum and Nationality Act 2006 are UK-wide. A lookup for a subdivision uses its own pack first (new `GB-NIR` pack, parent `GB`), then only GB versions that list it; otherwise it falls through and fails with `RuleNotFoundError` (404 in the API). A bare `GB` lookup keeps returning the Great Britain default law, for compatibility. Back-office edits on a subdivided pack keep the scope of the pack version they amend; a rule that exists only as a back-office edit answers the bare code, not a subdivision. Resolved rules and the API return `regions` so callers can see the extent. Bank holidays stay in the GB pack per region.
+
+**Consequences.** Northern Ireland maternity, paternity, irregular-hours accrual and gender pay gap lookups now fail explicitly until NI law is researched (COVERAGE.md lists them). Tenants with staff in Northern Ireland must pass `GB-NIR`, not `GB`, for those employees; the leave and time modules must map work locations to nation codes.
+
+## ADR-0023 — Official-source allow-list additions and EURES as a fallback (2026-10-18)
+
+**Context.** Bavarian Epiphany was verified on gesetze-bayern.de but left out because the domain was not allow-listed. The Lithuanian (e-tar.lt, e-seimas.lrs.lt) and Romanian (legislatie.just.ro, cdep.ro, gov.ro, mmuncii.ro) legal portals block or refuse automated fetching.
+
+**Decision.** Add `gesetze-bayern.de` (BAYERN.RECHT, the Bavarian State Chancellery's official Land-law portal) to the validator allow-list with a comment; every future addition must be a government, parliament, official gazette or EU-institution domain and carry a comment. Where a national legal portal cannot be fetched, the European Commission's EURES "Living and working conditions" pages (eures.europa.eu, already allowed) may be used for a single stable value, with the version's notes saying the primary text was not reachable, `effectiveFrom` set to the verification date, and a HUMAN_TODO entry to confirm it. EURES is not used where it is visibly inconsistent or out of date: the Lithuanian holiday lists disagree with each other and the Romanian list lacks days reported as added to the Labour Code, so LT and RO holidays stay unmodelled.
+
+**Consequences.** LT and RO annual leave are now modelled from EURES; CY, LT and RO holidays remain coverage to-dos for a person to check manually.
+
+## ADR-0024 — Pack versions are enforced with a content-hash manifest (2026-10-18)
+
+**Context.** Pack `version` is returned with every resolved rule (`packVersion`) but was never bumped when pack JSON changed, so consumers could not tell two different data sets apart.
+
+**Decision.** `packages/rules/pack-manifest.json` records, per pack, an append-only history of `(version, updatedOn, contentHash)`, where the hash is sha256 of the canonical (key-sorted) pack JSON without `version` and `updatedOn`. `pnpm --filter @thapsus/rules manifest -- --write` appends an entry only if the content changed and the version went up; otherwise it fails. `test/manifest.test.ts` fails when a pack's hash or version does not match its latest entry, when versions do not strictly increase, or when a pack is missing from the manifest.
+
+**Consequences.** Any pack edit needs a version bump, a manifest entry and a regenerated COVERAGE.md in the same commit. The packs edited in this change are at version 2 (GB, DE, LT, RO, CY, US-NY, US-CO); GB-NIR and US-NY-NYC start at version 1. Rewriting manifest history by hand is still possible, so code review must reject edits to existing entries.
+
+## ADR-0025 — Per-rule verification log in COVERAGE.md (2026-10-18)
+
+**Context.** COVERAGE.md showed only the latest verification date per jurisdiction, so a stale individual value could hide behind a recent one.
+
+**Decision.** The generator adds a verification log with one row per rule version (jurisdiction, key, effective period, regions, `verifiedOn`, source URL), a per-pack summary of holiday verification dates, and, for packs with subdivisions, a table of which nations each rule answers for. The existing staleness test keeps the file in step with the packs.
+
+**Consequences.** COVERAGE.md is longer (one row per rule version) and changes whenever any value is re-verified.
+
 ## ADR-0027 — Statutory sick pay uses the rule version in force on each day (2026-10-18)
 
 **Context.** UK SSP changed on 6 April 2026 (no waiting days, one-day PIW, no lower earnings limit, lower of £123.25 and 80% of NWE). The engine read only the post-April shape, so a 2025-26 rule (flat rate, three waiting days, four-day PIW, LEL) produced `NaN`. Spells and periods of entitlement often span the change, and S.I. 2026/373 regs. 3–6 govern that.
@@ -183,50 +293,38 @@ This work also fixed `scopePredicate`: an all-scope grant after a narrower grant
 
 **Consequences.** Absence settings (fit-note threshold, FMLA) live in `tenants.features.absence`.
 
-## ADR-0020 — Every rule version must have a golden vector (2026-10-18)
+## ADR-0041 — Prettier enforced once the stacked phase branches are merged (2026-10-18)
 
-**Context.** The audit of phase 2 found 24 rule versions with no golden vector dated inside their effective period, so "every rule has golden tests" was a convention, not a check. ADR-0010 also noted that the US rule goldens only repeated the pack values.
+**Context.** Prettier is configured (`.prettierrc.json`, `pnpm format`), but 147 files on the Phase 0 branch were never formatted. Phases 1–4 are stacked branches that touch most of those files, and several of them were being finished in parallel.
 
-**Decision.** `packages/rules/test/goldens.test.ts` has a `golden coverage` suite. It resolves every rule vector that asserts a value and fails if any pack (jurisdiction, key, version) is not answered by at least one vector. It also fails when a pack with holidays has no holiday vector, or when a declared subdivision (GB-ENG, GB-WLS, GB-SCT, GB-NIR) has none. Vectors may assert the answering pack (`expectJurisdiction`) to prove layering, and carry `source` and `notes`. Expected values come from an official source independent of the pack where one exists: eCFR point-in-time text, the DOL WHD state minimum wage history table, WAC 296-128-545, the Colorado PAY CALC orders, gov.uk and nidirect guidance, legislation.gov.uk point-in-time versions. Where only the pack's own source exists, the vector's `notes` say it is derived from the same statute or page. The DOL history table is not used for states whose rates change mid-year (Florida, Oregon): its values there contradict the state schedules.
+**Decision.** The repository is formatted in one commit, and `prettier --check .` is added to the verify lint step, right after Phases 0–4 are merged to `main`. That way no phase branch has to absorb a whole-repository reformat in the middle of a merge.
 
-**Consequences.** A new pack version cannot be merged without a vector. This supersedes the ADR-0010 remark that US rule goldens only repeat pack values: most now cite an independent official source.
+**Consequences.** Until then ESLint (including the hard-coded UI string rule) is the enforced style gate. After that commit, every later phase is formatted on every run.
 
-## ADR-0021 — Locality layer and hyphen-ancestor resolution (2026-10-18)
+## ADR-0042 — Shared configuration lives at the repository root (2026-10-18)
 
-**Context.** The engine reduced any unknown code straight to its country (`US-NY-NYC` → `US`), so a city lookup skipped state law, and the API rejected three-part codes. City ordinances (paid sick leave, minimum wage) are a large part of US coverage.
+**Context.** PROGRESS 0.1 mentions "shared config packages". The shared TypeScript settings (`tsconfig.base.json`, strict mode, extended by every package), ESLint (`eslint.config.mjs` plus the custom rule in `tools/eslint`), Prettier (`.prettierrc.json`) and Vitest (`vitest.config.ts`, one config with named projects) are each defined once at the root.
 
-**Decision.** Locality codes are `<ISO 3166-2>-<code>` with a 1–3 character alphanumeric code (`US-NY-NYC`); ISO 3166-2 has no city codes, so the suffix is ours and is documented per pack. Resolution starts at the most specific hyphen ancestor that has a pack and then follows `parent` (`US-NY-NYC` → `US-NY` → `US`; an unknown `US-NY-BUF` → `US-NY` → `US`). The validator requires a hyphenated pack's `parent` to be its hyphen ancestor and limits codes to three segments. The rules API accepts `^[A-Z]{2}(-[A-Z0-9]{1,3}){0,2}$`. The first locality pack is New York City (Protected Time Off Law, from the NYC DCWP site), modelled from 22 February 2026 only; earlier dates fall back to New York State.
+**Decision.** Keep them at the root instead of wrapping each one in a `packages/config-*` workspace. A wrapper package would add indirection without a second consumer: every workspace already lives in this repository.
 
-**Consequences.** `RuleBook.chain()` and `resolve()` keep their signatures; callers that pass a work-location code get locality law automatically. Leave and time modules should pass the most specific code they know for a work location. Holiday lookups are unchanged (country plus optional region).
+**Consequences.** One place to change each tool. If an external package ever needs them, they can be published as a `@thapsus/config` package then.
 
-## ADR-0022 — UK nations: rule-version extent and a Northern Ireland pack (2026-10-18)
+## ADR-0043 — Per-region GitHub OIDC deploy roles and a single deploy script (2026-10-18)
 
-**Context.** `GB-NIR` lookups silently returned Great Britain law, but Northern Ireland has its own employment legislation (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, its own social security Act). Some GB rules are UK-wide (minimum wage, right to work), most are not.
+**Context.** The deploy workflow called a `scripts/deploy.mjs` that did not exist, and the OIDC stack that HUMAN_TODO told the owner to deploy did not exist either. The global stack and the UK cell both created a secret named `thapsus-hr/<env>/internal-token` in eu-west-2, so the second deploy would have failed (synth cannot catch that).
 
-**Decision.** A pack may declare `subdivisions`. Every rule version in such a pack must then list the `regions` it was verified for (validator-enforced). The extent comes from the legislation.gov.uk extent markers: WTR 1998, ERA 1996, SSCBA 1992 s.157 and the family-leave regulations are E+W+S; the National Minimum Wage Act 1998 and the Immigration, Asylum and Nationality Act 2006 are UK-wide. A lookup for a subdivision uses its own pack first (new `GB-NIR` pack, parent `GB`), then only GB versions that list it; otherwise it falls through and fails with `RuleNotFoundError` (404 in the API). A bare `GB` lookup keeps returning the Great Britain default law, for compatibility. Back-office edits on a subdivided pack keep the scope of the pack version they amend; a rule that exists only as a back-office edit answers the bare code, not a subdivision. Resolved rules and the API return `regions` so callers can see the extent. Bank holidays stay in the GB pack per region.
+**Decision.**
+- `ThapsusHr-<env>-ci` creates the GitHub OIDC provider and one role per deploy region. Each role is trusted only for `repo:<owner>/<repo>:environment:<staging|production>`. It may only assume that region's CDK bootstrap roles and, in cell regions, run the post-deploy steps.
+- The single documented cross-region permission is reading the global internal service token, which is not personal data.
+- `scripts/deploy.mjs` (planner in `scripts/deploy-plan.ts`, unit-tested) deploys in dependency order and runs the post-deploy steps. It refuses us-east-1 and us-west-2, refuses credentials for the wrong region, and refuses production without explicit approval.
+- Cells now keep their copy of the token as `thapsus-hr/<env>/<cell>/internal-token`. An infra test fails if two stacks create a same-named secret in one region.
 
-**Consequences.** Northern Ireland maternity, paternity, irregular-hours accrual and gender pay gap lookups now fail explicitly until NI law is researched (COVERAGE.md lists them). Tenants with staff in Northern Ireland must pass `GB-NIR`, not `GB`, for those employees; the leave and time modules must map work locations to nation codes.
+**Consequences.** CI needs only `AWS_ACCOUNT_<env>` variables. Deploys are repeatable from a workstation with `--dry-run` first.
 
-## ADR-0023 — Official-source allow-list additions and EURES as a fallback (2026-10-18)
+## ADR-0044 — `pnpm dev` passes the caller's environment through Turborepo (2026-10-18)
 
-**Context.** Bavarian Epiphany was verified on gesetze-bayern.de but left out because the domain was not allow-listed. The Lithuanian (e-tar.lt, e-seimas.lrs.lt) and Romanian (legislatie.just.ro, cdep.ro, gov.ro, mmuncii.ro) legal portals block or refuse automated fetching.
+**Context.** Turborepo 2 runs tasks in strict environment mode, so variables set by the caller (for example a different `DATABASE_URL`) were silently dropped, and the apps fell back to `.env`.
 
-**Decision.** Add `gesetze-bayern.de` (BAYERN.RECHT, the Bavarian State Chancellery's official Land-law portal) to the validator allow-list with a comment; every future addition must be a government, parliament, official gazette or EU-institution domain and carry a comment. Where a national legal portal cannot be fetched, the European Commission's EURES "Living and working conditions" pages (eures.europa.eu, already allowed) may be used for a single stable value, with the version's notes saying the primary text was not reachable, `effectiveFrom` set to the verification date, and a HUMAN_TODO entry to confirm it. EURES is not used where it is visibly inconsistent or out of date: the Lithuanian holiday lists disagree with each other and the Romanian list lacks days reported as added to the Labour Code, so LT and RO holidays stay unmodelled.
+**Decision.** The dev script runs `turbo run dev --env-mode=loose`. Builds and other cached tasks keep strict mode.
 
-**Consequences.** LT and RO annual leave are now modelled from EURES; CY, LT and RO holidays remain coverage to-dos for a person to check manually.
-
-## ADR-0024 — Pack versions are enforced with a content-hash manifest (2026-10-18)
-
-**Context.** Pack `version` is returned with every resolved rule (`packVersion`) but was never bumped when pack JSON changed, so consumers could not tell two different data sets apart.
-
-**Decision.** `packages/rules/pack-manifest.json` records, per pack, an append-only history of `(version, updatedOn, contentHash)`, where the hash is sha256 of the canonical (key-sorted) pack JSON without `version` and `updatedOn`. `pnpm --filter @thapsus/rules manifest -- --write` appends an entry only if the content changed and the version went up; otherwise it fails. `test/manifest.test.ts` fails when a pack's hash or version does not match its latest entry, when versions do not strictly increase, or when a pack is missing from the manifest.
-
-**Consequences.** Any pack edit needs a version bump, a manifest entry and a regenerated COVERAGE.md in the same commit. The packs edited in this change are at version 2 (GB, DE, LT, RO, CY, US-NY, US-CO); GB-NIR and US-NY-NYC start at version 1. Rewriting manifest history by hand is still possible, so code review must reject edits to existing entries.
-
-## ADR-0025 — Per-rule verification log in COVERAGE.md (2026-10-18)
-
-**Context.** COVERAGE.md showed only the latest verification date per jurisdiction, so a stale individual value could hide behind a recent one.
-
-**Decision.** The generator adds a verification log with one row per rule version (jurisdiction, key, effective period, regions, `verifiedOn`, source URL), a per-pack summary of holiday verification dates, and, for packs with subdivisions, a table of which nations each rule answers for. The existing staleness test keeps the file in step with the packs.
-
-**Consequences.** COVERAGE.md is longer (one row per rule version) and changes whenever any value is re-verified.
+**Consequences.** Local dev and the dev smoke check (`scripts/dev-smoke.mjs`, a verify step) honour explicit environment overrides.

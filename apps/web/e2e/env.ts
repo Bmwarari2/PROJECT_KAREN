@@ -1,5 +1,10 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 /** Isolated environment for e2e: its own database and ports; no external services required. */
 export const E2E_DB = 'thapsus_e2e';
+/** Emails the e2e API sends are written here as JSON files (MAIL_TRANSPORT=file) so tests can follow links. */
+export const e2eMailDir = () => join(tmpdir(), `thapsus-e2e-mail-${process.env.E2E_API_PORT ?? '4100'}`);
 const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 export const E2E_APP_PASSWORD = 'local_dev_only_password';
 
@@ -27,6 +32,8 @@ export function e2eEnv(): Record<string, string> {
     OTEL_SDK_DISABLED: 'true',
     LOG_LEVEL: 'warn',
     INTERNAL_TOKEN: 'e2e-internal-token',
+    MAIL_TRANSPORT: 'file',
+    MAIL_DIR: e2eMailDir(),
     NEXT_TELEMETRY_DISABLED: '1',
   };
 }
