@@ -57,6 +57,24 @@
     "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
     "shiftCancelled": "Your shift on {date} was canceled"
   },
+  "compliance": {
+    "title": "Compliance center",
+    "kind": {
+      "licence": "License"
+    },
+    "dashboard": {
+      "matrixTitle": "Licenses, certificates and training"
+    },
+    "matrix": {
+      "intro": "Licenses, certifications, background checks and training required by job title, location or entity, with expiry dates and reminders.",
+      "emptyBody": "Add the licenses, certificates and training your roles need."
+    },
+    "rtw": {
+      "document": {
+        "certificate_of_registration_or_naturalisation_british_citizen_with_ni_number_document": "Certificate of registration or naturalization as a British citizen with a National Insurance number document"
+      }
+    }
+  },
   "app": {
     "nav": {
       "rota": "Schedule",

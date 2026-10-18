@@ -2,7 +2,7 @@
   "jurisdiction": "IT",
   "parent": "EU",
   "name": "Italy",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -47,6 +47,88 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Published GU n. 125 of 2026-06-01; GU states \"Entrata in vigore del provvedimento: 07/06/2026\". Also notified on EUR-Lex."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "INPS sickness indemnity for employees: 50% of average daily pay from day 4 to day 20, 66.66% from day 21 to day 180; first three days paid by the employer only if the contract provides",
+      "versions": [
+        {
+          "effectiveFrom": "2026-10-18",
+          "effectiveTo": null,
+          "value": {
+            "payer": "inps_usually_advanced_by_employer",
+            "benefitFromDay": 4,
+            "waitingDays": 3,
+            "waitingDaysPaidByEmployer": "only_if_provided_by_contract",
+            "bands": [
+              {
+                "fromDay": 4,
+                "toDay": 20,
+                "percentOfAverageDailyPay": 50
+              },
+              {
+                "fromDay": 21,
+                "toDay": 180,
+                "percentOfAverageDailyPay": 66.66
+              }
+            ],
+            "maxDaysPerCalendarYear": 180,
+            "fixedTermMaxDays": {
+              "rule": "days_worked_in_previous_12_months",
+              "minDays": 30,
+              "maxDays": 180
+            },
+            "sectorExceptions": [
+              {
+                "sector": "pubblici_esercizi_e_laboratori_di_pasticceria",
+                "percentOfAverageDailyPay": 80,
+                "wholePeriod": true
+              }
+            ],
+            "collectiveAgreementTopUp": "not_modelled"
+          },
+          "source": {
+            "url": "https://www.inps.it/it/it/dettaglio-approfondimento.schede-informative.indennit--di-malattia-e-visite-mediche-di-controllo.html",
+            "title": "INPS — Indennità di malattia/degenza ospedaliera e visite mediche di controllo"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "INPS page (updated 21 September 2026): indemnity from the fourth day; first three days at the employer's charge if the contract provides; 50% of average daily pay days 4-20, 66.66% days 21-180; at most 180 days in the calendar year (industry workers and tertiary-sector workers on open-ended contracts); fixed-term: days worked in the previous 12 months, minimum 30, maximum 180; public establishments and pastry workshops 80% for the whole period; normally advanced by the employer. Other categories (entertainment, maritime) and CCNL top-ups not modelled. INPS (Istituto Nazionale della Previdenza Sociale) added to the allow-list (ADR-0052). effectiveFrom = verification date (historical changes not researched)."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Civil Code art. 2118: notice on termination of an open-ended contract in the terms and manner set by collective agreements; no statutory minimum; indemnity in lieu",
+      "versions": [
+        {
+          "effectiveFrom": "2026-10-18",
+          "effectiveTo": null,
+          "value": {
+            "statutoryMinimum": null,
+            "setBy": "collective_agreement",
+            "legalBasis": "codice_civile_art_2118",
+            "appliesTo": "open_ended_contracts",
+            "fixedTermContracts": "no_notice_period",
+            "indemnityInLieu": "pay_for_notice_period",
+            "reportedCollectiveAgreementRange": {
+              "minDays": 15,
+              "maxMonths": 6,
+              "dependsOn": [
+                "length_of_service",
+                "job_category"
+              ]
+            }
+          },
+          "source": {
+            "url": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-italy_en",
+            "title": "EURES — Living and working conditions: Italy (European Commission)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EURES Italy (page dated 26/05/2026): the terminating party \"must give notice in accordance with the terms and procedures laid down in the collective agreements\" (Civil Code art. 2118); notice \"may range from a minimum of 15 days to a maximum of three or six months\" by service and category; failing notice, compensation for the notice period; no notice period for fixed-term contracts. The primary text on normattiva.it could not be fetched (connection reset), so per ADR-0023 EURES is used and effectiveFrom is the verification date (HUMAN_TODO 3.5). The applicable CCNL determines the actual period: model per collective agreement."
         }
       ]
     }
@@ -331,8 +413,8 @@
   "coverage": {
     "priority": "high",
     "deeperRulesTodo": [
-      "sick_pay.statutory (INPS indemnity 50%/66.66% + CCNL top-up) — official sources inps.it / normattiva.it are not on the validator allow-list",
-      "employment.notice_period (art. 2118 c.c.: notice set by CCNL; no statutory minimum) — normattiva.it not allow-listed",
+      "employment.notice_period per CCNL (collective agreement tables); primary text of Civil Code art. 2118 on normattiva.it (blocked)",
+      "sick_pay.statutory: CCNL employer top-ups and other INPS categories (entertainment, maritime)",
       "Local patron-saint holidays (e.g. Rome 29 June, Milan 7 Dec)",
       "family_leave.maternity / paternity",
       "working_time.max_weekly_hours",

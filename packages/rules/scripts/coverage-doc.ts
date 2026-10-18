@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { RuleBook } from '../src/engine';
 import { RULE_KEYS } from '../src/schema';
 
+/** USPS / ISO 3166-2:US subdivision codes of the 50 states and the District of Columbia (not rule data). */
+export const US_STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'];
+
 /** Generates docs/COVERAGE.md from the pack data (run: pnpm --filter @thapsus/rules coverage-doc). */
 export function coverageMarkdown(book = RuleBook.fromDirectory()): string {
   const packs = book.jurisdictions().sort((a, b) => {
@@ -52,6 +55,34 @@ export function coverageMarkdown(book = RuleBook.fromDirectory()): string {
     }
     lines.push('', '✘ = not verified for that subdivision: lookups fail explicitly (coverage to-do).');
     for (const [sub, keys] of notAvailable) lines.push(`- **${sub}** not modelled: ${keys.map((k) => `\`${k}\``).join(', ')}`);
+  }
+  // US state coverage: every state and DC, and which compliance areas the state layer models (BUILD_BRIEF 6.4)
+  const stateKeys: Array<[string, string]> = [
+    ['minimum_wage.rates', 'Minimum wage'],
+    ['overtime.daily', 'Daily overtime'],
+    ['overtime.exempt_salary_threshold', 'Exempt salary threshold'],
+    ['sick_pay.paid_sick_leave_accrual', 'Paid sick leave'],
+  ];
+  lines.push('', '## US state coverage', '', 'Every state and the District of Columbia. A state without a pack gets the federal rules only (FLSA, FMLA, I-9, EEO-1); its own law is a coverage to-do, never filled in from the federal layer.', '', `| State | Pack version | ${stateKeys.map(([, l]) => l).join(' | ')} | Localities | Status |`, `| --- | --- | ${stateKeys.map(() => '---').join(' | ')} | --- | --- |`);
+  for (const st of US_STATES) {
+    const code = `US-${st}`;
+    const p = book.pack(code);
+    const localities = packs.filter((x) => x.parent === code).map((x) => x.jurisdiction);
+    const cells = stateKeys.map(([k]) => (p?.rules.some((r) => r.key === k) ? '✔' : ''));
+    lines.push(`| ${code} | ${p ? p.version : '—'} | ${cells.join(' | ')} | ${localities.join(', ') || '—'} | ${p ? 'state layer modelled' : 'federal rules only (state law to do)'} |`);
+  }
+  const modelled = US_STATES.filter((s) => book.pack(`US-${s}`)).length;
+  lines.push('', `${modelled} of ${US_STATES.length} jurisdictions have a state pack.`);
+  // EU Pay Transparency Directive: each member state's transposition status as recorded in its pack
+  const memberStates = packs.filter((p) => p.parent === 'EU');
+  lines.push('', '## EU Pay Transparency Directive — transposition status', '', 'Directive (EU) 2023/970 (transposition deadline in the EU pack). Status per member state from its `reporting.pay_transparency` rule as verified; pending legal review.', '', '| Member state | Status | Law | In force from | Verified on | Source |', '| --- | --- | --- | --- | --- | --- |');
+  for (const p of memberStates) {
+    const v = p.rules.find((r) => r.key === 'reporting.pay_transparency')?.versions.at(-1) as { value: { status?: string; law?: string | null; inForceFrom?: string | null }; verifiedOn: string; source: { url: string } } | undefined;
+    if (!v) {
+      lines.push(`| ${p.jurisdiction} | not recorded | — | — | — | — |`);
+      continue;
+    }
+    lines.push(`| ${p.jurisdiction} | ${v.value.status ?? '—'} | ${(v.value.law ?? '—').replace(/\|/g, '/')} | ${v.value.inForceFrom ?? '—'} | ${v.verifiedOn} | ${v.source.url.replace(/\|/g, '%7C')} |`);
   }
   lines.push('', '## Verification log', '', 'Every rule version with the date it was last checked against its official source (`verifiedOn`). Holiday definitions are summarised per pack.', '', '| Jurisdiction | Rule | Effective from | Effective to | Regions | Verified on | Source |', '| --- | --- | --- | --- | --- | --- | --- |');
   for (const p of packs) {
