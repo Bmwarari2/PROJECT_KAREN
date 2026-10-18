@@ -16,7 +16,7 @@ import { totpCode } from './lib/totp';
 
 const N = Number(process.env.IMPORT_ROWS ?? 200_000);
 const BAD_EVERY = 20_000; // rows with an invalid date, so the error report is exercised
-const PASSWORD = 'Import-Bench-Password-2026';
+const PASSWORD = process.env.BENCH_PASSWORD ?? 'Import-Bench-Password-2026'; // fictional bench tenant only
 const started = Date.now();
 const log = (m: string) => console.log(`[${((Date.now() - started) / 1000).toFixed(1)}s] ${m}`);
 const checks: Array<{ check: string; pass: boolean; detail?: unknown }> = [];
