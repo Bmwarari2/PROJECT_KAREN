@@ -4,6 +4,7 @@ import { emitEvent, type Tx } from '@thapsus/db';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 import { evaluate, type Condition } from '../approvals/service';
 import { startWorkflow } from '../workflows/service';
+import { integrationHandlers } from './integrations';
 
 export type Trigger =
   | { type: 'record.created'; entity: 'employee' }
@@ -17,7 +18,7 @@ export type Action =
   | { type: 'notification'; to: { type: 'manager' | 'role' | 'user' | 'employee'; value?: string }; message: string }
   | { type: 'workflow'; templateId: string }
   | { type: 'webhook'; url: string }
-  | { type: 'integration'; integration: string; operation: string };
+  | { type: 'integration'; integration: string; operation: string; params?: Record<string, string | number | boolean> };
 
 export interface Rule {
   id: string;
@@ -104,8 +105,10 @@ export async function runRule(
         break;
       }
       case 'integration':
-        planned.push({ type: 'integration', detail: { integration: action.integration, operation: action.operation } });
-        if (!opts.dryRun) await emitEvent(tx, 'integration.requested', { integration: action.integration, operation: action.operation, employeeId: subject.employeeId ?? null, rule: rule.id });
+        planned.push({ type: 'integration', detail: { integration: action.integration, operation: action.operation, available: action.integration in integrationHandlers } });
+        // dispatched by the integrations.dispatch job (outbox → idempotent job → registered handler)
+        if (!opts.dryRun)
+          await emitEvent(tx, 'integration.requested', { integration: action.integration, operation: action.operation, params: action.params ?? {}, employeeId: subject.employeeId ?? null, rule: rule.id, eventKey: subject.eventKey, date: subject.date }, { type: 'automation_rule', id: rule.id });
         break;
     }
   }

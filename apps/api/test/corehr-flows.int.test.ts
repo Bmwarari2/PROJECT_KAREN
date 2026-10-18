@@ -537,6 +537,139 @@ describe('automation rules', () => {
   });
 });
 
+describe('automation triggers, actions and integrations', () => {
+  const daily = (date: string) =>
+    jobHandlers['automation.daily']!({ tenantId: owner.tenantId, job: { id: 'd', tenant_id: owner.tenantId, kind: 'automation.daily', idempotency_key: date, input: { date }, attempts: 1, created_by: null }, deps: ctx.deps, tx: (fn) => tx(fn), progress: async () => undefined });
+  const liveRuns = async (rule: string) => ((await api('GET', `/v1/automation/rules/${rule}/runs`)).json() as Array<{ dryRun: boolean; eventKey: string; status: string }>).filter((r) => !r.dryRun);
+  const disable = (...ids: string[]) => tx((t) => t.exec(`UPDATE app.automation_rules SET enabled = false WHERE id = ANY($1::uuid[])`, [ids]));
+
+  it('record.changed fires only for the watched fields; the notification and workflow actions take effect', async () => {
+    const tpl = (await api('POST', '/v1/workflow-templates', { kind: 'custom', name: 'Title change follow-up', autoStart: false, tasks: [{ key: 'review', title: 'Review the new job description', assignee: { type: 'role', value: 'hr_admin' }, dueOffsetDays: 5 }] })).json().id;
+    const rule = (await api('POST', '/v1/automation/rules', {
+      name: 'Job title changes',
+      trigger: { type: 'record.changed', entity: 'employee', fields: ['jobTitle'] },
+      actions: [{ type: 'notification', to: { type: 'manager' }, message: 'A report has a new job title' }, { type: 'workflow', templateId: tpl }],
+    })).json().id;
+    const mgrEmp = await hire({ legalFirstName: 'Notified', legalLastName: 'Manager' });
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    const emp = await hire({ managerId: mgrEmp });
+    await drain();
+    expect((await api('POST', `/v1/employees/${emp}/changes`, { effectiveDate: '2026-10-01', weeklyHours: 32 })).statusCode).toBe(200);
+    await drain();
+    expect(await liveRuns(rule)).toHaveLength(0);
+    expect((await api('POST', `/v1/employees/${emp}/changes`, { effectiveDate: '2026-10-01', jobTitle: 'Principal analyst' })).statusCode).toBe(200);
+    await drain();
+    const runs = await liveRuns(rule);
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({ status: 'succeeded', eventKey: expect.stringMatching(/^ev:\d+$/) });
+    const notes = await tx((t) => t.query(`SELECT kind, title_key, params->>'title' AS title, link FROM app.notifications WHERE user_id = $1 AND kind = 'automation'`, [mgr.userId]));
+    expect(notes).toEqual([{ kind: 'automation', title_key: 'notify.automation', title: 'A report has a new job title', link: '/app' }]);
+    const wf = ((await api('GET', `/v1/workflows?employeeId=${emp}`)).json() as Array<{ templateName: string; kind: string; anchorDate: string; taskCount: number }>).find((w) => w.templateName === 'Title change follow-up');
+    expect(wf).toMatchObject({ kind: 'custom', anchorDate: '2026-10-01', taskCount: 1 });
+    await disable(rule);
+  });
+
+  it('document-expiring and threshold rules fire from the daily job once per subject and day', async () => {
+    const docRule = (await api('POST', '/v1/automation/rules', { name: 'Visa expiring in 30 days', trigger: { type: 'document.expiring', offsetDays: 30 }, actions: [{ type: 'task', title: 'Renew the visa', assignee: { type: 'role', value: 'hr_admin' }, dueInDays: 7 }] })).json().id;
+    const emp = await hire({ legalFirstName: 'Expiring' });
+    const doc = await tx((t) => t.one<{ id: string }>(`INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, status, expires_on) VALUES (app.current_tenant(), $1, 'Visa', 'immigration', 'k/visa', 'visa.pdf', 'application/pdf', 'ready', '2027-05-31') RETURNING id`, [emp]));
+    await daily('2027-04-30');
+    expect(await liveRuns(docRule)).toHaveLength(0);
+    await daily('2027-05-01');
+    await daily('2027-05-01'); // idempotent
+    expect((await liveRuns(docRule)).map((r) => [r.eventKey, r.status])).toEqual([[`doc:${doc.id}:2027-05-01`, 'succeeded']]);
+    const tasks = await tx((t) => t.query<{ due_on: string; assignee_role: string }>(`SELECT due_on, assignee_role FROM app.tasks WHERE source = 'automation' AND source_id = $1 AND subject_employee_id = $2`, [docRule, emp]));
+    expect(tasks).toEqual([{ due_on: '2027-05-08', assignee_role: 'hr_admin' }]);
+
+    const big = (await api('POST', '/v1/org/departments', { name: 'Threshold big' })).json().id;
+    const small = (await api('POST', '/v1/org/departments', { name: 'Threshold small' })).json().id;
+    for (let i = 0; i < 3; i++) await hire({ departmentId: big });
+    for (let i = 0; i < 2; i++) await hire({ departmentId: small });
+    const thrRule = (await api('POST', '/v1/automation/rules', { name: 'Team over 2', trigger: { type: 'threshold', metric: 'department_headcount', gt: 2 }, actions: [{ type: 'notification', to: { type: 'role', value: 'owner' }, message: 'A department has grown past 2 people' }] })).json().id;
+    await daily('2027-05-02');
+    await daily('2027-05-02');
+    const keys = (await liveRuns(thrRule)).map((r) => r.eventKey);
+    expect(keys).toContain(`thr:${big}:2027-05-02`);
+    expect(keys).not.toContain(`thr:${small}:2027-05-02`);
+    expect(new Set(keys).size).toBe(keys.length);
+    const ownerNotes = await tx((t) => t.query(`SELECT 1 FROM app.notifications WHERE user_id = $1 AND kind = 'automation' AND params->>'title' = 'A department has grown past 2 people'`, [owner.userId]));
+    expect(ownerNotes.length).toBe(keys.length);
+    // the next day is a new evaluation
+    await daily('2027-05-03');
+    expect((await liveRuns(thrRule)).map((r) => r.eventKey)).toContain(`thr:${big}:2027-05-03`);
+    await disable(docRule, thrRule);
+  });
+
+  it('call-integration actions are dispatched to registered handlers and the result is recorded', async () => {
+    const { signBody } = await import('../src/modules/automation/integrations');
+    const calls: Array<{ url: string; body: string; signature: string }> = [];
+    const previousFetch = ctx.deps.fetch;
+    ctx.deps.fetch = (async (url: string, init?: RequestInit) => {
+      calls.push({ url: String(url), body: String(init?.body), signature: (init?.headers as Record<string, string>)['x-thapsus-signature']! });
+      return new Response('accepted', { status: 202 });
+    }) as typeof fetch;
+    ctx.deps.integrationSigningKey = 'fictional-test-signing-key';
+    const trigger = { type: 'record.created', entity: 'employee' };
+    const bad = async (action: Record<string, unknown>) => (await api('POST', '/v1/automation/rules', { name: 'Bad', trigger, actions: [action] })).statusCode;
+    expect(await bad({ type: 'integration', integration: 'not-registered', operation: 'sync' })).toBe(400);
+    for (const url of ['https://127.0.0.1/hook', 'https://10.1.2.3/hook', 'https://[::1]/hook', 'http://integrations.example.test/x', 'https://intranet.local/x', 'https://localhost/x', 'https://metadata/x'])
+      expect(await bad({ type: 'integration', integration: 'http', operation: 'sync', params: { url } }), url).toBe(400);
+    expect(await bad({ type: 'webhook', url: 'https://192.168.1.10/hook' })).toBe(400);
+    expect((await api('GET', '/v1/automation/integrations')).json()).toEqual(expect.arrayContaining([{ id: 'http' }, { id: 'log' }]));
+
+    const rule = (await api('POST', '/v1/automation/rules', {
+      name: 'Sync new joiners',
+      trigger,
+      conditions: [{ field: 'jobTitle', op: 'eq', value: 'Integration tester' }],
+      actions: [
+        { type: 'integration', integration: 'http', operation: 'employee.sync', params: { url: 'https://integrations.example.test/thapsus' } },
+        { type: 'integration', integration: 'log', operation: 'audit.trail' },
+      ],
+    })).json().id;
+    const emp = await hire({ legalFirstName: 'Integra', jobTitle: 'Integration tester' });
+    const dry = (await api('POST', `/v1/automation/rules/${rule}/dry-run`, { employeeId: emp })).json();
+    expect(dry.actions).toEqual([
+      { type: 'integration', detail: { integration: 'http', operation: 'employee.sync', available: true } },
+      { type: 'integration', detail: { integration: 'log', operation: 'audit.trail', available: true } },
+    ]);
+    expect(calls).toHaveLength(0);
+    await drain();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toBe('https://integrations.example.test/thapsus');
+    const body = JSON.parse(calls[0]!.body);
+    expect(body).toEqual({ integration: 'http', operation: 'employee.sync', rule, event: expect.stringMatching(/^ev:\d+$/), employeeId: emp, date: '2026-03-02' });
+    expect(calls[0]!.signature).toBe(signBody('fictional-test-signing-key', owner.tenantId, calls[0]!.body));
+    const log = async () => (await api('GET', `/v1/automation/integration-calls?ruleId=${rule}`)).json() as Array<{ integration: string; operation: string; status: string; subjectEmployeeId: string; result: Record<string, unknown>; attempts: number }>;
+    const first = await log();
+    expect(first.map((c) => [c.integration, c.operation, c.status, c.subjectEmployeeId, c.attempts]).sort()).toEqual([
+      ['http', 'employee.sync', 'succeeded', emp, 1],
+      ['log', 'audit.trail', 'succeeded', emp, 1],
+    ]);
+    expect(first.find((c) => c.integration === 'http')!.result).toEqual({ status: 202 });
+    expect(first.find((c) => c.integration === 'log')!.result).toEqual({ logged: true, operation: 'audit.trail' });
+    // redelivering the event and re-running the job does not call the integration again
+    await tx((t) => t.exec(`UPDATE app.outbox SET published_at = NULL WHERE topic = 'integration.requested' AND aggregate_id = $1`, [rule]));
+    await tx((t) => t.exec(`DELETE FROM app.jobs WHERE kind = 'integrations.dispatch'`));
+    await drain();
+    expect(calls).toHaveLength(1);
+    expect(await log()).toHaveLength(2);
+    // failures are recorded on the call, not thrown: an unreachable endpoint, then no signing key
+    ctx.deps.fetch = (async () => {
+      throw new Error('connect ECONNREFUSED');
+    }) as typeof fetch;
+    const down = await hire({ jobTitle: 'Integration tester' });
+    await drain();
+    ctx.deps.integrationSigningKey = undefined;
+    const unsigned = await hire({ jobTitle: 'Integration tester' });
+    await drain();
+    const http = (await log()).filter((c) => c.integration === 'http');
+    expect(http.find((c) => c.subjectEmployeeId === down)).toMatchObject({ status: 'failed', result: { status: 0 } });
+    expect(http.find((c) => c.subjectEmployeeId === unsigned)).toMatchObject({ status: 'failed', result: { reason: 'signing_key_not_configured' } });
+    ctx.deps.fetch = previousFetch;
+    await disable(rule);
+  });
+});
+
 describe('bulk import and export', () => {
   const upload = (name: string, body: string | Buffer) => {
     const boundary = '----thapsus' + Math.random().toString(16).slice(2);
