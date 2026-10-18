@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rules } from '@thapsus/rules';
-import { calculateOvertime, checkWorkingTime, splitByLocalDay, workedMinutes, type WorkingTimeRules } from '../src/modules/time/engine';
+import { calculateOvertime, checkWorkingTime, clockState, metresBetween, missingTimeRecords, newFindings, shiftTimes, splitByLocalDay, timesheetCsv, unavailableReason, workedMinutes, type WorkingTimeRules } from '../src/modules/time/engine';
 
 /** Golden tests: rule values come from the jurisdiction packs (sources recorded in the pack JSON). */
 const book = rules();
@@ -107,5 +107,90 @@ describe('UK and EU working-time limits (GB and EU packs)', () => {
   it('daily time recording is required where the pack says so (EU/DE)', () => {
     expect(eu.timeRecording?.required).toBe(true);
     expect(gb.timeRecording).toBeUndefined();
+  });
+});
+
+describe('shift wall-clock times → instants (overnight and DST)', () => {
+  it('an end time at or before the start is the next day (overnight shift)', () => {
+    expect(shiftTimes('2026-06-05', '22:00', '06:00', 'Europe/London')).toEqual({ startLocal: '2026-06-05T22:00', endLocal: '2026-06-06T06:00', startsAt: '2026-06-05T21:00:00Z', endsAt: '2026-06-06T05:00:00Z' });
+  });
+  it('a night shift over the spring clock change is an hour shorter in real time', () => {
+    const t = shiftTimes('2026-03-28', '22:00', '06:00', 'Europe/London');
+    expect(t.startsAt).toBe('2026-03-28T22:00:00Z');
+    expect(t.endsAt).toBe('2026-03-29T05:00:00Z');
+  });
+  it('a New York day shift uses the zone offset', () => {
+    expect(shiftTimes('2026-07-01', '09:00', '17:30', 'America/New_York')).toMatchObject({ startsAt: '2026-07-01T13:00:00Z', endsAt: '2026-07-01T21:30:00Z' });
+  });
+  it('rejects malformed times', () => {
+    expect(() => shiftTimes('2026-07-01', '25:00', '17:30', 'America/New_York')).toThrow();
+  });
+});
+
+describe('clock state machine', () => {
+  const e = (kind: 'in' | 'out' | 'break_start' | 'break_end', at: string) => ({ kind, occurred_at: at, zone: 'Europe/London' });
+  it('tracks in → break → back in → out', () => {
+    expect(clockState([])).toEqual({ state: 'out', since: null });
+    expect(clockState([e('in', '2026-06-01T08:00:00Z')])).toEqual({ state: 'in', since: '2026-06-01T08:00:00Z' });
+    expect(clockState([e('in', '2026-06-01T08:00:00Z'), e('break_start', '2026-06-01T12:00:00Z')]).state).toBe('break');
+    expect(clockState([e('in', '2026-06-01T08:00:00Z'), e('break_start', '2026-06-01T12:00:00Z'), e('break_end', '2026-06-01T12:30:00Z')]).state).toBe('in');
+    expect(clockState([e('out', '2026-06-01T17:00:00Z'), e('in', '2026-06-01T08:00:00Z')]).state).toBe('out'); // ordered by time, not arrival
+  });
+});
+
+describe('daily time recording (where the pack requires it)', () => {
+  const days = [
+    { date: '2026-06-01', scheduledMinutes: 480, workedMinutes: 470 },
+    { date: '2026-06-02', scheduledMinutes: 480, workedMinutes: 0 },
+    { date: '2026-06-03', scheduledMinutes: 0, workedMinutes: 0 },
+  ];
+  it('flags scheduled days without any recorded time only when recording is required', () => {
+    expect(missingTimeRecords(days, true)).toEqual([{ rule: 'working_time.time_recording', date: '2026-06-02', detail: { scheduledMinutes: 480 } }]);
+    expect(missingTimeRecords(days, false)).toEqual([]);
+  });
+});
+
+describe('findings introduced by a change', () => {
+  it('reports only violations that the candidate shift adds', () => {
+    const before = [{ rule: 'working_time.daily_rest', date: '2026-06-02', detail: { restHours: 9, minHours: 11 } }];
+    const after = [...before, { rule: 'working_time.weekly_rest', date: '2026-06-01', detail: { longestRestHours: 20, minHours: 24 } }];
+    expect(newFindings(before, after).map((v) => v.rule)).toEqual(['working_time.weekly_rest']);
+  });
+});
+
+describe('availability', () => {
+  const shift = { start: '2026-06-01T09:00', end: '2026-06-01T17:00', breakMinutes: 0, zone: 'Europe/London' }; // a Monday
+  it('a date entry overrides the weekday pattern', () => {
+    expect(unavailableReason(shift, [{ weekday: 1, on_date: null, available: false, from_time: null, to_time: null }])).toBe('unavailable');
+    expect(unavailableReason(shift, [{ weekday: 1, on_date: null, available: false, from_time: null, to_time: null }, { weekday: null, on_date: '2026-06-01', available: true, from_time: null, to_time: null }])).toBeNull();
+  });
+  it('a shift outside the available window is flagged', () => {
+    expect(unavailableReason(shift, [{ weekday: 1, on_date: null, available: true, from_time: '08:00', to_time: '14:00' }])).toBe('outside_window');
+    expect(unavailableReason(shift, [{ weekday: 1, on_date: null, available: true, from_time: '08:00', to_time: '18:00' }])).toBeNull();
+    expect(unavailableReason(shift, [])).toBeNull();
+  });
+});
+
+describe('payroll export CSV', () => {
+  it('is deterministic, quotes fields that need it and uses decimal hours from integer minutes', () => {
+    const csv = timesheetCsv([
+      { employeeNumber: 'E2', name: 'Zed "Z" Fictional', weekStart: '2026-06-01', worked: 2730, scheduled: 2700, regular: 2400, overtime: 300, double: 30, violations: 1, approvedAt: '2026-06-08T09:00:00.000Z' },
+      { employeeNumber: 'E1', name: 'Ann, Fictional', weekStart: '2026-06-01', worked: 0, scheduled: 0, regular: 0, overtime: 0, double: 0, violations: 0, approvedAt: null },
+    ]);
+    expect(csv.split('\r\n')).toEqual([
+      'employee_number,employee_name,week_start,worked_hours,scheduled_hours,regular_hours,overtime_hours,double_time_hours,violations,approved_at',
+      'E1,"Ann, Fictional",2026-06-01,0.00,0.00,0.00,0.00,0.00,0,',
+      'E2,"Zed ""Z"" Fictional",2026-06-01,45.50,45.00,40.00,5.00,0.50,1,2026-06-08T09:00:00.000Z',
+      '',
+    ]);
+  });
+  it('neutralises spreadsheet formula injection in names', () => {
+    expect(timesheetCsv([{ employeeNumber: 'E3', name: '=HYPERLINK("x")', weekStart: '2026-06-01', worked: 0, scheduled: 0, regular: 0, overtime: 0, double: 0, violations: 0, approvedAt: null }])).toContain(`"'=HYPERLINK(""x"")"`);
+  });
+});
+
+describe('geofence distance', () => {
+  it('haversine distance between two fictional points ~111 m per 0.001° latitude', () => {
+    expect(Math.round(metresBetween({ lat: 51.5, lng: -0.12 }, { lat: 51.501, lng: -0.12 }))).toBe(111);
   });
 });

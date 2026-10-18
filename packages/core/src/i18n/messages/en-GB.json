@@ -382,7 +382,18 @@
     "automation": "{title}",
     "leaveApproved": "Your time off was approved",
     "leaveRejected": "Your time off request was declined",
-    "absenceTrigger": "Absence review suggested ({trigger}, score {score})"
+    "absenceTrigger": "Absence review suggested ({trigger}, score {score})",
+    "rotaPublished": "Your rota for {from} to {to} is published ({shifts} shifts)",
+    "shiftChanged": "Your shift on {date} has changed",
+    "shiftCancelled": "Your shift on {date} was cancelled",
+    "swapOffered": "A colleague asked you to swap a shift on {date}",
+    "swapDeclined": "Your shift swap was declined",
+    "swapApproved": "Your shift swap on {date} was approved",
+    "swapRejected": "Your shift swap was not approved",
+    "shiftClaimApproved": "You have the open shift on {date}",
+    "shiftClaimRejected": "Your open shift request was not approved",
+    "timesheetApproved": "Your timesheet for the week of {week} was approved",
+    "timesheetRejected": "Your timesheet for the week of {week} was returned"
   },
   "people": {
     "title": "People",

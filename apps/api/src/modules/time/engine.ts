@@ -1,4 +1,4 @@
-import { addDays, compareInstants, dayOfWeek, instantToDate, minutesBetween, startOfDayInstant, zonedToInstant } from '@thapsus/core/time';
+import { addDays, addMinutes, assertCivilDate, compareInstants, dayOfWeek, instantToDate, minutesBetween, startOfDayInstant, zonedToInstant } from '@thapsus/core/time';
 
 /**
  * Pure working-time calculations. Intervals are local wall-clock times in an IANA zone, so DST and
@@ -140,7 +140,7 @@ export function checkWorkingTime(intervals: Interval[], r: WorkingTimeRules, opt
   if (weeklyRestHours !== undefined) {
     const reported = new Set<string>();
     for (const first of shifts) {
-      const windowEnd = new Date(Date.parse(first.s) + perDays * 86_400_000).toISOString();
+      const windowEnd = addMinutes(first.s, perDays * 24 * 60);
       if (instantToDate(windowEnd, first.i.zone) > addDays(opts.asOf, 1)) continue; // only complete windows
       const inWindow = shifts.filter((x) => compareInstants(x.s, first.s) >= 0 && compareInstants(x.s, windowEnd) < 0);
       let maxGap = 0;
@@ -171,4 +171,105 @@ export function checkWorkingTime(intervals: Interval[], r: WorkingTimeRules, opt
     if (average > maxAvg) v.push({ rule: 'working_time.max_weekly_hours', date: opts.asOf, detail: { averageHours: Math.round(average * 10) / 10, maxHours: maxAvg, referenceWeeks: Math.round(weeks * 10) / 10 } });
   }
   return v;
+}
+
+// ---- shifts, clock state and timesheet helpers ------------------------------------------------------
+
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/**
+ * Local wall-clock shift times in an IANA zone → stored local strings and UTC instants. An end at or
+ * before the start is on the next calendar day (overnight shift); DST gaps and overlaps are resolved by
+ * the shared time utilities.
+ */
+export function shiftTimes(date: string, start: string, end: string, zone: string) {
+  assertCivilDate(date);
+  if (!HHMM.test(start) || !HHMM.test(end)) throw new RangeError('Times must be HH:MM');
+  const endDate = end <= start ? addDays(date, 1) : date;
+  return { startLocal: `${date}T${start}`, endLocal: `${endDate}T${end}`, startsAt: zonedToInstant(date, start, zone), endsAt: zonedToInstant(endDate, end, zone) };
+}
+
+export type ClockKind = 'in' | 'out' | 'break_start' | 'break_end';
+
+/** Current state from clock events (ordered by when they happened, not when they were synced). */
+export function clockState(events: Array<{ kind: ClockKind; occurred_at: string }>): { state: 'out' | 'in' | 'break'; since: string | null } {
+  let state: 'out' | 'in' | 'break' = 'out';
+  let since: string | null = null;
+  for (const e of [...events].sort((a, b) => compareInstants(a.occurred_at, b.occurred_at))) {
+    if (e.kind === 'in') [state, since] = ['in', e.occurred_at];
+    else if (e.kind === 'out') [state, since] = ['out', e.occurred_at];
+    else if (e.kind === 'break_start' && state === 'in') [state, since] = ['break', e.occurred_at];
+    else if (e.kind === 'break_end' && state === 'break') [state, since] = ['in', e.occurred_at];
+  }
+  return { state, since: state === 'out' && since === null ? null : since };
+}
+
+/** Days with scheduled work but no recorded time, where the jurisdiction requires daily time recording. */
+export function missingTimeRecords(days: Array<{ date: string; scheduledMinutes: number; workedMinutes: number }>, required: boolean): Violation[] {
+  if (!required) return [];
+  return days.filter((d) => d.scheduledMinutes > 0 && d.workedMinutes === 0).map((d) => ({ rule: 'working_time.time_recording', date: d.date, detail: { scheduledMinutes: d.scheduledMinutes } }));
+}
+
+/** Findings in `after` that were not already present in `before` (so a change is judged on what it adds). */
+export function newFindings(before: Violation[], after: Violation[]): Violation[] {
+  const key = (v: Violation) => `${v.rule}|${v.date ?? ''}`;
+  const seen = new Set(before.map(key));
+  return after.filter((v) => !seen.has(key(v)));
+}
+
+export interface AvailabilityRow {
+  weekday: number | null;
+  on_date: string | null;
+  available: boolean;
+  from_time: string | null;
+  to_time: string | null;
+}
+
+/** Why a shift conflicts with the employee's stated availability (date entries override the weekday pattern). */
+export function unavailableReason(shift: Interval, rows: AvailabilityRow[]): 'unavailable' | 'outside_window' | null {
+  const date = shift.start.slice(0, 10);
+  const dated = rows.filter((r) => r.on_date === date);
+  const applicable = dated.length ? dated : rows.filter((r) => r.weekday === dayOfWeek(date));
+  if (!applicable.length) return null;
+  if (applicable.every((r) => !r.available)) return 'unavailable';
+  const start = shift.start.slice(11, 16);
+  const end = shift.end.slice(0, 10) > date ? '24:00' : shift.end.slice(11, 16);
+  const fits = applicable.some((r) => r.available && (r.from_time ?? '00:00') <= start && (r.to_time ?? '24:00') >= end);
+  return fits ? null : 'outside_window';
+}
+
+export interface TimesheetCsvRow {
+  employeeNumber: string;
+  name: string;
+  weekStart: string;
+  worked: number;
+  scheduled: number;
+  regular: number;
+  overtime: number;
+  double: number;
+  violations: number;
+  approvedAt: string | null;
+}
+
+const hours = (minutes: number) => `${Math.trunc(minutes / 60)}.${String(Math.round(((minutes % 60) * 100) / 60)).padStart(2, '0')}`;
+function csvField(v: string): string {
+  const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v; // spreadsheet formula injection
+  return /[",\r\n]/.test(safe) || safe !== v ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+/** Payroll export feed: one row per approved timesheet, ordered by employee number (byte-for-byte reproducible). */
+export function timesheetCsv(rows: TimesheetCsvRow[]): string {
+  const header = 'employee_number,employee_name,week_start,worked_hours,scheduled_hours,regular_hours,overtime_hours,double_time_hours,violations,approved_at';
+  const body = [...rows]
+    .sort((a, b) => (a.employeeNumber < b.employeeNumber ? -1 : a.employeeNumber > b.employeeNumber ? 1 : 0))
+    .map((r) => [csvField(r.employeeNumber), csvField(r.name), r.weekStart, hours(r.worked), hours(r.scheduled), hours(r.regular), hours(r.overtime), hours(r.double), String(r.violations), r.approvedAt ?? ''].join(','));
+  return [header, ...body, ''].join('\r\n');
+}
+
+/** Haversine distance in metres (geofence check). */
+export function metresBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const R = 6_371_000;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
 }
