@@ -33,6 +33,26 @@ async function tenantSuite(o: Owner, ip: string) {
   const tok = await ctx.app.inject({ method: 'POST', url: '/v1/settings/scim-tokens', headers: { cookie }, payload: { name: 'IdP' } });
   const scim = await ctx.app.inject({ method: 'POST', url: '/scim/v2/Users', headers: { authorization: `Bearer ${tok.json().token}`, 'content-type': 'application/scim+json' }, payload: JSON.stringify({ userName: `p${Math.random().toString(36).slice(2, 6)}@${o.slug}.example.test`, active: true }) });
   expect(scim.statusCode).toBe(201);
+  // verified domain via DNS TXT (mocked resolver)
+  const d = dom.json() as { id: string; txtName: string; txtValue: string };
+  ctx.dnsRecords.set(d.txtName, [[d.txtValue]]);
+  expect((await ctx.app.inject({ method: 'POST', url: `/v1/settings/domains/${d.id}/verify`, headers: { cookie } })).json()).toMatchObject({ verifiedAt: expect.any(String) });
+  // preferences and push subscriptions
+  expect((await ctx.app.inject({ method: 'PATCH', url: '/v1/me/preferences', headers: { cookie }, payload: { timeZone: 'Europe/Berlin' } })).statusCode).toBe(204);
+  const push = await ctx.app.inject({ method: 'POST', url: '/v1/me/push-subscriptions', headers: { cookie }, payload: { endpoint: `https://push.example.test/${Math.random().toString(36).slice(2)}`, keys: { p256dh: 'BFictional', auth: 'fictional' } } });
+  expect(push.statusCode).toBe(201);
+  // passwordless sign-in by magic link (email from the home region)
+  expect((await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link', payload: { tenant: o.slug, email: o.email }, remoteAddress: ip })).statusCode).toBe(202);
+  const mail = ctx.mailer.sent.findLast((m) => m.to === o.email)!;
+  const token = decodeURIComponent(/token=([^\s]+)/.exec(mail.text)![1]!);
+  expect((await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link/consume', payload: { token } })).json()).toMatchObject({ tenantId: o.tenantId });
+  // audit log export and chain verification
+  const range = `from=${encodeURIComponent(new Date(Date.now() - 86_400_000).toISOString())}&to=${encodeURIComponent(new Date(Date.now() + 86_400_000).toISOString())}`;
+  const exported = await ctx.app.inject({ method: 'GET', url: `/v1/audit/events?${range}&format=json`, headers: { cookie } });
+  expect(exported.statusCode).toBe(200);
+  expect((exported.json() as Array<{ action: string }>).some((e) => e.action === 'user.preferences_updated')).toBe(true);
+  const csv = await ctx.app.inject({ method: 'GET', url: `/v1/audit/events?${range}&format=csv`, headers: { cookie } });
+  expect(csv.headers['content-type']).toMatch(/text\/csv/);
   const verify = await ctx.app.inject({ method: 'POST', url: '/v1/audit/verify', headers: { cookie } });
   expect(verify.json().intact).toBe(true);
   return { domains: list.json().length as number };
