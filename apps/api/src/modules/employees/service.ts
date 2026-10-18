@@ -1,6 +1,6 @@
 import type { Tx } from '@thapsus/db';
 import { emitEvent } from '@thapsus/db';
-import { actionMatches, fieldAccess, type Principal, type Target } from '@thapsus/core/permissions';
+import { actionMatches, fieldAccess, type Principal, type RoleGrant, type Target } from '@thapsus/core/permissions';
 import { ApiError } from '../../http/errors';
 import { FIELDS, REQUIRED, SECTION_TABLE, permKeyFor, sectionsOf, type Section } from './model';
 
@@ -38,6 +38,40 @@ export async function loadTarget(tx: Tx, employeeId: string): Promise<Target & {
 }
 
 /**
+ * SQL predicate (on alias `e`) for the rows one grant's scope covers; 'true' for scope "all" and
+ * 'false' when the scope can match nothing (e.g. "self" without a linked employee).
+ */
+export function grantScopeSql(p: Principal, g: RoleGrant, add: (v: unknown) => string): string {
+  const vals = g.scope.values ?? [];
+  switch (g.scope.type) {
+    case 'all':
+      return 'true';
+    case 'entity':
+      return `e.entity_id = ANY(${add(vals)}::uuid[])`;
+    case 'country':
+      return `e.country = ANY(${add(vals)}::text[])`;
+    case 'department':
+      return `e.department_id = ANY(${add(vals)}::uuid[])`;
+    case 'location':
+      return `e.location_id = ANY(${add(vals)}::uuid[])`;
+    case 'self':
+      return p.employeeId ? `e.id = ${add(p.employeeId)}::uuid` : 'false';
+    case 'own_team': {
+      const roots = [p.employeeId, ...(p.delegatedFromEmployeeIds ?? [])].filter(Boolean);
+      if (!roots.length) return 'false';
+      return `(e.id IN (WITH RECURSIVE down AS (
+              SELECT id, 0 AS d FROM app.employees WHERE manager_id = ANY(${add(roots)}::uuid[])
+              UNION ALL SELECT x.id, down.d + 1 FROM app.employees x JOIN down ON x.manager_id = down.id WHERE down.d < 50
+            ) SELECT id FROM down)
+            OR e.id IN (SELECT employee_id FROM app.reporting_lines WHERE manager_id = ANY(${add(roots)}::uuid[]) AND kind <> 'solid'
+                          AND valid_from <= current_date AND (valid_to IS NULL OR valid_to > current_date)))`;
+    }
+    default:
+      return 'false';
+  }
+}
+
+/**
  * SQL predicate (on alias `e`) selecting the employees a principal may act on for `action`.
  * Deny by default: returns 'false' when no grant applies.
  */
@@ -49,37 +83,9 @@ export function scopePredicate(p: Principal, action: string, params: unknown[]):
   };
   for (const g of p.grants) {
     if (!g.permissions.some((perm) => actionMatches(perm, action))) continue;
-    const vals = g.scope.values ?? [];
-    switch (g.scope.type) {
-      case 'all':
-        return 'true';
-      case 'entity':
-        ors.push(`e.entity_id = ANY(${add(vals)}::uuid[])`);
-        break;
-      case 'country':
-        ors.push(`e.country = ANY(${add(vals)}::text[])`);
-        break;
-      case 'department':
-        ors.push(`e.department_id = ANY(${add(vals)}::uuid[])`);
-        break;
-      case 'location':
-        ors.push(`e.location_id = ANY(${add(vals)}::uuid[])`);
-        break;
-      case 'self':
-        if (p.employeeId) ors.push(`e.id = ${add(p.employeeId)}::uuid`);
-        break;
-      case 'own_team': {
-        const roots = [p.employeeId, ...(p.delegatedFromEmployeeIds ?? [])].filter(Boolean);
-        if (roots.length)
-          ors.push(`e.id IN (WITH RECURSIVE down AS (
-              SELECT id, 0 AS d FROM app.employees WHERE manager_id = ANY(${add(roots)}::uuid[])
-              UNION ALL SELECT x.id, down.d + 1 FROM app.employees x JOIN down ON x.manager_id = down.id WHERE down.d < 50
-            ) SELECT id FROM down)
-            OR e.id IN (SELECT employee_id FROM app.reporting_lines WHERE manager_id = ANY(${add(roots)}::uuid[]) AND kind <> 'solid'
-                          AND valid_from <= current_date AND (valid_to IS NULL OR valid_to > current_date))`);
-        break;
-      }
-    }
+    if (g.scope.type === 'all') return 'true';
+    const sql = grantScopeSql(p, g, add);
+    if (sql !== 'false') ors.push(sql);
   }
   return ors.length ? `(${ors.join(' OR ')})` : 'false';
 }
