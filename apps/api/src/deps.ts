@@ -1,5 +1,5 @@
 import { promises as dnsPromises } from 'node:dns';
-import { HOME_REGIONS, loadCellConfig, type CellConfig, type HomeRegion } from '@thapsus/core';
+import { assertCellResidency, HOME_REGIONS, loadCellConfig, type CellConfig, type HomeRegion } from '@thapsus/core';
 import { TenantRouter } from '@thapsus/db';
 import { directoryFromEnv, type TenantDirectory } from './lib/directory';
 import { keyProviderFromEnv, type KeyProvider } from './lib/kms';
@@ -43,6 +43,7 @@ export function regionalUrlsFromEnv(prefix: string, fallback: (r: HomeRegion) =>
 export async function depsFromEnv(): Promise<Deps> {
   const config = loadCellConfig();
   const env = process.env;
+  if (env.SERVICE_ROLE !== 'global') assertCellResidency(config.cell, env);
   if (config.env === 'prod' && env.MOCK_IDP_ENABLED === 'true') throw new Error('The mock IdP may never run in production');
   return {
     config,

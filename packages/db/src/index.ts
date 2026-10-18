@@ -3,3 +3,4 @@ export * from './router';
 export * from './context';
 export * from './audit';
 export { migrate, loadMigrations, lintMigration } from './migrate';
+export { moveTenant, tenantTablesInOrder, type MoveReport } from './move-tenant';

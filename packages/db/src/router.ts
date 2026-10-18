@@ -21,6 +21,8 @@ export interface RouterConfig {
   registryKey?: string;
   cacheTtlMs?: number;
   poolMax?: number;
+  /** Home region served by this cell; tenants homed elsewhere are treated as unknown here. */
+  cell?: string;
 }
 
 export interface RegistryEntry {
@@ -50,7 +52,7 @@ export class TenantRouter {
       if (!env.DATABASE_URL) throw new Error('DATABASE_URL or DATABASES must be configured');
       databases.shared = env.DATABASE_URL;
     }
-    return new TenantRouter({ databases, poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined });
+    return new TenantRouter({ databases, poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined, cell: env.CELL_REGION });
   }
 
   registryPool(): pg.Pool {
@@ -72,7 +74,7 @@ export class TenantRouter {
       [tenantId],
     );
     const entry = res.rows[0];
-    if (!entry) throw new TenantNotFoundError(tenantId);
+    if (!entry || (this.config.cell && entry.home_region !== this.config.cell)) throw new TenantNotFoundError(tenantId);
     this.cache.set(tenantId, { entry, at: Date.now() });
     return entry;
   }
@@ -82,7 +84,8 @@ export class TenantRouter {
       'SELECT tenant_id, slug, home_region, db_key, status FROM registry.tenants WHERE slug = $1',
       [slug],
     );
-    return res.rows[0];
+    const entry = res.rows[0];
+    return entry && (!this.config.cell || entry.home_region === this.config.cell) ? entry : undefined;
   }
 
   async poolFor(tenantId: string, opts: { allowMoving?: boolean } = {}): Promise<pg.Pool> {

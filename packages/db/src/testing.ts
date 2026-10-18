@@ -29,8 +29,9 @@ export async function resetDatabase(db: string): Promise<void> {
   });
 }
 
-export function testRouter(): TenantRouter {
+export function testRouter(cell?: string): TenantRouter {
   return new TenantRouter({
+    cell,
     databases: { shared: appUrl(TEST_DBS.shared), dedicated: appUrl(TEST_DBS.dedicated) },
     cacheTtlMs: 0,
   });

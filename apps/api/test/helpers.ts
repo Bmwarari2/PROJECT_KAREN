@@ -49,7 +49,7 @@ export async function startTestApp(opts: { cell?: HomeRegion; directory?: InMemo
   };
   const deps: Deps = {
     config: { env: 'test', cell, domain: 'thapsus-hr.test', appBaseUrl: 'http://localhost:3000', apiBaseUrl: base, globalBaseUrl: 'http://localhost:3000' },
-    router: testRouter(),
+    router: testRouter(cell),
     directory,
     mailer,
     keys: new LocalKeyProvider('11'.repeat(32)),

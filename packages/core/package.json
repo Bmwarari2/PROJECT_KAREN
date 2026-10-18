@@ -15,7 +15,8 @@
     "./tracing": "./src/tracing.ts",
     "./config": "./src/config.ts",
     "./permissions": "./src/permissions.ts",
-    "./roles": "./src/roles.ts"
+    "./roles": "./src/roles.ts",
+    "./residency": "./src/residency.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
