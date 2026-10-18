@@ -1,6 +1,6 @@
 # Sub-processors
 
-Thapsus-HR is the processor and each customer is the controller. Personal data goes to a third party only if that party is listed here, with its purpose and location for each home region. Every entry is added **before** the integration is written. Customers are notified of changes through the in-app sub-processor page (`/trust#subprocessors`) at least 30 days before a new sub-processor starts processing their data. That notice period is a draft pending legal review; see HUMAN_TODO.md.
+Thapsus-HR is the processor and each customer is the controller. Personal data goes to a third party only if that party is listed here, with its purpose and location for each home region. Every entry is added **before** the integration is written. The public list per region is rendered from this file at `/trust/subprocessors` (generated data: `packages/core/src/trust/generated.json`, refreshed with `pnpm --filter @thapsus/core trust-data`; a unit test fails if it is stale). Customers are notified of changes at least 30 days before a new sub-processor starts processing their data: every change is added to the change log below, and administrators who subscribe in Privacy → Legal receive an in-app and email notice. The notice period (`subprocessorNoticeDays` in `packages/core/src/trust/legal.json`) is a draft pending legal review; see HUMAN_TODO.md.
 
 ## Core infrastructure (all customers)
 
@@ -34,3 +34,11 @@ These are services the customer contracts with directly and connects to Thapsus-
 | Xero Payroll (UK) | Payroll handoff | Pay-period export fields chosen in the connector mapping |
 | Customer SFTP or S3 | Scheduled data exports and payroll files | Fields chosen by the customer |
 | Customer SIEM (HTTPS or S3) | Audit log streaming | Audit events (sensitive values redacted) |
+
+## Change log
+
+Each change is announced here first. `Effective from` must be at least the notice period after `Announced`, except for the baseline list. Regions are the home regions whose customers are notified.
+
+| Id | Type | Announced | Effective from | Regions | Change |
+| --- | --- | --- | --- | --- | --- |
+| 2026-10-18-baseline | baseline | 2026-10-18 | 2026-10-18 | uk, eu, us | Initial published list |

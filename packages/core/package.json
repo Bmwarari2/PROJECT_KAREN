@@ -16,10 +16,12 @@
     "./config": "./src/config.ts",
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
-    "./residency": "./src/residency.ts"
+    "./residency": "./src/residency.ts",
+    "./trust": "./src/trust/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "trust-data": "tsx scripts/trust-data.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
