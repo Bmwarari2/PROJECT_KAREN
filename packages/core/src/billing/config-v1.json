@@ -1,0 +1,113 @@
+{
+  "$comment": "Thapsus-HR billing configuration v1. Every price, band, discount, trial length, notice period, SLA target and contact channel lives here (or in a back-office contract record), never in code. Amounts are integer minor units per ISO 4217 currency. Prices are per billable employee per month and exclude tax (Stripe Tax adds VAT / sales tax).",
+  "id": "billing-config-v1",
+  "version": 1,
+  "effectiveFrom": "2026-10-18",
+  "currencies": ["GBP", "EUR", "USD"],
+  "taxBehavior": "exclusive",
+  "trial": { "days": 30, "planId": "plus" },
+  "terms": {
+    "monthly": { "interval": "month", "months": 1, "cancellationNoticeDays": 30 },
+    "annual": { "interval": "year", "months": 12, "cancellationNoticeDays": 30 }
+  },
+  "discounts": {
+    "terms": { "monthly": 0, "annual": 1500 },
+    "codes": [
+      { "code": "CHARITY20", "basisPoints": 2000, "plans": ["core", "plus"], "validFrom": "2026-10-18", "validTo": null, "description": "Registered charities and non-profits (verified by Thapsus support)" }
+    ]
+  },
+  "plans": [
+    {
+      "id": "core",
+      "rank": 1,
+      "selfServe": true,
+      "providerProductName": "Thapsus-HR Core",
+      "minimumEmployees": 5,
+      "features": ["people", "documents", "orgChart", "timeOff", "selfService", "helpCentre"],
+      "bands": [
+        { "id": "1-49", "minEmployees": 1, "maxEmployees": 49, "monthlyUnit": { "GBP": 400, "EUR": 450, "USD": 500 } },
+        { "id": "50-249", "minEmployees": 50, "maxEmployees": 249, "monthlyUnit": { "GBP": 360, "EUR": 410, "USD": 450 } },
+        { "id": "250-999", "minEmployees": 250, "maxEmployees": 999, "monthlyUnit": { "GBP": 320, "EUR": 360, "USD": 400 } },
+        { "id": "1000-4999", "minEmployees": 1000, "maxEmployees": 4999, "monthlyUnit": { "GBP": 280, "EUR": 320, "USD": 350 } }
+      ],
+      "support": {
+        "coverage": "business_hours",
+        "sla": {
+          "urgent": { "firstResponseMinutes": 240, "resolutionMinutes": 1020 },
+          "high": { "firstResponseMinutes": 480, "resolutionMinutes": 2040 },
+          "normal": { "firstResponseMinutes": 1020, "resolutionMinutes": 5100 },
+          "low": { "firstResponseMinutes": 2040, "resolutionMinutes": 10200 }
+        }
+      }
+    },
+    {
+      "id": "plus",
+      "rank": 2,
+      "selfServe": true,
+      "providerProductName": "Thapsus-HR Plus",
+      "minimumEmployees": 5,
+      "features": ["people", "documents", "orgChart", "timeOff", "selfService", "helpCentre", "rotas", "timeTracking", "workflows", "automation", "compliance"],
+      "bands": [
+        { "id": "1-49", "minEmployees": 1, "maxEmployees": 49, "monthlyUnit": { "GBP": 700, "EUR": 800, "USD": 900 } },
+        { "id": "50-249", "minEmployees": 50, "maxEmployees": 249, "monthlyUnit": { "GBP": 630, "EUR": 720, "USD": 810 } },
+        { "id": "250-999", "minEmployees": 250, "maxEmployees": 999, "monthlyUnit": { "GBP": 560, "EUR": 640, "USD": 720 } },
+        { "id": "1000-4999", "minEmployees": 1000, "maxEmployees": 4999, "monthlyUnit": { "GBP": 490, "EUR": 560, "USD": 630 } }
+      ],
+      "support": {
+        "coverage": "business_hours",
+        "sla": {
+          "urgent": { "firstResponseMinutes": 60, "resolutionMinutes": 510 },
+          "high": { "firstResponseMinutes": 240, "resolutionMinutes": 1020 },
+          "normal": { "firstResponseMinutes": 510, "resolutionMinutes": 2550 },
+          "low": { "firstResponseMinutes": 1020, "resolutionMinutes": 5100 }
+        }
+      }
+    },
+    {
+      "id": "enterprise",
+      "rank": 3,
+      "selfServe": false,
+      "providerProductName": "Thapsus-HR Enterprise",
+      "minimumEmployees": 250,
+      "features": ["people", "documents", "orgChart", "timeOff", "selfService", "helpCentre", "rotas", "timeTracking", "workflows", "automation", "compliance", "sso", "scim", "api", "dedicatedDatabase", "multiEntityBilling"],
+      "bands": [],
+      "support": {
+        "coverage": "always",
+        "sla": {
+          "urgent": { "firstResponseMinutes": 30, "resolutionMinutes": 240 },
+          "high": { "firstResponseMinutes": 120, "resolutionMinutes": 720 },
+          "normal": { "firstResponseMinutes": 480, "resolutionMinutes": 2880 },
+          "low": { "firstResponseMinutes": 1440, "resolutionMinutes": 7200 }
+        }
+      }
+    }
+  ],
+  "support": {
+    "atRiskPercent": 75,
+    "hours": {
+      "uk": { "timeZone": "Europe/London", "days": [1, 2, 3, 4, 5], "start": "09:00", "end": "17:30" },
+      "eu": { "timeZone": "Europe/Berlin", "days": [1, 2, 3, 4, 5], "start": "09:00", "end": "17:30" },
+      "us": { "timeZone": "America/New_York", "days": [1, 2, 3, 4, 5], "start": "09:00", "end": "17:30" }
+    },
+    "escalationEmail": "support-escalations-{region}@{domain}",
+    "contactChannels": {
+      "core": [
+        { "kind": "help_centre" },
+        { "kind": "ticket", "hours": "business_hours" },
+        { "kind": "email", "value": "support@{domain}", "hours": "business_hours" }
+      ],
+      "plus": [
+        { "kind": "help_centre" },
+        { "kind": "ticket", "hours": "business_hours" },
+        { "kind": "email", "value": "support@{domain}", "hours": "business_hours" },
+        { "kind": "chat", "hours": "business_hours" }
+      ],
+      "enterprise": [
+        { "kind": "help_centre" },
+        { "kind": "ticket", "hours": "always" },
+        { "kind": "email", "value": "enterprise-support@{domain}", "hours": "always" },
+        { "kind": "phone", "value": null, "hours": "always" }
+      ]
+    }
+  }
+}
