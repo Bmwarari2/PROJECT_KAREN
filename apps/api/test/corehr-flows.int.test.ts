@@ -580,11 +580,15 @@ describe('bulk approvals and bulk edit', () => {
 
 describe('automation rules', () => {
   it('runs on record events idempotently, with dry-run and an execution log', async () => {
+    const { signBody } = await import('../src/modules/automation/integrations');
     const hooks: string[] = [];
-    ctx.deps.fetch = (async (url: string) => {
+    const signed: Array<{ body: string; signature: string }> = [];
+    ctx.deps.fetch = (async (url: string, init?: RequestInit) => {
       hooks.push(url);
+      signed.push({ body: String(init?.body), signature: new Headers(init?.headers).get('x-thapsus-signature') ?? '' });
       return new Response('ok');
     }) as typeof fetch;
+    ctx.deps.integrationSigningKey = 'fictional-test-signing-key';
     const rule = (await api('POST', '/v1/automation/rules', {
       name: 'Part-time joiners need a hours review',
       trigger: { type: 'record.created', entity: 'employee' },
@@ -601,6 +605,9 @@ describe('automation rules', () => {
     const tasks = (await api('GET', '/v1/tasks')).json().filter((t: { title: string }) => t.title === 'Review working hours');
     expect(tasks.map((t: { subjectEmployeeId: string }) => t.subjectEmployeeId)).toEqual([pt]);
     expect(hooks).toEqual(['https://hooks.example.test/hr']);
+    // signed with the tenant's derived key, identifiers only
+    expect(signed[0]!.signature).toBe(signBody('fictional-test-signing-key', owner.tenantId, signed[0]!.body));
+    expect(Object.keys(JSON.parse(signed[0]!.body)).sort()).toEqual(['date', 'employeeId', 'event', 'rule']);
     // redelivery is a no-op
     await tx((t) => t.exec(`UPDATE app.outbox SET published_at = NULL WHERE aggregate_id = $1`, [pt]));
     await tx((t) => t.exec(`DELETE FROM app.jobs WHERE kind = 'automation.evaluate'`));
@@ -609,6 +616,7 @@ describe('automation rules', () => {
     const runs = (await api('GET', `/v1/automation/rules/${rule}/runs`)).json();
     expect(runs.some((r: { dryRun: boolean; status: string }) => !r.dryRun && r.status === 'succeeded')).toBe(true);
     expect(runs.some((r: { dryRun: boolean }) => r.dryRun)).toBe(true);
+    ctx.deps.integrationSigningKey = undefined;
     void ft;
   });
 

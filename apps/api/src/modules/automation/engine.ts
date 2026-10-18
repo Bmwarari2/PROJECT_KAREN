@@ -1,10 +1,9 @@
-import { createHmac } from 'node:crypto';
 import { addDays } from '@thapsus/core/time';
 import { emitEvent, type Tx } from '@thapsus/db';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 import { evaluate, type Condition } from '../approvals/service';
 import { startWorkflow } from '../workflows/service';
-import { integrationHandlers, isPublicHttpsUrl } from './integrations';
+import { integrationHandlers, isPublicHttpsUrl, signBody } from './integrations';
 
 export type Trigger =
   | { type: 'record.created'; entity: 'employee' }
@@ -56,7 +55,7 @@ export async function runRule(
   tx: Tx,
   rule: Rule,
   subject: Subject,
-  opts: { dryRun: boolean; fetch?: typeof fetch; webhookSecret?: string },
+  opts: { dryRun: boolean; fetch?: typeof fetch; signingKey?: string },
 ): Promise<{ matched: boolean; actions: PlannedAction[]; status: string }> {
   const matched = rule.conditions.every((c) => evaluate(c, subject.values));
   const planned: PlannedAction[] = [];
@@ -98,10 +97,16 @@ export async function runRule(
         if (!opts.dryRun) {
           // Only identifiers leave the cell; receivers fetch details through the API with their own credentials.
           const body = JSON.stringify({ rule: rule.id, event: subject.eventKey, employeeId: subject.employeeId ?? null, date: subject.date });
-          const sig = createHmac('sha256', opts.webhookSecret ?? 'unset').update(body).digest('hex');
+          // Signed with the tenant's derived key, like integration calls; never sent unsigned.
+          if (!opts.signingKey) {
+            planned[planned.length - 1]!.detail.status = 0;
+            planned[planned.length - 1]!.detail.reason = 'signing_key_not_configured';
+            break;
+          }
+          const { t: tenantId } = await tx.one<{ t: string }>('SELECT app.current_tenant()::text AS t');
           // re-checked at call time: rules saved before the check existed may hold any URL
           const res = isPublicHttpsUrl(action.url)
-            ? await (opts.fetch ?? fetch)(action.url, { method: 'POST', redirect: 'error', headers: { 'content-type': 'application/json', 'x-thapsus-signature': `sha256=${sig}` }, body, signal: AbortSignal.timeout(5000) }).catch((e: Error) => ({ ok: false, status: 0, statusText: e.message }))
+            ? await (opts.fetch ?? fetch)(action.url, { method: 'POST', redirect: 'error', headers: { 'content-type': 'application/json', 'x-thapsus-signature': signBody(opts.signingKey, tenantId, body) }, body, signal: AbortSignal.timeout(5000) }).catch((e: Error) => ({ ok: false, status: 0, statusText: e.message }))
             : { ok: false, status: 0 };
           planned[planned.length - 1]!.detail.status = res.status;
         }

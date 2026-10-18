@@ -138,7 +138,7 @@ registerJob('automation.evaluate', async (ctx) => {
     const values = await employeeValues(tx, payload.employeeId);
     let ran = 0;
     for (const rule of rules) {
-      const r = await runRule(tx, rule, { employeeId: payload.employeeId, values: { ...values, changedFields: payload.fields }, eventKey: `ev:${eventId}`, date: payload.effectiveDate ?? payload.startDate ?? new Date().toISOString().slice(0, 10) }, { dryRun: false, fetch: ctx.deps.fetch });
+      const r = await runRule(tx, rule, { employeeId: payload.employeeId, values: { ...values, changedFields: payload.fields }, eventKey: `ev:${eventId}`, date: payload.effectiveDate ?? payload.startDate ?? new Date().toISOString().slice(0, 10) }, { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey });
       if (r.status === 'succeeded') ran++;
     }
     return { rules: rules.length, ran };
@@ -153,14 +153,14 @@ registerJob('automation.daily', async (ctx) => {
       const t = rule.trigger;
       if (t.type === 'date.reached') {
         for (const emp of await employeesForDate(tx, t, date)) {
-          const r = await runRule(tx, rule, { employeeId: emp, values: await employeeValues(tx, emp), eventKey: `date:${emp}:${date}`, date }, { dryRun: false, fetch: ctx.deps.fetch });
+          const r = await runRule(tx, rule, { employeeId: emp, values: await employeeValues(tx, emp), eventKey: `date:${emp}:${date}`, date }, { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey });
           if (r.status === 'succeeded') ran++;
         }
       } else if (t.type === 'document.expiring') {
         const docs = await tx.query<{ id: string; employee_id: string | null }>(`SELECT id, employee_id FROM app.documents WHERE status = 'ready' AND expires_on = ($1::date + $2::int)`, [date, t.offsetDays]);
         for (const d of docs) {
           const values = d.employee_id ? await employeeValues(tx, d.employee_id) : {};
-          const r = await runRule(tx, rule, { employeeId: d.employee_id, values: { ...values, documentId: d.id }, eventKey: `doc:${d.id}:${date}`, date }, { dryRun: false, fetch: ctx.deps.fetch });
+          const r = await runRule(tx, rule, { employeeId: d.employee_id, values: { ...values, documentId: d.id }, eventKey: `doc:${d.id}:${date}`, date }, { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey });
           if (r.status === 'succeeded') ran++;
         }
       } else if (t.type === 'threshold') {
@@ -169,7 +169,7 @@ registerJob('automation.daily', async (ctx) => {
             ? await tx.query<{ key: string; n: number }>(`SELECT department_id::text AS key, count(*)::int AS n FROM app.employees WHERE status = 'active' AND department_id IS NOT NULL GROUP BY 1 HAVING count(*) > $1`, [t.gt])
             : await tx.query<{ key: string; n: number }>(`SELECT 'overdue' AS key, count(*)::int AS n FROM app.tasks WHERE status = 'open' AND due_on < $2 HAVING count(*) > $1`, [t.gt, date]);
         for (const b of breached) {
-          const r = await runRule(tx, rule, { employeeId: null, values: { metric: t.metric, key: b.key, value: b.n }, eventKey: `thr:${b.key}:${date}`, date }, { dryRun: false, fetch: ctx.deps.fetch });
+          const r = await runRule(tx, rule, { employeeId: null, values: { metric: t.metric, key: b.key, value: b.n }, eventKey: `thr:${b.key}:${date}`, date }, { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey });
           if (r.status === 'succeeded') ran++;
         }
       }
