@@ -774,6 +774,7 @@
     "closed": "{name} is closed. Its inputs are now frozen.",
     "connectorFor": "Connector for {name}",
     "exportPeriod": "Export: {name}",
+    "export": "Export",
     "exported": "Export ready",
     "connectors": "Connectors",
     "noConnectors": "No connectors yet. Add one to send payroll inputs in the format your payroll needs.",
