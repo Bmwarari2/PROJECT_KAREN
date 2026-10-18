@@ -119,6 +119,8 @@ describe('subscription lifecycle (Stripe test mode, mocked provider)', () => {
     expect(sub).toMatchObject({ status: 'trialing', planId: 'core', hasProviderSubscription: true });
     subId = [...fake.subscriptions.keys()][0]!;
     expect(ctx.directory.entries.get(owner.tenantId)?.planRef).toBe('core');
+    // plan-dependent product settings (e.g. the public API rate limit) follow the plan
+    expect((await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.one<{ plan: string }>(`SELECT features->>'plan' AS plan FROM app.tenants`))).plan).toBe('core');
     expect((await api('POST', '/v1/billing/subscription', { planId: 'plus', term: 'monthly', currency: 'GBP' })).statusCode).toBe(409);
   });
 

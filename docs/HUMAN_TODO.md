@@ -72,10 +72,23 @@ Things only a person with the right accounts or authority can do. The build runs
 
 ## 4. Payments, partners and integrations
 
-- [ ] 4.1 **Stripe:** create the account and enable Stripe Billing and Stripe Tax (UK VAT, EU OSS, US sales tax registrations as advised). Put the test-mode keys in Secrets Manager `thapsus-hr/<env>/stripe`. Switch to live mode only after approval.
+- [ ] 4.1 **Stripe (one account per home region, test mode; ADR-0103).** Billing runs in each cell against that region's own Stripe account, so webhooks and billing contacts never reach another region.
+  1. In the Stripe Dashboard, create an organisation and three accounts: "Thapsus-HR UK", "Thapsus-HR EU", "Thapsus-HR US" (business details as advised by finance). Stay in **test mode / sandboxes** until the product owner approves live mode.
+  2. In each account: Settings → Tax → set the origin address and add the registrations you hold (UK account: UK VAT; EU account: EU OSS and any local VAT; US account: the states where you have sales-tax nexus). Set the default tax behaviour to **exclusive** and the default product tax code to `txcd_10103001` (SaaS, business use).
+  3. In each account: Settings → Billing → Customer emails: turn **off** Stripe's own failed-payment emails (Thapsus-HR sends them from the home region). Settings → Branding: add the logo and accent colour.
+  4. In each account: Developers → API keys → create a **restricted key** (or use the test secret key) with write access to Customers, Products, Subscriptions, Checkout Sessions, Setup Intents and Invoices (read).
+  5. After the cell stacks are deployed, open Secrets Manager in the cell's region (eu-west-2, eu-central-1, us-east-2) and fill `thapsus-hr/<env>/stripe/<cell>` (`uk`, `eu`, `us`) with `{"STRIPE_SECRET_KEY": "sk_test_…", "STRIPE_WEBHOOK_SECRET": "whsec_…"}` (the webhook secret comes from step 4.5). Restart the api and worker services. Keys starting `sk_live_` are refused by the app until live mode is approved and the code guard is changed.
+  6. The global stack's older secret `thapsus-hr/<env>/stripe` (eu-west-2) is not read by any service. Ask the product owner before deleting it (deleting a cloud resource needs approval).
 - [ ] 4.2 **Microsoft Entra app registration** (multi-tenant) for joiner/leaver automation. Application permissions `User.ReadWrite.All`, `Group.ReadWrite.All`, `Directory.Read.All`; per-customer admin consent. Put the client id and secret in Secrets Manager `thapsus-hr/<env>/m365`.
 - [ ] 4.3 **Google Cloud project + OAuth client** for Workspace Admin SDK (domain-wide delegation scopes `admin.directory.user`, `admin.directory.group`). Customers grant consent per domain. Credentials go in `thapsus-hr/<env>/google`.
 - [ ] 4.4 **Payroll partner programmes** (stubs exist in code; real access needs agreements): Xero (Xero App Partner, Payroll UK API scopes); ADP Marketplace partner; Workday (Workday Partner Network / customer-sponsored integration system user); UKG partner; Gusto embedded partner; DATEV Marktplatz partner. Record credentials in Secrets Manager `thapsus-hr/<env>/payroll-<partner>`.
+- [ ] 4.5 **Stripe webhook endpoints, one per region.** In each regional Stripe account: Developers → Webhooks → Add endpoint `https://api.<cell>.<domain>/v1/billing/webhooks/stripe` (until a domain exists, the cell's API load-balancer URL). Events: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.finalized`, `invoice.paid`, `invoice.payment_failed`, `invoice.marked_uncollectible`, `invoice.voided`, `checkout.session.completed`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET` (step 4.1.5). Use "Send test webhook" and check the API answers `{"received": true}`.
+- [ ] 4.6 **Support contact channels.**
+  1. Create the support mailboxes `support@<domain>`, `enterprise-support@<domain>` and the escalation mailboxes `support-escalations-uk@<domain>`, `support-escalations-eu@<domain>`, `support-escalations-us@<domain>` (SLA escalation emails are sent there by each cell).
+  2. If you offer phone support for Enterprise, get a number per region and enter it in Back office → Contact channels in that region's back office (the default config hides phone until a number is set).
+  3. If you offer live chat, record the provider in `docs/SUBPROCESSORS.md` **before** connecting it.
+- [ ] 4.7 **Status page DNS.** When the domain exists, point `status.<domain>` at the marketing site (global stack, `/status`). Each region's status comes from `https://api.<cell>.<domain>/v1/status`; if you put a CDN in front of those three endpoints (allowed for this public endpoint only, ADR-0105), keep its TTL at or below 30 seconds and never cache any other path.
+- [ ] 4.8 **Commercial and legal review of billing terms (drafts):** the cancellation notice periods (30 days monthly and annual), the 30-day trial, the 15% annual discount, the `CHARITY20` discount code, the minimum billable employees, the SLA targets and support hours in `packages/core/src/billing/config-v1.json`, and the customer-facing wording on `/pricing` and in the billing page. Changes ship as a new config version (ADR-0100).
 
 ## 5. Accounts and access for staff
 
@@ -91,7 +104,7 @@ Things only a person with the right accounts or authority can do. The build runs
 - [ ] 6.3 **Publish the SDK** (optional). Create the `@thapsus` organisation on npmjs.com and add an automation token to GitHub Actions secrets (`NPM_TOKEN`).
   1. Remove `"private"` handling from `packages/sdk/package.json` (it has none today) and add a publish job.
   2. Until then, customers use the OpenAPI document at `/openapi.json`.
-- [ ] 6.4 **Plan → rate-limit mapping.** Confirm the per-plan API limits in `apps/api/src/modules/platform/config.ts`: trial 120, starter 300, growth 600, enterprise 3,000 requests a minute. Change them per environment with `API_PLATFORM_CONFIG`. Phase 10 billing will write the tenant's plan.
+- [ ] 6.4 **Plan → rate-limit mapping.** Confirm the per-plan API limits in `apps/api/src/modules/platform/config.ts`: trial 120, core 300, plus 600, enterprise 3,000 requests a minute (starter and growth are earlier placeholders). Change them per environment with `API_PLATFORM_CONFIG`. Phase 10 billing writes the tenant's plan to `app.tenants.features->>'plan'` (ADR-0109).
 - [ ] 6.5 **Legal review:**
   - the sandbox data classification (`apps/api/src/modules/platform/sandbox-tables.ts`), which confirms that no personal data is copied;
   - the wording that customer-configured destinations are not sub-processors (`docs/SUBPROCESSORS.md`).

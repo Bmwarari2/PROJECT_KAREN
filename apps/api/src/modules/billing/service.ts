@@ -106,6 +106,14 @@ export interface ContractRow {
 
 const LIVE = `status <> 'canceled'`;
 
+/**
+ * The tenant's current plan, for plan-dependent product settings (e.g. the public API rate limit in
+ * modules/platform reads app.tenants.features->>'plan'). Plan ids only; no billing details.
+ */
+export async function setTenantPlan(tx: Tx, planId: string) {
+  await tx.exec(`UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{plan}', to_jsonb($1::text)) WHERE features->>'plan' IS DISTINCT FROM $1`, [planId]);
+}
+
 export async function defaultAccount(tx: Tx): Promise<AccountRow> {
   return tx.one<AccountRow>('SELECT * FROM app.billing_accounts WHERE is_default');
 }
@@ -133,6 +141,7 @@ export async function ensureBillingDefaults(tx: Tx, cfg: BillingConfig, now: Dat
     [account.id, cfg.trial.planId, currency, expired ? 'trial_expired' : 'trialing', ends, t.created_at, cfg.version],
   );
   await writeAudit(tx, { actorType: 'system', action: 'billing.trial_started', targetType: 'billing_account', targetId: account.id, diff: { planId: cfg.trial.planId, trialEndsAt: ends } });
+  await setTenantPlan(tx, 'trial');
   return { account, created: true };
 }
 
@@ -332,6 +341,7 @@ export async function startSubscription(app: FastifyInstance, tenantId: string, 
       ).id;
     }
     await writeAudit(tx, { actorType: 'user', actorId, action: 'billing.subscription_started', targetType: 'billing_subscription', targetId: id, diff: { planId: q.planId, term: q.term, currency: q.currency, quantity: q.quantity, intervalAmountMinor: moneyJson(q.totalAmount).amountMinor } });
+    await setTenantPlan(tx, q.planId);
     await deps.directory.update(tenantId, { planRef: q.planId }).catch(() => undefined);
     return { id, status, quote: q };
   });
@@ -378,6 +388,7 @@ export async function changeSubscription(app: FastifyInstance, tenantId: string,
         `UPDATE app.billing_subscriptions SET plan_id = $2, term = $3, quantity = $4, band_id = $5, unit_amount_minor = $6, interval_amount_minor = $7, status = $8, current_period_start = $9, current_period_end = $10, trial_ends_at = $11, pending_change = NULL, config_version = $12 WHERE id = $1`,
         [sub.id, q.planId, q.term, amounts.quantity, amounts.bandId, amounts.unitAmountMinor, amounts.intervalAmountMinor, status, ps, pe, te, ctx.cfg.version],
       );
+      await setTenantPlan(tx, q.planId);
     }
     await writeAudit(tx, { actorType: 'user', actorId, action: 'billing.subscription_changed', targetType: 'billing_subscription', targetId: sub.id, diff: { from: { planId: sub.plan_id, term: sub.term }, to: { planId: q.planId, term: q.term }, kind: preview.kind, effectiveAt: preview.effectiveAt } });
   });
@@ -448,6 +459,7 @@ export async function applyReplacement(deps: Deps, tenantId: string, subId: stri
       [account.id, pc.planId, pc.term, sub.currency, status, ps, pe, pc.quantity, pc.bandId, pc.unitAmountMinor, pc.intervalAmountMinor, p.id, cfg.version],
     );
     await writeAudit(tx, { actorType: 'system', action: 'billing.subscription_replaced', targetType: 'billing_subscription', targetId: n.id, diff: { replaces: sub.id, planId: pc.planId, term: pc.term } });
+    await setTenantPlan(tx, pc.planId);
   });
   await deps.directory.update(tenantId, { planRef: pc.planId }).catch(() => undefined);
   return { replaced: true };
@@ -464,6 +476,7 @@ export async function settleSchedules(tx: Tx, now: string): Promise<{ downgrades
     if (pc.kind === 'downgrade') {
       await tx.exec(`UPDATE app.billing_subscriptions SET plan_id = $2, term = $3, quantity = $4, band_id = $5, unit_amount_minor = $6, interval_amount_minor = $7, pending_change = NULL WHERE id = $1`, [s.id, pc.planId, pc.term, pc.quantity, pc.bandId, pc.unitAmountMinor, pc.intervalAmountMinor]);
       await writeAudit(tx, { actorType: 'system', action: 'billing.downgrade_applied', targetType: 'billing_subscription', targetId: s.id, diff: { planId: pc.planId } });
+      await setTenantPlan(tx, pc.planId);
       downgrades++;
     } else replacementsDue.push(s.id);
   }

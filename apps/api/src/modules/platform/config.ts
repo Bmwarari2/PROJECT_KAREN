@@ -16,7 +16,7 @@ export interface PlatformConfig {
 }
 
 export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
-  apiRateLimitPerMinute: { default: 600, trial: 120, sandbox: 120, starter: 300, growth: 600, enterprise: 3000 },
+  apiRateLimitPerMinute: { default: 600, trial: 120, sandbox: 120, starter: 300, growth: 600, enterprise: 3000, core: 300, plus: 600 },
   idempotencyTtlHours: 24,
   webhooks: { maxAttempts: 8, baseDelaySeconds: 30, maxDelaySeconds: 6 * 3600, timeoutMs: 10_000, secretGraceHours: 24 },
   auditStreams: { batchSize: 500, timeoutMs: 15_000 },

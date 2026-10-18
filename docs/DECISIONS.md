@@ -413,3 +413,113 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 - **Status and cancellation:** staff follow the status at `/v1/backoffice/database-moves/{id}` and can cancel a request that has not started.
 
 **Consequences.** Moves are requested, approved and audited without giving the API new privileges. An integration test proves that a tenant moved through this path keeps working.
+
+---
+
+## ADR-0100 — Billing configuration v1 is versioned data; no price lives in code (2026-10-18)
+
+**Context.** Brief §6.12 requires published prices by headcount band, monthly rolling or annual terms, a free trial, discounts and cancellation notice, all configurable and never hard-coded. The global stack already publishes `billingConfigLocation` = `builtin:billing-config-v1` (SSM `/thapsus-hr/<env>/billing/config-location`).
+
+**Decision.**
+- One JSON document, `packages/core/src/billing/config-v1.json`, loaded by `loadBillingConfig(location)` (`@thapsus/core/billing`, env `BILLING_CONFIG_LOCATION`) and validated on load: contiguous bands, positive integer minor-unit prices for every band in GBP, EUR and USD, term months and notice days, term discounts and discount codes in basis points, the trial length and plan, the Stripe Tax product code, SLA targets per plan and priority, support hours per region and contact channels per plan.
+- Prices are per billable employee per month, excluding tax, with **volume** banding (the whole headcount is priced at its band) and a per-plan minimum billable headcount. Annual = 12 × monthly less the configured term discount, rounded half-up on integer minor units (`multiplyRatio`).
+- Every consumer (pricing page, billing API, back office, quotes) calls the same `quote()`; contract records can override (ADR-0107).
+- `packages/core/test/billing.test.ts` fails if any billing or pricing source file (core billing module, API billing module, `/pricing`, `/app/billing`, back-office plans) contains a price-like literal.
+- A new price list is a new JSON version (`config-v2`, new location value); subscriptions record the `config_version` they were priced with.
+
+**Consequences.** Prices change without code changes and are identical on the marketing site, in the app and on invoices. Changing published prices needs a config release (reviewed like code) rather than a back-office edit; per-customer prices are contract records.
+
+---
+
+## ADR-0101 — Support tickets live in the home region; staff see ticket content because the customer sent it to support (2026-10-18)
+
+**Context.** Brief §6.11 asks for tickets stored in the home region, open to admins and employees, worked by Thapsus support. CLAUDE.md says back-office users see personal data only through granted, logged support access.
+
+**Decision.**
+- Tickets, messages and attachments are tenant tables under forced RLS (`app.support_tickets`, `…_messages`, `…_attachments`); files are in the home-region bucket under `<tenant>/support/<ticket>/`. Admins with `support.manage` see every ticket in their company; everyone else sees their own. Urgent priority is reserved for admins.
+- **Ticket content is shown to staff without a support grant**, because the customer chose to send it to Thapsus support: reading it is the purpose of the submission (the same lawful basis as an email to a support mailbox). The requester's display name is part of that submission. Each staff view, reply, priority change and attachment download is written to the customer's audit log (`actor_type = support`) **and** the staff trail.
+- Anything beyond the ticket (employee records, other users) needs an active support grant (`withSupportAccess`; tested by `backoffice.int.test.ts`).
+- The cross-tenant queue reads a **metadata-only index** in the cell's back-office store (`backoffice.support_queue`: ids, priority, status, plan, deadlines). Subjects, messages and files never leave the tenant tables. The index is written after each change and re-synced by the SLA job, and lives in the shared database even for tenants on a dedicated database.
+
+**Consequences.** Support can work the queue at scale without a policy that lets the back-office role read tenant tables. Customers are told in the ticket form what support can see (`support.privacyNote`).
+
+---
+
+## ADR-0102 — SLA timers in support hours, from the plan configuration, with idempotent escalation (2026-10-18)
+
+**Decision.** First-response and resolution targets per plan and priority come from the billing config. `business_hours` plans count only the region's support hours (time zone, weekdays, opening and closing time, DST-safe through `@thapsus/core/time`); `always` plans count calendar time. At-risk is the configured percentage of each target. Deadlines are computed when a ticket opens and recomputed from the opening time if staff change the priority. The clock is not paused while waiting for the customer (simple and visible; a pause can be added later). Escalation: a periodic enqueuer (only for tenants with open tickets) creates `support.sla_sweep` once per tenant per 5-minute slot; each stage (at risk, breached) is claimed once per ticket by a guarded column update, and the email goes to the region's escalation mailbox from this cell with the reference, priority, plan and deadline only, never ticket text.
+
+**Consequences.** Re-runs and concurrent workers never send duplicate escalations (`support.int.test.ts`). Public holidays are not excluded from support hours yet (coverage to-do).
+
+---
+
+## ADR-0103 — Billing state lives in the home cell; one Stripe account per region; only company billing data reaches Stripe (2026-10-18)
+
+**Context.** The global layer must hold no employee personal data; Stripe receives only the billing contact fields listed in SUBPROCESSORS.md; webhook payloads must not be logged or kept; failed-payment emails must come from the tenant's home region. A single Stripe account would deliver every webhook (including invoice objects with billing emails) to every registered endpoint, so a UK customer's billing email would reach the EU and US cells.
+
+**Decision.**
+- **Billing state is tenant data in the home cell**: billing accounts, billing contacts, subscriptions, invoices (display fields only) and processed webhook ids are tenant tables under forced RLS. The global layer keeps only the directory `planRef`. The back-office store holds a provider-customer-id → tenant routing row (ids only).
+- **One Stripe account per home region** (UK, EU, US), each called only by its own cell with keys from that cell's Secrets Manager secret `thapsus-hr/<env>/stripe/<cell>` (CDK; values entered by a human, test mode only). Each account has its own webhook endpoint `https://api.<cell>.<domain>/v1/billing/webhooks/stripe` and its own tax registrations. Defensive: a cell acknowledges and ignores events for customers not homed in it. The global stack's older `thapsus-hr/<env>/stripe` secret is unused; removing it needs the product owner's approval (HUMAN_TODO 4.1).
+- `BillingProvider` (injected through deps) is the only path to Stripe. Its inputs are typed company-level fields: legal name, company address, company tax id, PO number, primary billing contact name and email, plan, term, currency, prices, an **aggregate** billable headcount and Thapsus ids as metadata. Card details are entered on Stripe-hosted Checkout (setup mode). `billing.int.test.ts` inspects every payload sent to the provider and fails on any employee field or value.
+- Webhooks: the raw body is verified with the official SDK (`Stripe.webhooks.constructEvent`, 5-minute tolerance), reduced to ids, statuses, amounts and dates, and never logged; `app.billing_webhook_events` keeps only `(event_id, type)` for idempotency.
+- `invoice.payment_failed` marks the subscription past due and enqueues one job per event id that emails every billing contact through the cell's home-region mailer.
+- `STRIPE_SECRET_KEY` must be a test-mode key (`sk_test_`/`rk_test_`), otherwise startup fails; without a key, dev/test/staging use the recording fake and production refuses billing calls.
+
+**Consequences.** Webhooks, contacts and emails stay in their region (`support-billing.residency.test.ts`). Thapsus runs three Stripe accounts (consolidated reporting through a Stripe organisation). Live mode is a deliberate, approved change.
+
+---
+
+## ADR-0104 — Plan changes, proration, cancellation with notice and reactivation (2026-10-18)
+
+**Decision.**
+- **Trial:** created at sign-up (`tenant.created` subscriber, and lazily) for `trial.days` on the trial plan; choosing a plan keeps the remaining trial days (Stripe `trial_end`).
+- **Upgrades** (higher plan rank, or monthly → annual) apply immediately with `proration_behavior=create_prorations`: credit for the unused time at the old price, charge for the rest of the period at the new price. The app shows an estimate by the minute (`prorationPreview`, half-up); Stripe invoices its own figure by the second.
+- **Downgrades** (lower plan, same term) are sent to Stripe at once with `proration_behavior=none`, so the new price starts at the next renewal; the current plan's features stay until the period ends, when the daily job applies the plan change.
+- **Annual → monthly** (and any downgrade that changes the term) waits for the end of the paid term: the current subscription is set to end then (`cancel_at`) and a replacement starts when Stripe reports it ended (`customer.subscription.deleted`, idempotent job).
+- **Currency** is fixed once a paid subscription starts (Stripe customers bill in one currency).
+- **Cancellation** takes effect at the first period end on or after `request + cancellationNoticeDays` for the term; during a trial it ends at the trial end. **Reactivation** clears the scheduled end before it takes effect; afterwards the owner starts a new subscription (no new trial).
+- **Headcount** is re-counted daily (active employees, per billing account); a changed quantity or band is sent with `proration_behavior=none`, so it applies from the next invoice.
+
+**Consequences.** Customers never pay twice for the same period and are never surprised mid-period by a downgrade. Rules are covered by `packages/core/test/billing.test.ts` and `apps/api/test/billing.int.test.ts`.
+
+---
+
+## ADR-0105 — The public status endpoint may be cached at the edge (2026-10-18)
+
+**Context.** CLAUDE.md forbids edge caching for authenticated pages and API responses because they carry personal data. The status page must show each region separately and stay readable during an incident.
+
+**Decision.** `GET /v1/status` on each cell is public, unauthenticated, rate-limited and **contains no personal data**: component states (API, a database round trip, the worker heartbeat, email delivery outcomes — timestamps and counts only), and incidents and maintenance that staff post for that region (public text; the form warns against personal data; no staff ids or emails are returned). It is the only route with `edgeCacheable` config, which lets it send `Cache-Control: public, max-age=30, s-maxage=30, stale-while-revalidate=60`; every other response still gets `private, no-store` (tested). The web `/status` page fetches each region's endpoint (`API_URL_<REGION>`) and shows a region as unavailable rather than borrowing another's data.
+
+**Consequences.** A short-lived shared cache is safe for this endpoint only. A full-region outage shows as "can't load this region's status"; posting status from outside the affected region (a hosted status provider) is a later option.
+
+---
+
+## ADR-0106 — Back office web UI and its data boundary (2026-10-18)
+
+**Decision.** The back office is part of the cell web app (`/backoffice/*`), with its own sign-in (password then mandatory TOTP), a separate staff cookie scoped to `/v1/backoffice` (SameSite=Strict, HttpOnly), its own shell and the same design tokens. Staff see, by role: this cell's tenants (registry plus usage **aggregates** — headcount, active users, storage bytes — snapshotted daily into `backoffice.tenant_usage`); the cross-region list from the global directory only (id, slug, region, plan, status — the directory deliberately has no name field, infra test 10); company-level billing structure (legal entities' names and countries, billing account names, currency, invoicing, PO numbers — never billing contacts); contracts; the support queue; status posts; rule data; the law-changes feed (phase 5 API); feature flags (phase 9 API, super admins); contact channels (append-only `backoffice.settings_versions`); and the staff audit trail (super admins, CSV export, the export itself recorded). Tenant personal data is reachable only through `withSupportAccess` (customer grant, expiry, revocation, read-only grants run read-only transactions), with each access in the tenant audit log and the staff trail.
+
+**Consequences.** One staff identity per cell (ADR-0011); a support person works each region's queue in that region's back office.
+
+---
+
+## ADR-0107 — Enterprise contracts and multi-entity billing accounts (2026-10-18)
+
+**Decision.** A contract is a back-office record (`backoffice.contracts`, by `subject_tenant_id`): plan, currency, term, start, end, renewal (auto / manual / none) with a notice window (renewal-due flag), collection (invoice with payment terms, or card) and pricing overrides — exactly one of a per-employee price, a flat fee or a discount on the published band price, plus an optional minimum headcount — validated against the config. Billing staff create drafts; commercial terms are frozen once active (end it and record a new one). Activation replaces self-serve billing: one subscription per billing account with `collection_method=send_invoice` and `days_until_due` = payment terms; accounts without customer-entered billing contacts wait (`pending_details`) and start when the owner adds them. Multi-entity billing: billing staff group legal entities into billing accounts (each with its own currency, invoicing and PO number, which Stripe prints on every invoice through the customer's invoice custom field); each entity is billed once, and unassigned entities fall to the default account. Every change is in the staff trail and the customer's audit log.
+
+**Consequences.** Custom prices never live in code or config. A PO number change refreshes the Stripe customer so the next invoices carry it.
+
+---
+
+## ADR-0108 — Help centre content as versioned JSON with a local search index (2026-10-18)
+
+**Decision.** Articles live in `packages/core/src/help/articles.json` with a `version`, `updatedOn`, the app paths they help with (`contexts`) and en-GB and en-US text; a unit test validates them. Search is an in-memory inverted index (light stemming, UK/US spelling folding, weighted title/summary/body, prefix match on the last term): no third party and no database. Pages render on the server; the app top bar links to `/app/help?context=<path>` for contextual articles, and each article links to a pre-filled support ticket.
+
+**Consequences.** Content changes ship with code review. If the corpus grows past a few hundred articles, move it to PostgreSQL full-text search (the brief's default) behind the same functions.
+
+---
+
+## ADR-0109 — Phase 10 integration with phases 5 and 9 (2026-10-18)
+
+**Decision.** After merging `phase-5-compliance` and `phase-9-enterprise`: the back office hosts the law-changes screen on the phase 5 API and the feature-flag screen on the phase 9 API (no parallel implementations); phase 5 and phase 10 tables are classified for sandboxes (billing state and support tickets are never copied); billing records the tenant's plan in `app.tenants.features->>'plan'`, which the phase 9 public-API rate limit reads, with `core` and `plus` mapped next to the existing plan keys.
+
+**Consequences.** Rate limits follow the plan a customer pays for. Plan keys must stay aligned between the billing config and `apps/api/src/modules/platform/config.ts`.

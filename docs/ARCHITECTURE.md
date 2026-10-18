@@ -124,3 +124,26 @@ flowchart LR
 - **Sandboxes:** a sandbox is a separate tenant in the same cell, built from the config-classified tables (`platform/sandbox-tables.ts`) with synthetic people.
 - **Feature flags:** the registry is `packages/core/src/features.ts`, overrides are stored in `app.tenants.features->'flags'`, and the check is `featureEnabled(tx, key)`. The web shell reads `/v1/tenant/experience`.
 - **Dedicated databases:** back-office move requests are run by `move-tenant --process-requests` (runbook).
+
+## 6. Support, back office, status and billing (Phase 10)
+
+```mermaid
+flowchart LR
+  subgraph Cell["Each cell (UK / EU / US)"]
+    API[api] --> T[(tenant tables, forced RLS:\ntickets, billing accounts,\ncontacts, subscriptions, invoices)]
+    API --> BO[(back-office store:\nqueue index, contracts, usage totals,\nstatus posts, staff trail)]
+    W[worker] --> API
+    API -- home-region SES --> MAIL[failed-payment and\nescalation emails]
+  end
+  STRIPE[(Stripe account\nfor this region)]
+  API -- company billing data only --> STRIPE
+  STRIPE -- signed webhooks --> API
+  STATUS[/status page/] -- public, cacheable --> API
+  DIR[(global directory:\nplanRef only)]
+  API -- planRef --> DIR
+```
+
+- **Billing state is tenant data in the home cell** and each cell talks only to its region's Stripe account (ADR-0103). The global layer stores only the plan reference.
+- **Support tickets** stay in the tenant tables; staff work a metadata-only queue and every ticket view is audited (ADR-0101). SLA timers and escalation follow ADR-0102.
+- **Status:** each cell serves a public `/v1/status` (ADR-0105); the web `/status` page shows the three regions side by side.
+- **Back office** (`/backoffice`): staff sessions with mandatory MFA; personal data only through customer-granted support access (ADR-0106).

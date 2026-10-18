@@ -3,7 +3,7 @@ import { addDays, startOfDayInstant } from '@thapsus/core/time';
 import { getPool, withTenant, writeAudit } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
-import { activeContract, billingConfig, billingProvider, contractPricing, headcounts, providerStatus, syncCustomer, type ContractRow, type SubRow } from './service';
+import { activeContract, billingConfig, billingProvider, contractPricing, headcounts, providerStatus, setTenantPlan, syncCustomer, type ContractRow, type SubRow } from './service';
 
 /**
  * Enterprise contracts (ADR-0107): custom pricing from the back-office contract record, annual
@@ -37,6 +37,7 @@ export async function activateContract(deps: Deps, contract: ContractRow, staffI
       );
       await tx.exec('UPDATE app.billing_accounts SET collection = $2, payment_terms_days = $3, currency = CASE WHEN provider_customer_id IS NULL THEN $4 ELSE currency END WHERE id = $1', [a.id, contract.collection, contract.payment_terms_days, contract.currency]);
     }
+    await setTenantPlan(tx, contract.plan_id);
     await writeAudit(tx, { actorType: 'support', actorId: staffId, action: 'billing.contract_activated', targetType: 'contract', targetId: contract.id, diff: { reference: contract.reference, planId: contract.plan_id, term: contract.term, accounts: accounts.length } });
     return cancels;
   });
