@@ -368,6 +368,44 @@
         }
       },
       "source": "https://www.gov.uk/national-minimum-wage-rates"
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "date": "2026-10-18",
+      "expect": {
+        "adult": {
+          "uninterruptedHours": 24,
+          "perDays": 7
+        }
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/11"
+    },
+    {
+      "key": "working_time.opt_out",
+      "date": "2026-10-18",
+      "expect": {
+        "permitted": true,
+        "mustBeInWriting": true,
+        "workerMayTerminate": true,
+        "defaultTerminationNoticeDays": 7,
+        "maxAgreedTerminationNoticeMonths": 3
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/5"
+    },
+    {
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-10-18",
+      "expectPath": {
+        "optOutAvailable": true
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/4"
+    },
+    {
+      "key": "working_time.time_recording",
+      "date": "2026-10-18",
+      "expect": null,
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/9",
+      "note": "WTR reg. 9 requires records adequate to show compliance with the limits, not a daily start/finish record; no daily-recording duty is modelled for GB."
     }
   ],
   "sources": [

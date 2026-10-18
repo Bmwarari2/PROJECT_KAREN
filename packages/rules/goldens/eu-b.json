@@ -598,6 +598,24 @@
       "expectPath": {
         "status": "not_transposed"
       }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "working_time.time_recording",
+      "date": "2019-05-12",
+      "expectPath": {
+        "required": true,
+        "retentionYears": 4
+      }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "working_time.time_recording",
+      "date": "2026-06-01",
+      "expectPath": {
+        "required": true,
+        "scope": "daily_start_and_end_each_worker"
+      }
     }
   ],
   "notes": "EU part B (IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE). expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). Holiday vectors list holiday dates (ordinary Sundays excluded). RO and LT have no holiday vectors: no official statutory text could be fetched (see packs coverage). Weekend-observance moves: none occur in 2026 for LV (4 May Mon, 18 Nov Wed).",
@@ -790,6 +808,16 @@
     {
       "url": "https://legislation.mt/eli/ln/2026/173/eng",
       "title": "L.N. 173 of 2026 — Equal Pay (Transparency and Reporting) Regulations, 2026",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+      "title": "Estatuto de los Trabajadores, art. 34.9 (BOE consolidated text)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2019-3481",
+      "title": "Real Decreto-ley 8/2019, disposición final sexta.4 (BOE)",
       "verifiedOn": "2026-10-18"
     }
   ]

@@ -2,7 +2,7 @@
   "jurisdiction": "ES",
   "parent": "EU",
   "name": "Spain",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -101,6 +101,34 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). Spain notified only pre-existing measures (Constitution, ET, LO 3/2007, RD 901/2020 and RD 902/2020 on equality plans and pay equality); no dedicated transposition act found. Pending legal review whether these partially transpose the Directive."
+        }
+      ]
+    },
+    {
+      "key": "working_time.time_recording",
+      "description": "Estatuto de los Trabajadores art. 34.9: the employer must guarantee a daily record of working time with the exact start and finish time of each worker; records kept for four years",
+      "versions": [
+        {
+          "effectiveFrom": "2019-05-12",
+          "effectiveTo": null,
+          "value": {
+            "required": true,
+            "scope": "daily_start_and_end_each_worker",
+            "employerObligation": true,
+            "retentionYears": 4,
+            "accessFor": [
+              "workers",
+              "legal_representatives",
+              "labour_inspectorate"
+            ]
+          },
+          "source": {
+            "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+            "title": "Real Decreto Legislativo 2/2015, Estatuto de los Trabajadores, art. 34.9 (BOE consolidated text)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 34.9: \"La empresa garantizará el registro diario de jornada, que deberá incluir el horario concreto de inicio y finalización de la jornada de trabajo de cada persona trabajadora\"; \"La empresa conservará los registros ... durante cuatro años y permanecerán a disposición de las personas trabajadoras, de sus representantes legales y de la Inspección de Trabajo y Seguridad Social.\" Paragraph 9 was added by art. 10 of Real Decreto-ley 8/2019 (BOE-A-2019-3481, published 12 March 2019), which applies it two months after publication (disposición final sexta.4) — 12 May 2019. Organisation of the record by collective agreement or company decision is not modelled."
         }
       ]
     }
@@ -516,7 +544,6 @@
       "sick_pay.statutory benefit percentages (60%/75%)",
       "family_leave.maternity / paternity (nacimiento y cuidado de menor)",
       "working_time.max_weekly_hours",
-      "working_time.time_recording",
       "minimum_wage.rates (SMI)"
     ],
     "notes": "National [\"*\"] holidays are the fixed national list in RD 2001/1983 art. 45.1 a)–c). Autonomous-community holidays are modelled only for ES-MD and ES-CT for 2026 from the BOE 2026 calendar."

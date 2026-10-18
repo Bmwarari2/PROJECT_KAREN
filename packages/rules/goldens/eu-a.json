@@ -617,6 +617,58 @@
       "expectPath": {
         "status": "not_transposed"
       }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.weekly_rest",
+      "date": "2026-06-01",
+      "expectPath": {
+        "minUninterruptedHours": 24,
+        "plusDailyRestHours": 11,
+        "perDays": 7
+      }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.rest_break",
+      "date": "2026-06-01",
+      "expectPath": {
+        "triggerWorkingDayHoursOver": 6
+      }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.time_recording",
+      "date": "2019-05-14",
+      "expectPath": {
+        "required": true
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "working_time.time_recording",
+      "date": "2026-06-01",
+      "expectPath": {
+        "required": true,
+        "employerObligation": true
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "working_time.daily_rest",
+      "date": "2026-06-01",
+      "expectPath": {
+        "minConsecutiveHours": 11
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-06-01",
+      "expectPath": {
+        "maxAverageWeeklyHours": 48,
+        "referencePeriodMaxMonths": 4
+      }
     }
   ],
   "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack because the source domain is not on the validator allow-list.",
@@ -814,6 +866,11 @@
       "title": "Estonian Ministry of Economic Affairs: Pay transparency",
       "verifiedOn": "2026-10-18",
       "note": "not on validator allow-list"
+    },
+    {
+      "url": "https://www.bundesarbeitsgericht.de/entscheidung/1-abr-22-21/",
+      "title": "Bundesarbeitsgericht, Beschluss vom 13. September 2022 – 1 ABR 22/21",
+      "verifiedOn": "2026-10-18"
     }
   ]
 }
