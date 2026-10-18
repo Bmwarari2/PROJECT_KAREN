@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { Type } from 'typebox';
-import { timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { REGIONS, isHomeRegion, type HomeRegion } from '@thapsus/core';
 import { t, isLocale } from '@thapsus/core/i18n';
 import { withRegistry, withTenant, writeAudit } from '@thapsus/db';
@@ -77,7 +77,7 @@ export async function tenancyRoutes(app: FastifyInstance) {
         await assignRole(tx, u.id, 'employee', { type: 'self' });
         await writeAudit(tx, { actorType: 'user', actorId: u.id, action: 'tenant.created', targetType: 'tenant', targetId: tenantId, diff: { region: b.region, slug: b.slug, dpaAccepted: true }, ip: req.ctx.ip, requestId: req.id });
         await tx.exec(
-          `INSERT INTO app.outbox (tenant_id, topic, aggregate_type, aggregate_id, payload) VALUES ($1, 'tenant.created', 'tenant', $1, '{}')`,
+          `INSERT INTO app.outbox (tenant_id, topic, aggregate_type, aggregate_id, payload) VALUES ($1::uuid, 'tenant.created', 'tenant', $1::text, '{}')`,
           [tenantId],
         );
         await startSession(deps, req, reply, tx, { tenantId, userId: u.id, method: 'password', mfaVerified: false });
@@ -133,8 +133,8 @@ export async function tenancyRoutes(app: FastifyInstance) {
       const domain = (req.body as { domain: string }).domain.toLowerCase();
       const row = await app.tenantTx(req, async (tx) => {
         const r = await tx.one<{ id: string; domain: string; verification_token: string; verified_at: string | null }>(
-          `INSERT INTO app.verified_domains (tenant_id, domain, verification_token) VALUES (app.current_tenant(), $1, encode(gen_random_bytes(18), 'hex')) RETURNING *`,
-          [domain],
+          `INSERT INTO app.verified_domains (tenant_id, domain, verification_token) VALUES (app.current_tenant(), $1, $2) RETURNING *`,
+          [domain, randomBytes(18).toString('hex')],
         );
         await app.audit(tx, req, { action: 'domain.added', targetType: 'domain', targetId: r.id, diff: { domain } });
         return r;

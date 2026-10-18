@@ -93,9 +93,11 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
   }
   if (deps.mockIdp) {
     const keys = await mockIdpKeys();
+    let info: Awaited<ReturnType<typeof mockIdpPlugin>> | undefined;
     await app.register(async (sub) => {
-      await mockIdpPlugin(sub, { baseUrl: deps.config.apiBaseUrl, keys });
+      info = await mockIdpPlugin(sub, { baseUrl: deps.config.apiBaseUrl, keys });
     });
+    app.decorate('mockIdpInfo', () => info);
   }
 
   app.get('/openapi.json', { config: { auth: 'public' }, schema: { hide: true } }, async () => app.swagger());

@@ -65,7 +65,7 @@ export async function startTestApp(opts: { cell?: HomeRegion; directory?: InMemo
     mockIdp: true,
     ...opts.overrides,
   };
-  const app = await buildApp(deps, { logger: false });
+  const app = await buildApp(deps, { logger: process.env.TEST_LOG === '1' });
   if (opts.listen !== false) await app.listen({ port, host: '127.0.0.1' });
   else await app.ready();
   return {

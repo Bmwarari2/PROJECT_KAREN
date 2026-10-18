@@ -145,7 +145,6 @@ export async function ssoRoutes(app: FastifyInstance) {
     const userId = await userForAssertedEmail(tx, email.toLowerCase(), name, jit);
     const security = await loadSecurity(tx);
     await startSession(deps, req, reply, tx, { tenantId, userId, method, mfaVerified: security.trustIdpMfa });
-    return reply.redirect(`${deps.config.appBaseUrl}/app`, 302);
   }
 
   app.get(
@@ -155,7 +154,7 @@ export async function ssoRoutes(app: FastifyInstance) {
       const q = req.query as { state: string; code?: string };
       const [tenantId, challengeId] = q.state.split('.');
       if (!tenantId || !challengeId || !q.code) throw new ApiError('invalidCredentials');
-      return withTenant(deps.router, tenantId, async (tx) => {
+      await withTenant(deps.router, tenantId, async (tx) => {
         const ch = await tx.maybe<{ challenge: string; data: { verifier: string; connectionId: string } }>(
           `UPDATE app.auth_challenges SET used_at = now() WHERE id = $1 AND kind = 'oidc' AND used_at IS NULL AND expires_at > now() RETURNING challenge, data`,
           [challengeId],
@@ -173,8 +172,10 @@ export async function ssoRoutes(app: FastifyInstance) {
         const claims = tokens.claims();
         const email = typeof claims?.email === 'string' ? claims.email : undefined;
         if (!email || claims?.email_verified === false) throw new ApiError('invalidCredentials');
-        return finish(req, reply, tenantId, tx, email, typeof claims?.name === 'string' ? claims.name : undefined, 'oidc', conn.jit_provisioning);
+        await finish(req, reply, tenantId, tx, email, typeof claims?.name === 'string' ? claims.name : undefined, 'oidc', conn.jit_provisioning);
       });
+      // Redirect only after the session row has committed.
+      return reply.redirect(`${deps.config.appBaseUrl}/app`, 302);
     },
   );
 
@@ -185,7 +186,7 @@ export async function ssoRoutes(app: FastifyInstance) {
       const body = req.body as { SAMLResponse: string; RelayState: string };
       const [tenantId, challengeId] = body.RelayState.split('.');
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
-      return withTenant(deps.router, tenantId, async (tx) => {
+      await withTenant(deps.router, tenantId, async (tx) => {
         const ch = await tx.maybe<{ data: { connectionId: string } }>(
           `UPDATE app.auth_challenges SET used_at = now() WHERE id = $1 AND kind = 'saml' AND used_at IS NULL AND expires_at > now() RETURNING data`,
           [challengeId],
@@ -213,8 +214,9 @@ export async function ssoRoutes(app: FastifyInstance) {
         }
         const email = (profile.email as string | undefined) ?? profile.nameID;
         const name = (profile['displayName'] as string | undefined) ?? undefined;
-        return finish(req, reply, tenantId, tx, email, name, 'saml', conn.jit_provisioning);
+        await finish(req, reply, tenantId, tx, email, name, 'saml', conn.jit_provisioning);
       });
+      return reply.redirect(`${deps.config.appBaseUrl}/app`, 302);
     },
   );
 
