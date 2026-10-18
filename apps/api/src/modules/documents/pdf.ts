@@ -5,7 +5,7 @@ export const sha256 = (b: Uint8Array) => createHash('sha256').update(b).digest('
 
 /** Standard PDF fonts only cover WinAnsi: map smart punctuation, replace anything else with "?". */
 const WIN_ANSI_EXTRA = new Set([0x20ac, 0x00a3]);
-const winAnsiSafe = (s: string) =>
+export const winAnsiSafe = (s: string) =>
   [...s]
     .map((ch) => {
       if (ch === '\u2018' || ch === '\u2019') return "'";
