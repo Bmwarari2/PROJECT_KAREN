@@ -38,6 +38,17 @@ Things only a person with the right accounts or authority can do. The build runs
   Replace the reviewer field via a back-office rule version when confirmed.
 - [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example Romania and Lithuania holidays and leave, Cyprus holidays, German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually.
 - [ ] 3.3 Review the DPA, privacy notice templates, DPIA template, records of processing, sub-processor notice period and retention defaults in `docs/legal/`.
+- [ ] 3.4 Review the time-off and absence calculation interpretations (ADR-0027 to ADR-0032), which a person must confirm against the law:
+  1. **UK SSP:** the per-day application across 6 April 2026, the S.I. 2026/373 reg. 4 protected rate condition, and the reg. 5/6 Schedule 11 exclusion, which is not modelled.
+  2. **France:** the employer complement durations treated as calendar days; the IJSS daily cap (not in the pack).
+  3. **Spain:** the IT benefit percentages, which are not in the ES pack. Add them with the BOE source once confirmed.
+  4. **Poland:** the age-50 limit (14 days) start rule and whether the route may use date of birth.
+  5. **Netherlands:** the statutory minimum wage floor and the art. 17 Wfsv daily wage cap. Add them to the NL pack if confirmed.
+  6. **Germany:** whether the six weeks run from the first sick day or from the end of the four-week waiting period when sickness starts during it.
+  7. **US paid sick leave:** the "use may begin" day for each state (CA Labor Code "90th day" vs DIR "90-day employment period"); the Massachusetts values, which were confirmed only via search results.
+  8. **FMLA:** the payroll-method headcount interpretation (whole workweeks), treating all US employees of a tenant as one employer, and the combined 26-week caregiver period.
+
+  Record each confirmation as a back-office rule version or an ADR update.
 
 ## 4. Payments, partners and integrations
 
