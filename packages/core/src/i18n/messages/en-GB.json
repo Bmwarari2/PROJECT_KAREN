@@ -415,7 +415,8 @@
     "complianceExpired": "{requirement} for {name} expired on {date}",
     "probationEnding": "Probation for {name} ends on {date}",
     "qualifyingPeriodReached": "{name} gains unfair dismissal protection on {date}",
-    "lawChangePublished": "Law change ({jurisdiction}): {title}"
+    "lawChangePublished": "Law change ({jurisdiction}): {title}",
+    "reportReady": "A scheduled report is ready. Sign in to download it."
   },
   "people": {
     "title": "People",
@@ -1499,6 +1500,292 @@
     "flsa": {
       "title": "Exempt and non-exempt (US)",
       "overtimeEligible": "Overtime-eligible"
+    }
+  },
+  "reports": {
+    "total": "Total",
+    "totalIn": "Total ({currency})",
+    "hoursSuffix": "h",
+    "hoursUnit": "hours",
+    "generatedAt": "Generated {when} ({zone})",
+    "pageOf": "Page {page} of {pages}",
+    "noRows": "No rows match this report.",
+    "group": {
+      "restricted": "Restricted",
+      "unassigned": "Unassigned",
+      "all": "All employees"
+    },
+    "groupBy": {
+      "entity": "Legal entity",
+      "department": "Department",
+      "location": "Location",
+      "country": "Country",
+      "none": "Whole company",
+      "type": "Absence type",
+      "employee": "Employee",
+      "week": "Week starting"
+    },
+    "granularity": {
+      "month": "month",
+      "year": "year"
+    },
+    "col": {
+      "headcount": "Headcount",
+      "fte": "FTE",
+      "date": "Date",
+      "headcountStart": "Headcount at start",
+      "headcountEnd": "Headcount at end",
+      "averageHeadcount": "Average headcount",
+      "leavers": "Leavers",
+      "voluntary": "Voluntary",
+      "involuntary": "Involuntary",
+      "otherOrUnknown": "Other or not recorded",
+      "turnoverRate": "Turnover rate",
+      "voluntaryRate": "Voluntary turnover",
+      "leaveType": "Absence type",
+      "spells": "Spells",
+      "employees": "Employees",
+      "daysLost": "Working days lost",
+      "hoursLost": "Working hours lost",
+      "bradfordFactor": "Bradford factor",
+      "untaken": "Untaken days",
+      "liability": "Liability",
+      "timesheets": "Timesheets",
+      "worked": "Worked",
+      "regular": "Regular",
+      "overtime": "Overtime",
+      "double": "Double time",
+      "scheduled": "Scheduled",
+      "overtimeShare": "Overtime share",
+      "currency": "Currency",
+      "measure": "Measure",
+      "gap": "Gap",
+      "jobCategory": "Job category",
+      "total": "Total",
+      "transposition": "National law",
+      "workers": "Workers",
+      "firstReportBy": "First report by",
+      "jpaCategories": "Categories needing a joint pay assessment",
+      "area": "Area",
+      "status": "Status",
+      "count": "Count"
+    },
+    "note": {
+      "headcountDefinition": "Headcount counts everyone employed on the date, including people on their last day, grouped by the job record in force that day.",
+      "monthEnds": "One point per month end; the last point is the end of the period.",
+      "restricted": "Some values are hidden by your access rights and are shown as restricted.",
+      "turnoverMethod": "Turnover = leavers in the period ÷ average of the headcounts on the first and last day × 100.",
+      "absenceMethod": "Approved absence overlapping the period, in working days of each person's work pattern, excluding public holidays. Annual leave and time off in lieu are not included.",
+      "bradford": "Bradford factor = spells² × days over the 52 weeks to the end of the period (enabled in report settings).",
+      "liabilityMethod": "Leave earned but not taken by the date, valued at contractual basic pay: annual pay ÷ (52 × working days per week).",
+      "liabilityRounding": "Amounts are calculated in whole minor units and rounded once, half away from zero. Over-taken leave shows as a negative amount.",
+      "overtimeMethod": "Approved timesheets for weeks starting in the period.",
+      "truncated": "Only the first rows are shown. Export the report to get every row.",
+      "complianceAggregates": "Sex and self-identification data stay encrypted in the vault; only totals from the compliance centre are shown. Each decrypt is logged.",
+      "suppressed": "Small counts are withheld (—) so that no one can be identified.",
+      "payTransparencyInterpretation": "Indicators follow Article 9 of Directive (EU) 2023/970 as interpreted pending national law.",
+      "complianceStatus": "Right-to-work, Form I-9 and compliance matrix status on the date, as on the compliance dashboard."
+    },
+    "ready": {
+      "headcount": {
+        "title": "Headcount",
+        "description": "People employed on a date, by legal entity, department, location or country, with FTE."
+      },
+      "headcountHistory": {
+        "title": "Headcount history",
+        "description": "Month-end headcount over a period from the effective-dated job history."
+      },
+      "turnover": {
+        "title": "Turnover",
+        "description": "Leavers over average headcount for a period, voluntary and involuntary."
+      },
+      "absence": {
+        "title": "Absence",
+        "description": "Working days and hours lost by absence type, team or person."
+      },
+      "holidayLiability": {
+        "title": "Holiday liability",
+        "description": "The value of leave earned but not yet taken, per currency."
+      },
+      "overtime": {
+        "title": "Overtime",
+        "description": "Worked, regular and overtime hours from approved timesheets."
+      },
+      "complianceStatus": {
+        "title": "Compliance status",
+        "description": "Right-to-work, Form I-9 and certification status on a date."
+      },
+      "genderPayGap": {
+        "title": "Gender pay gap",
+        "description": "The six UK gender pay gap figures for a snapshot year."
+      },
+      "eeo1": {
+        "title": "EEO-1 Component 1",
+        "description": "US workforce counts by job category, race or ethnicity and sex, with small counts withheld."
+      },
+      "payTransparency": {
+        "title": "EU pay transparency",
+        "description": "Pay gap indicators for each EU legal entity under Directive (EU) 2023/970."
+      }
+    },
+    "fact": {
+      "snapshotDate": "Snapshot date",
+      "deadline": "Publish by",
+      "headcount": "Headcount",
+      "threshold": "Reporting threshold",
+      "required": "Reporting required",
+      "relevantEmployees": "Relevant employees",
+      "excludedNoSex": "Left out (no sex recorded)",
+      "dataSource": "Pay data",
+      "source": "Source",
+      "windowFrom": "Snapshot window from",
+      "windowTo": "Snapshot window to",
+      "notReported": "Not self-identified",
+      "unmappedJobs": "Job titles without a category",
+      "suppressionThreshold": "Counts withheld below"
+    },
+    "gpg": {
+      "bonusProportion": "Paid a bonus"
+    },
+    "dataset": {
+      "employees": "People",
+      "leave": "Leave requests",
+      "absence": "Sickness absence",
+      "timesheets": "Timesheets"
+    },
+    "field": {
+      "employeeNumber": "Employee number",
+      "displayName": "Name",
+      "status": "Status",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "leaverType": "Leaver type",
+      "serviceMonths": "Length of service (months)",
+      "workEmail": "Work email",
+      "jobTitle": "Job title",
+      "department": "Department",
+      "location": "Location",
+      "entity": "Legal entity",
+      "country": "Country",
+      "manager": "Manager",
+      "employmentType": "Employment type",
+      "fte": "FTE",
+      "weeklyHours": "Weekly hours",
+      "contractType": "Contract type",
+      "probationEndDate": "Probation ends",
+      "payAmount": "Pay",
+      "payFrequency": "Pay frequency",
+      "dateOfBirth": "Date of birth",
+      "nationality": "Nationality",
+      "leaveType": "Leave type",
+      "leaveCategory": "Leave category",
+      "days": "Days",
+      "hours": "Hours",
+      "requestStatus": "Request status",
+      "fitNoteRequired": "Fit note required",
+      "returnToWork": "Return to work",
+      "sicknessReason": "Sickness reason",
+      "weekStart": "Week starting",
+      "timesheetStatus": "Timesheet status",
+      "workedMinutes": "Worked",
+      "regularMinutes": "Regular",
+      "overtimeMinutes": "Overtime",
+      "doubleMinutes": "Double time",
+      "scheduledMinutes": "Scheduled"
+    },
+    "measure": {
+      "count": "Count",
+      "countDistinct": "Distinct values",
+      "sum": "Total",
+      "avg": "Average",
+      "min": "Lowest",
+      "max": "Highest"
+    },
+    "op": {
+      "eq": "is",
+      "neq": "is not",
+      "in": "is one of",
+      "gt": "is more than",
+      "gte": "is at least",
+      "lt": "is less than",
+      "lte": "is at most",
+      "contains": "contains",
+      "isEmpty": "is empty",
+      "isNotEmpty": "is not empty"
+    },
+    "enum": {
+      "status": {
+        "active": "Active",
+        "pre_start": "Not started yet",
+        "leaver": "Leaver"
+      },
+      "leaverType": {
+        "voluntary": "Voluntary",
+        "involuntary": "Involuntary",
+        "other": "Other"
+      },
+      "employmentType": {
+        "full_time": "Full time",
+        "part_time": "Part time",
+        "casual": "Casual",
+        "contractor": "Contractor",
+        "intern": "Intern"
+      },
+      "contractType": {
+        "permanent": "Permanent",
+        "fixed_term": "Fixed term",
+        "zero_hours": "Zero hours",
+        "temporary": "Temporary",
+        "contractor": "Contractor",
+        "apprenticeship": "Apprenticeship"
+      },
+      "payFrequency": {
+        "annual": "Annual",
+        "monthly": "Monthly",
+        "weekly": "Weekly",
+        "hourly": "Hourly",
+        "daily": "Daily"
+      },
+      "leaveCategory": {
+        "annual": "Annual leave",
+        "sickness": "Sickness",
+        "unpaid": "Unpaid",
+        "family": "Family",
+        "toil": "Time off in lieu",
+        "fmla": "FMLA",
+        "other": "Other"
+      },
+      "requestStatus": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled"
+      },
+      "returnToWork": {
+        "not_required": "Not required",
+        "due": "Due",
+        "completed": "Completed"
+      },
+      "timesheetStatus": {
+        "open": "Open",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
+    },
+    "param": {
+      "asOf": "As of",
+      "from": "From",
+      "to": "To",
+      "groupBy": "Group by",
+      "leaveType": "Leave type",
+      "year": "Year",
+      "sector": "Sector",
+      "entityId": "Legal entity",
+      "snapshotDate": "Snapshot date",
+      "dataset": "Dataset",
+      "period": "Period",
+      "filters": "Filters"
     }
   }
 }

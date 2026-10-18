@@ -127,5 +127,26 @@
         "certificate_of_registration_or_naturalisation_british_citizen_with_ni_number_document": "Certificate of registration or naturalization as a British citizen with a National Insurance number document"
       }
     }
+  },
+  "reports": {
+    "note": {
+      "absenceMethod": "Approved absence overlapping the period, in working days of each person's work pattern, excluding public holidays. Vacation and comp time are not included.",
+      "liabilityMethod": "Leave earned but not taken by the date, valued at contractual base pay: annual pay ÷ (52 × working days per week)."
+    },
+    "ready": {
+      "holidayLiability": {
+        "title": "Vacation liability",
+        "description": "The value of time off earned but not yet taken, per currency."
+      }
+    },
+    "enum": {
+      "leaveCategory": {
+        "annual": "Vacation",
+        "toil": "Comp time"
+      },
+      "requestStatus": {
+        "cancelled": "Canceled"
+      }
+    }
   }
 }

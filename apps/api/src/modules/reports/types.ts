@@ -2,6 +2,7 @@ import type { TSchema } from 'typebox';
 import type { Tx } from '@thapsus/db';
 import type { Principal } from '@thapsus/core/permissions';
 import type { RuleBook } from '@thapsus/rules';
+import type { ComplianceReportCtx } from '../compliance/reporting';
 
 /**
  * Report result model shared by ready-made reports, the report builder, exports and the web UI.
@@ -15,6 +16,8 @@ export interface Column {
   /** Message catalogue key for the header. */
   labelKey: string;
   type: ColumnType;
+  /** Second header part (e.g. sex under a race/ethnicity heading), shown as "label – sub-label". */
+  subLabelKey?: string;
   /** Catalogue prefix for enum values: `${enumKey}.${value}`. */
   enumKey?: string;
   /** Decimal places of decimal / percent values. */
@@ -45,6 +48,8 @@ export interface ReportResult {
   chart?: ChartHint;
   /** Catalogue keys of notes shown with the report (method, rounding, restricted rows). */
   notes: string[];
+  /** Headline facts shown above the table (snapshot date, thresholds, sources). */
+  facts?: Array<{ key: string; labelKey: string; type: ColumnType; value: Cell; enumKey?: string }>;
   /** Rows the caller may see but whose grouping or value fields were hidden by field permissions. */
   restricted?: number;
   /** True when the result contains special-category data (the run is audited as a sensitive view). */
@@ -57,8 +62,14 @@ export interface ReportContext {
   principal: Principal;
   book: RuleBook;
   tenant: { homeRegion: string; defaultCurrency: string; timeZone: string; features: Record<string, unknown> };
+  /**
+   * Statutory reports (phase 5 compliance centre) read vault aggregates and write per-decrypt audit
+   * entries, so they run on the WRITER through this hook instead of the reporting reader.
+   */
+  compliance?: <T>(fn: (c: ComplianceReportCtx) => Promise<T>) => Promise<T>;
   /** Translator for the run's locale (labels such as "Unassigned" inside result rows). */
   t: (key: string, vars?: Record<string, string | number>) => string;
+  locale: string;
   progress?: (done: number, total?: number) => Promise<void>;
 }
 
@@ -74,8 +85,7 @@ export interface ReportDefinition<P = Record<string, unknown>> {
   jurisdictions: Jurisdiction[];
   sensitivity: 'standard' | 'personal' | 'special';
   params: TSchema;
-  /** 'pending_integration': registered, wired to the phase 5 compliance calculators when merged. */
-  status: 'available' | 'pending_integration';
+  status: 'available';
   run(ctx: ReportContext, params: P): Promise<ReportResult>;
 }
 

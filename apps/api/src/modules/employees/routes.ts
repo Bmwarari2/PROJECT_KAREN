@@ -300,14 +300,14 @@ export async function employeeRoutes(app: FastifyInstance) {
       schema: {
         tags: ['employees'],
         params: Type.Object({ id: Uuid }),
-        body: Type.Object({ endDate: CivilDate, reason: Type.String({ minLength: 2, maxLength: 200 }), reassignReportsTo: Type.Optional(Uuid) }),
+        body: Type.Object({ endDate: CivilDate, reason: Type.String({ minLength: 2, maxLength: 200 }), reassignReportsTo: Type.Optional(Uuid), leaverType: Type.Optional(Type.Union([Type.Literal('voluntary'), Type.Literal('involuntary'), Type.Literal('other')])) }),
         response: { 200: Type.Object({ id: Uuid, endDate: Type.String() }), 403: Problem, 422: Problem },
       },
     },
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
-      const b = req.body as { endDate: string; reason: string; reassignReportsTo?: string };
+      const b = req.body as { endDate: string; reason: string; reassignReportsTo?: string; leaverType?: 'voluntary' | 'involuntary' | 'other' };
       await app.tenantTx(req, async (tx) => {
         const target = await loadTarget(tx, id);
         if (!can(auth.principal, 'employees.terminate', target)) throw new ApiError('forbidden');
@@ -316,14 +316,15 @@ export async function employeeRoutes(app: FastifyInstance) {
           throw new ApiError('unprocessable', 'This person manages other employees; choose who their reports move to', { reports: reports.length });
         }
         for (const r of reports) await setManager(tx, r.id, b.reassignReportsTo!, b.endDate, 'solid', auth.userId);
-        await tx.exec('UPDATE app.employees SET end_date = $2 WHERE id = $1', [id, b.endDate]);
+        // leaver type (voluntary / involuntary) feeds the turnover report
+        await tx.exec('UPDATE app.employees SET end_date = $2, leaver_type = $3 WHERE id = $1', [id, b.endDate, b.leaverType ?? null]);
         // close any open-ended effective-dated records the day after the last working day
         const closeOn = (await tx.one<{ d: string }>(`SELECT ($1::date + 1)::text AS d`, [b.endDate])).d;
         for (const t of ['app.employee_jobs', 'app.employee_pay', 'app.employee_contracts', 'app.reporting_lines'])
           await tx.exec(`UPDATE ${t} SET valid_to = $2 WHERE employee_id = $1 AND (valid_to IS NULL OR valid_to > $2) AND valid_from < $2`, [id, closeOn]);
         await refreshCurrent(tx, id);
         await recordChangeEvent(tx, id, 'employee.terminated', { endDate: b.endDate });
-        await app.audit(tx, req, { action: 'employee.terminated', targetType: 'employee', targetId: id, diff: { endDate: b.endDate, reason: b.reason, reportsMoved: reports.length } });
+        await app.audit(tx, req, { action: 'employee.terminated', targetType: 'employee', targetId: id, diff: { endDate: b.endDate, reason: b.reason, leaverType: b.leaverType ?? null, reportsMoved: reports.length } });
       });
       return { id, endDate: b.endDate };
     },

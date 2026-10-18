@@ -196,7 +196,7 @@ export function compileSpec(p: Principal, spec: BuilderSpec, opts: CompileOption
   const joins = Object.entries(d.joins).filter(([k]) => needed.has(k)).map(([, j]) => sub(j.sql));
 
   // masked columns: CASE WHEN <readable for this row> THEN <value> END, plus the readability flag
-  const select: string[] = ['e.id AS "__eid"', 'e.entity_id AS "__ent"', 'e.country AS "__cty"', 'e.department_id AS "__dep"', 'e.location_id AS "__loc"'];
+  const select: string[] = ['e.id AS "__eid"', `${d.rowIdSql ?? 'e.id'} AS "__rid"`, 'e.entity_id AS "__ent"', 'e.country AS "__cty"', 'e.department_id AS "__dep"', 'e.location_id AS "__loc"'];
   const readableOf = new Map<string, string>();
   for (const [key, f] of used) {
     if (f.vault) continue;
@@ -218,7 +218,7 @@ export function compileSpec(p: Principal, spec: BuilderSpec, opts: CompileOption
   const maskedOf = (keys: string[]) => (keys.length ? keys.map((k) => `"r_${k}"`).join(' AND ') : 'true');
 
   if (!grouped) {
-    const outs: string[] = ['"__eid"', '"__ent"', '"__cty"', '"__dep"', '"__loc"'];
+    const outs: string[] = ['"__eid"', '"__rid"', '"__ent"', '"__cty"', '"__dep"', '"__loc"'];
     for (const k of columnKeys) {
       const f = used.get(k)!;
       columns.push({ key: k, labelKey: `reports.field.${k}`, type: typeToColumn[f.type], ...(f.enumValues ? { enumKey: enumKey(f) } : {}), ...(f.scale !== undefined ? { scale: f.type === 'decimal' ? Math.min(f.scale, 2) : f.scale } : {}), ...(f.sensitivity === 'special' ? { sensitive: true } : {}) });
@@ -242,7 +242,7 @@ export function compileSpec(p: Principal, spec: BuilderSpec, opts: CompileOption
       groupSql.push(expr);
       outs.push(`${expr} AS "g${i}"`);
       const key = g.granularity ? `${g.field}_${g.granularity}` : g.field;
-      columns.push({ key, labelKey: g.granularity ? `reports.field.${g.field}.${g.granularity}` : `reports.field.${g.field}`, type: f.type === 'date' ? 'date' : f.type === 'enum' ? 'enum' : f.type === 'boolean' ? 'boolean' : 'text', ...(f.enumValues ? { enumKey: enumKey(f) } : {}) });
+      columns.push({ key, labelKey: `reports.field.${g.field}`, ...(g.granularity ? { subLabelKey: `reports.granularity.${g.granularity}` } : {}), type: f.type === 'date' ? 'date' : f.type === 'enum' ? 'enum' : f.type === 'boolean' ? 'boolean' : 'text', ...(f.enumValues ? { enumKey: enumKey(f) } : {}) });
       decoders.push({ key, sqlKey: `g${i}`, type: f.type === 'boolean' ? 'boolean' : 'text', group: true });
     });
     if (moneyField) {
@@ -340,8 +340,8 @@ function filterSql(f: Filter, field: DatasetField, add: (v: unknown) => string):
 
 // ---- execution -------------------------------------------------------------------------------------------
 
-/** Decrypts vault values for permitted employees on the WRITER and audits every value read. */
-export type VaultReader = (category: string, field: string, employeeIds: string[]) => Promise<Map<string, string>>;
+/** Decrypts vault values (subject + field pairs) on the WRITER and audits every value read; keyed `${subject}|${field}`. */
+export type VaultReader = (category: string, pairs: Array<{ subject: string; field: string }>) => Promise<Map<string, string>>;
 
 function decode(value: unknown, d: Compiled['decoders'][number], row: Record<string, unknown>, t: (k: string) => string): Cell {
   if (value === null || value === undefined) return null;
@@ -387,11 +387,13 @@ export async function runSpec(tx: Tx, p: Principal, spec: BuilderSpec, opts: Run
     const gate = await FieldGate.create(tx, p);
     for (const f of c.vaultColumns) {
       const perm = `vault.read:${f.vault!.category}`;
-      const allowed = rows.filter((r) => can(p, perm, gate.target({ id: String(r.__eid), entity_id: r.__ent as string, country: r.__cty as string, department_id: r.__dep as string, location_id: r.__loc as string }))).map((r) => String(r.__eid));
-      const values = allowed.length && opts.vault ? await opts.vault(f.vault!.category, f.vault!.field, allowed) : new Map<string, string>();
+      const fieldOf = (r: Record<string, unknown>) => f.vault!.field.replace('{rowId}', String(r.__rid));
+      const allowed = new Set(rows.filter((r) => can(p, perm, gate.target({ id: String(r.__eid), entity_id: r.__ent as string, country: r.__cty as string, department_id: r.__dep as string, location_id: r.__loc as string }))).map((r) => String(r.__rid)));
+      const pairs = rows.filter((r) => allowed.has(String(r.__rid))).map((r) => ({ subject: String(r.__eid), field: fieldOf(r) }));
+      const values = pairs.length && opts.vault ? await opts.vault(f.vault!.category, pairs) : new Map<string, string>();
       rows.forEach((r, i) => {
-        out[i]![f.key] = values.get(String(r.__eid)) ?? null;
-        if (!allowed.includes(String(r.__eid))) restricted++;
+        out[i]![f.key] = values.get(`${String(r.__eid)}|${fieldOf(r)}`) ?? null;
+        if (!allowed.has(String(r.__rid))) restricted++;
       });
     }
   }

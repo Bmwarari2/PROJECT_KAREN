@@ -11,7 +11,8 @@ import { computeHeadcount, computeHeadcountHistory, computeTurnover, RESTRICTED,
 import { computeLiability } from '../calc/liability';
 import { formatScaled } from '../fixed';
 import { DIMENSION_PERM, employeeFacts, groupNames } from './load';
-import { GROUP_BY, type Column, type GroupBy, type ReportContext, type ReportDefinition, type ReportResult, type Row } from '../types';
+import { complianceStatusReportDef, eeo1ReportDef, genderPayGapReportDef, payTransparencyReportDef } from './compliance';
+import { GROUP_BY, type Column, type GroupBy, type ReportContext, type ReportDefinition, type Row } from '../types';
 
 /**
  * Ready-made report registry. Each report declares its parameters (TypeBox, published in OpenAPI), the
@@ -223,19 +224,20 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
     }
     const columns: Column[] = [
       groupColumn(groupBy === 'type' ? 'type' : groupBy),
-      ...(byType && groupBy !== 'type' ? [{ key: 'leaveType', labelKey: 'reports.col.leaveType', type: 'enum' as const, enumKey: 'reports.leaveType' }] : []),
+      ...(byType && groupBy !== 'type' ? [{ key: 'leaveType', labelKey: 'reports.col.leaveType', type: 'text' as const }] : []),
       { key: 'spells', labelKey: 'reports.col.spells', type: 'integer' },
       { key: 'employees', labelKey: 'reports.col.employees', type: 'integer' },
       { key: 'daysLost', labelKey: 'reports.col.daysLost', type: 'decimal', scale: 2 },
       { key: 'hoursLost', labelKey: 'reports.col.hoursLost', type: 'decimal', scale: 2 },
       ...(withBradford ? [{ key: 'bradfordFactor', labelKey: 'reports.col.bradfordFactor', type: 'decimal' as const, scale: 2, sensitive: true }] : []),
     ];
-    const typeLabel = (k: string | null) => (k ? ctx.t(`reports.leaveType.${k}`) : '');
+    const typeNames = new Map((await ctx.tx.query<{ key: string; name: Record<string, string> }>('SELECT key, name FROM app.leave_types')).map((x) => [x.key, x.name]));
+    const typeLabel = (k: string | null) => (k ? (typeNames.get(k)?.[ctx.locale] ?? typeNames.get(k)?.['en-GB'] ?? k) : '');
     return {
       columns,
       rows: result.map((r) => ({
         group: groupBy === 'type' ? typeLabel(r.leaveType) : label(r.key),
-        ...(byType && groupBy !== 'type' ? { leaveType: r.leaveType } : {}),
+        ...(byType && groupBy !== 'type' ? { leaveType: typeLabel(r.leaveType) } : {}),
         spells: r.spells,
         employees: r.employees,
         daysLost: r.daysLost,
@@ -291,14 +293,12 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
       if (++done % 200 === 0) await ctx.progress?.(done, emps.length);
       if (!policy) continue;
       const [ys, ye] = leaveYearFor(p.asOf, policy.config.yearStart);
-      const [holidays, requests, adjustments] = await Promise.all([
-        holidaysFor(ctx.tx, ctx.book, lc, ys, ye),
-        ctx.tx.query<{ start_date: string; end_date: string; status: 'approved' | 'pending'; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null }>(
+      const holidays = await holidaysFor(ctx.tx, ctx.book, lc, ys, ye);
+      const requests = await ctx.tx.query<{ start_date: string; end_date: string; status: 'approved' | 'pending'; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null }>(
           `SELECT start_date, end_date, status, start_half, end_half FROM app.leave_requests WHERE employee_id = $1 AND leave_type_id = $2 AND status IN ('pending', 'approved') AND start_date < $4 AND end_date >= $3`,
           [e.id, type.id, ys, ye],
-        ),
-        ctx.tx.query<{ amount: string; effective_date: string }>(`SELECT amount, effective_date FROM app.leave_adjustments WHERE employee_id = $1 AND leave_type_id = $2 AND effective_date >= $3 AND effective_date < $4`, [e.id, type.id, ys, ye]),
-      ]);
+        );
+      const adjustments = await ctx.tx.query<{ amount: string; effective_date: string }>(`SELECT amount, effective_date FROM app.leave_adjustments WHERE employee_id = $1 AND leave_type_id = $2 AND effective_date >= $3 AND effective_date < $4`, [e.id, type.id, ys, ye]);
       let carriedIn = 0;
       if (policy.config.carryOver?.maxDays && lc.startDate < ys) carriedIn = Math.max(0, (await balanceFor(ctx.tx, ctx.book, e.id, type.id, addDays(ys, -1), 1))?.available ?? 0);
       const target = gate.target(e);
@@ -417,28 +417,6 @@ const overtime: ReportDefinition<Static<typeof OvertimeParams>> = {
   },
 };
 
-// ---- compliance reports: registered now, wired to the phase 5 compliance calculators on merge ----------
-function pendingIntegration(id: string, titleKey: string, jurisdictions: ReportDefinition['jurisdictions'], params: ReportDefinition['params'], permission: string, sensitivity: ReportDefinition['sensitivity']): ReportDefinition {
-  return {
-    id,
-    category: 'compliance',
-    titleKey: `${titleKey}.title`,
-    descriptionKey: `${titleKey}.description`,
-    permission,
-    jurisdictions,
-    sensitivity,
-    params,
-    status: 'pending_integration',
-    async run(): Promise<ReportResult> {
-      throw new ApiError('unprocessable', 'This report becomes available with the compliance centre', { code: 'pendingIntegration' });
-    },
-  };
-}
-
-const SnapshotParams = Type.Object({ snapshotDate: CivilDate }, { additionalProperties: false });
-const YearParams = Type.Object({ year: Type.Integer({ minimum: 2000, maximum: 2100 }) }, { additionalProperties: false });
-const AsOfParams = Type.Object({ asOf: CivilDate }, { additionalProperties: false });
-
 export const READY_REPORTS: ReportDefinition[] = [
   headcount,
   headcountHistory,
@@ -446,10 +424,10 @@ export const READY_REPORTS: ReportDefinition[] = [
   absence,
   holidayLiability,
   overtime,
-  pendingIntegration('compliance-status', 'reports.ready.complianceStatus', ['*'], AsOfParams, 'compliance.read', 'personal'),
-  pendingIntegration('gender-pay-gap', 'reports.ready.genderPayGap', ['GB'], SnapshotParams, 'compliance.read', 'special'),
-  pendingIntegration('eeo-1', 'reports.ready.eeo1', ['US'], YearParams, 'compliance.read', 'special'),
-  pendingIntegration('pay-transparency', 'reports.ready.payTransparency', ['EU'], YearParams, 'compliance.read', 'special'),
+  complianceStatusReportDef,
+  genderPayGapReportDef,
+  eeo1ReportDef,
+  payTransparencyReportDef,
 ] as ReportDefinition[];
 
 export function readyReport(id: string): ReportDefinition {

@@ -22,6 +22,7 @@ export interface DatasetField {
   /** Currency column for money fields (masked together with the amount). */
   currencySql?: string;
   scale?: number;
+  /** Vault-backed value; `field` may contain {rowId} (per-record vault fields such as sickness reasons). */
   vault?: { category: VaultCategory; field: string };
 }
 
@@ -33,6 +34,8 @@ export interface Dataset {
   /** 'asOf' datasets read effective-dated records on a date; 'period' datasets select records overlapping [from, to]. */
   time: 'asOf' | 'period';
   from: string;
+  /** Id of the dataset row (used for per-record vault fields); defaults to the employee id. */
+  rowIdSql?: string;
   joins: Record<string, { sql: string; requires?: string[] }>;
   where: string[];
   fields: DatasetField[];
@@ -110,10 +113,8 @@ export const DATASETS: Dataset[] = [
       { key: 'payFrequency', type: 'enum', enumValues: PAY_FREQUENCIES, sql: 'pay.frequency', perm: 'pay.amount', sensitivity: 'personal', joins: ['pay'] },
       { key: 'dateOfBirth', type: 'date', sql: 'p.date_of_birth', perm: 'dateOfBirth', sensitivity: 'personal', joins: ['p'] },
       { key: 'nationality', type: 'text', sql: 'p.nationality', perm: 'nationality', sensitivity: 'personal', joins: ['p'] },
-      // Vault-backed (special category): decrypted on the writer for permitted rows only; each value read is audited.
-      { key: 'disabilityStatus', type: 'text', sql: 'NULL', perm: null, sensitivity: 'special', vault: { category: 'disability', field: 'status' } },
-      { key: 'eeoSex', type: 'text', sql: 'NULL', perm: null, sensitivity: 'special', vault: { category: 'eeo', field: 'sex' } },
-      { key: 'eeoRaceEthnicity', type: 'text', sql: 'NULL', perm: null, sensitivity: 'special', vault: { category: 'eeo', field: 'race_ethnicity' } },
+      // Sex for pay reporting and EEO-1 self-identification are deliberately absent: they leave the vault only
+      // as the compliance centre's suppressed aggregates (gender pay gap, EEO-1 and pay transparency reports).
     ],
   },
   {
@@ -142,6 +143,7 @@ export const DATASETS: Dataset[] = [
     sensitivity: 'special',
     time: 'period',
     from: 'app.sickness_records s JOIN app.employees e ON e.tenant_id = s.tenant_id AND e.id = s.employee_id LEFT JOIN app.leave_requests lr ON lr.tenant_id = s.tenant_id AND lr.id = s.leave_request_id',
+    rowIdSql: 's.id',
     joins: currentOrgJoins,
     where: ['s.start_date <= {to}', 'coalesce(s.end_date, {to}) >= {from}'],
     fields: [
@@ -152,6 +154,9 @@ export const DATASETS: Dataset[] = [
       { key: 'hours', type: 'decimal', scale: 2, sql: 'lr.amount_hours', perm: null, sensitivity: 'special' },
       { key: 'fitNoteRequired', type: 'boolean', sql: 's.fit_note_required', perm: null, sensitivity: 'special' },
       { key: 'returnToWork', type: 'enum', enumValues: RTW_STATUS, sql: 's.rtw_status', perm: null, sensitivity: 'special' },
+      // Vault-backed (health data): decrypted on the writer only for rows the caller holds vault.read:sickness for;
+      // every value read is audited.
+      { key: 'sicknessReason', type: 'text', sql: 'NULL', perm: null, sensitivity: 'special', vault: { category: 'sickness', field: 'reason:{rowId}' } },
     ],
   },
   {

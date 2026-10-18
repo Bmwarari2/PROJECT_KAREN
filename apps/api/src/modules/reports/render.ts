@@ -59,9 +59,15 @@ export function displayCell(locale: Locale, c: Column, v: Cell): string {
 }
 
 /** Header labels: money columns get a companion currency column and minutes are exported as hours. */
+/** Header text: "label – sub-label" when a column has a second part (e.g. race/ethnicity – sex). */
+export function headerOf(locale: Locale, c: Column): string {
+  const label = translate(locale, c.labelKey);
+  return c.subLabelKey ? `${label} – ${translate(locale, c.subLabelKey)}` : label;
+}
+
 function machineHeaders(locale: Locale, cols: Column[]): string[] {
   return cols.flatMap((c) => {
-    const label = translate(locale, c.labelKey);
+    const label = headerOf(locale, c);
     if (c.type === 'money') return [label, `${label} (${translate(locale, 'reports.col.currency')})`];
     if (c.type === 'minutes') return [`${label} (${translate(locale, 'reports.hoursUnit')})`];
     return [label];
@@ -172,7 +178,7 @@ export async function renderPdf(result: ReportResult, meta: RenderMeta): Promise
   const cols = result.columns;
   const rows = [...result.rows, ...(result.totals ?? [])];
   const text = rows.map((r) => cols.map((c) => displayCell(meta.locale, c, r[c.key] ?? null)));
-  const headers = cols.map((c) => translate(meta.locale, c.labelKey));
+  const headers = cols.map((c) => headerOf(meta.locale, c));
   // column widths proportional to content (header and up to 200 rows sampled), within the page width
   const natural = cols.map((_, i) => Math.min(220, Math.max(40, bold.widthOfTextAtSize(winAnsiSafe(headers[i]!), size), ...text.slice(0, 200).map((r) => font.widthOfTextAtSize(winAnsiSafe(r[i]!), size))) + 8));
   const scale = Math.min(1, width / natural.reduce((a, b) => a + b, 0));

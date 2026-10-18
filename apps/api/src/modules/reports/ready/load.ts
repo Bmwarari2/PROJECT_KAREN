@@ -60,7 +60,10 @@ export async function jobsFor(tx: Tx, p: Principal, action: string, from: string
 
 /** Employee facts for headcount / turnover, with the grouping dimension masked where it is not readable. */
 export async function employeeFacts(tx: Tx, p: Principal, from: string, to: string, groupBy: GroupBy): Promise<{ facts: EmployeeFact[]; restricted: number }> {
-  const [emps, jobs, gate] = await Promise.all([scopedEmployees(tx, p, 'employees.read', from, to), jobsFor(tx, p, 'employees.read', from, to), FieldGate.create(tx, p)]);
+  // one connection per transaction: queries run one after another
+  const emps = await scopedEmployees(tx, p, 'employees.read', from, to);
+  const jobs = await jobsFor(tx, p, 'employees.read', from, to);
+  const gate = await FieldGate.create(tx, p);
   let restricted = 0;
   const facts = emps.map((e) => {
     const readable = groupBy === 'none' || gate.readable(DIMENSION_PERM[groupBy], gate.target(e));
