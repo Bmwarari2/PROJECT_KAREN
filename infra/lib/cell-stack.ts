@@ -352,9 +352,10 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- Secrets for the services
     const internalToken = new secretsmanager.Secret(this, 'InternalToken', {
-      // Same name in every region of this env. The global stack and every cell each create their own
-      // copy; scripts/sync-internal-token copies the global value into each cell after deploy.
-      secretName: names.internalTokenSecret(env),
+      // The cell's own copy of the global internal token (no cross-region references); scripts/deploy.mjs
+      // copies the global value into it after each cell deploy. A distinct name per cell, because the UK
+      // cell shares eu-west-2 with the global stack's source secret.
+      secretName: names.cellInternalTokenSecret(env, cell),
       encryptionKey: dataKey,
       generateSecretString: { excludePunctuation: true, passwordLength: 64 },
     });
