@@ -74,6 +74,8 @@ function k6(base) {
         [
           'run',
           '--rm',
+          // write the summary into the mounted .loadtest as the invoking user (the image's user cannot)
+          ...(process.getuid ? ['--user', `${process.getuid()}:${process.getgid()}`] : []),
           '--network',
           'host',
           '-v',

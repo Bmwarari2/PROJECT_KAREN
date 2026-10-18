@@ -75,7 +75,8 @@ export function adminSession() {
   const cookie = `thr_sid=${res.cookies.thr_sid[0].value}`;
   const body = res.json();
   if (body.mfaEnrollmentRequired) {
-    const enrol = http.post(`${BASE}/v1/auth/mfa/totp/enroll`, null, params(cookie, { type: 'login' }));
+    const enrol = http.post(`${BASE}/v1/auth/mfa/totp/enroll`, '{}', params(cookie, { type: 'login' })); // JSON content type needs a body
+    if (enrol.status !== 200) fail(`MFA enrolment failed: ${enrol.status}`);
     const secret = enrol.json('secret');
     const ok = http.post(
       `${BASE}/v1/auth/mfa/totp/confirm`,
