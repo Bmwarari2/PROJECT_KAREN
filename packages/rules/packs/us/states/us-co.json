@@ -2,7 +2,7 @@
   "jurisdiction": "US-CO",
   "parent": "US",
   "name": "Colorado",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -159,7 +159,8 @@
             "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
           },
           "verifiedOn": "2026-10-18",
-          "reviewer": "research-agent (pending legal review)"
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Cross-checked 2026-10-18 with the 2025 PAY CALC Order (7 CCR 1103-14, effective 1 Jan 2025, https://cdle.colorado.gov/sites/cdle/files/adopted_2025_pay_calc_order_7_ccr_1103-14_11.7.24_accessible.pdf): $1,086.25/week, $56,485 rounded annual."
         },
         {
           "effectiveFrom": "2026-01-01",
@@ -176,7 +177,7 @@
           },
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
-          "notes": "Inflation-adjusted in future years; 2027 amount not yet verified."
+          "notes": "Inflation-adjusted in future years; 2027 amount not yet verified. Cross-checked 2026-10-18 with the adopted 2026 PAY CALC Order (7 CCR 1103-14, adopted 8 Dec 2025, https://cdle.colorado.gov/sites/cdle/files/adopted_2026_pay_calc_order_7_ccr_1103-14_redline_12.8.25.docx): $1,111.23/week, $57,784 rounded annual. That order states \"effective February 1, 2026\"; whether the 2026 level applies from 1 January (as modelled, per INFO #1) or 1 February 2026 needs legal review."
         }
       ]
     },

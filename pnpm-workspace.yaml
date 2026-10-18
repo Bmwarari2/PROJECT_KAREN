@@ -5,3 +5,6 @@ packages:
 allowBuilds:
   esbuild: true
   protobufjs: true
+  # ssh2 (SFTP payroll delivery) runs in pure JS; its optional native crypto/cpu-features builds are not needed.
+  cpu-features: false
+  ssh2: false

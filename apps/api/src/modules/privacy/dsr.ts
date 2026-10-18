@@ -178,10 +178,10 @@ export async function buildAccessExport(tx: Tx, o: { vault: Vault; actor: VaultA
 // ---- Erasure ----------------------------------------------------------------------------------------------
 /** Latest record date per retention category for one employee (what a statutory clock runs from). */
 const LATEST_RECORD: Partial<Record<RetentionCategory, string>> = {
-  time_records: `SELECT max(d) AS d FROM (SELECT max(occurred_at)::date AS d FROM app.clock_events WHERE employee_id = $1 UNION ALL SELECT max(week_start) FROM app.timesheets WHERE employee_id = $1 UNION ALL SELECT max(shift_date) FROM app.shifts WHERE employee_id = $1) x`,
+  time_records: `SELECT max(d) AS d FROM (SELECT max(occurred_at)::date AS d FROM app.clock_events WHERE employee_id = $1 UNION ALL SELECT max(week_start) FROM app.timesheets WHERE employee_id = $1 UNION ALL SELECT max(shift_date) FROM app.shifts WHERE employee_id = $1 UNION ALL SELECT max(period_end) FROM app.worked_hours WHERE employee_id = $1) x`,
   leave_records: `SELECT max(d) AS d FROM (SELECT max(end_date) AS d FROM app.leave_requests WHERE employee_id = $1 UNION ALL SELECT max(effective_date) FROM app.leave_adjustments WHERE employee_id = $1 UNION ALL SELECT max(start_date) FROM app.fmla_cases WHERE employee_id = $1) x`,
   sickness_records: `SELECT max(coalesce(end_date, start_date)) AS d FROM app.sickness_records WHERE employee_id = $1`,
-  payroll_records: `SELECT max(coalesce(valid_to, $2::date)) AS d FROM app.employee_pay WHERE employee_id = $1`,
+  payroll_records: `SELECT max(d) AS d FROM (SELECT max(coalesce(valid_to, $2::date)) AS d FROM app.employee_pay WHERE employee_id = $1 UNION ALL SELECT max(created_at)::date FROM app.payslips WHERE employee_id = $1 UNION ALL SELECT max(snapshot_date) FROM app.pay_report_inputs WHERE employee_id = $1) x`,
 };
 
 export interface ErasurePlan {
@@ -247,6 +247,10 @@ export async function applyErasure(tx: Tx, o: { vault: Vault; actor: VaultActor;
     const signed = await tx.query<{ signed_file_key: string | null }>(`SELECT s.signed_file_key FROM app.signature_requests s WHERE s.signer_employee_id = $1`, [s.employeeId]);
     fileKeys.push(...docs.flatMap((d) => (d.file_key ? [d.file_key] : [])), ...signed.flatMap((d) => (d.signed_file_key ? [d.signed_file_key] : [])));
   }
+  if (s.employeeId && erasing.has('payroll_records')) {
+    const slips = await tx.query<{ file_key: string }>(`SELECT file_key FROM app.payslips WHERE employee_id = $1`, [s.employeeId]);
+    fileKeys.push(...slips.map((d) => d.file_key));
+  }
   // Children before parents: the map is ordered so that user-scoped rows go before the user and the employee.
   const order = Object.entries(SUBJECT_TABLES).sort(([a], [b]) => rank(a) - rank(b));
   for (const [table, rule] of order) {
@@ -297,6 +301,7 @@ function rank(table: string): number {
   if (table === 'app.employees') return 3;
   if (table === 'app.users') return 2;
   if (table === 'app.employee_personal') return 1;
+  if (table === 'app.documents') return 0.5; // after compliance records, which reference evidence documents
   return 0;
 }
 

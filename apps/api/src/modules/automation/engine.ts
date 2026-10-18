@@ -1,9 +1,9 @@
-import { createHmac } from 'node:crypto';
 import { addDays } from '@thapsus/core/time';
 import { emitEvent, type Tx } from '@thapsus/db';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 import { evaluate, type Condition } from '../approvals/service';
 import { startWorkflow } from '../workflows/service';
+import { integrationHandlers, isPublicHttpsUrl, signBody } from './integrations';
 
 export type Trigger =
   | { type: 'record.created'; entity: 'employee' }
@@ -17,7 +17,7 @@ export type Action =
   | { type: 'notification'; to: { type: 'manager' | 'role' | 'user' | 'employee'; value?: string }; message: string }
   | { type: 'workflow'; templateId: string }
   | { type: 'webhook'; url: string }
-  | { type: 'integration'; integration: string; operation: string };
+  | { type: 'integration'; integration: string; operation: string; params?: Record<string, string | number | boolean> };
 
 export interface Rule {
   id: string;
@@ -55,7 +55,7 @@ export async function runRule(
   tx: Tx,
   rule: Rule,
   subject: Subject,
-  opts: { dryRun: boolean; fetch?: typeof fetch; webhookSecret?: string },
+  opts: { dryRun: boolean; fetch?: typeof fetch; signingKey?: string },
 ): Promise<{ matched: boolean; actions: PlannedAction[]; status: string }> {
   const matched = rule.conditions.every((c) => evaluate(c, subject.values));
   const planned: PlannedAction[] = [];
@@ -97,15 +97,26 @@ export async function runRule(
         if (!opts.dryRun) {
           // Only identifiers leave the cell; receivers fetch details through the API with their own credentials.
           const body = JSON.stringify({ rule: rule.id, event: subject.eventKey, employeeId: subject.employeeId ?? null, date: subject.date });
-          const sig = createHmac('sha256', opts.webhookSecret ?? 'unset').update(body).digest('hex');
-          const res = await (opts.fetch ?? fetch)(action.url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-thapsus-signature': `sha256=${sig}` }, body, signal: AbortSignal.timeout(5000) }).catch((e: Error) => ({ ok: false, status: 0, statusText: e.message }));
+          // Signed with the tenant's derived key, like integration calls; never sent unsigned.
+          if (!opts.signingKey) {
+            planned[planned.length - 1]!.detail.status = 0;
+            planned[planned.length - 1]!.detail.reason = 'signing_key_not_configured';
+            break;
+          }
+          const { t: tenantId } = await tx.one<{ t: string }>('SELECT app.current_tenant()::text AS t');
+          // re-checked at call time: rules saved before the check existed may hold any URL
+          const res = isPublicHttpsUrl(action.url)
+            ? await (opts.fetch ?? fetch)(action.url, { method: 'POST', redirect: 'error', headers: { 'content-type': 'application/json', 'x-thapsus-signature': signBody(opts.signingKey, tenantId, body) }, body, signal: AbortSignal.timeout(5000) }).catch((e: Error) => ({ ok: false, status: 0, statusText: e.message }))
+            : { ok: false, status: 0 };
           planned[planned.length - 1]!.detail.status = res.status;
         }
         break;
       }
       case 'integration':
-        planned.push({ type: 'integration', detail: { integration: action.integration, operation: action.operation } });
-        if (!opts.dryRun) await emitEvent(tx, 'integration.requested', { integration: action.integration, operation: action.operation, employeeId: subject.employeeId ?? null, rule: rule.id });
+        planned.push({ type: 'integration', detail: { integration: action.integration, operation: action.operation, available: action.integration in integrationHandlers } });
+        // dispatched by the integrations.dispatch job (outbox → idempotent job → registered handler)
+        if (!opts.dryRun)
+          await emitEvent(tx, 'integration.requested', { integration: action.integration, operation: action.operation, params: action.params ?? {}, employeeId: subject.employeeId ?? null, rule: rule.id, eventKey: subject.eventKey, date: subject.date }, { type: 'automation_rule', id: rule.id });
         break;
     }
   }

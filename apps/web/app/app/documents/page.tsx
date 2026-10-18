@@ -8,6 +8,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useSession } from '../shell';
+import { ExportLinks } from '@/components/export-links';
 
 interface SigReq {
   id: string;
@@ -63,7 +64,10 @@ export default function DocumentsPage() {
   const pending = (sigs.data ?? []).filter((s) => s.status === 'pending');
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-2">{t('documents.title')}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="mr-auto text-title-2">{t('documents.title')}</h1>
+        <ExportLinks list="documents" params={{ employeeId: session?.employeeId ?? undefined }} />
+      </div>
       {pending.length ? (
         <Card>
           <CardTitle>{t('documents.toSign')}</CardTitle>

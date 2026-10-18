@@ -6,8 +6,8 @@
   "closureGraceDays": 30,
   "dsrReminderDaysBefore": [7, 2, 0],
   "incidentReminderHoursBefore": [24, 4, 0],
-  "backupRetentionDays": { "dev": 7, "test": 7, "staging": 7, "prod": 35 },
-  "logRetentionDays": { "dev": 14, "test": 14, "staging": 30, "prod": 400 },
+  "backupRetentionDays": { "dev": 7, "test": 7, "staging": 7, "loadtest": 7, "prod": 35 },
+  "logRetentionDays": { "dev": 14, "test": 14, "staging": 30, "loadtest": 30, "prod": 400 },
   "securityContactLocalPart": "security",
   "privacyContactLocalPart": "privacy"
 }

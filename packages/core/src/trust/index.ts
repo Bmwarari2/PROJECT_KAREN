@@ -1,5 +1,6 @@
 import generated from './generated.json' with { type: 'json' };
 import legal from './legal.json' with { type: 'json' };
+import type { CellConfig } from '../config';
 import type { HomeRegion } from '../regions';
 
 /**
@@ -34,8 +35,8 @@ export interface LegalSettings {
   closureGraceDays: number;
   dsrReminderDaysBefore: number[];
   incidentReminderHoursBefore: number[];
-  backupRetentionDays: Record<'dev' | 'test' | 'staging' | 'prod', number>;
-  logRetentionDays: Record<'dev' | 'test' | 'staging' | 'prod', number>;
+  backupRetentionDays: Record<CellConfig['env'], number>;
+  logRetentionDays: Record<CellConfig['env'], number>;
   securityContactLocalPart: string;
   privacyContactLocalPart: string;
 }

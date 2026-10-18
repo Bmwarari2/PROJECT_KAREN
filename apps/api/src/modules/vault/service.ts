@@ -38,16 +38,16 @@ export class Vault {
     return row.id;
   }
 
-  /** Latest value per field for a subject and category. Throws 403 without the category permission. */
-  async read(tx: Tx, actor: VaultActor, tenantId: string, target: Target & { employeeId: string }, category: VaultCategory) {
+  /** Latest value per field for a subject and category (optionally only `fields`). Throws 403 without the category permission. */
+  async read(tx: Tx, actor: VaultActor, tenantId: string, target: Target & { employeeId: string }, category: VaultCategory, fields?: string[]) {
     if (!can(actor.principal, `vault.read:${category}`, target)) {
       await writeAudit(tx, { actorType: actor.actorType, actorId: actor.principal.userId, action: 'vault.read_denied', targetType: `vault:${category}`, targetId: target.employeeId, sensitive: true, requestId: actor.requestId, ip: actor.ip });
       throw new ApiError('forbidden');
     }
     const rows = await tx.query<{ id: string; field: string; envelope: Envelope; file_key: string | null; created_at: string }>(
       `SELECT DISTINCT ON (field) id, field, envelope, file_key, created_at FROM vault.records
-        WHERE subject_id = $1 AND category = $2 ORDER BY field, created_at DESC`,
-      [target.employeeId, category],
+        WHERE subject_id = $1 AND category = $2 AND ($3::text[] IS NULL OR field = ANY($3::text[])) ORDER BY field, created_at DESC`,
+      [target.employeeId, category, fields ?? null],
     );
     const out: Array<{ id: string; field: string; value: string; fileKey: string | null; recordedAt: string }> = [];
     for (const r of rows) {

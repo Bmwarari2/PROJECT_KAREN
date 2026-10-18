@@ -99,7 +99,7 @@ CREATE INDEX retention_runs_at ON app.retention_runs (tenant_id, run_at DESC);
 SELECT app.enable_tenant_rls('app.retention_runs');
 
 -- ---- Company data export and account closure ---------------------------------------------------------
-CREATE TABLE app.data_exports (
+CREATE TABLE app.company_exports (
   tenant_id uuid NOT NULL,
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   status text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'running', 'ready', 'failed')),
@@ -113,8 +113,8 @@ CREATE TABLE app.data_exports (
   completed_at timestamptz,
   PRIMARY KEY (tenant_id, id)
 );
-CREATE INDEX data_exports_recent ON app.data_exports (tenant_id, created_at DESC);
-SELECT app.enable_tenant_rls('app.data_exports');
+CREATE INDEX company_exports_recent ON app.company_exports (tenant_id, created_at DESC);
+SELECT app.enable_tenant_rls('app.company_exports');
 
 CREATE TABLE app.account_closures (
   tenant_id uuid NOT NULL,

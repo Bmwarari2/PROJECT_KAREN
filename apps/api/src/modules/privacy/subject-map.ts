@@ -52,7 +52,7 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.employee_contracts': { subject: [E()], actor: ['created_by'], category: 'personnel_records', erase: { keep: 'no direct identifiers once identity fields are erased; kept pseudonymised' } },
   'app.employee_pay': { subject: [E()], actor: ['created_by'], category: 'payroll_records', erase: DEL },
   'app.reporting_lines': { subject: [E()], actor: ['manager_id', 'created_by'], category: 'personnel_records', erase: { keep: 'organisation history; identifiers erased on the employee record' } },
-  'app.emergency_contacts': { subject: [E()], category: 'contact', erase: DEL },
+  'app.emergency_contacts': { subject: [E()], actor: ['created_by'], category: 'contact', erase: DEL },
   'app.custom_field_values': { subject: [E('record_id')], actor: ['created_by'], category: 'personnel_records', erase: DEL },
   'app.custom_object_records': { subject: [E()], actor: ['created_by'], category: 'personnel_records', erase: DEL },
   'app.documents': { subject: [E()], actor: ['created_by'], category: 'personnel_records', erase: DEL },
@@ -60,7 +60,7 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.workflow_instances': { subject: [E()], actor: ['started_by'], category: 'personnel_records', erase: DEL },
   'app.approval_requests': { subject: [E('subject_employee_id')], actor: ['requested_by'], category: 'personnel_records', erase: DEL },
   'app.approval_steps': { subject: [], actor: ['decided_by'], category: 'accountability', erase: { keep: 'decisions about other people' } },
-  'app.tasks': { subject: [E('subject_employee_id'), U('assignee_user_id')], actor: ['completed_by'], category: 'personnel_records', erase: DEL },
+  'app.tasks': { subject: [E('subject_employee_id'), U('assignee_user_id'), E('assignee_employee_id')], actor: ['completed_by'], category: 'personnel_records', erase: DEL },
 
   // ---- time off and absence -----------------------------------------------------------------------
   'app.leave_requests': { subject: [E()], actor: ['requested_by'], category: 'leave_records', erase: DEL },
@@ -77,6 +77,31 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.timesheets': { subject: [E()], actor: ['submitted_by'], category: 'time_records', erase: DEL },
   'app.working_time_opt_outs': { subject: [E()], actor: ['recorded_by', 'ended_by'], category: 'time_records', erase: DEL },
   'app.kiosk_pins': { subject: [E()], category: 'account', erase: DEL, omit: ['pin_hash'] },
+  'app.worked_hours': { subject: [E()], actor: ['created_by'], category: 'time_records', erase: DEL },
+
+  // ---- compliance -----------------------------------------------------------------------------------
+  // superseded_by on rtw_checks points at the newer check, not a person; it is listed so the catalog check passes.
+  'app.rtw_checks': { subject: [E()], actor: ['checked_by', 'superseded_by'], category: 'immigration_records', erase: DEL },
+  'app.i9_records': { subject: [E()], actor: ['created_by'], category: 'immigration_records', erase: DEL },
+  'app.flsa_attestations': { subject: [E()], actor: ['attested_by'], category: 'personnel_records', erase: DEL },
+  'app.compliance_records': { subject: [E()], actor: ['recorded_by'], category: 'personnel_records', erase: DEL },
+  'app.pay_report_inputs': { subject: [E()], actor: ['created_by'], category: 'payroll_records', erase: DEL },
+  'app.law_change_reads': { subject: [U()], category: 'account', erase: DEL },
+
+  // ---- payroll handoff, payslips, IT automation and assets ---------------------------------------------
+  'app.payslips': { subject: [E()], category: 'payroll_records', erase: DEL },
+  'app.it_accounts': { subject: [E()], category: 'personnel_records', erase: DEL },
+  'app.it_operations': { subject: [E()], category: 'personnel_records', erase: DEL },
+  'app.integration_calls': { subject: [E('subject_employee_id')], category: 'personnel_records', erase: DEL },
+  'app.asset_assignments': {
+    subject: [E()],
+    actor: ['acknowledged_by', 'created_by', 'received_by'],
+    category: 'personnel_records',
+    erase: { anonymise: { acknowledged_ip: null, acknowledged_user_agent: null, handover_note: null } },
+  },
+
+  // ---- reports ---------------------------------------------------------------------------------------
+  'app.saved_reports': { subject: [U('owner_user_id')], category: 'accountability', erase: { keep: 'company report definition (no personal data); other users may share it' } },
 
   // ---- account and security -------------------------------------------------------------------------
   'app.users': {
@@ -109,7 +134,7 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   // ---- actor-only references (the person acted on company records) ----------------------------------------
   'app.account_closures': { subject: [], actor: ['requested_by', 'cancelled_by'], category: 'accountability', erase: { keep: 'company record' } },
   'app.automation_rules': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
-  'app.data_exports': { subject: [], actor: ['requested_by'], category: 'accountability', erase: { keep: 'company record' } },
+  'app.company_exports': { subject: [], actor: ['requested_by'], category: 'accountability', erase: { keep: 'company record' } },
   'app.import_batches': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company record' } },
   'app.incidents': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company record' } },
   'app.jobs': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'operational record' } },
@@ -117,6 +142,22 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.privacy_notices': { subject: [], actor: ['updated_by'], category: 'accountability', erase: { keep: 'company record' } },
   'app.retention_policies': { subject: [], actor: ['updated_by'], category: 'accountability', erase: { keep: 'company configuration' } },
   'app.timesheet_exports': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'payroll export record' } },
+  'app.compliance_requirements': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.eeo_job_categories': { subject: [], actor: ['updated_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.pay_periods': { subject: [], actor: ['created_by', 'closed_by'], category: 'accountability', erase: { keep: 'company payroll calendar' } },
+  'app.pay_period_snapshots': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'closed pay-period inputs, kept so payroll exports stay reproducible for the payroll record retention period' } },
+  'app.payroll_exports': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'payroll export record' } },
+  'app.payroll_deliveries': { subject: [], actor: ['requested_by'], category: 'accountability', erase: { keep: 'delivery log' } },
+  'app.payroll_connectors': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.integration_credentials': { subject: [], actor: ['updated_by'], category: 'accountability', erase: { keep: 'company configuration (sealed credentials)' } },
+  'app.integration_oauth_states': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'single-use OAuth state that expires within minutes' } },
+  'app.payslip_batches': { subject: [], actor: ['created_by', 'published_by'], category: 'accountability', erase: { keep: 'company record' } },
+  'app.it_connections': { subject: [], actor: ['consented_by', 'created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.assets': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company asset register' } },
+  'app.report_runs': { subject: [], actor: ['requested_by'], category: 'accountability', erase: { keep: 'report run log; result files expire automatically' } },
+  'app.report_schedules': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.data_exports': { subject: [], actor: ['created_by', 'run_as_user_id'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.export_destinations': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
 };
 
 /**

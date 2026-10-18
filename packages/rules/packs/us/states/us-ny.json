@@ -2,7 +2,7 @@
   "jurisdiction": "US-NY",
   "parent": "US",
   "name": "New York",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -195,6 +195,6 @@
       "NY Paid Prenatal Leave",
       "privacy: GBL 899-aa duty of a person maintaining data it does not own"
     ],
-    "notes": "Local ordinances not yet modelled: NYC Earned Safe and Sick Time Act (incl. 2024 amendments), Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited)."
+    "notes": "NYC Earned Safe and Sick Time Act (Protected Time Off Law) is modelled in the US-NY-NYC locality pack from 22 Feb 2026 (earlier city history not modelled). Local ordinances not yet modelled: Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited)."
   }
 }

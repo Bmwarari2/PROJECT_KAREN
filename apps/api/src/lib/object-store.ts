@@ -22,44 +22,33 @@ export interface ObjectStore {
 
 export const objectKey = (tenantId: string, area: string, ext = '') => `${tenantId}/${area}/${randomUUID()}${ext}`;
 
-/**
- * In-memory store for tests and local development. With `downloadBaseUrl` set (local dev and e2e only,
- * never production) presigned GETs become short-lived HMAC-signed URLs served by the API's local
- * object route, so a browser can download exports without S3.
- */
 export class MemoryObjectStore implements ObjectStore {
   readonly objects = new Map<string, { body: Buffer; contentType: string }>();
-  private readonly signingKey: Buffer;
-  constructor(
-    private readonly opts: { downloadBaseUrl?: string; now?: () => number } = {},
-  ) {
-    this.signingKey = randomBytes(32);
-  }
-  get downloadsEnabled() {
-    return !!this.opts.downloadBaseUrl;
-  }
-  private sign(key: string, exp: number, filename: string) {
-    return createHmac('sha256', this.signingKey).update(`${key}\n${exp}\n${filename}`).digest('base64url');
-  }
+  /**
+   * Dev/test only: when `serve` is set, download links point at the API's `/v1/dev/objects` route with a
+   * short-lived HMAC signature (like a presigned URL), so files can be downloaded without an S3 emulator.
+   */
+  constructor(readonly serve?: { baseUrl: string; secret: Buffer }) {}
   async presignPut(key: string) {
     return `memory://put/${encodeURIComponent(key)}`;
   }
   async presignGet(key: string, filename?: string) {
-    if (!this.opts.downloadBaseUrl) return `memory://get/${encodeURIComponent(key)}`;
-    const exp = Math.floor((this.opts.now?.() ?? Date.now()) / 1000) + 300;
-    const name = filename ?? key.split('/').pop()!;
-    const q = new URLSearchParams({ key, exp: String(exp), name, sig: this.sign(key, exp, name) });
-    return `${this.opts.downloadBaseUrl}/v1/local-objects?${q}`;
+    if (!this.serve) return `memory://get/${encodeURIComponent(key)}`;
+    const exp = String(Math.floor(Date.now() / 1000) + 300);
+    const name = filename ?? key.split('/').pop() ?? 'file';
+    const q = new URLSearchParams({ key, exp, name, sig: this.sign(key, exp, name) });
+    return `${this.serve.baseUrl}/v1/dev/objects?${q.toString()}`;
   }
-  /** Verifies a URL produced by presignGet (signature and expiry) and returns the object to stream. */
-  verifyDownload(q: { key?: string; exp?: string; name?: string; sig?: string }): { body: Buffer; contentType: string; name: string } | undefined {
-    if (!q.key || !q.exp || !q.name || !q.sig) return undefined;
-    const expected = Buffer.from(this.sign(q.key, Number(q.exp), q.name));
+  private sign(key: string, exp: string, name: string) {
+    return createHmac('sha256', this.serve!.secret).update(`${key}\n${exp}\n${name}`).digest('base64url');
+  }
+  /** Checks a dev download link; returns the object when the signature is valid and unexpired. */
+  verify(q: { key: string; exp: string; name: string; sig: string }) {
+    if (!this.serve || Number(q.exp) < Date.now() / 1000) return undefined;
+    const want = Buffer.from(this.sign(q.key, q.exp, q.name));
     const got = Buffer.from(q.sig);
-    if (expected.length !== got.length || !timingSafeEqual(expected, got)) return undefined;
-    if (Number(q.exp) * 1000 < (this.opts.now?.() ?? Date.now())) return undefined;
-    const o = this.objects.get(q.key);
-    return o ? { ...o, name: q.name } : undefined;
+    if (want.length !== got.length || !timingSafeEqual(want, got)) return undefined;
+    return this.objects.get(q.key);
   }
   async list(prefix: string) {
     return [...this.objects.keys()].filter((k) => k.startsWith(prefix)).sort();
@@ -172,7 +161,6 @@ export class S3ObjectStore implements ObjectStore {
 
 export function objectStoreFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): ObjectStore {
   if (env.FILES_BUCKET) return new S3ObjectStore(cell, env.FILES_BUCKET, env.S3_ENDPOINT, env.FILES_KMS_KEY_ARN);
-  // Local dev and e2e only: signed downloads through the API so browsers can fetch generated files.
   const local = env.APP_ENV === 'dev' || env.APP_ENV === 'test' || env.APP_ENV === undefined;
-  return new MemoryObjectStore(local ? { downloadBaseUrl: env.API_BASE_URL } : {});
+  return new MemoryObjectStore(local ? { baseUrl: env.API_BASE_URL ?? 'http://localhost:4000', secret: randomBytes(32) } : undefined);
 }

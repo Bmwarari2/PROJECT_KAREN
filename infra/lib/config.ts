@@ -42,6 +42,8 @@ export interface EnvConfig {
   global: { certificateArn: string | null; monthlyBudgetUsd: number; services: { api: ServiceSize; web: ServiceSize } };
   cells: Record<HomeRegion, CellSettings>;
   billingConfigLocation: string;
+  /** GitHub Actions OIDC: the only repository and GitHub environment allowed to assume the deploy roles. */
+  ci: { githubRepository: string; githubEnvironment: string; oidcProviderArn: string | null };
 }
 
 export function loadConfig(env: EnvName): EnvConfig {
@@ -61,7 +63,10 @@ function validate(cfg: EnvConfig, env: EnvName) {
   for (const [name, s] of Object.entries({ ...cfg.services, ...prefix('global.', cfg.global.services) })) {
     if (s.minCapacity > s.maxCapacity || s.desiredCount < s.minCapacity || s.desiredCount > s.maxCapacity) fail(`services.${name} capacity is inconsistent`);
   }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.ci?.githubRepository ?? '')) fail('ci.githubRepository must be owner/repo');
+  if (!cfg.ci.githubEnvironment) fail('ci.githubEnvironment is required');
   if (env === 'prod') {
+    if (cfg.ci.githubEnvironment !== 'production') fail('prod deploys must come from the "production" GitHub environment (manual approval gate)');
     if (cfg.natGateways < 3) fail('prod needs one NAT gateway per AZ (3)');
     for (const [name, s] of Object.entries(cfg.services)) if (s.desiredCount < 2) fail(`prod services.${name}.desiredCount must be >= 2`);
     if (!cfg.aurora.deletionProtection) fail('prod Aurora must have deletion protection');
@@ -74,6 +79,8 @@ const prefix = <T>(p: string, o: Record<string, T>) => Object.fromEntries(Object
 export const names = {
   directoryTable: (env: EnvName) => `thapsus-hr-${env}-tenant-directory`,
   internalTokenSecret: (env: EnvName) => `thapsus-hr/${env}/internal-token`,
+  /** Each cell's copy of the global internal token (distinct name: the UK cell shares eu-west-2 with the global stack). */
+  cellInternalTokenSecret: (env: EnvName, cell: HomeRegion) => `thapsus-hr/${env}/${cell}/internal-token`,
   copyVault: (env: EnvName, cell: HomeRegion) => `thapsus-hr-${env}-${cell}-backup-copy`,
   stack: (env: EnvName, kind: string) => `ThapsusHr-${env}-${kind}`,
 };

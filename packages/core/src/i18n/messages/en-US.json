@@ -33,12 +33,30 @@
   "timeOff": {
     "kind": {
       "annual": "Vacation"
+    },
+    "hoursAvailable": "hours available",
+    "sickness": {
+      "title": "Record sick leave",
+      "employee": "Employee",
+      "firstDay": "First day off",
+      "lastDay": "Last day off (if known)",
+      "submit": "Record sick leave",
+      "recorded": "Sick leave recorded.",
+      "fitNoteRequired": "Sick leave recorded. A doctor's note is needed for an absence this long.",
+      "recent": "Recent sick leave",
+      "none": "No sick leave recorded.",
+      "ongoing": "ongoing",
+      "rtw": {
+        "due": "Return-to-work due",
+        "completed": "Return-to-work done",
+        "not_required": "Still out"
+      }
     }
   },
   "notify": {
     "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
     "shiftChanged": "Your shift on {date} has changed",
-    "shiftCancelled": "Your shift on {date} was cancelled",
+    "shiftCancelled": "Your shift on {date} was canceled",
     "swapOffered": "A colleague asked you to swap a shift on {date}",
     "swapDeclined": "Your shift swap was declined",
     "swapApproved": "Your shift swap on {date} was approved",
@@ -46,7 +64,8 @@
     "shiftClaimApproved": "You have the open shift on {date}",
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
-    "timesheetRejected": "Your timesheet for the week of {week} was returned"
+    "timesheetRejected": "Your timesheet for the week of {week} was returned",
+    "payslipAvailable": "Your pay stub for {label} is ready"
   },
   "privacy": {
     "ui": {
@@ -95,5 +114,123 @@
         "body": "Access exports, corrections and erasure, with legal deadlines for CCPA, UK GDPR and GDPR."
       }
     }
+  },
+  "app": {
+    "nav": {
+      "rota": "Schedule",
+      "clock": "Time clock",
+      "payslips": "Pay stubs"
+    }
+  },
+  "rota": {
+    "title": "Schedule",
+    "tabTeam": "Team schedule",
+    "gridLabel": "Schedule for the week of {date}",
+    "legend": "Dashed shifts are drafts that employees can’t see until you publish the week.",
+    "status": {
+      "cancelled": "Canceled"
+    },
+    "swapStatus": {
+      "cancelled": "Canceled"
+    },
+    "requestCancelled": "Request canceled."
+  },
+  "clock": {
+    "title": "Time clock"
+  },
+  "kiosk": {
+    "invalid": "Employee number or PIN not recognized."
+  },
+  "timesheets": {
+    "scheduled": "Scheduled"
+  },
+  "payroll": {
+    "frequencies": {
+      "fortnightly": "Every two weeks",
+      "four_weekly": "Every four weeks"
+    }
+  },
+  "payslips": {
+    "title": "Pay stubs",
+    "mine": "My pay stubs and tax documents",
+    "noneBody": "Your pay stubs and year-end documents appear here when payroll publishes them. We will let you know.",
+    "docTypes": {
+      "payslip": "Pay stub"
+    },
+    "upload": "Upload pay stubs or year-end documents",
+    "kinds": {
+      "payslip": "Pay stubs"
+    },
+    "labelHint": "Shown to employees, for example “May 2026” or “2025”"
+  },
+  "integrations": {
+    "licenceSku": "License SKU ID",
+    "rules": "Licenses and groups",
+    "noRules": "No rules yet: new accounts get no licenses or groups.",
+    "ruleSummary": "{licences} licenses, {groups} groups",
+    "intro": "Create, license and block accounts in Microsoft 365 or Google Workspace when people join and leave. Your administrator grants consent, you choose the licenses and groups, and every step can be previewed first.",
+    "ops": {
+      "assign_licence": "Assign licenses",
+      "remove_licence": "Remove licenses"
+    },
+    "googleDelegation": "Authorize client ID {clientId} with the scopes listed above in the Admin console, then verify.",
+    "serviceAccountHint": "The client ID your super admin authorizes for domain-wide delegation"
+  },
+  "compliance": {
+    "title": "Compliance center",
+    "kind": {
+      "licence": "License"
+    },
+    "dashboard": {
+      "matrixTitle": "Licenses, certificates and training"
+    },
+    "matrix": {
+      "intro": "Licenses, certifications, background checks and training required by job title, location or entity, with expiry dates and reminders.",
+      "emptyBody": "Add the licenses, certificates and training your roles need."
+    },
+    "rtw": {
+      "document": {
+        "certificate_of_registration_or_naturalisation_british_citizen_with_ni_number_document": "Certificate of registration or naturalization as a British citizen with a National Insurance number document"
+      }
+    }
+  },
+  "reports": {
+    "note": {
+      "absenceMethod": "Approved absence overlapping the period, in working days of each person's work pattern, excluding public holidays. Vacation and comp time are not included.",
+      "liabilityMethod": "Leave earned but not taken by the date, valued at contractual base pay: annual pay ÷ (52 × working days per week)."
+    },
+    "ready": {
+      "holidayLiability": {
+        "title": "Vacation liability",
+        "description": "The value of time off earned but not yet taken, per currency."
+      }
+    },
+    "enum": {
+      "leaveCategory": {
+        "annual": "Vacation",
+        "toil": "Comp time"
+      },
+      "requestStatus": {
+        "cancelled": "Canceled"
+      }
+    },
+    "builder": {
+      "modeSummary": "Summarize",
+      "intro": "Choose what to report on, the fields to show, filters and how to summarize. You only see people and fields your access allows."
+    }
+  },
+  "ess": {
+    "details": {
+      "status_cancelled": "Canceled"
+    },
+    "notifications": {
+      "cat": {
+        "rota": "Schedules and swaps"
+      }
+    }
+  },
+  "onboarding": {
+    "addressPostcode": "ZIP code",
+    "addressCity": "City"
   }
 }

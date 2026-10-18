@@ -101,6 +101,13 @@ describe('catalog-wide isolation checks', () => {
     expect(role.rows[0]).toEqual({ rolsuper: false, rolbypassrls: false });
     const owned = await owner.query(`SELECT count(*)::int AS n FROM pg_class WHERE relowner = 'thapsus_app'::regrole`);
     expect(owned.rows[0].n).toBe(0);
+    // extension operators resolve (USAGE on public), but nothing can be created there and the
+    // migration bookkeeping table stays unreadable
+    const pub = await owner.query(
+      `SELECT has_schema_privilege('thapsus_app', 'public', 'USAGE') AS usage, has_schema_privilege('thapsus_app', 'public', 'CREATE') AS create,
+              has_table_privilege('thapsus_app', 'public.schema_migrations', 'SELECT') AS read_migrations`,
+    );
+    expect(pub.rows[0]).toEqual({ usage: true, create: false, read_migrations: false });
   });
 
   it('policies granted to other roles are limited to the reviewed allowlist', async () => {
@@ -109,6 +116,31 @@ describe('catalog-wide isolation checks', () => {
       FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE p.polname <> 'tenant_isolation' ORDER BY 1`);
     expect(rows.map((r) => r.policy)).toEqual(['app.support_grants:backoffice_grants_read', 'app.users:lookup_by_email']);
+  });
+
+  it('SECURITY DEFINER functions (which run with owner rights) are limited to the reviewed allowlist', async () => {
+    const { rows } = await owner.query<{ fn: string; public: boolean }>(`
+      SELECT n.nspname || '.' || p.proname AS fn, has_function_privilege('public', p.oid, 'EXECUTE') AS public
+      FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1`);
+    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'audit.purge_closed_tenant', 'audit.seal_pending']);
+    // verified deletion at account closure (ADR-0085): only the application role, and only for its own tenant once closing
+    expect(rows.find((r) => r.fn === 'audit.purge_closed_tenant')!.public).toBe(false);
+    const purge = await owner.query<{ app: boolean; backoffice: boolean; reporting: boolean }>(
+      `SELECT has_function_privilege('thapsus_app', 'audit.purge_closed_tenant()', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'audit.purge_closed_tenant()', 'EXECUTE') AS backoffice, has_function_privilege('thapsus_reporting', 'audit.purge_closed_tenant()', 'EXECUTE') AS reporting`,
+    );
+    expect(purge.rows[0]).toEqual({ app: true, backoffice: false, reporting: false });
+    await expect(withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()'))).rejects.toThrow(/not being closed/);
+    // statistics refresh after bulk imports: the application role only, nobody else
+    expect(rows.find((r) => r.fn === 'app.analyze_core_hr')!.public).toBe(false);
+    const roles = await owner.query<{ app: boolean; backoffice: boolean }>(
+      `SELECT has_function_privilege('thapsus_app', 'app.analyze_core_hr()', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'app.analyze_core_hr()', 'EXECUTE') AS backoffice`,
+    );
+    expect(roles.rows[0]).toEqual({ app: true, backoffice: false });
+    await withTenant(router, tenantA, (tx) => tx.query('SELECT app.analyze_core_hr()'));
+    // the role itself still cannot maintain (ANALYZE, VACUUM, REINDEX…) the shared tables
+    const maintain = await owner.query<{ m: boolean }>(`SELECT has_table_privilege('thapsus_app', 'app.employees', 'MAINTAIN') AS m`);
+    expect(maintain.rows[0]!.m).toBe(false);
   });
 });
 

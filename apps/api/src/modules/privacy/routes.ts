@@ -12,7 +12,6 @@ import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { notify, usersWithRole } from '../../lib/notify';
-import { MemoryObjectStore } from '../../lib/object-store';
 import { periodic, registerJob } from '../../jobs/registry';
 import { loadPrincipal } from '../authz/principal';
 import { applyEmployeeChange, assertWritable, loadTarget } from '../employees/service';
@@ -625,7 +624,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   const ExportOut = Type.Object({ id: Uuid, status: Type.String(), createdAt: Type.String(), completedAt: Nullable(Type.String()), sizeBytes: Nullable(Type.Integer()), sha256: Nullable(Type.String()), progressDone: Nullable(Type.Integer()), progressTotal: Nullable(Type.Integer()), tables: Nullable(Type.Integer()), files: Nullable(Type.Integer()) });
   type ExportRow = { id: string; status: string; created_at: string; completed_at: string | null; size_bytes: string | null; sha256: string | null; manifest: { tables?: unknown[]; files?: { count: number } } | null; progress_done: string | null; progress_total: string | null };
   const mapExport = (r: ExportRow) => ({ id: r.id, status: r.status, createdAt: r.created_at, completedAt: r.completed_at, sizeBytes: r.size_bytes === null ? null : Number(r.size_bytes), sha256: r.sha256, progressDone: r.progress_done === null ? null : Number(r.progress_done), progressTotal: r.progress_total === null ? null : Number(r.progress_total), tables: r.manifest?.tables?.length ?? null, files: r.manifest?.files?.count ?? null });
-  const EXPORT_SQL = `SELECT x.*, j.progress_done, j.progress_total FROM app.data_exports x LEFT JOIN app.jobs j ON j.tenant_id = x.tenant_id AND j.id = x.job_id`;
+  const EXPORT_SQL = `SELECT x.*, j.progress_done, j.progress_total FROM app.company_exports x LEFT JOIN app.jobs j ON j.tenant_id = x.tenant_id AND j.id = x.job_id`;
   app.get('/v1/privacy/company-exports', { schema: { tags: ['privacy'], response: { 200: Type.Array(ExportOut), 403: Problem } } }, async (req) => {
     authorize(req, 'account.export');
     const rows = await app.tenantTx(req, (tx) => tx.query<ExportRow>(`${EXPORT_SQL} ORDER BY x.created_at DESC LIMIT 50`), { readOnly: true });
@@ -634,10 +633,10 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post('/v1/privacy/company-exports', { config: { selfAudited: true }, schema: { tags: ['privacy'], summary: 'Export all company data (background job with progress)', response: { 202: ExportOut, 403: Problem } } }, async (req, reply) => {
     const auth = authorize(req, 'account.export');
     const row = await app.tenantTx(req, async (tx) => {
-      const x = await tx.one<{ id: string }>(`INSERT INTO app.data_exports (tenant_id, requested_by) VALUES (app.current_tenant(), $1) RETURNING id`, [auth.userId]);
+      const x = await tx.one<{ id: string }>(`INSERT INTO app.company_exports (tenant_id, requested_by) VALUES (app.current_tenant(), $1) RETURNING id`, [auth.userId]);
       const j = await enqueueJob(tx, 'privacy.company_export', x.id, { exportId: x.id }, { createdBy: auth.userId });
-      await tx.exec(`UPDATE app.data_exports SET job_id = $2 WHERE id = $1`, [x.id, j.id]);
-      await app.audit(tx, req, { action: 'privacy.company_export_requested', targetType: 'data_export', targetId: x.id, sensitive: true });
+      await tx.exec(`UPDATE app.company_exports SET job_id = $2 WHERE id = $1`, [x.id, j.id]);
+      await app.audit(tx, req, { action: 'privacy.company_export_requested', targetType: 'company_export', targetId: x.id, sensitive: true });
       return tx.one<ExportRow>(`${EXPORT_SQL} WHERE x.id = $1`, [x.id]);
     });
     return reply.status(202).send(mapExport(row));
@@ -646,9 +645,9 @@ export async function privacyRoutes(app: FastifyInstance) {
     authorize(req, 'account.export');
     const { id } = req.params as { id: string };
     const x = await app.tenantTx(req, async (tx) => {
-      const r = await tx.maybe<{ file_key: string | null; sha256: string | null; status: string }>(`SELECT file_key, sha256, status FROM app.data_exports WHERE id = $1`, [id]);
+      const r = await tx.maybe<{ file_key: string | null; sha256: string | null; status: string }>(`SELECT file_key, sha256, status FROM app.company_exports WHERE id = $1`, [id]);
       if (!r?.file_key || r.status !== 'ready') throw new ApiError('notFound');
-      await app.audit(tx, req, { action: 'privacy.company_export_downloaded', targetType: 'data_export', targetId: id, sensitive: true });
+      await app.audit(tx, req, { action: 'privacy.company_export_downloaded', targetType: 'company_export', targetId: id, sensitive: true });
       return r;
     });
     return { url: await deps.objects.presignGet(x.file_key!, `company-export-${id}.zip`), sha256: x.sha256! };
@@ -864,16 +863,6 @@ export async function privacyRoutes(app: FastifyInstance) {
       return mapIncident(row, deps.now().toISOString());
     },
   );
-
-  // ---- Local development downloads (in-memory object store only; never registered with S3) -----------------
-  if (deps.objects instanceof MemoryObjectStore && deps.objects.downloadsEnabled && deps.config.env !== 'prod') {
-    const store = deps.objects;
-    app.get('/v1/local-objects', { config: { auth: 'public' }, schema: { hide: true } }, async (req, reply) => {
-      const o = store.verifyDownload(req.query as Record<string, string>);
-      if (!o) throw new ApiError('notFound');
-      return reply.type(o.contentType).header('Content-Disposition', `attachment; filename="${o.name.replace(/[^A-Za-z0-9._-]/g, '_')}"`).send(o.body);
-    });
-  }
 }
 
 // ---- Background jobs ---------------------------------------------------------------------------------------------------------
@@ -915,11 +904,11 @@ registerJob('privacy.dsr_export', async (ctx) => {
 
 registerJob('privacy.company_export', async (ctx) => {
   const exportId = String(ctx.job.input.exportId);
-  await ctx.tx((tx) => tx.exec(`UPDATE app.data_exports SET status = 'running' WHERE id = $1`, [exportId]));
+  await ctx.tx((tx) => tx.exec(`UPDATE app.company_exports SET status = 'running' WHERE id = $1`, [exportId]));
   const r = await buildCompanyExport(ctx, exportId);
   await ctx.tx(async (tx) => {
-    await tx.exec(`UPDATE app.data_exports SET status = 'ready', file_key = $2, size_bytes = $3, sha256 = $4, manifest = $5, completed_at = now() WHERE id = $1`, [exportId, r.key, r.size, r.sha256, JSON.stringify({ ...r.manifest, tables: r.manifest.tables.map((x) => ({ table: x.table, rows: x.rows })) })]);
-    await writeAudit(tx, { actorType: 'system', actorId: ctx.job.created_by, action: 'privacy.company_export_generated', targetType: 'data_export', targetId: exportId, diff: { tables: r.manifest.tables.length, files: r.manifest.files.count, bytes: r.size } });
+    await tx.exec(`UPDATE app.company_exports SET status = 'ready', file_key = $2, size_bytes = $3, sha256 = $4, manifest = $5, completed_at = now() WHERE id = $1`, [exportId, r.key, r.size, r.sha256, JSON.stringify({ ...r.manifest, tables: r.manifest.tables.map((x) => ({ table: x.table, rows: x.rows })) })]);
+    await writeAudit(tx, { actorType: 'system', actorId: ctx.job.created_by, action: 'privacy.company_export_generated', targetType: 'company_export', targetId: exportId, diff: { tables: r.manifest.tables.length, files: r.manifest.files.count, bytes: r.size } });
     if (ctx.job.created_by) await notify(tx, { userIds: [ctx.job.created_by], kind: 'privacy.export', titleKey: 'notify.companyExportReady', link: '/app/privacy/exports', dedupeKey: `company-export:${exportId}` });
   });
   return { exportId, bytes: r.size, tables: r.manifest.tables.length, files: r.manifest.files.count };

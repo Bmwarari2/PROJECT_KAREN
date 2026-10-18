@@ -3213,6 +3213,7 @@ export interface paths {
                         reason: string;
                         /** Format: uuid */
                         reassignReportsTo?: string;
+                        leaverType?: "voluntary" | "involuntary" | "other";
                     };
                 };
             };
@@ -3421,7 +3422,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    asOf?: string;
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -3444,6 +3447,8 @@ export interface paths {
                             phone?: string | null;
                             email?: string | null;
                             priority?: number;
+                            validFrom?: string | null;
+                            validTo?: string | null;
                         }[];
                     };
                 };
@@ -3474,9 +3479,12 @@ export interface paths {
                 };
             };
         };
+        /** Replace the emergency contact list in force from a date (default today); later future-dated lists are kept */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    effectiveDate?: string;
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -3511,7 +3519,34 @@ export interface paths {
                             phone?: string | null;
                             email?: string | null;
                             priority?: number;
+                            validFrom?: string | null;
+                            validTo?: string | null;
                         }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
                     };
                 };
                 /** @description Default Response */
@@ -7635,6 +7670,9 @@ export interface paths {
                             type: "integration";
                             integration: string;
                             operation: string;
+                            params?: {
+                                [key: string]: string | number | boolean;
+                            };
                         })[];
                         enabled?: boolean;
                     };
@@ -7755,6 +7793,93 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automation/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/automation/integration-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Execution log of "call integration" actions */
+        get: {
+            parameters: {
+                query?: {
+                    ruleId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            ruleId: string | null;
+                            integration: string;
+                            operation: string;
+                            subjectEmployeeId: string | null;
+                            status: string;
+                            attempts: number;
+                            result: unknown;
+                            createdAt: string;
+                            completedAt: string | null;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8147,12 +8272,19 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Export the people list (same filters and scope as GET /v1/employees); unreadable fields are blank per row */
         get: {
             parameters: {
                 query: {
                     format: "csv" | "xlsx";
                     fields?: string;
-                    status?: string;
+                    q?: string;
+                    status?: "active" | "pre_start" | "leaver" | "all";
+                    entityId?: string;
+                    departmentId?: string;
+                    locationId?: string;
+                    managerId?: string;
+                    country?: string;
                 };
                 header?: never;
                 path?: never;
@@ -8195,7 +8327,536 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
-                413: {
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exports/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export my task list (same rows as GET /v1/tasks) */
+        get: {
+            parameters: {
+                query: {
+                    format: "csv" | "xlsx";
+                    status?: "open" | "done" | "all";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": unknown;
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exports/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export approval requests (same rows as GET /v1/approvals); changed fields are listed by name, never their values */
+        get: {
+            parameters: {
+                query: {
+                    format: "csv" | "xlsx";
+                    view?: "mine" | "requested" | "all";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": unknown;
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exports/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export the documents list (same folder permissions as GET /v1/documents) */
+        get: {
+            parameters: {
+                query: {
+                    format: "csv" | "xlsx";
+                    employeeId?: string;
+                    folderId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": unknown;
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/employees/{id}/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give a person a sign-in (employee self-service, optionally manager) and email them a one-time invitation link */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email?: string;
+                        roles?: "manager"[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            userId: string;
+                            created: boolean;
+                            tasksAssigned: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My onboarding: documents to sign, forms to complete and checklist tasks (works before the start date) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            employee: {
+                                /** Format: uuid */
+                                id: string;
+                                displayName: string;
+                                jobTitle: string | null;
+                                department: string | null;
+                                location: string | null;
+                                manager: string | null;
+                                company: string;
+                                startDate: string;
+                                status: string;
+                                daysUntilStart: number;
+                            };
+                            formsEffectiveDate: string;
+                            documents: {
+                                /** Format: uuid */
+                                id: string;
+                                /** Format: uuid */
+                                documentId: string;
+                                title: string;
+                                status: string;
+                                requestedAt: string;
+                                signedAt: string | null;
+                            }[];
+                            forms: {
+                                personalDetails: {
+                                    complete: boolean;
+                                    values: {
+                                        [key: string]: unknown;
+                                    };
+                                };
+                                emergencyContacts: {
+                                    complete: boolean;
+                                    contacts: unknown[];
+                                };
+                            };
+                            tasks: {
+                                /** Format: uuid */
+                                id: string;
+                                title: string;
+                                description: string | null;
+                                dueOn: string | null;
+                                status: string;
+                            }[];
+                            progress: {
+                                done: number;
+                                total: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -8268,6 +8929,8 @@ export interface paths {
                             };
                             verifiedOn: string;
                             packVersion: number;
+                            /** @description Subdivisions the answering version was verified for (e.g. GB-ENG, GB-WLS, GB-SCT); absent = the whole jurisdiction */
+                            regions?: string[];
                         };
                     };
                 };
@@ -8344,6 +9007,8 @@ export interface paths {
                             };
                             verifiedOn: string;
                             packVersion: number;
+                            /** @description Subdivisions the answering version was verified for (e.g. GB-ENG, GB-WLS, GB-SCT); absent = the whole jurisdiction */
+                            regions?: string[];
                         }[];
                     };
                 };
@@ -8721,6 +9386,7 @@ export interface paths {
                             category: string;
                             paid: boolean;
                             requiresApproval: boolean;
+                            deductsBalance: boolean;
                         }[];
                     };
                 };
@@ -8933,6 +9599,7 @@ export interface paths {
                         "application/json": {
                             leaveType: string;
                             policy: string;
+                            unit: "days" | "hours";
                             year: string[];
                             entitlement: number;
                             accrued: number;
@@ -8992,6 +9659,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Adds to (or subtracts from) a balance, in the unit of the policy that applies (days or hours). */
         post: {
             parameters: {
                 query?: never;
@@ -9060,6 +9728,252 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/leave/worked-hours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Records hours actually worked in a period (inclusive dates) where timesheets are not used. Approved timesheets take precedence when present. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        /** Format: date */
+                        startDate: string;
+                        /** Format: date */
+                        endDate: string;
+                        hours: number;
+                        source?: "manual" | "import" | "payroll";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/worked-hours/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            hours: number;
+                            source: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/family-entitlements/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Statutory family leave that applies to the employee, from the jurisdiction packs (indicative; HR confirms when leave is notified). */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            jurisdiction: string | null;
+                            entitlements: {
+                                kind: string;
+                                leaveWeeks: number;
+                                detail: unknown;
+                                source: {
+                                    url: string;
+                                    title: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/leave/requests": {
         parameters: {
             query?: never;
@@ -9095,6 +10009,7 @@ export interface paths {
                             startDate: string;
                             endDate: string;
                             amountDays: number;
+                            amountHours: number;
                             status: string;
                             note: string | null;
                         }[];
@@ -9148,6 +10063,8 @@ export interface paths {
                         endDate: string;
                         startHalf?: "am" | "pm";
                         endHalf?: "am" | "pm";
+                        /** @description Part of a single day, in hours (hourly leave, intermittent FMLA). */
+                        hours?: number;
                         note?: string;
                         /** Format: uuid */
                         fmlaCaseId?: string;
@@ -9166,6 +10083,7 @@ export interface paths {
                             id: string;
                             status: string;
                             amountDays: number;
+                            amountHours: number;
                             warnings: unknown[];
                         };
                     };
@@ -9469,8 +10387,188 @@ export interface paths {
                     };
                     content?: never;
                 };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/settings/absence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            fitNoteAfterCalendarDays?: number | null;
+                            fmla?: {
+                                leaveYearMethod?: string;
+                                fixedYearStart?: string;
+                                publicAgency?: boolean;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        /** @description Company absence policy: fit-note threshold and the uniform FMLA leave-year method (validated against the US pack). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        fitNoteAfterCalendarDays?: number | null;
+                        fmla?: {
+                            leaveYearMethod?: string;
+                            fixedYearStart?: string;
+                            publicAgency?: boolean;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            fitNoteAfterCalendarDays?: number | null;
+                            fmla?: {
+                                leaveYearMethod?: string;
+                                fixedYearStart?: string;
+                                publicAgency?: boolean;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -9483,7 +10581,65 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description Sickness records (dates and status only — reasons, fit notes and return-to-work answers stay in the vault). */
+        get: {
+            parameters: {
+                query?: {
+                    employeeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            startDate: string;
+                            endDate: string | null;
+                            rtwStatus: string;
+                            fitNoteRequired: boolean;
+                            hasFitNote: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -9546,6 +10702,102 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sickness/{id}/medical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Medical detail of a sickness record from the vault. Needs vault.read:sickness (HR); every read and every refusal is audit-logged. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            reason: string | null;
+                            fitNote: {
+                                fileName: string;
+                            } | null;
+                            returnToWork: unknown | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9800,6 +11052,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Opens an FMLA case. Eligibility (employer coverage from headcount history, service, hours worked, employees within the radius) and the allowed leave-year methods come from the US pack. */
         post: {
             parameters: {
                 query?: never;
@@ -9813,10 +11066,12 @@ export interface paths {
                         /** Format: uuid */
                         employeeId: string;
                         reason: "own_health" | "family_care" | "birth_bonding" | "placement" | "military_exigency" | "military_caregiver";
-                        leaveYearMethod: "calendar_year" | "fixed_12_month_period" | "forward_from_first_leave_date" | "rolling_backward";
+                        /** @description One of family_leave.fmla.leaveYearMethods; defaults to the company setting. */
+                        leaveYearMethod?: string;
                         /** Format: date */
                         startDate: string;
                         intermittent?: boolean;
+                        /** @description Hours worked in the 12 months before the leave, when HR has a better record than the system. */
                         hoursPrior12Months?: number;
                     };
                 };
@@ -9834,11 +11089,41 @@ export interface paths {
                             eligible: boolean;
                             failed: string[];
                             entitlementHours: number;
+                            leaveYearMethod: string;
+                            employerCovered: boolean;
+                            employeesWithinRadius: number;
+                            hoursPrior12Months: number;
+                            hoursSource: string;
                         };
                     };
                 };
                 /** @description Default Response */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -9900,9 +11185,12 @@ export interface paths {
                             /** Format: uuid */
                             id: string;
                             eligible: boolean;
+                            intermittent: boolean;
+                            leaveYearMethod: string;
                             entitlementHours: number;
                             usedHours: number;
                             remainingHours: number;
+                            requests: number;
                             leaveYear: string[];
                         };
                     };
@@ -10033,6 +11321,8 @@ export interface paths {
                         bradfordThreshold?: number;
                         spellsThreshold?: number;
                         windowDays?: number;
+                        notifyRole?: string;
+                        notifyManager?: boolean;
                     };
                 };
             };
@@ -10046,6 +11336,31 @@ export interface paths {
                         "application/json": {
                             /** Format: uuid */
                             id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
                         };
                     };
                 };
@@ -14449,6 +15764,15140 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/settings/compliance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compliance reminder and reporting settings (product settings; statutory values come from the jurisdiction packs) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            rtwReminderDays: number[];
+                            i9ReminderDays: number[];
+                            matrixReminderDays: number[];
+                            probationReminderDays: number[];
+                            serviceReminderDays: number[];
+                            smallCellThreshold: number;
+                            businessWeekdays: number[];
+                            gpgSector: "privateAndVoluntary" | "publicAuthority";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        rtwReminderDays?: number[];
+                        i9ReminderDays?: number[];
+                        matrixReminderDays?: number[];
+                        probationReminderDays?: number[];
+                        serviceReminderDays?: number[];
+                        smallCellThreshold?: number;
+                        businessWeekdays?: number[];
+                        gpgSector?: "privateAndVoluntary" | "publicAuthority";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            rtwReminderDays: number[];
+                            i9ReminderDays: number[];
+                            matrixReminderDays: number[];
+                            probationReminderDays: number[];
+                            serviceReminderDays: number[];
+                            smallCellThreshold: number;
+                            businessWeekdays: number[];
+                            gpgSector: "privateAndVoluntary" | "publicAuthority";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Probation end dates and the date unfair dismissal protection begins (qualifying period effective-dated from the packs) */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                    withinDays?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            kind: string;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            dueOn: string;
+                            daysLeft: number;
+                            qualifyingPeriod: string | null;
+                            source: {
+                                url: string;
+                                title: string;
+                            } | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compliance status overview for the caller's scope on a date */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            asOf: string;
+                            rightToWork: {
+                                total: number;
+                                missing: number;
+                                valid: number;
+                                followUpDue: number;
+                                expired: number;
+                                retention: number;
+                            };
+                            i9: {
+                                total: number;
+                                missing: number;
+                                incomplete: number;
+                                overdue: number;
+                                reverificationDue: number;
+                                complete: number;
+                            };
+                            matrix: {
+                                compliant: number;
+                                expiring: number;
+                                expired: number;
+                                missing: number;
+                            };
+                            alerts: {
+                                kind: string;
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string;
+                                dueOn: string;
+                                daysLeft: number;
+                                qualifyingPeriod: string | null;
+                                source: {
+                                    url: string;
+                                    title: string;
+                                } | null;
+                            }[];
+                            reporting: {
+                                genderPayGap: {
+                                    headcount: number;
+                                    threshold: number;
+                                    required: boolean;
+                                    snapshotDate: string;
+                                    deadline: string;
+                                } | null;
+                                eeo1: {
+                                    usEmployees: number;
+                                    threshold: number;
+                                    required: boolean;
+                                    window: {
+                                        from: string;
+                                        to: string;
+                                    };
+                                } | null;
+                                payTransparency: {
+                                    /** Format: uuid */
+                                    entityId: string;
+                                    entityName: string;
+                                    country: string;
+                                    status: string;
+                                    workers: number;
+                                    reportingRequired: boolean;
+                                    firstReportBy: string | null;
+                                }[];
+                            };
+                            lawChanges: {
+                                relevant: number;
+                                unacknowledged: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/right-to-work/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** UK right-to-work check methods, document lists, follow-up and retention rules from the GB pack */
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            rules: unknown;
+                            retention: unknown;
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                            retentionSource: {
+                                url: string;
+                                title: string;
+                            };
+                            verifiedOn: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/right-to-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Right-to-work status of UK employees (current and within the retention period) */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                    status?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            jurisdiction: string | null;
+                            employmentStatus: string;
+                            status: "missing" | "valid" | "follow_up_due" | "expired" | "retention";
+                            checkId: string | null;
+                            checkMethod: string | null;
+                            listType: string | null;
+                            checkedOn: string | null;
+                            followUpDueOn: string | null;
+                            excuseEndsOn: string | null;
+                            retainUntil: string | null;
+                            hasEvidence: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/right-to-work/checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a right-to-work check; the follow-up date is calculated from the GB pack */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        checkMethod: string;
+                        listType: "list_a" | "list_b_group_1" | "list_b_group_2" | "online_unlimited" | "online_time_limited";
+                        /** Format: date */
+                        checkedOn: string;
+                        permissionExpiresOn?: string | null;
+                        pvnDate?: string | null;
+                        documentType?: string;
+                        documentReference?: string;
+                        shareCode?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            excuse: string;
+                            excuseEndsOn: string | null;
+                            followUpDueOn: string | null;
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/right-to-work/checks/{id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload the copy of the documents or the online check result (stored in the vault) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            vaultId: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/right-to-work/checks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One check with its vault details (every decrypt is audited) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            employeeId: string;
+                            checkMethod: string;
+                            listType: string;
+                            checkedOn: string;
+                            followUpDueOn: string | null;
+                            excuseEndsOn: string | null;
+                            details: {
+                                documentType: string | null;
+                                documentReference: string | null;
+                                shareCode: string | null;
+                            } | null;
+                            evidence: {
+                                fileName: string;
+                                url: string;
+                            } | null;
+                            ruleSource: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/i9": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Form I-9 status of US employees (deadlines, reverification and retention from the US pack) */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            jurisdiction: string | null;
+                            recordId: string | null;
+                            status: "missing" | "section1_due" | "section2_due" | "section2_overdue" | "complete" | "reverification_due" | "reverification_overdue";
+                            firstDayOfEmployment: string | null;
+                            section1CompletedOn: string | null;
+                            section2CompletedOn: string | null;
+                            section2DueOn: string | null;
+                            reverificationDueOn: string | null;
+                            retainUntil: string | null;
+                            retainAtLeastUntil: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create or update the Form I-9 record for an employment (deadlines from the US pack) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        /** Format: date */
+                        firstDayOfEmployment?: string;
+                        section1CompletedOn?: string | null;
+                        section2CompletedOn?: string | null;
+                        workAuthorizationExpiresOn?: string | null;
+                        supplementBCompletedOn?: string | null;
+                        lastDayOfEmployment?: string | null;
+                        citizenshipAttestation?: "us_citizen" | "noncitizen_national" | "lawful_permanent_resident" | "noncitizen_authorized_to_work";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            section1DueOn: string;
+                            section2DueOn: string;
+                            reverificationDueOn: string | null;
+                            retainAtLeastUntil: string;
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/i9/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Record Section 1/2 completion, a new authorization expiry or a completed reverification (Supplement B) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        section1CompletedOn?: string | null;
+                        section2CompletedOn?: string | null;
+                        workAuthorizationExpiresOn?: string | null;
+                        supplementBCompletedOn?: string | null;
+                        lastDayOfEmployment?: string | null;
+                        citizenshipAttestation?: "us_citizen" | "noncitizen_national" | "lawful_permanent_resident" | "noncitizen_authorized_to_work";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            section1DueOn: string;
+                            section2DueOn: string;
+                            reverificationDueOn: string | null;
+                            retainAtLeastUntil: string;
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/compliance/i9/{id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload the completed Form I-9 or document copies (stored in the vault) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            vaultId: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            name: string;
+                            description: string | null;
+                            appliesTo: {
+                                jobTitles?: string[];
+                                locationIds?: string[];
+                                entityIds?: string[];
+                                departmentIds?: string[];
+                                countries?: string[];
+                            };
+                            validityMonths: number | null;
+                            reminderDays: number[];
+                            evidenceRequired: boolean;
+                            active: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        kind: "licence" | "certification" | "background_check" | "training" | "other";
+                        name: string;
+                        description?: string | null;
+                        appliesTo?: {
+                            jobTitles?: string[];
+                            locationIds?: string[];
+                            entityIds?: string[];
+                            departmentIds?: string[];
+                            countries?: string[];
+                        };
+                        validityMonths?: number | null;
+                        reminderDays?: number[];
+                        evidenceRequired?: boolean;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            name: string;
+                            description: string | null;
+                            appliesTo: {
+                                jobTitles?: string[];
+                                locationIds?: string[];
+                                entityIds?: string[];
+                                departmentIds?: string[];
+                                countries?: string[];
+                            };
+                            validityMonths: number | null;
+                            reminderDays: number[];
+                            evidenceRequired: boolean;
+                            active: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/requirements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        kind?: "licence" | "certification" | "background_check" | "training" | "other";
+                        name?: string;
+                        description?: string | null;
+                        appliesTo?: {
+                            jobTitles?: string[];
+                            locationIds?: string[];
+                            entityIds?: string[];
+                            departmentIds?: string[];
+                            countries?: string[];
+                        };
+                        validityMonths?: number | null;
+                        reminderDays?: number[];
+                        evidenceRequired?: boolean;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            name: string;
+                            description: string | null;
+                            appliesTo: {
+                                jobTitles?: string[];
+                                locationIds?: string[];
+                                entityIds?: string[];
+                                departmentIds?: string[];
+                                countries?: string[];
+                            };
+                            validityMonths: number | null;
+                            reminderDays: number[];
+                            evidenceRequired: boolean;
+                            active: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/compliance/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a licence, certificate, background check or training completion for an employee */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        requirementId: string;
+                        /** Format: uuid */
+                        employeeId: string;
+                        /** Format: date */
+                        issuedOn: string;
+                        expiresOn?: string | null;
+                        reference?: string;
+                        /** Format: uuid */
+                        evidenceDocumentId?: string;
+                        notes?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            expiresOn: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/records/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            status: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status per employee and applicable requirement (compliant / expiring / expired / missing), permission-scoped, with filters */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                    status?: "compliant" | "expiring" | "expired" | "missing";
+                    requirementId?: string;
+                    kind?: "licence" | "certification" | "background_check" | "training" | "other";
+                    entityId?: string;
+                    locationId?: string;
+                    departmentId?: string;
+                    jobTitle?: string;
+                    employeeId?: string;
+                    limit?: number;
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            asOf: string;
+                            summary: {
+                                compliant: number;
+                                expiring: number;
+                                expired: number;
+                                missing: number;
+                            };
+                            total: number;
+                            rows: {
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string;
+                                jobTitle: string | null;
+                                /** Format: uuid */
+                                requirementId: string;
+                                requirementName: string;
+                                kind: string;
+                                status: string;
+                                recordId: string | null;
+                                issuedOn: string | null;
+                                expiresOn: string | null;
+                                daysLeft: number | null;
+                                evidenceRequired: boolean;
+                                hasEvidence: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/demographics/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Record the sex used for statutory pay-gap reporting (vault, diversity) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sex: "male" | "female" | "not_recorded";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/eeo/self-identification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Voluntary self-identification (race/ethnicity, sex, veteran and disability status) — stored only in the vault */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId?: string;
+                    } & {
+                        raceEthnicity: string | "declined";
+                        sex: "male" | "female" | "declined";
+                        veteranStatus?: "protected_veteran" | "not_protected_veteran" | "declined";
+                        disabilityStatus?: "yes" | "no" | "declined";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/eeo/self-identification/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one self-identification (vault.read:eeo; the view is audited) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            raceEthnicity: string;
+                            sex: string;
+                            veteranStatus: string;
+                            disabilityStatus: string;
+                            source: string;
+                            recordedAt: string;
+                        } | null;
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/eeo/job-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            categories: string[];
+                            mappings: {
+                                jobTitle: string;
+                                category: string;
+                            }[];
+                            unmappedJobTitles: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        mappings: {
+                            jobTitle: string;
+                            category: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            saved: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/reports/eeo-1": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** EEO-1 Component 1 data: counts by job category, race/ethnicity and sex for a workforce snapshot date, with small-cell suppression */
+        get: {
+            parameters: {
+                query: {
+                    year: number;
+                    snapshotDate?: string;
+                    exact?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            year: number;
+                            snapshotDate: string;
+                            window: {
+                                from: string;
+                                to: string;
+                            };
+                            required: boolean;
+                            threshold: number;
+                            totalEmployees: number;
+                            notReported: number;
+                            unmappedJobs: number;
+                            suppressionThreshold: number | null;
+                            table: {
+                                jobCategory: string;
+                                total: number | null;
+                                cells: {
+                                    raceEthnicity: string;
+                                    sex: string;
+                                    count: number | null;
+                                    suppressed: boolean;
+                                }[];
+                            }[];
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                            verifiedOn: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/pay-report-inputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Load per-employee pay data for a reporting snapshot (UK gender pay gap or EU pay transparency); replaces rows for the same snapshot */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        kind: "uk_gpg" | "eu_pay_transparency";
+                        /** Format: date */
+                        snapshotDate: string;
+                        rows: {
+                            /** Format: uuid */
+                            employeeId: string;
+                            currency: string;
+                            ordinaryPayMinor?: number;
+                            bonusInPeriodMinor?: number;
+                            payPeriodDays?: number;
+                            weeklyHours?: number;
+                            bonus12MonthsMinor?: number;
+                            fullPay?: boolean;
+                            annualBasicMinor?: number;
+                            annualVariableMinor?: number;
+                            annualHours?: number;
+                            workerCategory?: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            saved: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/reports/gender-pay-gap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** UK gender pay gap figures (S.I. 2017/172) for a snapshot year and sector, from loaded pay data or current pay records */
+        get: {
+            parameters: {
+                query: {
+                    year: number;
+                    sector?: "privateAndVoluntary" | "publicAuthority";
+                    entityId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            snapshotDate: string;
+                            deadline: string;
+                            sector: string;
+                            employeeThreshold: number;
+                            headcount: number;
+                            required: boolean;
+                            dataSource: "pay_report_inputs" | "employee_pay";
+                            population: {
+                                relevantEmployees: number;
+                                fullPayRelevantEmployees: number;
+                                excludedNoSexRecorded: number;
+                                male: number;
+                                female: number;
+                            };
+                            figures: {
+                                meanHourlyPayGap: number | null;
+                                medianHourlyPayGap: number | null;
+                                meanBonusGap: number | null;
+                                medianBonusGap: number | null;
+                                bonusProportions: {
+                                    male: number | null;
+                                    female: number | null;
+                                };
+                                quartiles: {
+                                    band: string;
+                                    total: number;
+                                    malePercent: number | null;
+                                    femalePercent: number | null;
+                                }[];
+                            };
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                            verifiedOn: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/reports/pay-transparency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** EU Pay Transparency Directive (EU) 2023/970 indicators per EU legal entity, with the member state's transposition status */
+        get: {
+            parameters: {
+                query: {
+                    year: number;
+                    entityId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            entityId: string;
+                            entityName: string;
+                            country: string;
+                            transposition: {
+                                status: string;
+                                law: string | null;
+                                inForceFrom: string | null;
+                                source: {
+                                    url: string;
+                                    title: string;
+                                };
+                                verifiedOn: string;
+                            };
+                            directive: {
+                                source: {
+                                    url: string;
+                                    title: string;
+                                };
+                                verifiedOn: string;
+                            };
+                            indicators: unknown;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/flsa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exempt / non-exempt check for US employees (salary level incl. state thresholds, salary basis, duties attestation) and resulting overtime eligibility */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            jurisdiction: string | null;
+                            flsaStatus: string | null;
+                            exemption: string | null;
+                            status: string;
+                            overtimeEligible: boolean;
+                            issues: string[];
+                            applicableAnnualThresholdMinor: number | null;
+                            sources: {
+                                jurisdiction: string;
+                                url: string;
+                                title: string;
+                            }[];
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/flsa/{employeeId}/overtime-eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether an employee is overtime-eligible on a date (for the time and payroll modules) */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            jurisdiction: string | null;
+                            flsaStatus: string | null;
+                            exemption: string | null;
+                            status: string;
+                            overtimeEligible: boolean;
+                            issues: string[];
+                            applicableAnnualThresholdMinor: number | null;
+                            sources: {
+                                jurisdiction: string;
+                                url: string;
+                                title: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/flsa/attestations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attest the duties test for an exempt employee (effective-dated; closes the previous attestation) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        exemption: string;
+                        duties: string[];
+                        /** Format: date */
+                        validFrom: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            complete: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/uk/holiday-accrual/calculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Holiday accrued in a pay period by an irregular-hours or part-year worker (WTR reg. 15B) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        minutesWorked: number;
+                        /** Format: date */
+                        payPeriodEnd: string;
+                        jurisdiction?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            exactHours: number;
+                            accruedHours: number;
+                            percent: number;
+                            source: {
+                                url: string;
+                                title: string;
+                            };
+                            verifiedOn: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/uk/holiday-accrual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GB irregular-hours / part-year workers and whether their leave policy accrues per hour worked at the statutory percentage */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            jurisdiction: string | null;
+                            basis: string;
+                            policyName: string | null;
+                            ok: boolean;
+                            issue: string | null;
+                            statutoryPercent: number | null;
+                            source: {
+                                url: string;
+                                title: string;
+                            } | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/uk/ssp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Statutory Sick Pay position of GB employees with sickness in the last year (from /v1/sickness/{employeeId}/statutory-pay) */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string;
+                            scheme: string | null;
+                            result: unknown;
+                            source: {
+                                url: string;
+                                title: string;
+                            } | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/leave-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Statutory leave rules that apply where the tenant employs people (US state/local paid sick leave and FMLA; EU baseline and member-state leave, sick pay and notice) */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            asOf: string;
+                            us: {
+                                paidSickLeave: {
+                                    jurisdiction: string;
+                                    employees: number;
+                                    answeredBy: string | null;
+                                    modelled: boolean;
+                                    summary: unknown;
+                                    source: {
+                                        url: string;
+                                        title: string;
+                                    } | null;
+                                }[];
+                                fmla: {
+                                    usEmployees: number;
+                                    coveredEmployer: boolean;
+                                    minEmployees: number;
+                                    openCases: number;
+                                    source: {
+                                        url: string;
+                                        title: string;
+                                    };
+                                } | null;
+                            };
+                            eu: {
+                                country: string;
+                                employees: number;
+                                rules: {
+                                    key: string;
+                                    answeredBy: string | null;
+                                    modelled: boolean;
+                                    source: {
+                                        url: string;
+                                        title: string;
+                                    } | null;
+                                    verifiedOn: string | null;
+                                }[];
+                                publicHolidays: number;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/backoffice/law-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            jurisdiction: string;
+                            effectiveDate: string;
+                            title: {
+                                [key: string]: string;
+                            };
+                            summary: {
+                                [key: string]: string;
+                            };
+                            whatToDo: {
+                                [key: string]: string;
+                            };
+                            ruleVersionIds: string[];
+                            packRuleRefs: {
+                                jurisdiction: string;
+                                key: string;
+                                /** Format: date */
+                                effectiveFrom: string;
+                            }[];
+                            sourceUrl: string | null;
+                            status: string;
+                            publishedAt: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a law-changes feed entry */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        jurisdiction: string;
+                        /** Format: date */
+                        effectiveDate: string;
+                        title: {
+                            "en-GB": string;
+                            "en-US"?: string;
+                        };
+                        summary: {
+                            "en-GB": string;
+                            "en-US"?: string;
+                        };
+                        whatToDo: {
+                            "en-GB": string;
+                            "en-US"?: string;
+                        };
+                        ruleVersionIds?: string[];
+                        packRuleRefs?: {
+                            jurisdiction: string;
+                            key: string;
+                            /** Format: date */
+                            effectiveFrom: string;
+                        }[];
+                        sourceUrl?: string | null;
+                        status?: "draft" | "published" | "withdrawn";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            jurisdiction: string;
+                            effectiveDate: string;
+                            title: {
+                                [key: string]: string;
+                            };
+                            summary: {
+                                [key: string]: string;
+                            };
+                            whatToDo: {
+                                [key: string]: string;
+                            };
+                            ruleVersionIds: string[];
+                            packRuleRefs: {
+                                jurisdiction: string;
+                                key: string;
+                                /** Format: date */
+                                effectiveFrom: string;
+                            }[];
+                            sourceUrl: string | null;
+                            status: string;
+                            publishedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/backoffice/law-changes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Correct, publish or withdraw an entry (every change is in the staff audit trail) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        jurisdiction?: string;
+                        /** Format: date */
+                        effectiveDate?: string;
+                        title?: {
+                            "en-GB": string;
+                            "en-US"?: string;
+                        };
+                        summary?: {
+                            "en-GB": string;
+                            "en-US"?: string;
+                        };
+                        whatToDo?: {
+                            "en-GB": string;
+                            "en-US"?: string;
+                        };
+                        ruleVersionIds?: string[];
+                        packRuleRefs?: {
+                            jurisdiction: string;
+                            key: string;
+                            /** Format: date */
+                            effectiveFrom: string;
+                        }[];
+                        sourceUrl?: string | null;
+                        status?: "draft" | "published" | "withdrawn";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            jurisdiction: string;
+                            effectiveDate: string;
+                            title: {
+                                [key: string]: string;
+                            };
+                            summary: {
+                                [key: string]: string;
+                            };
+                            whatToDo: {
+                                [key: string]: string;
+                            };
+                            ruleVersionIds: string[];
+                            packRuleRefs: {
+                                jurisdiction: string;
+                                key: string;
+                                /** Format: date */
+                                effectiveFrom: string;
+                            }[];
+                            sourceUrl: string | null;
+                            status: string;
+                            publishedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/compliance/law-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Law changes relevant to the jurisdictions where the company has entities, locations or employees, with read and acknowledged state */
+        get: {
+            parameters: {
+                query?: {
+                    unacknowledgedOnly?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            jurisdictions: string[];
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                jurisdiction: string;
+                                effectiveDate: string;
+                                title: string;
+                                summary: string;
+                                whatToDo: string;
+                                sourceUrl: string | null;
+                                publishedAt: string | null;
+                                ruleVersions: {
+                                    jurisdiction: string;
+                                    key: string;
+                                    effectiveFrom: string;
+                                    effectiveTo: string | null;
+                                    source: {
+                                        url: string;
+                                        title: string;
+                                    };
+                                    verifiedOn: string;
+                                    origin: string;
+                                }[];
+                                readAt: string | null;
+                                acknowledgedAt: string | null;
+                                acknowledgements: {
+                                    /** Format: uuid */
+                                    userId: string;
+                                    displayName: string;
+                                    acknowledgedAt: string;
+                                }[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/law-changes/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            readAt: string;
+                            acknowledgedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/compliance/law-changes/{id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge an entry (audited) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            readAt: string;
+                            acknowledgedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connector kinds, mappable fields per section, transforms and date formats */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            connectors: {
+                                kind: string;
+                                availability: string;
+                                formats: string[];
+                                deliveries: string[];
+                                regions: string[];
+                                docs: string;
+                            }[];
+                            sections: {
+                                [key: string]: {
+                                    field: string;
+                                    type: string;
+                                }[];
+                            };
+                            dateFormats: string[];
+                            defaultMapping: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/connectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            availability: string;
+                            docs: string;
+                            entityId: string | null;
+                            mapping: {
+                                dateFormat: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                decimalSeparator: "." | ",";
+                                delimiter: "," | ";" | "\t" | "|";
+                                includeHeader: boolean;
+                                sections: {
+                                    hours?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    absences?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    sickPay?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    payChanges?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    starters?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    leavers?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                };
+                            };
+                            delivery: {
+                                method: "download" | "sftp" | "api";
+                                sftp?: {
+                                    host: string;
+                                    port: number;
+                                    username: string;
+                                    directory: string;
+                                    hostKeySha256: string;
+                                };
+                            };
+                            settings: {
+                                xeroTenantId?: string;
+                                payrollCalendarId?: string;
+                                earningsRates?: {
+                                    regular?: string;
+                                    overtime?: string;
+                                    doubleTime?: string;
+                                };
+                                leaveTypes?: {
+                                    [key: string]: string;
+                                };
+                                leaveDescriptions?: {
+                                    [key: string]: string;
+                                };
+                                employees?: {
+                                    [key: string]: string;
+                                };
+                            };
+                            enabled: boolean;
+                            credentials: string[];
+                            configSha256: string;
+                            createdAt: string;
+                            updatedAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        kind: "csv" | "excel" | "xero_uk" | "adp" | "workday" | "ukg" | "gusto" | "datev";
+                        entityId?: string | null;
+                        mapping?: {
+                            dateFormat: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                            decimalSeparator: "." | ",";
+                            delimiter: "," | ";" | "\t" | "|";
+                            includeHeader: boolean;
+                            sections: {
+                                hours?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                absences?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                sickPay?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                payChanges?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                starters?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                leavers?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                            };
+                        };
+                        delivery?: {
+                            method: "download" | "sftp" | "api";
+                            sftp?: {
+                                host: string;
+                                port: number;
+                                username: string;
+                                directory: string;
+                                hostKeySha256: string;
+                            };
+                        };
+                        settings?: {
+                            xeroTenantId?: string;
+                            payrollCalendarId?: string;
+                            earningsRates?: {
+                                regular?: string;
+                                overtime?: string;
+                                doubleTime?: string;
+                            };
+                            leaveTypes?: {
+                                [key: string]: string;
+                            };
+                            leaveDescriptions?: {
+                                [key: string]: string;
+                            };
+                            employees?: {
+                                [key: string]: string;
+                            };
+                        };
+                        enabled?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            availability: string;
+                            docs: string;
+                            entityId: string | null;
+                            mapping: {
+                                dateFormat: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                decimalSeparator: "." | ",";
+                                delimiter: "," | ";" | "\t" | "|";
+                                includeHeader: boolean;
+                                sections: {
+                                    hours?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    absences?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    sickPay?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    payChanges?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    starters?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    leavers?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                };
+                            };
+                            delivery: {
+                                method: "download" | "sftp" | "api";
+                                sftp?: {
+                                    host: string;
+                                    port: number;
+                                    username: string;
+                                    directory: string;
+                                    hostKeySha256: string;
+                                };
+                            };
+                            settings: {
+                                xeroTenantId?: string;
+                                payrollCalendarId?: string;
+                                earningsRates?: {
+                                    regular?: string;
+                                    overtime?: string;
+                                    doubleTime?: string;
+                                };
+                                leaveTypes?: {
+                                    [key: string]: string;
+                                };
+                                leaveDescriptions?: {
+                                    [key: string]: string;
+                                };
+                                employees?: {
+                                    [key: string]: string;
+                                };
+                            };
+                            enabled: boolean;
+                            credentials: string[];
+                            configSha256: string;
+                            createdAt: string;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/connectors/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            availability: string;
+                            docs: string;
+                            entityId: string | null;
+                            mapping: {
+                                dateFormat: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                decimalSeparator: "." | ",";
+                                delimiter: "," | ";" | "\t" | "|";
+                                includeHeader: boolean;
+                                sections: {
+                                    hours?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    absences?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    sickPay?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    payChanges?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    starters?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    leavers?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                };
+                            };
+                            delivery: {
+                                method: "download" | "sftp" | "api";
+                                sftp?: {
+                                    host: string;
+                                    port: number;
+                                    username: string;
+                                    directory: string;
+                                    hostKeySha256: string;
+                                };
+                            };
+                            settings: {
+                                xeroTenantId?: string;
+                                payrollCalendarId?: string;
+                                earningsRates?: {
+                                    regular?: string;
+                                    overtime?: string;
+                                    doubleTime?: string;
+                                };
+                                leaveTypes?: {
+                                    [key: string]: string;
+                                };
+                                leaveDescriptions?: {
+                                    [key: string]: string;
+                                };
+                                employees?: {
+                                    [key: string]: string;
+                                };
+                            };
+                            enabled: boolean;
+                            credentials: string[];
+                            configSha256: string;
+                            createdAt: string;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        entityId?: string | null;
+                        mapping?: {
+                            dateFormat: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                            decimalSeparator: "." | ",";
+                            delimiter: "," | ";" | "\t" | "|";
+                            includeHeader: boolean;
+                            sections: {
+                                hours?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                absences?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                sickPay?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                payChanges?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                starters?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                                leavers?: {
+                                    enabled: boolean;
+                                    columns: {
+                                        header: string;
+                                        field?: string;
+                                        value?: string;
+                                        transform?: {
+                                            /** @enum {string} */
+                                            type: "date";
+                                            format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "number";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "hours";
+                                            decimals: number;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "minutes";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "money";
+                                            unit: "major" | "minor";
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "codeMap";
+                                            map: {
+                                                [key: string]: string;
+                                            };
+                                            default?: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "boolean";
+                                            true: string;
+                                            false: string;
+                                        } | {
+                                            /** @enum {string} */
+                                            type: "case";
+                                            case: "upper" | "lower";
+                                        };
+                                    }[];
+                                };
+                            };
+                        };
+                        delivery?: {
+                            method: "download" | "sftp" | "api";
+                            sftp?: {
+                                host: string;
+                                port: number;
+                                username: string;
+                                directory: string;
+                                hostKeySha256: string;
+                            };
+                        };
+                        settings?: {
+                            xeroTenantId?: string;
+                            payrollCalendarId?: string;
+                            earningsRates?: {
+                                regular?: string;
+                                overtime?: string;
+                                doubleTime?: string;
+                            };
+                            leaveTypes?: {
+                                [key: string]: string;
+                            };
+                            leaveDescriptions?: {
+                                [key: string]: string;
+                            };
+                            employees?: {
+                                [key: string]: string;
+                            };
+                        };
+                        enabled?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            availability: string;
+                            docs: string;
+                            entityId: string | null;
+                            mapping: {
+                                dateFormat: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                decimalSeparator: "." | ",";
+                                delimiter: "," | ";" | "\t" | "|";
+                                includeHeader: boolean;
+                                sections: {
+                                    hours?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    absences?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    sickPay?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    payChanges?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    starters?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                    leavers?: {
+                                        enabled: boolean;
+                                        columns: {
+                                            header: string;
+                                            field?: string;
+                                            value?: string;
+                                            transform?: {
+                                                /** @enum {string} */
+                                                type: "date";
+                                                format: "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy" | "yyyyMMdd" | "dd-MM-yyyy";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "number";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "hours";
+                                                decimals: number;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "minutes";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "money";
+                                                unit: "major" | "minor";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "codeMap";
+                                                map: {
+                                                    [key: string]: string;
+                                                };
+                                                default?: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "boolean";
+                                                true: string;
+                                                false: string;
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "case";
+                                                case: "upper" | "lower";
+                                            };
+                                        }[];
+                                    };
+                                };
+                            };
+                            delivery: {
+                                method: "download" | "sftp" | "api";
+                                sftp?: {
+                                    host: string;
+                                    port: number;
+                                    username: string;
+                                    directory: string;
+                                    hostKeySha256: string;
+                                };
+                            };
+                            settings: {
+                                xeroTenantId?: string;
+                                payrollCalendarId?: string;
+                                earningsRates?: {
+                                    regular?: string;
+                                    overtime?: string;
+                                    doubleTime?: string;
+                                };
+                                leaveTypes?: {
+                                    [key: string]: string;
+                                };
+                                leaveDescriptions?: {
+                                    [key: string]: string;
+                                };
+                                employees?: {
+                                    [key: string]: string;
+                                };
+                            };
+                            enabled: boolean;
+                            credentials: string[];
+                            configSha256: string;
+                            createdAt: string;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/payroll/connectors/{id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Store connector secrets (sealed with the regional KMS key; never returned) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        password?: string;
+                        privateKey?: string;
+                        passphrase?: string;
+                        clientId?: string;
+                        clientSecret?: string;
+                        refreshToken?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            configured: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/connectors/{id}/xero/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/xero/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    code?: string;
+                    state: string;
+                    error?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: "open" | "closed";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            entityId: string | null;
+                            frequency: string;
+                            startDate: string;
+                            endDate: string;
+                            payDate: string | null;
+                            status: string;
+                            closedAt: string | null;
+                            snapshotSha256: string | null;
+                            counts: {
+                                [key: string]: number;
+                            } | null;
+                            createdAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        frequency: "weekly" | "fortnightly" | "four_weekly" | "semi_monthly" | "monthly";
+                        /** Format: date */
+                        startDate: string;
+                        /** Format: date */
+                        endDate: string;
+                        payDate?: string | null;
+                        entityId?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            entityId: string | null;
+                            frequency: string;
+                            startDate: string;
+                            endDate: string;
+                            payDate: string | null;
+                            status: string;
+                            closedAt: string | null;
+                            snapshotSha256: string | null;
+                            counts: {
+                                [key: string]: number;
+                            } | null;
+                            createdAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/periods/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a period: snapshot its inputs so every later export is reproducible */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            entityId: string | null;
+                            frequency: string;
+                            startDate: string;
+                            endDate: string;
+                            payDate: string | null;
+                            status: string;
+                            closedAt: string | null;
+                            snapshotSha256: string | null;
+                            counts: {
+                                [key: string]: number;
+                            } | null;
+                            createdAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/periods/{id}/inputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview the canonical payroll inputs (live while open, the snapshot once closed) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            version: number;
+                            period: {
+                                [key: string]: unknown;
+                            };
+                            employees: {
+                                [key: string]: unknown;
+                            }[];
+                            hours: {
+                                [key: string]: unknown;
+                            }[];
+                            absences: {
+                                [key: string]: unknown;
+                            }[];
+                            sickPay: {
+                                [key: string]: unknown;
+                            }[];
+                            payChanges: {
+                                [key: string]: unknown;
+                            }[];
+                            starters: {
+                                [key: string]: unknown;
+                            }[];
+                            leavers: {
+                                [key: string]: unknown;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/periods/{id}/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Render a pay-period export with a connector (reproducible once the period is closed) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        connectorId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            periodId: string;
+                            /** Format: uuid */
+                            connectorId: string;
+                            fileName: string;
+                            contentType: string;
+                            sizeBytes: number;
+                            sha256: string;
+                            inputsSha256: string;
+                            configSha256: string;
+                            reproducible: boolean;
+                            counts: {
+                                [key: string]: number;
+                            };
+                            createdAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            periodId: string;
+                            /** Format: uuid */
+                            connectorId: string;
+                            fileName: string;
+                            contentType: string;
+                            sizeBytes: number;
+                            sha256: string;
+                            inputsSha256: string;
+                            configSha256: string;
+                            reproducible: boolean;
+                            counts: {
+                                [key: string]: number;
+                            };
+                            createdAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/exports/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Short-lived download link (home-region object store); logged as a delivery */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                            fileName: string;
+                            sha256: string;
+                            /** Format: uuid */
+                            deliveryId: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/exports/{id}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deliver an export by SFTP or API push (background job; idempotent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        idempotencyKey?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            exportId: string;
+                            /** Format: uuid */
+                            connectorId: string;
+                            /** Format: uuid */
+                            periodId: string;
+                            method: string;
+                            status: string;
+                            destination: string | null;
+                            detail: {
+                                [key: string]: unknown;
+                            };
+                            error: string | null;
+                            attempts: number;
+                            createdAt: string;
+                            completedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            exportId: string;
+                            /** Format: uuid */
+                            connectorId: string;
+                            /** Format: uuid */
+                            periodId: string;
+                            method: string;
+                            status: string;
+                            destination: string | null;
+                            detail: {
+                                [key: string]: unknown;
+                            };
+                            error: string | null;
+                            attempts: number;
+                            createdAt: string;
+                            completedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payroll/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivery log (downloads, SFTP uploads and API pushes) */
+        get: {
+            parameters: {
+                query?: {
+                    periodId?: string;
+                    exportId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            exportId: string;
+                            /** Format: uuid */
+                            connectorId: string;
+                            /** Format: uuid */
+                            periodId: string;
+                            method: string;
+                            status: string;
+                            destination: string | null;
+                            detail: {
+                                [key: string]: unknown;
+                            };
+                            error: string | null;
+                            attempts: number;
+                            createdAt: string;
+                            completedAt: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            docType: string;
+                            label: string;
+                            payDate: string | null;
+                            taxYear: string | null;
+                            matchBy: string;
+                            status: string;
+                            fileCount: number;
+                            matchedCount: number;
+                            createdAt: string;
+                            publishedAt: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Bulk upload payslips or year-end documents (PDFs or a zip of PDFs); returns the matching preview */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            docType: string;
+                            label: string;
+                            payDate: string | null;
+                            taxYear: string | null;
+                            matchBy: string;
+                            status: string;
+                            fileCount: number;
+                            matchedCount: number;
+                            createdAt: string;
+                            publishedAt: string | null;
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                matchStatus: string;
+                                employeeId: string | null;
+                                employeeNumber: string | null;
+                                employeeName: string | null;
+                                status: string;
+                                detail: {
+                                    [key: string]: unknown;
+                                };
+                            }[];
+                            rejected: {
+                                name: string;
+                                reason: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/batches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            docType: string;
+                            label: string;
+                            payDate: string | null;
+                            taxYear: string | null;
+                            matchBy: string;
+                            status: string;
+                            fileCount: number;
+                            matchedCount: number;
+                            createdAt: string;
+                            publishedAt: string | null;
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                matchStatus: string;
+                                employeeId: string | null;
+                                employeeNumber: string | null;
+                                employeeName: string | null;
+                                status: string;
+                                detail: {
+                                    [key: string]: unknown;
+                                };
+                            }[];
+                            rejected: {
+                                name: string;
+                                reason: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Discard the unpublished files of a batch (deletes them from storage) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            discarded: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/batches/{id}/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Match (or unmatch) one file by hand */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        employeeId: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            fileName: string;
+                            sizeBytes: number;
+                            sha256: string;
+                            matchStatus: string;
+                            employeeId: string | null;
+                            employeeNumber: string | null;
+                            employeeName: string | null;
+                            status: string;
+                            detail: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/batches/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish every matched file to its employee and notify them */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            published: number;
+                            notified: number;
+                            unmatched: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a published document sent in error */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            status: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/payslips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My payslips and year-end documents */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            docType: string;
+                            label: string;
+                            payDate: string | null;
+                            taxYear: string | null;
+                            fileName: string;
+                            publishedAt: string;
+                            viewed: boolean;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/employees/{id}/payslips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            docType: string;
+                            label: string;
+                            payDate: string | null;
+                            taxYear: string | null;
+                            fileName: string;
+                            publishedAt: string;
+                            viewed: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                            fileName: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Microsoft 365 and Google Workspace connection status */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            provider: string;
+                            status: string;
+                            domain: string | null;
+                            directoryId: string | null;
+                            clientId: string | null;
+                            adminSubject: string | null;
+                            settings: {
+                                usernameFormat?: string;
+                                joinerLeadDays?: number;
+                                leaverTiming?: "end_of_last_day" | "immediately";
+                                autoExecute?: boolean;
+                                maxJoinerBackdateDays?: number;
+                                defaultOrgUnitPath?: string;
+                            };
+                            consentedAt: string | null;
+                            credentials: string[];
+                            scopes: string[];
+                            rules: number;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        domain: string;
+                        directoryId?: string | null;
+                        clientId?: string | null;
+                        adminSubject?: string | null;
+                        settings?: {
+                            usernameFormat?: string;
+                            joinerLeadDays?: number;
+                            leaverTiming?: "end_of_last_day" | "immediately";
+                            autoExecute?: boolean;
+                            maxJoinerBackdateDays?: number;
+                            defaultOrgUnitPath?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            provider: string;
+                            status: string;
+                            domain: string | null;
+                            directoryId: string | null;
+                            clientId: string | null;
+                            adminSubject: string | null;
+                            settings: {
+                                usernameFormat?: string;
+                                joinerLeadDays?: number;
+                                leaverTiming?: "end_of_last_day" | "immediately";
+                                autoExecute?: boolean;
+                                maxJoinerBackdateDays?: number;
+                                defaultOrgUnitPath?: string;
+                            };
+                            consentedAt: string | null;
+                            credentials: string[];
+                            scopes: string[];
+                            rules: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Store the client secret (Microsoft) or service account key (Google); sealed, never returned */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        clientSecret?: string;
+                        serviceAccountKey?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            configured: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start per-customer admin consent (Microsoft) or get the delegation details to enter (Google) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string | null;
+                            clientId: string | null;
+                            scopes: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/microsoft365/consent-callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    state: string;
+                    tenant?: string;
+                    admin_consent?: string;
+                    error?: string;
+                    error_description?: string;
+                    scope?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prove the consent / delegation works by obtaining a token; marks the connection connected */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            provider: string;
+                            status: string;
+                            domain: string | null;
+                            directoryId: string | null;
+                            clientId: string | null;
+                            adminSubject: string | null;
+                            settings: {
+                                usernameFormat?: string;
+                                joinerLeadDays?: number;
+                                leaverTiming?: "end_of_last_day" | "immediately";
+                                autoExecute?: boolean;
+                                maxJoinerBackdateDays?: number;
+                                defaultOrgUnitPath?: string;
+                            };
+                            consentedAt: string | null;
+                            credentials: string[];
+                            scopes: string[];
+                            rules: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            provider: string;
+                            status: string;
+                            domain: string | null;
+                            directoryId: string | null;
+                            clientId: string | null;
+                            adminSubject: string | null;
+                            settings: {
+                                usernameFormat?: string;
+                                joinerLeadDays?: number;
+                                leaverTiming?: "end_of_last_day" | "immediately";
+                                autoExecute?: boolean;
+                                maxJoinerBackdateDays?: number;
+                                defaultOrgUnitPath?: string;
+                            };
+                            consentedAt: string | null;
+                            credentials: string[];
+                            scopes: string[];
+                            rules: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            priority: number;
+                            match: {
+                                [key: string]: string;
+                            };
+                            licences: {
+                                skuId: string;
+                                productId?: string;
+                            }[];
+                            groups: string[];
+                            orgUnitPath: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        priority?: number;
+                        match: {
+                            /** Format: uuid */
+                            entityId?: string;
+                            /** Format: uuid */
+                            departmentId?: string;
+                            /** Format: uuid */
+                            locationId?: string;
+                            jobTitleContains?: string;
+                        };
+                        licences: {
+                            skuId: string;
+                            productId?: string;
+                        }[];
+                        groups: string[];
+                        orgUnitPath?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            priority: number;
+                            match: {
+                                [key: string]: string;
+                            };
+                            licences: {
+                                skuId: string;
+                                productId?: string;
+                            }[];
+                            groups: string[];
+                            orgUnitPath: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        priority?: number;
+                        match: {
+                            /** Format: uuid */
+                            entityId?: string;
+                            /** Format: uuid */
+                            departmentId?: string;
+                            /** Format: uuid */
+                            locationId?: string;
+                            jobTitleContains?: string;
+                        };
+                        licences: {
+                            skuId: string;
+                            productId?: string;
+                        }[];
+                        groups: string[];
+                        orgUnitPath?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            priority: number;
+                            match: {
+                                [key: string]: string;
+                            };
+                            licences: {
+                                skuId: string;
+                                productId?: string;
+                            }[];
+                            groups: string[];
+                            orgUnitPath: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/preview/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dry run: the exact provider calls for this employee, without calling the provider */
+        get: {
+            parameters: {
+                query: {
+                    lifecycle: "joiner" | "leaver";
+                };
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            provider: string;
+                            lifecycle: string;
+                            principalName: string;
+                            matchedRules: string[];
+                            operations: {
+                                seq: number;
+                                op: string;
+                                method: string;
+                                url: string;
+                                target: string;
+                                body?: {
+                                    [key: string]: unknown;
+                                };
+                            }[];
+                            skipped?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/{provider}/run/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run (or re-run) the joiner or leaver steps for one employee now */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: "microsoft365" | "google_workspace";
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lifecycle: "joiner" | "leaver";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            jobId: string;
+                            created: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/integrations/it/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Execution log of provider calls */
+        get: {
+            parameters: {
+                query?: {
+                    employeeId?: string;
+                    provider?: "microsoft365" | "google_workspace";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            provider: string;
+                            lifecycle: string;
+                            anchorDate: string;
+                            seq: number;
+                            op: string;
+                            method: string;
+                            url: string;
+                            status: string;
+                            responseStatus: number | null;
+                            error: string | null;
+                            attempts: number;
+                            executedAt: string | null;
+                            createdAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: string;
+                    type?: "laptop" | "desktop" | "phone" | "tablet" | "monitor" | "headset" | "peripheral" | "vehicle" | "access_card" | "other";
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            assetTag: string;
+                            type: string;
+                            name: string;
+                            serialNumber: string | null;
+                            costMinor: number | null;
+                            currency: string | null;
+                            purchasedOn: string | null;
+                            status: string;
+                            entityId: string | null;
+                            locationId: string | null;
+                            notes: string | null;
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                            holder: {
+                                /** Format: uuid */
+                                assignmentId: string;
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string;
+                                assignedOn: string;
+                                acknowledgedAt: string | null;
+                            } | null;
+                            createdAt: string;
+                            updatedAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        assetTag: string;
+                        type: "laptop" | "desktop" | "phone" | "tablet" | "monitor" | "headset" | "peripheral" | "vehicle" | "access_card" | "other";
+                        name: string;
+                        serialNumber?: string | null;
+                        costMinor?: number | null;
+                        currency?: string | null;
+                        purchasedOn?: string | null;
+                        entityId?: string | null;
+                        locationId?: string | null;
+                        notes?: string | null;
+                        returnChecklist?: {
+                            key: string;
+                            label?: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            assetTag: string;
+                            type: string;
+                            name: string;
+                            serialNumber: string | null;
+                            costMinor: number | null;
+                            currency: string | null;
+                            purchasedOn: string | null;
+                            status: string;
+                            entityId: string | null;
+                            locationId: string | null;
+                            notes: string | null;
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                            holder: {
+                                /** Format: uuid */
+                                assignmentId: string;
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string;
+                                assignedOn: string;
+                                acknowledgedAt: string | null;
+                            } | null;
+                            createdAt: string;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/assets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            assetTag: string;
+                            type: string;
+                            name: string;
+                            serialNumber: string | null;
+                            costMinor: number | null;
+                            currency: string | null;
+                            purchasedOn: string | null;
+                            status: string;
+                            entityId: string | null;
+                            locationId: string | null;
+                            notes: string | null;
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                            holder: {
+                                /** Format: uuid */
+                                assignmentId: string;
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string;
+                                assignedOn: string;
+                                acknowledgedAt: string | null;
+                            } | null;
+                            createdAt: string;
+                            updatedAt: string;
+                            assignments: {
+                                /** Format: uuid */
+                                id: string;
+                                /** Format: uuid */
+                                assetId: string;
+                                assetTag: string;
+                                assetName: string;
+                                assetType: string;
+                                serialNumber: string | null;
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string | null;
+                                status: string;
+                                assignedOn: string;
+                                dueBackOn: string | null;
+                                conditionOut: string | null;
+                                handoverNote: string | null;
+                                acknowledgedAt: string | null;
+                                acknowledgementStatement: string | null;
+                                returnRequestedOn: string | null;
+                                returnTaskId: string | null;
+                                returnedOn: string | null;
+                                conditionIn: string | null;
+                                checklist: {
+                                    key: string;
+                                    label?: string;
+                                    done: boolean;
+                                }[];
+                                returnChecklist: {
+                                    key: string;
+                                    label?: string;
+                                }[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        serialNumber?: string | null;
+                        costMinor?: number | null;
+                        currency?: string | null;
+                        purchasedOn?: string | null;
+                        entityId?: string | null;
+                        locationId?: string | null;
+                        notes?: string | null;
+                        returnChecklist?: {
+                            key: string;
+                            label?: string;
+                        }[];
+                        status?: "in_stock" | "in_repair" | "retired";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            assetTag: string;
+                            type: string;
+                            name: string;
+                            serialNumber: string | null;
+                            costMinor: number | null;
+                            currency: string | null;
+                            purchasedOn: string | null;
+                            status: string;
+                            entityId: string | null;
+                            locationId: string | null;
+                            notes: string | null;
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                            holder: {
+                                /** Format: uuid */
+                                assignmentId: string;
+                                /** Format: uuid */
+                                employeeId: string;
+                                employeeName: string;
+                                assignedOn: string;
+                                acknowledgedAt: string | null;
+                            } | null;
+                            createdAt: string;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/assets/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue an asset to an employee; the employee is asked to acknowledge the handover */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        /** Format: date */
+                        assignedOn: string;
+                        dueBackOn?: string | null;
+                        conditionOut?: string;
+                        handoverNote?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            assetId: string;
+                            assetTag: string;
+                            assetName: string;
+                            assetType: string;
+                            serialNumber: string | null;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            status: string;
+                            assignedOn: string;
+                            dueBackOn: string | null;
+                            conditionOut: string | null;
+                            handoverNote: string | null;
+                            acknowledgedAt: string | null;
+                            acknowledgementStatement: string | null;
+                            returnRequestedOn: string | null;
+                            returnTaskId: string | null;
+                            returnedOn: string | null;
+                            conditionIn: string | null;
+                            checklist: {
+                                key: string;
+                                label?: string;
+                                done: boolean;
+                            }[];
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/asset-assignments/{id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The employee confirms they received the asset (handover sign-off) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {boolean} */
+                        confirm: true;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            assetId: string;
+                            assetTag: string;
+                            assetName: string;
+                            assetType: string;
+                            serialNumber: string | null;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            status: string;
+                            assignedOn: string;
+                            dueBackOn: string | null;
+                            conditionOut: string | null;
+                            handoverNote: string | null;
+                            acknowledgedAt: string | null;
+                            acknowledgementStatement: string | null;
+                            returnRequestedOn: string | null;
+                            returnTaskId: string | null;
+                            returnedOn: string | null;
+                            conditionIn: string | null;
+                            checklist: {
+                                key: string;
+                                label?: string;
+                                done: boolean;
+                            }[];
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/asset-assignments/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record the return against the checklist (completes the offboarding return task) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        returnedOn: string;
+                        outcome?: "returned" | "lost";
+                        conditionIn?: string;
+                        checklist: {
+                            key: string;
+                            done: boolean;
+                        }[];
+                        assetStatus?: "in_stock" | "in_repair" | "retired";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            assetId: string;
+                            assetTag: string;
+                            assetName: string;
+                            assetType: string;
+                            serialNumber: string | null;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            status: string;
+                            assignedOn: string;
+                            dueBackOn: string | null;
+                            conditionOut: string | null;
+                            handoverNote: string | null;
+                            acknowledgedAt: string | null;
+                            acknowledgementStatement: string | null;
+                            returnRequestedOn: string | null;
+                            returnTaskId: string | null;
+                            returnedOn: string | null;
+                            conditionIn: string | null;
+                            checklist: {
+                                key: string;
+                                label?: string;
+                                done: boolean;
+                            }[];
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/asset-assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    employeeId: string;
+                    status?: "active" | "returned" | "lost";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            assetId: string;
+                            assetTag: string;
+                            assetName: string;
+                            assetType: string;
+                            serialNumber: string | null;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            status: string;
+                            assignedOn: string;
+                            dueBackOn: string | null;
+                            conditionOut: string | null;
+                            handoverNote: string | null;
+                            acknowledgedAt: string | null;
+                            acknowledgementStatement: string | null;
+                            returnRequestedOn: string | null;
+                            returnTaskId: string | null;
+                            returnedOn: string | null;
+                            conditionIn: string | null;
+                            checklist: {
+                                key: string;
+                                label?: string;
+                                done: boolean;
+                            }[];
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Equipment issued to me (with handover sign-off status) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            assetId: string;
+                            assetTag: string;
+                            assetName: string;
+                            assetType: string;
+                            serialNumber: string | null;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            status: string;
+                            assignedOn: string;
+                            dueBackOn: string | null;
+                            conditionOut: string | null;
+                            handoverNote: string | null;
+                            acknowledgedAt: string | null;
+                            acknowledgementStatement: string | null;
+                            returnRequestedOn: string | null;
+                            returnTaskId: string | null;
+                            returnedOn: string | null;
+                            conditionIn: string | null;
+                            checklist: {
+                                key: string;
+                                label?: string;
+                                done: boolean;
+                            }[];
+                            returnChecklist: {
+                                key: string;
+                                label?: string;
+                            }[];
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ready-made reports and report-builder datasets available to the caller (permission-filtered) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ready: {
+                                id: string;
+                                category: string;
+                                titleKey: string;
+                                descriptionKey: string;
+                                jurisdictions: string[];
+                                applicable: boolean;
+                                sensitivity: string;
+                                params: unknown;
+                            }[];
+                            datasets: unknown[];
+                            formats: string[];
+                            canSchedule: boolean;
+                            canExportData: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/ready/{id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run a ready-made report on screen (reporting reader; large populations must use a background run) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        params: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            title: string;
+                            parameters: string[];
+                            generatedAt: string;
+                            columns: {
+                                key: string;
+                                labelKey: string;
+                                subLabelKey?: string;
+                                type: "text" | "enum" | "integer" | "decimal" | "percent" | "money" | "date" | "minutes" | "boolean";
+                                enumKey?: string;
+                                scale?: number;
+                                sensitive?: boolean;
+                            }[];
+                            rows: {
+                                [key: string]: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                            }[];
+                            totals?: {
+                                [key: string]: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                            }[];
+                            chart?: {
+                                type: "bar" | "line";
+                                x: string;
+                                y: string[];
+                            };
+                            notes: string[];
+                            facts?: {
+                                key: string;
+                                labelKey: string;
+                                type: "text" | "enum" | "integer" | "decimal" | "percent" | "money" | "date" | "minutes" | "boolean";
+                                value: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                                enumKey?: string;
+                            }[];
+                            restricted?: number;
+                            sensitive?: boolean;
+                            truncated?: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/builder/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview a report-builder specification (first 500 rows, permission-masked, on the reporting reader) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        dataset: "employees" | "leave" | "absence" | "timesheets";
+                        columns?: string[];
+                        filters?: {
+                            field: string;
+                            op: "eq" | "neq" | "in" | "gt" | "gte" | "lt" | "lte" | "contains" | "isEmpty" | "isNotEmpty";
+                            value?: string | number | boolean | string[];
+                        }[];
+                        groupBy?: {
+                            field: string;
+                            granularity?: "month" | "year";
+                        }[];
+                        measures?: {
+                            fn: "count" | "countDistinct" | "sum" | "avg" | "min" | "max";
+                            field?: string;
+                        }[];
+                        sort?: {
+                            key: string;
+                            dir: "asc" | "desc";
+                        };
+                        /** Format: date */
+                        asOf?: string;
+                        /** Format: date */
+                        from?: string;
+                        /** Format: date */
+                        to?: string;
+                        population?: "employed" | "all";
+                        chart?: "bar" | "line" | "none";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            title: string;
+                            parameters: string[];
+                            generatedAt: string;
+                            columns: {
+                                key: string;
+                                labelKey: string;
+                                subLabelKey?: string;
+                                type: "text" | "enum" | "integer" | "decimal" | "percent" | "money" | "date" | "minutes" | "boolean";
+                                enumKey?: string;
+                                scale?: number;
+                                sensitive?: boolean;
+                            }[];
+                            rows: {
+                                [key: string]: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                            }[];
+                            totals?: {
+                                [key: string]: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                            }[];
+                            chart?: {
+                                type: "bar" | "line";
+                                x: string;
+                                y: string[];
+                            };
+                            notes: string[];
+                            facts?: {
+                                key: string;
+                                labelKey: string;
+                                type: "text" | "enum" | "integer" | "decimal" | "percent" | "money" | "date" | "minutes" | "boolean";
+                                value: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                                enumKey?: string;
+                            }[];
+                            restricted?: number;
+                            sensitive?: boolean;
+                            truncated?: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My recent report runs (exports and scheduled deliveries) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            title: string;
+                            format: string;
+                            status: string;
+                            progressPercent: number;
+                            rowCount: number | null;
+                            bytes: number | null;
+                            fileName: string | null;
+                            errorCode: string | null;
+                            scheduled: boolean;
+                            createdAt: string;
+                            finishedAt: string | null;
+                            expiresAt: string | null;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Start a background report run (export to CSV, Excel or PDF); poll it, then download the result */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        source: {
+                            /** @enum {string} */
+                            kind: "ready";
+                            reportId: string;
+                            params: {
+                                [key: string]: unknown;
+                            };
+                        } | {
+                            /** @enum {string} */
+                            kind: "builder";
+                            spec: {
+                                dataset: "employees" | "leave" | "absence" | "timesheets";
+                                columns?: string[];
+                                filters?: {
+                                    field: string;
+                                    op: "eq" | "neq" | "in" | "gt" | "gte" | "lt" | "lte" | "contains" | "isEmpty" | "isNotEmpty";
+                                    value?: string | number | boolean | string[];
+                                }[];
+                                groupBy?: {
+                                    field: string;
+                                    granularity?: "month" | "year";
+                                }[];
+                                measures?: {
+                                    fn: "count" | "countDistinct" | "sum" | "avg" | "min" | "max";
+                                    field?: string;
+                                }[];
+                                sort?: {
+                                    key: string;
+                                    dir: "asc" | "desc";
+                                };
+                                /** Format: date */
+                                asOf?: string;
+                                /** Format: date */
+                                from?: string;
+                                /** Format: date */
+                                to?: string;
+                                population?: "employed" | "all";
+                                chart?: "bar" | "line" | "none";
+                            };
+                        } | {
+                            /** @enum {string} */
+                            kind: "saved";
+                            /** Format: uuid */
+                            savedReportId: string;
+                        };
+                        format: "csv" | "xlsx" | "pdf" | "json";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            title: string;
+                            format: string;
+                            status: string;
+                            progressPercent: number;
+                            rowCount: number | null;
+                            bytes: number | null;
+                            fileName: string | null;
+                            errorCode: string | null;
+                            scheduled: boolean;
+                            createdAt: string;
+                            finishedAt: string | null;
+                            expiresAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Poll a report run: status and progress */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            title: string;
+                            format: string;
+                            status: string;
+                            progressPercent: number;
+                            rowCount: number | null;
+                            bytes: number | null;
+                            fileName: string | null;
+                            errorCode: string | null;
+                            scheduled: boolean;
+                            createdAt: string;
+                            finishedAt: string | null;
+                            expiresAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/runs/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Short-lived download link for a finished run (home-region object store; the download is audited) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                            fileName: string;
+                            expiresInSeconds: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/runs/{id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The result of a finished JSON run (large reports shown on screen) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            title: string;
+                            parameters: string[];
+                            generatedAt: string;
+                            columns: {
+                                key: string;
+                                labelKey: string;
+                                subLabelKey?: string;
+                                type: "text" | "enum" | "integer" | "decimal" | "percent" | "money" | "date" | "minutes" | "boolean";
+                                enumKey?: string;
+                                scale?: number;
+                                sensitive?: boolean;
+                            }[];
+                            rows: {
+                                [key: string]: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                            }[];
+                            totals?: {
+                                [key: string]: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                            }[];
+                            chart?: {
+                                type: "bar" | "line";
+                                x: string;
+                                y: string[];
+                            };
+                            notes: string[];
+                            facts?: {
+                                key: string;
+                                labelKey: string;
+                                type: "text" | "enum" | "integer" | "decimal" | "percent" | "money" | "date" | "minutes" | "boolean";
+                                value: string | number | boolean | null | {
+                                    amountMinor: string;
+                                    currency: string;
+                                };
+                                enumKey?: string;
+                            }[];
+                            restricted?: number;
+                            sensitive?: boolean;
+                            truncated?: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            reportId: string | null;
+                            spec: unknown;
+                            shared: boolean;
+                            mine: boolean;
+                            updatedAt: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        kind: "ready" | "builder";
+                        reportId?: string;
+                        params?: {
+                            [key: string]: unknown;
+                        };
+                        spec?: {
+                            dataset: "employees" | "leave" | "absence" | "timesheets";
+                            columns?: string[];
+                            filters?: {
+                                field: string;
+                                op: "eq" | "neq" | "in" | "gt" | "gte" | "lt" | "lte" | "contains" | "isEmpty" | "isNotEmpty";
+                                value?: string | number | boolean | string[];
+                            }[];
+                            groupBy?: {
+                                field: string;
+                                granularity?: "month" | "year";
+                            }[];
+                            measures?: {
+                                fn: "count" | "countDistinct" | "sum" | "avg" | "min" | "max";
+                                field?: string;
+                            }[];
+                            sort?: {
+                                key: string;
+                                dir: "asc" | "desc";
+                            };
+                            /** Format: date */
+                            asOf?: string;
+                            /** Format: date */
+                            from?: string;
+                            /** Format: date */
+                            to?: string;
+                            population?: "employed" | "all";
+                            chart?: "bar" | "line" | "none";
+                        };
+                        relative?: "today" | "yesterday" | "previousWeek" | "previousMonth" | "monthToDate" | "yearToDate" | "previousYear";
+                        shared?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            reportId: string | null;
+                            spec: unknown;
+                            shared: boolean;
+                            mine: boolean;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/saved/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            reportId: string | null;
+                            spec: unknown;
+                            shared: boolean;
+                            mine: boolean;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        kind: "ready" | "builder";
+                        reportId?: string;
+                        params?: {
+                            [key: string]: unknown;
+                        };
+                        spec?: {
+                            dataset: "employees" | "leave" | "absence" | "timesheets";
+                            columns?: string[];
+                            filters?: {
+                                field: string;
+                                op: "eq" | "neq" | "in" | "gt" | "gte" | "lt" | "lte" | "contains" | "isEmpty" | "isNotEmpty";
+                                value?: string | number | boolean | string[];
+                            }[];
+                            groupBy?: {
+                                field: string;
+                                granularity?: "month" | "year";
+                            }[];
+                            measures?: {
+                                fn: "count" | "countDistinct" | "sum" | "avg" | "min" | "max";
+                                field?: string;
+                            }[];
+                            sort?: {
+                                key: string;
+                                dir: "asc" | "desc";
+                            };
+                            /** Format: date */
+                            asOf?: string;
+                            /** Format: date */
+                            from?: string;
+                            /** Format: date */
+                            to?: string;
+                            population?: "employed" | "all";
+                            chart?: "bar" | "line" | "none";
+                        };
+                        relative?: "today" | "yesterday" | "previousWeek" | "previousMonth" | "monthToDate" | "yearToDate" | "previousYear";
+                        shared?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            reportId: string | null;
+                            spec: unknown;
+                            shared: boolean;
+                            mine: boolean;
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Active users who may receive scheduled reports (for the recipient picker) */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            displayName: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            savedReportId: string;
+                            savedReportName: string;
+                            frequency: string;
+                            timeOfDay: string;
+                            weekday: number | null;
+                            dayOfMonth: number | null;
+                            timeZone: string;
+                            format: string;
+                            recipientUserIds: string[];
+                            enabled: boolean;
+                            lastPeriodKey: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Schedule delivery of a saved report (each recipient receives their own run, limited to their own permissions) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        savedReportId: string;
+                        frequency: "daily" | "weekly" | "monthly";
+                        timeOfDay: string;
+                        weekday?: number;
+                        dayOfMonth?: number;
+                        timeZone: string;
+                        format: "csv" | "xlsx" | "pdf";
+                        recipientUserIds: string[];
+                        enabled?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            savedReportId: string;
+                            savedReportName: string;
+                            frequency: string;
+                            timeOfDay: string;
+                            weekday: number | null;
+                            dayOfMonth: number | null;
+                            timeZone: string;
+                            format: string;
+                            recipientUserIds: string[];
+                            enabled: boolean;
+                            lastPeriodKey: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            savedReportId: string;
+                            savedReportName: string;
+                            frequency: string;
+                            timeOfDay: string;
+                            weekday: number | null;
+                            dayOfMonth: number | null;
+                            timeZone: string;
+                            format: string;
+                            recipientUserIds: string[];
+                            enabled: boolean;
+                            lastPeriodKey: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/settings/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report settings: Bradford factor in absence reports (off by default) and result retention */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            bradfordFactor: boolean;
+                            resultTtlHours: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        bradfordFactor?: boolean;
+                        resultTtlHours?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            bradfordFactor: boolean;
+                            resultTtlHours: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/data-exports/destinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                name: string;
+                                kind: string;
+                                lastTestedAt: string | null;
+                                credentialFields: string[];
+                                s3: {
+                                    bucket: string;
+                                    region: string;
+                                    prefix: string;
+                                    roleArn: string;
+                                    externalId: string;
+                                } | null;
+                                sftp: {
+                                    host: string;
+                                    port: number;
+                                    username: string;
+                                    directory: string;
+                                    hostKeySha256: string;
+                                    auth: string;
+                                } | null;
+                            }[];
+                            homeRegion: string;
+                            rolePrefix: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add an S3 (home-region bucket, cross-account role) or SFTP (pinned host key) destination */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        kind: "s3" | "sftp";
+                        s3?: {
+                            bucket: string;
+                            region: string;
+                            prefix?: string;
+                            roleArn: string;
+                        };
+                        sftp?: {
+                            host: string;
+                            port?: number;
+                            username: string;
+                            directory?: string;
+                            hostKeySha256: string;
+                            password?: string;
+                            privateKey?: string;
+                            passphrase?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            kind: string;
+                            lastTestedAt: string | null;
+                            credentialFields: string[];
+                            s3: {
+                                bucket: string;
+                                region: string;
+                                prefix: string;
+                                roleArn: string;
+                                externalId: string;
+                            } | null;
+                            sftp: {
+                                host: string;
+                                port: number;
+                                username: string;
+                                directory: string;
+                                hostKeySha256: string;
+                                auth: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/data-exports/destinations/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check the destination is reachable and writable */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ok: boolean;
+                            target: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/data-exports/destinations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/data-exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            destinationId: string;
+                            datasets: {
+                                dataset: "employees" | "leave" | "absence" | "timesheets";
+                                fields: string[];
+                            }[];
+                            format: string;
+                            frequency: string;
+                            timeOfDay: string;
+                            weekday: number | null;
+                            dayOfMonth: number | null;
+                            timeZone: string;
+                            enabled: boolean;
+                            /** Format: uuid */
+                            runAsUserId: string;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Schedule a data export of report-builder datasets (rows and fields limited to your own permissions at each delivery) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        /** Format: uuid */
+                        destinationId: string;
+                        datasets: {
+                            dataset: "employees" | "leave" | "absence" | "timesheets";
+                            fields: string[];
+                        }[];
+                        format: "csv" | "jsonl";
+                        frequency: "daily" | "weekly" | "monthly";
+                        timeOfDay: string;
+                        weekday?: number;
+                        dayOfMonth?: number;
+                        timeZone: string;
+                        enabled?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            destinationId: string;
+                            datasets: {
+                                dataset: "employees" | "leave" | "absence" | "timesheets";
+                                fields: string[];
+                            }[];
+                            format: string;
+                            frequency: string;
+                            timeOfDay: string;
+                            weekday: number | null;
+                            dayOfMonth: number | null;
+                            timeZone: string;
+                            enabled: boolean;
+                            /** Format: uuid */
+                            runAsUserId: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/data-exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            destinationId: string;
+                            datasets: {
+                                dataset: "employees" | "leave" | "absence" | "timesheets";
+                                fields: string[];
+                            }[];
+                            format: string;
+                            frequency: string;
+                            timeOfDay: string;
+                            weekday: number | null;
+                            dayOfMonth: number | null;
+                            timeZone: string;
+                            enabled: boolean;
+                            /** Format: uuid */
+                            runAsUserId: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/data-exports/{id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deliver now (a manual delivery for the current period) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            periodKey: string;
+                            trigger: string;
+                            status: string;
+                            files: number | null;
+                            rows: number | null;
+                            bytes: number | null;
+                            durationMs: number | null;
+                            errorCode: string | null;
+                            attempts: number;
+                            createdAt: string;
+                            finishedAt: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/data-exports/{id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivery log (status, files, rows, bytes, duration, error code; never personal data) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            periodKey: string;
+                            trigger: string;
+                            status: string;
+                            files: number | null;
+                            rows: number | null;
+                            bytes: number | null;
+                            durationMs: number | null;
+                            errorCode: string | null;
+                            attempts: number;
+                            createdAt: string;
+                            finishedAt: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Self-service hub: my leave, next shift, clock status, documents to sign, tasks, notifications and payslips */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            employee: {
+                                /** Format: uuid */
+                                id: string;
+                                displayName: string;
+                                jobTitle: string | null;
+                            } | null;
+                            leave: {
+                                available: string | null;
+                                unit: string | null;
+                                pending: number;
+                                next: {
+                                    start: string;
+                                    end: string;
+                                } | null;
+                            } | null;
+                            rota: {
+                                nextShift: {
+                                    date: string;
+                                    start: string;
+                                    end: string;
+                                    zone: string;
+                                } | null;
+                                pendingSwaps: number;
+                            } | null;
+                            clock: {
+                                clockedIn: boolean;
+                                since: string | null;
+                            } | null;
+                            documents: {
+                                toSign: number;
+                            };
+                            tasks: {
+                                open: number;
+                                overdue: number;
+                            };
+                            notifications: {
+                                unread: number;
+                            };
+                            payslips: {
+                                total: number;
+                                unviewed: number;
+                                latest: {
+                                    label: string;
+                                    payDate: string | null;
+                                } | null;
+                            } | null;
+                            changeRequests: {
+                                pending: number;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My own record (field-filtered as for the employee API) and which fields I can change or request */
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            employee: {
+                                /** Format: uuid */
+                                id: string;
+                            } & {
+                                [key: string]: unknown;
+                            };
+                            asOf: string;
+                            access: {
+                                [key: string]: string;
+                            };
+                            requestable: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/change-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My requests to change my details and their status */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            status: string;
+                            fields: string[];
+                            effectiveDate: string | null;
+                            createdAt: string;
+                            decidedAt: string | null;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Ask HR to change personal details I cannot edit myself (approval flow) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        effectiveDate?: string;
+                        legalFirstName?: string;
+                        legalLastName?: string;
+                        /** Format: date */
+                        dateOfBirth?: string;
+                        nationality?: string;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            approvalRequestId: string;
+                            fields: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My in-app notifications (newest first, keyset-paginated) */
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                    limit?: number;
+                    unread?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                kind: string;
+                                category: string;
+                                title: string;
+                                link: string | null;
+                                createdAt: string;
+                                read: boolean;
+                            }[];
+                            unread: number;
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark notifications as read (some, or all) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        ids?: string[];
+                        all?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            updated: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which notifications reach me by email and web push */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            email: boolean;
+                            push: boolean;
+                            categories: {
+                                [key: string]: {
+                                    email: boolean;
+                                    push: boolean;
+                                };
+                            };
+                        } & {
+                            available: string[];
+                            pushConfigured: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        email?: boolean;
+                        push?: boolean;
+                        categories?: {
+                            [key: string]: {
+                                email?: boolean;
+                                push?: boolean;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            email: boolean;
+                            push: boolean;
+                            categories: {
+                                [key: string]: {
+                                    email: boolean;
+                                    push: boolean;
+                                };
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
