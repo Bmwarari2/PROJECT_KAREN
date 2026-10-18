@@ -15,7 +15,6 @@
     "back": "Back",
     "yes": "Yes",
     "no": "No",
-    "export": "Export",
     "import": "Import",
     "submit": "Submit",
     "approve": "Approve",
@@ -35,7 +34,9 @@
     "organisation": "Organisation",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "exportCsv": "Export CSV",
+    "exportExcel": "Export Excel"
   },
   "locales": {
     "en-GB": "English (UK)",

@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { apiCall, expectAccessible, lastMailTo, signUpAndEnrol } from './helpers';
 
@@ -30,6 +30,13 @@ test.describe('field-level permissions in the UI', () => {
     await expect(page.getByRole('heading', { name: 'Pay', exact: true })).toBeVisible();
     await expect(page.getByText('£40,000.00')).toBeVisible();
     await expect(page.getByText('Date of birth')).toBeVisible();
+    // the people list exports exactly what the list shows (CSV here; Excel is the same rows)
+    await page.goto('/app/people');
+    const download = page.waitForEvent('download');
+    await page.getByRole('link', { name: 'Export CSV' }).click();
+    const csv = readFileSync((await (await download).path())!, 'utf8');
+    expect(csv.split('\r\n')[0]).toBe('employeeNumber,displayName,jobTitle,department,location,country,status,startDate,workEmail');
+    expect(csv).toContain('"Reese Report"');
 
     // the manager signs in from their invitation email
     const context = await browser.newContext();
@@ -48,6 +55,7 @@ test.describe('field-level permissions in the UI', () => {
     await expect(mp.getByText('£40,000.00')).toHaveCount(0);
     await expect(mp.getByText('Date of birth')).toHaveCount(0);
     await expect(mp.getByRole('button', { name: 'Make a change' })).toHaveCount(0);
+    await expect(mp.getByRole('link', { name: 'Export CSV' })).toHaveCount(0);
     await expectAccessible(mp);
     // and cannot open someone outside their team
     const outsider = await hire(page, entity, { legalFirstName: 'Outside', legalLastName: 'Team' });
