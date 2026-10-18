@@ -8,7 +8,7 @@
     "GB-NIR"
   ],
   "name": "United Kingdom",
-  "version": 3,
+  "version": 4,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -1540,14 +1540,15 @@
       "Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026)",
       "Statutory Adoption Pay; SMP/SPP rates before 2025-26",
       "Accommodation offset and NMW rates before April 2025",
-      "Right to work: full List A / List B document catalogue from the Employer's guide (1 Oct 2026 PDF), civil penalty amounts, extended liability detail",
+      "Right to work: guidance versions before 1 October 2026 (older checks cannot be recorded), civil penalty amounts, extended liability detail; document catalogue ids summarise the Employer's guide titles",
       "Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9)",
       "Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave",
       "Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap",
       "Statutory redundancy pay; flexible working; guaranteed hours / zero-hours (ERA 2025); fire-and-rehire",
       "ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties",
       "Bank holidays before 2019 and future proclaimed holidays",
-      "SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full"
+      "SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full",
+      "Gender pay gap: which sex/gender classification employers should record (GOV.UK gives no rule; HUMAN_TODO 3.6)"
     ]
   }
 }
