@@ -47,5 +47,23 @@
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned"
+  },
+  "compliance": {
+    "title": "Compliance center",
+    "kind": {
+      "licence": "License"
+    },
+    "dashboard": {
+      "matrixTitle": "Licenses, certificates and training"
+    },
+    "matrix": {
+      "intro": "Licenses, certifications, background checks and training required by job title, location or entity, with expiry dates and reminders.",
+      "emptyBody": "Add the licenses, certificates and training your roles need."
+    },
+    "rtw": {
+      "document": {
+        "certificate_of_registration_or_naturalisation_british_citizen_with_ni_number_document": "Certificate of registration or naturalization as a British citizen with a National Insurance number document"
+      }
+    }
   }
 }

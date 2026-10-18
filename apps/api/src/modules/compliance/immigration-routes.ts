@@ -305,7 +305,8 @@ export async function immigrationRoutes(app: FastifyInstance) {
         const newExpiry = b.workAuthorizationExpiresOn !== undefined ? b.workAuthorizationExpiresOn : r.work_authorization_expires_on;
         const rev = i9Reverification(rules.reverification.value, newExpiry);
         // A new expiry date opens the next reverification cycle (the completed Supplement B is kept in the audit trail).
-        const supplementB = b.workAuthorizationExpiresOn !== undefined ? null : b.supplementBCompletedOn;
+        const expiryChanged = b.workAuthorizationExpiresOn !== undefined && b.workAuthorizationExpiresOn !== r.work_authorization_expires_on;
+        const supplementB = expiryChanged ? null : b.supplementBCompletedOn;
         await tx.exec(
           `UPDATE app.i9_records SET section1_completed_on = CASE WHEN $2::boolean THEN $3::date ELSE section1_completed_on END,
              section2_completed_on = CASE WHEN $4::boolean THEN $5::date ELSE section2_completed_on END,
