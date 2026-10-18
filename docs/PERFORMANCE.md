@@ -63,6 +63,7 @@ The 200,000-person server timings are in the table above. Both stay within budge
 | --- | --- | ---: | ---: |
 | In-app navigation to the org chart until the first level is on screen | 102, 121, 146 | **121 ms** | 1,000 ms |
 | Expand a node until its children are on screen | 68, 70, 65 | **68 ms** | 300 ms |
+| Re-run on the same machine with no other workloads: first render / expand | 84, 111, 98 / 46, 36, 35 | **98 / 36 ms** | 1,000 / 300 ms |
 
 ### Bulk import of 200,000 employees (`scripts/bench-import.ts`)
 
