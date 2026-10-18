@@ -7,6 +7,8 @@ import { workflowRoutes } from './workflows/routes';
 import { approvalRoutes } from './approvals/routes';
 import { automationRoutes } from './automation/routes';
 import { importRoutes } from './imports/routes';
+import { rulesRoutes } from './rules/routes';
+import { backofficeAuthRoutes } from './backoffice/auth';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -17,4 +19,6 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(approvalRoutes);
   await app.register(automationRoutes);
   await app.register(importRoutes);
+  await app.register(rulesRoutes);
+  await app.register(backofficeAuthRoutes);
 }
