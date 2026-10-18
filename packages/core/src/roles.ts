@@ -24,6 +24,8 @@ const SELF_SERVICE = [
   'documents.read_own',
   'documents.sign',
   'payslips.read_own',
+  'assets.read_own',
+  'assets.acknowledge',
   'support.ticket',
   'help.read',
   'ai.ask',
@@ -46,7 +48,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
     permissions: [
       'employees.*', 'org.*', 'documents.*', 'workflows.*', 'approvals.*', 'automation.*', 'leave.*', 'absence.*',
       'rota.*', 'time.*', 'compliance.*', 'reports.*', 'imports.*', 'exports.*', 'audit.read', 'audit.export',
-      'settings.read', 'roles.read', 'privacy.*', 'assets.*', 'payroll.read', 'vault.read:*', 'vault.write:*',
+      'settings.read', 'roles.read', 'privacy.*', 'assets.*', 'payroll.read', 'integrations.*', 'vault.read:*', 'vault.write:*',
       'support.*', 'help.*', 'users.*', ...SELF_SERVICE,
     ],
     fieldAccess: { 'employee.*': 'write', 'employee.pay.*': 'write' },

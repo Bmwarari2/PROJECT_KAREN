@@ -91,6 +91,8 @@ flowchart TB
 | `packages/sdk` | Published OpenAPI document and TypeScript SDK |
 | `infra` | AWS CDK: cell, global and backup copy vault stacks |
 
+Customer-directed integrations (payroll connectors, SFTP, Xero, Microsoft 365, Google Workspace), payslip publishing and the asset register are described in [integrations.md](integrations.md): data flows, scopes, credentials and logs.
+
 ## 5. Sign-in routing
 
 ```mermaid
