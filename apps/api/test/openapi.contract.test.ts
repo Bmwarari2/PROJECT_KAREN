@@ -118,3 +118,36 @@ describe('rota, clock and timesheet endpoints match the spec', () => {
     check('post', '/v1/working-time/opt-outs', 201, (await c.api('POST', '/v1/working-time/opt-outs', { employeeId: emp, validFrom: '2030-01-01' })).json());
   });
 });
+
+describe('role and access management endpoints match the spec', () => {
+  it('catalogue, roles CRUD (201, 400, 403, 409), users and assignments (201, 409)', async () => {
+    const o = await ownerSession(ctx);
+    const h = { cookie: o.cookie };
+    const req = (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, payload?: unknown) => ctx.app.inject({ method, url, headers: h, payload: payload as object });
+    check('get', '/v1/roles/catalogue', 200, (await req('GET', '/v1/roles/catalogue')).json());
+    const roles = await req('GET', '/v1/roles');
+    check('get', '/v1/roles', 200, roles.json());
+    const builtIn = (roles.json() as Array<{ id: string; key: string }>).find((r) => r.key === 'hr_admin')!;
+    check('get', '/v1/roles/{id}', 200, (await req('GET', `/v1/roles/${builtIn.id}`)).json());
+    check('patch', '/v1/roles/{id}', 409, (await req('PATCH', `/v1/roles/${builtIn.id}`, { name: 'Renamed' })).json());
+    const body = { key: 'contract_role', name: 'Contract role', permissions: ['employees.read'], fieldAccess: { 'employee.jobTitle': 'read' } };
+    const created = await req('POST', '/v1/roles', body);
+    check('post', '/v1/roles', 201, created.json());
+    check('post', '/v1/roles', 400, (await req('POST', '/v1/roles', { ...body, key: 'contract_bad', permissions: ['nope.nope'] })).json());
+    check('post', '/v1/roles', 409, (await req('POST', '/v1/roles', body)).json());
+    check('patch', '/v1/roles/{id}', 200, (await req('PATCH', `/v1/roles/${created.json().id}`, { description: 'Fictional description' })).json());
+    const users = await req('GET', '/v1/users');
+    check('get', '/v1/users', 200, users.json());
+    const assigned = await req('POST', `/v1/users/${o.userId}/role-assignments`, { roleId: created.json().id, scope: { type: 'all' } });
+    check('post', '/v1/users/{userId}/role-assignments', 201, assigned.json());
+    check('post', '/v1/users/{userId}/role-assignments', 409, (await req('POST', `/v1/users/${o.userId}/role-assignments`, { roleId: created.json().id, scope: { type: 'all' } })).json());
+    check('get', '/v1/users/{userId}/role-assignments', 200, (await req('GET', `/v1/users/${o.userId}/role-assignments`)).json());
+    check('delete', '/v1/roles/{id}', 409, (await req('DELETE', `/v1/roles/${created.json().id}`)).json());
+    const owners = (await req('GET', `/v1/users/${o.userId}/role-assignments`)).json().assignments as Array<{ id: string; roleKey: string }>;
+    check('delete', '/v1/users/{userId}/role-assignments/{assignmentId}', 409, (await req('DELETE', `/v1/users/${o.userId}/role-assignments/${owners.find((a) => a.roleKey === 'owner')!.id}`)).json());
+    expect((await req('DELETE', `/v1/users/${o.userId}/role-assignments/${assigned.json().id}`)).statusCode).toBe(204);
+    expect((await req('DELETE', `/v1/roles/${created.json().id}`)).statusCode).toBe(204);
+    const forbidden = await ctx.app.inject({ method: 'GET', url: '/v1/roles' });
+    expect(forbidden.statusCode).toBe(401);
+  });
+});
