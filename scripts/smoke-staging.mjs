@@ -167,12 +167,19 @@ async function smoke(region) {
       );
     });
     await step('SSO login (OIDC, mock IdP)', async () => {
+      // The mock IdP names its own issuer: the public URL once a domain exists, otherwise the in-task
+      // address the API can reach without the self-signed certificate (MOCK_IDP_ISSUER_URL).
+      const { issuer } = expectStatus(
+        await new Session(api).req('GET', '/__mock-idp/.well-known/openid-configuration'),
+        200,
+        'mock IdP discovery',
+      );
       const conn = expectStatus(
         await owner.req('POST', '/v1/settings/sso-connections', {
           protocol: 'oidc',
           name: 'Smoke mock OIDC',
           oidc: {
-            issuer: `${api}/__mock-idp`,
+            issuer,
             clientId: 'thapsus-smoke-client',
             clientSecret: 'fictional-smoke-secret',
           },
@@ -186,8 +193,8 @@ async function smoke(region) {
         `/v1/auth/sso/start?tenant=${slug}&connection=${conn.id}&login_hint=${encodeURIComponent(email)}`,
       );
       if (start.status !== 302) throw new Error(`sso start ${start.status}`);
-      // without a domain the API names its in-task IdP address; the browser leg uses the public URL
-      const authorize = start.headers.get('location').replace(/^http:\/\/127\.0\.0\.1:4000/, api);
+      // the browser leg always goes through the public URL, whatever address the issuer names
+      const authorize = start.headers.get('location').replace(new URL(issuer).origin, api);
       const idp = await sso.req('GET', authorize);
       const cb = await sso.req('GET', idp.headers.get('location'));
       if (cb.status !== 302) throw new Error(`sso callback ${cb.status} ${cb.text.slice(0, 200)}`);
@@ -229,7 +236,7 @@ async function smoke(region) {
         await owner.req('GET', `/v1/employees/${emp.id}`),
         200,
         'read employee',
-      ).employeeNumber;
+      ).employee.employeeNumber;
       return emp.id;
     });
     await step('request leave', async () => {
