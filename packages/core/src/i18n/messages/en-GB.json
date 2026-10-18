@@ -301,7 +301,9 @@
       "pending": "Pending",
       "verify": "Verify",
       "domainVerified": "Domain verified.",
-      "organisationLink": "Organisation structure"
+      "organisationLink": "Organisation structure",
+      "rolesLink": "Roles and permissions",
+      "usersLink": "Users and access"
     }
   },
   "gallery": {
@@ -897,5 +899,322 @@
     "markDoneShort": "Mark as done",
     "done": "Done",
     "notLinked": "Your sign-in is not linked to an employee record, so there is no onboarding to show."
+  },
+  "access": {
+    "roles": {
+      "title": "Roles and permissions",
+      "intro": "A role bundles what people can do and which employee fields they can see. Built-in roles are maintained by Thapsus-HR; copy one to make a role of your own.",
+      "new": "New role",
+      "builtIn": "Built-in",
+      "custom": "Custom",
+      "admin": "Admin",
+      "colName": "Role",
+      "colType": "Type",
+      "colPermissions": "Permissions",
+      "colHolders": "Assignments",
+      "allPermissions": "Everything",
+      "permissionCount": "{count} permissions",
+      "empty": "No roles yet",
+      "back": "All roles",
+      "copy": "Copy role",
+      "readOnly": "This built-in role is maintained by Thapsus-HR and cannot be changed. Copy it to make a role of your own."
+    },
+    "editor": {
+      "createTitle": "New role",
+      "editTitle": "Edit role",
+      "name": "Name",
+      "key": "Identifier",
+      "keyHint": "Lower-case letters, numbers and underscores. It cannot be changed later.",
+      "description": "Description",
+      "isAdmin": "Admin role",
+      "isAdminHint": "People with an admin role must use two-step verification.",
+      "isAdminForced": "This role includes administrative permissions, so it is always an admin role.",
+      "permissionsTitle": "Permissions",
+      "permissionsBody": "Choose what people with this role can do. Where they can do it is chosen when the role is assigned.",
+      "allInArea": "All {area} permissions, including future ones",
+      "adminPermission": "Admin",
+      "fieldsTitle": "Field access",
+      "fieldsBody": "Choose which employee fields people with this role can see or change. A field set to Default follows its group row, then the All fields row.",
+      "fieldCol": "Field",
+      "level": {
+        "default": "Default",
+        "none": "Hidden",
+        "read": "View",
+        "write": "Edit"
+      },
+      "fieldLevelLabel": "{field}: {level}",
+      "allFields": "All fields",
+      "allInGroup": "All {group} fields",
+      "otherRules": "Other rules",
+      "create": "Create role",
+      "save": "Save changes",
+      "created": "Role created.",
+      "saved": "Role saved.",
+      "deleted": "Role deleted.",
+      "delete": "Delete role",
+      "deleteTitle": "Delete this role?",
+      "deleteBody": "People will no longer be able to receive it. This cannot be undone.",
+      "copyOf": "Copy of {name}"
+    },
+    "area": {
+      "self": "Own record",
+      "employees": "People",
+      "org": "Organisation",
+      "documents": "Documents",
+      "workflows": "Workflows",
+      "approvals": "Approvals",
+      "automation": "Automation",
+      "leave": "Time off",
+      "absence": "Sickness and absence",
+      "rota": "Rotas",
+      "time": "Time tracking",
+      "payslips": "Payslips",
+      "payroll": "Payroll",
+      "reports": "Reports",
+      "imports": "Imports",
+      "exports": "Exports",
+      "vault": "Sensitive data",
+      "privacy": "Privacy requests",
+      "audit": "Audit log",
+      "users": "Sign-ins",
+      "roles": "Roles and access",
+      "settings": "Workspace settings",
+      "support": "Support",
+      "help": "Help centre",
+      "ai": "AI assistant",
+      "compliance": "Compliance",
+      "assets": "Assets"
+    },
+    "perm": {
+      "self": {
+        "read": "View own record",
+        "update_contact": "Update own contact details"
+      },
+      "employees": {
+        "read": "View people",
+        "history": "View record history",
+        "create": "Add people",
+        "update": "Change people’s records",
+        "terminate": "Record leavers"
+      },
+      "org": {
+        "reporting": "View reporting lines",
+        "manage": "Manage organisation structure"
+      },
+      "documents": {
+        "read_own": "View own documents",
+        "upload_own": "Upload own documents",
+        "sign": "Sign documents",
+        "read": "View people’s documents",
+        "manage": "Manage documents and templates"
+      },
+      "workflows": {
+        "tasks": "Complete assigned tasks",
+        "read": "View workflows",
+        "start": "Start workflows",
+        "manage": "Manage workflow templates"
+      },
+      "approvals": {
+        "act": "Approve or reject requests",
+        "manage": "Manage approval policies"
+      },
+      "automation": {
+        "read": "View automation rules",
+        "manage": "Manage automation rules"
+      },
+      "leave": {
+        "request": "Request time off",
+        "read": "View time off",
+        "approve": "Approve time off",
+        "record": "Record time off for others",
+        "adjust": "Adjust balances",
+        "manage": "Manage time-off policies"
+      },
+      "absence": {
+        "read": "View absence",
+        "record": "Record sickness",
+        "manage": "Manage absence settings"
+      },
+      "rota": {
+        "view_own": "View own shifts",
+        "swap_request": "Request shift swaps",
+        "availability": "Set availability",
+        "view": "View rotas",
+        "manage": "Build and publish rotas"
+      },
+      "time": {
+        "clock": "Clock in and out",
+        "read": "View time records",
+        "approve": "Approve timesheets",
+        "correct": "Correct time records",
+        "export": "Export time records",
+        "manage": "Manage time settings and kiosks"
+      },
+      "payslips": {
+        "read_own": "View own payslips"
+      },
+      "payroll": {
+        "read": "View payroll data"
+      },
+      "reports": {
+        "read_team": "View team reports",
+        "read": "View reports",
+        "run": "Run reports"
+      },
+      "imports": {
+        "run": "Import data"
+      },
+      "exports": {
+        "run": "Export lists"
+      },
+      "vault": {
+        "read:health": "View health information",
+        "read:sickness": "View sickness details and fit notes",
+        "read:disability": "View disability information",
+        "read:diversity": "View diversity data",
+        "read:eeo": "View EEO data",
+        "read:immigration": "View immigration and right-to-work documents",
+        "write:health": "Record health information",
+        "write:sickness": "Record sickness details and fit notes",
+        "write:disability": "Record disability information",
+        "write:diversity": "Record diversity data",
+        "write:eeo": "Record EEO data",
+        "write:immigration": "Record immigration and right-to-work documents"
+      },
+      "privacy": {
+        "read": "View privacy requests"
+      },
+      "audit": {
+        "read": "View the audit log",
+        "export": "Export the audit log"
+      },
+      "users": {
+        "invite": "Invite people to sign in"
+      },
+      "roles": {
+        "read": "View roles and who holds them",
+        "manage": "Create and change custom roles",
+        "assign": "Assign and revoke roles"
+      },
+      "settings": {
+        "read": "View workspace settings",
+        "manage": "Change workspace settings"
+      },
+      "support": {
+        "ticket": "Contact support"
+      },
+      "help": {
+        "read": "Read the help centre"
+      },
+      "ai": {
+        "ask": "Ask the AI assistant"
+      }
+    },
+    "section": {
+      "core": "Core",
+      "personal": "Personal",
+      "job": "Job",
+      "pay": "Pay",
+      "contract": "Contract",
+      "custom": "Custom fields",
+      "bank": "Bank details"
+    },
+    "field": {
+      "id": "Record ID",
+      "displayName": "Name",
+      "status": "Status",
+      "employeeNumber": "Employee number",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "workEmail": "Work email",
+      "workPhone": "Work phone",
+      "photoUrl": "Photo",
+      "manager": "Manager",
+      "legalFirstName": "Legal first name",
+      "legalLastName": "Legal last name",
+      "preferredName": "Preferred name",
+      "pronouns": "Pronouns",
+      "dateOfBirth": "Date of birth",
+      "personalEmail": "Personal email",
+      "personalPhone": "Personal phone",
+      "address": "Address",
+      "nationality": "Nationality",
+      "emergencyContacts": "Emergency contacts",
+      "jobTitle": "Job title",
+      "position": "Position",
+      "department": "Department",
+      "location": "Location",
+      "entity": "Legal entity",
+      "costCentre": "Cost centre",
+      "employmentType": "Employment type",
+      "fte": "FTE",
+      "weeklyHours": "Weekly hours",
+      "workPattern": "Work pattern",
+      "flsaStatus": "FLSA status",
+      "pay": {
+        "amount": "Pay",
+        "grade": "Grade"
+      },
+      "contract": {
+        "type": "Contract type",
+        "noticePeriod": "Notice period",
+        "probation": "Probation"
+      }
+    },
+    "scope": {
+      "all": "Everyone",
+      "entity": "Legal entities",
+      "country": "Countries",
+      "department": "Departments",
+      "location": "Locations",
+      "own_team": "Their own team",
+      "self": "Only themselves"
+    },
+    "users": {
+      "title": "Users and access",
+      "intro": "Everyone who can sign in, and the roles they hold. A role change applies to the person’s next action.",
+      "search": "Search by name or email",
+      "colName": "Name",
+      "colEmail": "Email",
+      "colRoles": "Roles",
+      "colMfa": "Two-step verification",
+      "mfaOn": "On",
+      "mfaOff": "Not set up",
+      "status": {
+        "invited": "Invited",
+        "active": "Active",
+        "deactivated": "Deactivated"
+      },
+      "empty": "No one matches",
+      "back": "All users",
+      "assignmentsTitle": "Roles",
+      "noAssignments": "This person has no roles.",
+      "colRole": "Role",
+      "colScope": "Applies to",
+      "colAdded": "Added",
+      "revoke": "Revoke",
+      "revokeLabel": "Revoke {role} ({scope})",
+      "revoked": "Role revoked.",
+      "assignTitle": "Assign a role",
+      "role": "Role",
+      "chooseRole": "Choose a role",
+      "scopeType": "Applies to",
+      "scopeValues": "Choose where",
+      "noScopeValues": "There is nothing to choose yet. Add them under Organisation structure.",
+      "assign": "Assign role",
+      "assigned": "Role assigned.",
+      "adminNoMfa": "This person has not set up two-step verification. With an admin role they must set it up before they can continue.",
+      "scopeSummary": "{type}: {values}"
+    },
+    "errors": {
+      "exceedsYourAccess": "You can only grant access you hold yourself.",
+      "notHeld": "Not yours to grant: {list}",
+      "scopeTooWide": "You can only grant access within your own scope.",
+      "lastOwner": "A workspace always keeps at least one owner.",
+      "roleInUse": "This role is still assigned ({count}). Revoke those assignments first.",
+      "builtInRole": "Built-in roles cannot be changed.",
+      "keyTaken": "That identifier is already in use.",
+      "duplicateAssignment": "This person already holds that role there."
+    }
   }
 }

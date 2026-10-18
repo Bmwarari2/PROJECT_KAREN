@@ -83,7 +83,7 @@ export function isAdminGrade(permissions: string[]): boolean {
 }
 
 // ---- employee fields ------------------------------------------------------------------------------------
-export type FieldSection = 'core' | 'personal' | 'job' | 'pay' | 'contract' | 'other';
+export type FieldSection = 'core' | 'personal' | 'job' | 'pay' | 'contract';
 export interface FieldCatalogueEntry {
   /** Field key under the `employee` resource (as checked by fieldAccess(principal, 'employee', key)). */
   key: string;
@@ -97,9 +97,11 @@ export const EMPLOYEE_FIELDS: FieldCatalogueEntry[] = [
   ...f('job', 'jobTitle', 'position', 'department', 'location', 'entity', 'costCentre', 'employmentType', 'fte', 'weeklyHours', 'workPattern', 'flsaStatus'),
   ...f('pay', 'pay.amount', 'pay.grade'),
   ...f('contract', 'contract.type', 'contract.noticePeriod', 'contract.probation'),
-  ...f('other', 'custom'),
 ];
-/** Field groups that may be granted with a wildcard (`employee.pay.*`). `bank` is reserved for payroll details. */
+/**
+ * Field groups that may be granted with a wildcard (`employee.pay.*`). Custom fields and objects are
+ * `employee.custom.<key>` (validated against the tenant); `bank` is reserved for payroll details.
+ */
 export const EMPLOYEE_FIELD_GROUPS = ['pay', 'contract', 'custom', 'bank'] as const;
 const FIELD_KEYS = new Set(EMPLOYEE_FIELDS.map((x) => `employee.${x.key}`));
 const FIELD_LEVELS: FieldAccess[] = ['none', 'read', 'write'];

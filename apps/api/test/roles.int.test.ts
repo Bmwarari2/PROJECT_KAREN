@@ -124,7 +124,8 @@ describe('catalogue and built-in roles', () => {
     ]);
     const keys = new Set(EMPLOYEE_FIELDS.map((f) => f.key));
     for (const def of Object.values(FIELDS)) expect(keys.has(def.perm), def.perm).toBe(true);
-    for (const perm of Object.values(DERIVED_PERMS)) expect(keys.has(perm), perm).toBe(true);
+    // `custom` is the container of custom values, each governed by employee.custom.<key>
+    for (const perm of Object.values(DERIVED_PERMS).filter((x) => x !== 'custom')) expect(keys.has(perm), perm).toBe(true);
     expect(cat.fields.map((f) => f.key)).toEqual([...keys]);
   });
 });

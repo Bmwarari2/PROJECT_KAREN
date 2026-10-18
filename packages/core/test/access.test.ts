@@ -120,3 +120,19 @@ describe('scope rule', () => {
     expect(checkAssignment(entityAdmin, def, { type: 'all' }, {}, fieldProbes())).toEqual({ mayAssign: false, permissions: ['employees.read'], fields: ['employee.jobTitle'] });
   });
 });
+
+describe('access catalogue labels', () => {
+  it('every permission, area, field and scope has an en-GB label', async () => {
+    const { t } = await import('../src/i18n');
+    const { PERMISSION_CATALOGUE, EMPLOYEE_FIELDS, EMPLOYEE_FIELD_GROUPS, SCOPE_TYPES } = await import('../src/access');
+    const keys = [
+      ...PERMISSION_CATALOGUE.map((a) => `access.area.${a.area}`),
+      ...PERMISSION_CATALOGUE.flatMap((a) => a.permissions.map((x) => `access.perm.${x.key}`)),
+      ...EMPLOYEE_FIELDS.map((x) => `access.field.${x.key}`),
+      ...EMPLOYEE_FIELDS.map((x) => `access.section.${x.section}`),
+      ...EMPLOYEE_FIELD_GROUPS.map((g) => `access.section.${g}`),
+      ...SCOPE_TYPES.map((s) => `access.scope.${s}`),
+    ];
+    for (const key of keys) expect(t('en-GB', key), key).not.toBe(key);
+  });
+});
