@@ -8,7 +8,7 @@
     "GB-NIR"
   ],
   "name": "United Kingdom",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -65,6 +65,12 @@
               "upliftPercentOfPayForWorkDone": 12.07,
               "itemisedPayStatementMustShowHolidayPay": true,
               "inForceFrom": "2024-01-01"
+            },
+            "accruesOn": "last_day_of_each_pay_period",
+            "rounding": {
+              "unit": "hour",
+              "fractionBelowMinutesIsZero": 30,
+              "fractionFromMinutesIsOneHour": 30
             }
           },
           "source": {
@@ -73,7 +79,7 @@
           },
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
-          "notes": "Reg. 15B(1): applies to irregular hours workers and part-year workers in respect of leave years beginning on or after 1 April 2024; 15B(3): accrues at 12.07% of hours worked in the pay period; 15B(4): max 28 days per leave year. Reg. 16A (inserted 1.1.2024 by S.I. 2023/1426): holiday pay for reg. 15B leave may be paid as a 12.07% uplift; itemised pay statements must show the holiday pay amount (16A(7)). Source for 16A: https://www.legislation.gov.uk/uksi/1998/1833/regulation/16A. For leave years beginning on or before 31 March 2024 GOV.UK says accrual is not required (not modelled). Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
+          "notes": "Reg. 15B(1): applies to irregular hours workers and part-year workers in respect of leave years beginning on or after 1 April 2024; 15B(3): accrues at 12.07% of hours worked in the pay period; 15B(4): max 28 days per leave year. Reg. 16A (inserted 1.1.2024 by S.I. 2023/1426): holiday pay for reg. 15B leave may be paid as a 12.07% uplift; itemised pay statements must show the holiday pay amount (16A(7)). Source for 16A: https://www.legislation.gov.uk/uksi/1998/1833/regulation/16A. For leave years beginning on or before 31 March 2024 GOV.UK says accrual is not required (not modelled). Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR. Phase 5 (verified 2026-10-18): reg. 15B(3) leave accrues \"on the last day of each pay period\"; reg. 15B(5) a fraction of an hour is treated as zero if less than 30 minutes and as one hour if 30 minutes or more. GOV.UK worked example (68 hours in June -> 8.2076 -> 8 hours): https://www.gov.uk/government/publications/simplifying-holiday-entitlement-and-holiday-pay-calculations/holiday-pay-and-entitlement-reforms-from-1-january-2024 (updated 1 April 2024).",
           "regions": [
             "GB-ENG",
             "GB-WLS",
@@ -446,7 +452,53 @@
                 "followUpCheck": "within_six_months"
               }
             },
-            "extendedLiabilityScreening": true
+            "extendedLiabilityScreening": true,
+            "listTypes": [
+              "list_a",
+              "list_b_group_1",
+              "list_b_group_2",
+              "online_unlimited",
+              "online_time_limited"
+            ],
+            "documentCatalogue": {
+              "list_a": [
+                "passport_british_citizen_current_or_expired",
+                "passport_or_passport_card_irish_citizen_current_or_expired",
+                "crown_dependency_unlimited_leave_document_verified_by_ecs",
+                "passport_endorsed_exempt_or_no_time_limit",
+                "immigration_status_document_indefinite_stay_with_ni_number_document",
+                "uk_birth_or_adoption_certificate_with_ni_number_document",
+                "channel_islands_isle_of_man_or_irish_birth_or_adoption_certificate_with_ni_number_document",
+                "certificate_of_registration_or_naturalisation_british_citizen_with_ni_number_document"
+              ],
+              "list_b_group_1": [
+                "passport_endorsed_permission_to_stay_and_work",
+                "crown_dependency_limited_leave_document_verified_by_ecs",
+                "photographic_immigration_status_document_with_valid_endorsement_with_ni_number_document"
+              ],
+              "list_b_group_2": [
+                "euss_application_on_or_before_2021_06_30_with_pvn",
+                "euss_certificate_of_application_non_digital_on_or_after_2021_07_01_with_pvn",
+                "crown_dependency_limited_leave_document_with_pvn",
+                "application_registration_card_permitting_work_with_pvn",
+                "positive_verification_notice_from_ecs"
+              ]
+            },
+            "followUp": {
+              "list_a": null,
+              "list_b_group_1": {
+                "dueBy": "permission_expiry_date"
+              },
+              "list_b_group_2": {
+                "excusePeriod": "P6M",
+                "from": "positive_verification_notice_date",
+                "dueBy": "before_excuse_expires"
+              },
+              "online_unlimited": null,
+              "online_time_limited": {
+                "dueBy": "permission_expiry_date"
+              }
+            }
           },
           "source": {
             "url": "https://www.gov.uk/government/publications/right-to-work-checklist/employers-right-to-work-checklist-accessible-version",
@@ -454,7 +506,7 @@
           },
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
-          "notes": "Summarised from the Home Office Employers' right to work checklist (last updated 1 October 2026) and https://www.gov.uk/check-job-applicant-right-to-work. effectiveFrom = date of the guidance version verified; earlier guidance versions are NOT modelled. Exact acceptable document lists live in the Employer's guide (PDF, 1 Oct 2026) — deeper rule TODO. The online check covers eVisa holders; RtW DVSPs can check eligible British/Irish passports (IDVT). Extent: UK-wide — the illegal-working civil penalty and offence (Immigration, Asylum and Nationality Act 2006 ss.15 and 21) extend to the whole UK (legislation.gov.uk extent \"U.K.\", https://www.legislation.gov.uk/ukpga/2006/13/section/15), so this version also answers GB-NIR.",
+          "notes": "Summarised from the Home Office Employers' right to work checklist (last updated 1 October 2026) and https://www.gov.uk/check-job-applicant-right-to-work. effectiveFrom = date of the guidance version verified; earlier guidance versions are NOT modelled. Exact acceptable document lists live in the Employer's guide (PDF, 1 Oct 2026) — deeper rule TODO. The online check covers eVisa holders; RtW DVSPs can check eligible British/Irish passports (IDVT). Extent: UK-wide — the illegal-working civil penalty and offence (Immigration, Asylum and Nationality Act 2006 ss.15 and 21) extend to the whole UK (legislation.gov.uk extent \"U.K.\", https://www.legislation.gov.uk/ukpga/2006/13/section/15), so this version also answers GB-NIR. Phase 5 (verified 2026-10-18): document catalogue ids follow the checklist lists A, B Group 1 and B Group 2 (accessible version, updated 1 October 2026). Follow-up timing from the Employer's guide to right to work checks (1 October 2026, https://assets.publishing.service.gov.uk/media/6abd2b2c26660e5f62a7f193/FINAL_-_Employer_s_guide_to_right_to_work_checks.pdf): time-limited permission must be re-checked \"on, or before, the date their permission comes to an end\" (section 4, p. 55); a PVN gives an excuse \"for 6 months from the date specified in the PVN\" and \"The follow-up check must be carried out before the six-month statutory excuse expires\" (pp. 35-36); no follow-up where the initial check confirmed settled status or status under the EU Settlement Scheme.",
           "regions": [
             "GB-ENG",
             "GB-WLS",
@@ -613,7 +665,94 @@
                 "yearOffset": 1
               }
             },
-            "publishWithinMonthsOfSnapshot": 12
+            "publishWithinMonthsOfSnapshot": 12,
+            "calculations": [
+              {
+                "id": "mean_hourly_pay_gap",
+                "population": "full_pay_relevant_employees",
+                "formula": "(A - B) / A * 100",
+                "a": "male_mean_hourly_rate",
+                "b": "female_mean_hourly_rate",
+                "regulation": 8
+              },
+              {
+                "id": "median_hourly_pay_gap",
+                "population": "full_pay_relevant_employees",
+                "formula": "(A - B) / A * 100",
+                "a": "male_median_hourly_rate",
+                "b": "female_median_hourly_rate",
+                "regulation": 9
+              },
+              {
+                "id": "mean_bonus_gap",
+                "population": "relevant_employees_paid_bonus",
+                "formula": "(A - B) / A * 100",
+                "a": "male_mean_bonus",
+                "b": "female_mean_bonus",
+                "regulation": 10
+              },
+              {
+                "id": "median_bonus_gap",
+                "population": "relevant_employees_paid_bonus",
+                "formula": "(A - B) / A * 100",
+                "a": "male_median_bonus",
+                "b": "female_median_bonus",
+                "regulation": 11
+              },
+              {
+                "id": "bonus_proportions",
+                "population": "relevant_employees",
+                "formula": "A / B * 100",
+                "regulation": 12
+              },
+              {
+                "id": "quartile_pay_bands",
+                "population": "full_pay_relevant_employees",
+                "formula": "A / B * 100",
+                "regulation": 13
+              }
+            ],
+            "bonusRelevantPeriodMonthsEndingWithSnapshot": 12,
+            "hourlyRate": {
+              "includes": [
+                "ordinary_pay",
+                "bonus_pay_attributed_to_relevant_pay_period"
+              ],
+              "weeklyMultiplier": "7 / days_in_relevant_pay_period",
+              "daysPerMonth": 30.44,
+              "daysPerYear": 365.25,
+              "divideBy": "weekly_working_hours",
+              "regulation": 6
+            },
+            "fullPayRelevantEmployee": "relevant employee not paid at a reduced rate or nil in the relevant pay period as a result of being on leave",
+            "quartiles": {
+              "bands": [
+                "lower",
+                "lower_middle",
+                "upper_middle",
+                "upper"
+              ],
+              "rankBy": "hourly_rate_lowest_to_highest",
+              "equalSizeSoFarAsPossible": true,
+              "remainderAllocation": {
+                "1": [
+                  "lower"
+                ],
+                "2": [
+                  "lower",
+                  "upper_middle"
+                ],
+                "3": [
+                  "lower",
+                  "lower_middle",
+                  "upper_middle"
+                ]
+              },
+              "sameRateAcrossBands": "same_male_female_proportion_in_each_band"
+            },
+            "reportingPrecision": {
+              "wholeNumberOrOneDecimalPlace": true
+            }
           },
           "source": {
             "url": "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/when-to-report",
@@ -621,7 +760,7 @@
           },
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
-          "notes": "GOV.UK guidance: 250+ employees on the snapshot date (headcount, not FTE); snapshot 31 March (most public authorities) / 5 April (private, voluntary, all other public authorities); deadlines 30 March / 4 April the following year. Applies to England, Scotland and Wales; different rules for public authorities in Scotland and Wales; NI-based employers with 250+ employees in GB are included (https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report). Private-sector regs (S.I. 2017/172) in force 6 April 2017; reg. 2(2) publish within 12 months of snapshot. ERA 2025 equality action plans (GOV.UK guidance 7 April 2026) not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
+          "notes": "GOV.UK guidance: 250+ employees on the snapshot date (headcount, not FTE); snapshot 31 March (most public authorities) / 5 April (private, voluntary, all other public authorities); deadlines 30 March / 4 April the following year. Applies to England, Scotland and Wales; different rules for public authorities in Scotland and Wales; NI-based employers with 250+ employees in GB are included (https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report). Private-sector regs (S.I. 2017/172) in force 6 April 2017; reg. 2(2) publish within 12 months of snapshot. ERA 2025 equality action plans (GOV.UK guidance 7 April 2026) not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR. Phase 5 (verified 2026-10-18): the six figures are S.I. 2017/172 reg. 2(1)(a)-(f) (https://www.legislation.gov.uk/uksi/2017/172/regulation/2); definitions reg. 1 (\"full-pay relevant employee\", \"snapshot date\"), reg. 6 hourly rate (weekly multiplier 7 / days in the relevant pay period, a month = 30.44 days, a year = 365.25 days), regs. 8-11 gaps expressed as a percentage of the male figure, reg. 10(2)/12(3) bonus period = 12 months ending with the snapshot date, reg. 13 quartiles (equal sections so far as possible; employees on the same rate spanning bands split in the same male/female proportion). Remainder allocation (1 -> lower; 2 -> lower and upper middle; 3 -> lower, lower middle and upper middle), worked examples and \"whole percentages or rounded to one decimal place\" from GOV.UK \"Making your calculations\" (updated 21 May 2026, https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/making-your-calculations). The guidance gives no rule on which sex/gender classification to use: left to the employer (legal review).",
           "regions": [
             "GB-ENG",
             "GB-WLS",

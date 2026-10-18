@@ -2,7 +2,7 @@
   "jurisdiction": "US-CA",
   "parent": "US",
   "name": "California",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -182,6 +182,29 @@
           "notes": "2027 rate not yet verified. Industry (fast food, health care) and local minimum wages are higher and not modelled."
         }
       ]
+    },
+    {
+      "key": "overtime.exempt_salary_threshold",
+      "description": "California executive, administrative and professional exemptions: monthly salary of at least two times the state minimum wage for full-time employment (40 hours a week)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "multipleOfMinimumWage": 2,
+            "fullTimeHoursPerWeek": 40,
+            "salaryPeriod": "monthly",
+            "minimumWageKey": "minimum_wage.rates"
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/IWC/WageOrders2024/IWCArticle04.pdf",
+            "title": "IWC Wage Order 4-2001 (IWC Form 1104, Rev. 11/2023), section 1(A)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Wage Order 4 s.1(A)(1)(f), (2)(g), (3)(d): the employee \"must also earn a monthly salary equivalent to no less than two (2) times the state minimum wage for full-time employment. Full-time employment is defined in Labor Code Section 515(c) as 40 hours per week.\" The amount follows the US-CA minimum_wage.rates in force (2026: 2 x $16.90 x 40 = $1,352.00 a week, derived). The DIR exemptions FAQ (https://www.dir.ca.gov/dlse/faq_overtimeexemptions.htm) states the same test. leginfo.legislature.ca.gov returned HTTP 403. Computer professional and physician hourly thresholds not modelled. effectiveFrom = the Rev. 11/2023 wage order edition in force from 2024."
+        }
+      ]
     }
   ],
   "holidays": [],
@@ -189,9 +212,9 @@
     "priority": "high",
     "deeperRulesTodo": [
       "State holidays (not modelled yet)",
-      "CA exempt salary threshold (2x state minimum wage for full-time)",
       "Meal and rest periods",
-      "Alternative workweek schedules"
+      "Alternative workweek schedules",
+      "Computer professional hourly and physician exempt thresholds (Labor Code 515.5, 515.6)"
     ],
     "notes": "Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks."
   }

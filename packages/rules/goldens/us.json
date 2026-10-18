@@ -994,6 +994,55 @@
       },
       "source": "https://www.dol.gov/agencies/whd/minimum-wage/state",
       "notes": "Unknown locality code (fictional BUF) resolves to its state, not to federal law. DOL WHD: $16.00 remainder of the state."
+    },
+    {
+      "key": "reporting.eeo1",
+      "date": "2026-10-18",
+      "expectPath": {
+        "jobCategories.length": 10,
+        "jobCategories[0]": "executive_senior_level_officials_and_managers",
+        "raceEthnicityCategories[0]": "hispanic_or_latino",
+        "raceEthnicityCategories.length": 7,
+        "workforceSnapshot.from.month": 10,
+        "workforceSnapshot.to.month": 12
+      },
+      "source": "https://www.eeoc.gov/sites/default/files/migrated_files/employers/eeo1/instruction_rev_2006.pdf",
+      "notes": "Categories from the EEO-1 Instruction Booklet; Q4 snapshot from the EEOC Commission meeting transcript of 11 August 2026."
+    },
+    {
+      "key": "overtime.exempt_duties_tests",
+      "date": "2026-10-18",
+      "expectPath": {
+        "categories[4].id": "computer",
+        "categories[4].hourlyAlternative.amountMinor": 2763,
+        "categories[5].salaryTest": "none",
+        "nondiscretionaryBonusMaxPercentOfStandardSalary": 10
+      },
+      "source": "https://www.dol.gov/agencies/whd/fact-sheets/17a-overtime",
+      "notes": "DOL Fact Sheet #17A: computer employees \"not less than $27.63 an hour\"; outside sales has no salary test; up to 10% of the standard salary level from nondiscretionary bonuses."
+    },
+    {
+      "key": "i9.completion_deadlines",
+      "date": "2026-10-18",
+      "expectPath": {
+        "section1.dueBy": "first_day_of_employment",
+        "section2.businessDaysAfterFirstDay": 3,
+        "section2.thenDueBy": "first_day_of_employment"
+      },
+      "source": "https://www.uscis.gov/sites/default/files/document/forms/i-9instr.pdf",
+      "notes": "Form I-9 instructions (01/20/25): Section 1 no later than the first day of employment; Section 2 within 3 business days, or by the first day when employed for less than 3 business days."
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2026-06-01",
+      "expectJurisdiction": "US-CA",
+      "expectPath": {
+        "multipleOfMinimumWage": 2,
+        "fullTimeHoursPerWeek": 40
+      },
+      "source": "https://www.dir.ca.gov/dlse/faq_overtimeexemptions.htm",
+      "notes": "DIR FAQ: \"not less than two times the monthly State minimum wage for full time employment\" (independent of the wage order used by the pack)."
     }
   ],
   "sources": [
