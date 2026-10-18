@@ -932,6 +932,68 @@
       },
       "source": "https://app.leg.wa.gov/WAC/default.aspx?cite=296-128-545",
       "notes": "Derived: WAC 296-128-545(8) 2027: fifty or fewer employees 2.25x, more than fifty 2.5x the minimum wage for a 40-hour week; 2027 minimum wage $17.73 (L&I history page) -> $1,595.70 and $1,773.00."
+    },
+    {
+      "jurisdiction": "US-NY-NYC",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expectJurisdiction": "US-NY-NYC",
+      "expectPath": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 30
+        },
+        "tiers[2].hours": 40,
+        "tiers[3].minEmployees": 100,
+        "tiers[3].hours": 56,
+        "tiers[0].paid": false,
+        "immediatelyAvailableUnpaidHours.hours": 32
+      },
+      "source": "https://www.nyc.gov/site/dca/about/paid-sick-leave-law.page",
+      "notes": "DCWP law page (independent of the FAQ used by the pack): \"up to 40 or 56 hours of paid protected time off per year\" and \"32 hours of unpaid protected time off from the beginning of employment\"; accrual rate and tier boundaries from the DCWP FAQ (same source as the pack)."
+    },
+    {
+      "jurisdiction": "US-NY-NYC",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-02-21",
+      "expectJurisdiction": "US-NY",
+      "expectPath": {
+        "accrual.perHoursWorked": 30
+      },
+      "notes": "City law before 22 Feb 2026 is not modelled: the lookup falls back to New York State paid sick leave."
+    },
+    {
+      "jurisdiction": "US-NY-NYC",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expectJurisdiction": "US-NY",
+      "expectPath": {
+        "rates[0].region": "nyc",
+        "rates[0].hourlyMinor": 1700
+      },
+      "source": "https://www.dol.gov/agencies/whd/minimum-wage/state",
+      "notes": "DOL WHD state table (updated 1 July 2026): New York $17.00 (New York City, Nassau, Suffolk and Westchester)."
+    },
+    {
+      "jurisdiction": "US-NY-NYC",
+      "key": "overtime.weekly",
+      "date": "2026-06-01",
+      "expectJurisdiction": "US",
+      "expectPath": {
+        "thresholdHours": 40
+      }
+    },
+    {
+      "jurisdiction": "US-NY-BUF",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expectJurisdiction": "US-NY",
+      "expectPath": {
+        "rates[2].region": "remainder_of_state",
+        "rates[2].hourlyMinor": 1600
+      },
+      "source": "https://www.dol.gov/agencies/whd/minimum-wage/state",
+      "notes": "Unknown locality code (fictional BUF) resolves to its state, not to federal law. DOL WHD: $16.00 remainder of the state."
     }
   ],
   "sources": [
@@ -1133,6 +1195,16 @@
     {
       "url": "https://cdle.colorado.gov/sites/cdle/files/adopted_2026_pay_calc_order_7_ccr_1103-14_redline_12.8.25.docx",
       "title": "Colorado 2026 PAY CALC Order (7 CCR 1103-14), adopted redline",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.nyc.gov/site/dca/about/paid-sick-leave-FAQs.page",
+      "title": "NYC DCWP — Protected Time Off Law: Frequently Asked Questions (02/2026)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.nyc.gov/site/dca/about/paid-sick-leave-law.page",
+      "title": "NYC DCWP — NYC's Protected Time Off Law",
       "verifiedOn": "2026-10-18"
     }
   ]

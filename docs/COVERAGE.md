@@ -44,7 +44,8 @@
 | US-GA — Georgia | US | high | 1 | 1 | 0 | 2026-10-18 |
 | US-IL — Illinois | US | high | 1 | 2 | 0 | 2026-10-18 |
 | US-MA — Massachusetts | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-NY — New York | US | high | 1 | 2 | 0 | 2026-10-18 |
+| US-NY — New York | US | high | 2 | 2 | 0 | 2026-10-18 |
+| US-NY-NYC — New York City | US-NY | high | 1 | 1 | 0 | 2026-10-18 |
 | US-OR — Oregon | US | high | 1 | 2 | 0 | 2026-10-18 |
 | US-TX — Texas | US | high | 1 | 2 | 0 | 2026-10-18 |
 | US-WA — Washington | US | high | 1 | 3 | 0 | 2026-10-18 |
@@ -91,6 +92,7 @@
 | US-IL |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
 | US-MA |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
 | US-NY |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-NY-NYC |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | US-OR |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
 | US-TX |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
 | US-WA |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
@@ -136,7 +138,8 @@
 - **US-GA** (high): State holidays (not modelled yet); Georgia Family Care Act — No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime.
 - **US-IL** (high): State holidays (not modelled yet); Illinois state holidays; Day and Temporary Labor Services Act; Illinois Equal Pay registration certificates — Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA).
 - **US-MA** (high): State holidays (not modelled yet); Massachusetts PFML; Pay transparency law — Local ordinances: none identified for sick leave or minimum wage (not verified). Massachusetts Paid Family and Medical Leave (PFML) and the Sunday/holiday premium pay phase-out (blue laws) are not modelled. No daily overtime.
-- **US-NY** (high): State holidays (not modelled yet); NY exempt salary thresholds (executive/administrative) by region; NY Paid Family Leave; NY Paid Prenatal Leave — Local ordinances not yet modelled: NYC Earned Safe and Sick Time Act (incl. 2024 amendments), Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited).
+- **US-NY** (high): State holidays (not modelled yet); NY exempt salary thresholds (executive/administrative) by region; NY Paid Family Leave; NY Paid Prenatal Leave — NYC Earned Safe and Sick Time Act (Protected Time Off Law) is modelled in the US-NY-NYC locality pack from 22 Feb 2026 (earlier city history not modelled). Local ordinances not yet modelled: Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited).
+- **US-NY-NYC** (high): ESSTA history before 22 February 2026 (2014 Act, 2020 and 2024 amendments); NYC Fair Workweek (fast food and retail); NYC Temporary Schedule Change Law; NYC pay transparency in job listings; Other localities: San Francisco, Los Angeles, Seattle, Chicago, Cook County, Denver, Portland (see state pack notes) — First locality pack (code US-NY-NYC = state ISO 3166-2 code + locality, ADR-0021). City minimum wage is the New York State rate for the "nyc" region (US-NY pack). Sources: NYC DCWP (nyc.gov). Pending legal review.
 - **US-OR** (high): State holidays (not modelled yet); Oregon Paid Leave; Oregon predictive scheduling; Region (county) mapping for minimum wage — Local ordinances not yet modelled: Portland-area paid sick time threshold is modelled in the rule; Oregon Paid Leave (paid family and medical leave), predictive scheduling, and manufacturing/agriculture overtime rules not modelled.
 - **US-TX** (high): State holidays (not modelled yet) — No statewide paid sick leave. City paid sick leave ordinances (Austin, Dallas, San Antonio) — legal status not verified; not modelled. No daily overtime.
 - **US-WA** (high): State holidays (not modelled yet); WA Paid Family and Medical Leave; Exempt salary threshold for 2025 and 2028+; Computer professional hourly threshold — Local ordinances not yet modelled: Seattle minimum wage and Paid Sick and Safe Time, Tacoma Paid Sick Leave, SeaTac, Tukwila, Renton, Bellingham, Everett, Burien, unincorporated King County minimum wages; WA Paid Family and Medical Leave. No state daily overtime (FLSA weekly rule inherited).

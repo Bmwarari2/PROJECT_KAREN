@@ -8268,6 +8268,8 @@ export interface paths {
                             };
                             verifiedOn: string;
                             packVersion: number;
+                            /** @description Subdivisions the answering version was verified for (e.g. GB-ENG, GB-WLS, GB-SCT); absent = the whole jurisdiction */
+                            regions?: string[];
                         };
                     };
                 };
@@ -8344,6 +8346,8 @@ export interface paths {
                             };
                             verifiedOn: string;
                             packVersion: number;
+                            /** @description Subdivisions the answering version was verified for (e.g. GB-ENG, GB-WLS, GB-SCT); absent = the whole jurisdiction */
+                            regions?: string[];
                         }[];
                     };
                 };

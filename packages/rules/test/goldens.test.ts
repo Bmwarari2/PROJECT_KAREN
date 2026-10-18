@@ -118,6 +118,14 @@ describe('layered resolution', () => {
     expect(book.resolve('DE', 'working_time.daily_rest', '2026-06-01').jurisdiction).toBe('EU');
     expect(book.resolve('GB-SCT', 'leave.statutory_annual_minimum', '2026-06-01').jurisdiction).toBe('GB');
   });
+  it('US localities walk locality -> state -> federal; unknown localities stop at their state', () => {
+    expect(book.chain('US-NY-NYC')).toEqual(['US-NY-NYC', 'US-NY', 'US']);
+    expect(book.chain('US-CA-SF')).toEqual(['US-CA', 'US']);
+    expect(book.resolve('US-NY-NYC', 'sick_pay.paid_sick_leave_accrual', '2026-06-01').jurisdiction).toBe('US-NY-NYC');
+    expect(book.resolve('US-NY-NYC', 'minimum_wage.rates', '2026-06-01').jurisdiction).toBe('US-NY');
+    expect(book.resolve('US-CA-SF', 'overtime.daily', '2026-06-01').jurisdiction).toBe('US-CA');
+    expect(book.tryResolve('US-TX-AUS', 'overtime.daily', '2026-06-01')).toBeUndefined();
+  });
   it('UK nations: Scotland, Wales and England get GB law; Northern Ireland never inherits a GB rule not verified for it', () => {
     for (const nation of ['GB-SCT', 'GB-WLS', 'GB-ENG']) {
       expect(book.resolve(nation, 'leave.statutory_annual_minimum', '2026-06-01').jurisdiction).toBe('GB');

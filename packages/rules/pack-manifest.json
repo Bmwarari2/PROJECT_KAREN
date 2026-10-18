@@ -275,6 +275,18 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:6e86d897241986d9fcddd383b57599125b7df1aa7af34787bc94bb7fc6657203"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:6c64a9a633daea55d5e4823e5c27bafb445ce7c1a1cf27c651f07a0339e8fcdb"
+      }
+    ],
+    "US-NY-NYC": [
+      {
+        "version": 1,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:b1ba1273f7d7c4c02a70e33f926d519df562090d9ee32d45a0efef7cae3d2d27"
       }
     ],
     "US-OR": [
