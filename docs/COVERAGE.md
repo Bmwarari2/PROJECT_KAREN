@@ -38,7 +38,7 @@
 | SI — Slovenia | EU | medium | 1 | 2 | 15 | 2026-10-18 |
 | SK — Slovakia | EU | medium | 1 | 2 | 17 | 2026-10-18 |
 | US-CA — California | US | high | 1 | 4 | 0 | 2026-10-18 |
-| US-CO — Colorado | US | high | 1 | 4 | 0 | 2026-10-18 |
+| US-CO — Colorado | US | high | 2 | 4 | 0 | 2026-10-18 |
 | US-FL — Florida | US | high | 1 | 1 | 0 | 2026-10-18 |
 | US-GA — Georgia | US | high | 1 | 1 | 0 | 2026-10-18 |
 | US-IL — Illinois | US | high | 1 | 2 | 0 | 2026-10-18 |

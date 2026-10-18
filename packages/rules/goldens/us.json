@@ -664,6 +664,274 @@
           "currency": "USD"
         }
       }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2022-06-01",
+      "expectPath": {
+        "standardWeekly": {
+          "amountMinor": 68400,
+          "currency": "USD"
+        },
+        "hceAnnualTotalCompensation": {
+          "amountMinor": 10743200,
+          "currency": "USD"
+        },
+        "hceMinimumWeeklySalary": {
+          "amountMinor": 68400,
+          "currency": "USD"
+        }
+      },
+      "source": "https://www.ecfr.gov/api/renderer/v1/content/enhanced/2022-06-01/title-29?part=541&section=541.600",
+      "notes": "eCFR point-in-time text as at 2022-06-01 (independent of the Federal Register document used by the pack): 29 CFR 541.600(a) \"not less than $684 per week\"; 541.601(a)(1) \"Beginning on January 1, 2020 ... total annual compensation of at least $107,432\"; 541.601(b)(1) \"at least $684 per week paid on a salary or fee basis\"."
+    },
+    {
+      "jurisdiction": "US",
+      "key": "i9.reverification",
+      "date": "2026-10-18",
+      "expectPath": {
+        "acceptableLists": [
+          "A",
+          "C"
+        ],
+        "recordedOn": "supplement_b"
+      },
+      "source": "https://www.uscis.gov/i-9-central/form-i-9-resources/handbook-for-employers-m-274/60-completing-supplement-b-reverification-and-rehire-of-form-i-9/61-reverifying-employment-authorization-for-current-employees",
+      "notes": "USCIS M-274 6.1 (last updated 10/08/2026; independent of the I-9 Central page used by the pack): reverify \"no later than the date employment authorization expires\" with documentation \"such as any documentation from List A or C\"; chapter 6.0 is \"Completing Supplement B, Reverification and Rehire of Form I-9\"."
+    },
+    {
+      "jurisdiction": "US",
+      "key": "reporting.eeo1",
+      "date": "2026-10-18",
+      "expectPath": {
+        "required": true,
+        "privateEmployerMinEmployees": 100,
+        "federalContractorMinEmployees": 50
+      },
+      "source": "https://www.ecfr.gov/current/title-29/section-1602.7",
+      "notes": "eCFR (independent of the EEOC page used by the pack): 29 CFR 1602.7 \"every employer that is subject to title VII ... and that has 100 or more employees shall file\" Standard Form 100 (EEO-1); 41 CFR 60-1.7(a)(1)(ii) federal prime contractors and first-tier subcontractors with \"50 or more employees\" (and a $50,000 contract) file EEO-1 (https://www.ecfr.gov/current/title-41/section-60-1.7). EEOC's July 2026 rescission NPRM is not final."
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "minimum_wage.rates",
+      "date": "2024-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1600
+          }
+        ]
+      },
+      "source": "https://www.dol.gov/agencies/whd/state/minimum-wage/history",
+      "notes": "Independent federal source: DOL WHD state minimum wage history table (rates for January 1 of each year), fetched 2026-10-18. California 2024: 16.00."
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "minimum_wage.rates",
+      "date": "2024-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1442
+          }
+        ]
+      },
+      "source": "https://www.dol.gov/agencies/whd/state/minimum-wage/history",
+      "notes": "Independent federal source: DOL WHD state minimum wage history table (rates for January 1 of each year), fetched 2026-10-18. Colorado 2024: 14.42."
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "minimum_wage.rates",
+      "date": "2027-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1571
+          }
+        ]
+      },
+      "source": "https://cdle.colorado.gov/press-releases/press-release-colorado-minimum-wage-will-increase-to-1571/hour-in-2027",
+      "notes": "Same source as the pack (only official source for 2027 yet): CDLE press release of 13 Aug 2026, \"Colorado's minimum wage will increase to $15.71 per hour in 2027\"."
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2025-06-01",
+      "expect": {
+        "annual": {
+          "amountMinor": 5648500,
+          "currency": "USD"
+        }
+      },
+      "source": "https://cdle.colorado.gov/sites/cdle/files/adopted_2025_pay_calc_order_7_ccr_1103-14_11.7.24_accessible.pdf",
+      "notes": "2025 PAY CALC Order (7 CCR 1103-14, adopted 7 Nov 2024, effective 1 Jan 2025), row (E): EAP \"$1,086.25 per week ($56,485 rounded annual equivalent)\" — independent of the INFO #1 sheet used by the pack."
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2026-06-01",
+      "expect": {
+        "annual": {
+          "amountMinor": 5778400,
+          "currency": "USD"
+        }
+      },
+      "source": "https://cdle.colorado.gov/sites/cdle/files/adopted_2026_pay_calc_order_7_ccr_1103-14_redline_12.8.25.docx",
+      "notes": "Adopted 2026 PAY CALC Order (redline, adopted 8 Dec 2025), row (E): EAP \"$1,111.23 per week ($57,784 rounded annual equivalent)\". The order states \"effective February 1, 2026\" — the date is checked mid-year to avoid that open question (HUMAN_TODO 3.1)."
+    },
+    {
+      "jurisdiction": "US-FL",
+      "key": "minimum_wage.rates",
+      "date": "2025-01-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1300
+          }
+        ]
+      },
+      "source": "https://www.flsenate.gov/Laws/Constitution",
+      "notes": "Derived from the constitution (same source as the pack): Art. X s.24(c) \"Effective September 30th, 2021 ... $10.00 per hour, and then increase each September 30th thereafter by $1.00 per hour\" -> $13.00 from 30 Sep 2024. The DOL January-1 history table is not used for Florida because its 2023 value does not follow this schedule."
+    },
+    {
+      "jurisdiction": "US-IL",
+      "key": "minimum_wage.rates",
+      "date": "2024-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1400
+          }
+        ]
+      },
+      "source": "https://www.dol.gov/agencies/whd/state/minimum-wage/history",
+      "notes": "Independent federal source: DOL WHD state minimum wage history table (rates for January 1 of each year), fetched 2026-10-18. Illinois 2024: 14.00."
+    },
+    {
+      "jurisdiction": "US-NY",
+      "key": "minimum_wage.rates",
+      "date": "2024-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "nyc",
+            "hourlyMinor": 1600
+          },
+          {
+            "region": "long_island_westchester",
+            "hourlyMinor": 1600
+          },
+          {
+            "region": "remainder_of_state",
+            "hourlyMinor": 1500
+          }
+        ]
+      },
+      "source": "https://dol.ny.gov/history-minimum-wage-new-york-state",
+      "notes": "NYS DOL history (same source as the pack): New York City and Long Island & Westchester \"$16.00 per hour on and after January 1, 2024\", remainder of state \"$15.00 per hour on and after January 1, 2024\". Remainder-of-state value independently matches the DOL WHD history table (New York 2024: 15.00)."
+    },
+    {
+      "jurisdiction": "US-OR",
+      "key": "minimum_wage.rates",
+      "date": "2025-01-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "standard",
+            "hourlyMinor": 1470
+          },
+          {
+            "region": "portland_metro",
+            "hourlyMinor": 1595
+          },
+          {
+            "region": "nonurban_counties",
+            "hourlyMinor": 1370
+          }
+        ]
+      },
+      "source": "https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx",
+      "notes": "Oregon BOLI rate summary table (same page as the pack): \"July 1, 2024 $14.70 $15.95 $13.70\" (standard, Portland Metro, nonurban). The DOL January-1 history table lists 14.70 for 1 Jan 2024, contradicting BOLI's July effective dates, so it is not used for Oregon."
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "minimum_wage.rates",
+      "date": "2024-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1628
+          }
+        ]
+      },
+      "source": "https://www.dol.gov/agencies/whd/state/minimum-wage/history",
+      "notes": "Independent federal source: DOL WHD state minimum wage history table (rates for January 1 of each year), fetched 2026-10-18. Washington 2024: 16.28 (also L&I history: January 1, 2024 $16.28)."
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "minimum_wage.rates",
+      "date": "2025-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1666
+          }
+        ]
+      },
+      "source": "https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage",
+      "notes": "Same source as the pack (the DOL history table stops at 2024): L&I \"January 1, 2025 $16.66\"."
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2026-06-01",
+      "expect": {
+        "weekly": {
+          "amountMinor": 154170,
+          "currency": "USD"
+        },
+        "multipleOfMinimumWage": 2.25
+      },
+      "source": "https://app.leg.wa.gov/WAC/default.aspx?cite=296-128-545",
+      "notes": "Derived independently of the L&I page used by the pack: WAC 296-128-545(7) \"Beginning January 1, 2026 ... not less than 2.25 times the minimum wage ... for a forty-hour workweek regardless of the size of the employer\" x $17.13 (DOL WHD state table, updated 1 July 2026) x 40 = $1,541.70."
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2027-06-01",
+      "expectPath": {
+        "bands[0].maxEmployees": 50,
+        "bands[0].weekly": {
+          "amountMinor": 159570,
+          "currency": "USD"
+        },
+        "bands[0].multipleOfMinimumWage": 2.25,
+        "bands[1].minEmployees": 51,
+        "bands[1].weekly": {
+          "amountMinor": 177300,
+          "currency": "USD"
+        },
+        "bands[1].multipleOfMinimumWage": 2.5
+      },
+      "source": "https://app.leg.wa.gov/WAC/default.aspx?cite=296-128-545",
+      "notes": "Derived: WAC 296-128-545(8) 2027: fifty or fewer employees 2.25x, more than fifty 2.5x the minimum wage for a 40-hour week; 2027 minimum wage $17.73 (L&I history page) -> $1,595.70 and $1,773.00."
     }
   ],
   "sources": [
@@ -835,6 +1103,36 @@
     {
       "url": "https://www.flsenate.gov/Laws/Constitution",
       "title": "Constitution of the State of Florida — Art. X, s. 24 (Florida minimum wage)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/state/minimum-wage/history",
+      "title": "U.S. DOL WHD — Changes in Basic Minimum Wages in Non-Farm Employment Under State Law (January 1 of each year)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.ecfr.gov/current/title-29/section-1602.7",
+      "title": "eCFR — 29 CFR 1602.7 Requirement for filing of report (EEO-1)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.ecfr.gov/current/title-41/section-60-1.7",
+      "title": "eCFR — 41 CFR 60-1.7 Reports and other required information",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://app.leg.wa.gov/WAC/default.aspx?cite=296-128-545",
+      "title": "WAC 296-128-545 Salary thresholds",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://cdle.colorado.gov/sites/cdle/files/adopted_2025_pay_calc_order_7_ccr_1103-14_11.7.24_accessible.pdf",
+      "title": "Colorado 2025 PAY CALC Order (7 CCR 1103-14)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://cdle.colorado.gov/sites/cdle/files/adopted_2026_pay_calc_order_7_ccr_1103-14_redline_12.8.25.docx",
+      "title": "Colorado 2026 PAY CALC Order (7 CCR 1103-14), adopted redline",
       "verifiedOn": "2026-10-18"
     }
   ]

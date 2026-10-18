@@ -44,6 +44,81 @@
       ]
     },
     {
+      "region": "GB-ENG",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-04-14",
+        "2028-04-17",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-08-28",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json, fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2025,
+      "dates": [
+        "2025-01-01",
+        "2025-04-18",
+        "2025-04-21",
+        "2025-05-05",
+        "2025-05-26",
+        "2025-08-25",
+        "2025-12-25",
+        "2025-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-04",
+        "2026-05-25",
+        "2026-08-31",
+        "2026-12-25",
+        "2026-12-28"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2027,
+      "dates": [
+        "2027-01-01",
+        "2027-03-26",
+        "2027-03-29",
+        "2027-05-03",
+        "2027-05-31",
+        "2027-08-30",
+        "2027-12-27",
+        "2027-12-28"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-04-14",
+        "2028-04-17",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-08-28",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
       "region": "GB-SCT",
       "year": 2025,
       "dates": [
@@ -88,6 +163,22 @@
         "2027-12-27",
         "2027-12-28"
       ]
+    },
+    {
+      "region": "GB-SCT",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-01-04",
+        "2028-04-14",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-08-07",
+        "2028-11-30",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json, fetched 2026-10-18"
     },
     {
       "region": "GB-NIR",
@@ -136,6 +227,23 @@
         "2027-12-27",
         "2027-12-28"
       ]
+    },
+    {
+      "region": "GB-NIR",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-03-17",
+        "2028-04-14",
+        "2028-04-17",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-07-12",
+        "2028-08-28",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json, fetched 2026-10-18"
     }
   ],
   "rules": [
@@ -368,6 +476,75 @@
         }
       },
       "source": "https://www.gov.uk/national-minimum-wage-rates"
+    },
+    {
+      "key": "working_time.opt_out",
+      "date": "2026-10-18",
+      "expectPath": {
+        "permitted": true,
+        "mustBeInWriting": true,
+        "defaultTerminationNoticeDays": 7,
+        "maxAgreedTerminationNoticeMonths": 3,
+        "employerMustKeepUpToDateRecordsOfOptedOutWorkers": true
+      },
+      "source": "https://www.gov.uk/maximum-weekly-working-hours/weekly-maximum-working-hours-and-opting-out",
+      "notes": "GOV.UK (independent of the reg. 5 pack source): opt-out \"must be voluntary and in writing\"; cancel with \"at least 7 days' notice\", \"up to 3 months' notice depending on what's in your agreement\"; employer \"must keep a record that you've opted out\"."
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "date": "2026-10-18",
+      "expectPath": {
+        "adult.uninterruptedHours": 24,
+        "adult.perDays": 7,
+        "adult.employerAlternatives[1].hoursEach": 48,
+        "adult.employerAlternatives[1].perDays": 14
+      },
+      "source": "https://www.gov.uk/rest-breaks-work",
+      "notes": "GOV.UK: \"an uninterrupted 24 hours without any work each week or an uninterrupted 48 hours without any work each fortnight\". Young-worker value not on that page (pack value from reg. 11(3))."
+    },
+    {
+      "key": "right_to_work.document_rules",
+      "date": "2026-10-18",
+      "expectPath": {
+        "timing": "before_employment_starts",
+        "britishAndIrishCitizensCannotUseShareCode": true,
+        "lists.listBGroup1.followUpCheck": "before_permission_expiry",
+        "methods[0].id": "manual_document_check",
+        "methods[1].requires[0]": "share_code"
+      },
+      "source": "https://www.gov.uk/check-job-applicant-right-to-work",
+      "notes": "GOV.UK check page (independent of the checklist used by the pack): check \"before you employ them\"; online check with a share code or check original documents; \"British and Irish citizens cannot get an online share code\"; time-limited right to work -> \"check their documents again when it's due to expire\"."
+    },
+    {
+      "key": "family_leave.maternity",
+      "date": "2025-10-01",
+      "expectPath": {
+        "leaveWeeks": 52,
+        "pay.weeks": 39,
+        "pay.remaining33Weeks.flatRate": {
+          "amountMinor": 18718,
+          "currency": "GBP"
+        },
+        "pay.remaining33Weeks.rule": "lower_of"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1986/1960/regulation/6/2025-04-06",
+      "notes": "SMP prescribed rate £187.18 from the Statutory Maternity Pay (General) Regulations 1986 reg. 6 as at 6 April 2025 (substituted by S.I. 2025/295 art. 9) — independent of the GOV.UK rates page used by the pack."
+    },
+    {
+      "key": "family_leave.paternity",
+      "date": "2025-10-01",
+      "expectPath": {
+        "leaveWeeksMax": 2,
+        "mustEndWithinWeeksOfBirth": 52,
+        "leaveQualifyingService.weeks": 26,
+        "pay.flatRate": {
+          "amountMinor": 18718,
+          "currency": "GBP"
+        },
+        "pay.rule": "lower_of"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/2002/2818/regulation/2/2025-04-06",
+      "notes": "SPP weekly rate: smaller of £187.18 and 90% of normal weekly earnings (Statutory Paternity Pay and Statutory Adoption Pay (Weekly Rates) Regulations 2002 reg. 2 as at 6 April 2025). Leave: PAL Regs 2002 reg. 4(2)(a) 26 weeks' service and reg. 5(1)-(2) one or two weeks within 52 weeks of birth, as at 6 April 2025 (https://www.legislation.gov.uk/uksi/2002/2788/regulation/4/2025-04-06, /regulation/5/2025-04-06)."
     }
   ],
   "sources": [
@@ -419,6 +596,20 @@
     "https://www.legislation.gov.uk/uksi/1998/1833/regulation/1/made",
     "https://www.legislation.gov.uk/uksi/2023/1426/regulation/1/made",
     "https://www.legislation.gov.uk/ukpga/1996/18/section/243",
-    "https://www.legislation.gov.uk/ukpga/1996/18/introduction/enacted"
+    "https://www.legislation.gov.uk/ukpga/1996/18/introduction/enacted",
+    "https://www.nidirect.gov.uk/articles/holiday-entitlements",
+    "https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week",
+    "https://www.nidirect.gov.uk/articles/rest-breaks",
+    "https://www.gov.uk/maximum-weekly-working-hours/weekly-maximum-working-hours-and-opting-out",
+    "https://www.gov.uk/rest-breaks-work",
+    "https://www.legislation.gov.uk/nisr/2016/49/regulation/15",
+    "https://www.legislation.gov.uk/nisr/2016/49/regulation/16",
+    "https://www.legislation.gov.uk/ukpga/1992/7/section/153",
+    "https://www.legislation.gov.uk/nisi/1996/1919/article/118",
+    "https://www.legislation.gov.uk/nisi/1996/1919/article/140",
+    "https://www.legislation.gov.uk/uksi/1986/1960/regulation/6/2025-04-06",
+    "https://www.legislation.gov.uk/uksi/2002/2818/regulation/2/2025-04-06",
+    "https://www.legislation.gov.uk/ukpga/1998/39/section/1",
+    "https://www.legislation.gov.uk/ukpga/2006/13/section/15"
   ]
 }

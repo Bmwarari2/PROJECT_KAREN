@@ -5,7 +5,9 @@ import { RuleBook } from '../src/engine';
 
 /**
  * Golden tests: expected values were copied from official sources (gov.uk, OPM, BALM, Service-Public,
- * BOE, citizensinformation.ie, …) independently of the pack data, and every vector must still hold.
+ * BOE, citizensinformation.ie, …) independently of the pack data where possible (a vector's `notes`
+ * says when it is derived from the same statute as the pack), and every vector must still hold.
+ * `golden coverage` below fails when any pack rule version has no vector dated inside it (ADR-0020).
  */
 interface HolidayVector {
   jurisdiction?: string;
@@ -19,8 +21,13 @@ interface RuleVector {
   jurisdiction?: string;
   key: string;
   date: string;
+  /** Full value (objects: subset match); null = no rule may be in force on that date. */
   expect?: unknown;
   expectPath?: Record<string, unknown>;
+  /** Pack that must answer (proves layering, e.g. GB-NIR answered by GB-NIR, US-NY-BUF by US-NY). */
+  expectJurisdiction?: string;
+  source?: string;
+  notes?: string;
 }
 interface GoldenFile {
   jurisdiction?: string;
@@ -67,6 +74,7 @@ for (const file of files) {
         }
         const resolved = book.resolve(j, r.key, r.date);
         expect(resolved.source.url).toMatch(/^https:\/\//);
+        if (r.expectJurisdiction) expect(resolved.jurisdiction).toBe(r.expectJurisdiction);
         if (r.expect !== undefined) {
           if (r.expect && typeof r.expect === 'object' && !Array.isArray(r.expect)) expect(resolved.value).toMatchObject(r.expect as object);
           else expect(resolved.value).toEqual(r.expect);
@@ -76,6 +84,32 @@ for (const file of files) {
     }
   });
 }
+
+const goldenFiles = files.map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')) as GoldenFile);
+const ruleVectors = goldenFiles.flatMap((g) => (g.rules ?? []).map((r) => ({ ...r, jurisdiction: r.jurisdiction ?? g.jurisdiction! })));
+const holidayVectors = goldenFiles.flatMap((g) => (g.holidays ?? []).map((h) => ({ ...h, jurisdiction: h.jurisdiction ?? g.jurisdiction! })));
+
+describe('golden coverage', () => {
+  it('every pack rule version has a golden vector dated inside its effective period that resolves to it', () => {
+    // a vector counts only if it asserts a value (expect or expectPath) and the engine answers it from that exact version
+    const answered = new Set<string>();
+    for (const r of ruleVectors) {
+      if (r.expect === null || (r.expect === undefined && !r.expectPath)) continue;
+      const res = book.tryResolve(r.jurisdiction, r.key, r.date);
+      if (res) answered.add(`${res.jurisdiction} ${r.key} ${res.effectiveFrom}`);
+    }
+    const missing = book.jurisdictions().flatMap((p) => p.rules.flatMap((rule) => rule.versions.map((v) => `${p.jurisdiction} ${rule.key} ${v.effectiveFrom}`).filter((id) => !answered.has(id))));
+    expect(missing, 'add a vector to packages/rules/goldens for each (jurisdiction key effectiveFrom)').toEqual([]);
+  });
+  it('every pack with holidays has a holiday vector, and so does every declared subdivision', () => {
+    const missing: string[] = [];
+    for (const p of book.jurisdictions()) {
+      if (p.holidays.length && !holidayVectors.some((h) => h.jurisdiction === p.jurisdiction)) missing.push(p.jurisdiction);
+      for (const sub of p.subdivisions ?? []) if (!holidayVectors.some((h) => h.jurisdiction === p.jurisdiction && h.region === sub)) missing.push(sub);
+    }
+    expect(missing).toEqual([]);
+  });
+});
 
 describe('layered resolution', () => {
   it('US state falls back to federal; member state falls back to EU; nations resolve to GB', () => {

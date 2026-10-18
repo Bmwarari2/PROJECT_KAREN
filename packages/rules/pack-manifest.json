@@ -223,6 +223,11 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:2f74057b631a6bc0e12abbdc5849cc89373d7dcaa490422c55ff63499d7cc33d"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:4e35011a61948485d70c6037d2f8ef240aeb0786bf4a9aa7c1ef5f5bc1fb795c"
       }
     ],
     "US-FL": [
