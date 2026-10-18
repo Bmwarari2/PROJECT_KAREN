@@ -42,6 +42,7 @@ export function lintMigration(m: Pick<MigrationFile, 'name' | 'sql'>): string[] 
 
 export interface MigrateOptions {
   ownerUrl: string;
+  dir?: string;
   rolePasswords?: Partial<Record<'thapsus_app' | 'thapsus_backoffice' | 'thapsus_reporting', string>>;
   log?: (msg: string) => void;
 }
@@ -60,7 +61,7 @@ export async function migrate(opts: MigrateOptions): Promise<string[]> {
         (r) => [r.name, r.checksum],
       ),
     );
-    for (const m of loadMigrations()) {
+    for (const m of loadMigrations(opts.dir)) {
       const prev = done.get(m.name);
       if (prev) {
         if (prev !== m.checksum) throw new Error(`Migration ${m.name} was modified after being applied`);

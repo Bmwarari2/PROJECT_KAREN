@@ -56,6 +56,9 @@ export function cellEndpointsFromEnv(env: NodeJS.ProcessEnv): Array<{ kind: Reso
   const add = (kind: ResourceKind, v: string | undefined) => v && list.push({ kind, resource: v });
   if (env.DATABASES) for (const url of Object.values(JSON.parse(env.DATABASES) as Record<string, string>)) add('database', url);
   add('database', env.DATABASE_URL);
+  add('database', env.DATABASE_HOST);
+  add('database', env.REPORTING_DATABASE_HOST);
+  if (env.DEDICATED_DATABASE_HOSTS) for (const h of Object.values(JSON.parse(env.DEDICATED_DATABASE_HOSTS) as Record<string, string>)) add('database', h);
   add('database', env.REPORTING_DATABASE_URL);
   add('database', env.BACKOFFICE_DATABASE_URL);
   add('cache', env.VALKEY_URL);

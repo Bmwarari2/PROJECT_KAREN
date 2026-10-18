@@ -1,6 +1,6 @@
 import { promises as dnsPromises } from 'node:dns';
 import { assertCellResidency, HOME_REGIONS, loadCellConfig, type CellConfig, type HomeRegion } from '@thapsus/core';
-import { TenantRouter } from '@thapsus/db';
+import { secretToUrl, TenantRouter } from '@thapsus/db';
 import { directoryFromEnv, type TenantDirectory } from './lib/directory';
 import { keyProviderFromEnv, type KeyProvider } from './lib/kms';
 import { mailerFromEnv, type Mailer } from './lib/mailer';
@@ -57,7 +57,7 @@ export async function depsFromEnv(): Promise<Deps> {
     now: () => new Date(),
     regionalAppUrls: regionalUrlsFromEnv('APP_URL', () => config.appBaseUrl),
     regionalApiUrls: regionalUrlsFromEnv('API_URL', () => config.apiBaseUrl),
-    backofficeDbUrl: env.BACKOFFICE_DATABASE_URL,
+    backofficeDbUrl: env.BACKOFFICE_DATABASE_URL ?? (env.BACKOFFICE_DATABASE_SECRET ? secretToUrl(env.BACKOFFICE_DATABASE_SECRET, env.DATABASE_HOST) : undefined),
     fetch: globalThis.fetch,
     serviceRole: env.SERVICE_ROLE === 'global' ? 'global' : 'cell',
     mockIdp: env.MOCK_IDP_ENABLED === 'true',

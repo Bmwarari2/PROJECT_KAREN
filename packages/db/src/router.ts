@@ -49,8 +49,15 @@ export class TenantRouter {
   static fromEnv(env: NodeJS.ProcessEnv = process.env): TenantRouter {
     const databases: Record<string, string> = env.DATABASES ? JSON.parse(env.DATABASES) : {};
     if (!databases.shared) {
-      if (!env.DATABASE_URL) throw new Error('DATABASE_URL or DATABASES must be configured');
-      databases.shared = env.DATABASE_URL;
+      if (env.DATABASE_SECRET) databases.shared = secretToUrl(env.DATABASE_SECRET, env.DATABASE_HOST);
+      else if (env.DATABASE_URL) databases.shared = env.DATABASE_URL;
+      else throw new Error('DATABASE_URL, DATABASE_SECRET or DATABASES must be configured');
+    }
+    // Dedicated databases: DEDICATED_DATABASE_HOSTS={"acme": "host"} reuse the app role secret.
+    if (env.DEDICATED_DATABASE_HOSTS && env.DATABASE_SECRET) {
+      for (const [key, host] of Object.entries(JSON.parse(env.DEDICATED_DATABASE_HOSTS) as Record<string, string>)) {
+        databases[key] = secretToUrl(env.DATABASE_SECRET, host);
+      }
     }
     return new TenantRouter({ databases, poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined, cell: env.CELL_REGION });
   }
@@ -99,4 +106,13 @@ export class TenantRouter {
     if (tenantId) this.cache.delete(tenantId);
     else this.cache.clear();
   }
+}
+
+/** Builds a connection URL from a Secrets Manager database secret ({username, password, host, port, dbname}). */
+export function secretToUrl(secretJson: string, hostOverride?: string): string {
+  const s = JSON.parse(secretJson) as { username: string; password: string; host?: string; port?: number; dbname?: string };
+  const host = hostOverride ?? s.host;
+  if (!host) throw new Error('database secret has no host');
+  const sslmode = /amazonaws\.com$/.test(host) ? '?sslmode=require' : '';
+  return `postgres://${encodeURIComponent(s.username)}:${encodeURIComponent(s.password)}@${host}:${s.port ?? 5432}/${s.dbname ?? 'thapsus'}${sslmode}`;
 }
