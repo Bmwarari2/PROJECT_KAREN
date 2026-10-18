@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { MapPin, Monitor, Pencil } from 'lucide-react';
-import { Badge, Button, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, Textarea } from '@thapsus/ui';
+import { Badge, Button, buttonVariants, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, Textarea } from '@thapsus/ui';
 import { dateTimeFormat, formatNumber, LOCALES } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -227,7 +227,7 @@ function Sites({ countries }: { countries: string[] }) {
       ) : locations.data.length === 0 ? (
         <EmptyState icon={<MapPin aria-hidden />} title={t('admin.time.noSites')} />
       ) : (
-        <Table dense>
+        <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.time.sitesTitle') })}>
           <THead>
             <tr>
               <TH>{t('rota.location')}</TH>
@@ -301,12 +301,10 @@ function Clocking({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
       title={t('admin.time.clockingTitle')}
       description={t('admin.time.clockingBody')}
       actions={
-        <Button asChild size="sm" variant="secondary">
-          <Link href="/app/clock" className="no-underline">
-            <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />
-            {t('admin.time.manageKiosks')}
-          </Link>
-        </Button>
+        <Link href="/app/clock" className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}>
+          <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />
+          {t('admin.time.manageKiosks')}
+        </Link>
       }
     >
       <form onSubmit={submit} className="flex flex-col gap-4">

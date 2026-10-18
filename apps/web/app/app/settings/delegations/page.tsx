@@ -53,7 +53,7 @@ export default function DelegationsPage() {
   const given = (list.data ?? []).filter((d) => d.direction === 'given');
   const received = (list.data ?? []).filter((d) => d.direction === 'received');
   const table = (rows: Delegation[], who: 'toName' | 'fromName', canEnd: boolean) => (
-    <Table dense>
+    <Table dense scrollLabel={t('admin.tableScroll', { name: t(who === 'toName' ? 'admin.delegations.givenTitle' : 'admin.delegations.receivedTitle') })}>
       <THead>
         <tr>
           <TH>{t(who === 'toName' ? 'admin.delegations.to' : 'admin.delegations.from')}</TH>
@@ -81,7 +81,7 @@ export default function DelegationsPage() {
                   {status !== 'ended' ? (
                     <ConfirmAction
                       label={status === 'active' ? t('admin.delegations.endNow') : t('common.cancel')}
-                      ariaLabel={t('admin.delegations.endLabel', { name: d.toName })}
+                      ariaLabel={t('admin.delegations.endLabel', { action: status === 'active' ? t('admin.delegations.endNow') : t('common.cancel'), name: d.toName })}
                       title={t('admin.delegations.endTitle', { name: d.toName })}
                       body={t('admin.delegations.endBody')}
                       confirmLabel={status === 'active' ? t('admin.delegations.endNow') : t('admin.delegations.cancelDelegation')}

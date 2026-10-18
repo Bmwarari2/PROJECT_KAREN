@@ -120,7 +120,7 @@ function Triggers() {
       ) : triggers.data.length === 0 ? (
         <EmptyState icon={<BellRing aria-hidden />} title={t('admin.absence.noTriggers')} />
       ) : (
-        <Table dense>
+        <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.absence.triggersTitle') })}>
           <THead>
             <tr>
               <TH>{t('admin.name')}</TH>
@@ -196,7 +196,7 @@ function CoverRules() {
       ) : rules.data.length === 0 ? (
         <EmptyState icon={<Users aria-hidden />} title={t('admin.absence.noCover')} />
       ) : (
-        <Table dense>
+        <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.absence.coverTitle') })}>
           <THead>
             <tr>
               <TH>{t('admin.name')}</TH>

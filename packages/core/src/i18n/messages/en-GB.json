@@ -694,6 +694,7 @@
     "allEntities": "All legal entities",
     "secretOnce": "Copy it now and store it somewhere safe. For your security it will not be shown again.",
     "secretDone": "I have copied it",
+    "tableScroll": "{name} (scrollable table)",
     "userPicker": {
       "search": "Search for {label}",
       "searchPlaceholder": "Search by name",
@@ -1013,7 +1014,7 @@
       },
       "endNow": "End now",
       "cancelDelegation": "Cancel delegation",
-      "endLabel": "End the delegation to {name}",
+      "endLabel": "{action}: delegation to {name}",
       "endTitle": "End the delegation to {name}?",
       "endBody": "They will no longer receive your approvals."
     },

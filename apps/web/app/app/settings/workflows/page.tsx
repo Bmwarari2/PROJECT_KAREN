@@ -190,7 +190,7 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
         </span>
       }
     >
-      <Table dense>
+      <Table dense scrollLabel={t('admin.tableScroll', { name: tpl.name })}>
         <THead>
           <tr>
             <TH>{t('admin.workflows.taskTitle')}</TH>

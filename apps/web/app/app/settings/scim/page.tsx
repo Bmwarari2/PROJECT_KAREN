@@ -64,7 +64,7 @@ export default function ScimPage() {
         ) : tokens.data.length === 0 ? (
           <EmptyState icon={<KeyRound aria-hidden />} title={t('admin.scim.none')} />
         ) : (
-          <Table dense>
+          <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.scim.tokensTitle') })}>
             <THead>
               <tr>
                 <TH>{t('admin.name')}</TH>

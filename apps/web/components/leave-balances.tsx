@@ -24,7 +24,7 @@ export function LeaveBalancesTable({ balances, typeName, caption }: { balances: 
   const locale = useLocale();
   const amount = (b: LeaveBalance, v: number) => formatUnit(v, b.unit === 'hours' ? 'hour' : 'day', locale);
   return (
-    <Table dense>
+    <Table dense scrollLabel={caption}>
       <caption className="sr-only">{caption}</caption>
       <THead>
         <tr>

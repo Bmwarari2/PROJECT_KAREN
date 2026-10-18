@@ -404,7 +404,7 @@ export default function LeaveSettingsPage() {
         {!types.data ? (
           <Skeleton className="h-24" />
         ) : (
-          <Table dense>
+          <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.leave.typesTitle') })}>
             <THead>
               <tr>
                 <TH>{t('admin.name')}</TH>

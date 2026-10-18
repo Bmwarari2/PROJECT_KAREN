@@ -56,7 +56,7 @@ export default function DomainsPage() {
         ) : domains.data.length === 0 ? (
           <EmptyState icon={<Globe aria-hidden />} title={t('app.settings.noDomains')} />
         ) : (
-          <Table dense>
+          <Table dense scrollLabel={t('admin.tableScroll', { name: t('app.settings.domainsTitle') })}>
             <THead>
               <tr>
                 <TH>{t('app.settings.domainLabel')}</TH>

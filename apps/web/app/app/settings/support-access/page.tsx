@@ -101,7 +101,7 @@ export default function SupportAccessPage() {
         ) : grants.data.length === 0 ? (
           <EmptyState icon={<LifeBuoy aria-hidden />} title={t('admin.support.none')} />
         ) : (
-          <Table dense>
+          <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.support.listTitle') })}>
             <THead>
               <tr>
                 <TH>{t('admin.support.staffId')}</TH>
