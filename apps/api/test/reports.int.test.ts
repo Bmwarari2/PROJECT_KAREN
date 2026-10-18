@@ -263,7 +263,7 @@ describe('7.2 background runs, exports, downloads and expiry', () => {
     const job = await w.tx((t) => t.one<{ progress_done: string; progress_total: string }>(`SELECT progress_done, progress_total FROM app.jobs WHERE kind = 'reports.run' AND idempotency_key = $1`, [queued.id]));
     expect(Number(job.progress_done)).toBeGreaterThanOrEqual(90);
     const csv = (await fileOf(queued.id)).toString('utf8');
-    expect(csv.replace(/^﻿/, '').split('\r\n').slice(0, 1)).toEqual(['Legal entity,Headcount,FTE']);
+    expect(csv.replace(/^\ufeff/, '').split('\r\n').slice(0, 1)).toEqual(['Legal entity,Headcount,FTE']);
     expect(csv).toContain('Fictional Widgets Ltd,5,');
     const dl = await w.api('GET', `/v1/reports/runs/${queued.id}/download`);
     expect(dl.statusCode, dl.body).toBe(200);
