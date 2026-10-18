@@ -17661,6 +17661,2894 @@
         }
       }
     },
+    "/v1/leave/types": {
+      "get": {
+        "tags": [
+          "leave"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "key",
+                      "name",
+                      "category",
+                      "paid",
+                      "requiresApproval"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "key": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "category": {
+                        "type": "string"
+                      },
+                      "paid": {
+                        "type": "boolean"
+                      },
+                      "requiresApproval": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/policies": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "leaveTypeId",
+                  "config"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "leaveTypeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "entityId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "country": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Z]{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "config": {
+                    "type": "object",
+                    "required": [
+                      "accrual",
+                      "unit",
+                      "yearStart",
+                      "proRata",
+                      "includesPublicHolidays",
+                      "waitingDays",
+                      "allowNegativeDays",
+                      "rounding"
+                    ],
+                    "properties": {
+                      "accrual": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "method",
+                              "days"
+                            ],
+                            "properties": {
+                              "method": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "annual_upfront"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "monthly"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "days": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 366
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "method",
+                              "percent"
+                            ],
+                            "properties": {
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "per_hour_worked"
+                                ]
+                              },
+                              "percent": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "unit": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "days"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "hours"
+                            ]
+                          }
+                        ]
+                      },
+                      "yearStart": {
+                        "type": "string",
+                        "pattern": "^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+                      },
+                      "proRata": {
+                        "type": "boolean"
+                      },
+                      "includesPublicHolidays": {
+                        "type": "boolean"
+                      },
+                      "waitingDays": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 365
+                      },
+                      "carryOver": {
+                        "type": "object",
+                        "required": [
+                          "maxDays"
+                        ],
+                        "properties": {
+                          "maxDays": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "expiresAfterMonths": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 24
+                          }
+                        }
+                      },
+                      "capDays": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "allowNegativeDays": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 30
+                      },
+                      "rounding": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "none"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "up_half_day"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "nearest_half_day"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "up_whole_day"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "warnings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/policies/{id}/assign": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "employeeIds",
+                  "validFrom"
+                ],
+                "properties": {
+                  "employeeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 10000
+                  },
+                  "validFrom": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "assigned"
+                  ],
+                  "properties": {
+                    "assigned": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/balances/{employeeId}": {
+      "get": {
+        "tags": [
+          "leave"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "asOf",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "employeeId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "leaveType",
+                      "policy",
+                      "year",
+                      "entitlement",
+                      "accrued",
+                      "carriedOver",
+                      "carryOverExpired",
+                      "adjustments",
+                      "publicHolidays",
+                      "taken",
+                      "booked",
+                      "pending",
+                      "available",
+                      "inWaitingPeriod"
+                    ],
+                    "properties": {
+                      "leaveType": {
+                        "type": "string"
+                      },
+                      "policy": {
+                        "type": "string"
+                      },
+                      "year": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "entitlement": {
+                        "type": "number"
+                      },
+                      "accrued": {
+                        "type": "number"
+                      },
+                      "carriedOver": {
+                        "type": "number"
+                      },
+                      "carryOverExpired": {
+                        "type": "number"
+                      },
+                      "adjustments": {
+                        "type": "number"
+                      },
+                      "publicHolidays": {
+                        "type": "number"
+                      },
+                      "taken": {
+                        "type": "number"
+                      },
+                      "booked": {
+                        "type": "number"
+                      },
+                      "pending": {
+                        "type": "number"
+                      },
+                      "available": {
+                        "type": "number"
+                      },
+                      "inWaitingPeriod": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/adjustments": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "employeeId",
+                  "leaveTypeId",
+                  "amount",
+                  "effectiveDate",
+                  "reason"
+                ],
+                "properties": {
+                  "employeeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "leaveTypeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "minimum": -365,
+                    "maximum": 365
+                  },
+                  "effectiveDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "manual"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "toil"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "carry_over"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "correction"
+                        ]
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/requests": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "leaveTypeId",
+                  "startDate",
+                  "endDate"
+                ],
+                "properties": {
+                  "employeeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "leaveTypeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "startHalf": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "am"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "pm"
+                        ]
+                      }
+                    ]
+                  },
+                  "endHalf": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "am"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "pm"
+                        ]
+                      }
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "fmlaCaseId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "amountDays",
+                    "warnings"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "amountDays": {
+                      "type": "number"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "leave"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "name": "employeeId",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "employeeId",
+                      "employeeName",
+                      "leaveType",
+                      "startDate",
+                      "endDate",
+                      "amountDays",
+                      "status",
+                      "note"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "employeeId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "employeeName": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "leaveType": {
+                        "type": "string"
+                      },
+                      "startDate": {
+                        "type": "string"
+                      },
+                      "endDate": {
+                        "type": "string"
+                      },
+                      "amountDays": {
+                        "type": "number"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "note": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/requests/{id}/cancel": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/calendar": {
+      "get": {
+        "tags": [
+          "leave"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "from",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "to",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "entries",
+                    "holidays"
+                  ],
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "employeeId",
+                          "name",
+                          "start",
+                          "end",
+                          "kind",
+                          "status"
+                        ],
+                        "properties": {
+                          "employeeId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "start": {
+                            "type": "string"
+                          },
+                          "end": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "holidays": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "date",
+                          "name"
+                        ],
+                        "properties": {
+                          "date": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/ics-tokens": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "scope"
+                ],
+                "properties": {
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "me"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "team"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "url"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/ics-tokens/{id}": {
+      "delete": {
+        "tags": [
+          "leave"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/v1/sickness": {
+      "post": {
+        "tags": [
+          "absence"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "startDate"
+                ],
+                "properties": {
+                  "employeeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "endDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "rtwStatus",
+                    "fitNoteRequired"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rtwStatus": {
+                      "type": "string"
+                    },
+                    "fitNoteRequired": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sickness/{id}/fit-note": {
+      "post": {
+        "tags": [
+          "absence"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "vaultId"
+                  ],
+                  "properties": {
+                    "vaultId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sickness/{id}/return-to-work": {
+      "post": {
+        "tags": [
+          "absence"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "answers",
+                  "fitForWork"
+                ],
+                "properties": {
+                  "answers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 2000
+                    }
+                  },
+                  "fitForWork": {
+                    "type": "boolean"
+                  },
+                  "adjustments": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "rtwStatus"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rtwStatus": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sickness/{employeeId}/statutory-pay": {
+      "get": {
+        "tags": [
+          "absence"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "asOf",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "in": "query",
+            "name": "normalWeeklyEarningsMinor",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "employeeId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jurisdiction",
+                    "scheme",
+                    "result",
+                    "source"
+                  ],
+                  "properties": {
+                    "jurisdiction": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scheme": {
+                      "type": "string"
+                    },
+                    "result": {},
+                    "source": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "url",
+                            "title"
+                          ],
+                          "properties": {
+                            "url": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/fmla/cases": {
+      "post": {
+        "tags": [
+          "absence"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "employeeId",
+                  "reason",
+                  "leaveYearMethod",
+                  "startDate"
+                ],
+                "properties": {
+                  "employeeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "own_health"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "family_care"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "birth_bonding"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "placement"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "military_exigency"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "military_caregiver"
+                        ]
+                      }
+                    ]
+                  },
+                  "leaveYearMethod": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "calendar_year"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "fixed_12_month_period"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "forward_from_first_leave_date"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "rolling_backward"
+                        ]
+                      }
+                    ]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "intermittent": {
+                    "type": "boolean"
+                  },
+                  "hoursPrior12Months": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "eligible",
+                    "failed",
+                    "entitlementHours"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "entitlementHours": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/fmla/cases/{id}": {
+      "get": {
+        "tags": [
+          "absence"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "asOf",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "eligible",
+                    "entitlementHours",
+                    "usedHours",
+                    "remainingHours",
+                    "leaveYear"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "entitlementHours": {
+                      "type": "number"
+                    },
+                    "usedHours": {
+                      "type": "number"
+                    },
+                    "remainingHours": {
+                      "type": "number"
+                    },
+                    "leaveYear": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/absence/bradford/{employeeId}": {
+      "get": {
+        "tags": [
+          "absence"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "asOf",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "employeeId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "spells",
+                    "days",
+                    "score"
+                  ],
+                  "properties": {
+                    "spells": {
+                      "type": "integer"
+                    },
+                    "days": {
+                      "type": "number"
+                    },
+                    "score": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/absence/triggers": {
+      "post": {
+        "tags": [
+          "absence"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "bradfordThreshold": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "spellsThreshold": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "windowDays": {
+                    "type": "integer",
+                    "minimum": 7,
+                    "maximum": 730
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leave/cover-rules": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "minPresent",
+                  "enforcement"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "departmentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "locationId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "minPresent": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "enforcement": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "warn"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "block"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/company-calendars": {
+      "post": {
+        "tags": [
+          "leave"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "days"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "entityId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "locationId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "days": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "date",
+                        "name"
+                      ],
+                      "properties": {
+                        "date": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 120
+                        }
+                      }
+                    },
+                    "maxItems": 366
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/global/v1/resolve": {
       "get": {
         "tags": [

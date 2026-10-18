@@ -4,7 +4,7 @@ import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
 import { addDays, compareDates, dateParts, daysBetween, today } from '@thapsus/core/time';
 import { enqueueJob, withTenant, writeAudit, type Tx } from '@thapsus/db';
-import { authorize, authorizeSome, requireAuth } from '../../http/context';
+import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
@@ -213,7 +213,7 @@ export async function leaveRoutes(app: FastifyInstance) {
         req,
         async (tx) => {
           const params: unknown[] = [];
-          let where = '';
+          let where: string;
           if (q.employeeId) {
             if (!(await canActOn(tx, auth, q.employeeId, 'leave.read'))) throw new ApiError('forbidden');
             params.push(q.employeeId);
@@ -644,6 +644,8 @@ registerJob('absence.triggers', async (ctx) => {
         const hit = (t.bradford_threshold !== null && bf.score >= t.bradford_threshold) || (t.spells_threshold !== null && bf.spells >= t.spells_threshold);
         if (!hit) continue;
         const recipients = [...(await usersWithRole(tx, t.notify_role))];
+        // Small companies often have no HR admin: the owner handles HR, so the alert goes to them.
+        if (!recipients.length) recipients.push(...(await usersWithRole(tx, 'owner')));
         if (t.notify_manager) {
           const m = await userForEmployee(tx, (await tx.maybe<{ manager_id: string | null }>('SELECT manager_id FROM app.employees WHERE id = $1', [employee_id]))?.manager_id);
           if (m) recipients.push(m);

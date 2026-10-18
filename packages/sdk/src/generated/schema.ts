@@ -8689,6 +8689,1473 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/leave/types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            key: string;
+                            name: {
+                                [key: string]: string;
+                            };
+                            category: string;
+                            paid: boolean;
+                            requiresApproval: boolean;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        /** Format: uuid */
+                        leaveTypeId: string;
+                        entityId?: string | null;
+                        country?: string | null;
+                        config: {
+                            accrual: {
+                                method: "annual_upfront" | "monthly";
+                                days: number;
+                            } | {
+                                /** @enum {string} */
+                                method: "per_hour_worked";
+                                percent: number;
+                            };
+                            unit: "days" | "hours";
+                            yearStart: string;
+                            proRata: boolean;
+                            includesPublicHolidays: boolean;
+                            waitingDays: number;
+                            carryOver?: {
+                                maxDays: number;
+                                expiresAfterMonths?: number;
+                            };
+                            capDays?: number;
+                            allowNegativeDays: number;
+                            rounding: "none" | "up_half_day" | "nearest_half_day" | "up_whole_day";
+                        };
+                        /** Format: date */
+                        effectiveFrom?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            warnings: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/policies/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        employeeIds: string[];
+                        /** Format: date */
+                        validFrom: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            assigned: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/balances/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            leaveType: string;
+                            policy: string;
+                            year: string[];
+                            entitlement: number;
+                            accrued: number;
+                            carriedOver: number;
+                            carryOverExpired: number;
+                            adjustments: number;
+                            publicHolidays: number;
+                            taken: number;
+                            booked: number;
+                            pending: number;
+                            available: number;
+                            inWaitingPeriod: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        /** Format: uuid */
+                        leaveTypeId: string;
+                        amount: number;
+                        /** Format: date */
+                        effectiveDate: string;
+                        kind?: "manual" | "toil" | "carry_over" | "correction";
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    employeeId?: string;
+                    status?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            leaveType: string;
+                            startDate: string;
+                            endDate: string;
+                            amountDays: number;
+                            status: string;
+                            note: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId?: string;
+                        /** Format: uuid */
+                        leaveTypeId: string;
+                        /** Format: date */
+                        startDate: string;
+                        /** Format: date */
+                        endDate: string;
+                        startHalf?: "am" | "pm";
+                        endHalf?: "am" | "pm";
+                        note?: string;
+                        /** Format: uuid */
+                        fmlaCaseId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            status: string;
+                            amountDays: number;
+                            warnings: unknown[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            status: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            entries: {
+                                /** Format: uuid */
+                                employeeId: string;
+                                name: string;
+                                start: string;
+                                end: string;
+                                kind: string;
+                                status: string;
+                            }[];
+                            holidays: {
+                                date: string;
+                                name: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/ics-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        scope: "me" | "team";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            url: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/ics-tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sickness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId?: string;
+                        /** Format: date */
+                        startDate: string;
+                        endDate?: string | null;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            rtwStatus: string;
+                            fitNoteRequired: boolean;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sickness/{id}/fit-note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            vaultId: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sickness/{id}/return-to-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        answers: {
+                            [key: string]: string;
+                        };
+                        fitForWork: boolean;
+                        adjustments?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            rtwStatus: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sickness/{employeeId}/statutory-pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                    normalWeeklyEarningsMinor?: number;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            jurisdiction: string | null;
+                            scheme: string;
+                            result: unknown;
+                            source: {
+                                url: string;
+                                title: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fmla/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        employeeId: string;
+                        reason: "own_health" | "family_care" | "birth_bonding" | "placement" | "military_exigency" | "military_caregiver";
+                        leaveYearMethod: "calendar_year" | "fixed_12_month_period" | "forward_from_first_leave_date" | "rolling_backward";
+                        /** Format: date */
+                        startDate: string;
+                        intermittent?: boolean;
+                        hoursPrior12Months?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            eligible: boolean;
+                            failed: string[];
+                            entitlementHours: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fmla/cases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            eligible: boolean;
+                            entitlementHours: number;
+                            usedHours: number;
+                            remainingHours: number;
+                            leaveYear: string[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/absence/bradford/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    asOf?: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            spells: number;
+                            days: number;
+                            score: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/absence/triggers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        bradfordThreshold?: number;
+                        spellsThreshold?: number;
+                        windowDays?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leave/cover-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        departmentId?: string | null;
+                        locationId?: string | null;
+                        minPresent: number;
+                        enforcement: "warn" | "block";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/settings/company-calendars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        entityId?: string | null;
+                        locationId?: string | null;
+                        days: {
+                            /** Format: date */
+                            date: string;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/global/v1/resolve": {
         parameters: {
             query?: never;
