@@ -83,7 +83,8 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
     defaultScope: 'own_team',
     permissions: [
       'employees.read', 'leave.read', 'leave.approve', 'absence.read', 'absence.record', 'rota.*', 'time.read',
-      'time.approve', 'time.correct', 'approvals.act', 'reports.read_team', 'documents.read', 'workflows.tasks', ...SELF_SERVICE,
+      'time.approve', 'time.correct', 'approvals.act', 'reports.read_team', 'documents.read', 'workflows.tasks', 'compliance.read',
+      ...SELF_SERVICE,
     ],
     fieldAccess: {
       'employee.*': 'none',

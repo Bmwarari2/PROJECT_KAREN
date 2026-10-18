@@ -6,8 +6,10 @@ import type { HolidayDefinition, JurisdictionPack, Rule, RuleKey, RuleVersion } 
 
 /**
  * Rule engine over the jurisdiction packs. Values are looked up by (jurisdiction, key, date) with
- * layered resolution — US state → US; EU member state → EU; UK nation → GB — and every answer
- * carries its source and verification date.
+ * layered resolution — locality → state → US; EU member state → EU; UK nation → GB — and every
+ * answer carries its source and verification date. A code without its own pack resolves through
+ * its hyphen ancestors ("US-NY-BUF" → "US-NY" → "US"); in packs that declare `subdivisions` (GB) a
+ * rule version only answers for the subdivisions it lists in `regions` (ADR-0021, ADR-0022).
  */
 export const PACKS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'packs');
 
@@ -30,7 +32,17 @@ export interface ResolvedRule<V = unknown> {
   source: { url: string; title: string };
   verifiedOn: string;
   packVersion: number;
+  /** Subdivisions the answering version was verified for; absent = the whole jurisdiction. */
+  regions?: string[];
 }
+
+/** A code and its hyphen ancestors, most specific first: "US-NY-NYC" → ["US-NY-NYC", "US-NY", "US"]. */
+export function codeLineage(code: string): string[] {
+  const parts = code.split('-');
+  return parts.map((_, i) => parts.slice(0, parts.length - i).join('-'));
+}
+
+const inForce = (v: { effectiveFrom: string; effectiveTo: string | null }, date: string) => v.effectiveFrom <= date && (v.effectiveTo === null || v.effectiveTo > date);
 
 export interface HolidayOccurrence {
   id: string;
@@ -93,11 +105,14 @@ export class RuleBook {
     return this.packs.get(code);
   }
 
-  /** Resolution chain: e.g. "US-CA" → ["US-CA", "US"]; "GB-SCT" → ["GB"]; "DE" → ["DE", "EU"]. */
+  /**
+   * Resolution chain: e.g. "US-NY-NYC" → ["US-NY-NYC", "US-NY", "US"]; "US-NY-BUF" (no pack) → ["US-NY", "US"];
+   * "GB-SCT" → ["GB"]; "GB-NIR" → ["GB-NIR", "GB"]; "DE-BY" → ["DE", "EU"]. Starts at the most specific
+   * hyphen ancestor that has a pack, then follows each pack's `parent`.
+   */
   chain(jurisdiction: string): string[] {
     const out: string[] = [];
-    let cur: string | null | undefined = jurisdiction;
-    if (!this.packs.has(jurisdiction) && jurisdiction.includes('-')) cur = jurisdiction.split('-')[0]; // nation/state without its own pack
+    let cur: string | null | undefined = codeLineage(jurisdiction).find((c) => this.packs.has(c));
     const seen = new Set<string>();
     while (cur && !seen.has(cur)) {
       seen.add(cur);
@@ -107,15 +122,29 @@ export class RuleBook {
     return out;
   }
 
+  /**
+   * Whether a pack version answers a lookup for `jurisdiction`. Versions without `regions` cover the
+   * whole pack. A lookup for the pack itself ("GB") is answered by its region-scoped versions (the
+   * default law of the pack); a lookup for a subdivision ("GB-NIR") only by versions listing it.
+   */
+  private covers(regions: string[] | undefined, jurisdiction: string, packCode: string): boolean {
+    if (!regions || jurisdiction === packCode) return true;
+    const lineage = codeLineage(jurisdiction);
+    return regions.some((r) => lineage.includes(r));
+  }
+
   /** Most specific rule version in force on `date` (layered). */
   resolve<V = unknown>(jurisdiction: string, key: RuleKey | string, date: string): ResolvedRule<V> {
     for (const j of this.chain(jurisdiction)) {
       const pack = this.packs.get(j)!;
-      const o = this.overrides.find((x) => x.jurisdiction === j && x.key === key && x.effectiveFrom <= date && (x.effectiveTo === null || x.effectiveTo > date));
-      if (o) return { jurisdiction: j, key, value: o.value as V, effectiveFrom: o.effectiveFrom, effectiveTo: o.effectiveTo, source: o.source, verifiedOn: o.verifiedOn, packVersion: pack.version };
       const rule = pack.rules.find((r) => r.key === key) as Rule<V> | undefined;
-      const v = rule?.versions.find((x: RuleVersion<V>) => x.effectiveFrom <= date && (x.effectiveTo === null || x.effectiveTo > date));
-      if (v) return { jurisdiction: j, key, value: v.value, effectiveFrom: v.effectiveFrom, effectiveTo: v.effectiveTo, source: v.source, verifiedOn: v.verifiedOn, packVersion: pack.version };
+      const v = rule?.versions.find((x: RuleVersion<V>) => inForce(x, date));
+      const applies = v ? this.covers(v.regions, jurisdiction, j) : !pack.subdivisions || jurisdiction === j;
+      if (!applies) continue; // not verified for this subdivision: fall through to the parent, or fail
+      // back-office edits amend the pack for the same scope as the pack version they layer over
+      const o = this.overrides.find((x) => x.jurisdiction === j && x.key === key && inForce(x, date));
+      if (o) return { jurisdiction: j, key, value: o.value as V, effectiveFrom: o.effectiveFrom, effectiveTo: o.effectiveTo, source: o.source, verifiedOn: o.verifiedOn, packVersion: pack.version, ...(v?.regions ? { regions: v.regions } : {}) };
+      if (v) return { jurisdiction: j, key, value: v.value, effectiveFrom: v.effectiveFrom, effectiveTo: v.effectiveTo, source: v.source, verifiedOn: v.verifiedOn, packVersion: pack.version, ...(v.regions ? { regions: v.regions } : {}) };
     }
     throw new RuleNotFoundError(jurisdiction, key, date);
   }

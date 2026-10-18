@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CalendarClock, CalendarDays, ClipboardList, Clock, FileText, Home, Inbox, Laptop, ListChecks, LogOut, Menu, Network, Plug, Receipt, Settings, ShieldCheck, Upload, Users, Wallet, Zap } from 'lucide-react';
+import { Bell, CalendarClock, CalendarDays, ClipboardList, Clock, FileText, Home, Inbox, Laptop, ListChecks, LogOut, Menu, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, Users, Wallet, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
@@ -36,6 +36,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/assets', label: t('app.nav.assets'), icon: <Laptop aria-hidden />, show: has('assets.read_own') || has('assets.read') },
     { href: '/app/payroll', label: t('app.nav.payroll'), icon: <Wallet aria-hidden />, show: has('payroll.read') },
     { href: '/app/integrations', label: t('app.nav.integrations'), icon: <Plug aria-hidden />, show: has('integrations.read') },
+    { href: '/app/compliance', label: t('app.nav.compliance'), icon: <Scale aria-hidden />, show: has('compliance.read') || has('compliance.law_changes') },
     { href: '/app/imports', label: t('app.nav.imports'), icon: <Upload aria-hidden />, show: has('imports.run') },
     { href: '/app/automation', label: t('app.nav.automation'), icon: <Zap aria-hidden />, show: has('automation.read') },
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
