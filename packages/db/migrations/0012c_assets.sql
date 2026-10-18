@@ -52,6 +52,7 @@ CREATE TABLE app.asset_assignments (
   acknowledgement_task_id uuid,
   -- return (offboarding creates the task; marking the asset returned completes it)
   return_task_id uuid,
+  return_requested_on date,
   returned_on date,
   returned_at timestamptz,
   received_by uuid,

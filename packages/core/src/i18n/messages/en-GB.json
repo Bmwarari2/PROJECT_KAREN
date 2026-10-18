@@ -63,7 +63,8 @@
     "tenantUnavailable": "This workspace is temporarily unavailable.",
     "gone": "This is no longer available.",
     "unprocessable": "We could not process that request.",
-    "internal": "Something went wrong on our side. Please try again."
+    "internal": "Something went wrong on our side. Please try again.",
+    "notImplemented": "This is not available yet."
   },
   "auth": {
     "magicLinkSubject": "Your sign-in link for Thapsus-HR",
@@ -393,7 +394,10 @@
     "shiftClaimApproved": "You have the open shift on {date}",
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
-    "timesheetRejected": "Your timesheet for the week of {week} was returned"
+    "timesheetRejected": "Your timesheet for the week of {week} was returned",
+    "payslipAvailable": "Your payslip for {label} is ready",
+    "yearEndAvailable": "Your year-end document for {label} is ready",
+    "assetAssigned": "Please confirm you received {asset}"
   },
   "people": {
     "title": "People",
@@ -618,5 +622,9 @@
       "away": "Away"
     },
     "bookedToast": "Booked ({days} days)."
+  },
+  "assets": {
+    "ackTaskTitle": "Confirm you received {asset}",
+    "returnTaskTitle": "Return {asset} ({tag})"
   }
 }
