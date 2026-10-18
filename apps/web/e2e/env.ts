@@ -32,6 +32,8 @@ export function e2eEnv(): Record<string, string> {
     OTEL_SDK_DISABLED: 'true',
     LOG_LEVEL: 'warn',
     INTERNAL_TOKEN: 'e2e-internal-token',
+    // every spec signs up its own fictional workspaces from 127.0.0.1; the per-IP limits (10 sign-ups an hour) would block the suite
+    IP_THROTTLE_MULTIPLIER: '50',
     MAIL_TRANSPORT: 'file',
     MAIL_DIR: e2eMailDir(),
     NEXT_TELEMETRY_DISABLED: '1',
