@@ -48,6 +48,7 @@ export async function seedBuiltInRoles(tx: Tx): Promise<Record<string, string>> 
        VALUES (app.current_tenant(), $1, $2, true, $3, $4, $5)
        ON CONFLICT (tenant_id, key) DO UPDATE SET permissions = EXCLUDED.permissions, field_access = EXCLUDED.field_access,
          is_admin = EXCLUDED.is_admin, name = EXCLUDED.name
+         WHERE app.roles.built_in -- never overwrite a customer's custom role that happens to share a key
        RETURNING id`,
       [r.key, r.name, r.isAdmin, r.permissions, JSON.stringify(r.fieldAccess)],
     );
