@@ -4,6 +4,7 @@ A multi-tenant HR platform for UK, EU and US employers, from 10 to 200,000+ empl
 
 - Scope: [`docs/BUILD_BRIEF.md`](docs/BUILD_BRIEF.md) · Status: [`docs/PROGRESS.md`](docs/PROGRESS.md) · Rules: [`CLAUDE.md`](CLAUDE.md)
 - Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Design: [`docs/DESIGN.md`](docs/DESIGN.md) · Security: [`docs/SECURITY.md`](docs/SECURITY.md) · Decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md)
+- Guides: [`docs/guides/admin-guide.md`](docs/guides/admin-guide.md) (admins and managers) · [`docs/guides/employee-guide.md`](docs/guides/employee-guide.md) (employees)
 
 ## Prerequisites
 
