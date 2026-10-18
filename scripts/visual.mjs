@@ -19,8 +19,10 @@ try {
     if (ok) break;
     execSync(process.platform === 'win32' ? 'powershell -Command "Start-Sleep -Seconds 2"' : 'sleep 2');
   }
-  const projects = ['visual-desktop-light', 'visual-desktop-dark', 'visual-phone-light', 'visual-phone-dark'].map((p) => `--project ${p}`).join(' ');
-  const update = process.env.UPDATE_SNAPSHOTS ? ' --update-snapshots' : '';
+  const all = ['visual-desktop-light', 'visual-desktop-dark', 'visual-phone-light', 'visual-phone-dark'];
+  const projects = (process.env.VISUAL_PROJECTS?.split(',') ?? all).map((p) => `--project ${p}`).join(' ');
+  // 'missing' writes only baselines that do not exist yet; 'all' rewrites every baseline
+  const update = process.env.UPDATE_SNAPSHOTS ? ` --update-snapshots=${process.env.UPDATE_SNAPSHOTS === 'all' ? 'all' : 'missing'}` : '';
   const r = spawnSync(`pnpm --filter @thapsus/web exec playwright test ${projects}${update}`, {
     shell: true,
     stdio: 'inherit',

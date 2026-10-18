@@ -6,10 +6,13 @@ const PAGES = ['/', '/signin', '/signup', '/design/gallery'];
 
 for (const path of PAGES) {
   test(`page ${path}`, async ({ page }) => {
+    // The long marketing page takes well over a minute to capture full-page in the container on slow hosts.
+    test.setTimeout(600_000);
     await page.goto(path);
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot(`${path === '/' ? 'home' : path.slice(1).replace(/\//g, '-')}.png`, {
       fullPage: true,
+      timeout: 300_000,
       mask: [page.locator('footer p')],
     });
   });

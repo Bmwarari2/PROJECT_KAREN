@@ -10,6 +10,8 @@ export function FeatureShowcase({ features }: { features: Array<{ key: string; t
   const [active, setActive] = React.useState(0);
   const refs = React.useRef<Array<HTMLLIElement | null>>([]);
   React.useEffect(() => {
+    // Reduced motion: a static showcase (first panel active), no scroll-driven changes.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.index));

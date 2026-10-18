@@ -65,7 +65,9 @@ const waitFor = async (url) => {
   for (let i = 0; i < 120; i++) {
     try {
       if ((await fetch(url)).ok) return;
-    } catch {}
+    } catch {
+      // not up yet
+    }
     await new Promise((r) => setTimeout(r, 1000));
   }
   throw new Error(`timeout waiting for ${url}`);
