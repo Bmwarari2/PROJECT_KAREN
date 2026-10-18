@@ -37,7 +37,22 @@ Things only a person with the right accounts or authority can do. The build runs
   
   Replace the reviewer field via a back-office rule version when confirmed.
 - [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example Romania and Lithuania holidays and leave, Cyprus holidays, German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually.
-- [ ] 3.3 Review the DPA, privacy notice templates, DPIA template, records of processing, sub-processor notice period and retention defaults in `docs/legal/`.
+- [ ] 3.3 **Legal review of the privacy and trust drafts** (every file starts with "DRAFT — for legal review"):
+  1. DPAs: `docs/legal/dpa-uk.md`, `docs/legal/dpa-eu.md`, `docs/legal/dpa-us.md`. Fill the bracketed terms (legal entity, liability, governing law, audit terms, sub-processor objection remedy) and confirm the transfer position for remote support access.
+  2. Employee privacy notice templates: `docs/legal/privacy-notice-uk.md`, `docs/legal/privacy-notice-eu.md`, `docs/legal/privacy-notice-us.md`. Confirm the lawful-basis table and the US sensitive-information wording.
+  3. `docs/legal/dpia-template.md` and `docs/legal/records-of-processing.md` (Art. 30(2) processor record). Also write the separate Art. 30(1) record for Thapsus's own controller activities.
+  4. Contractual settings in `packages/core/src/trust/legal.json`: sub-processor notice (30 days), processor breach notification target (48 hours), closure grace period (30 days), reminder thresholds. Change the values there, then run `pnpm --filter @thapsus/core trust-data` if documents changed.
+  5. When the DPA wording changes, bump the `Version YYYY-MM-DD` line in each DPA file and regenerate. Customers are then asked to re-accept in Privacy → DPA and notices.
+  6. Set `legalReview` to `reviewed` in `legal.json` once done.
+- [ ] 3.4 **Privacy rule values in the jurisdiction packs** (`privacy.dsr_deadline`, `privacy.breach_notification`, `retention.*`; reviewer `research-agent (pending legal review)`):
+  1. Confirm the UK Article 12A reading (clock start, clarification stop) and the conservative choices in ADR-0080 (no next-working-day rollover; earlier reading of "two further months").
+  2. **California:** open Civ. Code §1798.82 on leginfo.legislature.ca.gov in a browser (automated access was blocked). Confirm the consumer-notice timing after SB 446 (2025), the Attorney General timing and the duty of a business maintaining data it does not own. Record them as a back-office rule version. Also confirm the CCPA regulations' confirmation-of-receipt timing (11 CCR §7021).
+  3. **Illinois:** open 815 ILCS 530/10 on ilga.gov (unreachable during research). Confirm the Attorney General threshold and deadline for private data collectors, and the duty of a data collector maintaining data it does not own.
+  4. **Georgia:** check O.C.G.A. §10-1-912 in the official code (published by LexisNexis for the General Assembly, not on the allow-list) and decide whether to allow-list that host or record it by back-office edit.
+  5. **New York:** confirm the effective date of the current 30-day rule in GBL §899-aa and the duty of a person maintaining data it does not own.
+  6. **Oregon:** confirm that the 45-day limit in ORS 646A.604(3)(a) also applies to the Attorney General notice.
+  7. **Retention:** confirm the suggested UK personnel-records default (6 years after employment ends, Limitation Act 1980 s. 5; England and Wales only) and add Scottish and Northern Irish periods. Confirm that 29 CFR 1602.14 keeps the personnel records of current US employees. Add member-state retention periods for the EU (coverage to-do).
+  8. Confirm the erasure semantics in ADR-0082 (what is anonymised versus deleted versus kept for accountability).
 
 ## 4. Payments, partners and integrations
 

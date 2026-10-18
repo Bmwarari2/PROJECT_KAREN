@@ -21,6 +21,10 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Secrets | AWS Secrets Manager in AWS; git-ignored `.env` locally; secret scan in `pnpm verify`; GitHub OIDC for deploys (no long-lived keys) | `scripts/secret-scan.mjs`, `.github/workflows/deploy.yml` |
 | Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI | verify `security` step |
 | Infrastructure | WAF (AWS managed rules plus a rate limit) on every ALB; KMS everywhere; S3 public access blocked; no `*` action on `*` resource in IAM | `infra/test` |
+| Privacy requests | Access exports cover every table that references the person; a catalog test fails on unmapped person columns. Credentials are never exported. Each vault decrypt is audited with its purpose, and withheld categories are audited too. Downloads use short-lived home-region links. | `apps/api/test/privacy-dsr.int.test.ts`, `apps/api/test/privacy-coverage.int.test.ts` |
+| Erasure and retention | Legal holds and statutory minimums from the packs are always honoured. Tenants can lengthen a period but never shorten a statutory one. The deletion log holds counts and rule versions only. | `apps/api/test/privacy-retention.int.test.ts`, `apps/api/test/privacy-dsr.int.test.ts` |
+| Verified deletion | Account closure has a grace period. The audit log is purged only through `audit.purge_closed_tenant()`, which refuses tenants that are not closing; the app role still has no DELETE. All object versions and rate-limit keys are removed, every store is checked empty, and a deletion certificate is issued. The global directory is marked deleted and holds no personal data. | `apps/api/test/privacy-closure.int.test.ts`, `packages/db/test/rls.isolation.test.ts` ("the closed-tenant audit purge…") |
+| Breach handling | Customer incident log with statutory deadlines from the packs and reminders. Staff-only processor breach register with no personal data; controllers are notified in their own logs. | `apps/api/test/privacy-legal.int.test.ts`, `docs/runbooks/incident-and-breach-response.md` |
 
 ## Accepted risks and follow-ups
 
