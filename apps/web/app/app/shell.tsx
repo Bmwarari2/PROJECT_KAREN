@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CalendarClock, CalendarDays, ClipboardList, Clock, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Scale, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
+import { Bell, CalendarClock, CalendarDays, CircleHelp, ClipboardList, Clock, CreditCard, FileText, Home, Inbox, LifeBuoy, ListChecks, LogOut, Menu, Network, Scale, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
 import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
@@ -54,6 +54,9 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
     { href: '/app/security', label: t('app.nav.security'), icon: <ShieldCheck aria-hidden />, show: true },
     { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') },
+    { href: '/app/billing', label: t('app.nav.billing'), icon: <CreditCard aria-hidden />, show: has('billing.manage') },
+    { href: '/app/help', label: t('app.nav.help'), icon: <CircleHelp aria-hidden />, show: true },
+    { href: '/app/support', label: t('app.nav.support'), icon: <LifeBuoy aria-hidden />, show: has('support.ticket') },
   ];
   return items.filter((i) => i.show).map(({ show: _show, ...i }) => ({ ...i, active: i.href === '/app' ? path === '/app' : path.startsWith(i.href) }));
 }
@@ -127,6 +130,10 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
             </Sheet>
             <span className="truncate text-callout font-semibold lg:hidden">{t('common.appName')}</span>
             <div className="ml-auto flex items-center gap-3">
+              {/* Contextual help: articles linked from the page the user is on. */}
+              <Link href={`/app/help?context=${encodeURIComponent(path)}`} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-text hover:bg-surface" aria-label={t('app.nav.helpForPage')} title={t('app.nav.helpForPage')}>
+                <CircleHelp aria-hidden className="h-5 w-5 stroke-[1.5]" />
+              </Link>
               <div className="hidden md:block">
                 <LocaleSwitch />
               </div>

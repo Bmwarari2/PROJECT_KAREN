@@ -180,7 +180,8 @@ const PRICING_SOURCES = [
 ];
 const PRICE_LITERALS: Array<[string, RegExp]> = [
   ['amount/price/fee assigned a number', /\b\w*(amount|price|fee|cost|unit)\w*["']?\s*[:=]\s*-?\d{2,}/i],
-  ['currency symbol followed by a number', /[£€]\s?\d|\$\s?\d/],
+  // `$1`-style SQL placeholders are not prices; a dollar amount in quotes, with cents or "per …" is.
+  ['currency symbol followed by a number', /[£€]\s?\d|(?<![\w(,=\s])\$\d|\$\d+\.\d{2}\b|\$\d+\s+(per|a)\b|\bUS\$\s?\d/],
   ['currency code assigned a number', /\b(GBP|EUR|USD)["']?\s*[:=]\s*\d+/],
   ['number followed by a currency code', /\d\s*(GBP|EUR|USD)\b/],
 ];
@@ -209,6 +210,9 @@ describe('no hard-coded prices', () => {
     expect(hardcodedPrices('const unitAmountMinor = 400;')).toHaveLength(1);
     expect(hardcodedPrices("monthlyUnit: { GBP: 400 }")).not.toHaveLength(0);
     expect(hardcodedPrices('label = "From £4 per person"')).not.toHaveLength(0);
+    expect(hardcodedPrices("price = '$12'")).not.toHaveLength(0);
+    expect(hardcodedPrices('label = "Only $9 per seat"')).not.toHaveLength(0);
+    expect(hardcodedPrices("tx.query('SELECT * FROM t WHERE id = $1 AND x = ($2, $3)')")).toEqual([]);
     expect(hardcodedPrices('const total = 500 USD')).not.toHaveLength(0);
     expect(hardcodedPrices('const q = quote(cfg, input); // amounts from config')).toEqual([]);
   });

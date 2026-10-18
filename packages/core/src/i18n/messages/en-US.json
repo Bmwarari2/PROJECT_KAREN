@@ -52,7 +52,11 @@
   "app": {
     "nav": {
       "rota": "Schedule",
-      "clock": "Time clock"
+      "clock": "Time clock",
+      "billing": "Billing",
+      "help": "Help center",
+      "support": "Support",
+      "helpForPage": "Help for this page"
     }
   },
   "rota": {
@@ -139,12 +143,626 @@
     "email": {
       "paymentFailedSubject": "Payment failed for your Thapsus-HR invoice {number}",
       "paymentFailedBody": "Hello,\n\nWe couldn't process the payment of {amount} for invoice {number} for {company}. It is due on {due}.\n\nPlease update your payment details on the billing page:\n{link}\n\nYour workspace stays available while you do this. If you've already paid, you can ignore this email.\n\nThapsus-HR billing"
-    }
+    },
+    "title": "Billing",
+    "regionNote": "Your billing details and invoices are stored in {region}.",
+    "ownersOnly": "Only the company owner can manage billing.",
+    "contractTitle": "Your contract",
+    "contractBody": "Billing follows contract {reference} for the {plan} plan, from {start} to {end}. Invoices are due within {days} days. Contact your account manager to make changes.",
+    "subscriptionTitle": "Your subscription",
+    "status": {
+      "trialing": "Free trial",
+      "trial_expired": "Trial ended",
+      "incomplete": "Awaiting payment details",
+      "active": "Active",
+      "past_due": "Payment overdue",
+      "canceled": "Canceled"
+    },
+    "plan": "Plan",
+    "term": "Term",
+    "currency": "Currency",
+    "headcount": "Billable employees",
+    "headcountValue": "{billed} billed ({active} active)",
+    "amount": "Price",
+    "free": "Free during the trial",
+    "perInterval": {
+      "monthly": "{amount} per month",
+      "annual": "{amount} per year"
+    },
+    "trialEnds": "Trial ends",
+    "renews": "Current period ends",
+    "pending": "Changing to {plan} ({term}) on {date}.",
+    "cancelling": "Your subscription ends on {date}.",
+    "reactivate": "Keep my subscription",
+    "reactivated": "Your subscription will continue",
+    "invoiceCollection": "Paid by invoice, due within {days} days. PO number: {po}",
+    "changeTitle": "Change plan",
+    "chooseTitle": "Choose a plan",
+    "changeRules": "Upgrades start now with a prorated charge. Downgrades and switching from annual to monthly start at the end of the period you have paid for.",
+    "chooseLead": "You keep any free trial days left; you are charged when the trial ends. Every workspace gets {days} days free.",
+    "discountCode": "Discount code",
+    "currencyLocked": "The currency is fixed once a paid subscription has started.",
+    "quoteLine": "{unit} per billable employee × {quantity}.",
+    "taxNote": "Tax is added where it applies.",
+    "noChange": "This is your current plan.",
+    "now": "Takes effect now.",
+    "nowProrated": "Takes effect now. Estimated charge for the rest of this period: {amount} before tax.",
+    "atPeriodEnd": "Takes effect on {date}, at the end of the period you have paid for.",
+    "applyChange": "Change plan",
+    "start": "Start subscription",
+    "started": "Subscription started",
+    "changed": "Plan changed",
+    "detailsFirst": "Add your billing details first.",
+    "addCard": "Add a card",
+    "updateCard": "Update card",
+    "redirecting": "Opening the secure payment page",
+    "cancel": "Cancel subscription",
+    "cancelConfirm": "Cancel your subscription? It ends at the end of the billing period after a {days}-day notice period, and you keep full access until then.",
+    "cancelled": "Cancellation scheduled",
+    "invoices": "Invoices",
+    "noInvoices": "No invoices yet",
+    "invoiceNumber": "Invoice",
+    "period": "Period",
+    "total": "Total",
+    "po": "PO number",
+    "view": "View",
+    "invoiceStatus": {
+      "draft": "Draft",
+      "open": "Due",
+      "paid": "Paid",
+      "uncollectible": "Unpaid",
+      "void": "Void"
+    },
+    "detailsTitle": "Billing details",
+    "companyName": "Company legal name",
+    "addressLine1": "Address line 1",
+    "addressLine2": "Address line 2",
+    "city": "City",
+    "region": "State or county",
+    "postalCode": "ZIP code",
+    "country": "Country code",
+    "countryHint": "Two letters, for example GB, DE or US.",
+    "taxIdType": "Tax ID type",
+    "taxIdTypeHint": "For example gb_vat, eu_vat or us_ein.",
+    "taxId": "Tax ID",
+    "contactName": "Billing contact name",
+    "contactEmail": "Billing contact email",
+    "contactHint": "Invoices and payment problems are sent here.",
+    "otherContactName": "Second billing contact (optional)",
+    "otherContactEmail": "Second contact email",
+    "stripeNote": "We share only your company details and your billing contact with our payment provider, Stripe. We never share employee data.",
+    "saveDetails": "Save billing details",
+    "detailsSaved": "Billing details saved"
   },
   "support": {
     "email": {
       "escalationSubject": "[{region}] SLA {state}: ticket {reference} ({priority})",
       "escalationBody": "Support ticket {reference} is {state} on its {timer} target.\n\nPriority: {priority}\nPlan: {plan}\nDue: {due}\n\nOpen it in the back office:\n{link}"
+    },
+    "title": "Support",
+    "searchHelpFirst": "Search the help center first",
+    "newTitle": "New ticket",
+    "subject": "Subject",
+    "category": "Category",
+    "priority": "Priority",
+    "priorityHint": "Urgent means the service is unusable for your company (admins only).",
+    "description": "What happened?",
+    "descriptionHint": "Include the steps to reproduce it. Please do not include sensitive data such as health information.",
+    "attachment": "Attachment (optional)",
+    "attachmentHint": "PNG, JPEG, PDF, text or CSV, up to 10 MB.",
+    "privacyNote": "Your ticket is stored in your workspace's home region. Our support team can read what you send here, and nothing else in your workspace without an admin's permission.",
+    "submit": "Send ticket",
+    "created": "Ticket {reference} raised",
+    "contactTitle": "Contact options",
+    "planLine": "Your plan: {plan}",
+    "hoursLine": "Support hours: {start} to {end}, Monday to Friday ({zone})",
+    "alwaysLine": "Support is available around the clock.",
+    "slaTitle": "Our response targets",
+    "firstResponse": "First response",
+    "resolution": "Resolution",
+    "hours": "{count} h",
+    "minutes": "{count} min",
+    "channels": {
+      "help_centre": "Help center",
+      "ticket": "Support tickets",
+      "email": "Email",
+      "phone": "Phone",
+      "chat": "Live chat"
+    },
+    "coverage": {
+      "business_hours": "support hours",
+      "always": "24/7"
+    },
+    "categories": {
+      "question": "Question",
+      "problem": "Something is not working",
+      "billing": "Billing",
+      "account": "Account and sign-in",
+      "data": "Data and privacy",
+      "feature_request": "Suggestion"
+    },
+    "priorities": {
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "statuses": {
+      "open": "Open",
+      "awaiting_customer": "Waiting for you",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "slaStates": {
+      "on_track": "On track",
+      "at_risk": "At risk",
+      "breached": "Overdue",
+      "met": "Met",
+      "met_late": "Met late"
+    },
+    "myTickets": "My tickets",
+    "allTickets": "All company tickets",
+    "scopeLabel": "Which tickets",
+    "noTickets": "No tickets yet",
+    "reference": "Reference",
+    "sla": "Target",
+    "updated": "Last activity",
+    "back": "All tickets",
+    "firstResponseDue": "First response due",
+    "resolutionDue": "Resolution due",
+    "conversation": "Conversation",
+    "fromSupport": "Thapsus-HR support",
+    "you": "You",
+    "attachments": "Attachments",
+    "attached": "File attached",
+    "reply": "Reply",
+    "replied": "Reply sent",
+    "send": "Send reply",
+    "attachFile": "Attach a file",
+    "close": "Close ticket",
+    "closedToast": "Ticket closed",
+    "closedNote": "This ticket is closed. Raise a new ticket if you need more help."
+  },
+  "pricing": {
+    "meta": {
+      "title": "Pricing",
+      "description": "Simple, published prices per employee, by company size. Monthly or annual, with a free trial."
+    },
+    "title": "Fair prices, published for everyone",
+    "lead": "Pay per active employee, with lower prices as you grow. Monthly plans roll with no lock-in; annual plans cost less.",
+    "trialBadge": "Free for {days} days, no card needed",
+    "termLabel": "Billing term",
+    "currencyLabel": "Currency",
+    "plansLabel": "Plans",
+    "term": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "annualSave": "Annual (save {percent})"
+    },
+    "billed": {
+      "monthly": "billed monthly",
+      "annual": "billed annually"
+    },
+    "from": "From",
+    "perEmployeeMonth": "per employee per month",
+    "minimum": "Minimum of {count} employees",
+    "cta": "Start your {days}-day free trial",
+    "custom": "Custom pricing",
+    "enterpriseTerms": "Annual contracts, invoicing with payment terms and purchase orders",
+    "contactSales": "Talk to us",
+    "plans": {
+      "core": {
+        "name": "Core",
+        "summary": "Everything to run people records, documents and time off."
+      },
+      "plus": {
+        "name": "Plus",
+        "summary": "Core, plus schedules, time tracking, workflows and compliance tools."
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "summary": "For large and multi-entity organizations, with 24/7 support."
+      }
+    },
+    "features": {
+      "people": "Effective-dated employee records",
+      "documents": "Documents and e-signature",
+      "orgChart": "Organization chart",
+      "timeOff": "Time off and absence",
+      "selfService": "Employee self-service app",
+      "helpCentre": "Help center and support tickets",
+      "rotas": "Schedules and shift swaps",
+      "timeTracking": "Clock-in and timesheets",
+      "workflows": "Onboarding and offboarding workflows",
+      "automation": "Automation rules",
+      "compliance": "Compliance center",
+      "sso": "Single sign-on (SAML and OIDC)",
+      "scim": "SCIM user provisioning",
+      "api": "Public API and webhooks",
+      "dedicatedDatabase": "Dedicated database option",
+      "multiEntityBilling": "Billing per legal entity"
+    },
+    "bands": {
+      "title": "Prices by company size",
+      "lead": "The price for your whole company follows its number of active employees ({term}). Prices exclude VAT and sales tax.",
+      "caption": "Price per employee per month in {currency}",
+      "employees": "Active employees",
+      "range": "{min} to {max}",
+      "more": "{min} or more"
+    },
+    "terms": {
+      "title": "How billing works",
+      "trial": {
+        "title": "Free trial",
+        "body": "Every workspace starts with {days} days free. Choose a plan when you are ready."
+      },
+      "monthly": {
+        "title": "Monthly",
+        "body": "No lock-in. Cancel at any time with {days} days' notice; your plan ends at the end of the billing month after the notice period."
+      },
+      "annual": {
+        "title": "Annual",
+        "body": "Save {percent} by paying yearly. Give {days} days' notice before your renewal date to stop it renewing."
+      },
+      "changes": {
+        "title": "Upgrades and downgrades",
+        "body": "Upgrades start right away and you pay only the difference for the rest of the period. Downgrades start at the end of the period you have paid for."
+      },
+      "tax": {
+        "title": "Tax",
+        "body": "VAT, sales tax and reverse charge are calculated by Stripe Tax for your billing address."
+      },
+      "currency": {
+        "title": "Currency",
+        "body": "Pay in pounds, euros or US dollars. Your currency is set when your first paid subscription starts."
+      }
+    }
+  },
+  "statusPage": {
+    "meta": {
+      "title": "Service status",
+      "description": "Live status of Thapsus-HR in the United Kingdom, the European Union and the United States."
+    },
+    "title": "Service status",
+    "lead": "Each region runs separately, so each is reported separately. Status is refreshed every 30 seconds.",
+    "componentsLabel": "Components",
+    "components": {
+      "api": "API and app",
+      "database": "Database",
+      "worker": "Background jobs",
+      "email": "Email delivery"
+    },
+    "state": {
+      "operational": "Operational",
+      "degraded": "Degraded",
+      "outage": "Outage",
+      "maintenance": "Maintenance"
+    },
+    "overall": {
+      "operational": "All systems operational",
+      "degraded": "Some systems degraded",
+      "outage": "Service disruption",
+      "maintenance": "Maintenance in progress"
+    },
+    "postStatus": {
+      "investigating": "Investigating",
+      "identified": "Identified",
+      "monitoring": "Monitoring",
+      "resolved": "Resolved",
+      "scheduled": "Scheduled",
+      "in_progress": "In progress",
+      "completed": "Completed"
+    },
+    "activeTitle": "Current incidents",
+    "noActive": "No incidents right now.",
+    "upcomingTitle": "Scheduled maintenance",
+    "historyTitle": "Past 30 days ({count})",
+    "noHistory": "Nothing to report.",
+    "updated": "Updated {time}",
+    "unavailable": "We can't load this region's status right now. Please try again shortly."
+  },
+  "help": {
+    "title": "Help center",
+    "contactSupport": "Contact support",
+    "searchLabel": "Search the help center",
+    "searchPlaceholder": "Search, for example \"request time off\"",
+    "search": "Search",
+    "forThisPage": "Help for the page you were on",
+    "resultsFor": "Results for \"{query}\"",
+    "allArticles": "All articles",
+    "noResults": "No articles match your search",
+    "noResultsBody": "Try different words, or raise a ticket and we will help.",
+    "back": "All help articles",
+    "updated": "Updated {date} · version {version}",
+    "stillStuck": "Still need help? Our support team can look at it with you.",
+    "raiseTicket": "Raise a ticket"
+  },
+  "backoffice": {
+    "title": "Thapsus back office",
+    "cell": "Cell: {region}",
+    "roles": {
+      "super_admin": "Super admin",
+      "support": "Support",
+      "rules_editor": "Rules editor",
+      "billing": "Billing"
+    },
+    "nav": {
+      "label": "Back office",
+      "overview": "Overview",
+      "tenants": "Customers",
+      "support": "Support queue",
+      "plans": "Plans and contracts",
+      "status": "Status page",
+      "rules": "Rule data",
+      "lawChanges": "Law changes",
+      "audit": "Staff audit trail",
+      "settings": "Contact channels"
+    },
+    "signin": {
+      "title": "Staff sign-in",
+      "lead": "For Thapsus staff only. Every action is recorded.",
+      "totpLead": "Enter the six-digit code from your authenticator app.",
+      "email": "Work email",
+      "password": "Password",
+      "code": "Authenticator code",
+      "codeHint": "Six digits. Codes change every 30 seconds.",
+      "continue": "Continue",
+      "verify": "Verify and sign in",
+      "note": "Multi-factor authentication is required for every staff session."
+    },
+    "overview": {
+      "title": "Overview",
+      "lead": "This cell serves {region} ({aws}). Customer data from other regions is never shown here.",
+      "tenants": "Customers",
+      "openTickets": "Open tickets",
+      "slaAtRisk": "Tickets at risk",
+      "slaBreached": "Tickets overdue",
+      "activeContracts": "Active contracts",
+      "renewalsDue": "Renewals due",
+      "activeIncidents": "Open incidents",
+      "privacy": "Customer personal data is only visible through support access that the customer grants, and every access is logged in their audit log and in the staff trail."
+    },
+    "tenants": {
+      "title": "Customers",
+      "cellLead": "Customers homed in this cell, with usage totals only.",
+      "allLead": "Every region, from the global directory: identifiers, regions, plan and status only.",
+      "viewLabel": "Which customers",
+      "thisCell": "This cell",
+      "allRegions": "All regions",
+      "search": "Search by workspace",
+      "workspace": "Workspace",
+      "region": "Region",
+      "plan": "Plan",
+      "headcount": "Employees",
+      "activeUsers": "Active users",
+      "storage": "Storage",
+      "contract": "Contract",
+      "mb": "{value} MB"
+    },
+    "tenant": {
+      "lead": "{slug} · {region} · since {created}",
+      "usage": "Usage",
+      "refresh": "Refresh",
+      "usageRefreshed": "Usage refreshed",
+      "computedAt": "Counted at",
+      "noUsage": "Not counted yet.",
+      "aggregatesOnly": "Totals only: no names or records.",
+      "supportAccess": "Support access",
+      "grantActive": "You have {level} access until {until}.",
+      "grantNone": "You have no support access to this customer's data.",
+      "level": {
+        "read": "read-only",
+        "read_write": "read and write"
+      },
+      "employeeId": "Employee ID",
+      "viewRecord": "View record",
+      "accessLogged": "Opening a record needs the customer's support grant and is written to their audit log and the staff trail.",
+      "noGrant": "No active support grant from this customer. Ask an admin to grant access from Settings.",
+      "billingAccounts": "Billing accounts",
+      "billingLead": "Group legal entities into separately invoiced accounts. Billing contacts are entered by the customer and are not shown here.",
+      "accountName": "Account name",
+      "collection": "Payment",
+      "invoice": "Invoice with payment terms",
+      "card": "Card",
+      "byInvoice": "Invoice, {days} days",
+      "byCard": "Card",
+      "paymentTerms": "Payment terms (days)",
+      "entities": "Legal entities",
+      "default": "Default",
+      "detailsMissing": "Details missing",
+      "unassigned": "All entities not assigned elsewhere",
+      "addAccount": "Add billing account",
+      "accountCreated": "Billing account created",
+      "contracts": "Contracts",
+      "noContracts": "No contract: self-serve billing."
+    },
+    "flags": {
+      "title": "Feature flags",
+      "lead": "Turn features on or off for this workspace. Changes are written to the customer's audit log and the staff trail.",
+      "managedBy": {
+        "tenant": "managed by the customer",
+        "staff": "managed by Thapsus"
+      },
+      "default": "Default ({value})",
+      "on": "On",
+      "off": "Off",
+      "saved": "Feature flag saved"
+    },
+    "plans": {
+      "title": "Plans and contracts",
+      "lead": "Plans and prices come from the billing configuration ({location}, version {version}, from {date}).",
+      "selfServe": "Self-serve, minimum {min} employees",
+      "contractOnly": "By contract only",
+      "monthlyUnit": "Per employee per month",
+      "discounts": "Annual discount {annual}. Discount codes: {codes}. Free trial: {trial} days."
+    },
+    "contracts": {
+      "title": "Enterprise contracts",
+      "reference": "Reference",
+      "pricing": "Pricing",
+      "dates": "Dates",
+      "invoicing": "Invoicing",
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "ended": "Ended"
+      },
+      "renewal": {
+        "auto": "Renews automatically",
+        "manual": "Renewal by agreement",
+        "none": "Does not renew"
+      },
+      "renewalDue": "Renewal due",
+      "unit": "{amount} per employee",
+      "flat": "{amount} fixed fee",
+      "discount": "{percent} off the published price",
+      "activate": "Activate",
+      "activated": "Contract activated",
+      "end": "End",
+      "endConfirm": "End this contract? Billing stops at the end of its end date.",
+      "ended": "Contract ended",
+      "newTitle": "Record a contract",
+      "newLead": "Custom prices are stored on the contract record. Activating it bills each of the customer's billing accounts by invoice.",
+      "chooseTenant": "Choose a workspace",
+      "startsOn": "Starts on",
+      "endsOn": "Ends on",
+      "renewalLabel": "Renewal",
+      "renewalNotice": "Renewal reminder (days before end)",
+      "pricingMode": "Pricing",
+      "mode": {
+        "unit": "Price per employee",
+        "flat": "Fixed fee",
+        "discount": "Discount on published price"
+      },
+      "amount": "Amount per billing period ({currency})",
+      "percentOff": "Discount (%)",
+      "minimumEmployees": "Minimum billable employees",
+      "create": "Save as draft",
+      "created": "Contract saved"
+    },
+    "support": {
+      "title": "Support queue",
+      "lead": "Tickets from customers in this cell, most urgent first. The queue shows routing details only; opening a ticket is logged.",
+      "showAll": "Show closed tickets",
+      "openOnly": "Open tickets only",
+      "empty": "The queue is empty",
+      "waitingOn": "Waiting on",
+      "us": "Us",
+      "customer": "Customer",
+      "thapsus": "Thapsus support",
+      "ticketLead": "{reference} · {plan} plan · raised from {page}",
+      "auditNote": "You can see this ticket because the customer sent it to support. This view is recorded in the customer's audit log and the staff trail.",
+      "grantNote": "To look at anything else in this workspace, the customer must grant support access.",
+      "updated": "Ticket updated",
+      "opened": "Attachment opened",
+      "reply": "Reply to the customer",
+      "thenSet": "Then set the ticket to",
+      "send": "Send reply",
+      "replied": "Reply sent"
+    },
+    "status": {
+      "title": "Status page",
+      "lead": "Post incidents and planned maintenance for this region. Posts appear on the public status page.",
+      "viewPublic": "View the public page",
+      "newTitle": "New post",
+      "kind": "Type",
+      "incident": "Incident",
+      "maintenance": "Maintenance",
+      "impact": "Impact",
+      "impacts": {
+        "minor": "Minor (degraded)",
+        "major": "Major (outage)",
+        "critical": "Critical (outage)"
+      },
+      "startUtc": "Starts (UTC)",
+      "endUtc": "Ends (UTC)",
+      "postTitle": "Title",
+      "components": "Affected components",
+      "message": "Message",
+      "noPersonalData": "Public text: never include customer names or personal data.",
+      "post": "Publish",
+      "posted": "Posted",
+      "when": "When",
+      "update": "Update",
+      "postUpdate": "Post update",
+      "updated": "Update posted"
+    },
+    "rules": {
+      "title": "Jurisdiction rule data",
+      "lead": "Rule values come from the jurisdiction packs. Corrections are added as new dated versions; nothing is overwritten.",
+      "jurisdiction": "Jurisdiction",
+      "key": "Rule",
+      "inherited": "from parent",
+      "versions": "Versions",
+      "effective": "In force",
+      "value": "Value",
+      "source": "Official source",
+      "verified": "Verified",
+      "origin": "Origin",
+      "origins": {
+        "pack": "Pack",
+        "backoffice": "Back office"
+      },
+      "addTitle": "Add a version",
+      "addLead": "Use the official government source. The newest version wins where periods overlap.",
+      "from": "In force from",
+      "to": "In force until (optional)",
+      "valueJson": "Value (JSON)",
+      "sourceUrl": "Source URL",
+      "sourceTitle": "Source title",
+      "verifiedOn": "Verified on",
+      "notes": "Notes",
+      "add": "Add version",
+      "added": "Version added",
+      "badJson": "The value must be valid JSON."
+    },
+    "lawChanges": {
+      "title": "Law changes",
+      "lead": "Entries in the law-changes feed. Customers see published entries for the jurisdictions where they have entities, locations or employees.",
+      "effective": "Effective date",
+      "entry": "Entry",
+      "status": {
+        "draft": "Draft",
+        "published": "Published",
+        "withdrawn": "Withdrawn"
+      },
+      "publish": "Publish",
+      "published": "Published",
+      "withdraw": "Withdraw",
+      "withdrawn": "Withdrawn",
+      "newTitle": "New entry",
+      "titleGb": "Title (English, UK)",
+      "titleUs": "Title (English, US, optional)",
+      "summaryGb": "Summary (English, UK)",
+      "summaryUs": "Summary (English, US, optional)",
+      "whatGb": "What to do (English, UK)",
+      "whatUs": "What to do (English, US, optional)",
+      "create": "Save entry",
+      "created": "Entry saved"
+    },
+    "audit": {
+      "title": "Staff audit trail",
+      "lead": "Every staff action in this cell. The trail is append-only.",
+      "export": "Export CSV",
+      "from": "From",
+      "to": "To",
+      "at": "When",
+      "staff": "Staff member",
+      "action": "Action",
+      "customer": "Customer",
+      "target": "Target"
+    },
+    "settings": {
+      "title": "Support contact channels",
+      "lead": "Contact options shown to customers in {region}, per plan. Saving adds a new version; earlier versions are kept.",
+      "kind": "Channel",
+      "value": "Address or number",
+      "valuePlaceholder": "For example support@example.com",
+      "hours": "Hours",
+      "remove": "Remove",
+      "addChannel": "Add channel",
+      "save": "Save channels",
+      "saved": "Contact channels saved"
     }
   }
 }
