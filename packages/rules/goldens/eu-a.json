@@ -18,10 +18,7 @@
         "2026-12-25",
         "2026-12-26"
       ],
-      "packGaps": [
-        "2026-01-06"
-      ],
-      "source": "Official BALM 2026 list (balm.bund.de) for all dates except 6 Jan; Epiphany from Bayerisches Feiertagsgesetz Art. 1(1) (https://www.gesetze-bayern.de/Content/Document/BayFTG-1), a domain not on the validator allow-list, so it is not yet in the pack (packGaps). Assumption (15 Aug) excluded: only in predominantly Catholic municipalities."
+      "source": "Official BALM 2026 list (balm.bund.de) for all dates except 6 Jan; Epiphany from Bayerisches Feiertagsgesetz Art. 1(1) Nr. 1 (https://www.gesetze-bayern.de/Content/Document/BayFTG-1, fetched 2026-10-18). Assumption (15 Aug) excluded: only in predominantly Catholic municipalities."
     },
     {
       "jurisdiction": "DE",
@@ -665,7 +662,7 @@
       }
     }
   ],
-  "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack because the source domain is not on the validator allow-list.",
+  "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack (none at present).",
   "sources": [
     {
       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",

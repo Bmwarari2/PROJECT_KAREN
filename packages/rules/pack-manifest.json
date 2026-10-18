@@ -27,6 +27,11 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:8d95237e0983bac464e1eb550fad8f2ced5e519b523ee1d7be4ba8895c863ea8"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:63fe3afa29ccec2f388b09305d771a26dc7c0500ae5b42ad2e9c436ca6228322"
       }
     ],
     "CZ": [
@@ -41,6 +46,11 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:e555be5ee4db2b05ebf4d616c4b6240926bb4f3014e97d673da2c5ac5328164b"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:7c0da691ff00dc7a88a7180a52c5b9d92b3a9922f965cd8cf97f6a24530c6634"
       }
     ],
     "DK": [
@@ -144,6 +154,11 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:951bba0454060a0c7ffa43c6a599d9224eec9f811b52697bf2730322c6c7d9db"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:4b33dd72ecf6e77766f75140cb1647d657b4d6a6181412d49e86cfc90e1593d4"
       }
     ],
     "LU": [
@@ -193,6 +208,11 @@
         "version": 1,
         "updatedOn": "2026-10-18",
         "contentHash": "sha256:54136624140db428434b30337ad28ceeb07688e603f8009aa3011b0c4d8757d6"
+      },
+      {
+        "version": 2,
+        "updatedOn": "2026-10-18",
+        "contentHash": "sha256:5b8a4ac4084d930ff62c991442c21316632420832658b3b589ce7c6271756b8d"
       }
     ],
     "SE": [
