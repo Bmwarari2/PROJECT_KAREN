@@ -1,6 +1,7 @@
 name: Deploy
 
-# Staging deploys automatically from main after CI passes; production only through the
+# Staging deploys automatically from main after CI passes once the owner opts in by setting the
+# repository variable AUTO_DEPLOY_STAGING=true (HUMAN_TODO 1.5); production only through the
 # `production` environment, which requires a manual approval (configured in GitHub settings).
 # AWS access uses GitHub OIDC role assumption — there are no AWS keys in this repository.
 on:
@@ -22,7 +23,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGING == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment == 'prod' && 'production' || 'staging' }}

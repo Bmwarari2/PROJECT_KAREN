@@ -24,6 +24,7 @@ Things only a person with the right accounts or authority can do. The build runs
      - optionally add `STAGING_SELF_SIGNED_TLS=true` while staging has no domain;
      - add `DEPLOY_PARAMS_GLOBAL`, `DEPLOY_PARAMS_CELL_UK`, `DEPLOY_PARAMS_CELL_EU` and `DEPLOY_PARAMS_CELL_US` with the CloudFormation parameters, e.g. `CertificateArn=arn:aws:acm:...,GlobalBaseUrl=https://...`. See `infra/README.md → Parameters`.
   4. In GitHub → Settings → Environments, create `staging` and `production`. Give `production` required reviewers (you) so every production deploy needs manual approval.
+  5. When the first manual staging deploy has worked, set the repository variable `AUTO_DEPLOY_STAGING=true`. From then on every green CI run on `main` deploys staging. Until then the Deploy workflow only runs when started by hand (`workflow_dispatch`).
 - [ ] 1.6 **Separate AWS accounts per environment (recommended).** Create `hr-dev` and `hr-prod` accounts in the organisation, apply the same SCP region allow-list, add SSO access, and put their account ids in `infra/config/dev.json` and `infra/config/prod.json` (currently both use the staging account id as a placeholder).
 
 ## 2. Domain, TLS and email
