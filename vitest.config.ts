@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 const special = ['**/*.int.test.ts', '**/*.isolation.test.ts', '**/*.residency.test.ts', '**/*.contract.test.ts'];
-const roots = (suffix: string) => ['{apps,packages}/*/{src,test}/**/*' + suffix, 'infra/test/**/*' + suffix, 'scripts/test/**/*' + suffix];
+const roots = (suffix: string) => ['{apps,packages}/*/{src,test}/**/*' + suffix, 'infra/test/**/*' + suffix, 'scripts/test/**/*' + suffix, 'tools/*/test/**/*' + suffix];
 const ignore = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/cdk.out/**', 'apps/web/e2e/**'];
 
 export default defineConfig({

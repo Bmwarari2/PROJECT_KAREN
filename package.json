@@ -19,7 +19,8 @@
     "synth:enterprise": "pnpm --filter @thapsus/db synth:enterprise",
     "smoke:staging": "node scripts/smoke-staging.mjs",
     "loadtest": "node scripts/loadtest.mjs",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "setup": "node scripts/dev-setup.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -28,11 +29,13 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
+    "pg": "^8.23.1",
     "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "turbo": "^2.11.9",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "web-push": "^3.6.7"
   }
 }

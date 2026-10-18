@@ -75,7 +75,9 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
   await app.register(formbody);
   await app.register(contextPlugin, { deps });
 
-  app.get('/health', { config: { auth: 'public' }, schema: { hide: true } }, async () => ({ ok: true, region: deps.config.cell, role: deps.serviceRole }));
+  for (const path of ['/health', '/health/api']) {
+    app.get(path, { config: { auth: 'public' }, schema: { hide: true } }, async () => ({ ok: true, region: deps.config.cell, role: deps.serviceRole }));
+  }
 
   if (deps.serviceRole === 'global') {
     await app.register(globalRoutes);

@@ -68,9 +68,272 @@
     "magicLinkSubject": "Your sign-in link for Thapsus-HR",
     "magicLinkBody": "Use this link to sign in. It expires in 15 minutes and can be used once:\n\n{link}\n\nIf you did not ask for it, you can ignore this email.",
     "findWorkspaceSubject": "Your Thapsus-HR workspaces",
-    "findWorkspaceBody": "You asked us to find your workspaces. Sign in here:\n\n{list}\n\nIf you did not ask for this, you can ignore this email."
+    "findWorkspaceBody": "You asked us to find your workspaces. Sign in here:\n\n{list}\n\nIf you did not ask for this, you can ignore this email.",
+    "signIn": {
+      "title": "Sign in",
+      "lead": "Use your workspace name and work email.",
+      "submit": "Sign in",
+      "or": "or",
+      "continueSso": "Continue with single sign-on",
+      "passkey": "Sign in with a passkey",
+      "magicLink": "Email me a sign-in link",
+      "magicSent": "If that address has an account, a sign-in link is on its way.",
+      "findWorkspace": "Find my workspace",
+      "createWorkspace": "Create a workspace",
+      "needWorkspace": "Enter your workspace name first.",
+      "needWorkspaceAndEmail": "Enter your workspace name and email first."
+    },
+    "fields": {
+      "workspace": "Workspace",
+      "workspaceHint": "The short name your company uses, for example acme.",
+      "email": "Email",
+      "password": "Password",
+      "company": "Company name",
+      "yourName": "Your name",
+      "workEmail": "Work email"
+    },
+    "mfa": {
+      "codeLabel": "Six-digit code",
+      "codeHint": "From your authenticator app.",
+      "verify": "Verify"
+    },
+    "signUp": {
+      "title": "Create your workspace",
+      "lead": "Free for 30 days. No card needed.",
+      "regionLabel": "Where should your data live?",
+      "regionHint": "This cannot be changed later. All personal data, files, backups and emails stay in this region.",
+      "regionDetail": {
+        "uk": "For UK companies. UK GDPR and the Data Protection Act 2018.",
+        "eu": "For EU companies. EU GDPR.",
+        "us": "For US companies. US state privacy laws."
+      },
+      "slugHint": "Lowercase letters, numbers and hyphens.",
+      "passwordHint": "At least 12 characters.",
+      "dpa": "I accept the data processing agreement on behalf of my company.",
+      "dpaRequired": "Please accept the data processing agreement.",
+      "submit": "Create workspace",
+      "slugTaken": "That workspace name is taken. Try another."
+    },
+    "find": {
+      "title": "Find my workspace",
+      "lead": "Enter your work email and we will send you a list of your workspaces.",
+      "submit": "Send me my workspaces",
+      "sent": "If we found any workspaces for that address, we have emailed them to you."
+    },
+    "magic": {
+      "title": "Signing you in",
+      "invalid": "This link has expired or has already been used."
+    }
   },
   "push": {
     "testBody": "Notifications are working on this device."
+  },
+  "marketing": {
+    "meta": {
+      "description": "Thapsus-HR is the simpler, fairer HR platform for growing companies across the UK, EU and US."
+    },
+    "nav": {
+      "label": "Main",
+      "product": "Product",
+      "pricing": "Pricing",
+      "trust": "Security",
+      "signIn": "Sign in",
+      "getStarted": "Get started"
+    },
+    "footer": {
+      "copyright": "© {year} Thapsus. All rights reserved.",
+      "label": "Footer",
+      "trust": "Security and trust",
+      "subprocessors": "Sub-processors",
+      "status": "Status"
+    },
+    "hero": {
+      "eyebrow": "HR for the UK, EU and US",
+      "title": "People, time and compliance. Calmly handled.",
+      "lead": "One place for employee records, time off, rotas and the rules of every country you hire in, with your data kept in the region you choose.",
+      "ctaPrimary": "Start free trial",
+      "ctaSecondary": "See pricing"
+    },
+    "regions": {
+      "uk": "Data stays in London, with backups across availability zones.",
+      "eu": "Data stays in Frankfurt; backup copies only within the EU.",
+      "us": "Data stays in Ohio; backup copies only within the US."
+    },
+    "features": {
+      "title": "Everything HR needs, nothing it does not.",
+      "lead": "Built for ten people or two hundred thousand, with the same calm interface.",
+      "people": {
+        "title": "People and organisation",
+        "body": "Effective-dated records, multiple legal entities and an org chart that stays fast at any size."
+      },
+      "timeOff": {
+        "title": "Time off and absence",
+        "body": "Policies per country, public holidays, sickness tracking and statutory rules kept current."
+      },
+      "rota": {
+        "title": "Rotas and time",
+        "body": "Build rotas, swap shifts and clock in from any phone, with working-time rules built in."
+      },
+      "compliance": {
+        "title": "Compliance centre",
+        "body": "Right to work, I-9, pay transparency and more, with a feed of what changed and what to do."
+      }
+    },
+    "residency": {
+      "title": "Your data stays in your region.",
+      "body": "Choose where your company lives when you sign up. Every record, file, backup and email for your people stays there."
+    },
+    "fair": {
+      "title": "Fair by design",
+      "pricing": {
+        "title": "Transparent pricing",
+        "body": "Published prices by company size. Monthly plans you can leave at any time."
+      },
+      "export": {
+        "title": "Your data, always",
+        "body": "Export everything whenever you like, in open formats."
+      },
+      "support": {
+        "title": "Real people",
+        "body": "Responsive human support, with clear response times on every plan."
+      }
+    },
+    "cta": {
+      "title": "Bring calm to HR in an afternoon.",
+      "button": "Create your workspace"
+    },
+    "mock": {
+      "people": "People",
+      "timeOff": "Time off",
+      "rota": "Rota",
+      "reports": "Reports",
+      "roleEngineer": "Software engineer",
+      "roleDesigner": "Product designer",
+      "roleSupport": "Customer support",
+      "statusActive": "Active",
+      "statusLeave": "On leave",
+      "statusStarting": "Starts Monday",
+      "caption": "The Thapsus-HR people directory showing three fictional employees."
+    }
+  },
+  "roles": {
+    "owner": "Company owner",
+    "hr_admin": "HR admin",
+    "entity_hr_admin": "Country or entity HR admin",
+    "payroll_admin": "Payroll admin",
+    "manager": "Manager",
+    "employee": "Employee"
+  },
+  "app": {
+    "nav": {
+      "label": "App",
+      "home": "Home",
+      "notifications": "Notifications",
+      "security": "Security",
+      "settings": "Settings"
+    },
+    "home": {
+      "greeting": "Welcome, {name}",
+      "security": "Account security",
+      "mfaOn": "Two-step verification is on for this session.",
+      "mfaOff": "Two-step verification is not set up yet.",
+      "manageSecurity": "Manage security",
+      "roles": "Your roles",
+      "region": "Data residency",
+      "regionBody": "Your workspace data is stored and processed in its home region only.",
+      "emptyTitle": "You are all set",
+      "emptyBody": "New tasks and approvals will appear here."
+    },
+    "security": {
+      "title": "Security",
+      "verifyRequired": "Enter a code from your authenticator app to continue.",
+      "setupRequired": "Administrators must set up two-step verification before continuing.",
+      "mfaDone": "Two-step verification is on.",
+      "passkeyAdded": "Passkey added.",
+      "passkeyFailed": "We could not add the passkey. Please try again.",
+      "totpTitle": "Authenticator app",
+      "totpBody": "Use an authenticator app to get a new six-digit code every 30 seconds.",
+      "totpSecret": "Add this key to your authenticator app, then enter the code it shows.",
+      "openAuthenticator": "Open in authenticator app",
+      "totpStart": "Set up authenticator app",
+      "passkeyTitle": "Passkeys",
+      "passkeyBody": "Sign in with your fingerprint, face or device PIN. Passkeys cannot be phished.",
+      "passkeyAdd": "Add a passkey"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "pushTitle": "Notifications on this device",
+      "enable": "Turn on",
+      "test": "Send a test",
+      "testSent": "Sent to {count} device(s).",
+      "state": {
+        "idle": "Get notified about approvals, shifts and requests.",
+        "unsupported": "This browser does not support notifications.",
+        "subscribed": "Notifications are on for this device.",
+        "denied": "Notifications are blocked in your browser settings."
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "domainsTitle": "Verified domains",
+      "domainsBody": "Verify the email domains your company owns to enable single sign-on and automatic account creation.",
+      "domainLabel": "Domain",
+      "noDomains": "No domains yet",
+      "txtRecord": "DNS TXT record",
+      "verified": "Verified",
+      "pending": "Pending",
+      "verify": "Verify",
+      "domainVerified": "Domain verified."
+    }
+  },
+  "gallery": {
+    "title": "Component gallery",
+    "lead": "Every design system component, for review and visual regression.",
+    "typography": "Typography",
+    "sampleHeadline": "Calm, clear and quick.",
+    "sampleTitle": "Quarterly headcount",
+    "sampleBody": "Fictional sample text that shows how body copy wraps across lines at a comfortable reading width.",
+    "buttons": "Buttons",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "ghost": "Ghost",
+    "danger": "Danger",
+    "link": "Link",
+    "small": "Small",
+    "large": "Large",
+    "loading": "Saving",
+    "disabled": "Disabled",
+    "forms": "Forms",
+    "fieldLabel": "Preferred name",
+    "fieldHint": "Shown to colleagues in the directory.",
+    "fieldValue": "Avery",
+    "fieldError": "Enter a name.",
+    "badges": "Badges",
+    "neutral": "Neutral",
+    "accent": "Accent",
+    "success": "Approved",
+    "warning": "Pending",
+    "cards": "Cards and states",
+    "cardTitle": "Upcoming leave",
+    "emptyTitle": "No requests",
+    "emptyBody": "New requests will appear here.",
+    "table": "Table",
+    "colName": "Name",
+    "colTeam": "Team",
+    "colBalance": "Balance (days)",
+    "interactive": "Overlays and controls",
+    "openDialog": "Open dialog",
+    "dialogTitle": "Approve request",
+    "openSheet": "Open sheet",
+    "sheetTitle": "Details",
+    "showToast": "Show toast",
+    "toastTitle": "Saved",
+    "tabOne": "Overview",
+    "tabTwo": "History",
+    "inverseTitle": "Dark sections for contrast."
+  },
+  "offline": {
+    "title": "You are offline",
+    "body": "Check your connection. Any clock-ins you make will sync when you are back online."
   }
 }

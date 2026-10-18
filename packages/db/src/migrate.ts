@@ -75,7 +75,7 @@ export async function migrate(opts: MigrateOptions): Promise<string[]> {
         await client.query('COMMIT');
       } catch (err) {
         await client.query('ROLLBACK');
-        throw new Error(`Migration ${m.name} failed: ${(err as Error).message}`);
+        throw new Error(`Migration ${m.name} failed: ${(err as Error).message}`, { cause: err });
       }
       applied.push(m.name);
     }

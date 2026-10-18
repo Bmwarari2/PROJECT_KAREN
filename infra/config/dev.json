@@ -1,0 +1,34 @@
+{
+  "env": "dev",
+  "account": "247115937622",
+  "domain": null,
+  "hostedZoneId": null,
+  "alarmEmail": null,
+  "globalBaseUrl": null,
+  "regionalUrls": {},
+  "logRetentionDays": 14,
+  "natGateways": 1,
+  "aurora": { "minAcu": 0.5, "maxAcu": 4, "backupRetentionDays": 7, "deletionProtection": false },
+  "valkey": { "nodeType": "cache.t4g.micro", "replicas": 1 },
+  "backup": { "dailyRetentionDays": 7, "continuousRetentionDays": 7, "copyRetentionDays": 7 },
+  "services": {
+    "api": { "cpu": 512, "memoryMiB": 1024, "desiredCount": 1, "minCapacity": 1, "maxCapacity": 3 },
+    "worker": { "cpu": 512, "memoryMiB": 1024, "desiredCount": 1, "minCapacity": 1, "maxCapacity": 2 },
+    "web": { "cpu": 512, "memoryMiB": 1024, "desiredCount": 1, "minCapacity": 1, "maxCapacity": 3 }
+  },
+  "wafRateLimitPer5Min": 2000,
+  "global": {
+    "certificateArn": null,
+    "monthlyBudgetUsd": 100,
+    "services": {
+      "api": { "cpu": 256, "memoryMiB": 512, "desiredCount": 1, "minCapacity": 1, "maxCapacity": 2 },
+      "web": { "cpu": 256, "memoryMiB": 512, "desiredCount": 1, "minCapacity": 1, "maxCapacity": 2 }
+    }
+  },
+  "cells": {
+    "uk": { "certificateArn": null, "monthlyBudgetUsd": 400 },
+    "eu": { "certificateArn": null, "monthlyBudgetUsd": 400 },
+    "us": { "certificateArn": null, "monthlyBudgetUsd": 400 }
+  },
+  "billingConfigLocation": "builtin:billing-config-v1"
+}

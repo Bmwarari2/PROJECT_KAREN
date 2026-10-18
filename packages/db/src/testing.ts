@@ -4,7 +4,8 @@ import { TenantRouter } from './router';
 import { withRegistry } from './context';
 
 export const TEST_OWNER_BASE = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
-export const TEST_APP_PASSWORD = 'app_test_password';
+// Roles are cluster-wide, so dev, tests, e2e and Lighthouse share one local-only password (Docker Postgres only).
+export const TEST_APP_PASSWORD = 'local_dev_only_password';
 export const TEST_DBS = { shared: 'thapsus_test', dedicated: 'thapsus_test_dedicated' } as const;
 
 export const ownerUrl = (db: string) => `${TEST_OWNER_BASE}/${db}`;

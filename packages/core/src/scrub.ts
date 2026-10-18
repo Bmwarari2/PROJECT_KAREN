@@ -54,6 +54,9 @@ export function scrub<T>(value: T, depth = 0): T {
     if (value instanceof Error) {
       return { name: value.name, message: scrubString(value.message) } as unknown as T;
     }
+    // Class instances (e.g. request/reply objects) are reduced by the logger's allow-list serializers.
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) return value;
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       out[k] = isPersonalKey(k) && v !== null && v !== undefined ? REDACTED : scrub(v, depth + 1);

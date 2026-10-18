@@ -2,7 +2,8 @@ import { promises as dnsPromises } from 'node:dns';
 import { assertCellResidency, HOME_REGIONS, loadCellConfig, type CellConfig, type HomeRegion } from '@thapsus/core';
 import { secretToUrl, TenantRouter } from '@thapsus/db';
 import { directoryFromEnv, type TenantDirectory } from './lib/directory';
-import { keyProviderFromEnv, type KeyProvider } from './lib/kms';
+import { randomBytes } from 'node:crypto';
+import { keyProviderFromEnv, LocalKeyProvider, type KeyProvider } from './lib/kms';
 import { mailerFromEnv, type Mailer } from './lib/mailer';
 import { rateLimiterFromEnv, type RateLimiter } from './lib/rate-limit';
 import { objectStoreFromEnv, type ObjectStore } from './lib/object-store';
@@ -47,10 +48,11 @@ export async function depsFromEnv(): Promise<Deps> {
   if (config.env === 'prod' && env.MOCK_IDP_ENABLED === 'true') throw new Error('The mock IdP may never run in production');
   return {
     config,
-    router: TenantRouter.fromEnv(),
+    // The global service never touches tenant databases; its router is never used to connect.
+    router: env.SERVICE_ROLE === 'global' && !env.DATABASE_URL && !env.DATABASE_SECRET ? new TenantRouter({ databases: { shared: 'postgres://unused@127.0.0.1:1/none' } }) : TenantRouter.fromEnv(),
     directory: await directoryFromEnv(),
     mailer: mailerFromEnv(config.cell),
-    keys: keyProviderFromEnv(config.cell),
+    keys: env.SERVICE_ROLE === 'global' ? new LocalKeyProvider(randomBytes(32).toString('hex'), 'global-unused') : keyProviderFromEnv(config.cell),
     limiter: rateLimiterFromEnv(),
     dns: dnsPromises,
     objects: objectStoreFromEnv(config.cell),

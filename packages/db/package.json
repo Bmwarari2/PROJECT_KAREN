@@ -9,10 +9,10 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "migrate": "tsx src/cli/migrate.ts",
-    "seed": "tsx src/cli/seed.ts",
-    "synth:enterprise": "tsx src/cli/synth-enterprise.ts",
-    "move-tenant": "tsx src/cli/move-tenant.ts"
+    "migrate": "tsx --env-file-if-exists=../../.env src/cli/migrate.ts",
+    "seed": "tsx --env-file-if-exists=../../.env ../../apps/api/src/cli/seed.ts",
+    "synth:enterprise": "tsx --env-file-if-exists=../../.env ../../apps/api/src/cli/synth-enterprise.ts",
+    "move-tenant": "tsx --env-file-if-exists=../../.env src/cli/move-tenant.ts"
   },
   "dependencies": {
     "@thapsus/core": "workspace:*",

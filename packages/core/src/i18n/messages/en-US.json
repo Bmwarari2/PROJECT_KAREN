@@ -3,7 +3,17 @@
     "organisation": "Organization"
   },
   "errors": {
-    "unauthorised": "Please sign in to continue.",
     "ssoRequired": "Your organization requires single sign-on."
+  },
+  "marketing": {
+    "features": {
+      "people": { "title": "People and organization" },
+      "rota": {
+        "title": "Schedules and time",
+        "body": "Build schedules, swap shifts and clock in from any phone, with working-time rules built in."
+      },
+      "compliance": { "title": "Compliance center" }
+    },
+    "mock": { "rota": "Schedule" }
   }
 }

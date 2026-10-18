@@ -159,6 +159,7 @@ export class DynamoDirectory implements TenantDirectory {
         },
       }),
     );
+    if (e.verifiedDomains.length) await this.update(e.tenantId, { verifiedDomains: e.verifiedDomains });
   }
   async byId(id: string) {
     const out = await this.client.send(new GetItemCommand({ TableName: this.table, Key: { pk: { S: `TENANT#${id}` } } }));
@@ -185,9 +186,18 @@ export class DynamoDirectory implements TenantDirectory {
   async update(id: string, p: Partial<DirectoryEntry>) {
     const sets: string[] = [];
     const values: Record<string, { S: string } | { SS: string[] }> = {};
-    if (p.status) (sets.push('#s = :s'), (values[':s'] = { S: p.status }));
-    if (p.planRef) (sets.push('planRef = :p'), (values[':p'] = { S: p.planRef }));
-    if (p.verifiedDomains?.length) (sets.push('verifiedDomains = :v'), (values[':v'] = { SS: p.verifiedDomains }));
+    if (p.status) {
+      sets.push('#s = :s');
+      values[':s'] = { S: p.status };
+    }
+    if (p.planRef) {
+      sets.push('planRef = :p');
+      values[':p'] = { S: p.planRef };
+    }
+    if (p.verifiedDomains?.length) {
+      sets.push('verifiedDomains = :v');
+      values[':v'] = { SS: p.verifiedDomains };
+    }
     if (!sets.length) return;
     await this.client.send(
       new UpdateItemCommand({
