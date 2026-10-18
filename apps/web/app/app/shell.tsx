@@ -37,7 +37,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/automation', label: t('app.nav.automation'), icon: <Zap aria-hidden />, show: has('automation.read') },
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
     { href: '/app/security', label: t('app.nav.security'), icon: <ShieldCheck aria-hidden />, show: true },
-    { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') },
+    { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') || has('roles.read') },
   ];
   return items.filter((i) => i.show).map(({ show: _show, ...i }) => ({ ...i, active: i.href === '/app' ? path === '/app' : path.startsWith(i.href) }));
 }

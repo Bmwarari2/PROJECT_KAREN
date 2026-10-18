@@ -5,6 +5,7 @@ import { Globe } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
+import { hasPermission, useSession } from '../shell';
 
 interface Domain {
   id: string;
@@ -17,10 +18,14 @@ interface Domain {
 export default function SettingsPage() {
   const t = useT();
   const toast = useToast();
+  const session = useSession();
+  const canSettings = hasPermission(session, 'settings.read');
   const [domains, setDomains] = React.useState<Domain[] | null>(null);
   const [domain, setDomain] = React.useState('');
   const load = React.useCallback(() => api<Domain[]>('/v1/settings/domains').then(setDomains).catch(() => setDomains([])), []);
-  React.useEffect(() => void load(), [load]);
+  React.useEffect(() => {
+    if (canSettings) void load();
+  }, [load, canSettings]);
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -45,10 +50,25 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-title-2">{t('app.settings.title')}</h1>
-      <Link href="/app/settings/organisation" className="text-callout">
-        {t('app.settings.organisationLink')}
-      </Link>
-      <Card>
+      <nav aria-label={t('app.settings.title')} className="flex flex-wrap gap-x-6 gap-y-2">
+        {canSettings ? (
+          <Link href="/app/settings/organisation" className="text-callout">
+            {t('app.settings.organisationLink')}
+          </Link>
+        ) : null}
+        {hasPermission(session, 'roles.read') ? (
+          <>
+            <Link href="/app/settings/roles" className="text-callout">
+              {t('app.settings.rolesLink')}
+            </Link>
+            <Link href="/app/settings/users" className="text-callout">
+              {t('app.settings.usersLink')}
+            </Link>
+          </>
+        ) : null}
+      </nav>
+      {/* Workspace settings need settings.read; a role-management-only role sees just the links above. */}
+      <Card hidden={!canSettings}>
         <CardTitle>{t('app.settings.domainsTitle')}</CardTitle>
         <p className="mt-2 text-callout text-text-secondary">{t('app.settings.domainsBody')}</p>
         <form onSubmit={add} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
