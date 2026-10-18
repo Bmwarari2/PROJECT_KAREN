@@ -359,6 +359,12 @@ export class CellStack extends Stack {
       encryptionKey: dataKey,
       generateSecretString: { excludePunctuation: true, passwordLength: 64 },
     });
+    const integrationKey = new secretsmanager.Secret(this, 'IntegrationSigningKey', {
+      // Master key for the per-tenant HMAC keys that sign outbound integration calls (ADR-0018).
+      secretName: `thapsus-hr/${env}/integration-signing-key`,
+      encryptionKey: dataKey,
+      generateSecretString: { excludePunctuation: true, passwordLength: 64 },
+    });
     const vapid = new secretsmanager.Secret(this, 'VapidKeys', {
       secretName: `thapsus-hr/${env}/vapid`,
       description: 'Web push VAPID key pair, filled by a script (empty values disable web push).',
@@ -431,6 +437,7 @@ export class CellStack extends Stack {
       REPORTING_DATABASE_SECRET: ecs.Secret.fromSecretsManager(reportingDbSecret),
       VALKEY_AUTH_TOKEN: ecs.Secret.fromSecretsManager(valkeyAuth),
       INTERNAL_TOKEN: ecs.Secret.fromSecretsManager(internalToken),
+      INTEGRATION_SIGNING_KEY: ecs.Secret.fromSecretsManager(integrationKey),
       VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY'),
       VAPID_PRIVATE_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PRIVATE_KEY'),
       ...(mockIdp

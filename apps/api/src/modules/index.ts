@@ -1,6 +1,24 @@
 import type { FastifyInstance } from 'fastify';
+import '../jobs/core';
+import { employeeRoutes } from './employees/routes';
+import { orgRoutes } from './org/routes';
+import { documentRoutes } from './documents/routes';
+import { workflowRoutes } from './workflows/routes';
+import { approvalRoutes } from './approvals/routes';
+import { automationRoutes } from './automation/routes';
+import { importRoutes } from './imports/routes';
+import { exportRoutes } from './exports/routes';
+import { onboardingRoutes } from './onboarding/routes';
 
-/** Feature modules registered per phase. */
+/** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
-  void app;
+  await app.register(employeeRoutes);
+  await app.register(orgRoutes);
+  await app.register(documentRoutes);
+  await app.register(workflowRoutes);
+  await app.register(approvalRoutes);
+  await app.register(automationRoutes);
+  await app.register(importRoutes);
+  await app.register(exportRoutes);
+  await app.register(onboardingRoutes);
 }

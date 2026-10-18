@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import Link from 'next/link';
 import { Globe } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
@@ -44,6 +45,9 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-title-2">{t('app.settings.title')}</h1>
+      <Link href="/app/settings/organisation" className="text-callout">
+        {t('app.settings.organisationLink')}
+      </Link>
       <Card>
         <CardTitle>{t('app.settings.domainsTitle')}</CardTitle>
         <p className="mt-2 text-callout text-text-secondary">{t('app.settings.domainsBody')}</p>

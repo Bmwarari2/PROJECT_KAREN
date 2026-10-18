@@ -11,7 +11,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | Phase | Scope | Branch | Status |
 | --- | --- | --- | --- |
 | 0 | Foundations | `phase-0-foundations` | [h] |
-| 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [ ] |
+| 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
 | 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [ ] |
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [ ] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [ ] |
@@ -128,37 +128,43 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 1 — Core HR and organisation model (6.1)
 
-- [ ] **1.1 Effective-dated employee records**
+- [x] **1.1 Effective-dated employee records**
   - Personal details, jobs, positions, grades, pay history, cost centres, contracts and emergency contacts stored as effective-dated records with exclusion constraints preventing overlapping periods.
   - As-of queries return the correct state for any past, present or future date; future-dated changes take effect automatically on their date (scheduled job, idempotent); full history view per employee.
   - Custom fields (text, number, date, select, multi-select, boolean, currency, file) and custom objects with validation, field-level permissions and audit.
   - Field-level permissions enforced identically in API responses and UI.
   - Employee list for the 200,000-employee tenant: paginated p95 < 1 s locally (benchmark recorded); full-text + trigram search.
-- [ ] **1.2 Organisation model and org chart**
+  - _Evidence:_ `apps/api/test/employees.int.test.ts` ("effective-dated employee records": as-of, past/present/future changes with full history, overlap rejection by the database, the idempotent daily job for future-dated changes; "every effective-dated section rejects overlapping periods"; "emergency contacts are effective-dated"; "positions, grades and cost centres on job records"; "custom fields and objects" and "custom fields: every type, validation, field-level permissions and audit"; "field-level permissions and scope"; "fuzzy search"); `apps/web/e2e/corehr.spec.ts` ("field-level permissions in the UI"); `scripts/bench-corehr.ts` (exits 1 over budget; list p95 23 ms, search 42 ms on 200,000 employees, `docs/PERFORMANCE.md` §2.3).
+- [x] **1.2 Organisation model and org chart**
   - Multiple legal entities, countries, departments, locations and cost centres; solid-line, matrix and dotted-line reporting relationships, all effective-dated.
   - Reporting cycles are rejected; reassigning a manager with reports is handled explicitly.
   - Org chart loads lazily by subtree with search and focus; first render < 1 s and expanding a node < 300 ms for the 200,000-employee tenant.
-- [ ] **1.3 Documents**
+  - _Evidence:_ `apps/api/test/employees.int.test.ts` ("reporting lines and org chart": cycles rejected, explicit reassignment when terminating a manager with reports, dotted and matrix lines; "organisation: cost centres, matrix reporting and org-chart search"); `apps/web/e2e/corehr.spec.ts` ("org chart": first level 121 ms, expand 68 ms, search and focus); `scripts/bench-corehr.ts` (roots p95 14 ms, expand 14 ms on 200,000 employees).
+- [x] **1.3 Documents**
   - Folders with permissions; files stored in the home-region S3 bucket via presigned URLs; content-type and size validation.
   - Templates with merge fields rendered to PDF.
   - Click-to-sign with audit trail: signer, timestamp, IP address, SHA-256 of the exact document signed; signature certificate page; hash verification test.
   - Expiry tracking with reminders; bulk send to a filtered set of employees with progress tracking.
-- [ ] **1.4 Bulk import and export**
+  - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("documents": uploads validated by type, size and content; templates with merge fields rendered to PDF and click-to-sign with signer, time, IP and SHA-256 plus the certificate page and hash verification; folder permissions; bulk send as a background job with progress; expiry reminders once per threshold).
+- [x] **1.4 Bulk import and export**
   - CSV and Excel import with column mapping, validation preview (row-level errors), dry run and background processing with progress.
   - Importing 200,000 employees completes as a background job with progress updates and a downloadable error report; re-running the same file is idempotent.
   - CSV and Excel export of any permitted list, respecting field-level permissions.
-- [ ] **1.5 Onboarding, offboarding and internal transfer workflows**
+  - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("bulk import and export": Excel import with typed cells, preview with row-level errors, background job with progress and a downloadable error report, idempotent re-run, exports of every list view respecting field-level permissions); `scripts/bench-import.ts` (200,000 rows in 386 s with 57 progress updates; re-import changes nothing, `docs/PERFORMANCE.md` §2.3); `apps/web/e2e/corehr.spec.ts` (download).
+- [x] **1.5 Onboarding, offboarding and internal transfer workflows**
   - Workflow templates with tasks, assignees (role- or person-based), due dates relative to start/leave/transfer date, and reminders.
   - Pre-start portal for new joiners (documents, forms, checklist) before their start date.
   - Transfer workflow changes job/entity/location with effective dating.
-- [ ] **1.6 Approval chains and bulk actions**
+  - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("workflows" and "workflow due dates, assignees and reminders": onboarding with relative due dates and role, manager and named-person assignees, reminders, offboarding on termination, transfers with effective dating; "pre-start portal"); `apps/web/e2e/corehr.spec.ts` ("pre-start portal", axe).
+- [x] **1.6 Approval chains and bulk actions**
   - Multi-step, conditional (field-based) and delegated approvals with escalation on timeout; approval history in the audit log.
   - Bulk approve/reject and bulk edit with permission checks and a summary of results.
-- [ ] **1.7 Automation rules**
+  - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("approvals": multi-step conditional approval with delegation, escalation on timeout, bulk decisions with a result summary, audit history; "bulk approvals and bulk edit": per-employee permission checks and summaries).
+- [x] **1.7 Automation rules**
   - Triggers: record created or changed, date reached, document expiring, threshold hit.
   - Actions: create task, send notification, start workflow, call webhook, call integration.
   - Rules evaluated from outbox events by idempotent worker jobs; dry-run preview; execution log.
-
+  - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("automation rules" and "automation triggers, actions and integrations": record created/changed, date reached, document expiring and threshold triggers; task, notification, workflow, signed webhook and integration actions; idempotent outbox-driven jobs, dry run and the execution log).
 ---
 
 ## Phase 2 — Jurisdiction pack framework (6.4 framework)

@@ -237,7 +237,7 @@ describe.each(combos)('%s cell %s', (env, cell) => {
       'OTEL_EXPORTER_OTLP_ENDPOINT', 'BACKUP_VAULT_ARN', 'DIRECTORY_TABLE', 'DIRECTORY_REGION',
     ]) expect(envNames, n).toContain(n);
     expect((app.Secrets as Json[]).map((s) => s.Name)).toEqual(
-      expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
+      expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'INTEGRATION_SIGNING_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
     );
     expect((apiTask.Properties!.ContainerDefinitions as Json[]).map((c) => c.Name)).toContain('otel-collector');
     const [, migrator] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-migrator'))!;

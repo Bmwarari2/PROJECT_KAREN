@@ -15,7 +15,6 @@
     "back": "Back",
     "yes": "Yes",
     "no": "No",
-    "export": "Export",
     "import": "Import",
     "submit": "Submit",
     "approve": "Approve",
@@ -34,7 +33,10 @@
     "signOut": "Sign out",
     "organisation": "Organisation",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "loadMore": "Load more",
+    "exportCsv": "Export CSV",
+    "exportExcel": "Export Excel"
   },
   "locales": {
     "en-GB": "English (UK)",
@@ -230,7 +232,16 @@
       "home": "Home",
       "notifications": "Notifications",
       "security": "Security",
-      "settings": "Settings"
+      "settings": "Settings",
+      "people": "People",
+      "orgChart": "Org chart",
+      "tasks": "Tasks",
+      "approvals": "Approvals",
+      "documents": "Documents",
+      "imports": "Imports",
+      "automation": "Automation",
+      "timeOff": "Time off",
+      "onboarding": "Onboarding"
     },
     "home": {
       "greeting": "Welcome, {name}",
@@ -242,7 +253,10 @@
       "region": "Data residency",
       "regionBody": "Your workspace data is stored and processed in its home region only.",
       "emptyTitle": "You are all set",
-      "emptyBody": "New tasks and approvals will appear here."
+      "emptyBody": "New tasks and approvals will appear here.",
+      "welcomeTitle": "Before your first day",
+      "welcomeBody": "Sign your documents, add your details and work through your checklist.",
+      "openWelcome": "Open your onboarding"
     },
     "security": {
       "title": "Security",
@@ -283,7 +297,8 @@
       "verified": "Verified",
       "pending": "Pending",
       "verify": "Verify",
-      "domainVerified": "Domain verified."
+      "domainVerified": "Domain verified.",
+      "organisationLink": "Organisation structure"
     }
   },
   "gallery": {
@@ -335,5 +350,307 @@
   "offline": {
     "title": "You are offline",
     "body": "Check your connection. Any clock-ins you make will sync when you are back online."
+  },
+  "documents": {
+    "certificate": {
+      "title": "Signature certificate",
+      "signer": "Signed by",
+      "signedAt": "Signed at (UTC)",
+      "ip": "IP address",
+      "userAgent": "Device",
+      "hash": "SHA-256 of the document signed",
+      "reference": "Signature reference",
+      "statement": "The signer confirmed they had read the document above and agreed to sign it electronically. Thapsus-HR recorded the signer, time, IP address, device and a SHA-256 fingerprint of the exact document signed. Any change to the document changes its fingerprint."
+    },
+    "title": "Documents",
+    "empty": "No documents yet",
+    "toSign": "Waiting for your signature",
+    "read": "Read",
+    "sign": "Sign",
+    "signTitle": "Sign {title}",
+    "signBody": "Read the document first. Your name, the time, your IP address and a fingerprint of the exact document are recorded.",
+    "typedName": "Type your full name",
+    "consent": "I have read this document and agree to sign it electronically.",
+    "signNow": "Sign document",
+    "signed": "Document signed."
+  },
+  "notify": {
+    "signatureRequested": "You have a document to sign",
+    "documentExpiring": "{title} expires in {days} days",
+    "documentExpired": "{title} has expired",
+    "taskAssigned": "New task: {title}",
+    "taskDueSoon": "Task due soon: {title}",
+    "approvalRequested": "Approval needed: {title}",
+    "approvalDecided": "Your request was {decision}",
+    "approvalEscalated": "Approval escalated: {title}",
+    "workflowStarted": "{workflow} started for {name}",
+    "automation": "{title}",
+    "leaveApproved": "Your time off was approved",
+    "leaveRejected": "Your time off request was declined",
+    "absenceTrigger": "Absence review suggested ({trigger}, score {score})",
+    "taskOverdue": "Task overdue: {title}"
+  },
+  "people": {
+    "title": "People",
+    "add": "Add person",
+    "hire": "Add to the team",
+    "hired": "Person added.",
+    "export": "Export",
+    "searchPlaceholder": "Search by name, number, email or title",
+    "empty": "No people match",
+    "asOf": "As of",
+    "ongoing": "ongoing",
+    "makeChange": "Make a change",
+    "makeChangeBody": "Changes take effect on the date you choose. Future-dated changes apply automatically on their date.",
+    "effectiveDate": "Effective date",
+    "changeSaved": "Change saved.",
+    "changePending": "Change sent for approval.",
+    "status": {
+      "active": "Active",
+      "pre_start": "Starting soon",
+      "leaver": "Left",
+      "all": "All"
+    },
+    "col": {
+      "name": "Name",
+      "number": "Number",
+      "title": "Job title",
+      "department": "Department",
+      "location": "Location"
+    },
+    "tab": {
+      "overview": "Overview",
+      "history": "History",
+      "documents": "Documents"
+    },
+    "section": {
+      "personal": "Personal",
+      "job": "Job",
+      "pay": "Pay",
+      "contract": "Contract"
+    },
+    "field": {
+      "employeeNumber": "Employee number",
+      "legalFirstName": "Legal first name",
+      "legalLastName": "Legal last name",
+      "preferredName": "Preferred name",
+      "pronouns": "Pronouns",
+      "dateOfBirth": "Date of birth",
+      "personalEmail": "Personal email",
+      "personalPhone": "Personal phone",
+      "address": "Address",
+      "nationality": "Nationality",
+      "jobTitle": "Job title",
+      "positionId": "Position",
+      "departmentId": "Department",
+      "department": "Department",
+      "departmentName": "Department",
+      "locationId": "Location",
+      "location": "Location",
+      "locationName": "Location",
+      "entityId": "Legal entity",
+      "entity": "Legal entity",
+      "entityName": "Legal entity",
+      "costCentreId": "Cost centre",
+      "gradeId": "Grade",
+      "employmentType": "Employment type",
+      "fte": "FTE",
+      "weeklyHours": "Weekly hours",
+      "workPattern": "Work pattern",
+      "flsaStatus": "FLSA status",
+      "payAmountMinor": "Pay",
+      "payCurrency": "Currency",
+      "payFrequency": "Pay frequency",
+      "contractType": "Contract type",
+      "noticePeriodDays": "Notice period (days)",
+      "probationEndDate": "Probation end date",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "effectiveDate": "Effective date",
+      "workEmail": "Work email",
+      "workPhone": "Work phone",
+      "managerId": "Manager",
+      "managerEmployeeNumber": "Manager (employee number)"
+    },
+    "invite": "Invite to sign in",
+    "invited": "Invitation sent."
+  },
+  "org": {
+    "title": "Org chart",
+    "search": "Find a person",
+    "expand": "Show team",
+    "collapse": "Hide team",
+    "reports": "{count} reports"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "empty": "No open tasks",
+    "complete": "Done",
+    "col": {
+      "task": "Task",
+      "person": "Person",
+      "due": "Due"
+    },
+    "source": {
+      "workflow": "Workflow",
+      "approval": "Approval",
+      "automation": "Automation",
+      "document": "Document",
+      "manual": "Task",
+      "compliance": "Compliance"
+    }
+  },
+  "approvals": {
+    "title": "Approvals",
+    "empty": "Nothing waiting for you",
+    "approveSelected": "Approve selected",
+    "rejectSelected": "Reject selected",
+    "selectAll": "Select all",
+    "select": "Select request for {name}",
+    "bulkResult": "{ok} done, {failed} could not be processed",
+    "col": {
+      "request": "Request",
+      "person": "Person",
+      "details": "Details",
+      "requested": "Requested"
+    }
+  },
+  "imports": {
+    "title": "Import people",
+    "step1": "1. Upload a file",
+    "step1Body": "CSV or Excel, with a header row. Up to 200,000 rows; large files run in the background.",
+    "file": "File",
+    "upload": "Upload",
+    "step2": "2. Match columns ({rows} rows)",
+    "ignore": "Ignore this column",
+    "preview": "Check the file",
+    "step3": "3. Review and run",
+    "summary": "{creates} new, {updates} to update, {errors} problems",
+    "row": "Row",
+    "column": "Column",
+    "problem": "Problem",
+    "dryRun": "Dry run",
+    "run": "Import",
+    "progress": "{done} of {total} rows — {status}",
+    "errorReport": "Download the error report",
+    "status": {
+      "queued": "queued",
+      "running": "running",
+      "succeeded": "finished",
+      "failed": "failed",
+      "cancelled": "cancelled"
+    }
+  },
+  "automation": {
+    "title": "Automation",
+    "new": "New rule",
+    "name": "Rule name",
+    "trigger": "When",
+    "taskTitle": "Create task",
+    "empty": "No rules yet",
+    "on": "On",
+    "off": "Off",
+    "dryRun": "Dry run",
+    "dryResult": "{candidates} people, {actions} actions",
+    "triggers": {
+      "record.created": "A person is added",
+      "record.changed": "A record changes",
+      "date.reached": "A date is reached",
+      "document.expiring": "A document is expiring",
+      "threshold": "A threshold is crossed"
+    }
+  },
+  "orgSettings": {
+    "title": "Organisation",
+    "legal-entities": "Legal entities",
+    "departments": "Departments",
+    "locations": "Locations",
+    "field": {
+      "name": "Name",
+      "country": "Country (ISO)",
+      "currency": "Currency",
+      "timeZone": "Time zone",
+      "code": "Code",
+      "regionCode": "Region code"
+    }
+  },
+  "timeOff": {
+    "title": "Time off",
+    "subscribe": "Add to my calendar",
+    "icsCopied": "Calendar link copied. Paste it into your calendar app to subscribe.",
+    "noEmployee": "Your account is not linked to an employee record.",
+    "daysAvailable": "days available",
+    "entitlement": "Entitlement",
+    "publicHolidays": "Public holidays",
+    "taken": "Taken",
+    "booked": "Booked",
+    "carriedOver": "Carried over",
+    "request": "Request time off",
+    "type": "Type",
+    "from": "From",
+    "to": "To",
+    "note": "Note (optional)",
+    "send": "Send request",
+    "requested": "Request sent for approval ({days} days).",
+    "mine": "My requests",
+    "dates": "Dates",
+    "days": "Days",
+    "none": "No requests yet.",
+    "team": "Who's away in the next 30 days",
+    "teamNone": "Nobody is away.",
+    "upcomingHolidays": "Public holidays",
+    "status": {
+      "approved": "Approved",
+      "pending": "Waiting",
+      "rejected": "Declined",
+      "cancelled": "Cancelled"
+    },
+    "kind": {
+      "annual": "Annual leave",
+      "sickness": "Sickness",
+      "unpaid": "Unpaid leave",
+      "family": "Family leave",
+      "toil": "Time off in lieu",
+      "fmla": "FMLA leave",
+      "away": "Away"
+    },
+    "bookedToast": "Booked ({days} days)."
+  },
+  "onboarding": {
+    "inviteSubject": "Your sign-in for {company} on Thapsus-HR",
+    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 7 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
+    "title": "Onboarding",
+    "heading": "Welcome to {company}, {name}",
+    "startsOn": "You start on {date}.",
+    "daysToGo": "Days until you start: {days}",
+    "started": "You started on {date}.",
+    "role": "Your role",
+    "manager": "Your manager",
+    "progressLabel": "Onboarding progress",
+    "progress": "{done} of {total} steps complete",
+    "documentsTitle": "Documents to sign",
+    "documentsEmpty": "There are no documents for you to sign.",
+    "signedOn": "Signed on {date}",
+    "personalTitle": "Personal details",
+    "personalBody": "So that we can reach you and send your paperwork. These details apply from your start date.",
+    "contactsTitle": "Emergency contact",
+    "contactsBody": "Who should we contact if something happens to you at work?",
+    "complete": "Complete",
+    "toDo": "To do",
+    "saved": "Saved.",
+    "addressLine1": "Address line 1",
+    "addressCity": "Town or city",
+    "addressPostcode": "Postcode",
+    "addressCountry": "Country code",
+    "contactName": "Full name",
+    "contactRelationship": "Relationship",
+    "contactPhone": "Phone number",
+    "checklistTitle": "Your checklist",
+    "checklistEmpty": "Nothing on your checklist yet.",
+    "due": "Due {date}",
+    "markDone": "Mark as done: {title}",
+    "markDoneShort": "Mark as done",
+    "done": "Done",
+    "notLinked": "Your sign-in is not linked to an employee record, so there is no onboarding to show."
   }
 }
