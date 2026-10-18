@@ -11,7 +11,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | Phase | Scope | Branch | Status |
 | --- | --- | --- | --- |
 | 0 | Foundations | `phase-0-foundations` | [h] |
-| 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [ ] |
+| 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
 | 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [ ] |
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [ ] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [ ] |
