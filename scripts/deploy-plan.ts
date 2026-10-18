@@ -8,7 +8,7 @@ import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, names, type EnvName } fro
  * Targets: `ci`, `backupcopy` (the copy vault for the current AWS region), `global`, `cell-uk`,
  * `cell-eu`, `cell-us`, or `all` (in dependency order).
  */
-export type Target = 'ci' | 'backupcopy' | 'global' | `cell-${HomeRegion}` | 'all';
+export type Target = 'ci' | 'backupcopy' | 'global' | `cell-${HomeRegion}` | `synth-${HomeRegion}` | 'all';
 
 export type Step =
   | { kind: 'cdk-deploy'; stack: string; region: string; parameters: Record<string, string> }
@@ -16,6 +16,7 @@ export type Step =
   | { kind: 'ensure-vapid'; region: string; secretName: string }
   | { kind: 'ensure-mock-idp'; region: string; secretName: string }
   | { kind: 'run-migrator'; stack: string; region: string }
+  | { kind: 'run-synth'; stack: string; region: string; employees: number; users: number }
   | { kind: 'restart-services'; stack: string; region: string }
   | { kind: 'health-check'; stack: string; region: string; insecureTls: boolean };
 
@@ -30,6 +31,8 @@ export interface PlanInput {
   parameters?: Partial<Record<'global' | `cell-${HomeRegion}`, Record<string, string>>>;
   /** Staging without a domain uses an imported self-signed certificate; health checks accept it explicitly. */
   selfSignedTls?: boolean;
+  /** `synth-<cell>`: size of the synthetic enterprise tenant to generate (load tests). */
+  synth?: { employees: number; users: number };
 }
 
 export class PlanError extends Error {}
@@ -48,7 +51,9 @@ export function planDeploy(input: PlanInput): Step[] {
         : planTarget(env, t, { ...input, awsRegion: regionOf(t) }),
     );
   }
-  if (!(ORDER as string[]).includes(input.only)) throw new PlanError(`unknown target "${input.only}" (expected ${[...ORDER, 'all'].join(', ')})`);
+  const synth = /^synth-(uk|eu|us)$/.exec(input.only);
+  if (synth) return planSynth(env, synth[1] as HomeRegion, input);
+  if (!(ORDER as string[]).includes(input.only)) throw new PlanError(`unknown target "${input.only}" (expected ${[...ORDER, 'synth-<cell>', 'all'].join(', ')})`);
   return planTarget(env, input.only as Target, input);
 }
 
@@ -82,8 +87,17 @@ function planTarget(env: EnvName, t: Target, input: PlanInput): Step[] {
     { kind: 'sync-internal-token', from: GLOBAL_REGION, fromSecret: names.internalTokenSecret(env), to: region, toSecret: names.cellInternalTokenSecret(env, t.slice(5) as HomeRegion) },
     { kind: 'ensure-vapid', region, secretName: `thapsus-hr/${env}/vapid` },
   ];
-  // The mock IdP only ever exists outside production (for SSO smoke tests).
-  if (env !== 'prod') steps.push({ kind: 'ensure-mock-idp', region, secretName: `thapsus-hr/${env}/mock-idp` });
+  // The mock IdP only exists in dev and staging (for the SSO smoke tests).
+  if (env === 'dev' || env === 'staging') steps.push({ kind: 'ensure-mock-idp', region, secretName: `thapsus-hr/${env}/mock-idp` });
   steps.push({ kind: 'run-migrator', stack, region }, { kind: 'restart-services', stack, region }, { kind: 'health-check', stack, region, insecureTls: !!input.selfSignedTls });
   return steps;
+}
+
+/** Generates the synthetic enterprise tenant inside a cell (load tests only; never in production). */
+function planSynth(env: EnvName, cell: HomeRegion, input: PlanInput): Step[] {
+  if (env !== 'loadtest' && env !== 'staging') throw new PlanError('synthetic data is generated only in the loadtest (or staging) environment');
+  const region = REGIONS[cell].awsRegion;
+  if (input.awsRegion && input.awsRegion !== region) throw new PlanError(`synth-${cell} runs in ${region} but the credentials are for ${input.awsRegion}`);
+  const { employees, users } = input.synth ?? { employees: 200_000, users: 26_000 };
+  return [{ kind: 'run-synth', stack: names.stack(env, `cell-${cell}`), region, employees, users }];
 }

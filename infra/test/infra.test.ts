@@ -160,11 +160,11 @@ describe.each(combos)('%s cell %s', (env, cell) => {
 
   it('7. IAM: no wildcard actions and no Resource "*" outside the documented allow-list', () => expectLeastPrivilege(t));
 
-  it('8. the mock IdP is enabled in dev/staging only and never in prod', () => {
+  it('8. the mock IdP is enabled in dev/staging only (never in prod or the load-test environment)', () => {
     const containers = resources(t, 'AWS::ECS::TaskDefinition').flatMap(([, r]) => r.Properties!.ContainerDefinitions as Json[]);
     const mockEnv = containers.flatMap((c) => asArray(c.Environment as Json[]).filter((e) => e.Name === 'MOCK_IDP_ENABLED'));
     const mockSecrets = containers.flatMap((c) => asArray(c.Secrets as Json[]).filter((s) => String(s.Name).startsWith('MOCK_IDP')));
-    if (env === 'prod') {
+    if (env === 'prod' || env === 'loadtest') {
       expect(mockEnv).toEqual([]);
       expect(mockSecrets).toEqual([]);
       expect(JSON.stringify(t)).not.toContain('mock-idp"');
@@ -224,6 +224,23 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     const https = resources(t, 'AWS::ElasticLoadBalancingV2::Listener').filter(([, l]) => l.Properties!.Protocol === 'HTTPS');
     expect(https.length).toBeGreaterThan(0);
     for (const [, l] of https) expect(asArray(l.Properties!.Certificates).length).toBe(1);
+  });
+
+  it('stateful resources are kept on stack deletion, except in the temporary load-test environment', () => {
+    const stateful = resources(t).filter(([, r]) => /^AWS::(KMS::Key|S3::Bucket|Backup::BackupVault|RDS::DBCluster)$/.test(r.Type));
+    expect(stateful.length).toBeGreaterThanOrEqual(5);
+    for (const [id, r] of stateful) {
+      const policy = (r as Res & { DeletionPolicy?: string }).DeletionPolicy;
+      if (env === 'loadtest') expect(policy, id).toBe('Delete');
+      else expect(['Retain', 'Snapshot'], id).toContain(policy);
+    }
+  });
+
+  it('per-IP throttles are relaxed only in the load-test environment', () => {
+    const containers = resources(t, 'AWS::ECS::TaskDefinition').flatMap(([, r]) => r.Properties!.ContainerDefinitions as Json[]);
+    const relaxed = containers.flatMap((c) => asArray(c.Environment as Json[]).filter((e) => e.Name === 'IP_THROTTLE_MULTIPLIER'));
+    if (env === 'loadtest') expect(relaxed.length).toBeGreaterThan(0);
+    else expect(relaxed).toEqual([]);
   });
 
   it('services receive the documented configuration', () => {

@@ -47,4 +47,12 @@ describe('deploy planner', () => {
     const regions = new Set(steps.flatMap((s) => ('region' in s ? [s.region] : [s.from, s.to])));
     expect([...regions].sort()).toEqual(['eu-central-1', 'eu-west-1', 'eu-west-2', 'us-east-2', 'us-west-1']);
   });
+
+  it('synthetic data only for load tests (or staging), in the cell region, never in production', () => {
+    expect(planDeploy({ env: 'loadtest', only: 'synth-uk', awsRegion: 'eu-west-2' })).toEqual([{ kind: 'run-synth', stack: 'ThapsusHr-loadtest-cell-uk', region: 'eu-west-2', employees: 200_000, users: 26_000 }]);
+    expect(() => planDeploy({ env: 'prod', only: 'synth-uk', awsRegion: 'eu-west-2', productionApproved: true })).toThrow(PlanError);
+    expect(() => planDeploy({ env: 'loadtest', only: 'synth-uk', awsRegion: 'eu-central-1' })).toThrow(PlanError);
+    // the load-test cell has no mock IdP
+    expect(planDeploy({ env: 'loadtest', only: 'cell-uk', awsRegion: 'eu-west-2' }).some((s) => s.kind === 'ensure-mock-idp')).toBe(false);
+  });
 });

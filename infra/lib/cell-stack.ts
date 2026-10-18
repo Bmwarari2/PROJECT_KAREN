@@ -29,6 +29,7 @@ import {
   cellBudget,
   certificateArn,
   encryptedLogGroup,
+  keepUnlessEphemeral,
   logsBucket,
   publicAlb,
   regionalWaf,
@@ -67,7 +68,7 @@ export class CellStack extends Stack {
       alias: `alias/${prefix}-data`,
       description: `Thapsus-HR ${env} ${cell}: Aurora, S3, Valkey, SQS, logs, backups`,
       enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     allowLogsService(dataKey);
     allowAlertingServices(dataKey);
@@ -75,7 +76,7 @@ export class CellStack extends Stack {
       alias: `alias/${prefix}-vault`,
       description: `Thapsus-HR ${env} ${cell}: field-level envelope encryption of sensitive data`,
       enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
 
     // ---------------------------------------------------------------- Network
@@ -144,7 +145,7 @@ export class CellStack extends Stack {
         { id: 'abort-multipart', abortIncompleteMultipartUploadAfter: Duration.days(7) },
       ],
       cors: [{ allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT], allowedOrigins: [corsOrigin], allowedHeaders: ['*'], maxAge: 3000 }],
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
 
     // ---------------------------------------------------------------- Security groups
@@ -208,7 +209,7 @@ export class CellStack extends Stack {
       iamAuthentication: true,
       cloudwatchLogsExports: ['postgresql'],
       copyTagsToSnapshot: true,
-      removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.SNAPSHOT,
+      removalPolicy: prod ? RemovalPolicy.RETAIN : cfg.env === 'loadtest' ? RemovalPolicy.DESTROY : RemovalPolicy.SNAPSHOT,
     });
     // Only the DB cluster resource waits for its log group (a construct-level dependency would cycle via the proxy role).
     cluster.node.defaultChild!.node.addDependency(auroraLogs.node.defaultChild!);
@@ -303,7 +304,7 @@ export class CellStack extends Stack {
     const backupVault = new backup.BackupVault(this, 'BackupVault', {
       backupVaultName: prefix,
       encryptionKey: dataKey,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     const plan = new backup.BackupPlan(this, 'BackupPlan', { backupPlanName: prefix, backupVault });
     // Continuous backup (point-in-time restore, RPO ≤ 15 minutes) for Aurora and S3.
@@ -424,6 +425,7 @@ export class CellStack extends Stack {
       SCHEDULE_GROUP_NAME: scheduleGroup.name!,
       SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
       ...(mockIdpAllowed ? { MOCK_IDP_ENABLED: 'true' } : {}),
+      ...(cfg.loadTest ? { IP_THROTTLE_MULTIPLIER: String(cfg.loadTest.ipThrottleMultiplier) } : {}),
     };
     const backendSecrets: Record<string, ecs.Secret> = {
       DATABASE_SECRET: ecs.Secret.fromSecretsManager(appDbSecret),

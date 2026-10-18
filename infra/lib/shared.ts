@@ -99,6 +99,14 @@ export function allowAlertingServices(key: kms.Key) {
 }
 
 /**
+ * Removal policy for stateful resources: kept when a stack is deleted, except in the temporary
+ * load-test environment, which `pnpm loadtest` creates and deletes completely (no leftover cost).
+ */
+export function keepUnlessEphemeral(cfg: EnvConfig): RemovalPolicy {
+  return cfg.env === 'loadtest' ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN;
+}
+
+/**
  * Access-log bucket (S3 server access logs + ALB access logs). Both log-delivery services only
  * support SSE-S3 on the target bucket, so this bucket is SSE-S3; it holds request metadata only.
  */
@@ -113,7 +121,7 @@ export function logsBucket(scope: Construct, bucketName: string, cfg: EnvConfig)
     lifecycleRules: [
       { id: 'expire-logs', expiration: Duration.days(cfg.logRetentionDays), noncurrentVersionExpiration: Duration.days(7) },
     ],
-    removalPolicy: RemovalPolicy.RETAIN,
+    removalPolicy: keepUnlessEphemeral(cfg),
   });
 }
 

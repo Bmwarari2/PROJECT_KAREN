@@ -8,6 +8,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile --filter @thapsus/api... --filter thapsus-hr
 RUN node scripts/bundle.mjs apps/api/src/main.ts apps/api/dist/main.mjs \
  && node scripts/bundle.mjs packages/db/src/cli/migrate.ts apps/api/dist/migrate.mjs \
+ && node scripts/bundle.mjs apps/api/src/cli/synth-enterprise.ts apps/api/dist/synth.mjs \
  && cp -r packages/db/migrations apps/api/dist/migrations
 RUN pnpm deploy --filter @thapsus/api --prod --legacy /out && cp -r apps/api/dist /out/dist
 

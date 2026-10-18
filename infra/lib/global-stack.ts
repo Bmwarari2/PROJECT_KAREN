@@ -21,6 +21,7 @@ import {
   cellBudget,
   certificateArn,
   encryptedLogGroup,
+  keepUnlessEphemeral,
   logsBucket,
   publicAlb,
   regionalWaf,
@@ -62,7 +63,7 @@ export class GlobalStack extends Stack {
       alias: `alias/${prefix}`,
       description: `Thapsus-HR ${env} global layer: directory table, logs, secrets`,
       enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     allowLogsService(key);
     allowAlertingServices(key);
@@ -76,7 +77,7 @@ export class GlobalStack extends Stack {
       encryptionKey: key,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       deletionProtection: prod,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     table.addGlobalSecondaryIndex({
       indexName: 'byDomain',

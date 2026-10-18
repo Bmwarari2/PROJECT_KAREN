@@ -1,7 +1,8 @@
 // Deploys Thapsus-HR stacks for one environment. Run with tsx so it can share the region map:
 //   node --import tsx scripts/deploy.mjs --env staging --only cell-uk [--dry-run] [--approved]
 //     [--param CertificateArn=arn:...] [--param GlobalBaseUrl=https://...] [--self-signed-tls]
-// Targets: ci | backupcopy | global | cell-uk | cell-eu | cell-us | all (in dependency order).
+// Targets: ci | backupcopy | global | cell-uk | cell-eu | cell-us | all (in dependency order);
+// synth-<cell> [--employees N --users N] generates the synthetic tenant (loadtest/staging only).
 // Production refuses to run without --approved (or the GitHub "production" environment, which
 // sets DEPLOY_ENVIRONMENT=production after its manual approval gate).
 // Credentials: GitHub OIDC in CI (no keys in the repo); locally, an SSO/assumed-role session.
@@ -36,6 +37,7 @@ try {
     productionApproved: flag('approved') || process.env.DEPLOY_ENVIRONMENT === 'production',
     parameters: Object.keys(params).length ? { global: params, 'cell-uk': params, 'cell-eu': params, 'cell-us': params } : undefined,
     selfSignedTls: flag('self-signed-tls'),
+    synth: value('employees') || value('users') ? { employees: Number(value('employees') ?? 200_000), users: Number(value('users') ?? 26_000) } : undefined,
   });
 } catch (err) {
   if (err instanceof PlanError) {
@@ -116,6 +118,32 @@ for (const s of steps) {
       const code = desc.tasks?.[0]?.containers?.[0]?.exitCode;
       if (code !== 0) throw new Error(`migrator exited with ${code} (see /thapsus-hr/${env}/<cell>/migrator logs)`);
       console.log('migrations applied');
+      break;
+    }
+    case 'run-synth': {
+      // The migrator task definition with a command override: generates the synthetic enterprise
+      // tenant (fictional data only) inside the cell, with more CPU/memory than a migration needs.
+      const o = outputs(s.stack);
+      const net = `awsvpcConfiguration={subnets=[${o.MigratorSubnetIds ?? '<MigratorSubnetIds>'}],securityGroups=[${o.MigratorSecurityGroupId ?? '<MigratorSecurityGroupId>'}],assignPublicIp=DISABLED}`;
+      const overrides = JSON.stringify({
+        cpu: '4096',
+        memory: '8192',
+        containerOverrides: [{ name: 'migrator', command: ['node', 'dist/synth.mjs'], environment: [{ name: 'SYNTH_EMPLOYEES', value: String(s.employees) }, { name: 'SYNTH_USERS', value: String(s.users) }] }],
+      });
+      const run = aws(s.region, 'ecs', 'run-task', '--cluster', o.EcsClusterName ?? '<EcsClusterName>', '--task-definition', o.MigratorTaskDefinitionArn ?? '<MigratorTaskDefinitionArn>', '--launch-type', 'FARGATE', '--network-configuration', net, '--overrides', overrides);
+      if (dryRun) break;
+      const task = JSON.parse(run).tasks?.[0]?.taskArn;
+      if (!task) throw new Error('synth task did not start');
+      // `aws ecs wait tasks-stopped` gives up after 10 minutes; generation can take longer.
+      let desc;
+      for (let i = 0; i < 360; i++) {
+        desc = JSON.parse(aws(s.region, 'ecs', 'describe-tasks', '--cluster', o.EcsClusterName, '--tasks', task));
+        if (desc.tasks?.[0]?.lastStatus === 'STOPPED') break;
+        await new Promise((r) => setTimeout(r, 10_000));
+      }
+      const code = desc?.tasks?.[0]?.containers?.[0]?.exitCode;
+      if (code !== 0) throw new Error(`synthetic data generation exited with ${code}`);
+      console.log(`synthetic tenant generated (${s.employees} employees, ${s.users} sign-in users)`);
       break;
     }
     case 'restart-services': {

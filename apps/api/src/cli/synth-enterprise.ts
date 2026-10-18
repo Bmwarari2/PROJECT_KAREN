@@ -3,7 +3,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import pg from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
-import { closeAllPools, TenantRouter, withTenant } from '@thapsus/db';
+import { closeAllPools, secretToUrl, TenantRouter, withTenant } from '@thapsus/db';
 import { directoryFromEnv } from '../lib/directory';
 import { hashPassword } from '../modules/auth/tokens';
 import { provisionTenant } from './provision';
@@ -15,6 +15,11 @@ import { DEPARTMENTS, FIRST_NAMES, JOB_TITLES, LAST_NAMES, prng } from './fixtur
  * SYNTH_USERS sign-in users for load testing. Bulk-loaded with COPY (as the owner role; COPY does not
  * support RLS-protected inserts). All data is fictional.
  */
+// In AWS this runs as the cell's migrator task (scripts/deploy.mjs `synth-<cell>`, load tests only),
+// which receives the database credentials as Secrets Manager values rather than URLs.
+if (!process.env.DATABASE_URL && !process.env.DATABASE_SECRET && process.env.APP_DATABASE_SECRET) process.env.DATABASE_SECRET = process.env.APP_DATABASE_SECRET;
+if (!process.env.MIGRATOR_DATABASE_URL && process.env.OWNER_DATABASE_SECRET) process.env.MIGRATOR_DATABASE_URL = secretToUrl(process.env.OWNER_DATABASE_SECRET, process.env.DATABASE_HOST);
+if (process.env.APP_ENV === 'prod') throw new Error('synthetic data is never generated in production');
 const N = Number(process.env.SYNTH_EMPLOYEES ?? 200_000);
 const USERS = Number(process.env.SYNTH_USERS ?? 6_000);
 const SEED = 424242;

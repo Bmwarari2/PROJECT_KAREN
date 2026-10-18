@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME_REGIONS, type HomeRegion } from '@thapsus/core/regions';
 
-export const ENVS = ['dev', 'staging', 'prod'] as const;
+/** `loadtest` is a temporary environment created and torn down by `pnpm loadtest` (brief §8). */
+export const ENVS = ['dev', 'staging', 'prod', 'loadtest'] as const;
 export type EnvName = (typeof ENVS)[number];
 
 export interface ServiceSize {
@@ -42,6 +43,8 @@ export interface EnvConfig {
   global: { certificateArn: string | null; monthlyBudgetUsd: number; services: { api: ServiceSize; web: ServiceSize } };
   cells: Record<HomeRegion, CellSettings>;
   billingConfigLocation: string;
+  /** Only in the temporary load-test environment: relaxes per-IP throttles for a single load generator. */
+  loadTest?: { ipThrottleMultiplier: number };
   /** GitHub Actions OIDC: the only repository and GitHub environment allowed to assume the deploy roles. */
   ci: { githubRepository: string; githubEnvironment: string; oidcProviderArn: string | null };
 }
@@ -65,6 +68,7 @@ function validate(cfg: EnvConfig, env: EnvName) {
   }
   if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.ci?.githubRepository ?? '')) fail('ci.githubRepository must be owner/repo');
   if (!cfg.ci.githubEnvironment) fail('ci.githubEnvironment is required');
+  if (cfg.loadTest && env !== 'loadtest') fail('loadTest settings are only allowed in the loadtest environment');
   if (env === 'prod') {
     if (cfg.ci.githubEnvironment !== 'production') fail('prod deploys must come from the "production" GitHub environment (manual approval gate)');
     if (cfg.natGateways < 3) fail('prod needs one NAT gateway per AZ (3)');
