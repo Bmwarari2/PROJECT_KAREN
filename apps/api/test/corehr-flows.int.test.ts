@@ -805,6 +805,44 @@ describe('bulk import and export', () => {
     expect(status.errorReportUrl).toContain(encodeURIComponent(key).slice(0, 10));
   });
 
+  it('falls back row by row on a failing chunk, rejects manager cycles and stays idempotent on numbers', async () => {
+    const csv = [
+      'Employee ID,First name,Last name,Start date,Job title,Entity,Weekly hours,FTE,Manager',
+      'EDG001,Ana,Edgecase,2026-01-05,Engineer,Fictional Ltd,30,1,EDG002',
+      'EDG002,Ben,Edgecase,2026-01-05,Engineer,Fictional Ltd,37.5,1,EDG001',
+      'EDG003,Cal,Edgecase,2026-01-05,Engineer,Fictional Ltd,40,2,',
+      'EDG003,Cal,Edgecase,2026-01-05,Senior engineer,Fictional Ltd,40,1,',
+      'EDG004,Dee,Edgecase,2026-01-05,Engineer,Fictional Ltd,30,1,EDG001',
+    ].join('\n');
+    const importFile = async () => {
+      const up = (await upload('edge.csv', csv)).json();
+      const mapping = { ...up.suggestedMapping, 'Start date': 'startDate', 'Job title': 'jobTitle' };
+      expect(mapping).toMatchObject({ 'Weekly hours': 'weeklyHours', FTE: 'fte' });
+      await api('POST', `/v1/imports/${up.id}/preview`, { mapping });
+      await api('POST', `/v1/imports/${up.id}/run`, {});
+      await drain();
+      const key = (await tx((t) => t.one<{ error_file_key: string }>(`SELECT error_file_key FROM app.import_batches WHERE id = $1`, [up.id]))).error_file_key;
+      return { stats: (await api('GET', `/v1/imports/${up.id}`)).json().stats, report: (ctx.deps.objects as MemoryObjectStore).objects.get(key)!.body.toString() };
+    };
+    const first = await importFile();
+    // the FTE of 2 breaks the bulk insert of the chunk; only that row fails, the duplicate number then imports
+    expect(first.stats).toMatchObject({ created: 4, failed: 1 });
+    expect(first.report.split('\r\n')).toContain('4,"","new row for relation ""employee_jobs"" violates check constraint ""employee_jobs_fte_check"""');
+    const person = async (num: string) => tx((t) => t.one<{ id: string; manager_id: string | null; job_title: string }>(`SELECT id, manager_id, job_title FROM app.employees WHERE employee_number = $1`, [num]));
+    const [a, b, c, d] = [await person('EDG001'), await person('EDG002'), await person('EDG003'), await person('EDG004')];
+    expect(c.job_title).toBe('Senior engineer');
+    // EDG001 → EDG002 → EDG001 would be a reporting cycle: one link is applied, the other is reported
+    expect([a.manager_id === b.id, b.manager_id === a.id].filter(Boolean)).toHaveLength(1);
+    expect(first.report).toMatch(/,"managerEmployeeNumber","This would create a reporting cycle"/);
+    expect(d.manager_id).toBe(a.id);
+    // a second import of the same file changes nothing: 30 hours equals the stored 30.00
+    const second = await importFile();
+    expect(second.stats).toMatchObject({ created: 0, updated: 0, unchanged: 4, failed: 1 });
+    expect((await api('GET', `/v1/employees/${a.id}/history`)).json().job).toHaveLength(1);
+    const lines = await tx((t) => t.query(`SELECT 1 FROM app.reporting_lines WHERE employee_id = ANY($1::uuid[]) AND kind = 'solid'`, [[a.id, b.id]]));
+    expect(lines).toHaveLength(1);
+  });
+
   it('reports progress as the background job works through the file in chunks', async () => {
     const rows = ['Employee ID,First name,Last name,Start date,Job title,Entity,Salary,Currency,Pay frequency,Contract type'];
     for (let i = 1; i <= 5; i++) rows.push(`PRG00${i},Prog${i},Fictional,2026-01-05,Tester,Fictional Ltd,30000,GBP,annual,permanent`);
