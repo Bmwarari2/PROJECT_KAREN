@@ -69,6 +69,7 @@ Things only a person with the right accounts or authority can do. The build runs
   
   Confirm by adding a back-office rule version with your name as reviewer.
 - [ ] 3.13 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
+- [ ] 3.14 **Holiday liability method (ADR-0073).** Ask finance and an employment lawyer to confirm the valuation used by the Holiday liability report (accrued-to-date leave less leave taken, at contractual basic pay ÷ (52 × working days per week), rounded once per person, negative when over-taken, no employer on-costs or variable pay) is acceptable for each market's accounting practice, and whether variable pay should be included for UK workers (holiday pay rules). Record the outcome in ADR-0073.
 
 ## 4. Payments, partners and integrations
 
@@ -103,6 +104,10 @@ Things only a person with the right accounts or authority can do. The build runs
   4. **UKG**: apply to the UKG Partner Network. Request UKG Pro (and UKG Ready) developer access for the time and pay import APIs, plus sandbox tenants.
   5. **Gusto**: apply to Gusto Embedded / the Gusto developer partner programme. Get sandbox OAuth credentials and production approval for the payroll and time-off endpoints (US tenants only).
   6. **DATEV**: apply to the DATEV Marktplatz partner programme (DATEV eG). Sign the partner agreement and get access to the DATEVconnect / LODAS import interfaces (EU tenants with German entities only).
+- [ ] 4.5 **Customer data-export roles (ADR-0077, docs/guides/data-export.md).**
+  1. For each environment and cell, note the AWS account id that runs the cell's API and worker and publish it to customers (replace `<THAPSUS_HR_ACCOUNT_ID>` guidance in docs/guides/data-export.md, for example with a per-region table on the help site).
+  2. Optionally tighten the documented trust policy with an `aws:PrincipalArn` condition naming the cell's API and worker task role ARNs (printed by `cdk deploy` of the cell stack).
+  3. Have a customer-facing reviewer try the guide end to end against a test AWS account in each home region (eu-west-2, eu-central-1, us-east-2): create the `thapsus-hr-export-*` role, add the destination, press Test connection, run Send now and confirm the file and the delivery log.
 
 ## 5. Accounts and access for staff
 

@@ -410,3 +410,83 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Decision.** Recording a check or I-9 on a date with no rule in force fails with 422 instead of applying later guidance to an earlier check. A new expiry date on an I-9 opens the next reverification cycle (the completed Supplement B stays in the audit trail).
 
 **Consequences.** Customers migrating older checks need the earlier guidance versions added to the packs first (coverage to-do).
+
+## ADR-0070 — Ready-made reports are a typed registry proven by golden tests (2026-10-18)
+
+**Context.** Phase 7 needs headcount, turnover, absence, holiday liability, overtime and the statutory reports, reproducible for any date, permission-aware and exportable in several formats.
+
+**Decision.** `apps/api/src/modules/reports/ready/registry.ts` holds one definition per report: id, category, i18n title/description keys, permission(s), jurisdictions (`*`, `GB`, `US`, `EU`), sensitivity, a TypeBox parameter schema and `run(ctx, params)` returning typed columns (`text`, `enum`, `integer`, `decimal`, `percent`, `money`, `date`, `minutes`, `boolean`) and rows, optional totals, facts, notes and a chart hint. Calculations are pure functions over facts loaded once (`calc/people.ts`, `calc/absence.ts`, `calc/liability.ts`) using bigint fixed point (ten-thousandths, one rounding half away from zero); they never read the clock — the caller passes explicit dates. Statutory values (working-day patterns, bank holidays, thresholds) come only from the jurisdiction packs and the leave engine. `apps/api/test/reports-goldens.test.ts` pins every calculation to hand-computed values for fixed dates. Renderers (CSV with BOM, XLSX with typed cells, PDF with title, parameters, generated-at with time zone, and the table) take the same result model, so screen and file always agree.
+
+**Consequences.** A new report is a definition plus a golden test. On-screen runs above a population limit (absence 2,000, holiday liability 1,000 employees) must use a background run.
+
+## ADR-0071 — Reports run on the Aurora reader endpoint as a read-only role (2026-10-18)
+
+**Context.** Reports must not load the writer, must keep forced RLS, and must work when a large tenant moves to its own database.
+
+**Decision.** Tenant routing config gains optional reader URLs per database key (`READER_DATABASES`, `REPORTING_DATABASE_URL`, or `REPORTING_DATABASE_SECRET` + `REPORTING_DATABASE_HOST`; `DEDICATED_READER_HOSTS` for dedicated databases). `withTenantReader` opens a read-only transaction on the tenant's reader as `thapsus_reporting` (SELECT only, no BYPASSRLS, owns nothing, revoked from the vault, credentials, sessions, tokens and export-destination secrets) with the same `app.tenant_id` context; if a database key has no reader it falls back to that key's writer, never to another database's reader. The CDK cell stack passes the Aurora cluster read endpoint as `REPORTING_DATABASE_HOST` to the API and worker. We use the cluster reader endpoint, not an RDS Proxy read-only endpoint, to avoid a second proxy's cost; reader lag (normally under a second) is acceptable for reports. Vault decryption and compliance calculators that need the vault run on the writer, with every decrypt audited.
+
+**Consequences.** Reports can be a few seconds behind writes. Moving a tenant to a dedicated database needs its reader host in configuration only.
+
+## ADR-0072 — Headcount and turnover definitions (2026-10-18)
+
+**Context.** HR teams compare these figures with other systems, so the definitions must be explicit.
+
+**Decision.** Employed on date D: `start_date <= D` and (`end_date` is null or `end_date >= D`); `end_date` is the last working day. Grouping uses the job record in force on D (`[valid_from, valid_to)`); country is the job location's, else the legal entity's; no job record → "Unassigned"; a dimension the viewer cannot read → "Restricted". Turnover for `[from, to]` inclusive = leavers with `end_date` in the period ÷ ((headcount on `from` + headcount on `to`) ÷ 2) × 100, rounded once to 2 dp; a leaver's group is their job on the last day. Voluntary / involuntary comes from the new optional `leaver_type` on termination (expand-only column, `voluntary | involuntary | other`); unrecorded leavers count as "Other or not recorded".
+
+**Consequences.** Existing leavers show as "not recorded" until HR sets the type. The definitions are printed as notes on the report.
+
+## ADR-0073 — Holiday liability method and rounding (2026-10-18)
+
+**Context.** Finance teams need the value of leave earned but not taken, per currency, without floating point.
+
+**Decision.** Untaken = leave accrued to the date (by the leave engine's accrual method; up-front entitlements pro-rated to the part of the leave year employed so far) + carry-over (capped, minus expired) + adjustments − public holidays taken where the entitlement includes them − approved leave taken. Value = annualised contractual basic pay × untaken ÷ (52 × working days per week) (or ÷ (52 × weekly hours) for hour-based policies), computed in integer minor units and rounded once, half away from zero; totals per currency, never converted or mixed. Over-taken leave is a negative amount. It excludes employer on-costs and variable pay.
+
+**Consequences.** Finance may need on-costs added outside the system; the method is listed for review in HUMAN_TODO.md.
+
+## ADR-0074 — Report builder: masked SQL, no individual special-category values (2026-10-18)
+
+**Context.** The builder lets users pick fields, filters and groupings; it must never reveal what the user's grants hide, including through filters or group labels.
+
+**Decision.** Datasets (`people`, `leave`, `absence`, `timesheets`) declare each field's SQL, type, label key, sensitivity and permission. The compiled query first builds a masked base (`CASE WHEN <readable for this row> THEN value END`, using the same scope predicates and field-level permissions as the employee API), then filters, groups and aggregates only the masked values, so filtering on a hidden value matches nothing and hidden groups show as "Restricted". Money aggregates group by currency. Vault-backed fields (sickness reason) appear only with the category permission, are decrypted on the writer after the reader query and every value read is audited. Sex, gender and EEO categories are not builder fields at all: they are reported only as suppressed aggregates by the compliance calculators. Specs are validated against a TypeBox schema; previews are limited to 500 rows and exports to 250,000.
+
+**Consequences.** Some useful cuts (for example pay by sex) are only available through the statutory reports, by design.
+
+## ADR-0075 — Background runs, short-lived downloads and result expiry (2026-10-18)
+
+**Context.** Exports and large reports should not block requests, and results contain personal data.
+
+**Decision.** `app.report_runs` holds status, progress, row count, bytes, error code and expiry. The idempotent `reports.run` job renders the file into the tenant's home-region object store under `<tenant>/reports/<run>/…`; downloads use 300-second presigned links issued only to the requester and audited. Results expire after the tenant setting `reports.resultTtlHours` (default 168); the `reports.cleanup` job deletes the object and marks the run expired (download then returns 410). Permanent errors (forbidden, validation, not found, unprocessable) fail without retry; others retry up to five attempts.
+
+**Consequences.** Users re-run reports after expiry. Object-store lifecycle rules remain a backstop.
+
+## ADR-0076 — Scheduled delivery per recipient; emails carry no personal data (2026-10-18)
+
+**Context.** Scheduled reports must respect each recipient's own permissions and must not leak data by email.
+
+**Decision.** A schedule (daily, weekly on an ISO weekday, monthly on day 1–28, at a local time in an IANA zone, DST-aware) belongs to a saved report; relative periods (`previousMonth`, `yearToDate`, …) resolve against the period date. For each due period the enqueuer creates one run per recipient, unique on (schedule, period, recipient), and runs it with the recipient's own principal; recipients must be able to use reports when the schedule is saved. The home-region mailer sends a generic "your report is ready" email with a sign-in-protected link to `/app/reports/runs/<id>`; no report title, content or names are in the email.
+
+**Consequences.** Two recipients may receive different rows from the same schedule. The recipient picker lists only users who can use reports.
+
+## ADR-0077 — Data export destinations: home-region S3 via `thapsus-hr-export-*` roles, or pinned SFTP (2026-10-18)
+
+**Context.** Customers want regular extracts in their own storage without long-lived keys, and residency rules forbid writing outside the home region.
+
+**Decision.** One module (`apps/api/src/modules/exports/destination.ts`) defines a small `Destination` interface (`describe`, `test`, `put`) with two implementations. S3: the bucket region must equal the cell's home region (validated on save and confirmed by `HeadBucket` before each write); credentials come from STS `AssumeRole` (15 minutes) on a customer role whose name starts with `thapsus-hr-export-`, with a per-destination ExternalId (`thr-` + 32 hex) generated by us; clients come only from the residency-guarded factory. The CDK cell stack grants the API and worker task roles `sts:AssumeRole` on `arn:aws:iam::*:role/thapsus-hr-export-*` only. SFTP reuses the phase 6 transport (ssh2, pinned SHA256 host key, private-address refusal); passwords and keys are sealed with the regional KMS key. Exports choose builder datasets and fields (never vault fields), run as the user who set them up (permissions re-evaluated each delivery), are idempotent per (export, period), and log status, files, rows, bytes, duration and error code only. The customer setup is in docs/guides/data-export.md.
+
+**Consequences.** Customers create and own the IAM role. Destinations are the controller's own systems, not sub-processors (SUBPROCESSORS.md).
+
+## ADR-0078 — Self-service: one hub over existing modules; legal details change through approval (2026-10-18)
+
+**Context.** Employees need one place for their details, leave, shifts, clock, documents, tasks, notifications and payslips, without duplicating those modules.
+
+**Decision.** `GET /v1/me/summary` returns counts and next items from the existing modules (leave balance via the leave service, read-only; next published shift and pending swaps; clock state; documents to sign; open and overdue tasks; unread notifications; published payslips from phase 6), each only when the caller's grants allow it; the web hub links to the existing pages. Contact details the employee may write change directly through the employee changes API; legal name, date of birth and nationality go through `POST /v1/me/change-requests` as an `employee.self_change` approval (HR admin, else owner; never the requester), applied effective-dated on approval; audit records the fields, not the values. Notification preferences (`users.notification_prefs`) switch email and web push per category (approval, leave, absence, rota, time, task, document, payslip, compliance, asset, report); in-app notifications are always kept, and the delivery job honours the preferences.
+
+**Consequences.** Self-service screens add no new data stores beyond the preferences column.
+
+## ADR-0079 — Statutory reports reuse the compliance calculators (2026-10-18)
+
+**Context.** Gender pay gap, EEO-1, EU pay transparency and compliance status already exist in the compliance centre (phase 5) and read sex/EEO data from the vault.
+
+**Decision.** The shared calculations were extracted into `apps/api/src/modules/compliance/reporting.ts` and are called by both the compliance routes and the ready-made reports, on the writer (vault access, audited), returning only aggregates with the compliance centre's small-cell suppression. Reports add no new calculation or access path for special-category data; EEO-1 output is always marked as not an exact filing.
+
+**Consequences.** Changes to the statutory methods are made once, in the compliance module.

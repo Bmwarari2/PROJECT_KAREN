@@ -535,7 +535,7 @@ export class CellStack extends Stack {
           resources: [directoryTableArn, `${directoryTableArn}/index/*`],
         }),
       );
-      // Scheduled data export (ADR-0076): assume ONLY customer roles named thapsus-hr-export-* (any customer
+      // Scheduled data export (ADR-0077): assume ONLY customer roles named thapsus-hr-export-* (any customer
       // account; the customer's trust policy pins this task role and our ExternalId). STS is regional and the
       // bucket must be in this cell's region, which the application checks before writing.
       role.addToPrincipalPolicy(
