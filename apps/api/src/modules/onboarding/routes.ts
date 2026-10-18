@@ -8,8 +8,7 @@ import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { assignRole } from '../authz/principal';
 import { assertPasswordlessAllowed } from '../auth/common';
-import { MAGIC_PREFIX } from '../auth/routes';
-import { composeToken, hashToken, newToken } from '../auth/tokens';
+import { composeToken, hashToken, MAGIC_PREFIX, newToken } from '../auth/tokens';
 import { contactsAsOf, employeeAsOf, filterFields, loadTarget } from '../employees/service';
 import { claimPersonTasks } from '../workflows/service';
 
