@@ -1,0 +1,43 @@
+{
+  "jurisdiction": "RO",
+  "parent": "EU",
+  "name": "Romania",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). Romania notified only pre-existing measures (Codul muncii, Legea 202/2002, OG 137/2000, Legea 283/2024 etc.); no dedicated act found. Pending legal review."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "holidays: Codul muncii art. 139 (incl. Orthodox Good Friday/Easter/Pentecost via calendar \"orthodox\", 6–7 January, 24 January, 1 June) — NOT modelled: legislatie.just.ro refused connections and the mmuncii.gov.ro / sgg.gov.ro / anp.gov.ro copies sit behind a browser-verification challenge, so no official text could be fetched",
+      "leave.statutory_annual_minimum (Codul muncii art. 145: 20 working days) — same reason",
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "minimum_wage.rates"
+    ],
+    "notes": "Pack intentionally minimal: values were not written from memory."
+  }
+}

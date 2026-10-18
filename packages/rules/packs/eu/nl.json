@@ -1,0 +1,642 @@
+{
+  "jurisdiction": "NL",
+  "parent": "EU",
+  "name": "Netherlands",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Statutory annual leave (BW 7:634)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "multipleOfWeeklyHours": 4,
+            "basis": "agreed_weekly_working_hours",
+            "proRataForPartYear": true
+          },
+          "source": {
+            "url": "https://wetten.overheid.nl/BWBR0005290/2026-01-01",
+            "title": "Burgerlijk Wetboek Boek 7 (wetten.overheid.nl), versie 2026-01-01 — art. 7:629, 7:634, 7:672"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "At least four times the agreed weekly working hours per year (or equivalent if hours are agreed per year)."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Continued pay during sickness (BW 7:629)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "payer": "employer",
+            "continuedPayPercent": 70,
+            "maxWeeks": 104,
+            "minimumWageFloorFirstWeeks": 52,
+            "wageCap": "max_daily_wage_wfsv_art17"
+          },
+          "source": {
+            "url": "https://wetten.overheid.nl/BWBR0005290/2026-01-01",
+            "title": "Burgerlijk Wetboek Boek 7 (wetten.overheid.nl), versie 2026-01-01 — art. 7:629, 7:634, 7:672"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "70% of time-based wage for 104 weeks, first 52 weeks at least the statutory minimum wage; capped at the daily maximum under art. 17 Wfsv. Shorter (6 weeks) for domestic workers <4 days/week and employees over state-pension age."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Statutory notice (BW 7:672)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "terminationDate": "end_of_month",
+            "employerByService": [
+              {
+                "minServiceYears": 0,
+                "months": 1
+              },
+              {
+                "minServiceYears": 5,
+                "months": 2
+              },
+              {
+                "minServiceYears": 10,
+                "months": 3
+              },
+              {
+                "minServiceYears": 15,
+                "months": 4
+              }
+            ],
+            "employeeMonths": 1,
+            "employerAfterStatePensionAgeMonths": 1,
+            "shorteningOnlyByCao": true,
+            "uwvPermitDeduction": {
+              "minRemainingMonths": 1
+            }
+          },
+          "source": {
+            "url": "https://wetten.overheid.nl/BWBR0005290/2026-01-01",
+            "title": "Burgerlijk Wetboek Boek 7 (wetten.overheid.nl), versie 2026-01-01 — art. 7:629, 7:634, 7:672"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "draft",
+            "law": "Wet implementatie Richtlijn loontransparantie mannen en vrouwen (Kamerstuk 36949), submitted 2026-05-21",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://wetgevingskalender.overheid.nl/Regeling/WGK025384",
+            "title": "Wetgevingskalender: Implementatie richtlijn loontransparantie (Kamerstuk 36949)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Bill pending in the Tweede Kamer (nota n.a.v. verslag 2026-09-02); entry into force by Royal Decree, government target 2027-01-01. No measure notified on EUR-Lex."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Nieuwjaarsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Goede Vrijdag",
+      "rule": {
+        "type": "easter",
+        "offset": -2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Eerste Paasdag",
+      "rule": {
+        "type": "easter",
+        "offset": 0
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Tweede Paasdag",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": "2025-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "one_off",
+        "date": "2025-04-26"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2025-01-01",
+      "effectiveTo": "2026-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2031-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "one_off",
+        "date": "2031-04-26"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2031-01-01",
+      "effectiveTo": "2032-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2032-01-01",
+      "effectiveTo": "2036-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "one_off",
+        "date": "2036-04-26"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2036-01-01",
+      "effectiveTo": "2037-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2037-01-01",
+      "effectiveTo": "2042-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "one_off",
+        "date": "2042-04-26"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2042-01-01",
+      "effectiveTo": "2043-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2043-01-01",
+      "effectiveTo": "2053-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "one_off",
+        "date": "2053-04-26"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2053-01-01",
+      "effectiveTo": "2054-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2054-01-01",
+      "effectiveTo": "2059-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "one_off",
+        "date": "2059-04-26"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2059-01-01",
+      "effectiveTo": "2060-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "kings-day",
+      "name": "King's Day",
+      "localName": "Koningsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2060-01-01",
+      "effectiveTo": "2061-01-01",
+      "source": {
+        "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+        "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "27 April; if 27 April is a Sunday it is celebrated on Saturday 26 April. Schema has no conditional rule, so those years are one_off segments; generated through 2060."
+    },
+    {
+      "id": "liberation-day",
+      "name": "Liberation Day",
+      "localName": "Bevrijdingsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 5
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Hemelvaartsdag",
+      "rule": {
+        "type": "easter",
+        "offset": 39
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Eerste Pinksterdag",
+      "rule": {
+        "type": "easter",
+        "offset": 49
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Tweede Pinksterdag",
+      "rule": {
+        "type": "easter",
+        "offset": 50
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Eerste Kerstdag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "boxing-day",
+      "name": "Second Day of Christmas",
+      "localName": "Tweede Kerstdag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+        "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "Whether a public holiday is a paid day off is set by CAO/contract (no statutory right) — model per CAO",
+      "leave.carry_over (statutory leave lapses 6 months after year end, BW 7:640a)",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours (Arbeidstijdenwet)",
+      "minimum_wage.rates",
+      "employment.probation"
+    ],
+    "notes": "Rijksoverheid: there is no law making official holidays days off for employees; the CAO or contract decides."
+  }
+}

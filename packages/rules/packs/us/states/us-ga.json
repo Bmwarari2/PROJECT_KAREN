@@ -1,0 +1,49 @@
+{
+  "jurisdiction": "US-GA",
+  "parent": "US",
+  "name": "Georgia",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "minimum_wage.rates",
+      "description": "Georgia state minimum wage",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 515
+              }
+            ],
+            "appliesToEmployersWithMinEmployees": 6,
+            "flsaCoveredEmployersPay": {
+              "amountMinor": 725,
+              "currency": "USD"
+            }
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/minimum-wage/state",
+            "title": "U.S. DOL WHD — State Minimum Wage Laws (updated 1 July 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Georgia rate $5.15 applies only to employers of 6+ employees not covered by the FLSA; FLSA-covered employers must pay $7.25 (federal pack)."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Georgia Family Care Act"
+    ],
+    "notes": "No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime."
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "jurisdiction": "US-FL",
+  "parent": "US",
+  "name": "Florida",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "minimum_wage.rates",
+      "description": "Florida minimum wage (Fla. Const. art. X, s. 24)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-09-30",
+          "effectiveTo": "2025-09-30",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1300
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.flsenate.gov/Laws/Constitution",
+            "title": "Constitution of the State of Florida — Art. X, s. 24 (Florida minimum wage)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Schedule: $10.00 on 30 Sep 2021, +$1.00 each 30 Sep until $15.00 on 30 Sep 2026."
+        },
+        {
+          "effectiveFrom": "2025-09-30",
+          "effectiveTo": "2026-09-30",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1400
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.flsenate.gov/Laws/Constitution",
+            "title": "Constitution of the State of Florida — Art. X, s. 24 (Florida minimum wage)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2026-09-30",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1500
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.flsenate.gov/Laws/Constitution",
+            "title": "Constitution of the State of Florida — Art. X, s. 24 (Florida minimum wage)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "From 30 Sep 2027 the rate is inflation-adjusted annually and the adjusted rate takes effect the following 1 January (first adjustment 1 Jan 2028). Tipped direct wage not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Verify Florida local-preemption statute for leave mandates"
+    ],
+    "notes": "No statewide paid sick leave law; no official Florida source stating this explicitly was found, so sick_pay.paid_sick_leave_accrual is omitted (federal rule: none). Local preemption of employee-benefit mandates not verified. No daily overtime."
+  }
+}

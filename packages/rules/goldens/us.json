@@ -1,0 +1,841 @@
+{
+  "jurisdiction": "US",
+  "holidays": [
+    {
+      "region": "*",
+      "year": 2025,
+      "dates": [
+        "2025-01-01",
+        "2025-01-20",
+        "2025-02-17",
+        "2025-05-26",
+        "2025-06-19",
+        "2025-07-04",
+        "2025-09-01",
+        "2025-10-13",
+        "2025-11-11",
+        "2025-11-27",
+        "2025-12-25"
+      ]
+    },
+    {
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-19",
+        "2026-02-16",
+        "2026-05-25",
+        "2026-06-19",
+        "2026-07-03",
+        "2026-09-07",
+        "2026-10-12",
+        "2026-11-11",
+        "2026-11-26",
+        "2026-12-25"
+      ]
+    },
+    {
+      "region": "*",
+      "year": 2027,
+      "dates": [
+        "2027-01-01",
+        "2027-01-18",
+        "2027-02-15",
+        "2027-05-31",
+        "2027-06-18",
+        "2027-07-05",
+        "2027-09-06",
+        "2027-10-11",
+        "2027-11-11",
+        "2027-11-25",
+        "2027-12-24"
+      ]
+    }
+  ],
+  "holidayNotes": "Dates are OPM's observed dates. 2025 excludes Inauguration Day (20 Jan 2025, DC area only, not modelled; it coincided with MLK Day). OPM lists New Year's Day 2028 (observed Fri 31 Dec 2027) under 2028, so it is not in the 2027 list — the holiday engine must attribute observed dates to the holiday's own year.",
+  "rules": [
+    {
+      "jurisdiction": "US",
+      "key": "overtime.weekly",
+      "date": "2026-06-01",
+      "expect": {
+        "thresholdHours": 40,
+        "multiplier": 1.5,
+        "averagingAcrossWorkweeksAllowed": false
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2026-06-01",
+      "expect": {
+        "standardWeekly": {
+          "amountMinor": 68400,
+          "currency": "USD"
+        },
+        "standardAnnualEquivalent": {
+          "amountMinor": 3556800,
+          "currency": "USD"
+        },
+        "hceAnnualTotalCompensation": {
+          "amountMinor": 10743200,
+          "currency": "USD"
+        },
+        "hceMinimumWeeklySalary": {
+          "amountMinor": 68400,
+          "currency": "USD"
+        }
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2024-08-01",
+      "expect": {
+        "standardWeekly": {
+          "amountMinor": 84400,
+          "currency": "USD"
+        },
+        "hceAnnualTotalCompensation": {
+          "amountMinor": 13296400,
+          "currency": "USD"
+        }
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "overtime.exempt_salary_threshold",
+      "date": "2024-12-01",
+      "expect": {
+        "standardWeekly": {
+          "amountMinor": 68400,
+          "currency": "USD"
+        },
+        "standardAnnualEquivalent": {
+          "amountMinor": 3556800,
+          "currency": "USD"
+        },
+        "hceAnnualTotalCompensation": {
+          "amountMinor": 10743200,
+          "currency": "USD"
+        },
+        "hceMinimumWeeklySalary": {
+          "amountMinor": 68400,
+          "currency": "USD"
+        }
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 725
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "family_leave.fmla",
+      "date": "2026-06-01",
+      "expect": {
+        "coveredEmployer": {
+          "privateSectorMinEmployees": 50,
+          "inWorkweeks": 20,
+          "publicAgenciesCoveredRegardlessOfSize": true,
+          "localEducationalAgenciesCovered": true
+        },
+        "eligibility": {
+          "minMonthsOfService": 12,
+          "minHoursInPrior12Months": 1250,
+          "minEmployeesWithinRadius": 50,
+          "radiusMiles": 75
+        },
+        "entitlementWorkweeks": 12,
+        "militaryCaregiverWorkweeks": 26,
+        "leaveYearMethods": [
+          "calendar_year",
+          "fixed_12_month_period",
+          "forward_from_first_leave_date",
+          "rolling_backward_from_leave_date"
+        ],
+        "leaveYearMethodMustBeUniform": true,
+        "defaultIfNoMethodSelected": "most_beneficial_to_employee",
+        "militaryCaregiverPeriod": "single_12_month_period_from_first_day_of_caregiver_leave"
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "i9.retention",
+      "date": "2026-06-01",
+      "expect": {
+        "rule": "later_of",
+        "afterHireYears": 3,
+        "afterEmploymentEndsYears": 1,
+        "hireDateField": "first_day_of_employment"
+      }
+    },
+    {
+      "jurisdiction": "US",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "federal": false
+      }
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "overtime.daily",
+      "date": "2026-06-01",
+      "expect": {
+        "tiers": [
+          {
+            "afterHours": 8,
+            "multiplier": 1.5
+          },
+          {
+            "afterHours": 12,
+            "multiplier": 2
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "overtime.seventh_day",
+      "date": "2026-06-01",
+      "expect": {
+        "appliesTo": "seventh_consecutive_day_of_work_in_workweek",
+        "tiers": [
+          {
+            "afterHours": 0,
+            "multiplier": 1.5
+          },
+          {
+            "afterHours": 8,
+            "multiplier": 2
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 30
+        },
+        "annualUseCap": {
+          "hours": 40,
+          "days": 5,
+          "rule": "greater_of"
+        },
+        "accrualCap": {
+          "hours": 80,
+          "days": 10,
+          "rule": "greater_of"
+        },
+        "frontloadAlternative": {
+          "hours": 40,
+          "days": 5,
+          "rule": "greater_of",
+          "newHireMinimums": [
+            {
+              "byDay": 120,
+              "hours": 24,
+              "days": 3
+            },
+            {
+              "byDay": 200,
+              "hours": 40,
+              "days": 5
+            }
+          ]
+        },
+        "eligibility": {
+          "minDaysWorkedInStateWithinYear": 30,
+          "employmentPeriodDaysBeforeUse": 90
+        },
+        "localOrdinancesMayBeMoreGenerous": true
+      }
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "minimum_wage.rates",
+      "date": "2025-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1650
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1690
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-NY",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 30
+        },
+        "period": "calendar_year",
+        "tiers": [
+          {
+            "minEmployees": 0,
+            "maxEmployees": 4,
+            "netIncomeMaxMinor": 100000000,
+            "hours": 40,
+            "paid": false
+          },
+          {
+            "minEmployees": 0,
+            "maxEmployees": 4,
+            "netIncomeAboveMinor": 100000000,
+            "hours": 40,
+            "paid": true
+          },
+          {
+            "minEmployees": 5,
+            "maxEmployees": 99,
+            "hours": 40,
+            "paid": true
+          },
+          {
+            "minEmployees": 100,
+            "maxEmployees": null,
+            "hours": 56,
+            "paid": true
+          }
+        ],
+        "netIncomeCurrency": "USD"
+      }
+    },
+    {
+      "jurisdiction": "US-NY",
+      "key": "minimum_wage.rates",
+      "date": "2025-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "nyc",
+            "hourlyMinor": 1650
+          },
+          {
+            "region": "long_island_westchester",
+            "hourlyMinor": 1650
+          },
+          {
+            "region": "remainder_of_state",
+            "hourlyMinor": 1550
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-NY",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "nyc",
+            "hourlyMinor": 1700
+          },
+          {
+            "region": "long_island_westchester",
+            "hourlyMinor": 1700
+          },
+          {
+            "region": "remainder_of_state",
+            "hourlyMinor": 1600
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 40
+        },
+        "carryoverMinHours": 40,
+        "useBeginsCalendarDay": 90
+      }
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1713
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "minimum_wage.rates",
+      "date": "2027-01-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1773
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "overtime.daily",
+      "date": "2026-06-01",
+      "expect": {
+        "tiers": [
+          {
+            "afterHours": 12,
+            "multiplier": 1.5
+          }
+        ],
+        "consecutiveHoursThreshold": 12,
+        "consecutiveMultiplier": 1.5,
+        "rule": "whichever_of_weekly_daily_or_consecutive_pays_more"
+      }
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 30
+        },
+        "annualCapHours": 48,
+        "allEmployerSizes": true
+      }
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "minimum_wage.rates",
+      "date": "2025-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1481
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1516
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-IL",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "statute": "Paid Leave for All Workers Act",
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 40
+        },
+        "capHoursPer12Months": 40,
+        "useBeginsAfterDays": 90,
+        "localOrdinanceCarveOut": "Employers covered by a paid leave ordinance in force before 1 Jan 2024 (City of Chicago, Cook County) are not subject to PLAWA where that ordinance requires paid leave"
+      }
+    },
+    {
+      "jurisdiction": "US-IL",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1500
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-MA",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 30
+        },
+        "annualCapHours": 40,
+        "paidIfEmployeesAtLeast": 11,
+        "useBeginsAfterDays": 90
+      }
+    },
+    {
+      "jurisdiction": "US-MA",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1500
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-OR",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "accrual": {
+          "hoursEarned": 1,
+          "perHoursWorked": 30
+        },
+        "annualCapHours": 40,
+        "paidIfOregonEmployeesAtLeast": 10,
+        "paidIfEmployeesAtLeastWithPortlandLocation": 6,
+        "useMayBeDeferredUntilCalendarDay": 91,
+        "employerMayLimitCarryoverHours": 40,
+        "employerMayCapBalanceHours": 80
+      }
+    },
+    {
+      "jurisdiction": "US-OR",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-30",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "standard",
+            "hourlyMinor": 1505
+          },
+          {
+            "region": "portland_metro",
+            "hourlyMinor": 1630
+          },
+          {
+            "region": "nonurban_counties",
+            "hourlyMinor": 1405
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-OR",
+      "key": "minimum_wage.rates",
+      "date": "2026-07-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "standard",
+            "hourlyMinor": 1555
+          },
+          {
+            "region": "portland_metro",
+            "hourlyMinor": 1680
+          },
+          {
+            "region": "nonurban_counties",
+            "hourlyMinor": 1455
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-TX",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 725
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-TX",
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "date": "2026-06-01",
+      "expect": {
+        "statewide": false
+      }
+    },
+    {
+      "jurisdiction": "US-FL",
+      "key": "minimum_wage.rates",
+      "date": "2026-09-29",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1400
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-FL",
+      "key": "minimum_wage.rates",
+      "date": "2026-09-30",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 1500
+          }
+        ]
+      }
+    },
+    {
+      "jurisdiction": "US-GA",
+      "key": "minimum_wage.rates",
+      "date": "2026-06-01",
+      "expect": {
+        "currency": "USD",
+        "rates": [
+          {
+            "region": "*",
+            "hourlyMinor": 515
+          }
+        ],
+        "appliesToEmployersWithMinEmployees": 6,
+        "flsaCoveredEmployersPay": {
+          "amountMinor": 725,
+          "currency": "USD"
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "title": "OPM — Federal Holidays (5 U.S.C. 6103)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title5/html/USCODE-2023-title5-partIII-subpartE-chap61-subchapI-sec6103.htm",
+      "title": "5 U.S.C. 6103 — Holidays (incl. Pub. L. 117-17 adding Juneteenth)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/overtime",
+      "title": "U.S. DOL WHD — Overtime Pay",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/overtime/salary-levels",
+      "title": "U.S. DOL WHD — Earnings thresholds for the EAP exemption",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.govinfo.gov/content/pkg/FR-2026-05-15/html/2026-09839.htm",
+      "title": "91 FR 27833 (15 May 2026) — Defining and Delimiting the Exemptions …; Implementation of Federal Court Judgments",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/minimum-wage",
+      "title": "U.S. DOL WHD — Minimum Wage",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/minimum-wage/state",
+      "title": "U.S. DOL WHD — State Minimum Wage Laws (updated 1 July 2026)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/fact-sheets/28-fmla",
+      "title": "U.S. DOL WHD Fact Sheet #28 — The Family and Medical Leave Act",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/agencies/whd/fact-sheets/28h-fmla-12-month-period",
+      "title": "U.S. DOL WHD Fact Sheet #28H — 12-month period under the FMLA",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.uscis.gov/i-9-central/form-i-9-resources/handbook-for-employers-m-274/100-retaining-form-i-9",
+      "title": "USCIS M-274 Handbook for Employers — 10.0 Retaining Form I-9",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.uscis.gov/i-9-central/completing-form-i-9/completing-supplement-b-reverification-and-rehires-formerly-section-3",
+      "title": "USCIS I-9 Central — Completing Supplement B, Reverification and Rehires",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.eeoc.gov/data/eeo-data-collections",
+      "title": "EEOC — EEO Data Collections",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.eeoc.gov/newsroom/eeoc-proposes-rescission-annual-race-and-sex-reporting-requirements",
+      "title": "EEOC press release (21 Jul 2026) — EEOC Proposes Rescission of Annual Race and Sex Reporting Requirements",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dol.gov/general/topic/workhours/sickleave",
+      "title": "U.S. DOL — Sick Leave",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dir.ca.gov/dlse/faq_overtime.htm",
+      "title": "California DIR/DLSE — Overtime FAQ",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dir.ca.gov/dlse/faq_minimumwage.htm",
+      "title": "California DIR/DLSE — Minimum Wage FAQ",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.dir.ca.gov/dlse/Paid_Sick_Leave.htm",
+      "title": "California DIR/DLSE — Paid Sick Leave",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.ny.gov/programs/new-york-paid-sick-leave",
+      "title": "New York State — New York Paid Sick Leave",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://dol.ny.gov/history-minimum-wage-new-york-state",
+      "title": "NYS DOL — History of the Minimum Wage in New York State",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.ny.gov/new-york-states-minimum-wage/new-york-states-minimum-wage",
+      "title": "New York State — New York State's Minimum Wage",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage",
+      "title": "Washington L&I — History of Washington State's Minimum Wage",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://lni.wa.gov/workers-rights/leave/paid-sick-leave/",
+      "title": "Washington L&I — Paid Sick Leave",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.lni.wa.gov/workers-rights/wages/overtime/changes-to-overtime-rules",
+      "title": "Washington L&I — Changes made to Washington's overtime rules",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+      "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://cdle.colorado.gov/press-releases/press-release-colorado-minimum-wage-will-increase-to-1571/hour-in-2027",
+      "title": "Colorado CDLE press release — Colorado Minimum Wage will Increase to $15.71/hour in 2027",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://cdle.colorado.gov/dlss/labor-laws-by-topic/wage-and-hour-laws-including-paid-sick-leave",
+      "title": "Colorado CDLE — Wage and Hour Laws (including Paid Sick Leave)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://labor.illinois.gov/faqs/paidleavefaq.html",
+      "title": "Illinois Department of Labor — Paid Leave for All Workers Act FAQ",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf",
+      "title": "Illinois Department of Labor — Minimum Wage Rates (historic)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.mass.gov/info-details/earned-sick-time",
+      "title": "Mass.gov — Earned Sick Time",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.mass.gov/minimum-wage-program",
+      "title": "Mass.gov — Minimum Wage Program",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx",
+      "title": "Oregon BOLI — Minimum Wage Schedule",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.oregon.gov/boli/workers/pages/sick-time.aspx",
+      "title": "Oregon BOLI — Sick Time",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://efte.twc.texas.gov/vacation_sick_and_parental_leave_policies.html",
+      "title": "Texas Workforce Commission — Texas Guidebook for Employers: Vacation, Sick, and Parental Leave Policies",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.flsenate.gov/Laws/Constitution",
+      "title": "Constitution of the State of Florida — Art. X, s. 24 (Florida minimum wage)",
+      "verifiedOn": "2026-10-18"
+    }
+  ]
+}

@@ -1,0 +1,353 @@
+{
+  "jurisdiction": "SE",
+  "parent": "EU",
+  "name": "Sweden",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Annual leave (Semesterlag 1977:480, 4 §)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 25,
+            "dayUnit": "semesterdagar",
+            "startedAfterAug31DaysThatYear": 5
+          },
+          "source": {
+            "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "title": "Semesterlag (1977:480), 4 §"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Right to 25 days of leave each leave year; only 5 days if employment starts after 31 August of the leave year."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "draft",
+            "law": "Lagrådsremiss \"Genomförande av lönetransparensdirektivet\" (15 januari 2026) — amendments to Diskrimineringslagen (2008:567)",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://www.regeringen.se/pressmeddelanden/2026/03/mer-tid-for-forberedelser-infor-genomforandet-av-lonetransparensdirektivet/",
+            "title": "Regeringen: Mer tid för förberedelser inför genomförandet av lönetransparensdirektivet (11 mars 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Government said on 2026-03-11 it intends to propose entry into force 2027-01-01 (first pay reports to DO by 2028-05-20). No act adopted; Sweden notified only pre-existing measures on EUR-Lex. Secondary sources report the government later paused the bill (26 Mar 2026) — not confirmed on regeringen.se."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Nyårsdagen",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Trettondedag jul",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Långfredagen",
+      "rule": {
+        "type": "easter",
+        "offset": -2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Påskdagen",
+      "rule": {
+        "type": "easter",
+        "offset": 0
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Annandag påsk",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "may-day",
+      "name": "May Day",
+      "localName": "Första maj",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Kristi himmelsfärdsdag",
+      "rule": {
+        "type": "easter",
+        "offset": 39
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Pingstdagen",
+      "rule": {
+        "type": "easter",
+        "offset": 49
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "national-day",
+      "name": "National Day of Sweden",
+      "localName": "Sveriges nationaldag",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Public holiday since 2005 (Lag 2004:1320, which also removed Whit Monday)."
+    },
+    {
+      "id": "midsummer-day",
+      "name": "Midsummer Day",
+      "localName": "Midsommardagen",
+      "rule": {
+        "type": "weekday_on_or_after",
+        "month": 6,
+        "day": 20,
+        "weekday": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "The Saturday falling 20–26 June."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Alla helgons dag",
+      "rule": {
+        "type": "weekday_on_or_after",
+        "month": 10,
+        "day": 31,
+        "weekday": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "The Saturday falling 31 October – 6 November."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Juldagen",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "boxing-day",
+      "name": "Second Day of Christmas",
+      "localName": "Annandag jul",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+        "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "Midsummer Eve, Christmas Eve and New Year's Eve: not allmänna helgdagar under Lag 1989:253 (customarily days off via collective agreements) — not modelled",
+      "leave.carry_over (sparade semesterdagar)",
+      "sick_pay.statutory (sjuklön 80% days 2–14, karensavdrag)",
+      "employment.notice_period (LAS 11 §)",
+      "family_leave.*",
+      "working_time.max_weekly_hours"
+    ],
+    "notes": "All Sundays are also allmänna helgdagar (Lag 1989:253, 1 §)."
+  }
+}

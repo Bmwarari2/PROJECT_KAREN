@@ -1,0 +1,393 @@
+{
+  "jurisdiction": "SI",
+  "parent": "EU",
+  "name": "Slovenia",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Minimum annual leave (ZDR-1, 159. člen)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 4,
+            "fiveDayWeekDays": 20,
+            "additionalStatutoryDaysForCategories": true
+          },
+          "source": {
+            "url": "https://www.gov.si/assets/ministrstva/MDDSZ/Delovna-razmerja/Letni-dopust-in-regres.pdf",
+            "title": "MDDSZ (GOV.SI): Letni dopust in regres — ZDR-1, 159. člen"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "At least four weeks regardless of full- or part-time; day count depends on the weekly schedule (5-day week = at least 20 days). Additional days for older workers, disabled workers etc. (159. člen (3)–(4)) not modelled."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). Slovenia notified only pre-existing measures (ZDR-1, ZVarD, etc.); no dedicated act adopted. Secondary sources report a draft act in 2026."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Novo leto",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "new-year-2",
+      "name": "New Year's Day (second day)",
+      "localName": "Novo leto",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "preseren-day",
+      "name": "Prešeren Day, Slovenian Cultural Holiday",
+      "localName": "Prešernov dan",
+      "rule": {
+        "type": "fixed",
+        "month": 2,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Velikonočna nedelja",
+      "rule": {
+        "type": "easter",
+        "offset": 0
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Velikonočni ponedeljek",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "resistance-day",
+      "name": "Day of Uprising Against Occupation",
+      "localName": "Dan upora proti okupatorju",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 27
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Praznik dela",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "labour-day-2",
+      "name": "Labour Day (second day)",
+      "localName": "Praznik dela",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Binkoštna nedelja",
+      "rule": {
+        "type": "easter",
+        "offset": 49
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "statehood-day",
+      "name": "Statehood Day",
+      "localName": "Dan državnosti",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption of Mary",
+      "localName": "Marijino vnebovzetje",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "reformation-day",
+      "name": "Reformation Day",
+      "localName": "Dan reformacije",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 31
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "remembrance-day",
+      "name": "Day of Remembrance for the Dead",
+      "localName": "Dan spomina na mrtve",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Božič",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence and Unity Day",
+      "localName": "Dan samostojnosti in enotnosti",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+        "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "State holidays that are not days off (8 Jun, 17 Aug, 15 Sep, 23 Sep, 25 Oct, 10 Nov, 23 Nov) — not modelled as holidays",
+      "sick_pay.statutory",
+      "employment.notice_period (ZDR-1 94. člen)",
+      "family_leave.*",
+      "minimum_wage.rates"
+    ],
+    "notes": "Only state holidays and other holidays that are dela prosti dnevi (non-working days) are modelled."
+  }
+}

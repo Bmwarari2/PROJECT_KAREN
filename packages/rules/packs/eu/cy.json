@@ -1,0 +1,68 @@
+{
+  "jurisdiction": "CY",
+  "parent": "EU",
+  "name": "Cyprus",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Minimum paid annual leave: 4 weeks = 20 working days (5-day week) or 24 working days (6-day week)",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 4,
+            "days": 20,
+            "weekBasisDays": 5,
+            "sixDayWeekDays": 24
+          },
+          "source": {
+            "url": "https://www.mlsi.gov.cy/mlsi/dlr/dlr.nsf/All/41C9AFE72E7CCBD9C22586E10038B097?OpenDocument=",
+            "title": "Cyprus Department of Labour Relations: Working Time / Minimum Paid Annual Holidays"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Department of Labour Relations: \"All employees are entitled to at least 4 weeks annual leave yearly\", minimum 20 working days on a 5-day week, 24 on a 6-day week. Annual Holidays with Pay Law qualifying rules (48 weeks) and the Central Holiday Fund not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists no notified Cypriot measures (checked 2026-10-18). A draft bill is reported by private trackers — not verified on an official site."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "holidays: Cyprus has no single statutory public-holiday list for private-sector employment found on an allow-listed source (holidays arise by law, established practice or agreement per the MLSI guide) — not modelled"
+    ]
+  }
+}

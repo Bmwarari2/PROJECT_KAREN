@@ -1,0 +1,184 @@
+{
+  "jurisdiction": "US-WA",
+  "parent": "US",
+  "name": "Washington",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Washington paid sick leave",
+      "versions": [
+        {
+          "effectiveFrom": "2018-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 40
+            },
+            "carryoverMinHours": 40,
+            "useBeginsCalendarDay": 90
+          },
+          "source": {
+            "url": "https://lni.wa.gov/workers-rights/leave/paid-sick-leave/",
+            "title": "Washington L&I — Paid Sick Leave"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Earning began 1 Jan 2018. No annual accrual cap stated by L&I; balances of 40 hours or less must carry over."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Washington state minimum wage (CPI-W indexed annually)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": "2025-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1628
+              }
+            ]
+          },
+          "source": {
+            "url": "https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage",
+            "title": "Washington L&I — History of Washington State's Minimum Wage"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": "2026-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1666
+              }
+            ]
+          },
+          "source": {
+            "url": "https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage",
+            "title": "Washington L&I — History of Washington State's Minimum Wage"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": "2027-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1713
+              }
+            ]
+          },
+          "source": {
+            "url": "https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage",
+            "title": "Washington L&I — History of Washington State's Minimum Wage"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2027-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1773
+              }
+            ]
+          },
+          "source": {
+            "url": "https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage",
+            "title": "Washington L&I — History of Washington State's Minimum Wage"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Announced by L&I for 1 Jan 2027. 14-15 year olds may be paid 85%; not modelled."
+        }
+      ]
+    },
+    {
+      "key": "overtime.exempt_salary_threshold",
+      "description": "Washington EAP exempt salary threshold (multiple of state minimum wage)",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": "2027-01-01",
+          "value": {
+            "weekly": {
+              "amountMinor": 154170,
+              "currency": "USD"
+            },
+            "multipleOfMinimumWage": 2.25
+          },
+          "source": {
+            "url": "https://www.lni.wa.gov/workers-rights/wages/overtime/changes-to-overtime-rules",
+            "title": "Washington L&I — Changes made to Washington's overtime rules"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2027-01-01",
+          "effectiveTo": null,
+          "value": {
+            "bands": [
+              {
+                "minEmployees": 1,
+                "maxEmployees": 50,
+                "weekly": {
+                  "amountMinor": 159570,
+                  "currency": "USD"
+                },
+                "multipleOfMinimumWage": 2.25
+              },
+              {
+                "minEmployees": 51,
+                "maxEmployees": null,
+                "weekly": {
+                  "amountMinor": 177300,
+                  "currency": "USD"
+                },
+                "multipleOfMinimumWage": 2.5
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.lni.wa.gov/workers-rights/wages/overtime/changes-to-overtime-rules",
+            "title": "Washington L&I — Changes made to Washington's overtime rules"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Phase-in to 2.5x for all employers by 2028 not modelled yet."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "WA Paid Family and Medical Leave",
+      "Exempt salary threshold for 2025 and 2028+",
+      "Computer professional hourly threshold"
+    ],
+    "notes": "Local ordinances not yet modelled: Seattle minimum wage and Paid Sick and Safe Time, Tacoma Paid Sick Leave, SeaTac, Tukwila, Renton, Bellingham, Everett, Burien, unincorporated King County minimum wages; WA Paid Family and Medical Leave. No state daily overtime (FLSA weekly rule inherited)."
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "jurisdiction": "US-TX",
+  "parent": "US",
+  "name": "Texas",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Texas: no statewide sick leave requirement for private employers",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "statewide": false
+          },
+          "source": {
+            "url": "https://efte.twc.texas.gov/vacation_sick_and_parental_leave_policies.html",
+            "title": "Texas Workforce Commission — Texas Guidebook for Employers: Vacation, Sick, and Parental Leave Policies"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "TWC: sick and/or parental leave is not required unless it would be a reasonable accommodation under disability- or pregnancy-related laws."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Texas minimum wage (Texas Minimum Wage Act adopts the federal FLSA rate)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 725
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/minimum-wage/state",
+            "title": "U.S. DOL WHD — State Minimum Wage Laws (updated 1 July 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Texas Labor Code ch. 62 adopts the FLSA section 6 rate by reference."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)"
+    ],
+    "notes": "No statewide paid sick leave. City paid sick leave ordinances (Austin, Dallas, San Antonio) — legal status not verified; not modelled. No daily overtime."
+  }
+}

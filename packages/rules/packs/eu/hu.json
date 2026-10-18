@@ -1,0 +1,322 @@
+{
+  "jurisdiction": "HU",
+  "parent": "EU",
+  "name": "Hungary",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Mt. 116. §: basic leave of 20 working days (plus age-based additional days under 117. §, not modelled)",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 20,
+            "dayUnit": "munkanap",
+            "ageBasedAdditionalDays": "not_modelled"
+          },
+          "source": {
+            "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+            "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "116. § \"Az alapszabadság mértéke húsz munkanap.\" 117. § age-based pótszabadság (from age 25: 1 day, 28: 2, 31: 3, 33: 4, …) only partly verified — not modelled. Verified via njt.hu indexed text. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex shows 0 notified Hungarian measures (checked 2026-10-18)."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Újév",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "national-day-1848",
+      "name": "1848 Revolution Memorial Day",
+      "localName": "Nemzeti ünnep (március 15.)",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Nagypéntek",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Húsvéthétfő",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "A munka ünnepe",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Pünkösdhétfő",
+      "rule": {
+        "type": "easter",
+        "offset": 50,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "state-foundation-day",
+      "name": "State Foundation Day",
+      "localName": "Az államalapítás ünnepe",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 20
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "national-day-1956",
+      "name": "1956 Revolution Memorial Day",
+      "localName": "Nemzeti ünnep (október 23.)",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 23
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Mindenszentek",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Karácsony",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    },
+    {
+      "id": "second-day-of-christmas",
+      "name": "Second Day of Christmas",
+      "localName": "Karácsony másnapja",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+        "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Munkaszüneti nap under Mt. 102. § (1) (Good Friday added by Act XIII of 2017). Verified via njt.hu indexed text (direct fetch failed with connection reset)."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "leave.statutory_annual_minimum: 117. § age/children additional days",
+      "holidays: government-decreed bridge-day working-day swaps"
+    ]
+  }
+}

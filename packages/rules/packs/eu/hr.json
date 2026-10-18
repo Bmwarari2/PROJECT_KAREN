@@ -1,0 +1,389 @@
+{
+  "jurisdiction": "HR",
+  "parent": "EU",
+  "name": "Croatia",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Zakon o radu čl. 77(1): at least four weeks annual leave for each calendar year",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 4,
+            "perCalendarYear": true
+          },
+          "source": {
+            "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/full/2023_04_46_788.html",
+            "title": "Hrvatski sabor: Odluka o nedavanju vjerodostojnog tumačenja članka 77. stavka 1. Zakona o radu (NN 46/2023)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Sabor decision NN 46/2023 quoting Art. 77(1): \"pravo na godišnji odmor ima radnik za svaku kalendarsku godinu u trajanju od najmanje četiri tjedna\". Minors and workers in harmful conditions: at least five weeks (not modelled). Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists no notified Croatian measures (checked 2026-10-18)."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Nova godina",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Bogojavljenje ili Sveta tri kralja",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Uskrs",
+      "rule": {
+        "type": "easter",
+        "offset": 0,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Uskrsni ponedjeljak",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "corpus-christi",
+      "name": "Corpus Christi",
+      "localName": "Tijelovo",
+      "rule": {
+        "type": "easter",
+        "offset": 60,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Praznik rada",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "statehood-day",
+      "name": "Statehood Day",
+      "localName": "Dan državnosti",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 30
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "anti-fascist-struggle-day",
+      "name": "Anti-Fascist Struggle Day",
+      "localName": "Dan antifašističke borbe",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 22
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "victory-day",
+      "name": "Victory and Homeland Thanksgiving Day",
+      "localName": "Dan pobjede i domovinske zahvalnosti i Dan hrvatskih branitelja",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 5
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption Day",
+      "localName": "Velika Gospa",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Svi sveti",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "remembrance-day",
+      "name": "Remembrance Day (Vukovar and Škabrnja)",
+      "localName": "Dan sjećanja na žrtve Domovinskog rata",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 18
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Božić",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "Sveti Stjepan",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+        "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Zakon o blagdanima, spomendanima i neradnim danima (NN 110/2019) čl. 1, in force 1 January 2020."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "holidays: individual religious non-working days (Orthodox Christmas, Bajram, Yom Kippur etc., čl. 3)"
+    ]
+  }
+}

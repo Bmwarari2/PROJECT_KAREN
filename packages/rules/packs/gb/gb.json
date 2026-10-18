@@ -1,0 +1,1294 @@
+{
+  "jurisdiction": "GB",
+  "parent": null,
+  "name": "United Kingdom",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Statutory paid annual leave: 4 weeks (reg. 13) + 1.6 weeks additional (reg. 13A) = 5.6 weeks, capped at 28 days.",
+      "versions": [
+        {
+          "effectiveFrom": "2009-04-01",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 5.6,
+            "capDays": 28,
+            "components": {
+              "reg13Weeks": 4,
+              "reg13AWeeks": 1.6
+            },
+            "bankHolidaysMayCountTowardsEntitlement": true,
+            "payInLieuOnlyOnTermination": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A",
+            "title": "Working Time Regulations 1998, reg. 13A (entitlement to additional annual leave)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 13(1): four weeks; reg. 13A(2)(e): 1.6 weeks in any leave year beginning on or after 1 April 2009; reg. 13A(3): aggregate maximum 28 days. Applies per LEAVE YEAR beginning on/after effectiveFrom. GOV.UK (https://www.gov.uk/holiday-entitlement-rights) confirms 5.6 weeks, 28-day cap and that employers may include bank holidays. Reg. 13(9)(b): no payment in lieu except on termination. Irregular-hours accrual: see leave.irregular_hours_accrual."
+        }
+      ]
+    },
+    {
+      "key": "leave.irregular_hours_accrual",
+      "description": "Irregular-hours and part-year workers accrue leave at 12.07% of hours worked (reg. 15B) and may be paid rolled-up holiday pay (reg. 16A).",
+      "versions": [
+        {
+          "effectiveFrom": "2024-04-01",
+          "effectiveTo": null,
+          "value": {
+            "appliesTo": [
+              "irregular_hours_worker",
+              "part_year_worker"
+            ],
+            "appliesToLeaveYearsBeginningOnOrAfter": "2024-04-01",
+            "accrualPercentOfHoursWorked": 12.07,
+            "accrualBasis": "hours_worked_in_pay_period",
+            "capDaysPerLeaveYear": 28,
+            "sickAndStatutoryLeaveAccrual": "reg_15C",
+            "rolledUpHolidayPay": {
+              "permitted": true,
+              "upliftPercentOfPayForWorkDone": 12.07,
+              "itemisedPayStatementMustShowHolidayPay": true,
+              "inForceFrom": "2024-01-01"
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/15B",
+            "title": "Working Time Regulations 1998, reg. 15B (irregular hours and part-year workers)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 15B(1): applies to irregular hours workers and part-year workers in respect of leave years beginning on or after 1 April 2024; 15B(3): accrues at 12.07% of hours worked in the pay period; 15B(4): max 28 days per leave year. Reg. 16A (inserted 1.1.2024 by S.I. 2023/1426): holiday pay for reg. 15B leave may be paid as a 12.07% uplift; itemised pay statements must show the holiday pay amount (16A(7)). Source for 16A: https://www.legislation.gov.uk/uksi/1998/1833/regulation/16A. For leave years beginning on or before 31 March 2024 GOV.UK says accrual is not required (not modelled)."
+        }
+      ]
+    },
+    {
+      "key": "leave.carry_over",
+      "description": "Carry-over of untaken statutory leave (reg. 13 EU-derived 4 weeks vs reg. 13A additional 1.6 weeks).",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "reg13FourWeeks": {
+              "defaultCarryOver": false,
+              "statutoryFamilyLeave": {
+                "carryOver": true,
+                "limit": "following_leave_year"
+              },
+              "sickLeave": {
+                "carryOver": true,
+                "mustBeTakenWithinMonthsOfLeaveYearEnd": 18
+              },
+              "employerFailedToGiveOpportunityOrInform": {
+                "carryOver": true,
+                "limit": "end_of_first_full_leave_year_after_failure_ceases"
+              }
+            },
+            "reg13AOnePointSixWeeks": {
+              "defaultCarryOver": false,
+              "byRelevantAgreement": {
+                "carryOver": true,
+                "limit": "following_leave_year"
+              },
+              "statutoryFamilyLeave": {
+                "carryOver": true,
+                "limit": "following_leave_year"
+              }
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13",
+            "title": "Working Time Regulations 1998, reg. 13 (entitlement to annual leave)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 13(9): reg. 13 leave may only be taken in the leave year it is due, except under paras (14), (15), (17). 13(14): statutory leave -> carry to following leave year; 13(15): sick leave -> must be taken within 18 months of end of the leave year; 13(16)-(18): employer failure to give reasonable opportunity/encourage/inform -> carry until end of first full leave year after the failure ends. Paras (14)-(18) inserted 1.1.2024 by S.I. 2023/1426. Reg. 13A(7): relevant agreement may allow carry-forward of 13A leave; 13A(7A): statutory leave carry-forward (https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A). Pre-2024 case-law / COVID carry-over not modelled."
+        }
+      ]
+    },
+    {
+      "key": "working_time.max_weekly_hours",
+      "description": "Average weekly working time limit.",
+      "versions": [
+        {
+          "effectiveFrom": "1998-10-01",
+          "effectiveTo": null,
+          "value": {
+            "maxAverageHours": 48,
+            "perDays": 7,
+            "includesOvertime": true,
+            "referencePeriodWeeks": 17,
+            "extendedReferencePeriodWeeks": 26,
+            "extendedReferencePeriodNote": "reg. 4(5) special cases substitute 26 weeks",
+            "optOutAvailable": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/4",
+            "title": "Working Time Regulations 1998, reg. 4 (maximum weekly working time)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 4(1): average 48 hours for each seven days unless written opt-out; reg. 4(3): any 17-week reference period; reg. 4(5): 26 weeks for listed special cases. WTR in force 1 October 1998 (reg. 1(1), https://www.legislation.gov.uk/uksi/1998/1833/regulation/1/made). Current text verified; intermediate amendments not modelled. Reference periods up to 52 weeks via collective/workforce agreement were NOT verified in this pass and are not encoded."
+        }
+      ]
+    },
+    {
+      "key": "working_time.opt_out",
+      "description": "Individual written opt-out from the 48-hour average.",
+      "versions": [
+        {
+          "effectiveFrom": "1998-10-01",
+          "effectiveTo": null,
+          "value": {
+            "permitted": true,
+            "mustBeInWriting": true,
+            "mayBeFixedTermOrIndefinite": true,
+            "workerMayTerminate": true,
+            "defaultTerminationNoticeDays": 7,
+            "maxAgreedTerminationNoticeMonths": 3,
+            "employerMustKeepUpToDateRecordsOfOptedOutWorkers": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/5",
+            "title": "Working Time Regulations 1998, reg. 5 (agreement to exclude the maximum)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 4(1) (worker's agreement in writing), reg. 4(2) (up-to-date records of workers to whom the limit does not apply), reg. 5(2)(b) (terminable by the worker on not less than 7 days' written notice unless agreement provides otherwise), reg. 5(3) (agreed notice period must not exceed three months)."
+        }
+      ]
+    },
+    {
+      "key": "working_time.daily_rest",
+      "description": "Minimum daily rest.",
+      "versions": [
+        {
+          "effectiveFrom": "1998-10-01",
+          "effectiveTo": null,
+          "value": {
+            "adult": {
+              "consecutiveHours": 11,
+              "per": "24h"
+            },
+            "youngWorker": {
+              "consecutiveHours": 12,
+              "per": "24h"
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/10",
+            "title": "Working Time Regulations 1998, reg. 10 (daily rest)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 10(1)/(2). Young-worker figure reflects current text; its historical commencement is not modelled. Exceptions (regs. 21-24) not encoded."
+        }
+      ]
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "description": "Minimum weekly rest.",
+      "versions": [
+        {
+          "effectiveFrom": "1998-10-01",
+          "effectiveTo": null,
+          "value": {
+            "adult": {
+              "uninterruptedHours": 24,
+              "perDays": 7,
+              "employerAlternatives": [
+                {
+                  "periods": 2,
+                  "hoursEach": 24,
+                  "perDays": 14
+                },
+                {
+                  "periods": 1,
+                  "hoursEach": 48,
+                  "perDays": 14
+                }
+              ]
+            },
+            "youngWorker": {
+              "hours": 48,
+              "perDays": 7
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/11",
+            "title": "Working Time Regulations 1998, reg. 11 (weekly rest period)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 11(1)-(3). Young-worker figure reflects current text; its historical commencement is not modelled."
+        }
+      ]
+    },
+    {
+      "key": "working_time.rest_break",
+      "description": "Minimum in-work rest break.",
+      "versions": [
+        {
+          "effectiveFrom": "1998-10-01",
+          "effectiveTo": null,
+          "value": {
+            "adult": {
+              "whenDailyWorkingTimeExceedsHours": 6,
+              "minUninterruptedMinutes": 20
+            },
+            "youngWorker": {
+              "whenDailyWorkingTimeExceedsHours": 4.5,
+              "minMinutes": 30
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/12",
+            "title": "Working Time Regulations 1998, reg. 12 (rest breaks)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Reg. 12(1),(3),(4). Adult break detail subject to collective/workforce agreement. Young-worker figure reflects current text."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Statutory Sick Pay (GB) parameters.",
+      "versions": [
+        {
+          "effectiveFrom": "2025-04-06",
+          "effectiveTo": "2026-04-06",
+          "value": {
+            "weeklyRate": {
+              "amountMinor": 11875,
+              "currency": "GBP"
+            },
+            "calculation": "flat_rate",
+            "waitingDays": 3,
+            "minPeriodOfIncapacityDays": 4,
+            "lowerEarningsLimitWeekly": {
+              "amountMinor": 12500,
+              "currency": "GBP"
+            },
+            "maxWeeks": 28,
+            "linkingPeriodWeeks": 8,
+            "paidFor": "qualifying_days"
+          },
+          "source": {
+            "url": "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2025-to-2026",
+            "title": "GOV.UK — Rates and thresholds for employers 2025 to 2026"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "GOV.UK rates and thresholds 2025-26: SSP £118.75 (7 qualifying days table), LEL £125/week. Waiting days: SSCBA 1992 s.155(1) \"not payable for the first three qualifying days\" (https://www.legislation.gov.uk/ukpga/1992/4/section/155/2022-03-25). PIW: s.152(2) \"four or more consecutive days\" (https://www.legislation.gov.uk/ukpga/1992/4/section/152/2022-03-25). Linking: s.152(3) 8 weeks. 28 weeks per GOV.UK."
+        },
+        {
+          "effectiveFrom": "2026-04-06",
+          "effectiveTo": null,
+          "value": {
+            "weeklyRate": {
+              "amountMinor": 12325,
+              "currency": "GBP"
+            },
+            "calculation": "lower_of_flat_rate_and_percent_of_normal_weekly_earnings",
+            "percentOfNormalWeeklyEarnings": 80,
+            "normalWeeklyEarningsPeriodWeeks": 8,
+            "waitingDays": 0,
+            "minPeriodOfIncapacityDays": 1,
+            "lowerEarningsLimitWeekly": null,
+            "maxWeeks": 28,
+            "linkingPeriodWeeks": 8,
+            "paidFor": "qualifying_days",
+            "transitional": {
+              "protectedBandNormalWeeklyEarnings": {
+                "min": {
+                  "amountMinor": 12500,
+                  "currency": "GBP"
+                },
+                "max": {
+                  "amountMinor": 15405,
+                  "currency": "GBP"
+                }
+              },
+              "protectedWeeklyRate": {
+                "amountMinor": 12325,
+                "currency": "GBP"
+              },
+              "appliesTo": "period of entitlement began on/before 2026-04-05 and continues on/after 2026-04-06, with SSP paid for at least one qualifying day on/before 2026-04-05",
+              "source": "S.I. 2026/373 reg. 4"
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/ukpga/1992/4/section/157",
+            "title": "Social Security Contributions and Benefits Act 1992, s. 157 (rate of payment) as amended by Employment Rights Act 2025 s. 11 and S.I. 2026/148"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "IN FORCE 6 April 2026: Employment Rights Act 2025 ss.10-13 commenced by S.I. 2026/373 reg. 2 (https://www.legislation.gov.uk/uksi/2026/373/made). s.155(1) waiting days omitted (6.4.2026); s.152(2) PIW now \"one day\" or more; s.157(1) weekly rate = lower of £123.25 and 80% of normal weekly earnings; LEL eligibility removed (s.11). £123.25 set by S.I. 2026/148 from 6.4.2026. GOV.UK employer guide (https://www.gov.uk/employers-sick-pay) confirms \"£123.25 a week or 80% of average weekly earnings - whichever is lower\", 28 weeks; average weekly earnings over 8 weeks per https://www.gov.uk/statutory-sick-pay/what-youll-get. Transitional regs 3, 5, 6 of S.I. 2026/373 (waiting days spanning the change, sub-LEL earners) not encoded."
+        }
+      ]
+    },
+    {
+      "key": "right_to_work.document_rules",
+      "description": "UK right to work check methods and follow-up rules (structural summary).",
+      "versions": [
+        {
+          "effectiveFrom": "2026-10-01",
+          "effectiveTo": null,
+          "value": {
+            "timing": "before_employment_starts",
+            "methods": [
+              {
+                "id": "manual_document_check",
+                "steps": [
+                  "obtain_original_documents",
+                  "check_in_presence_of_holder_in_person_or_live_video",
+                  "copy_in_unalterable_format",
+                  "record_date_of_check"
+                ]
+              },
+              {
+                "id": "home_office_online_check",
+                "for": "evisa_holders",
+                "requires": [
+                  "share_code",
+                  "date_of_birth"
+                ],
+                "service": "https://www.gov.uk/view-right-to-work",
+                "retain": "pdf_or_html_profile_with_photo_and_check_date"
+              },
+              {
+                "id": "rtw_digital_verification_service_provider",
+                "optional": true,
+                "providerMustBeRegisteredWith": "OfDIA",
+                "eligibleDocuments": [
+                  "eligible_british_passport",
+                  "eligible_irish_passport"
+                ]
+              }
+            ],
+            "britishAndIrishCitizensCannotUseShareCode": true,
+            "facialRecognitionRequiresRegisteredDvsp": true,
+            "mustNotMandateMethodOrDiscriminate": true,
+            "lists": {
+              "listA": {
+                "excuse": "continuous",
+                "followUpCheck": false
+              },
+              "listBGroup1": {
+                "excuse": "time_limited_until_permission_expires",
+                "followUpCheck": "before_permission_expiry"
+              },
+              "listBGroup2": {
+                "excuse": "time_limited_six_months",
+                "requiresPositiveVerificationNotice": true,
+                "followUpCheck": "within_six_months"
+              }
+            },
+            "extendedLiabilityScreening": true
+          },
+          "source": {
+            "url": "https://www.gov.uk/government/publications/right-to-work-checklist/employers-right-to-work-checklist-accessible-version",
+            "title": "GOV.UK — Employers' right to work checklist (updated 1 October 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Summarised from the Home Office Employers' right to work checklist (last updated 1 October 2026) and https://www.gov.uk/check-job-applicant-right-to-work. effectiveFrom = date of the guidance version verified; earlier guidance versions are NOT modelled. Exact acceptable document lists live in the Employer's guide (PDF, 1 Oct 2026) — deeper rule TODO. The online check covers eVisa holders; RtW DVSPs can check eligible British/Irish passports (IDVT)."
+        }
+      ]
+    },
+    {
+      "key": "right_to_work.retention",
+      "description": "Retention of right to work check records.",
+      "versions": [
+        {
+          "effectiveFrom": "2026-10-01",
+          "effectiveTo": null,
+          "value": {
+            "retainDuringEmployment": true,
+            "retainAfterEmploymentEnds": "P2Y",
+            "thenDestroy": true,
+            "mustRecordDateOfCheck": true
+          },
+          "source": {
+            "url": "https://www.gov.uk/check-job-applicant-right-to-work",
+            "title": "GOV.UK — Check a job applicant's right to work"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "GOV.UK: keep copies \"during the applicant's employment and for 2 years after they stop working for you\"; checklist: keep securely during employment and for two years afterwards, then destroy. effectiveFrom = guidance version verified; earlier periods not modelled."
+        }
+      ]
+    },
+    {
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "description": "Continuous employment required for ordinary unfair dismissal protection (ERA 1996 s.108), tested at the effective date of termination.",
+      "versions": [
+        {
+          "effectiveFrom": "2012-04-06",
+          "effectiveTo": "2027-01-01",
+          "value": {
+            "qualifyingPeriod": "P2Y",
+            "measuredTo": "effective_date_of_termination",
+            "compensatoryAwardCapped": true
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/ukpga/1996/18/section/108",
+            "title": "Employment Rights Act 1996, s. 108 (qualifying period of employment)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "ERA 1996 s.108(1) \"two years\" (substituted by S.I. 2012/989 from 6.4.2012 for employment beginning on/after that date — https://www.legislation.gov.uk/uksi/2012/989/made). Automatically-unfair reasons with no qualifying period are not modelled. Resolve by effective date of termination (EDT), not dismissal date."
+        },
+        {
+          "effectiveFrom": "2027-01-01",
+          "effectiveTo": null,
+          "value": {
+            "qualifyingPeriod": "P6M",
+            "measuredTo": "effective_date_of_termination",
+            "compensatoryAwardCapped": false
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/2026/559/made",
+            "title": "Employment Rights Act 2025 (Commencement No. 4 and Transitional and Saving Provisions) Regulations 2026 (S.I. 2026/559)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Employment Rights Act 2025 s.25(2) substitutes \"six months\" for \"two years\" in ERA 1996 s.108(1),(2) (https://www.legislation.gov.uk/ukpga/2025/36/section/25); s.25(3) omits s.124 (compensatory award cap). Commencement made: S.I. 2026/559 reg. 3 brings s.25 (remainder) and Sch. 3 into force on 1 January 2027 (legislation.gov.uk still shows the s.108 change as prospective on 2026-10-18). Reg. 4: amendments have effect even where the employee is dismissed before 1.1.2027 but NOT where the EDT falls before 1.1.2027 — select the version by EDT. s.25(5) partly commenced 1 July 2026 (consequential)."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Statutory minimum notice (ERA 1996 s.86).",
+      "versions": [
+        {
+          "effectiveFrom": "1996-08-22",
+          "effectiveTo": null,
+          "value": {
+            "minServiceToApply": "P1M",
+            "employer": {
+              "underTwoYearsWeeks": 1,
+              "fromTwoYears": {
+                "weeksPerYearOfContinuousEmployment": 1
+              },
+              "maxWeeks": 12
+            },
+            "employee": {
+              "weeks": 1
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/ukpga/1996/18/section/86",
+            "title": "Employment Rights Act 1996, s. 86 (rights of employer and employee to minimum notice)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "s.86(1): employee continuously employed one month or more: (a) <2 years: 1 week; (b) 2 to <12 years: 1 week per year of continuous employment; (c) 12+ years: 12 weeks. s.86(2): employee gives at least 1 week. ERA 1996 dated 22 May 1996, in force at end of 3 months beginning with that day (s.243) = 22 August 1996."
+        }
+      ]
+    },
+    {
+      "key": "reporting.gender_pay_gap",
+      "description": "Gender pay gap reporting (England, Scotland and Wales).",
+      "versions": [
+        {
+          "effectiveFrom": "2017-04-06",
+          "effectiveTo": null,
+          "value": {
+            "employeeThreshold": 250,
+            "headcountBasis": "individual_employees_on_snapshot_date",
+            "territory": [
+              "GB-ENG",
+              "GB-WLS",
+              "GB-SCT"
+            ],
+            "snapshotDates": {
+              "publicAuthority": {
+                "month": 3,
+                "day": 31
+              },
+              "privateAndVoluntary": {
+                "month": 4,
+                "day": 5
+              }
+            },
+            "reportingDeadlines": {
+              "publicAuthority": {
+                "month": 3,
+                "day": 30,
+                "yearOffset": 1
+              },
+              "privateAndVoluntary": {
+                "month": 4,
+                "day": 4,
+                "yearOffset": 1
+              }
+            },
+            "publishWithinMonthsOfSnapshot": 12
+          },
+          "source": {
+            "url": "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/when-to-report",
+            "title": "GOV.UK — Gender pay gap reporting: when to report"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "GOV.UK guidance: 250+ employees on the snapshot date (headcount, not FTE); snapshot 31 March (most public authorities) / 5 April (private, voluntary, all other public authorities); deadlines 30 March / 4 April the following year. Applies to England, Scotland and Wales; different rules for public authorities in Scotland and Wales; NI-based employers with 250+ employees in GB are included (https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report). Private-sector regs (S.I. 2017/172) in force 6 April 2017; reg. 2(2) publish within 12 months of snapshot. ERA 2025 equality action plans (GOV.UK guidance 7 April 2026) not modelled."
+        }
+      ]
+    },
+    {
+      "key": "family_leave.maternity",
+      "description": "Statutory Maternity Leave and Pay (GB).",
+      "versions": [
+        {
+          "effectiveFrom": "2025-04-06",
+          "effectiveTo": "2026-04-05",
+          "value": {
+            "leaveWeeks": 52,
+            "ordinaryWeeks": 26,
+            "additionalWeeks": 26,
+            "leaveQualifyingService": null,
+            "compulsoryLeaveWeeksAfterBirth": 2,
+            "compulsoryLeaveWeeksFactoryWorkers": 4,
+            "earliestStartWeeksBeforeEWC": 11,
+            "pay": {
+              "weeks": 39,
+              "first6Weeks": {
+                "percentOfAWE": 90
+              },
+              "remaining33Weeks": {
+                "flatRate": {
+                  "amountMinor": 18718,
+                  "currency": "GBP"
+                },
+                "percentOfAWE": 90,
+                "rule": "lower_of"
+              },
+              "qualifyingServiceWeeks": 26,
+              "qualifyingWeek": "15th week before EWC",
+              "lowerEarningsLimitWeekly": {
+                "amountMinor": 12500,
+                "currency": "GBP"
+              }
+            }
+          },
+          "source": {
+            "url": "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2025-to-2026",
+            "title": "GOV.UK — Rates and thresholds for employers 2025 to 2026"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "SMP £187.18 and LEL £125 from GOV.UK Rates and thresholds 2025-26. Leave rules from https://www.gov.uk/maternity-pay-leave/leave. Versions before 2025-04-06 not modelled."
+        },
+        {
+          "effectiveFrom": "2026-04-05",
+          "effectiveTo": null,
+          "value": {
+            "leaveWeeks": 52,
+            "ordinaryWeeks": 26,
+            "additionalWeeks": 26,
+            "leaveQualifyingService": null,
+            "compulsoryLeaveWeeksAfterBirth": 2,
+            "compulsoryLeaveWeeksFactoryWorkers": 4,
+            "earliestStartWeeksBeforeEWC": 11,
+            "pay": {
+              "weeks": 39,
+              "first6Weeks": {
+                "percentOfAWE": 90
+              },
+              "remaining33Weeks": {
+                "flatRate": {
+                  "amountMinor": 19432,
+                  "currency": "GBP"
+                },
+                "percentOfAWE": 90,
+                "rule": "lower_of"
+              },
+              "qualifyingServiceWeeks": 26,
+              "qualifyingWeek": "15th week before EWC",
+              "lowerEarningsLimitWeekly": {
+                "amountMinor": 12900,
+                "currency": "GBP"
+              }
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1986/1960/regulation/6",
+            "title": "Statutory Maternity Pay (General) Regulations 1986, reg. 6 (prescribed rate) as amended by S.I. 2026/148"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "SMP prescribed rate £194.32 substituted by S.I. 2026/148 art. 9 with effect 5 April 2026 (6 April for maternity allowance purposes). GOV.UK: 52 weeks (26 ordinary + 26 additional), compulsory 2 weeks (4 factory), earliest start 11 weeks before EWC, SMP 39 weeks: 90% AWE for 6 weeks then £194.32 or 90% whichever lower (https://www.gov.uk/maternity-pay-leave/pay); SMP needs 26 weeks' service into the qualifying week and average earnings of at least £129/week (https://www.gov.uk/maternity-pay-leave/eligibility). The exact start date of the £129 LEL was not separately verified (assumed to align with the 2026-27 uprating)."
+        }
+      ]
+    },
+    {
+      "key": "family_leave.paternity",
+      "description": "Statutory Paternity Leave and Pay (birth, GB).",
+      "versions": [
+        {
+          "effectiveFrom": "2025-04-06",
+          "effectiveTo": "2026-04-06",
+          "value": {
+            "leaveWeeksMax": 2,
+            "blocks": "one_block_of_1_or_2_weeks_or_two_separate_1_week_blocks",
+            "mustEndWithinWeeksOfBirth": 52,
+            "cannotStartBeforeBirth": true,
+            "leaveQualifyingService": {
+              "weeks": 26,
+              "endingWith": "week immediately preceding the 14th week before EWC"
+            },
+            "pay": {
+              "flatRate": {
+                "amountMinor": 18718,
+                "currency": "GBP"
+              },
+              "percentOfAWE": 90,
+              "rule": "lower_of",
+              "qualifyingServiceWeeks": 26,
+              "lowerEarningsLimitWeekly": {
+                "amountMinor": 12500,
+                "currency": "GBP"
+              }
+            }
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/2002/2788/regulation/4/2025-01-01",
+            "title": "Paternity and Adoption Leave Regulations 2002, reg. 4 (version as at 1 January 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Leave pattern: S.I. 2024/329 (two non-consecutive weeks; within 52 weeks of birth) for children whose EWC is after 6 April 2024 (https://www.legislation.gov.uk/uksi/2024/329/note/made). Leave qualifying service: PAL Regs 2002 reg. 4(2)(a) as at 2025. SPP £187.18 and LEL £125: GOV.UK rates and thresholds 2025-26. Versions before 2025-04-06 not modelled."
+        },
+        {
+          "effectiveFrom": "2026-04-06",
+          "effectiveTo": null,
+          "value": {
+            "leaveWeeksMax": 2,
+            "blocks": "one_block_of_1_or_2_weeks_or_two_separate_1_week_blocks",
+            "mustEndWithinWeeksOfBirth": 52,
+            "cannotStartBeforeBirth": true,
+            "leaveQualifyingService": null,
+            "notice": {
+              "dueDateWeeksBeforeEWC": 15,
+              "changeStartDateNoticeDays": 28
+            },
+            "pay": {
+              "flatRate": {
+                "amountMinor": 19432,
+                "currency": "GBP"
+              },
+              "percentOfAWE": 90,
+              "rule": "lower_of",
+              "qualifyingServiceWeeks": 26,
+              "qualifyingWeek": "15th week before EWC",
+              "lowerEarningsLimitWeekly": {
+                "amountMinor": 12900,
+                "currency": "GBP"
+              }
+            }
+          },
+          "source": {
+            "url": "https://www.gov.uk/paternity-pay-leave/leave",
+            "title": "GOV.UK — Paternity pay and leave: leave"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Day-one paternity leave: Employment Rights Act 2025 s.16 fully in force 6 April 2026 (S.I. 2026/3 reg. 4, transitional provisions in Sch. 1 — https://www.legislation.gov.uk/uksi/2026/3/body/made); PAL Regs reg. 4(2)(a) omitted by S.I. 2026/15. GOV.UK: \"eligible for Paternity Leave from the first day of employment\"; pay still needs 26 weeks' service and average earnings of at least £129 (https://www.gov.uk/paternity-pay-leave/eligibility). SPP rate £194.32 substituted from 6 April 2026 by S.I. 2026/148 art. 10(1)(a) (https://www.legislation.gov.uk/uksi/2002/2818/regulation/2). GB only — Northern Ireland differs."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "National Living Wage / National Minimum Wage hourly rates.",
+      "versions": [
+        {
+          "effectiveFrom": "2025-04-01",
+          "effectiveTo": "2026-04-01",
+          "value": {
+            "hourly": {
+              "age21Plus": {
+                "amountMinor": 1221,
+                "currency": "GBP"
+              },
+              "age18to20": {
+                "amountMinor": 1000,
+                "currency": "GBP"
+              },
+              "under18": {
+                "amountMinor": 755,
+                "currency": "GBP"
+              },
+              "apprentice": {
+                "amountMinor": 755,
+                "currency": "GBP"
+              }
+            },
+            "apprenticeRateApplies": "aged under 19, or aged 19+ in the first year of the apprenticeship",
+            "nationalLivingWageMinAge": 21
+          },
+          "source": {
+            "url": "https://www.gov.uk/national-minimum-wage-rates",
+            "title": "GOV.UK — National Minimum Wage and National Living Wage rates"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "GOV.UK table column \"April 2025 to March 2026\". \"The rates change on 1 April every year.\" Accommodation offset not verified in this pass."
+        },
+        {
+          "effectiveFrom": "2026-04-01",
+          "effectiveTo": null,
+          "value": {
+            "hourly": {
+              "age21Plus": {
+                "amountMinor": 1271,
+                "currency": "GBP"
+              },
+              "age18to20": {
+                "amountMinor": 1085,
+                "currency": "GBP"
+              },
+              "under18": {
+                "amountMinor": 800,
+                "currency": "GBP"
+              },
+              "apprentice": {
+                "amountMinor": 800,
+                "currency": "GBP"
+              }
+            },
+            "apprenticeRateApplies": "aged under 19, or aged 19+ in the first year of the apprenticeship",
+            "nationalLivingWageMinAge": 21
+          },
+          "source": {
+            "url": "https://www.gov.uk/national-minimum-wage-rates",
+            "title": "GOV.UK — National Minimum Wage and National Living Wage rates"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "GOV.UK table column \"April 2026\": 21+ £12.71, 18-20 £10.85, under 18 £8, apprentice £8."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "uk_substitute: if the day falls on Sat/Sun, the substitute is the next weekday that is not already a bank holiday (assign in date order; e.g. Christmas on Sunday -> Tuesday 27 Dec because Boxing Day takes Monday 26)."
+    },
+    {
+      "id": "second-january",
+      "name": "2nd January",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 2
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-SCT"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Scotland only. uk_substitute: if the day falls on Sat/Sun, the substitute is the next weekday that is not already a bank holiday (assign in date order; e.g. Christmas on Sunday -> Tuesday 27 Dec because Boxing Day takes Monday 26)."
+    },
+    {
+      "id": "st-patricks-day",
+      "name": "St Patrick's Day",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 17
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not a bank holiday in Scotland."
+    },
+    {
+      "id": "early-may-bank-holiday",
+      "name": "Early May bank holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": "2020-01-01",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "early-may-bank-holiday",
+      "name": "Early May bank holiday (VE day)",
+      "rule": {
+        "type": "one_off",
+        "date": "2020-05-08"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": "2021-01-01",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Moved to Friday 8 May 2020 (75th anniversary of VE day)."
+    },
+    {
+      "id": "early-may-bank-holiday",
+      "name": "Early May bank holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2021-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "spring-bank-holiday",
+      "name": "Spring bank holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": 1,
+        "n": -1
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": "2022-01-01",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "spring-bank-holiday",
+      "name": "Spring bank holiday",
+      "rule": {
+        "type": "one_off",
+        "date": "2022-06-02"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2022-01-01",
+      "effectiveTo": "2023-01-01",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Moved to Thursday 2 June 2022 for the Platinum Jubilee."
+    },
+    {
+      "id": "spring-bank-holiday",
+      "name": "Spring bank holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": 1,
+        "n": -1
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2023-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "battle-of-the-boyne",
+      "name": "Battle of the Boyne (Orangemen's Day)",
+      "rule": {
+        "type": "fixed",
+        "month": 7,
+        "day": 12
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "summer-bank-holiday",
+      "name": "Summer bank holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 8,
+        "weekday": 1,
+        "n": -1
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Last Monday in August (England, Wales, Northern Ireland)."
+    },
+    {
+      "id": "summer-bank-holiday",
+      "name": "Summer bank holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 8,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "GB-SCT"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in August (Scotland)."
+    },
+    {
+      "id": "st-andrews-day",
+      "name": "St Andrew's Day",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 30
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-SCT"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "uk_substitute: if the day falls on Sat/Sun, the substitute is the next weekday that is not already a bank holiday (assign in date order; e.g. Christmas on Sunday -> Tuesday 27 Dec because Boxing Day takes Monday 26)."
+    },
+    {
+      "id": "boxing-day",
+      "name": "Boxing Day",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "uk_substitute: if the day falls on Sat/Sun, the substitute is the next weekday that is not already a bank holiday (assign in date order; e.g. Christmas on Sunday -> Tuesday 27 Dec because Boxing Day takes Monday 26)."
+    },
+    {
+      "id": "platinum-jubilee-bank-holiday",
+      "name": "Platinum Jubilee bank holiday",
+      "rule": {
+        "type": "one_off",
+        "date": "2022-06-03"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2022-06-03",
+      "effectiveTo": "2022-06-04",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "state-funeral-queen-elizabeth-ii",
+      "name": "Bank Holiday for the State Funeral of Queen Elizabeth II",
+      "rule": {
+        "type": "one_off",
+        "date": "2022-09-19"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2022-09-19",
+      "effectiveTo": "2022-09-20",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "coronation-king-charles-iii",
+      "name": "Bank holiday for the coronation of King Charles III",
+      "rule": {
+        "type": "one_off",
+        "date": "2023-05-08"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-ENG",
+        "GB-WLS",
+        "GB-SCT",
+        "GB-NIR"
+      ],
+      "effectiveFrom": "2023-05-08",
+      "effectiveTo": "2023-05-09",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "world-cup-bank-holiday-2026",
+      "name": "World Cup bank holiday",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-06-15"
+      },
+      "observance": "none",
+      "regions": [
+        "GB-SCT"
+      ],
+      "effectiveFrom": "2026-06-15",
+      "effectiveTo": "2026-06-16",
+      "source": {
+        "url": "https://www.gov.uk/bank-holidays",
+        "title": "GOV.UK — UK bank holidays (and https://www.gov.uk/bank-holidays.json)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Scotland only; listed by GOV.UK as a 2026 Scottish bank holiday."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "notes": "UK pack: bank holidays for England & Wales, Scotland and Northern Ireland (2019 onwards, checked against gov.uk/bank-holidays.json) and core GB employment rules verified on legislation.gov.uk / gov.uk on 2026-10-18. Includes Employment Rights Act 2025 changes in force (SSP from 6 April 2026; day-one paternity leave from 6 April 2026) and commenced-but-future (unfair dismissal 6 months from 1 January 2027, S.I. 2026/559). Employment rules modelled are GB (England, Scotland, Wales); Northern Ireland has separate employment legislation — NI-specific rules are a TODO. Pending legal review.",
+    "deeperRulesTodo": [
+      "Northern Ireland employment rules (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, NI SSP/paternity differences)",
+      "Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026)",
+      "Statutory Adoption Pay; SMP/SPP rates before 2025-26",
+      "Accommodation offset and NMW rates before April 2025",
+      "Right to work: full List A / List B document catalogue from the Employer's guide (1 Oct 2026 PDF), civil penalty amounts, extended liability detail",
+      "Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9)",
+      "Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave",
+      "Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap",
+      "Statutory redundancy pay; flexible working; guaranteed hours / zero-hours (ERA 2025); fire-and-rehire",
+      "ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties",
+      "Bank holidays before 2019 and future proclaimed holidays",
+      "SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full"
+    ]
+  }
+}
