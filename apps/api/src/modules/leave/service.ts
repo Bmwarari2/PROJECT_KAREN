@@ -218,16 +218,19 @@ export async function ensureLeaveType(tx: Tx, key: string): Promise<string> {
   const has = await tx.maybe<{ id: string }>('SELECT id FROM app.leave_types WHERE key = $1', [key]);
   if (has) return has.id;
   const [, name, category, paid, approval] = DEFAULT_TYPES.find((t) => t[0] === key)!;
-  return (await tx.one<{ id: string }>(
-    `INSERT INTO app.leave_types (tenant_id, key, name, category, paid, requires_approval, deducts_balance) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) RETURNING id`,
+  await tx.exec(
+    `INSERT INTO app.leave_types (tenant_id, key, name, category, paid, requires_approval, deducts_balance) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, key) DO NOTHING`,
     [key, JSON.stringify({ 'en-GB': name, 'en-US': name === 'Annual leave' ? 'Vacation' : name }), category, paid, approval, key === 'annual' || key === 'toil'],
-  )).id;
+  );
+  return (await tx.one<{ id: string }>('SELECT id FROM app.leave_types WHERE key = $1', [key])).id;
 }
 
 /** Default leave types and an annual policy based on the tenant's home-region statutory minimum. */
 export async function ensureLeaveDefaults(tx: Tx, book: RuleBook) {
-  const has = await tx.maybe('SELECT 1 FROM app.leave_types LIMIT 1');
-  if (has) return;
+  if (await tx.maybe('SELECT 1 FROM app.leave_types LIMIT 1')) return;
+  // First use: pages load balances and types in parallel, so serialise seeding per tenant.
+  await tx.exec(`SELECT pg_advisory_xact_lock(hashtextextended('thapsus:leave-defaults:' || app.current_tenant()::text, 0))`);
+  if (await tx.maybe('SELECT 1 FROM app.leave_types LIMIT 1')) return;
   const t = await tx.one<{ home_region: string }>('SELECT home_region FROM app.tenants');
   const ids: Record<string, string> = {};
   for (const [key] of DEFAULT_TYPES) if (key !== 'fmla' || t.home_region === 'us') ids[key] = await ensureLeaveType(tx, key);

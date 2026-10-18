@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { rules } from '@thapsus/rules';
-import { closeDb, startTestApp, type TestContext } from './helpers';
+import { withTenant, type Tx } from '@thapsus/db';
+import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
+import { ruleBook } from '../src/modules/rules/routes';
+import { ensureLeaveDefaults } from '../src/modules/leave/service';
 import { leaveFixtures } from './leave-fixtures';
 
 /**
@@ -18,6 +21,31 @@ beforeAll(async () => {
 afterAll(async () => {
   await ctx.close();
   await closeDb();
+});
+
+describe('first use', () => {
+  it('concurrent first requests seed the default leave types once (no unique-key failure)', async () => {
+    // Deterministic interleaving: A has seeded but not committed when B starts seeding.
+    const o = await ownerSession(ctx);
+    const book = await ruleBook(ctx.app);
+    const inTenant = <T>(fn: (t: Tx) => Promise<T>) => withTenant(ctx.deps.router, o.tenantId, fn);
+    let seeded!: () => void;
+    let release!: () => void;
+    const aSeeded = new Promise<void>((r) => (seeded = r));
+    const gate = new Promise<void>((r) => (release = r));
+    const a = inTenant(async (t) => {
+      await ensureLeaveDefaults(t, book);
+      seeded();
+      await gate;
+    });
+    await aSeeded;
+    const b = inTenant((t) => ensureLeaveDefaults(t, book));
+    await new Promise((r) => setTimeout(r, 300)); // B is now waiting on A
+    release();
+    await a;
+    await expect(b).resolves.toBeUndefined();
+    expect(await inTenant((t) => t.query('SELECT key FROM app.leave_types'))).toHaveLength(5);
+  });
 });
 
 describe('policies per entity and country', () => {
