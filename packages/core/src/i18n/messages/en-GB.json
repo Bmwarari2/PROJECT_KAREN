@@ -606,6 +606,24 @@
       "fmla": "FMLA leave",
       "away": "Away"
     },
-    "bookedToast": "Booked ({days} days)."
+    "bookedToast": "Booked ({days} days).",
+    "hoursAvailable": "hours available",
+    "sickness": {
+      "title": "Record sickness",
+      "employee": "Employee",
+      "firstDay": "First day off",
+      "lastDay": "Last day off (if known)",
+      "submit": "Record sickness",
+      "recorded": "Sickness recorded.",
+      "fitNoteRequired": "Sickness recorded. A fit note is needed for an absence this long.",
+      "recent": "Recent sickness",
+      "none": "No sickness recorded.",
+      "ongoing": "ongoing",
+      "rtw": {
+        "due": "Return-to-work due",
+        "completed": "Return-to-work done",
+        "not_required": "Still off"
+      }
+    }
   }
 }
