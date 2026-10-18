@@ -239,7 +239,8 @@
       "documents": "Documents",
       "imports": "Imports",
       "automation": "Automation",
-      "timeOff": "Time off"
+      "timeOff": "Time off",
+      "onboarding": "Onboarding"
     },
     "home": {
       "greeting": "Welcome, {name}",
@@ -251,7 +252,10 @@
       "region": "Data residency",
       "regionBody": "Your workspace data is stored and processed in its home region only.",
       "emptyTitle": "You are all set",
-      "emptyBody": "New tasks and approvals will appear here."
+      "emptyBody": "New tasks and approvals will appear here.",
+      "welcomeTitle": "Before your first day",
+      "welcomeBody": "Sign your documents, add your details and work through your checklist.",
+      "openWelcome": "Open your onboarding"
     },
     "security": {
       "title": "Security",
@@ -466,7 +470,9 @@
       "workPhone": "Work phone",
       "managerId": "Manager",
       "managerEmployeeNumber": "Manager (employee number)"
-    }
+    },
+    "invite": "Invite to sign in",
+    "invited": "Invitation sent."
   },
   "org": {
     "title": "Org chart",
@@ -608,5 +614,42 @@
       "away": "Away"
     },
     "bookedToast": "Booked ({days} days)."
+  },
+  "onboarding": {
+    "inviteSubject": "Your sign-in for {company} on Thapsus-HR",
+    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 7 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
+    "title": "Onboarding",
+    "heading": "Welcome to {company}, {name}",
+    "startsOn": "You start on {date}.",
+    "daysToGo": "Days until you start: {days}",
+    "started": "You started on {date}.",
+    "role": "Your role",
+    "manager": "Your manager",
+    "progressLabel": "Onboarding progress",
+    "progress": "{done} of {total} steps complete",
+    "documentsTitle": "Documents to sign",
+    "documentsEmpty": "There are no documents for you to sign.",
+    "signedOn": "Signed on {date}",
+    "personalTitle": "Personal details",
+    "personalBody": "So that we can reach you and send your paperwork. These details apply from your start date.",
+    "contactsTitle": "Emergency contact",
+    "contactsBody": "Who should we contact if something happens to you at work?",
+    "complete": "Complete",
+    "toDo": "To do",
+    "saved": "Saved.",
+    "addressLine1": "Address line 1",
+    "addressCity": "Town or city",
+    "addressPostcode": "Postcode",
+    "addressCountry": "Country code",
+    "contactName": "Full name",
+    "contactRelationship": "Relationship",
+    "contactPhone": "Phone number",
+    "checklistTitle": "Your checklist",
+    "checklistEmpty": "Nothing on your checklist yet.",
+    "due": "Due {date}",
+    "markDone": "Mark as done: {title}",
+    "markDoneShort": "Mark as done",
+    "done": "Done",
+    "notLinked": "Your sign-in is not linked to an employee record, so there is no onboarding to show."
   }
 }

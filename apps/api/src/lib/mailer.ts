@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import nodemailer from 'nodemailer';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import type { HomeRegion } from '@thapsus/core';
@@ -21,6 +24,23 @@ export class MemoryMailer implements Mailer {
   constructor(readonly region: HomeRegion) {}
   async send(mail: Mail) {
     this.sent.push(mail);
+  }
+}
+
+/**
+ * Local development and end-to-end tests only: writes each email as a JSON file in `dir` so tools and
+ * tests can read it (e.g. a sign-in link). Refused in staging and production (see mailerFromEnv).
+ */
+export class FileMailer implements Mailer {
+  constructor(
+    readonly region: HomeRegion,
+    private readonly dir: string,
+  ) {
+    mkdirSync(dir, { recursive: true });
+  }
+  async send(mail: Mail) {
+    mkdirSync(this.dir, { recursive: true }); // the directory may be cleared between test runs
+    writeFileSync(join(this.dir, `${Date.now()}-${randomUUID()}.json`), JSON.stringify(mail));
   }
 }
 
@@ -68,6 +88,10 @@ export class SesMailer implements Mailer {
 export function mailerFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): Mailer {
   const from = env.MAIL_FROM ?? `no-reply@${env.THAPSUS_HR_DOMAIN ?? 'thapsus-hr.localhost'}`;
   if (env.MAIL_TRANSPORT === 'ses') return new SesMailer(cell, from, env.SES_CONFIGURATION_SET);
+  if (env.MAIL_TRANSPORT === 'file') {
+    if (env.APP_ENV !== 'dev' && env.APP_ENV !== 'test') throw new Error('MAIL_TRANSPORT=file is only allowed in dev and test');
+    return new FileMailer(cell, env.MAIL_DIR ?? '.tmp/mail');
+  }
   if (env.SMTP_URL) return new SmtpMailer(cell, env.SMTP_URL, from);
   return new MemoryMailer(cell);
 }

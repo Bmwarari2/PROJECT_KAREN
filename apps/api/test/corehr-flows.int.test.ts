@@ -8,6 +8,7 @@ import { hashPassword } from '../src/modules/auth/tokens';
 import { jobHandlers, eventSubscribers } from '../src/worker';
 import type { MemoryObjectStore } from '../src/lib/object-store';
 import { pdfPageTexts, pdfText } from './pdf-text';
+import { addDays, today } from '@thapsus/core/time';
 
 let ctx: TestContext;
 let owner: Awaited<ReturnType<typeof ownerSession>>;
@@ -355,6 +356,90 @@ describe('workflow due dates, assignees and reminders', () => {
     expect(((await api('GET', '/v1/tasks', undefined, mgr.cookie)).json() as Array<{ title: string; dueOn: string; subjectEmployeeId: string }>).find((t) => t.title === 'Run the site induction' && t.subjectEmployeeId === emp)?.dueOn).toBe('2027-04-07');
     const audit = await tx((t) => t.one<{ diff: { changes: Record<string, { from: unknown; to: unknown }> } }>(`SELECT diff FROM audit.events WHERE action = 'employee.transferred' AND target_id = $1`, [emp]));
     expect(audit.diff.changes).toMatchObject({ locationId: { from: leeds, to: glasgow }, jobTitle: { from: 'Analyst', to: 'Site lead' } });
+  });
+});
+
+describe('pre-start portal', () => {
+  it('a joiner invited before their start date signs in and sees documents to sign, forms and their checklist', async () => {
+    await api('POST', '/v1/workflow-templates', {
+      kind: 'onboarding',
+      name: 'Joiner self-service',
+      tasks: [
+        { key: 'photo', title: 'Upload a profile photo', assignee: { type: 'employee' }, dueOffsetDays: -7 },
+        { key: 'handbook', title: 'Read the staff handbook', assignee: { type: 'employee' }, dueOffsetDays: -2 },
+        { key: 'desk', title: 'Prepare a desk', assignee: { type: 'role', value: 'hr_admin' }, dueOffsetDays: -1 },
+      ],
+    });
+    const mgrEmp = await hire({ legalFirstName: 'Welcoming', legalLastName: 'Manager' });
+    const start = addDays(today('Europe/London'), 21);
+    const joiner = await hire({ startDate: start, legalFirstName: 'Nova', legalLastName: 'Joiner', personalEmail: 'nova.joiner@personal.example.test', managerId: mgrEmp, jobTitle: 'Designer' });
+    await drain();
+    // the joiner's own checklist tasks exist already and wait for them to have a sign-in
+    const waiting = await tx((t) => t.query<{ title: string; assignee_user_id: string | null }>(`SELECT title, assignee_user_id FROM app.tasks WHERE subject_employee_id = $1 AND assignee_employee_id = $1 ORDER BY title`, [joiner]));
+    expect(waiting).toEqual([{ title: 'Read the staff handbook', assignee_user_id: null }, { title: 'Upload a profile photo', assignee_user_id: null }]);
+    const contract = (await api('POST', '/v1/document-templates', { name: 'Contract of employment', body: 'Dear {{employee.firstName}}, welcome aboard.' })).json().id;
+    expect((await api('POST', `/v1/document-templates/${contract}/generate`, { employeeId: joiner, requireSignature: true })).statusCode).toBe(201);
+
+    // only people who may manage sign-ins can invite
+    const mgr = await login(mgrEmp, 'manager', { type: 'own_team' });
+    expect((await api('POST', `/v1/employees/${joiner}/invite`, {}, mgr.cookie)).statusCode).toBe(403);
+    const inv = await api('POST', `/v1/employees/${joiner}/invite`, {});
+    expect(inv.statusCode, inv.body).toBe(201);
+    expect(inv.json()).toMatchObject({ created: true, tasksAssigned: 2 });
+    const mail = ctx.mailer.sent.at(-1)!;
+    expect(mail.to).toBe('nova.joiner@personal.example.test');
+    expect(mail.subject).toBe(`Your sign-in for Fictional ${owner.slug} Ltd on Thapsus-HR`);
+    const token = decodeURIComponent(/\/auth\/magic\?token=(\S+)/.exec(mail.text)![1]!);
+
+    // signs in before the start date with the one-time link (no admin role, so no MFA step)
+    const consumed = await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link/consume', payload: { token }, remoteAddress: '10.80.0.1' });
+    expect(consumed.statusCode, consumed.body).toBe(200);
+    expect(consumed.json()).toMatchObject({ mfaRequired: false, mfaEnrollmentRequired: false });
+    const cookie = cookieFrom(consumed);
+    expect((await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link/consume', payload: { token }, remoteAddress: '10.80.0.2' })).statusCode).toBe(401);
+
+    const portal = (await api('GET', '/v1/me/onboarding', undefined, cookie)).json();
+    expect(portal.employee).toMatchObject({ id: joiner, displayName: 'Nova Joiner', status: 'pre_start', startDate: start, daysUntilStart: 21, jobTitle: 'Designer', manager: 'Welcoming Manager', company: `Fictional ${owner.slug} Ltd` });
+    expect(portal.formsEffectiveDate).toBe(start);
+    expect(portal.documents).toEqual([expect.objectContaining({ title: 'Contract of employment', status: 'pending', signedAt: null })]);
+    expect(portal.tasks.map((k: { title: string; dueOn: string; status: string }) => [k.title, k.dueOn, k.status])).toEqual([
+      ['Upload a profile photo', addDays(start, -7), 'open'],
+      ['Read the staff handbook', addDays(start, -2), 'open'],
+    ]);
+    expect(portal.tasks.map((k: { title: string }) => k.title)).not.toContain('Prepare a desk');
+    expect(portal.forms).toMatchObject({ personalDetails: { complete: false, values: { personalEmail: 'nova.joiner@personal.example.test', personalPhone: null } }, emergencyContacts: { complete: false, contacts: [] } });
+    expect(portal.progress).toEqual({ done: 0, total: 5 });
+    // the same tasks appear in their task list
+    expect(((await api('GET', '/v1/tasks', undefined, cookie)).json() as Array<{ title: string }>).map((k) => k.title)).toEqual(expect.arrayContaining(['Upload a profile photo', 'Read the staff handbook']));
+
+    // completes the forms and part of the checklist, and signs, all before day one
+    const personal = await api('POST', `/v1/employees/${joiner}/changes`, { effectiveDate: portal.formsEffectiveDate, personalPhone: '+44 7700 900123', address: { line1: '1 Fictional Street', city: 'Leeds', postcode: 'LS1 1AA', country: 'GB' } }, cookie);
+    expect(personal.statusCode, personal.body).toBe(200);
+    expect((await api('PUT', `/v1/employees/${joiner}/emergency-contacts?effectiveDate=${portal.formsEffectiveDate}`, [{ name: 'Orion Joiner', relationship: 'Parent', phone: '+44 7700 900456' }], cookie)).statusCode).toBe(200);
+    expect((await api('POST', `/v1/tasks/${portal.tasks[0].id}/complete`, undefined, cookie)).statusCode).toBe(200);
+    expect((await api('POST', `/v1/signature-requests/${portal.documents[0].id}/sign`, { consent: true, typedName: 'Nova Joiner' }, cookie)).statusCode).toBe(200);
+    const after = (await api('GET', '/v1/me/onboarding', undefined, cookie)).json();
+    expect(after.forms.personalDetails).toMatchObject({ complete: true, values: { personalPhone: '+44 7700 900123', address: { city: 'Leeds' } } });
+    expect(after.forms.emergencyContacts).toMatchObject({ complete: true, contacts: [expect.objectContaining({ name: 'Orion Joiner' })] });
+    expect(after.documents[0]).toMatchObject({ status: 'signed', signedAt: expect.any(String) });
+    expect(after.tasks.map((k: { status: string }) => k.status)).toEqual(['done', 'open']);
+    expect(after.progress).toEqual({ done: 4, total: 5 });
+    // HR sees the joiner's answers from the start date
+    expect((await api('GET', `/v1/employees/${joiner}?asOf=${start}`)).json().employee.personalPhone).toBe('+44 7700 900123');
+
+    // still self-service only
+    expect((await api('POST', `/v1/employees/${joiner}/changes`, { effectiveDate: start, jobTitle: 'Director' }, cookie)).statusCode).toBe(403);
+    expect((await api('GET', `/v1/employees/${mgrEmp}`, undefined, cookie)).statusCode).toBe(403);
+
+    // re-inviting reuses the sign-in; an address already in use, or no address, is refused
+    expect((await api('POST', `/v1/employees/${joiner}/invite`, {})).json()).toMatchObject({ created: false, userId: inv.json().userId });
+    const other = await hire({ startDate: start });
+    expect((await api('POST', `/v1/employees/${other}/invite`, { email: 'nova.joiner@personal.example.test' })).statusCode).toBe(409);
+    expect((await api('POST', `/v1/employees/${other}/invite`, {})).statusCode).toBe(400);
+    const audit = await tx((t) => t.query<{ diff: { created: boolean; tasksAssigned: number } }>(`SELECT diff FROM audit.events WHERE action = 'user.invited' AND target_id = $1 ORDER BY id`, [joiner]));
+    expect(audit.map((a) => [a.diff.created, a.diff.tasksAssigned])).toEqual([[true, 2], [false, 0]]);
+    // a sign-in without an employee record has no onboarding
+    expect((await api('GET', '/v1/me/onboarding')).statusCode).toBe(404);
   });
 });
 
