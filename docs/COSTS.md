@@ -47,3 +47,17 @@ The global stack in production costs about $150. Production is not deployed unti
 ## Development
 
 The dev environment matches staging but is only deployed on demand. The default is local Docker, which costs nothing.
+
+## Load test (temporary, per run)
+
+`pnpm loadtest --provision` creates `ThapsusHr-loadtest-global` and `ThapsusHr-loadtest-cell-uk` (eu-west-2 only; `infra/config/loadtest.json`) and deletes them at the end of the run (`docs/runbooks/load-test.md`). Nothing is left running.
+
+| Item (about 2 hours: provisioning, synthetic data, a 20-minute k6 run, teardown) | Per run |
+| --- | --- |
+| Fargate: 6–40 api tasks at 1 vCPU / 2 GB, plus worker and web | ~$5–15 |
+| Aurora Serverless v2 scaling up to 64 ACU under load, plus RDS Proxy | ~$6–15 |
+| ElastiCache `cache.r7g.large` ×2, ALB, NAT gateway, WAF (pro-rated hourly) | ~$2–4 |
+| Load generator: one `c7i.2xlarge` EC2 instance in eu-west-2 for 2 hours, if used | ~$1 |
+| **Total per run** | **~$15–40** |
+
+The per-month budget alarm for the load-test cell is $300, so a forgotten teardown alerts within days. Run it only with the product owner's go-ahead.
