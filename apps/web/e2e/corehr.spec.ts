@@ -108,8 +108,9 @@ test.describe('org chart', () => {
     const median = (k: 'firstRenderMs' | 'expandMs') => runs.map((r) => r[k]).sort((a, b) => a - b)[1]!;
     const result = { at: new Date().toISOString(), people: 33, runs, medianFirstRenderMs: Math.round(median('firstRenderMs')), medianExpandMs: Math.round(median('expandMs')) };
     console.log(`org chart client timing: ${JSON.stringify(result)}`);
-    mkdirSync('e2e/.results', { recursive: true });
-    writeFileSync('e2e/.results/org-chart-timing.json', JSON.stringify(result, null, 2));
+    // kept with the other benchmark results (git-ignored); Playwright clears its own output folder per run
+    mkdirSync('../../.verify', { recursive: true });
+    writeFileSync('../../.verify/org-chart-client-timing.json', JSON.stringify(result, null, 2));
     expect(result.medianFirstRenderMs).toBeLessThan(1000);
     expect(result.medianExpandMs).toBeLessThan(300);
     await expect(page.getByRole('link', { name: 'Lead1 Fictional' })).toBeVisible();
