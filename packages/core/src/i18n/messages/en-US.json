@@ -147,6 +147,20 @@
       "requestStatus": {
         "cancelled": "Canceled"
       }
+    },
+    "builder": {
+      "modeSummary": "Summarize",
+      "intro": "Choose what to report on, the fields to show, filters and how to summarize. You only see people and fields your access allows."
+    }
+  },
+  "ess": {
+    "details": {
+      "status_cancelled": "Canceled"
+    },
+    "notifications": {
+      "cat": {
+        "rota": "Schedules and swaps"
+      }
     }
   }
 }
