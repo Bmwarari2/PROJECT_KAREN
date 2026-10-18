@@ -49,7 +49,7 @@ describe('billing configuration v1', () => {
     const core = contactChannels(cfg, 'core', 'uk', 'thapsus-hr.test');
     expect(core.map((c) => c.kind)).toEqual(['help_centre', 'ticket', 'email']);
     expect(core.find((c) => c.kind === 'email')!.value).toBe('support@thapsus-hr.test');
-    // the enterprise phone number is null until a human configures it (HUMAN_TODO 4.6)
+    // the enterprise phone number is null until a human configures it (HUMAN_TODO 4.7)
     expect(contactChannels(cfg, 'enterprise', 'us', 'x.test').some((c) => c.kind === 'phone')).toBe(false);
     const overridden = contactChannels(cfg, 'core', 'eu', 'x.test', { eu: { core: [{ kind: 'phone', value: '+49 30 0000000', hours: 'business_hours' }] } });
     expect(overridden).toEqual([{ kind: 'phone', value: '+49 30 0000000', hours: 'business_hours' }]);

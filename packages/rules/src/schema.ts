@@ -1,3 +1,5 @@
+import { PRIVACY_RULE_KEYS } from './privacy-keys';
+
 /**
  * Jurisdiction pack format. Employment rules are DATA: versioned, effective-dated, each version
  * carrying its official source URL, the date it was verified against that source and the reviewer.
@@ -84,6 +86,7 @@ export interface JurisdictionPack {
 
 /** Standard rule keys (extend as packs grow; validated so typos are caught). */
 export const RULE_KEYS = {
+  ...PRIVACY_RULE_KEYS,
   'leave.statutory_annual_minimum': 'Minimum paid annual leave entitlement',
   'leave.irregular_hours_accrual': 'Holiday accrual for irregular-hours / part-year workers',
   'leave.carry_over': 'Statutory carry-over of untaken leave',

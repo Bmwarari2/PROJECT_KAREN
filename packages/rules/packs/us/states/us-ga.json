@@ -2,7 +2,7 @@
   "jurisdiction": "US-GA",
   "parent": "US",
   "name": "Georgia",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -42,7 +42,8 @@
     "priority": "high",
     "deeperRulesTodo": [
       "State holidays (not modelled yet)",
-      "Georgia Family Care Act"
+      "Georgia Family Care Act",
+      "privacy: O.C.G.A. 10-1-912 breach notification — the official Georgia Code is published on a non-government host (not allow-listed); not modelled, legal review required"
     ],
     "notes": "No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime."
   }

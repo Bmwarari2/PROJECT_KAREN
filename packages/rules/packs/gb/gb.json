@@ -1,16 +1,282 @@
 {
   "jurisdiction": "GB",
   "parent": null,
-  "subdivisions": [
-    "GB-ENG",
-    "GB-WLS",
-    "GB-SCT",
-    "GB-NIR"
-  ],
   "name": "United Kingdom",
-  "version": 4,
+  "version": 5,
   "updatedOn": "2026-10-18",
   "rules": [
+    {
+      "key": "privacy.dsr_deadline",
+      "description": "UK GDPR time limit for responding to data subject requests (Articles 12 and 12A)",
+      "versions": [
+        {
+          "effectiveFrom": "2021-01-01",
+          "effectiveTo": "2026-02-05",
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT",
+            "GB-NIR"
+          ],
+          "value": {
+            "period": "P1M",
+            "clockStartsAt": [
+              "request_received"
+            ],
+            "extension": {
+              "period": "P2M",
+              "grounds": "where necessary, taking into account the complexity and number of the requests",
+              "noticeBefore": "initial_deadline",
+              "reasonsRequired": true
+            },
+            "clockStopForClarification": null,
+            "appliesTo": [
+              "access",
+              "correction",
+              "deletion"
+            ],
+            "maxTotal": "P3M"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/eur/2016/679/article/12/2026-02-04",
+            "title": "UK GDPR Article 12(3) (point-in-time version, 4 February 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 12(3): respond 'without undue delay and in any event within one month of receipt of the request'; the period 'may be extended by two further months where necessary, taking into account the complexity and number of the requests'; the data subject must be told of an extension within one month of receipt, with reasons. Counted as a calendar month to the corresponding date (clamped to month end); no rollover for non-working days is applied, so the deadline shown is never later than the law allows. effectiveFrom = UK GDPR baseline at the end of the transition period; superseded by Article 12A on 5 February 2026."
+        },
+        {
+          "effectiveFrom": "2026-02-05",
+          "effectiveTo": null,
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT",
+            "GB-NIR"
+          ],
+          "value": {
+            "period": "P1M",
+            "clockStartsAt": [
+              "request_received",
+              "information_received",
+              "fee_paid"
+            ],
+            "extension": {
+              "period": "P2M",
+              "grounds": "necessary by reason of the complexity of the requests or the number of requests",
+              "noticeBefore": "initial_deadline",
+              "reasonsRequired": true
+            },
+            "clockStopForClarification": {
+              "appliesTo": [
+                "access"
+              ]
+            },
+            "appliesTo": [
+              "access",
+              "correction",
+              "deletion"
+            ],
+            "maxTotal": "P3M"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/eur/2016/679/article/12A.",
+            "title": "UK GDPR Article 12A — meaning of \"applicable time period\" (inserted by the Data (Use and Access) Act 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 12A, in force 5 February 2026 (S.I. 2026/82): one month starting with the 'relevant time', the latest of receipt of the request, receipt of information requested under Art. 12(6) (e.g. to confirm identity) and payment of any fee under Art. 12(5); extendable by two further months by notice given before the end of the one-month period, stating the reasons; for Art. 15 requests the time between asking for information reasonably required to identify the information or processing and receiving it does not count (Art. 12A(5)). Art. 12(3) now refers to 'the applicable time period (see Article 12A)'."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "UK GDPR personal data breach notification (Articles 33 and 34)",
+      "versions": [
+        {
+          "effectiveFrom": "2021-01-01",
+          "effectiveTo": "2026-09-30",
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT",
+            "GB-NIR"
+          ],
+          "value": {
+            "regulator": {
+              "body": "Information Commissioner",
+              "deadlineHours": 72,
+              "from": "awareness",
+              "standard": "without undue delay and, where feasible, not later than 72 hours after having become aware of it; a later notification must give reasons for the delay",
+              "condition": "unless the breach is unlikely to result in a risk to the rights and freedoms of natural persons"
+            },
+            "individuals": {
+              "standard": "without undue delay",
+              "condition": "likely to result in a high risk to the rights and freedoms of natural persons"
+            },
+            "processorToController": {
+              "standard": "without undue delay after becoming aware of a personal data breach"
+            },
+            "lawEnforcementDelay": false
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/eur/2016/679/article/33/2026-09-29",
+            "title": "UK GDPR Article 33 (point-in-time version, 29 September 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 33(1): notify the Commissioner 'without undue delay and, where feasible, not later than 72 hours after having become aware of it', with reasons for any delay; Art. 33(2): the processor notifies the controller without undue delay; Art. 34(1) (https://www.legislation.gov.uk/eur/2016/679/article/34): communicate to the data subject without undue delay where the breach is likely to result in a high risk."
+        },
+        {
+          "effectiveFrom": "2026-09-30",
+          "effectiveTo": null,
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT",
+            "GB-NIR"
+          ],
+          "value": {
+            "regulator": {
+              "body": "Information Commission",
+              "deadlineHours": 72,
+              "from": "awareness",
+              "standard": "without undue delay and, where feasible, not later than 72 hours after having become aware of it; a later notification must give reasons for the delay",
+              "condition": "unless the breach is unlikely to result in a risk to the rights and freedoms of natural persons"
+            },
+            "individuals": {
+              "standard": "without undue delay",
+              "condition": "likely to result in a high risk to the rights and freedoms of natural persons"
+            },
+            "processorToController": {
+              "standard": "without undue delay after becoming aware of a personal data breach"
+            },
+            "lawEnforcementDelay": false
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/eur/2016/679/article/33",
+            "title": "UK GDPR Article 33 (latest revised text)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "As before; from 30 September 2026 notifications go to 'the Commission' (the Information Commission), substituted by S.I. 2026/386 under the Data (Use and Access) Act 2025. Art. 34(1) unchanged: data subjects told without undue delay where there is a likely high risk."
+        }
+      ]
+    },
+    {
+      "key": "retention.time_records",
+      "description": "Working Time Regulations 1998 reg. 9 record retention",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT"
+          ],
+          "value": {
+            "period": "P2Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/9",
+            "title": "Working Time Regulations 1998, regulation 9"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "reg. 9(1)(b): retain records adequate to show compliance 'for two years from the date on which they were made'. Regulation 9 was restructured by S.I. 2023/1426 from 1 January 2024; effectiveFrom is that version, earlier versions are not modelled."
+        }
+      ]
+    },
+    {
+      "key": "retention.payroll_records",
+      "description": "PAYE record retention (Income Tax (PAYE) Regulations 2003 reg. 97)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT",
+            "GB-NIR"
+          ],
+          "value": {
+            "period": "P3Y",
+            "from": "end_of_tax_year",
+            "statutoryMinimum": true,
+            "legalReview": "pending",
+            "taxYearEnd": "04-05"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/2003/2682/regulation/97",
+            "title": "Income Tax (PAYE) Regulations 2003, regulation 97"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "reg. 97(1): 'keep and preserve for not less than three years after the end of the tax year to which they relate'. A tax year 'begins on 6 April and ends on the following 5 April' (Income Tax Act 2007 s. 4(3), https://www.legislation.gov.uk/ukpga/2007/3/section/4). Modelling baseline; earlier history not modelled."
+        }
+      ]
+    },
+    {
+      "key": "retention.minimum_wage_records",
+      "description": "National Minimum Wage Regulations 2015 reg. 59 record retention",
+      "versions": [
+        {
+          "effectiveFrom": "2021-04-01",
+          "effectiveTo": null,
+          "regions": [
+            "GB-ENG",
+            "GB-WLS",
+            "GB-SCT",
+            "GB-NIR"
+          ],
+          "value": {
+            "period": "P6Y",
+            "from": "end_of_following_pay_reference_period",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/uksi/2015/621/regulation/59",
+            "title": "National Minimum Wage Regulations 2015, regulation 59"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "reg. 59(8): keep records 'for a period of six years beginning with the day upon which the pay reference period immediately following' the one they relate to ends; 'six years' substituted from 1 April 2021 by S.I. 2021/329 (the earlier period is not modelled). The following pay reference period defaults to one month unless the tenant configures otherwise."
+        }
+      ]
+    },
+    {
+      "key": "retention.personnel_records",
+      "description": "Suggested retention of personnel files after employment ends (not a statutory period)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "regions": [
+            "GB-ENG",
+            "GB-WLS"
+          ],
+          "value": {
+            "period": "P6Y",
+            "from": "employment_end",
+            "statutoryMinimum": false,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.legislation.gov.uk/ukpga/1980/58/section/5",
+            "title": "Limitation Act 1980, section 5"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Suggested default only, for legal review: s. 5 'An action founded on simple contract shall not be brought after the expiration of six years' from accrual, so personnel records are suggested to be kept for six years after employment ends to defend contractual claims. Extends to England and Wales; Scotland and Northern Ireland limitation periods are not modelled. Not a statutory minimum: tenants may choose another period."
+        }
+      ]
+    },
     {
       "key": "leave.statutory_annual_minimum",
       "description": "Statutory paid annual leave: 4 weeks (reg. 13) + 1.6 weeks additional (reg. 13A) = 5.6 weeks, capped at 28 days.",
@@ -1536,11 +1802,9 @@
     "priority": "high",
     "notes": "UK pack: bank holidays for England & Wales, Scotland and Northern Ireland (2019 onwards, checked against gov.uk/bank-holidays.json) and core GB employment rules verified on legislation.gov.uk / gov.uk on 2026-10-18. Includes Employment Rights Act 2025 changes in force (SSP from 6 April 2026; day-one paternity leave from 6 April 2026) and commenced-but-future (unfair dismissal 6 months from 1 January 2027, S.I. 2026/559). Every rule version lists the UK nations it was verified for (`regions`, ADR-0022). Northern Ireland has separate employment legislation: lookups for GB-NIR are answered by the GB-NIR pack and by the UK-wide GB rules only (minimum wage, right to work); every other GB rule is not returned for GB-NIR (it fails explicitly). A bare `GB` lookup returns the Great Britain (England, Wales, Scotland) law. Pending legal review.",
     "deeperRulesTodo": [
-      "Northern Ireland: rules still missing from the GB-NIR pack are listed there",
       "Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026)",
       "Statutory Adoption Pay; SMP/SPP rates before 2025-26",
       "Accommodation offset and NMW rates before April 2025",
-      "Right to work: guidance versions before 1 October 2026 (older checks cannot be recorded), civil penalty amounts, extended liability detail; document catalogue ids summarise the Employer's guide titles",
       "Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9)",
       "Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave",
       "Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap",
@@ -1548,7 +1812,16 @@
       "ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties",
       "Bank holidays before 2019 and future proclaimed holidays",
       "SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full",
+      "privacy: Northern Ireland and Scottish limitation periods for the suggested personnel-records default",
+      "Northern Ireland: rules still missing from the GB-NIR pack are listed there",
+      "Right to work: guidance versions before 1 October 2026 (older checks cannot be recorded), civil penalty amounts, extended liability detail; document catalogue ids summarise the Employer's guide titles",
       "Gender pay gap: which sex/gender classification employers should record (GOV.UK gives no rule; HUMAN_TODO 3.6)"
     ]
-  }
+  },
+  "subdivisions": [
+    "GB-ENG",
+    "GB-WLS",
+    "GB-SCT",
+    "GB-NIR"
+  ]
 }

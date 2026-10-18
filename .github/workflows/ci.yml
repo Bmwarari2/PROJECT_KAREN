@@ -29,6 +29,9 @@ jobs:
       valkey:
         image: valkey/valkey:8-alpine
         ports: ['6379:6379']
+      mail:
+        image: axllent/mailpit:latest
+        ports: ['1025:1025', '8025:8025']
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

@@ -123,6 +123,7 @@ describe('tickets in the home region', () => {
     const view = await api('GET', `/v1/backoffice/support/tickets/${owner.tenantId}/${ticketId}`, undefined, support.cookie);
     expect(view.statusCode).toBe(200);
     expect(view.json().ticket.subject).toBe('Payslip export shows the wrong month');
+    ctx.clock.advanceMinutes(5); // the test clock is frozen: without this the reply shares the first message's timestamp and the thread order is arbitrary
     const reply = await api('POST', `/v1/backoffice/support/tickets/${owner.tenantId}/${ticketId}/messages`, { body: 'Thanks — we are looking into the export month.', status: 'awaiting_customer' }, support.cookie);
     expect(reply.statusCode, reply.body).toBe(201);
     const thread = (await api('GET', `/v1/support/tickets/${ticketId}`, undefined, employee.cookie)).json();

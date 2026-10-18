@@ -13,6 +13,19 @@ import { withDeliveryHealth } from './modules/status/service';
 import { STRICT_OUTBOUND, type OutboundPolicy } from './lib/outbound';
 import { crossAccountS3FromEnv, type CrossAccountS3 } from './modules/platform/siem-s3';
 
+/** Platform-level OAuth apps for customer-directed integrations (secrets from Secrets Manager via env). */
+export interface IntegrationApps {
+  xero?: { clientId: string; clientSecret: string };
+  microsoft?: { clientId: string; clientSecret: string };
+}
+
+export function integrationAppsFromEnv(env: NodeJS.ProcessEnv): IntegrationApps {
+  const out: IntegrationApps = {};
+  if (env.XERO_CLIENT_ID && env.XERO_CLIENT_SECRET) out.xero = { clientId: env.XERO_CLIENT_ID, clientSecret: env.XERO_CLIENT_SECRET };
+  if (env.MS_GRAPH_CLIENT_ID && env.MS_GRAPH_CLIENT_SECRET) out.microsoft = { clientId: env.MS_GRAPH_CLIENT_ID, clientSecret: env.MS_GRAPH_CLIENT_SECRET };
+  return out;
+}
+
 export interface DnsResolver {
   resolveTxt(name: string): Promise<string[][]>;
 }
@@ -38,6 +51,10 @@ export interface Deps {
   /** Enables the built-in mock OIDC/SAML identity provider (dev, test and staging smoke only). */
   mockIdp: boolean;
   webPush?: { publicKey: string; privateKey: string; subject: string };
+  /** Signs outbound integration calls (a per-tenant key is derived from it). Unset = signed calls refused. */
+  integrationSigningKey?: string;
+  /** Platform OAuth apps for Xero and Microsoft 365 (absent until registered; see HUMAN_TODO 4.2 and 4.4). */
+  integrations?: IntegrationApps;
   /** Billing provider (Stripe test mode in AWS; a recording fake in tests and local dev). ADR-0103. */
   billing?: BillingProvider;
   /** Signing secret of this region's Stripe webhook endpoint (Secrets Manager thapsus-hr/<env>/stripe). */
@@ -86,12 +103,14 @@ export async function depsFromEnv(): Promise<Deps> {
     fetch: globalThis.fetch,
     serviceRole: env.SERVICE_ROLE === 'global' ? 'global' : 'cell',
     mockIdp: env.MOCK_IDP_ENABLED === 'true',
+    integrationSigningKey: env.INTEGRATION_SIGNING_KEY || undefined,
     // Stripe keys come only from Secrets Manager (ECS secrets) or a git-ignored local .env; test mode only.
     billing: env.STRIPE_SECRET_KEY ? StripeBillingProvider.fromKey(env.STRIPE_SECRET_KEY) : undefined,
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || undefined,
     webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,
+    integrations: integrationAppsFromEnv(env),
     outbound: outboundPolicyFromEnv(config.env, env),
     siemS3: crossAccountS3FromEnv(config.cell, env),
   };

@@ -8,7 +8,9 @@ import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { notify } from '../../lib/notify';
 import { loadTarget } from '../employees/service';
 import { periodic, registerJob, subscribe } from '../../jobs/registry';
-import { autoStart, maybeCompleteInstance, startWorkflow } from './service';
+import { autoStart, DEFAULT_REMINDER_DAYS_BEFORE, listTasks, maybeCompleteInstance, startWorkflow, taskRoles } from './service';
+
+export { taskRoles };
 
 const TaskDef = Type.Object({
   key: Type.String({ pattern: '^[a-z0-9_-]{1,40}$' }),
@@ -20,8 +22,6 @@ const TaskDef = Type.Object({
 });
 const Task = Type.Object({ id: Uuid, title: Type.String(), description: Nullable(Type.String()), source: Type.String(), status: Type.String(), dueOn: Nullable(Type.String()), subjectEmployeeId: Nullable(Type.String()), subjectName: Nullable(Type.String()), assigneeRole: Nullable(Type.String()), link: Nullable(Type.String()) });
 
-/** Role queues a user works from; company owners also see the HR admin queue. */
-export const taskRoles = (keys: string[]) => [...new Set([...keys, ...(keys.includes('owner') ? ['hr_admin'] : [])])];
 
 export async function workflowRoutes(app: FastifyInstance) {
   app.get('/v1/workflow-templates', { schema: { tags: ['workflows'], response: { 200: Type.Array(Type.Any()) } } }, async (req) => {
@@ -90,19 +90,7 @@ export async function workflowRoutes(app: FastifyInstance) {
     async (req) => {
       const auth = requireAuth(req);
       const status = (req.query as { status?: string }).status ?? 'open';
-      const roles = taskRoles(auth.principal.grants.map((g) => g.roleKey));
-      const rows = await app.tenantTx(
-        req,
-        (tx) =>
-          tx.query<Record<string, string | null>>(
-            `SELECT k.*, e.display_name AS subject_name FROM app.tasks k LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
-              WHERE (k.assignee_user_id = $1 OR (k.assignee_user_id IS NULL AND k.assignee_role = ANY($2::text[])))
-                AND ($3 = 'all' OR k.status = $3) ORDER BY k.due_on NULLS LAST, k.created_at LIMIT 500`,
-            [auth.userId, roles, status],
-          ),
-        { readOnly: true },
-      );
-      return rows.map((r) => ({ id: r.id!, title: r.title!, description: r.description, source: r.source!, status: r.status!, dueOn: r.due_on, subjectEmployeeId: r.subject_employee_id, subjectName: r.subject_name, assigneeRole: r.assignee_role, link: r.link }));
+      return app.tenantTx(req, (tx) => listTasks(tx, auth.userId, auth.principal.grants.map((g) => g.roleKey), status), { readOnly: true });
     },
   );
 
@@ -143,17 +131,32 @@ registerJob('workflows.autostart', async (ctx) => {
   return { started: started.length };
 });
 
-// ---- reminders: due soon and overdue (deduplicated per task and day) ----------------------------------
+// ---- reminders: one "due soon" reminder per task at its own lead time, one "overdue" reminder ----------
 registerJob('tasks.reminders', async (ctx) => {
   const date = String(ctx.job.input.date);
   return ctx.tx(async (tx) => {
-    const due = await tx.query<{ id: string; title: string; assignee_user_id: string }>(
-      `SELECT id, title, assignee_user_id FROM app.tasks WHERE status = 'open' AND assignee_user_id IS NOT NULL AND due_on IS NOT NULL AND due_on <= ($1::date + 2)`,
-      [date],
+    // reminder_days_before comes from the workflow template task (persisted on the task); NULL = default
+    const due = await tx.query<{ id: string; title: string; assignee_user_id: string; overdue: boolean }>(
+      `SELECT id, title, assignee_user_id, due_on < $1::date AS overdue FROM app.tasks
+        WHERE status = 'open' AND assignee_user_id IS NOT NULL AND due_on IS NOT NULL
+          AND due_on - coalesce(reminder_days_before, $2::int) <= $1::date`,
+      [date, DEFAULT_REMINDER_DAYS_BEFORE],
     );
     let sent = 0;
-    for (const t of due) sent += (await notify(tx, { userIds: [t.assignee_user_id], kind: 'task.due', titleKey: 'notify.taskDueSoon', params: { title: t.title }, link: '/app/tasks', dedupeKey: `due:${t.id}:${date}` })).length;
-    return { date, sent };
+    let overdue = 0;
+    for (const t of due) {
+      const ids = await notify(tx, {
+        userIds: [t.assignee_user_id],
+        kind: t.overdue ? 'task.overdue' : 'task.due',
+        titleKey: t.overdue ? 'notify.taskOverdue' : 'notify.taskDueSoon',
+        params: { title: t.title },
+        link: '/app/tasks',
+        dedupeKey: t.overdue ? `overdue:${t.id}` : `due:${t.id}`,
+      });
+      sent += ids.length;
+      if (t.overdue) overdue += ids.length;
+    }
+    return { date, sent, overdue };
   });
 });
 periodic.push(async (tx, now) => {
