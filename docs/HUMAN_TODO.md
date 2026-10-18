@@ -11,10 +11,20 @@ Things only a person with the right accounts or authority can do. The build runs
   3. Copy the certificate ARN into `infra/config/<env>.json` as `marketingCloudFrontCertArn` and redeploy the global stack. Until then the marketing site is served by the eu-west-2 regional ALB (no CDN). Authenticated app and API hosts never use a CDN in either case.
 - [ ] 1.3 **CloudFront-scoped WAF.** Same constraint as 1.2: a WAF web ACL for CloudFront must be created in us-east-1. It is only needed if 1.2 is done. Regional ALBs already have regional WAF web ACLs.
 - [ ] 1.4 **Activate the `cell` cost-allocation tag** so the per-cell AWS Budgets filters work: Billing console → Cost allocation tags → find `cell` (user-defined) → Activate. It takes up to 24 hours to apply.
-- [ ] 1.5 **GitHub → AWS deploy roles (OIDC).** For each environment account:
-  1. Deploy the CI stack once from a workstation: `pnpm --filter @thapsus/infra cdk deploy ThapsusHr-<env>-ci -c env=<env>`. It creates the GitHub OIDC provider and the deploy role, limited to `repo:Bmwarari2/PROJECT_KAREN`.
-  2. In GitHub → Settings → Secrets and variables → Actions → Variables, add `AWS_DEPLOY_ROLE_staging` (and later `AWS_DEPLOY_ROLE_prod`) with the role ARN printed by the stack.
-  3. In GitHub → Settings → Environments, create `staging` and `production`. Give `production` required reviewers (you) so production deploys need manual approval.
+- [ ] 1.5 **GitHub → AWS deploy roles (OIDC), once per environment account.** There are no AWS keys anywhere; GitHub assumes one role per region.
+  1. Bootstrap CDK with a scoped execution policy instead of the default AdministratorAccess. In each of eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1:
+     `pnpm --filter @thapsus/infra exec cdk bootstrap aws://<account>/<region> --cloudformation-execution-policies <arn of a policy limited to the services in docs/ARCHITECTURE.md>`.
+     The default (AdministratorAccess) also works, but it is broader than needed.
+  2. From a workstation, with an administrator SSO session, run:
+     `pnpm --filter @thapsus/infra exec cdk deploy ThapsusHr-<env>-ci -c env=<env>`.
+     It creates the GitHub OIDC provider and the roles `thapsus-hr-<env>-deploy-<region>`. A role can only be assumed by `repo:Bmwarari2/PROJECT_KAREN:environment:<staging|production>`, and only reaches its own region's CDK bootstrap roles.
+     If two environments share one AWS account, deploy the first one, then put its printed `GitHubOidcProviderArn` into the other environment's `infra/config/<env>.json → ci.oidcProviderArn` before deploying that one (one provider per account).
+  3. In GitHub → Settings → Secrets and variables → Actions → Variables:
+     - add `AWS_ACCOUNT_staging` (and later `AWS_ACCOUNT_prod`) with the account id;
+     - optionally add `STAGING_SELF_SIGNED_TLS=true` while staging has no domain;
+     - add `DEPLOY_PARAMS_GLOBAL`, `DEPLOY_PARAMS_CELL_UK`, `DEPLOY_PARAMS_CELL_EU` and `DEPLOY_PARAMS_CELL_US` with the CloudFormation parameters, e.g. `CertificateArn=arn:aws:acm:...,GlobalBaseUrl=https://...`. See `infra/README.md → Parameters`.
+  4. In GitHub → Settings → Environments, create `staging` and `production`. Give `production` required reviewers (you) so every production deploy needs manual approval.
+  5. When the first manual staging deploy has worked, set the repository variable `AUTO_DEPLOY_STAGING=true`. From then on every green CI run on `main` deploys staging. Until then the Deploy workflow only runs when started by hand (`workflow_dispatch`).
 - [ ] 1.6 **Separate AWS accounts per environment (recommended).** Create `hr-dev` and `hr-prod` accounts in the organisation, apply the same SCP region allow-list, add SSO access, and put their account ids in `infra/config/dev.json` and `infra/config/prod.json` (currently both use the staging account id as a placeholder).
 
 ## 2. Domain, TLS and email

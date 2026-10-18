@@ -67,6 +67,19 @@ describe('permission engine', () => {
     expect(canSome(ukHr, 'employees.read')).toBe(true);
   });
 
+  it('department and location scopes are enforced (deny when the target lacks the attribute)', () => {
+    const deptHr: Principal = { userId: 'u-dept', grants: [role('entity_hr_admin', { type: 'department', values: ['dep-eng'] })] };
+    const siteLead: Principal = { userId: 'u-site', grants: [role('entity_hr_admin', { type: 'location', values: ['loc-leeds'] })] };
+    const eng = { employeeId: 'e-1', departmentId: 'dep-eng', locationId: 'loc-london' };
+    const ops = { employeeId: 'e-2', departmentId: 'dep-ops', locationId: 'loc-leeds' };
+    expect(can(deptHr, 'employees.update', eng)).toBe(true);
+    expect(can(deptHr, 'employees.update', ops)).toBe(false);
+    expect(can(siteLead, 'employees.update', ops)).toBe(true);
+    expect(can(siteLead, 'employees.update', eng)).toBe(false);
+    expect(can(siteLead, 'employees.update', { employeeId: 'e-3' })).toBe(false);
+    expect(can(siteLead, 'employees.update')).toBe(false);
+  });
+
   it('custom roles with field-level permissions: most specific key wins, highest grant wins', () => {
     const custom: Principal = {
       userId: 'u-c',

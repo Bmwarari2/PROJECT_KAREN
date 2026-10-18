@@ -33,6 +33,8 @@ export interface Deps {
   /** Enables the built-in mock OIDC/SAML identity provider (dev, test and staging smoke only). */
   mockIdp: boolean;
   webPush?: { publicKey: string; privateKey: string; subject: string };
+  /** Signs outbound integration calls (a per-tenant key is derived from it). Unset = signed calls refused. */
+  integrationSigningKey?: string;
 }
 
 export function regionalUrlsFromEnv(prefix: string, fallback: (r: HomeRegion) => string): Record<HomeRegion, string> {
@@ -63,6 +65,7 @@ export async function depsFromEnv(): Promise<Deps> {
     fetch: globalThis.fetch,
     serviceRole: env.SERVICE_ROLE === 'global' ? 'global' : 'cell',
     mockIdp: env.MOCK_IDP_ENABLED === 'true',
+    integrationSigningKey: env.INTEGRATION_SIGNING_KEY || undefined,
     webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,

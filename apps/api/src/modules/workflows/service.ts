@@ -2,6 +2,9 @@ import { addDays } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 
+/** Reminder lead time for tasks whose template does not set `reminderDaysBefore`. */
+export const DEFAULT_REMINDER_DAYS_BEFORE = 2;
+
 export interface WorkflowTaskDef {
   key: string;
   title: string;
@@ -33,9 +36,12 @@ export async function startWorkflow(tx: Tx, templateId: string, employeeId: stri
   for (const task of tpl.tasks) {
     let assignees: string[] = [];
     let role: string | null = null;
+    // The person a task is for (the joiner or their manager), kept even before they can sign in.
+    let person: string | null = null;
     if (task.assignee.type === 'user' && task.assignee.value) assignees = [task.assignee.value];
-    if (task.assignee.type === 'employee') assignees = [await userForEmployee(tx, employeeId)].filter(Boolean) as string[];
-    if (task.assignee.type === 'manager') assignees = [await userForEmployee(tx, emp.manager_id)].filter(Boolean) as string[];
+    if (task.assignee.type === 'employee') person = employeeId;
+    if (task.assignee.type === 'manager') person = emp.manager_id;
+    if (person) assignees = [await userForEmployee(tx, person)].filter(Boolean) as string[];
     if (task.assignee.type === 'role' && task.assignee.value) {
       role = task.assignee.value;
       assignees = await usersWithRole(tx, task.assignee.value);
@@ -52,9 +58,12 @@ export async function startWorkflow(tx: Tx, templateId: string, employeeId: stri
         subjectEmployeeId: employeeId,
         assigneeUserId: user,
         assigneeRole: role,
+        assigneeEmployeeId: person,
         dueOn,
+        reminderDaysBefore: task.reminderDaysBefore ?? null,
         link: `/app/tasks`,
-        dedupeKey: `wf:${inst.id}:${task.key}:${user ?? role ?? 'unassigned'}`,
+        // person tasks dedupe on the person, so a sign-in created later does not duplicate them
+        dedupeKey: `wf:${inst.id}:${task.key}:${person ? `emp:${person}` : (user ?? role ?? 'unassigned')}`,
       });
     }
     if (assignees.length) await notify(tx, { userIds: assignees, kind: 'task.assigned', titleKey: 'notify.taskAssigned', params: { title: task.title }, link: '/app/tasks', dedupeKey: `wf:${inst.id}:${task.key}` });
@@ -80,4 +89,43 @@ export async function autoStart(tx: Tx, kind: 'onboarding' | 'offboarding' | 'tr
     if (id) started.push(id);
   }
   return started;
+}
+
+/**
+ * Hands open tasks that were waiting for a person (e.g. a joiner's pre-start checklist created before
+ * they were invited) to that person's new sign-in.
+ */
+export async function claimPersonTasks(tx: Tx, employeeId: string, userId: string): Promise<number> {
+  const rows = await tx.query<{ id: string }>(
+    `UPDATE app.tasks SET assignee_user_id = $2 WHERE assignee_employee_id = $1 AND assignee_user_id IS NULL AND status = 'open' RETURNING id`,
+    [employeeId, userId],
+  );
+  return rows.length;
+}
+
+/** Role queues a user works from; company owners also see the HR admin queue. */
+export const taskRoles = (keys: string[]) => [...new Set([...keys, ...(keys.includes('owner') ? ['hr_admin'] : [])])];
+
+export interface TaskView {
+  id: string;
+  title: string;
+  description: string | null;
+  source: string;
+  status: string;
+  dueOn: string | null;
+  subjectEmployeeId: string | null;
+  subjectName: string | null;
+  assigneeRole: string | null;
+  link: string | null;
+}
+
+/** The caller's tasks: assigned to them, or to a role queue they work from. Shared by the list and export. */
+export async function listTasks(tx: Tx, userId: string, roleKeys: string[], status: string, limit = 500): Promise<TaskView[]> {
+  const rows = await tx.query<Record<string, string | null>>(
+    `SELECT k.*, e.display_name AS subject_name FROM app.tasks k LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
+      WHERE (k.assignee_user_id = $1 OR (k.assignee_user_id IS NULL AND k.assignee_role = ANY($2::text[])))
+        AND ($3 = 'all' OR k.status = $3) ORDER BY k.due_on NULLS LAST, k.created_at LIMIT ${Math.trunc(limit)}`,
+    [userId, taskRoles(roleKeys), status],
+  );
+  return rows.map((r) => ({ id: r.id!, title: r.title!, description: r.description ?? null, source: r.source!, status: r.status!, dueOn: r.due_on ?? null, subjectEmployeeId: r.subject_employee_id ?? null, subjectName: r.subject_name ?? null, assigneeRole: r.assignee_role ?? null, link: r.link ?? null }));
 }

@@ -14,7 +14,7 @@ import { createLogger } from '../src/logger';
 import { scrubSpanAttributes } from '../src/tracing';
 import * as time from '../src/time';
 import { money, add, multiplyRatio, allocate, parseDecimal, toDecimalString } from '../src/money';
-import { CATALOGUES, flatten, formatMoney, formatDate, resolveLocale, t } from '../src/i18n';
+import { CATALOGUES, flatten, formatMoney, formatDate, formatDateTime, formatNumber, resolveLocale, t } from '../src/i18n';
 
 describe('residency map', () => {
   it('pins each home region to the brief', () => {
@@ -203,5 +203,17 @@ describe('i18n', () => {
   it('formats dates per locale without zone drift', () => {
     expect(formatDate('2027-07-04', 'en-US', 'short')).toBe('7/4/27');
     expect(formatDate('2027-07-04', 'en-GB', 'short')).toBe('04/07/2027');
+  });
+  it('formats numbers per locale', () => {
+    expect(formatNumber(1234567.891, 'en-GB', { maximumFractionDigits: 2 })).toBe('1,234,567.89');
+    expect(formatNumber(1234567.891, 'en-US', { maximumFractionDigits: 2 })).toBe('1,234,567.89');
+    expect(formatNumber(0.125, 'en-GB', { style: 'percent', maximumFractionDigits: 1 })).toBe('12.5%');
+  });
+  it('formats instants in the viewer\'s IANA zone, across DST', () => {
+    // 2026-03-29 01:30Z is 02:30 BST in London (after the spring change) and 21:30 EDT the day before in New York.
+    const at = '2026-03-29T01:30:00Z';
+    expect(formatDateTime(at, 'en-GB', 'Europe/London').replace(/\s/g, ' ')).toBe('29 Mar 2026, 02:30');
+    expect(formatDateTime(at, 'en-US', 'America/New_York').replace(/\s/g, ' ')).toBe('Mar 28, 2026, 9:30 PM');
+    expect(formatDateTime(at, 'en-GB', 'Asia/Kolkata').replace(/\s/g, ' ')).toBe('29 Mar 2026, 07:00');
   });
 });

@@ -10,6 +10,7 @@ Stacks per environment (`dev`, `staging`, `prod`; settings in `config/<env>.json
 | `ThapsusHr-<env>-cell-us` | us-east-2 | Regional cell |
 | `ThapsusHr-<env>-backup-copy-eu` | eu-west-1 | Backup copy vault for the EU cell |
 | `ThapsusHr-<env>-backup-copy-us` | us-west-1 | Backup copy vault for the US cell |
+| `ThapsusHr-<env>-ci` | eu-west-2 (IAM is global) | GitHub OIDC provider + one deploy role per region (`thapsus-hr-<env>-deploy-<region>`), assumable only by this repository's matching GitHub environment |
 
 The UK cell has no backup copy (London only). No stack ever targets us-east-1 or us-west-2, and
 there is no CloudFront (ADR-0001). The region map comes from `packages/core/src/regions.ts`.
@@ -32,17 +33,33 @@ npx tsc --noEmit -p infra                          # typecheck
 Synth does not build images; deploy builds `apps/{api,worker,web}/Dockerfile` with the repo root as
 the context (linux/amd64).
 
-## Deploy order (per environment — production deploys need explicit approval)
+## Deploy (per environment — production deploys need explicit approval)
 
-1. `cdk bootstrap` in eu-west-2, eu-central-1, us-east-2, eu-west-1, us-west-1 only.
-2. `ThapsusHr-<env>-backup-copy-eu` and `-backup-copy-us` (the cells' backup plans copy into them).
-3. `ThapsusHr-<env>-global`.
-4. `ThapsusHr-<env>-cell-uk`, `-cell-eu`, `-cell-us`.
-5. Copy the global `thapsus-hr/<env>/internal-token` value into the same-named secret in each cell
-   region (secrets cannot be referenced across regions), fill `thapsus-hr/<env>/vapid` (and
-   `thapsus-hr/<env>/mock-idp` outside prod), then force a new deployment of the services.
-6. Run the migrator in each cell with the stack outputs:
-   `aws ecs run-task --cluster <EcsClusterName> --task-definition <MigratorTaskDefinitionArn> --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[<MigratorSubnetIds>],securityGroups=[<MigratorSecurityGroupId>]}"`.
+`scripts/deploy.mjs` runs every step below; `--dry-run` prints the plan without touching AWS.
+
+```sh
+node --import tsx scripts/deploy.mjs --env staging --only all --dry-run       # the whole plan
+node --import tsx scripts/deploy.mjs --env staging --only cell-uk             # one target (credentials for eu-west-2)
+node --import tsx scripts/deploy.mjs --env prod --only global --approved       # production: only after approval
+```
+
+Targets in dependency order: `ci` → `backupcopy` (for the current AWS region: eu-west-1 or us-west-1) → `global` → `cell-uk` → `cell-eu` → `cell-us`. For each cell the script:
+
+1. Runs `cdk deploy`.
+2. Copies the global `thapsus-hr/<env>/internal-token` value into the cell's own `thapsus-hr/<env>/<cell>/internal-token`. The names differ because the UK cell shares eu-west-2 with the global stack.
+3. Generates VAPID keys and, outside production only, the mock IdP signing key and certificate, if the secrets are still empty.
+4. Runs the migrator task and fails if it exits non-zero.
+5. Restarts the services.
+6. Waits for `/health`.
+
+Pass CloudFormation parameters with `--param Key=Value`, or with `DEPLOY_PARAMS=Key=Value,...` in CI. Add `--self-signed-tls` only for staging without a domain.
+
+**One-time setup** (HUMAN_TODO 1.5):
+1. Run `cdk bootstrap` in eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1 only.
+2. Deploy `ThapsusHr-<env>-ci` once from a workstation.
+3. Set the GitHub variables `AWS_ACCOUNT_<env>` and create the `staging` and `production` environments.
+
+After that, `.github/workflows/deploy.yml` deploys staging from `main`, using OIDC and the per-region roles.
 
 ## Parameters (only while `domain` / certificates are not configured)
 

@@ -352,9 +352,16 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- Secrets for the services
     const internalToken = new secretsmanager.Secret(this, 'InternalToken', {
-      // Same name in every region of this env. The global stack and every cell each create their own
-      // copy; scripts/sync-internal-token copies the global value into each cell after deploy.
-      secretName: names.internalTokenSecret(env),
+      // The cell's own copy of the global internal token (no cross-region references); scripts/deploy.mjs
+      // copies the global value into it after each cell deploy. A distinct name per cell, because the UK
+      // cell shares eu-west-2 with the global stack's source secret.
+      secretName: names.cellInternalTokenSecret(env, cell),
+      encryptionKey: dataKey,
+      generateSecretString: { excludePunctuation: true, passwordLength: 64 },
+    });
+    const integrationKey = new secretsmanager.Secret(this, 'IntegrationSigningKey', {
+      // Master key for the per-tenant HMAC keys that sign outbound integration calls (ADR-0018).
+      secretName: `thapsus-hr/${env}/integration-signing-key`,
       encryptionKey: dataKey,
       generateSecretString: { excludePunctuation: true, passwordLength: 64 },
     });
@@ -430,6 +437,7 @@ export class CellStack extends Stack {
       REPORTING_DATABASE_SECRET: ecs.Secret.fromSecretsManager(reportingDbSecret),
       VALKEY_AUTH_TOKEN: ecs.Secret.fromSecretsManager(valkeyAuth),
       INTERNAL_TOKEN: ecs.Secret.fromSecretsManager(internalToken),
+      INTEGRATION_SIGNING_KEY: ecs.Secret.fromSecretsManager(integrationKey),
       VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY'),
       VAPID_PRIVATE_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PRIVATE_KEY'),
       ...(mockIdp

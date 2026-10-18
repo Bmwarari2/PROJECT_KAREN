@@ -79,6 +79,9 @@ export const DERIVED_PERMS: Record<string, string> = {
   managerId: 'manager',
   photoUrl: 'photoUrl',
   custom: 'custom',
+  position: 'position',
+  grade: 'pay.grade',
+  costCentre: 'costCentre',
 };
 
 export function permKeyFor(field: string): string {
