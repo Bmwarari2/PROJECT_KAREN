@@ -118,3 +118,62 @@ describe('rota, clock and timesheet endpoints match the spec', () => {
     check('post', '/v1/working-time/opt-outs', 201, (await c.api('POST', '/v1/working-time/opt-outs', { employeeId: emp, validFrom: '2030-01-01' })).json());
   });
 });
+
+describe('enterprise platform endpoints match the spec (phase 9)', () => {
+  it('API keys, OAuth clients and the token endpoint', async () => {
+    const o = await ownerSession(ctx);
+    const h = { cookie: o.cookie };
+    const key = await ctx.app.inject({ method: 'POST', url: '/v1/settings/api-keys', headers: h, payload: { name: 'Contract', scopes: ['employees:read'], roleKey: 'hr_admin' } });
+    check('post', '/v1/settings/api-keys', 201, key.json());
+    check('get', '/v1/settings/api-keys', 200, (await ctx.app.inject({ method: 'GET', url: '/v1/settings/api-keys?limit=1', headers: h })).json());
+    check('get', '/v1/settings/api-access/roles', 200, (await ctx.app.inject({ method: 'GET', url: '/v1/settings/api-access/roles', headers: h })).json());
+    const viaKey = await ctx.app.inject({ method: 'GET', url: '/v1/employees', headers: { authorization: `Bearer ${key.json().key}` } });
+    check('get', '/v1/employees', 200, viaKey.json());
+    check('post', '/v1/settings/api-keys/{id}/revoke', 200, (await ctx.app.inject({ method: 'POST', url: `/v1/settings/api-keys/${key.json().id}/revoke`, headers: h })).json());
+    const client = await ctx.app.inject({ method: 'POST', url: '/v1/settings/oauth-clients', headers: h, payload: { name: 'Contract client', scopes: ['org:read'], roleKey: 'hr_admin' } });
+    check('post', '/v1/settings/oauth-clients', 201, client.json());
+    check('get', '/v1/settings/oauth-clients', 200, (await ctx.app.inject({ method: 'GET', url: '/v1/settings/oauth-clients', headers: h })).json());
+    const c = client.json();
+    const basic = (s: string) => `Basic ${Buffer.from(`${c.clientId}:${s}`).toString('base64')}`;
+    const token = await ctx.app.inject({ method: 'POST', url: '/v1/oauth/token', headers: { authorization: basic(c.clientSecret), 'content-type': 'application/x-www-form-urlencoded' }, payload: 'grant_type=client_credentials' });
+    check('post', '/v1/oauth/token', 200, token.json());
+    const denied = await ctx.app.inject({ method: 'POST', url: '/v1/oauth/token', headers: { authorization: basic('thr_cs_wrong'), 'content-type': 'application/x-www-form-urlencoded' }, payload: 'grant_type=client_credentials' });
+    check('post', '/v1/oauth/token', 401, denied.json());
+    check('post', '/v1/settings/oauth-clients/{id}/rotate-secret', 200, (await ctx.app.inject({ method: 'POST', url: `/v1/settings/oauth-clients/${c.id}/rotate-secret`, headers: h, payload: {} })).json());
+    check('post', '/v1/settings/oauth-clients/{id}/revoke', 200, (await ctx.app.inject({ method: 'POST', url: `/v1/settings/oauth-clients/${c.id}/revoke`, headers: h })).json());
+  });
+
+  it('webhooks, audit streams, sandboxes, feature flags, branding and the experience model', async () => {
+    const o = await ownerSession(ctx);
+    const h = { cookie: o.cookie };
+    const inj = (method: string, url: string, payload?: unknown) => ctx.app.inject({ method: method as 'GET', url, headers: h, payload: payload as object });
+    const ep = await inj('POST', '/v1/webhooks', { url: 'https://hooks.example.com/contract', eventTypes: ['employee.*'] });
+    check('post', '/v1/webhooks', 201, ep.json());
+    check('post', '/v1/webhooks', 422, (await inj('POST', '/v1/webhooks', { url: 'https://169.254.169.254/x', eventTypes: ['employee.*'] })).json());
+    check('get', '/v1/webhooks', 200, (await inj('GET', '/v1/webhooks')).json());
+    check('get', '/v1/webhooks/event-types', 200, (await inj('GET', '/v1/webhooks/event-types')).json());
+    check('patch', '/v1/webhooks/{id}', 200, (await inj('PATCH', `/v1/webhooks/${ep.json().id}`, { description: 'Contract' })).json());
+    check('post', '/v1/webhooks/{id}/rotate-secret', 200, (await inj('POST', `/v1/webhooks/${ep.json().id}/rotate-secret`, {})).json());
+    check('post', '/v1/webhooks/{id}/ping', 202, (await inj('POST', `/v1/webhooks/${ep.json().id}/ping`)).json());
+    check('get', '/v1/webhooks/{id}/deliveries', 200, (await inj('GET', `/v1/webhooks/${ep.json().id}/deliveries`)).json());
+
+    const stream = await inj('POST', '/v1/settings/audit-streams', { name: 'Contract SIEM', kind: 'https', url: 'https://siem.example.com/ingest', filters: { actions: ['auth.'] } });
+    check('post', '/v1/settings/audit-streams', 201, stream.json());
+    check('post', '/v1/settings/audit-streams', 422, (await inj('POST', '/v1/settings/audit-streams', { name: 'Elsewhere', kind: 's3', bucket: 'fictional-audit', region: 'us-east-2', roleArn: 'arn:aws:iam::123456789012:role/A' })).json());
+    check('get', '/v1/settings/audit-streams', 200, (await inj('GET', '/v1/settings/audit-streams')).json());
+    check('patch', '/v1/settings/audit-streams/{id}', 200, (await inj('PATCH', `/v1/settings/audit-streams/${stream.json().id}`, { status: 'paused' })).json());
+    check('get', '/v1/settings/audit-streams/{id}/batches', 200, (await inj('GET', `/v1/settings/audit-streams/${stream.json().id}/batches`)).json());
+
+    const sb = await inj('POST', '/v1/sandboxes', { syntheticPeople: 1 });
+    check('post', '/v1/sandboxes', 202, sb.json());
+    check('get', '/v1/sandboxes', 200, (await inj('GET', '/v1/sandboxes')).json());
+    check('get', '/v1/sandboxes/{id}', 200, (await inj('GET', `/v1/sandboxes/${sb.json().id}`)).json());
+
+    check('get', '/v1/settings/features', 200, (await inj('GET', '/v1/settings/features')).json());
+    check('put', '/v1/settings/features/{key}', 200, (await inj('PUT', '/v1/settings/features/webhooks', { enabled: true })).json());
+    check('get', '/v1/settings/branding', 200, (await inj('GET', '/v1/settings/branding')).json());
+    check('put', '/v1/settings/branding', 200, (await inj('PUT', '/v1/settings/branding', { accentLight: '#1f3a8a' })).json());
+    check('put', '/v1/settings/branding', 422, (await inj('PUT', '/v1/settings/branding', { accentLight: '#ffff00' })).json());
+    check('get', '/v1/tenant/experience', 200, (await inj('GET', '/v1/tenant/experience')).json());
+  });
+});
