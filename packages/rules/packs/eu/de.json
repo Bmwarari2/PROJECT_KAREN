@@ -2,7 +2,7 @@
   "jurisdiction": "DE",
   "parent": "EU",
   "name": "Germany",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -184,6 +184,29 @@
       "verifiedOn": "2026-10-18",
       "reviewer": "research-agent (pending legal review)",
       "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Heilige Drei Könige (Epiphanias)",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "DE-BY"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gesetze-bayern.de/Content/Document/BayFTG-1",
+        "title": "Bayerisches Feiertagsgesetz (FTG) Art. 1 — Gesetzliche Feiertage (BAYERN.RECHT)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Art. 1(1) Nr. 1 lists \"Heilige Drei Könige (Epiphanias)\" as a statutory holiday \"im ganzen Staatsgebiet\" (all of Bavaria); BAYERN.RECHT shows the text in force from 01.08.2013. effectiveFrom follows the DE pack's 2026 modelling baseline. Not modelled: Mariä Himmelfahrt (Art. 1(1) Nr. 2, only in predominantly Catholic municipalities) and the Augsburg Friedensfest (Art. 1(2), 8 August, city of Augsburg only). Epiphany in DE-BW and DE-ST is not verified yet."
     },
     {
       "id": "good-friday",
@@ -486,8 +509,8 @@
       "working_time.max_weekly_hours",
       "minimum_wage.rates",
       "leave.carry_over",
-      "holidays: Epiphany (DE-BW/DE-BY/DE-ST), Repentance Day (DE-SN), World Children's Day (DE-TH), Women's Day (DE-MV), Assumption (DE-SL; Catholic municipalities of DE-BY), Augsburg Peace Festival — Land-law sources not on the validator allow-list"
+      "holidays: Epiphany (DE-BW/DE-ST), Repentance Day (DE-SN), World Children's Day (DE-TH), Women's Day (DE-MV), Assumption (DE-SL; Catholic municipalities of DE-BY), Augsburg Peace Festival — Land-law portals other than gesetze-bayern.de are not on the validator allow-list yet"
     ],
-    "notes": "Epiphany (6 Jan) in Bavaria verified against BayFTG Art. 1 (gesetze-bayern.de) but omitted because that domain is not allow-listed; see goldens packGaps."
+    "notes": "Epiphany (6 Jan) in Bavaria is modelled from BayFTG Art. 1 on gesetze-bayern.de (allow-listed 2026-10-18, ADR-0023)."
   }
 }

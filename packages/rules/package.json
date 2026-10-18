@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "validate": "tsx scripts/validate.ts",
-    "coverage-doc": "tsx scripts/coverage-doc.ts"
+    "coverage-doc": "tsx scripts/coverage-doc.ts",
+    "manifest": "tsx scripts/manifest.ts"
   },
   "dependencies": {
     "@thapsus/core": "workspace:*"

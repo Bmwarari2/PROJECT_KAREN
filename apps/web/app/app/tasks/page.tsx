@@ -6,6 +6,7 @@ import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { ExportLinks } from '@/components/export-links';
 
 interface Task {
   id: string;
@@ -24,7 +25,10 @@ export default function TasksPage() {
   if (!data) return <Skeleton className="h-64 w-full" />;
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-title-2">{t('tasks.title')}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="mr-auto text-title-2">{t('tasks.title')}</h1>
+        <ExportLinks list="tasks" params={{ status: 'open' }} />
+      </div>
       {data.length === 0 ? (
         <EmptyState icon={<ListChecks aria-hidden />} title={t('tasks.empty')} />
       ) : (

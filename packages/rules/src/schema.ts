@@ -1,3 +1,5 @@
+import { PRIVACY_RULE_KEYS } from './privacy-keys';
+
 /**
  * Jurisdiction pack format. Employment rules are DATA: versioned, effective-dated, each version
  * carrying its official source URL, the date it was verified against that source and the reviewer.
@@ -17,6 +19,12 @@ export interface RuleVersion<V = unknown> {
   verifiedOn: string; // YYYY-MM-DD the value was checked against the source
   reviewer: string;
   notes?: string;
+  /**
+   * ISO 3166-2 subdivisions this version was verified for (e.g. ["GB-ENG", "GB-WLS", "GB-SCT"]). Omitted =
+   * the whole jurisdiction. Required in packs that declare `subdivisions`; a lookup for a subdivision
+   * not listed here does not get this version (it falls through or fails) — never silently inherited.
+   */
+  regions?: string[];
 }
 
 export interface Rule<V = unknown> {
@@ -53,10 +61,19 @@ export interface HolidayDefinition {
 }
 
 export interface JurisdictionPack {
-  /** ISO 3166-1 alpha-2 country ("GB", "DE"), "EU" for the EU baseline, or ISO 3166-2 for a US state ("US-CA"). */
+  /**
+   * ISO 3166-1 alpha-2 country ("GB", "DE"), "EU" for the EU baseline, ISO 3166-2 for a state or nation
+   * ("US-CA", "GB-NIR"), or a locality below it as `<ISO 3166-2>-<code>` ("US-NY-NYC").
+   */
   jurisdiction: string;
-  /** Parent in layered resolution: member state → "EU"; US state → "US"; UK nation → "GB". */
+  /** Parent in layered resolution: locality → state; member state → "EU"; US state → "US"; UK nation → "GB". */
   parent: string | null;
+  /**
+   * ISO 3166-2 subdivisions with their own law (e.g. the UK nations). When set, every rule version in
+   * this pack must state the `regions` it was verified for, so a subdivision never inherits a rule by
+   * accident (ADR-0022).
+   */
+  subdivisions?: string[];
   name: string;
   /** Pack version: bump on every data change (edits create new versions, never overwrite). */
   version: number;
@@ -69,6 +86,7 @@ export interface JurisdictionPack {
 
 /** Standard rule keys (extend as packs grow; validated so typos are caught). */
 export const RULE_KEYS = {
+  ...PRIVACY_RULE_KEYS,
   'leave.statutory_annual_minimum': 'Minimum paid annual leave entitlement',
   'leave.irregular_hours_accrual': 'Holiday accrual for irregular-hours / part-year workers',
   'leave.carry_over': 'Statutory carry-over of untaken leave',
@@ -82,6 +100,7 @@ export const RULE_KEYS = {
   'overtime.daily': 'Daily overtime thresholds and multipliers',
   'overtime.seventh_day': 'Seventh consecutive day premium',
   'overtime.exempt_salary_threshold': 'Minimum salary for exempt (white-collar) classification',
+  'overtime.exempt_duties_tests': 'Exemption categories, duties criteria and which salary test applies',
   'sick_pay.statutory': 'Statutory sick pay parameters',
   'sick_pay.paid_sick_leave_accrual': 'Paid sick leave accrual (US state/local)',
   'family_leave.fmla': 'FMLA eligibility and entitlement',
@@ -91,6 +110,7 @@ export const RULE_KEYS = {
   'right_to_work.retention': 'Retention period for right-to-work records',
   'i9.retention': 'Form I-9 retention period',
   'i9.reverification': 'Form I-9 reverification rules',
+  'i9.completion_deadlines': 'Form I-9 Section 1 and Section 2 completion deadlines',
   'employment.unfair_dismissal_qualifying_period': 'Qualifying service for unfair dismissal protection',
   'employment.probation': 'Statutory probation limits',
   'employment.notice_period': 'Statutory minimum notice periods',

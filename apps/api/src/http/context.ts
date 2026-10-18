@@ -105,10 +105,12 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
     return payload;
   });
 
-  // Safety net: every successful mutating call is audited even if the route forgot to.
-  app.addHook('onResponse', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return;
-    if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth) return;
+  // Safety net: every successful mutating call is audited even if the route forgot to. It runs before
+  // the response is sent, so a client never sees success for a change that has no audit entry yet.
+  app.addHook('onSend', async (req: FastifyRequest, reply: FastifyReply, payload) => {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return payload;
+    if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth) return payload;
+    req.auditWritten = true;
     await withTenant(opts.deps.router, req.auth.tenantId, (tx) =>
       writeAudit(tx, {
         actorType: actorTypeOf(req.auth),
@@ -119,6 +121,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
         requestId: req.id,
       }),
     ).catch((err) => req.log.error({ err }, 'fallback audit failed'));
+    return payload;
   });
 
   app.decorate('tenantTx', function <T>(req: FastifyRequest, fn: (tx: Tx) => Promise<T>, o: { readOnly?: boolean } = {}) {

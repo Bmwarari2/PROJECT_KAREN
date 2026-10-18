@@ -10,6 +10,19 @@ import { objectStoreFromEnv, type ObjectStore } from './lib/object-store';
 import { STRICT_OUTBOUND, type OutboundPolicy } from './lib/outbound';
 import { crossAccountS3FromEnv, type CrossAccountS3 } from './modules/platform/siem-s3';
 
+/** Platform-level OAuth apps for customer-directed integrations (secrets from Secrets Manager via env). */
+export interface IntegrationApps {
+  xero?: { clientId: string; clientSecret: string };
+  microsoft?: { clientId: string; clientSecret: string };
+}
+
+export function integrationAppsFromEnv(env: NodeJS.ProcessEnv): IntegrationApps {
+  const out: IntegrationApps = {};
+  if (env.XERO_CLIENT_ID && env.XERO_CLIENT_SECRET) out.xero = { clientId: env.XERO_CLIENT_ID, clientSecret: env.XERO_CLIENT_SECRET };
+  if (env.MS_GRAPH_CLIENT_ID && env.MS_GRAPH_CLIENT_SECRET) out.microsoft = { clientId: env.MS_GRAPH_CLIENT_ID, clientSecret: env.MS_GRAPH_CLIENT_SECRET };
+  return out;
+}
+
 export interface DnsResolver {
   resolveTxt(name: string): Promise<string[][]>;
 }
@@ -35,6 +48,10 @@ export interface Deps {
   /** Enables the built-in mock OIDC/SAML identity provider (dev, test and staging smoke only). */
   mockIdp: boolean;
   webPush?: { publicKey: string; privateKey: string; subject: string };
+  /** Signs outbound integration calls (a per-tenant key is derived from it). Unset = signed calls refused. */
+  integrationSigningKey?: string;
+  /** Platform OAuth apps for Xero and Microsoft 365 (absent until registered; see HUMAN_TODO 4.2 and 4.4). */
+  integrations?: IntegrationApps;
   /** SSRF policy for customer-configured destinations (webhooks, SIEM). Strict when omitted. */
   outbound?: OutboundPolicy;
   /** Writes audit batches to customer S3 buckets through a cross-account role (home region only). */
@@ -76,9 +93,11 @@ export async function depsFromEnv(): Promise<Deps> {
     fetch: globalThis.fetch,
     serviceRole: env.SERVICE_ROLE === 'global' ? 'global' : 'cell',
     mockIdp: env.MOCK_IDP_ENABLED === 'true',
+    integrationSigningKey: env.INTEGRATION_SIGNING_KEY || undefined,
     webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,
+    integrations: integrationAppsFromEnv(env),
     outbound: outboundPolicyFromEnv(config.env, env),
     siemS3: crossAccountS3FromEnv(config.cell, env),
   };

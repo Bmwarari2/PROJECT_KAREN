@@ -2,6 +2,7 @@ import { App, Stack, Tags, type AppProps } from 'aws-cdk-lib';
 import { HOME_REGIONS, REGIONS } from '@thapsus/core/regions';
 import { BackupCopyVaultStack } from './backup-copy-vault-stack';
 import { CellStack } from './cell-stack';
+import { CiStack } from './ci-stack';
 import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvName } from './config';
 import { GlobalStack } from './global-stack';
 
@@ -38,6 +39,12 @@ export function addEnvironment(app: App, env: EnvName): Stack[] {
       stacks.push(copy);
     }
   }
+  // GitHub OIDC deploy roles (IAM is global; the stack lives with the global layer).
+  const deployRegions = [...new Set(stacks.map((s) => s.region))];
+  const cellsByRegion = Object.fromEntries(HOME_REGIONS.map((c) => [REGIONS[c].awsRegion, c]));
+  const ci = new CiStack(app, names.stack(env, 'ci'), { env: at(GLOBAL_REGION), config, deployRegions, cellsByRegion });
+  tag(ci, env, 'global');
+  stacks.push(ci);
   for (const s of stacks) {
     if ((FORBIDDEN_STACK_REGIONS as readonly string[]).includes(s.region)) throw new Error(`${s.stackName}: region ${s.region} is denied by the org SCP`);
   }

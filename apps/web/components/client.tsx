@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useT, useLocale } from '@/lib/i18n-client';
-import { LOCALE_COOKIE, THEME_COOKIE, type ThemeChoice } from '@/lib/i18n';
+import { LOCALE_COOKIE, THEME_COOKIE, type ThemeChoice } from '@/lib/i18n-shared';
 
 const setCookie = (name: string, value: string) => {
   document.cookie = `${name}=${value}; path=/; max-age=31536000; samesite=lax`;

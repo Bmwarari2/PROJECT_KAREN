@@ -1,6 +1,7 @@
 import { parse as parseCsv } from 'csv-parse/sync';
 import ExcelJS from 'exceljs';
 import { isCivilDate } from '@thapsus/core/time';
+import { parseDecimal } from '@thapsus/core/money';
 import { FIELDS } from '../employees/model';
 
 export interface Table {
@@ -59,6 +60,7 @@ export function validateRow(raw: Record<string, string>, rowNumber: number, refs
   const errors: RowError[] = [];
   const v: Record<string, unknown> = {};
   const err = (column: string, message: string) => errors.push({ row: rowNumber, column, message });
+  let amount: string | undefined;
   for (const [k, val] of Object.entries(raw)) {
     const value = val.trim();
     if (value === '') continue;
@@ -68,8 +70,7 @@ export function validateRow(raw: Record<string, string>, rowNumber: number, refs
       continue;
     }
     if (k === 'payAmountMinor') {
-      if (!/^\d+(\.\d{1,2})?$/.test(value)) err(k, 'expected an amount like 45000 or 45000.50');
-      else v[k] = Math.round(Number(value) * 100); // decimal → minor units (validated, 2 dp max)
+      amount = value; // converted below, once the currency (and so its minor-unit exponent) is known
       continue;
     }
     if (FIELDS[k]?.type === 'number') {
@@ -104,6 +105,20 @@ export function validateRow(raw: Record<string, string>, rowNumber: number, refs
       continue;
     }
     v[k] = value;
+  }
+  if (amount !== undefined) {
+    // decimal → integer minor units without floating point (e.g. 48000.50 GBP → 4800050, 5000 JPY → 5000)
+    const currency = String(v.payCurrency ?? '').toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currency)) err('payCurrency', 'required with an amount');
+    else if (!/^\d+(\.\d+)?$/.test(amount)) err('payAmountMinor', 'expected an amount like 45000 or 45000.50');
+    else {
+      try {
+        v.payAmountMinor = Number(parseDecimal(amount, currency).amountMinor);
+        v.payCurrency = currency;
+      } catch {
+        err('payAmountMinor', `too many decimal places for ${currency}`);
+      }
+    }
   }
   if (!v.employeeNumber) err('employeeNumber', 'required');
   return { values: v, errors };

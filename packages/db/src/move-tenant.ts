@@ -39,8 +39,11 @@ async function connect(url: string, tenantId: string) {
   return c;
 }
 
-/** Tenant tables in foreign-key dependency order (parents first). */
-export async function tenantTablesInOrder(client: pg.Client): Promise<string[]> {
+/**
+ * Tenant tables in foreign-key dependency order (parents first). Reads only the catalog, so any
+ * connection works (the owner here; the application role for exports and verified deletion).
+ */
+export async function tenantTablesInOrder(client: Pick<pg.ClientBase, 'query'>): Promise<string[]> {
   const { rows: tables } = await client.query<{ name: string }>(
     `SELECT format('%I.%I', n.nspname, c.relname) AS name FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE c.relkind = 'r' AND n.nspname = ANY($1)

@@ -60,6 +60,30 @@ export async function withTenant<T>(
   );
 }
 
+/**
+ * Read-only tenant context on the tenant's READER (reporting role on a read replica), falling back to the
+ * writer when no reader is configured for the tenant's database. Same transaction-local tenant setting,
+ * so forced RLS applies exactly as on the writer. Used for reports and data exports only.
+ */
+export async function withTenantReader<T>(
+  router: TenantRouter,
+  tenantId: string,
+  fn: (tx: Tx, info: { reader: boolean; dbKey: string }) => Promise<T>,
+  opts: Pick<TenantContextOptions, 'actorId'> = {},
+): Promise<T> {
+  if (!UUID_RE.test(tenantId)) throw new Error('Invalid tenant id');
+  if (opts.actorId && !UUID_RE.test(opts.actorId)) throw new Error('Invalid actor id');
+  const { pool, reader, dbKey } = await router.readerPoolFor(tenantId, { allowMoving: true });
+  return runInTransaction(
+    pool,
+    (tx) => fn(tx, { reader, dbKey }),
+    async (tx) => {
+      await tx.query("SELECT set_config('app.tenant_id', $1, true), set_config('app.actor_id', $2, true)", [tenantId, opts.actorId ?? '']);
+    },
+    true,
+  );
+}
+
 /** Registry-level access (no tenant data). */
 export async function withRegistry<T>(router: TenantRouter, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return runInTransaction(router.registryPool(), fn);

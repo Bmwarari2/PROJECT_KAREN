@@ -30,13 +30,17 @@ export async function resetDatabase(db: string): Promise<void> {
   });
 }
 
-export function testRouter(cell?: string): TenantRouter {
+export function testRouter(cell?: string, opts: { readers?: Record<string, string> } = {}): TenantRouter {
   return new TenantRouter({
     cell,
     databases: { shared: appUrl(TEST_DBS.shared), dedicated: appUrl(TEST_DBS.dedicated) },
+    readers: opts.readers,
     cacheTtlMs: 0,
   });
 }
+
+/** Reader URL for a test database: the reporting role (read-only grants, no vault, no BYPASSRLS). */
+export const readerUrl = (db: string) => appUrl(db, 'thapsus_reporting');
 
 /** Creates a tenant row in the registry and the tenant database (as the app role; RLS applies). */
 export async function createTestTenant(

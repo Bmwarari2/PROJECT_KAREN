@@ -2,7 +2,7 @@
   "jurisdiction": "CY",
   "parent": "EU",
   "name": "Cyprus",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -62,7 +62,7 @@
       "working_time.max_weekly_hours",
       "minimum_wage.rates",
       "employment.probation",
-      "holidays: Cyprus has no single statutory public-holiday list for private-sector employment found on an allow-listed source (holidays arise by law, established practice or agreement per the MLSI guide) — not modelled"
+      "holidays: not modelled — Cyprus has no single statutory public-holiday list for private-sector employment on an allow-listed source (holidays arise by law, established practice or agreement per the MLSI guide). EURES Cyprus (checked 2026-10-18) only says official holidays \"varies from 14 to 17 annually\" and refers to the Department of Labour Relations; no official gov.cy list for 2026 was found"
     ]
   }
 }
