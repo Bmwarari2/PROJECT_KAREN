@@ -17,9 +17,9 @@ export type GuardResult = { allowed: true } | { allowed: false; reason: RefusalR
 export function normaliseQuestion(input: string): string {
   return input
     .normalize('NFKC')
-    .replace(/[​-‏⁠﻿]/g, '')
-    .replace(/[‘’ʼ]/g, "'")
-    .replace(/[“”]/g, '"')
+    .replace(/[\u200b-\u200f\u2060\ufeff]/g, '')
+    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}'"<>[\]/:@.\s-]+/gu, ' ')
     .replace(/[.?!]+(\s|$)/g, ' $1')

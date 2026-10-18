@@ -18,7 +18,7 @@ export interface Chunk {
 /** Text per page (PDF) or a single page (text and Markdown). Returns null when the type cannot be read. */
 export async function extractPages(contentType: string, bytes: Buffer): Promise<{ pages: string[]; paged: boolean } | null> {
   if (contentType === 'text/plain' || contentType === 'text/markdown') {
-    const text = bytes.toString('utf8').replace(/^﻿/, '');
+    const text = bytes.toString('utf8').replace(/^\ufeff/, '');
     return { pages: [contentType === 'text/markdown' ? stripMarkdownInline(text) : text], paged: false };
   }
   if (contentType === 'application/pdf') {

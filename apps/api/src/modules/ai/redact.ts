@@ -36,7 +36,7 @@ export function wordTokens(text: string): Token[] {
   const re = /[\p{L}][\p{L}\p{M}]*/gu;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
-    const before = text.slice(0, m.index).replace(/[\s"'(\[‘“]+$/u, '');
+    const before = text.slice(0, m.index).replace(/[\s"'([\u2018\u201c]+$/u, '');
     out.push({
       word: m[0].toLowerCase(),
       start: m.index,
@@ -121,7 +121,7 @@ export async function redactPeople(tx: Tx, texts: string[], askerEmployeeId: str
     for (const sp of spans) if (!kept.length || sp[0] >= kept[kept.length - 1]![1]) kept.push(sp);
     let s = text;
     for (const [a, b, rep] of kept.reverse()) s = s.slice(0, a) + rep + s.slice(b);
-    return s.replace(/\[person\](?:[\s'’-]+\[person\])+/g, PERSON);
+    return s.replace(/\[person\](?:[\s'\u2019-]+\[person\])+/g, PERSON);
   });
   return { texts: out, questionMentionsColleague: mentionsColleague };
 }
