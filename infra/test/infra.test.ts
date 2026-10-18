@@ -226,6 +226,23 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     for (const [, l] of https) expect(asArray(l.Properties!.Certificates).length).toBe(1);
   });
 
+  it('the web server reaches the api privately over Service Connect (server-rendered app pages)', () => {
+    const [, ns] = resources(t, 'AWS::ServiceDiscovery::HttpNamespace')[0]!;
+    expect(String(ns.Properties!.Name)).toMatch(/\.internal$/);
+    const svc = (suffix: string) => resources(t, 'AWS::ECS::Service').find(([, r]) => String(r.Properties!.ServiceName).endsWith(suffix))![1];
+    const apiSc = svc('-api').Properties!.ServiceConnectConfiguration as Json;
+    expect(apiSc.Enabled).toBe(true);
+    expect((apiSc.Services as Json[]).map((x) => (x.ClientAliases as Json[])[0])).toEqual([{ DnsName: 'api', Port: 4000 }]);
+    const webSc = svc('-web').Properties!.ServiceConnectConfiguration as Json;
+    expect(webSc.Enabled).toBe(true);
+    expect(webSc.Services).toBeUndefined();
+    const [, webTask] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-web'))!;
+    const webApp = (webTask.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
+    expect((webApp.Environment as Json[]).find((e) => e.Name === 'API_INTERNAL_URL')?.Value).toBe('http://api:4000');
+    const ingress = resources(t, 'AWS::EC2::SecurityGroupIngress').map(([, r]) => r.Properties!);
+    expect(ingress.some((r) => r.FromPort === 4000 && r.ToPort === 4000 && r.Description === 'web to api (Service Connect)')).toBe(true);
+  });
+
   it('services receive the documented configuration', () => {
     const [, apiTask] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-api'))!;
     const app = (apiTask.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
