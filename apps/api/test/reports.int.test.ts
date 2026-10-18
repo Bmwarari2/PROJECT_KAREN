@@ -350,6 +350,16 @@ describe('7.2 saved reports and scheduled delivery', () => {
       expect(`${m.subject} ${m.text}`).not.toMatch(/Ada|Ben|Cleo|Mona|Dan|Eve|Fictional Widgets|Monthly headcount/);
     }
   });
+
+  it('the recipient picker lists only active users who may use reports, and needs the schedule permission', async () => {
+    const employee = await w.login(w.people.eve, 'employee', { type: 'self' });
+    const list = await w.api('GET', '/v1/reports/recipients');
+    expect(list.statusCode, list.body).toBe(200);
+    const ids = list.json().map((r: { id: string }) => r.id);
+    expect(ids).toContain(w.owner.userId);
+    expect(ids).not.toContain(employee.userId);
+    expect((await w.api('GET', '/v1/reports/recipients', undefined, employee.cookie)).statusCode).toBe(403);
+  });
 });
 
 describe('7.1 statutory reports from the compliance centre', () => {

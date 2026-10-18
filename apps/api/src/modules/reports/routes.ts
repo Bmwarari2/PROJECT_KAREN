@@ -348,6 +348,31 @@ export async function reportRoutes(app: FastifyInstance) {
   type ScheduleBodyT = { savedReportId: string; frequency: 'daily' | 'weekly' | 'monthly'; timeOfDay: string; weekday?: number; dayOfMonth?: number; timeZone: string; format: string; recipientUserIds: string[]; enabled?: boolean };
   const scheduleOut = (r: { id: string; saved_report_id: string; name: string; frequency: string; time_of_day: string; weekday: number | null; day_of_month: number | null; time_zone: string; format: string; recipient_user_ids: string[]; enabled: boolean; last_period_key: string | null }) => ({ id: r.id, savedReportId: r.saved_report_id, savedReportName: r.name, frequency: r.frequency, timeOfDay: r.time_of_day, weekday: r.weekday, dayOfMonth: r.day_of_month, timeZone: r.time_zone, format: r.format, recipientUserIds: r.recipient_user_ids, enabled: r.enabled, lastPeriodKey: r.last_period_key });
 
+  app.get(
+    '/v1/reports/recipients',
+    { schema: { tags: ['reports'], summary: 'Active users who may receive scheduled reports (for the recipient picker)', querystring: Type.Object({ q: Type.Optional(Type.String({ maxLength: 100 })) }), response: { 200: Type.Array(Type.Object({ id: Uuid, displayName: Type.String() })), 403: Problem } } },
+    async (req) => {
+      authorizeSome(req, 'reports.schedule');
+      const q = (req.query as { q?: string }).q?.trim();
+      return app.tenantTx(
+        req,
+        async (tx) => {
+          const params: unknown[] = [];
+          let where = `status = 'active'`;
+          if (q) {
+            params.push(`%${q.replace(/[%_\\]/g, '\\$&')}%`);
+            where += ` AND display_name ILIKE $1`;
+          }
+          const users = await tx.query<{ id: string; display_name: string }>(`SELECT id, display_name FROM app.users WHERE ${where} ORDER BY display_name, id LIMIT 40`, params);
+          const out: Array<{ id: string; displayName: string }> = [];
+          for (const u of users) if (canUseReports(await loadPrincipal(tx, u.id))) out.push({ id: u.id, displayName: u.display_name });
+          return out.slice(0, 20);
+        },
+        { readOnly: true },
+      );
+    },
+  );
+
   app.get('/v1/reports/schedules', { schema: { tags: ['reports'], response: { 200: Type.Array(ScheduleOut), 403: Problem } } }, async (req) => {
     authorizeSome(req, 'reports.schedule');
     const rows = await app.tenantTx(req, (tx) => tx.query<Parameters<typeof scheduleOut>[0]>('SELECT s.*, r.name FROM app.report_schedules s JOIN app.saved_reports r ON r.tenant_id = s.tenant_id AND r.id = s.saved_report_id ORDER BY r.name, s.created_at'), { readOnly: true });
