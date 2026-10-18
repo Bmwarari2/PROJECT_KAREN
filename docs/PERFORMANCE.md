@@ -1,11 +1,55 @@
 # Performance
 
-Benchmarks for the scale targets in `docs/PROGRESS.md`. **All numbers are local measurements**: a
-Docker PostgreSQL on a shared development machine, with the API in-process (Fastify `inject`, so no
-network hop). They show the order of magnitude and catch regressions. They are not production latency,
-which `pnpm loadtest` (k6, a temporary AWS environment) will measure.
+Brief §3 sets the scale targets. This file records how each one is measured and the latest result. Local numbers come from a development container, not from AWS. The staging and load-test numbers in §3 are filled in by `pnpm loadtest` (Phase 12) against a temporary environment that is torn down after each run.
 
-## Method
+## 1. Targets (brief §3)
+
+| Target | How it is proven | Status |
+| --- | --- | --- |
+| One tenant with 200,000 employees and 50 legal entities across the UK, EU and US | `pnpm synth:enterprise` (§2.1); the generator test `apps/api/test/cli.int.test.ts` | Generated locally (§2.1) |
+| 5,000 concurrent users per tenant | k6 `concurrent-users` scenario in `pnpm loadtest` | Pending the AWS load-test run (Phase 12) |
+| 20,000 clock-ins within 10 minutes | k6 `clock-in-burst` scenario in `pnpm loadtest` | Pending the AWS load-test run (Phase 12) |
+| p95 < 300 ms for common reads, < 1 s for paginated lists at that size | Local benchmarks per phase (§2) plus k6 thresholds | Local p95 within budget (§2.3); AWS run pending |
+| 200,000-employee bulk import and large reports as background jobs with progress | Phase 1 import benchmark (§2.3), Phase 7 report jobs | Import: 386 s for 200,000 rows with progress (§2.3) |
+| 99.9 % availability, Multi-AZ, RPO ≤ 15 min, RTO ≤ 4 h | CDK assertions (Multi-AZ, continuous backup) plus the Phase 12 drills | Drills pending (Phase 12) |
+
+## 2. Local measurements
+
+**Machine:** 4 vCPU, 15 GB RAM Linux container. PostgreSQL 17 (Docker, `postgres:17-alpine`, `shared_buffers=128MB`). Node 24.22. Other build and test jobs shared the machine during these runs, so treat the numbers as upper bounds.
+
+### 2.1 Synthetic enterprise tenant (Phase 0)
+
+Command: `SYNTH_EMPLOYEES=200000 SYNTH_USERS=6000 pnpm synth:enterprise` on a fresh, migrated database. The data is bulk-loaded with `COPY`.
+
+| Date | Employees | Legal entities | Locations | Sign-in users | Generator runtime | Wall clock (incl. tsx start-up) | Database size |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-10-18 | 200,000 | 50 | 150 | 6,000 | 171.7 s | 2 m 53 s | 740 MB |
+
+Phases of the run:
+- 0.3 s — organisation (50 entities, 150 locations, 10 departments)
+- 14.4 s — employees
+- 144.8 s — effective-dated history and reporting lines
+- 171.7 s — sign-in users and roles
+
+The output is deterministic: two runs with the same size produce byte-identical employee data, which the `cli.int.test.ts` digest test checks.
+
+### 2.2 Lighthouse, mobile (Phase 0)
+
+`pnpm verify` → `scripts/lighthouse.mjs`: median of three runs on a production build with default mobile throttling. Thresholds are performance ≥ 90 and accessibility ≥ 95. Latest results are below; `.verify/lighthouse.json` holds the newest run.
+
+| Page | Performance | Accessibility | Best practices | LCP | CLS | TBT |
+| --- | --- | --- | --- | --- | --- | --- |
+| Marketing home | 98 | 96 | 96 | 2,180 ms | 0.000 | 78 ms |
+| Sign in | 100 | 96 | 96 | 1,613 ms | 0.000 | 43 ms |
+| Sign up | 98 | 100 | 96 | 2,058 ms | 0.000 | 99 ms |
+| App home (signed in) | 100 | 100 | 96 | 964 ms | 0.000 | 84 ms |
+| App security (signed in) | 100 | 100 | 96 | 957 ms | 0.000 | 53 ms |
+
+### 2.3 Core HR at 200,000 employees (Phase 1)
+
+These runs use the API in-process (Fastify `inject`, so no network hop). They show the order of magnitude and catch regressions; production latency comes from `pnpm loadtest` (§3).
+
+#### Method
 
 | Step | Command | What it does |
 | --- | --- | --- |
@@ -17,7 +61,7 @@ which `pnpm loadtest` (k6, a temporary AWS environment) will measure.
 Budgets (p95): people list, search, filters and profile < 1,000 ms (PROGRESS 1.1). Org chart first
 render < 1,000 ms and node expand < 300 ms (PROGRESS 1.2).
 
-## Machine
+#### Machine
 
 | | |
 | --- | --- |
@@ -28,16 +72,16 @@ render < 1,000 ms and node expand < 300 ms (PROGRESS 1.2).
 | Database | PostgreSQL 17.11 in Docker (default settings: `shared_buffers` 128 MB, `work_mem` 4 MB) |
 | Runtime | Node.js 24.22 |
 
-## Results — 2026-10-18
+#### Results — 2026-10-18
 
-### Synthetic 200,000-employee tenant
+##### Synthetic 200,000-employee tenant
 
 | Step | Result |
 | --- | --- |
 | `pnpm synth:enterprise` (200,000 employees, 235,466 job records, 50 entities, 6,000 users) | **173.9 s** |
 | Phase 1 migrations 0007b–0007i applied on top of that data (FK validation, exclusion constraints) | < 1 s |
 
-### Core HR reads on 200,000 employees (`scripts/bench-corehr.ts`, 30 runs each)
+##### Core HR reads on 200,000 employees (`scripts/bench-corehr.ts`, 30 runs each)
 
 | Request | p50 ms | p95 ms | max ms | p95 budget | Result |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -54,7 +98,7 @@ render < 1,000 ms and node expand < 300 ms (PROGRESS 1.2).
 | Org chart search | 24 | 35 | 35 | 1,000 | pass |
 | Directory search | 18 | 27 | 28 | 1,000 | pass |
 
-### Org chart in the browser (Playwright, Chromium, production build)
+##### Org chart in the browser (Playwright, Chromium, production build)
 
 The client was measured with a 33-person org (root, 8 leads with 3 reports each) against the real API.
 The 200,000-person server timings are in the table above. Both stay within budget.
@@ -65,7 +109,7 @@ The 200,000-person server timings are in the table above. Both stay within budge
 | Expand a node until its children are on screen | 68, 70, 65 | **68 ms** | 300 ms |
 | Re-run on the same machine with no other workloads: first render / expand | 84, 111, 98 / 46, 36, 35 | **98 / 36 ms** | 1,000 / 300 ms |
 
-### Bulk import of 200,000 employees (`scripts/bench-import.ts`)
+##### Bulk import of 200,000 employees (`scripts/bench-import.ts`)
 
 This was a fresh tenant, a 200,000-row CSV (21 MiB) and the real worker engine. The same database already held the
 200,000-person enterprise tenant.
@@ -88,7 +132,7 @@ extrapolates to more than 1.5 hours for 200,000. Its final tenant-wide refresh t
 people and hit the 30 s statement timeout. ADR-0019 records the set-based rewrite that produced the
 numbers above.
 
-### Re-running
+##### Re-running
 
 ```sh
 pnpm synth:enterprise                                    # once; ~3 minutes
@@ -98,3 +142,7 @@ node --env-file=.env --import tsx scripts/bench-import.ts  # ~7 minutes (IMPORT_
 
 Use a database that the test suites do not reset: the integration suites drop and recreate
 `thapsus_test`.
+
+## 3. Load tests against AWS (`pnpm loadtest`)
+
+Not run yet. The owner's machine runs it after the staging deploy (see `docs/HANDOVER.md`). Results go here, one table per run, with the environment, its size and the teardown confirmation.
