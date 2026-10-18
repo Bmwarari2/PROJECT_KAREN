@@ -153,7 +153,7 @@ export default function AskHrPage() {
                       <li key={c.n} id={`src-${x.result.id}-${c.n}`} className="flex items-start gap-2 text-callout">
                         <span className="text-footnote text-text-secondary">[{c.n}]</span>
                         <FileText aria-hidden className="mt-0.5 h-4 w-4 shrink-0 stroke-[1.5] text-accent" />
-                        <button type="button" className="text-left text-accent hover:underline" onClick={() => open(c.documentId)} aria-label={t('askHr.openSource', { title: c.title })}>
+                        <button type="button" className="text-left text-accent hover:underline" onClick={() => open(c.documentId)}>
                           {c.title}
                           {c.heading ? ` — ${c.heading}` : ''}
                           {c.page ? ` (${t('askHr.page', { page: c.page })})` : ''}

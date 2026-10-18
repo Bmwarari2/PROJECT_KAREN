@@ -973,7 +973,6 @@
     "you": "You asked",
     "sources": "Sources",
     "page": "page {page}",
-    "openSource": "Open {title}",
     "feedbackPrompt": "Was this helpful?",
     "helpful": "Helpful",
     "notHelpful": "Not helpful",
