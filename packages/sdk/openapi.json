@@ -2506,7 +2506,8 @@
                       "hasClientSecret",
                       "acsUrl",
                       "redirectUri",
-                      "spEntityId"
+                      "spEntityId",
+                      "testSignInUrl"
                     ],
                     "properties": {
                       "id": {
@@ -2557,6 +2558,9 @@
                         "type": "string"
                       },
                       "spEntityId": {
+                        "type": "string"
+                      },
+                      "testSignInUrl": {
                         "type": "string"
                       }
                     }
@@ -2969,7 +2973,8 @@
                     "hasClientSecret",
                     "acsUrl",
                     "redirectUri",
-                    "spEntityId"
+                    "spEntityId",
+                    "testSignInUrl"
                   ],
                   "properties": {
                     "id": {
@@ -3020,6 +3025,9 @@
                       "type": "string"
                     },
                     "spEntityId": {
+                      "type": "string"
+                    },
+                    "testSignInUrl": {
                       "type": "string"
                     }
                   }

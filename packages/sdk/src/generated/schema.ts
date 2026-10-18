@@ -1339,6 +1339,7 @@ export interface paths {
                             acsUrl: string;
                             redirectUri: string;
                             spEntityId: string;
+                            testSignInUrl: string;
                         }[];
                     };
                 };
@@ -1765,6 +1766,7 @@ export interface paths {
                             acsUrl: string;
                             redirectUri: string;
                             spEntityId: string;
+                            testSignInUrl: string;
                         };
                     };
                 };

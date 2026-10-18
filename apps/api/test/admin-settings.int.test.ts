@@ -50,7 +50,7 @@ describe('sign-in settings', () => {
     expect(list.statusCode).toBe(200);
     expect(list.body).not.toContain('fictional-secret-value');
     expect(list.body).not.toContain('clientSecretEnc');
-    expect(list.json()).toEqual([expect.objectContaining({ id, protocol: 'oidc', name: 'Fictional IdP', enabled: true, idpUrl: 'https://idp.example.test', clientId: 'thapsus-client', hasClientSecret: true, redirectUri, spEntityId })]);
+    expect(list.json()).toEqual([expect.objectContaining({ id, protocol: 'oidc', name: 'Fictional IdP', enabled: true, idpUrl: 'https://idp.example.test', clientId: 'thapsus-client', hasClientSecret: true, redirectUri, spEntityId, testSignInUrl: `${ctx.base}/v1/auth/sso/start?tenant=${owner.slug}&connection=${id}` })]);
   });
 
   it('turns a connection off and on, refuses to leave enforced SSO without a connection, and deletes', async () => {

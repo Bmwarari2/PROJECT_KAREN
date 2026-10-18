@@ -325,9 +325,11 @@ export async function ssoRoutes(app: FastifyInstance) {
     acsUrl: Type.String(),
     redirectUri: Type.String(),
     spEntityId: Type.String(),
+    /** Starts a real sign-in with this connection (for testing it before enforcing SSO). */
+    testSignInUrl: Type.String(),
   });
   type ConnRow = { id: string; protocol: 'oidc' | 'saml'; name: string; enabled: boolean; jit_provisioning: boolean; created_at: string; config: Partial<OidcConfig & SamlConfig> };
-  const connectionOut = (tenantId: string, r: ConnRow) => ({
+  const connectionOut = (tenantId: string, slug: string, r: ConnRow) => ({
     id: r.id,
     protocol: r.protocol,
     name: r.name,
@@ -340,13 +342,21 @@ export async function ssoRoutes(app: FastifyInstance) {
     acsUrl: samlAcs,
     redirectUri: oidcCallback,
     spEntityId: spEntityId(tenantId, r.id),
+    testSignInUrl: `${api}/v1/auth/sso/start?tenant=${encodeURIComponent(slug)}&connection=${r.id}`,
   });
+  const tenantSlug = async (tx: Tx) => (await tx.one<{ slug: string }>('SELECT slug FROM app.tenants')).slug;
   const CONN_COLUMNS = 'id, protocol, name, enabled, jit_provisioning, created_at, config';
 
   app.get('/v1/settings/sso-connections', { schema: { tags: ['settings'], response: { 200: Type.Array(ConnectionOut), 403: Problem } } }, async (req) => {
     const auth = authorize(req, 'settings.read');
-    const rows = await app.tenantTx(req, (tx) => tx.query<ConnRow>(`SELECT ${CONN_COLUMNS} FROM app.sso_connections ORDER BY created_at`), { readOnly: true });
-    return rows.map((r) => connectionOut(auth.tenantId, r));
+    return app.tenantTx(
+      req,
+      async (tx) => {
+        const slug = await tenantSlug(tx);
+        return (await tx.query<ConnRow>(`SELECT ${CONN_COLUMNS} FROM app.sso_connections ORDER BY created_at`)).map((r) => connectionOut(auth.tenantId, slug, r));
+      },
+      { readOnly: true },
+    );
   });
 
   /** Refuses a change that would leave SSO enforced with no enabled connection (everyone would be locked out). */
@@ -387,7 +397,7 @@ export async function ssoRoutes(app: FastifyInstance) {
           targetId: id,
           diff: { before: { name: before.name, enabled: before.enabled, jitProvisioning: before.jit_provisioning }, after: { name: row.name, enabled: row.enabled, jitProvisioning: row.jit_provisioning } },
         });
-        return connectionOut(auth.tenantId, row);
+        return connectionOut(auth.tenantId, await tenantSlug(tx), row);
       });
     },
   );
