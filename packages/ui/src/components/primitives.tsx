@@ -134,9 +134,14 @@ export function EmptyState({ icon, title, body, action }: { icon?: React.ReactNo
 }
 
 // ---- Table -----------------------------------------------------------------------------------
-export function Table({ className, dense, ...props }: React.TableHTMLAttributes<HTMLTableElement> & { dense?: boolean }) {
+/**
+ * `scrollLabel` names the scroll area and makes it focusable, so keyboard users can scroll a table
+ * that is wider than the screen (WCAG 2.1.1); pass it wherever a table may overflow on phones.
+ */
+export function Table({ className, dense, scrollLabel, ...props }: React.TableHTMLAttributes<HTMLTableElement> & { dense?: boolean; scrollLabel?: string }) {
+  const scroll = scrollLabel ? { tabIndex: 0, role: 'region', 'aria-label': scrollLabel } : {};
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-border">
+    <div className={cn('w-full overflow-x-auto rounded-lg border border-border', scrollLabel && focusRing)} {...scroll}>
       <table data-dense={dense || undefined} className={cn('w-full border-collapse text-left text-callout tabular-nums', className)} {...props} />
     </div>
   );
