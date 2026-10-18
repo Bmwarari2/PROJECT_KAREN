@@ -297,7 +297,7 @@ async function smoke(region) {
     // tidy up: schedule the fictional tenant for closure (grace period, then verified deletion)
     if (ctx.tenantId)
       await owner
-        .req('POST', '/v1/privacy/account-closure', { confirmSlug: slug, reason: 'staging smoke test' })
+        .req('POST', '/v1/privacy/closure', { confirmWorkspace: slug, reason: 'staging smoke test' })
         .catch(() => undefined);
   }
   return steps;
