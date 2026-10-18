@@ -13,7 +13,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 0 | Foundations | `phase-0-foundations` | [h] |
 | 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
 | 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h] |
-| 3 | Time off and absence (6.2) | `phase-3-time-off` | [ ] |
+| 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [ ] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [ ] |
 | 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [ ] |
@@ -189,20 +189,24 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 3 — Time off and absence (6.2)
 
-- [ ] **3.1 Leave policy engine**
+- [x] **3.1 Leave policy engine**
   - Policies per entity and country: accrual (annual, monthly, per hour worked), pro rata for part-time and mid-year joiners/leavers, carry-over with expiry, caps, waiting periods, negative balances, TOIL, unpaid and family leave types.
   - Tests first: balance calculations covered by table-driven tests including leap years, DST, part-time patterns and policy changes mid-year.
   - Requests, approvals (via approval chains), cancellations, balance adjustments with audit.
-- [ ] **3.2 Public holidays and company calendars**
+  - _Evidence:_ `apps/api/test/leave-engine.test.ts` (table-driven: leave years, pro rata for mid-year policy and FTE changes and joiners, monthly and per-hour accrual, working patterns and half days, a week across the clock change, a leap day, carry-over expiry, caps, negative balances, waiting periods, TOIL); `leave-policies.int.test.ts` (entity- and country-scoped policies, mid-year changes, per-hour accrual, carry-over, waiting period 422, TOIL, unpaid and family leave, request and cancel audit rows); `leave.int.test.ts` (requests through the approval chain, rejection, insufficient balance, audited HR adjustments); `apps/web/e2e/time-off.spec.ts` (request flow, axe).
+- [x] **3.2 Public holidays and company calendars**
   - Public holidays from jurisdiction packs per country and region (UK nations, EU member states, US federal) plus company calendars; working patterns determine deductions.
-- [ ] **3.3 Sickness absence and statutory sick pay tracking**
+  - _Evidence:_ `leave.int.test.ts` ("public holidays per region and calendars": Scottish bank holidays in leave counts, company closure days); `leave-engine.test.ts` ("request amounts with working patterns, holidays and DST", part-timers' non-working days not deducted).
+- [x] **3.3 Sickness absence and statutory sick pay tracking**
   - Sickness records with fit notes/documents stored in the sensitive vault; return-to-work forms.
   - Statutory sick pay tracking from pack rules: UK SSP, EU member-state rules where held, US state and local paid sick leave accruals; golden tests per rule.
-- [ ] **3.4 US FMLA**
+  - _Evidence:_ `leave.int.test.ts` (sickness reasons and fit notes in the vault, return-to-work, UK SSP for linked spells); `absence.int.test.ts` (fit notes required after the company threshold, medical detail readable by HR and the employee only with refusals audited, SSP per region); `leave-engine.test.ts` golden vectors ("UK statutory sick pay … both sides of 6 April 2026", "EU employer sick pay" per held member state, "US state paid sick leave" per state pack).
+- [x] **3.4 US FMLA**
   - Eligibility checks (employer coverage, length of service, hours worked, worksite employee count) from pack data; leave year methods; intermittent leave tracking; golden tests.
-- [ ] **3.5 Absence analytics**
+  - _Evidence:_ `absence.int.test.ts` ("US FMLA": leave-year method from the pack, 75-mile worksite count, recorded or HR-provided hours, intermittent usage in hours, coverage from headcount history); `leave.int.test.ts` (eligibility from the US pack); `leave-engine.test.ts` (every leave-year method in the pack).
+- [x] **3.5 Absence analytics**
   - Bradford factor, configurable trigger alerts, team calendar, cover rules (minimum staffing) and per-user ICS feeds with revocable tokens and no sensitive detail.
-
+  - _Evidence:_ `leave-engine.test.ts` ("absence analytics": Bradford factor); `leave.int.test.ts` (trigger alerts deduplicated, minimum-cover block, team calendar hiding sensitive types, token-scoped revocable ICS); `absence.int.test.ts` (masking per viewer, ICS tokens tenant-bound and own-only revocation, trigger windows and manager notification); `leave-policies.int.test.ts` (cover rule that warns).
 ---
 
 ## Phase 4 — Rotas and time tracking (6.3)
