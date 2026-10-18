@@ -151,7 +151,7 @@ export async function buildCompanyExport(ctx: JobContext<Deps>, exportId: string
   }
   out.add(manifest.files.manifest, Buffer.from(fileLines.join('\r\n') + '\r\n'));
   out.add('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
-  await ctx.progress(++step, total);
+  await ctx.progress(step + 1, total);
   const zip = await out.finish();
   const key = `${tenantId}/exports/${exportId}.zip`;
   await deps.objects.put(key, zip, 'application/zip');

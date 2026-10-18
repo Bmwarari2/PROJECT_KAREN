@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CalendarDays, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
+import { Bell, CalendarDays, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Scale, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
@@ -26,6 +26,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/documents', label: t('app.nav.documents'), icon: <FileText aria-hidden />, show: true },
     { href: '/app/imports', label: t('app.nav.imports'), icon: <Upload aria-hidden />, show: has('imports.run') },
     { href: '/app/automation', label: t('app.nav.automation'), icon: <Zap aria-hidden />, show: has('automation.read') },
+    { href: '/app/privacy', label: t('app.nav.privacy'), icon: <Scale aria-hidden />, show: has('privacy.read') },
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
     { href: '/app/security', label: t('app.nav.security'), icon: <ShieldCheck aria-hidden />, show: true },
     { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') },
