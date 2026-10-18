@@ -21,6 +21,7 @@ import { supportGrantRoutes } from './modules/support/routes';
 import { meRoutes } from './modules/me/routes';
 import { mockIdpKeys, mockIdpPlugin } from './dev/mock-idp';
 import { registerModules } from './modules';
+import { MemoryObjectStore } from './lib/object-store';
 
 export const API_VERSION = '1.0.0';
 
@@ -92,6 +93,16 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     await app.register(meRoutes);
     await registerModules(app);
     if (deps.config.env !== 'prod') await app.register(globalRoutes); // single-process local dev
+    // Dev/test only: signed download links for the in-memory object store (production uses S3 presigned URLs).
+    const store = deps.objects;
+    if (store instanceof MemoryObjectStore && store.serve && (deps.config.env === 'dev' || deps.config.env === 'test')) {
+      app.get('/v1/dev/objects', { config: { auth: 'public' }, schema: { hide: true } }, async (req, reply) => {
+        const q = req.query as { key?: string; exp?: string; name?: string; sig?: string };
+        const o = q.key && q.exp && q.name && q.sig ? store.verify({ key: q.key, exp: q.exp, name: q.name, sig: q.sig }) : undefined;
+        if (!o) return reply.status(404).send({ type: 'about:blank#notFound', title: 'Not found', status: 404, code: 'notFound' });
+        return reply.header('content-type', o.contentType).header('content-disposition', `attachment; filename="${q.name!.replace(/["\\\r\n]/g, '')}"`).send(o.body);
+      });
+    }
   }
   if (deps.mockIdp) {
     const keys = await mockIdpKeys();

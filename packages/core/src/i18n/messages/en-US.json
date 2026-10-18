@@ -46,6 +46,44 @@
     "shiftClaimApproved": "You have the open shift on {date}",
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
-    "timesheetRejected": "Your timesheet for the week of {week} was returned"
+    "timesheetRejected": "Your timesheet for the week of {week} was returned",
+    "payslipAvailable": "Your pay stub for {label} is ready"
+  },
+  "payroll": {
+    "frequencies": {
+      "fortnightly": "Every two weeks",
+      "four_weekly": "Every four weeks"
+    }
+  },
+  "payslips": {
+    "title": "Pay stubs",
+    "mine": "My pay stubs and tax documents",
+    "noneBody": "Your pay stubs and year-end documents appear here when payroll publishes them. We will let you know.",
+    "docTypes": {
+      "payslip": "Pay stub"
+    },
+    "upload": "Upload pay stubs or year-end documents",
+    "kinds": {
+      "payslip": "Pay stubs"
+    },
+    "labelHint": "Shown to employees, for example “May 2026” or “2025”"
+  },
+  "app": {
+    "nav": {
+      "payslips": "Pay stubs"
+    }
+  },
+  "integrations": {
+    "licenceSku": "License SKU ID",
+    "rules": "Licenses and groups",
+    "noRules": "No rules yet: new accounts get no licenses or groups.",
+    "ruleSummary": "{licences} licenses, {groups} groups",
+    "intro": "Create, license and block accounts in Microsoft 365 or Google Workspace when people join and leave. Your administrator grants consent, you choose the licenses and groups, and every step can be previewed first.",
+    "ops": {
+      "assign_licence": "Assign licenses",
+      "remove_licence": "Remove licenses"
+    },
+    "googleDelegation": "Authorize client ID {clientId} with the scopes listed above in the Admin console, then verify.",
+    "serviceAccountHint": "The client ID your super admin authorizes for domain-wide delegation"
   }
 }
