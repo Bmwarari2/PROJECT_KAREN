@@ -77,6 +77,14 @@ describe('audit context', () => {
     expect(row.request_id).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it('a client cannot choose its own IP: only the hop added by the trusted proxy counts', async () => {
+    // The ALB appends the real client address; anything to its left was supplied by the client.
+    const res = await ctx.app.inject({ method: 'PATCH', url: '/v1/me/preferences', payload: { locale: 'en-GB' }, headers: { cookie: owner.cookie, 'x-forwarded-for': '6.6.6.6, 203.0.113.9' }, remoteAddress: '10.0.12.34' });
+    expect(res.statusCode).toBe(204);
+    const row = await tx((t) => t.one<{ ip: string }>(`SELECT host(ip) AS ip FROM audit.events WHERE action = 'user.preferences_updated' ORDER BY id DESC LIMIT 1`));
+    expect(row.ip).toBe('203.0.113.9');
+  });
+
   it('the safety-net hook audits a mutating call whose route forgot to', async () => {
     const res = await ctx.app.inject({ method: 'POST', url: '/v1/__test/unaudited', headers: { cookie: owner.cookie, 'user-agent': 'FictionalBrowser/2.0' } });
     expect(res.statusCode).toBe(200);
