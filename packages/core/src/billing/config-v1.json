@@ -5,6 +5,7 @@
   "effectiveFrom": "2026-10-18",
   "currencies": ["GBP", "EUR", "USD"],
   "taxBehavior": "exclusive",
+  "providerTaxCode": "txcd_10103001",
   "trial": { "days": 30, "planId": "plus" },
   "terms": {
     "monthly": { "interval": "month", "months": 1, "cancellationNoticeDays": 30 },

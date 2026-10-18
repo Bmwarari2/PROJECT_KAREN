@@ -112,6 +112,35 @@ export async function backofficeAuthRoutes(app: FastifyInstance) {
       const ok = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(secret), digits: 6, period: 30 }).validate({ token: (req.body as { code: string }).code, timestamp: deps.now().getTime(), window: 1 }) !== null;
       if (!ok) throw new ApiError('invalidCredentials');
       await pool.query('UPDATE backoffice.staff_sessions SET mfa_verified_at = now() WHERE id = $1', [s.id]);
+      req.staff = { staffId: s.staff_id, role: 'support', email: '' };
+      await staffAudit(app, req, 'staff.mfa_verified');
+      return reply.status(204).send(null);
+    },
+  );
+
+  // Who is signed in (the back-office UI uses this; 403 mfaRequired until the TOTP step is done).
+  app.get(
+    '/v1/backoffice/auth/session',
+    { config: { auth: 'public' }, preHandler: requireStaff(app, ['support', 'rules_editor', 'billing']), schema: { tags: ['backoffice'], response: { 200: Type.Object({ staffId: Type.String(), email: Type.String(), displayName: Type.String(), role: Type.String(), cell: Type.String() }), 401: Problem, 403: Problem } } },
+    async (req) => {
+      const { rows } = await backofficePool(app).query<{ display_name: string }>('SELECT display_name FROM backoffice.staff_users WHERE id = $1', [req.staff!.staffId]);
+      return { staffId: req.staff!.staffId, email: req.staff!.email, displayName: rows[0]?.display_name ?? '', role: req.staff!.role, cell: deps.config.cell };
+    },
+  );
+
+  app.post(
+    '/v1/backoffice/auth/logout',
+    { config: { auth: 'public', selfAudited: true }, schema: { tags: ['backoffice'], response: { 204: Type.Null() } } },
+    async (req, reply) => {
+      const token = req.cookies?.[STAFF_COOKIE];
+      if (token) {
+        const { rows } = await backofficePool(app).query<{ staff_id: string }>('UPDATE backoffice.staff_sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL RETURNING staff_id', [hashToken(token)]);
+        if (rows[0]) {
+          req.staff = { staffId: rows[0].staff_id, role: 'support', email: '' };
+          await staffAudit(app, req, 'staff.logout');
+        }
+      }
+      reply.clearCookie(STAFF_COOKIE, { path: '/v1/backoffice' });
       return reply.status(204).send(null);
     },
   );

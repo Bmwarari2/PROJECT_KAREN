@@ -12,6 +12,10 @@ import { backofficeAuthRoutes } from './backoffice/auth';
 import { leaveRoutes } from './leave/routes';
 import { timeRoutes } from './time/routes';
 import { complianceRoutes } from './compliance/routes';
+import { billingRoutes } from './billing/routes';
+import { supportTicketRoutes } from './support/tickets';
+import { statusRoutes } from './status/routes';
+import { backofficeRoutes } from './backoffice/routes';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -27,4 +31,8 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(leaveRoutes);
   await app.register(timeRoutes);
   await app.register(complianceRoutes);
+  await app.register(billingRoutes);
+  await app.register(supportTicketRoutes);
+  await app.register(statusRoutes);
+  await app.register(backofficeRoutes);
 }

@@ -69,6 +69,8 @@ export interface BillingConfig {
   effectiveFrom: string;
   currencies: BillingCurrency[];
   taxBehavior: 'exclusive' | 'inclusive';
+  /** Stripe Tax product tax code (https://docs.stripe.com/tax/tax-codes: txcd_10103001 = SaaS, business use). */
+  providerTaxCode: string;
   trial: { days: number; planId: string };
   terms: Record<Term, { interval: 'month' | 'year'; months: number; cancellationNoticeDays: number }>;
   discounts: { terms: Record<Term, number>; codes: DiscountCode[] };
@@ -100,6 +102,7 @@ export function validateBillingConfig(raw: unknown): string[] {
   if (!isInt(c.version) || c.version < 1) p.push('version must be a positive integer');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(c.effectiveFrom ?? '')) p.push('effectiveFrom must be a date');
   if (!Array.isArray(c.currencies) || !c.currencies.every((x) => (BILLING_CURRENCIES as readonly string[]).includes(x))) p.push('currencies must be a subset of GBP, EUR, USD');
+  if (!/^txcd_\d{8}$/.test(c.providerTaxCode ?? '')) p.push('providerTaxCode must be a Stripe tax code (txcd_########)');
   if (!isInt(c.trial?.days) || c.trial.days < 0 || c.trial.days > 90) p.push('trial.days must be 0–90');
   for (const t of TERMS) {
     const term = c.terms?.[t];

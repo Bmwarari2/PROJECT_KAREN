@@ -7,6 +7,9 @@ import { keyProviderFromEnv, LocalKeyProvider, type KeyProvider } from './lib/km
 import { mailerFromEnv, type Mailer } from './lib/mailer';
 import { rateLimiterFromEnv, type RateLimiter } from './lib/rate-limit';
 import { objectStoreFromEnv, type ObjectStore } from './lib/object-store';
+import type { BillingProvider } from './modules/billing/provider';
+import { StripeBillingProvider } from './modules/billing/stripe-provider';
+import { withDeliveryHealth } from './modules/status/service';
 
 export interface DnsResolver {
   resolveTxt(name: string): Promise<string[][]>;
@@ -33,6 +36,10 @@ export interface Deps {
   /** Enables the built-in mock OIDC/SAML identity provider (dev, test and staging smoke only). */
   mockIdp: boolean;
   webPush?: { publicKey: string; privateKey: string; subject: string };
+  /** Billing provider (Stripe test mode in AWS; a recording fake in tests and local dev). ADR-0103. */
+  billing?: BillingProvider;
+  /** Signing secret of this region's Stripe webhook endpoint (Secrets Manager thapsus-hr/<env>/stripe). */
+  stripeWebhookSecret?: string;
 }
 
 export function regionalUrlsFromEnv(prefix: string, fallback: (r: HomeRegion) => string): Record<HomeRegion, string> {
@@ -46,12 +53,15 @@ export async function depsFromEnv(): Promise<Deps> {
   const env = process.env;
   if (env.SERVICE_ROLE !== 'global') assertCellResidency(config.cell, env);
   if (config.env === 'prod' && env.MOCK_IDP_ENABLED === 'true') throw new Error('The mock IdP may never run in production');
+  // The global service never touches tenant databases; its router is never used to connect.
+  const router = env.SERVICE_ROLE === 'global' && !env.DATABASE_URL && !env.DATABASE_SECRET ? new TenantRouter({ databases: { shared: 'postgres://unused@127.0.0.1:1/none' } }) : TenantRouter.fromEnv();
+  const mailer = mailerFromEnv(config.cell);
   return {
     config,
-    // The global service never touches tenant databases; its router is never used to connect.
-    router: env.SERVICE_ROLE === 'global' && !env.DATABASE_URL && !env.DATABASE_SECRET ? new TenantRouter({ databases: { shared: 'postgres://unused@127.0.0.1:1/none' } }) : TenantRouter.fromEnv(),
+    router,
     directory: await directoryFromEnv(),
-    mailer: mailerFromEnv(config.cell),
+    // Cells record email delivery outcomes (timestamps and counts only) for the public status page.
+    mailer: env.SERVICE_ROLE === 'global' ? mailer : withDeliveryHealth(mailer, () => router.registryPool()),
     keys: env.SERVICE_ROLE === 'global' ? new LocalKeyProvider(randomBytes(32).toString('hex'), 'global-unused') : keyProviderFromEnv(config.cell),
     limiter: rateLimiterFromEnv(),
     dns: dnsPromises,
@@ -63,6 +73,9 @@ export async function depsFromEnv(): Promise<Deps> {
     fetch: globalThis.fetch,
     serviceRole: env.SERVICE_ROLE === 'global' ? 'global' : 'cell',
     mockIdp: env.MOCK_IDP_ENABLED === 'true',
+    // Stripe keys come only from Secrets Manager (ECS secrets) or a git-ignored local .env; test mode only.
+    billing: env.STRIPE_SECRET_KEY ? StripeBillingProvider.fromKey(env.STRIPE_SECRET_KEY) : undefined,
+    stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || undefined,
     webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,
