@@ -616,9 +616,44 @@
         "required": true,
         "scope": "daily_start_and_end_each_worker"
       }
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectPath": {
+        "days": 20,
+        "sixDayWeekDays": 24,
+        "excludesPublicHolidays": true,
+        "oneUnbrokenPartMinDays": 10
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-lithuania_en",
+      "notes": "Same source as the pack (EURES); the primary Labour Code text could not be fetched, so this vector is not independent."
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-17",
+      "expectJurisdiction": "EU",
+      "expectPath": {
+        "weeks": 4
+      },
+      "notes": "Before the verification date Lithuania falls back to the EU baseline."
+    },
+    {
+      "jurisdiction": "RO",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectPath": {
+        "days": 20,
+        "dayUnit": "working_days",
+        "additionalDaysMin": 3
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-romania_en",
+      "notes": "Same source as the pack (EURES); the primary Labour Code text could not be fetched, so this vector is not independent."
     }
   ],
-  "notes": "EU part B (IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE). expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). Holiday vectors list holiday dates (ordinary Sundays excluded). RO and LT have no holiday vectors: no official statutory text could be fetched (see packs coverage). Weekend-observance moves: none occur in 2026 for LV (4 May Mon, 18 Nov Wed).",
+  "notes": "EU part B (IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE). expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). Holiday vectors list holiday dates (ordinary Sundays excluded). RO and LT have no holiday vectors: no official statutory text could be fetched (see packs coverage); their annual leave comes from EURES. Weekend-observance moves: none occur in 2026 for LV (4 May Mon, 18 Nov Wed).",
   "sources": [
     {
       "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",

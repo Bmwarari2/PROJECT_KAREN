@@ -37,7 +37,32 @@ describe('rule lookups for tenants', () => {
     expect((await get('/v1/rules/DE')).json().map((x: { key: string }) => x.key)).toEqual(expect.arrayContaining(['leave.statutory_annual_minimum', 'working_time.max_weekly_hours']));
   });
 
+  it('accepts locality codes and walks locality -> state -> federal', async () => {
+    const nyc = (await get('/v1/rules/US-NY-NYC/sick_pay.paid_sick_leave_accrual?date=2026-06-01')).json();
+    expect(nyc).toMatchObject({ jurisdiction: 'US-NY-NYC', effectiveFrom: '2026-02-22' });
+    expect(nyc.source.url).toMatch(/^https:\/\/www\.nyc\.gov\//);
+    expect((await get('/v1/rules/US-NY-NYC/minimum_wage.rates?date=2026-06-01')).json().jurisdiction).toBe('US-NY');
+    expect((await get('/v1/rules/US-NY-BUF/minimum_wage.rates?date=2026-06-01')).json().jurisdiction).toBe('US-NY');
+    expect((await get('/v1/rules/US-NY-NYC?date=2026-06-01')).json().map((x: { jurisdiction: string }) => x.jurisdiction)).toEqual(expect.arrayContaining(['US-NY-NYC', 'US-NY', 'US']));
+    expect((await get('/v1/rules/US-NY-NYCX/minimum_wage.rates')).statusCode).toBe(400);
+    expect((await get('/v1/rules/US-NY-NYC-X/minimum_wage.rates')).statusCode).toBe(400);
+  });
+
+  it('keeps UK nations apart: Northern Ireland never silently inherits Great Britain law', async () => {
+    expect((await get('/v1/rules/GB-SCT/leave.statutory_annual_minimum?date=2026-06-01')).json()).toMatchObject({ jurisdiction: 'GB', regions: ['GB-ENG', 'GB-WLS', 'GB-SCT'] });
+    expect((await get('/v1/rules/GB-WLS/employment.unfair_dismissal_qualifying_period?date=2027-01-01')).json().value.qualifyingPeriod).toBe('P6M');
+    const ni = (await get('/v1/rules/GB-NIR/employment.unfair_dismissal_qualifying_period?date=2027-01-01')).json();
+    expect(ni).toMatchObject({ jurisdiction: 'GB-NIR', value: { qualifyingPeriod: 'P1Y' } });
+    expect((await get('/v1/rules/GB-NIR/minimum_wage.rates?date=2026-06-01')).json().regions).toContain('GB-NIR');
+    expect((await get('/v1/rules/GB-NIR/reporting.gender_pay_gap?date=2026-06-01')).statusCode).toBe(404);
+    const all = (await get('/v1/rules/GB-NIR?date=2026-06-01')).json() as Array<{ key: string; jurisdiction: string }>;
+    expect(all.map((x) => x.key)).not.toContain('reporting.gender_pay_gap');
+    expect(all.find((x) => x.key === 'leave.statutory_annual_minimum')?.jurisdiction).toBe('GB-NIR');
+  });
+
   it('returns public holidays for country and region with observed days', async () => {
+    const wls = (await get('/v1/holidays?country=GB&region=GB-WLS&year=2026')).json();
+    expect(wls.map((h: { observed: string | null; date: string }) => h.observed ?? h.date)).toContain('2026-12-28');
     const sct = (await get('/v1/holidays?country=GB&region=GB-SCT&year=2026')).json();
     expect(sct.map((h: { id: string }) => h.id)).toEqual(expect.arrayContaining(['st-andrews-day']));
     const us2027 = (await get('/v1/holidays?country=US&year=2027')).json();
