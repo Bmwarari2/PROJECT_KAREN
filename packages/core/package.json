@@ -16,7 +16,8 @@
     "./config": "./src/config.ts",
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
-    "./residency": "./src/residency.ts"
+    "./residency": "./src/residency.ts",
+    "./ai-models": "./src/ai-models.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

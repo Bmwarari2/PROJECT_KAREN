@@ -47,5 +47,17 @@
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned"
+  },
+  "askHr": {
+    "off": {
+      "body": "Your organization has not turned on the Ask HR assistant. Contact HR with your question."
+    },
+    "settings": {
+      "body": "Ask HR lets employees ask questions about your policies. It answers only from the policy documents you choose, cites them, and tells people they are talking to AI. It never makes or recommends employment decisions, such as hiring, pay, performance, promotion, discipline or termination. It is off until you turn it on."
+    },
+    "refusal": {
+      "employment_decision": "I can't make or recommend decisions about people, such as hiring, pay, performance ratings, promotion, discipline, termination or layoffs. I can explain what your company's policies say about these processes. For a decision, speak to HR or the manager responsible."
+    },
+    "disclosure": "You are talking to an AI assistant. It answers only from your company's policy documents and can make mistakes, so check the cited source. It never makes or recommends decisions about hiring, pay, performance, promotion, discipline or termination."
   }
 }

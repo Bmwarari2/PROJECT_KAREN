@@ -7,6 +7,7 @@ import { keyProviderFromEnv, LocalKeyProvider, type KeyProvider } from './lib/km
 import { mailerFromEnv, type Mailer } from './lib/mailer';
 import { rateLimiterFromEnv, type RateLimiter } from './lib/rate-limit';
 import { objectStoreFromEnv, type ObjectStore } from './lib/object-store';
+import { aiProviderFromEnv, type AiProvider } from './modules/ai/provider';
 
 export interface DnsResolver {
   resolveTxt(name: string): Promise<string[][]>;
@@ -33,6 +34,8 @@ export interface Deps {
   /** Enables the built-in mock OIDC/SAML identity provider (dev, test and staging smoke only). */
   mockIdp: boolean;
   webPush?: { publicKey: string; privateKey: string; subject: string };
+  /** "Ask HR" model (in-region Bedrock, or the fake in dev/test); undefined when the cell has no in-region model. */
+  ai?: AiProvider;
 }
 
 export function regionalUrlsFromEnv(prefix: string, fallback: (r: HomeRegion) => string): Record<HomeRegion, string> {
@@ -66,5 +69,6 @@ export async function depsFromEnv(): Promise<Deps> {
     webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,
+    ai: env.SERVICE_ROLE === 'global' ? undefined : aiProviderFromEnv(config.cell),
   };
 }
