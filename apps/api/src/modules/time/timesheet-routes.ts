@@ -127,7 +127,7 @@ export async function timesheetRoutes(app: FastifyInstance) {
         );
         await ensureApprovalPolicy(tx, 'timesheet', 'Timesheet approval');
         const approvalId = await requestApproval(tx, 'timesheet', p.employeeId, auth.userId, { timesheetId: row.id, weekStart, workedMinutes: ts.workedMinutes, overtimeMinutes: ts.overtimeMinutes + ts.doubleMinutes, violations: ts.violations.length });
-        let final = row;
+        let final: TimesheetRow;
         if (approvalId) final = await tx.one<TimesheetRow>('UPDATE app.timesheets SET approval_request_id = $2 WHERE id = $1 RETURNING *', [row.id, approvalId]);
         else final = await tx.one<TimesheetRow>(`UPDATE app.timesheets SET status = 'approved', decided_at = now() WHERE id = $1 RETURNING *`, [row.id]);
         await app.audit(tx, req, { action: 'timesheet.submitted', targetType: 'timesheet', targetId: row.id, diff: { employeeId: p.employeeId, weekStart, workedMinutes: ts.workedMinutes, overtimeMinutes: ts.overtimeMinutes, doubleMinutes: ts.doubleMinutes, violations: ts.violations.map((v) => v.rule) } });

@@ -31,7 +31,17 @@ export async function loadSecurity(tx: Tx): Promise<TenantSecurity> {
   return { ...DEFAULT_SECURITY, ...(row?.security ?? {}) };
 }
 
-export type AuthMethod = 'password' | 'passkey' | 'magic_link' | 'oidc' | 'saml' | 'support';
+export type AuthMethod = 'password' | 'passkey' | 'magic_link' | 'oidc' | 'saml' | 'support' | 'api_key' | 'oauth_client';
+
+/** Set for machine callers (scoped API key or OAuth 2.0 client credentials token); see modules/platform/api-auth.ts. */
+export interface ApiClientInfo {
+  /** API key id or OAuth client id (stable; used as the audit actor id and idempotency scope). */
+  id: string;
+  kind: 'api_key' | 'oauth_client';
+  name: string;
+  scopes: string[];
+  rateLimitPerMinute: number;
+}
 
 export interface AuthContext {
   tenantId: string;
@@ -42,6 +52,7 @@ export interface AuthContext {
   hasMfaFactor: boolean;
   principal: Principal;
   user: { email: string; displayName: string; locale: string | null; timeZone: string | null; employeeId: string | null };
+  apiClient?: ApiClientInfo;
 }
 
 export async function createSession(

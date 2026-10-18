@@ -17,6 +17,8 @@
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
     "./residency": "./src/residency.ts",
+    "./features": "./src/features.ts",
+    "./api-scopes": "./src/api-scopes.ts",
     "./ai-models": "./src/ai-models.ts"
   },
   "scripts": {

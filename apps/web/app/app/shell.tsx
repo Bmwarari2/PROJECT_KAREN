@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, CalendarDays, FileText, Home, Inbox, ListChecks, LogOut, Menu, Network, Settings, ShieldCheck, Upload, Users, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
+import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
+import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
@@ -12,6 +14,20 @@ import type { ThemeChoice } from '@/lib/i18n';
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
+
+/** Workspace feature flags and branding (GET /v1/tenant/experience); the app hides disabled features. */
+export interface Experience {
+  kind: string;
+  features: Partial<Record<FeatureKey, boolean>>;
+  branding: { palette: { light: BrandPalette; dark: BrandPalette } | null; logoUrl: string | null };
+}
+export const ExperienceContext = React.createContext<{ experience: Experience | null; reload: () => void }>({ experience: null, reload: () => undefined });
+export const useExperience = () => React.useContext(ExperienceContext);
+/** Whether a feature is on for the signed-in workspace (registry default until the experience loads). */
+export function useFeature(key: FeatureKey): boolean {
+  const { experience } = useExperience();
+  return experience?.features[key] ?? FEATURE_FLAGS[key].default;
+}
 
 /** Navigation entries; each feature phase adds its own (permission-filtered). */
 export function navItems(t: (k: string) => string, s: SessionInfo, path: string): NavItem[] {
@@ -38,6 +54,8 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
   const router = useRouter();
   const path = usePathname();
   const [session, setSession] = React.useState<SessionInfo | null>(null);
+  const [experience, setExperience] = React.useState<Experience | null>(null);
+  const [experienceTick, setExperienceTick] = React.useState(0);
 
   React.useEffect(() => {
     api<SessionInfo>('/v1/auth/session')
@@ -50,6 +68,14 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
         if (err instanceof ApiProblem && err.status === 401) router.replace(`/signin`);
       });
   }, [path, router]);
+
+  React.useEffect(() => {
+    if (!session || (session.isAdmin && !session.mfaVerified)) return;
+    api<Experience>('/v1/tenant/experience')
+      .then(setExperience)
+      .catch(() => undefined);
+  }, [session, experienceTick]);
+  const experienceValue = React.useMemo(() => ({ experience, reload: () => setExperienceTick((n) => n + 1) }), [experience]);
 
   const signOut = async () => {
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
@@ -65,10 +91,16 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
 
   return (
     <SessionContext.Provider value={session}>
+      <ExperienceContext.Provider value={experienceValue}>
+      {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
       <div className="flex min-h-dvh">
         <Sidebar>
           <Link href="/app" className="px-3 no-underline">
-            <Logo label={t('common.appName')} />
+            {experience?.branding.logoUrl ? (
+              <img src={experience.branding.logoUrl} alt={t('platform.branding.logoAlt')} className="h-8 max-w-[160px] object-contain" />
+            ) : (
+              <Logo label={t('common.appName')} />
+            )}
           </Link>
           {session ? <SidebarNav items={nav} label={t('app.nav.label')} renderLink={renderLink} /> : <Skeleton className="h-40" />}
         </Sidebar>
@@ -100,11 +132,17 @@ export function AppShell({ children, theme }: { children: React.ReactNode; theme
               </Button>
             </div>
           </TopBar>
+          {experience?.kind === 'sandbox' ? (
+            <p role="status" className="border-b border-border bg-accent-subtle px-4 py-2 text-center text-footnote text-text">
+              {t('platform.sandbox.banner')}
+            </p>
+          ) : null}
           <main id="main" className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8">
             {session ? children : <Skeleton className="h-64 w-full" />}
           </main>
         </div>
       </div>
+      </ExperienceContext.Provider>
     </SessionContext.Provider>
   );
 }

@@ -8,6 +8,8 @@ import { withTenant, writeAudit, type AuditEntry, type Tx } from '@thapsus/db';
 import type { Deps } from '../deps';
 import { ApiError } from './errors';
 import { mfaGate, resolveSession, SESSION_COOKIE, type AuthContext } from '../modules/auth/sessions';
+import { apiClientMayCall } from '@thapsus/core/api-scopes';
+import { isApiCredential, resolveApiCredential } from '../modules/platform/api-auth';
 
 export interface RequestCtx {
   locale: Locale;
@@ -46,6 +48,13 @@ export function authorize(req: FastifyRequest, action: string, target?: Target):
   return auth;
 }
 
+/** Audit actor type for the caller: a person, Thapsus support (granted access) or an API client. */
+export function actorTypeOf(auth: AuthContext | undefined): AuditEntry['actorType'] {
+  if (!auth) return 'system';
+  if (auth.method === 'support') return 'support';
+  return auth.apiClient ? 'api_client' : 'user';
+}
+
 export function authorizeSome(req: FastifyRequest, action: string): AuthContext {
   const auth = requireAuth(req);
   if (!canSome(auth.principal, action)) throw new ApiError('forbidden');
@@ -70,8 +79,16 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
     const mode = req.routeOptions.config?.auth ?? 'user';
     if (mode === 'public' || !req.routeOptions.url) return; // unknown routes fall through to the 404 handler
     const header = req.headers.authorization;
-    const token = req.cookies?.[SESSION_COOKIE] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
-    const auth = await resolveSession(opts.deps.router, token, opts.deps.now());
+    const bearer = header?.startsWith('Bearer ') ? header.slice(7).trim() : undefined;
+    let auth: AuthContext | undefined;
+    if (isApiCredential(bearer)) {
+      // Public API: scoped API key or OAuth access token → api_client principal (modules/platform).
+      auth = await resolveApiCredential(opts.deps, bearer!);
+      if (auth && !apiClientMayCall(req.routeOptions.url)) throw new ApiError('forbidden', 'apiClientNotAllowed');
+    } else {
+      const token = req.cookies?.[SESSION_COOKIE] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
+      auth = await resolveSession(opts.deps.router, token, opts.deps.now());
+    }
     if (!auth) throw new ApiError('unauthorised');
     req.auth = auth;
     if (auth.user.locale && isLocale(auth.user.locale) && !req.headers['accept-language']) req.ctx.locale = auth.user.locale;
@@ -94,7 +111,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
     if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth) return;
     await withTenant(opts.deps.router, req.auth.tenantId, (tx) =>
       writeAudit(tx, {
-        actorType: req.auth!.method === 'support' ? 'support' : 'user',
+        actorType: actorTypeOf(req.auth),
         actorId: req.auth!.userId,
         action: `http.${req.method.toLowerCase()} ${req.routeOptions.url}`,
         ip: req.ctx.ip,
@@ -112,7 +129,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
   app.decorate('audit', async function (tx: Tx, req: FastifyRequest, entry: Partial<AuditEntry> & { action: string }) {
     req.auditWritten = true;
     await writeAudit(tx, {
-      actorType: entry.actorType ?? (req.auth?.method === 'support' ? 'support' : req.auth ? 'user' : 'system'),
+      actorType: entry.actorType ?? actorTypeOf(req.auth),
       actorId: entry.actorId ?? req.auth?.userId ?? null,
       ip: req.ctx.ip,
       userAgent: req.ctx.userAgent,
