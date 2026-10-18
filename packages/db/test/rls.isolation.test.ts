@@ -16,7 +16,7 @@ const NON_TENANT_SCHEMAS: Record<string, string> = {
 };
 
 /** Registry tables are routing metadata; any new column must be added here deliberately (no personal data). */
-const REGISTRY_COLUMNS = new Set(['tenant_id', 'slug', 'home_region', 'db_key', 'status', 'created_at', 'updated_at', 'kind', 'signalled_at']);
+const REGISTRY_COLUMNS = new Set(['tenant_id', 'slug', 'home_region', 'db_key', 'status', 'created_at', 'updated_at', 'kind', 'signalled_at', 'issued_at', 'certificate', 'certificate_sha256']);
 
 let owner: pg.Client;
 let router: TenantRouter;
@@ -180,6 +180,23 @@ describe('cross-tenant access is impossible', () => {
     } finally {
       await pool.end();
     }
+  });
+
+  it('the closed-tenant audit purge refuses active tenants and never touches another tenant', async () => {
+    for (const t of [tenantA, tenantB]) {
+      await withTenant(router, t, (tx) => tx.exec(`INSERT INTO audit.events (tenant_id, actor_type, action) VALUES (app.current_tenant(), 'system', 'test.event')`));
+    }
+    await expect(withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()'))).rejects.toThrow(/not being closed/);
+    await expect(withTenant(router, tenantA, (tx) => tx.exec('DELETE FROM audit.events'))).rejects.toThrow(/permission denied/);
+    // Even with the purge flag set by hand the app role has no DELETE privilege on the audit log.
+    await expect(
+      withTenant(router, tenantA, async (tx) => {
+        await tx.query(`SELECT set_config('audit.purging', $1, true)`, [tenantB]);
+        return tx.exec('DELETE FROM audit.events');
+      }),
+    ).rejects.toThrow(/permission denied/);
+    const b = await withTenant(router, tenantB, (tx) => tx.one<{ n: number }>(`SELECT count(*)::int AS n FROM audit.events WHERE action = 'test.event'`));
+    expect(b.n).toBe(1);
   });
 
   it('the find-my-workspace lookup reveals tenant ids only', async () => {
