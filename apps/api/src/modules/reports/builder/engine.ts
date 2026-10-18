@@ -1,5 +1,6 @@
 import { Type, type Static } from 'typebox';
 import { can, canSome, type Principal } from '@thapsus/core/permissions';
+import { compareDates } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
 import { ApiError } from '../../../http/errors';
 import { CivilDate } from '../../../http/schemas';
@@ -136,15 +137,21 @@ export function compileSpec(p: Principal, spec: BuilderSpec, opts: CompileOption
   if (!d || !canSome(p, d.permission)) throw new ApiError('forbidden');
   const params: unknown[] = [];
   const add = paramAdder(params);
-  const tokens: Record<string, string> = {};
-  if (d.time === 'asOf') tokens.asOf = `${add(spec.asOf ?? opts.defaultAsOf)}::date`;
+  // date tokens become bound parameters only when some SQL actually uses them (no unused bind parameters)
+  const values: Record<string, string> = {};
+  if (d.time === 'asOf') values.asOf = spec.asOf ?? opts.defaultAsOf;
   else {
     if (!spec.from || !spec.to) throw new ApiError('validation', 'from and to are required for this dataset');
-    if (spec.from > spec.to) throw new ApiError('validation', 'from must not be after to');
-    tokens.from = `${add(spec.from)}::date`;
-    tokens.to = `${add(spec.to)}::date`;
+    if (compareDates(spec.from, spec.to) > 0) throw new ApiError('validation', 'from must not be after to');
+    values.from = spec.from;
+    values.to = spec.to;
   }
-  const sub = (s: string) => s.replace(/\{(asOf|from|to)\}/g, (_, k: string) => tokens[k] ?? 'NULL');
+  const bound: Record<string, string> = {};
+  const token = (k: string) => {
+    if (!(k in values)) return 'NULL';
+    return (bound[k] ??= `${add(values[k])}::date`);
+  };
+  const sub = (s: string) => s.replace(/\{(asOf|from|to)\}/g, (_, k: string) => token(k));
 
   const groupBy = spec.groupBy ?? [];
   const measures = spec.measures ?? [];
@@ -206,7 +213,7 @@ export function compileSpec(p: Principal, spec: BuilderSpec, opts: CompileOption
     if (f.type === 'money') select.push(`CASE WHEN ${readable} THEN ${sub(f.currencySql!)} END AS "c_${key}__ccy"`);
   }
   const where = [rowScope(p, d.permission, params), ...d.where.map(sub)];
-  if (d.key === 'employees' && (spec.population ?? 'employed') === 'employed') where.push(`e.start_date <= ${tokens.asOf} AND (e.end_date IS NULL OR e.end_date >= ${tokens.asOf})`);
+  if (d.key === 'employees' && (spec.population ?? 'employed') === 'employed') where.push(`e.start_date <= ${token('asOf')} AND (e.end_date IS NULL OR e.end_date >= ${token('asOf')})`);
 
   const outerWhere = filters.map((flt) => filterSql(flt, used.get(flt.field)!, add));
   const limit = Math.min(opts.limit, MAX_EXPORT_ROWS);
