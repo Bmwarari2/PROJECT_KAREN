@@ -6,7 +6,7 @@ import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import { ApiError } from '../../http/errors';
 import { Problem } from '../../http/schemas';
 import { authorize } from '../../http/context';
-import { resolveTenantSlug, startSession, throttle } from './common';
+import { consumeChallenge, resolveTenantSlug, startSession, throttle } from './common';
 import { loadSecurity } from './sessions';
 import { assignRole } from '../authz/principal';
 import { open, seal, type Envelope } from '../../lib/kms';
@@ -154,12 +154,9 @@ export async function ssoRoutes(app: FastifyInstance) {
       const q = req.query as { state: string; code?: string };
       const [tenantId, challengeId] = q.state.split('.');
       if (!tenantId || !challengeId || !q.code) throw new ApiError('invalidCredentials');
+      const ch = await consumeChallenge<{ verifier: string; connectionId: string }>(deps, tenantId, challengeId, 'oidc');
+      if (!ch) throw new ApiError('invalidCredentials');
       await withTenant(deps.router, tenantId, async (tx) => {
-        const ch = await tx.maybe<{ challenge: string; data: { verifier: string; connectionId: string } }>(
-          `UPDATE app.auth_challenges SET used_at = now() WHERE id = $1 AND kind = 'oidc' AND used_at IS NULL AND expires_at > now() RETURNING challenge, data`,
-          [challengeId],
-        );
-        if (!ch) throw new ApiError('invalidCredentials');
         const conn = await connection(tx, ch.data.connectionId);
         const config = await oidcConfig(tenantId, conn.id, conn.config);
         const current = new URL(`${api}${req.url}`);
@@ -186,12 +183,9 @@ export async function ssoRoutes(app: FastifyInstance) {
       const body = req.body as { SAMLResponse: string; RelayState: string };
       const [tenantId, challengeId] = body.RelayState.split('.');
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
+      const ch = await consumeChallenge<{ connectionId: string }>(deps, tenantId, challengeId, 'saml');
+      if (!ch) throw new ApiError('invalidCredentials');
       await withTenant(deps.router, tenantId, async (tx) => {
-        const ch = await tx.maybe<{ data: { connectionId: string } }>(
-          `UPDATE app.auth_challenges SET used_at = now() WHERE id = $1 AND kind = 'saml' AND used_at IS NULL AND expires_at > now() RETURNING data`,
-          [challengeId],
-        );
-        if (!ch) throw new ApiError('invalidCredentials');
         const conn = await connection(tx, ch.data.connectionId);
         const result = await samlClient(tenantId, conn.id, conn.config)
           .validatePostResponseAsync({ SAMLResponse: body.SAMLResponse })

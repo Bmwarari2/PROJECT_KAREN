@@ -92,3 +92,25 @@ export async function recordFailure(deps: Deps, req: FastifyRequest, tenantId: s
     });
   });
 }
+
+/**
+ * Consumes a one-time challenge in its OWN committed transaction, so a failed verification later
+ * in the request can never roll the consumption back and allow a retry.
+ */
+export async function consumeChallenge<T = Record<string, unknown>>(
+  deps: Deps,
+  tenantId: string,
+  id: string,
+  kind: string,
+  userId?: string,
+): Promise<{ challenge: string; data: T } | undefined> {
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !/^[0-9a-f-]{36}$/i.test(tenantId)) return undefined;
+  return withTenant(deps.router, tenantId, (tx) =>
+    tx.maybe<{ challenge: string; data: T }>(
+      `UPDATE app.auth_challenges SET used_at = now()
+        WHERE id = $1 AND kind = $2 AND used_at IS NULL AND expires_at > $3 AND ($4::uuid IS NULL OR user_id = $4::uuid)
+        RETURNING challenge, data`,
+      [id, kind, deps.now(), userId ?? null],
+    ),
+  );
+}

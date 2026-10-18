@@ -66,7 +66,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
 
   app.addHook('preHandler', async (req: FastifyRequest) => {
     const mode = req.routeOptions.config?.auth ?? 'user';
-    if (mode === 'public') return;
+    if (mode === 'public' || !req.routeOptions.url) return; // unknown routes fall through to the 404 handler
     const header = req.headers.authorization;
     const token = req.cookies?.[SESSION_COOKIE] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
     const auth = await resolveSession(opts.deps.router, token, opts.deps.now());

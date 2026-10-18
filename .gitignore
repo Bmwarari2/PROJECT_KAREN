@@ -13,3 +13,4 @@ test-results/
 .lighthouse/
 .tmp/
 *.tsbuildinfo
+.tmp-*.log

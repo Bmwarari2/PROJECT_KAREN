@@ -11,7 +11,7 @@ import { ApiError } from '../../http/errors';
 import { Problem } from '../../http/schemas';
 import { requireAuth } from '../../http/context';
 import { resolveTenantSlug, startSession, throttle } from './common';
-import { assertPasswordlessAllowed } from './common';
+import { assertPasswordlessAllowed, consumeChallenge } from './common';
 
 const uuidToBytes = (u: string) => Buffer.from(u.replace(/-/g, ''), 'hex');
 const bytesToUuid = (b: Buffer) => {
@@ -65,12 +65,9 @@ export async function passkeyRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const auth = requireAuth(req);
       const body = req.body as { challengeId: string; response: Parameters<typeof verifyRegistrationResponse>[0]['response']; name?: string };
+      const ch = await consumeChallenge(deps, auth.tenantId, body.challengeId, 'passkey_register', auth.userId);
+      if (!ch) throw new ApiError('invalidCredentials');
       await app.tenantTx(req, async (tx) => {
-        const ch = await tx.maybe<{ challenge: string }>(
-          `UPDATE app.auth_challenges SET used_at = now() WHERE id = $1 AND user_id = $2 AND kind = 'passkey_register' AND used_at IS NULL AND expires_at > now() RETURNING challenge`,
-          [body.challengeId, auth.userId],
-        );
-        if (!ch) throw new ApiError('invalidCredentials');
         const result = await verifyRegistrationResponse({
           response: body.response,
           expectedChallenge: ch.challenge,
@@ -122,11 +119,8 @@ export async function passkeyRoutes(app: FastifyInstance) {
       const body = req.body as { challengeId: string; response: Parameters<typeof verifyAuthenticationResponse>[0]['response'] };
       const [tenantId, challengeId] = body.challengeId.split('.');
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
+      const ch = await consumeChallenge(deps, tenantId, challengeId, 'passkey_login');
       return withTenant(deps.router, tenantId, async (tx) => {
-        const ch = await tx.maybe<{ challenge: string }>(
-          `UPDATE app.auth_challenges SET used_at = now() WHERE id = $1 AND kind = 'passkey_login' AND used_at IS NULL AND expires_at > now() RETURNING challenge`,
-          [challengeId],
-        );
         const cred = await tx.maybe<{ id: string; user_id: string; credential_id: string; public_key: Buffer; counter: string; transports: string[] }>(
           'SELECT id, user_id, credential_id, public_key, counter, transports FROM app.passkeys WHERE credential_id = $1',
           [body.response?.id],
