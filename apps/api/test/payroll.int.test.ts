@@ -19,8 +19,9 @@ let xero: MockProviders;
 const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
 const PERIOD = { name: 'May 2026', frequency: 'monthly', startDate: '2026-05-01', endDate: '2026-05-31', payDate: '2026-05-29' };
 
-const people: Record<string, string> = {};
-const numbers: Record<string, string> = {};
+type Who = 'hourly' | 'starter' | 'leaver' | 'raise' | 'spans';
+const people = {} as Record<Who, string>;
+const numbers = {} as Record<Who, string>;
 let periodId: string;
 let csvConnector: string;
 
@@ -53,7 +54,7 @@ beforeAll(async () => {
   people.raise = await c.hire({ legalFirstName: 'Rae', legalLastName: 'Raise', startDate: '2023-01-02' });
   people.spans = await c.hire({ legalFirstName: 'Ola', legalLastName: 'Overlap', startDate: '2023-01-02' });
   const all = await c.tx((t) => t.query<{ id: string; employee_number: string }>('SELECT id, employee_number FROM app.employees'));
-  for (const [k, id] of Object.entries(people)) numbers[k] = all.find((x) => x.id === id)!.employee_number;
+  for (const [k, id] of Object.entries(people)) numbers[k as Who] = all.find((x) => x.id === id)!.employee_number;
 
   expect((await c.api('POST', `/v1/employees/${people.leaver}/terminate`, { endDate: '2026-05-15', reason: 'Resigned' })).statusCode).toBe(200);
   expect((await c.api('POST', `/v1/employees/${people.raise}/changes`, { effectiveDate: '2026-05-10', payAmountMinor: 3_300_000, payCurrency: 'GBP', payFrequency: 'annual', reason: 'Annual review' })).statusCode).toBe(200);
