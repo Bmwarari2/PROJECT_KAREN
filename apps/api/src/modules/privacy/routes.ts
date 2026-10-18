@@ -4,7 +4,7 @@ import { REGIONS } from '@thapsus/core';
 import { addMinutes, compareDates, compareInstants, daysBetween, instantToDate, minutesBetween } from '@thapsus/core/time';
 import { LEGAL, TRUST, templateForRegion, type LegalTemplate } from '@thapsus/core/trust';
 import { breachDeadlines, retentionRules, RETENTION_CATEGORIES, type BreachDeadline, type RetentionCategory, type RuleBook } from '@thapsus/rules';
-import { enqueueJob, writeAudit, type Tx } from '@thapsus/db';
+import { enqueueJob, withTenant, writeAudit, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
@@ -16,6 +16,7 @@ import { loadPrincipal } from '../authz/principal';
 import { applyEmployeeChange, assertWritable, loadTarget } from '../employees/service';
 import { FIELDS } from '../employees/model';
 import { ruleBook } from '../rules/routes';
+import { sha256 } from '../documents/pdf';
 import { Vault, type VaultActor } from '../vault/service';
 import { applyErasure, buildAccessExport, deadlineColumns, effectiveDue, erasurePlan, homeRegion, resolveSubject, todayUtc, type DsrRow } from './dsr';
 import { buildCompanyExport, purgeTenant } from './company';
@@ -343,20 +344,21 @@ export async function privacyRoutes(app: FastifyInstance) {
 
   app.post(
     '/v1/privacy/requests/:id/export',
-    { config: { selfAudited: true }, schema: { tags: ['privacy'], summary: 'Generate the access export (JSON and PDF) in the background', params: Type.Object({ id: Uuid }), response: { 202: Type.Object({ jobId: Uuid, status: Type.String() }), 403: Problem, 404: Problem, 409: Problem } } },
-    async (req, reply) => {
+    { config: { selfAudited: true }, schema: { tags: ['privacy'], summary: 'Generate the access export (JSON and PDF) into the home-region object store', params: Type.Object({ id: Uuid }), response: { 200: DsrOut, 403: Problem, 404: Problem, 409: Problem } } },
+    async (req) => {
       const auth = authorize(req, 'privacy.dsr');
       const { id } = req.params as { id: string };
-      const job = await app.tenantTx(req, async (tx) => {
+      await app.tenantTx(req, async (tx) => {
         const r = await loadDsr(tx, id);
         assertOpen(r);
         if (r.kind !== 'access') throw new ApiError('conflict', 'Only access requests produce an export');
         await tx.exec(`UPDATE app.dsr_requests SET status = 'in_progress' WHERE id = $1 AND status = 'received'`, [id]);
-        const j = await enqueueJob(tx, 'privacy.dsr_export', `${id}:${deps.now().toISOString().slice(0, 16)}`, { requestId: id }, { createdBy: auth.userId });
         await app.audit(tx, req, { action: 'privacy.dsr_export_requested', targetType: 'dsr_request', targetId: id, sensitive: true });
-        return j;
       });
-      return reply.status(202).send({ jobId: job.id, status: job.status });
+      // One person's data is bounded, so the export is generated inline (the job handler does the same for automation).
+      await generateAccessExport(deps, auth.tenantId, id, auth.userId, req.id);
+      const book = await ruleBook(app);
+      return mapDsr(await app.tenantTx(req, (tx) => loadDsr(tx, id), { readOnly: true }), today(), book);
     },
   );
 
@@ -873,30 +875,40 @@ export async function privacyRoutes(app: FastifyInstance) {
 }
 
 // ---- Background jobs ---------------------------------------------------------------------------------------------------------
-registerJob('privacy.dsr_export', async (ctx) => {
-  const requestId = String(ctx.job.input.requestId);
-  const vault = new Vault(ctx.deps.keys);
-  const built = await ctx.tx(async (tx) => {
+/**
+ * Builds the access export for a request as the given user (vault permissions and audit apply to
+ * them), stores JSON and PDF under the tenant's prefix in the home-region object store and records
+ * the keys and hashes on the request.
+ */
+export async function generateAccessExport(deps: Deps, tenantId: string, requestId: string, userId: string, requestRef: string) {
+  const vault = new Vault(deps.keys);
+  const built = await withTenant(deps.router, tenantId, async (tx) => {
     const r = await tx.maybe<DsrRow>('SELECT * FROM app.dsr_requests WHERE id = $1', [requestId]);
     if (!r || r.kind !== 'access') return undefined;
-    const principal = await loadPrincipal(tx, ctx.job.created_by ?? r.created_by!);
-    const actor: VaultActor = { principal, actorType: 'user', requestId: `job:${ctx.job.id}` };
-    const locale = (await tx.maybe<{ locale: string | null }>('SELECT locale FROM app.users WHERE id = $1', [principal.userId]))?.locale;
-    return { r, out: await buildAccessExport(tx, { vault, actor, tenantId: ctx.tenantId, request: r, locale: locale === 'en-US' ? 'en-US' : 'en-GB', now: ctx.deps.now() }) };
-  });
-  if (!built) return { skipped: true };
-  const base = `${ctx.tenantId}/privacy/dsr/${requestId}`;
-  const { createHash } = await import('node:crypto');
-  const h = (b: Uint8Array) => createHash('sha256').update(b).digest('hex');
-  await ctx.deps.objects.put(`${base}/export.json`, built.out.json, 'application/json');
-  await ctx.deps.objects.put(`${base}/summary.pdf`, Buffer.from(built.out.pdf), 'application/pdf');
-  await ctx.tx(async (tx) => {
-    const exp = { json: { key: `${base}/export.json`, sha256: h(built.out.json) }, pdf: { key: `${base}/summary.pdf`, sha256: h(built.out.pdf) }, generatedAt: ctx.deps.now().toISOString(), summary: built.out.summary };
+    const principal = await loadPrincipal(tx, userId);
+    const actor: VaultActor = { principal, actorType: 'user', requestId: requestRef };
+    const locale = (await tx.maybe<{ locale: string | null }>('SELECT locale FROM app.users WHERE id = $1', [userId]))?.locale;
+    return buildAccessExport(tx, { vault, actor, tenantId, request: r, locale: locale === 'en-US' ? 'en-US' : 'en-GB', now: deps.now() });
+  }, { actorId: userId });
+  if (!built) return undefined;
+  const base = `${tenantId}/privacy/dsr/${requestId}`;
+  await deps.objects.put(`${base}/export.json`, built.json, 'application/json');
+  await deps.objects.put(`${base}/summary.pdf`, Buffer.from(built.pdf), 'application/pdf');
+  await withTenant(deps.router, tenantId, async (tx) => {
+    const exp = { json: { key: `${base}/export.json`, sha256: sha256(built.json) }, pdf: { key: `${base}/summary.pdf`, sha256: sha256(built.pdf) }, generatedAt: deps.now().toISOString(), summary: built.summary };
     await tx.exec(`UPDATE app.dsr_requests SET outcome = coalesce(outcome, '{}'::jsonb) || jsonb_build_object('export', $2::jsonb) WHERE id = $1`, [requestId, JSON.stringify(exp)]);
-    await writeAudit(tx, { actorType: 'system', actorId: ctx.job.created_by, action: 'privacy.dsr_export_generated', targetType: 'dsr_request', targetId: requestId, diff: { tables: Object.keys(built.out.summary.tables).length, sensitiveValues: built.out.summary.sensitiveValues }, sensitive: true });
-    if (ctx.job.created_by) await notify(tx, { userIds: [ctx.job.created_by], kind: 'privacy.dsr', titleKey: 'notify.dsrExportReady', link: `/app/privacy?request=${requestId}`, dedupeKey: `dsr-export:${requestId}:${ctx.job.id}` });
-  });
-  return { requestId, ...built.out.summary };
+    await writeAudit(tx, { actorType: 'user', actorId: userId, action: 'privacy.dsr_export_generated', targetType: 'dsr_request', targetId: requestId, diff: { tables: Object.keys(built.summary.tables).length, sensitiveValues: built.summary.sensitiveValues }, sensitive: true, requestId: requestRef });
+    await notify(tx, { userIds: [userId], kind: 'privacy.dsr', titleKey: 'notify.dsrExportReady', link: `/app/privacy?request=${requestId}`, dedupeKey: `dsr-export:${requestId}:${exp.generatedAt}` });
+  }, { actorId: userId });
+  return built.summary;
+}
+
+registerJob('privacy.dsr_export', async (ctx) => {
+  const requestId = String(ctx.job.input.requestId);
+  const userId = ctx.job.created_by ?? (await ctx.tx((tx) => tx.maybe<{ created_by: string | null }>('SELECT created_by FROM app.dsr_requests WHERE id = $1', [requestId])))?.created_by;
+  if (!userId) return { skipped: true };
+  const summary = await generateAccessExport(ctx.deps, ctx.tenantId, requestId, userId, `job:${ctx.job.id}`);
+  return summary ? { requestId, ...summary } : { skipped: true };
 });
 
 registerJob('privacy.company_export', async (ctx) => {

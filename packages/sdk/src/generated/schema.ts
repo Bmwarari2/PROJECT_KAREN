@@ -15399,7 +15399,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Generate the access export (JSON and PDF) in the background */
+        /** Generate the access export (JSON and PDF) into the home-region object store */
         post: {
             parameters: {
                 query?: never;
@@ -15412,15 +15412,54 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                202: {
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
                             /** Format: uuid */
-                            jobId: string;
+                            id: string;
+                            kind: string;
                             status: string;
+                            subjectEmployeeId: string | null;
+                            subjectUserId: string | null;
+                            subjectName: string | null;
+                            jurisdiction: string;
+                            channel: string;
+                            requesterRelationship: string;
+                            receivedOn: string;
+                            informationReceivedOn: string | null;
+                            pausedDays: number;
+                            dueOn: string | null;
+                            extended: boolean;
+                            extendedDueOn: string | null;
+                            effectiveDueOn: string | null;
+                            daysRemaining: number | null;
+                            overdue: boolean;
+                            extensionAllowed: boolean;
+                            extensionNoticeBy: string | null;
+                            extensionReason: string | null;
+                            rule: {
+                                jurisdiction: string;
+                                key: string;
+                                effectiveFrom: string;
+                                effectiveTo: string | null;
+                                packVersion: number;
+                                source: {
+                                    url: string;
+                                    title: string;
+                                };
+                                verifiedOn: string;
+                            } | null;
+                            identityVerifiedAt: string | null;
+                            identityMethod: string | null;
+                            identityNote: string | null;
+                            details: string | null;
+                            outcome: unknown | null;
+                            exportReady: boolean;
+                            createdAt: string;
+                            completedAt: string | null;
                         };
                     };
                 };

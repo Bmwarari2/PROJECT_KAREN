@@ -90,9 +90,9 @@ describe('per-person access export', () => {
     await c.putSensitive(emp, 'diversity', 'ethnicity', 'Prefer not to say');
     const r = await createDsr({ kind: 'access', subjectEmployeeId: emp, receivedOn: '2026-03-10', identity: { method: 'signed_in_account' } });
     expect(r.subjectUserId).toBe(login.userId);
-    expect((await c.api('POST', `/v1/privacy/requests/${r.id}/export`)).statusCode).toBe(202);
-    const [result] = await c.runQueued('privacy.dsr_export');
-    expect(result).toMatchObject({ requestId: r.id, sensitiveValues: 2 });
+    const gen = await c.api('POST', `/v1/privacy/requests/${r.id}/export`);
+    expect(gen.statusCode, gen.body).toBe(200);
+    expect(gen.json().outcome.export.summary).toMatchObject({ sensitiveValues: 2 });
     const detail = (await c.api('GET', `/v1/privacy/requests/${r.id}`)).json();
     expect(detail).toMatchObject({ status: 'in_progress', exportReady: true });
 
@@ -135,9 +135,11 @@ describe('per-person access export', () => {
       const role = await t.one<{ id: string }>(`INSERT INTO app.roles (tenant_id, key, name, is_admin, permissions, field_access) VALUES (app.current_tenant(), 'privacy_officer', 'Privacy officer', false, '{privacy.*}', '{}') RETURNING id`);
       await t.exec(`INSERT INTO app.role_assignments (tenant_id, user_id, role_id, scope_type, scope_values) VALUES (app.current_tenant(), $1, $2, 'all', '{}')`, [officer.userId, role.id]);
     });
-    expect((await c.api('POST', `/v1/privacy/requests/${r.id}/export`, undefined, officer.cookie)).statusCode).toBe(202);
-    const [result] = await c.runQueued('privacy.dsr_export');
-    expect(result).toMatchObject({ sensitiveValues: 0, withheldCategories: ['sickness'] });
+    const gen = await c.api('POST', `/v1/privacy/requests/${r.id}/export`, undefined, officer.cookie);
+    expect(gen.statusCode, gen.body).toBe(200);
+    expect(gen.json().outcome.export.summary).toMatchObject({ sensitiveValues: 0, withheldCategories: ['sickness'] });
+    // The background job produces the same export for automation (e.g. a scheduled re-run).
+    expect(await c.runJob('privacy.dsr_export', { requestId: r.id })).toMatchObject({ requestId: r.id, sensitiveValues: 1 });
     const denied = await c.tx((t) => t.query(`SELECT 1 FROM audit.events WHERE action = 'vault.read_denied' AND actor_id = $1`, [officer.userId]));
     expect(denied).toHaveLength(1);
   });

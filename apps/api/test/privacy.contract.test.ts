@@ -44,9 +44,8 @@ describe('privacy endpoints match the spec', () => {
     check('get', '/v1/privacy/requests', await c.api('GET', '/v1/privacy/requests?status=all'));
     check('get', '/v1/privacy/requests/{id}', await c.api('GET', `/v1/privacy/requests/${id}`));
     check('post', '/v1/privacy/requests/{id}/identity', await c.api('POST', `/v1/privacy/requests/${id}/identity`, { method: 'signed_in_account' }));
-    check('post', '/v1/privacy/requests/{id}/export', await c.api('POST', `/v1/privacy/requests/${id}/export`));
     check('get', '/v1/privacy/requests/{id}/download', await c.api('GET', `/v1/privacy/requests/${id}/download?file=pdf`));
-    await c.runQueued('privacy.dsr_export');
+    check('post', '/v1/privacy/requests/{id}/export', await c.api('POST', `/v1/privacy/requests/${id}/export`));
     check('get', '/v1/privacy/requests/{id}/download', await c.api('GET', `/v1/privacy/requests/${id}/download?file=pdf`));
     check('get', '/v1/privacy/requests/{id}/erasure-plan', await c.api('GET', `/v1/privacy/requests/${id}/erasure-plan`));
     check('post', '/v1/privacy/requests/{id}/close', await c.api('POST', `/v1/privacy/requests/${id}/close`, { outcome: 'completed' }));

@@ -34604,7 +34604,7 @@
     },
     "/v1/privacy/requests/{id}/export": {
       "post": {
-        "summary": "Generate the access export (JSON and PDF) in the background",
+        "summary": "Generate the access export (JSON and PDF) into the home-region object store",
         "tags": [
           "privacy"
         ],
@@ -34620,23 +34620,305 @@
           }
         ],
         "responses": {
-          "202": {
+          "200": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "required": [
-                    "jobId",
-                    "status"
+                    "id",
+                    "kind",
+                    "status",
+                    "subjectEmployeeId",
+                    "subjectUserId",
+                    "subjectName",
+                    "jurisdiction",
+                    "channel",
+                    "requesterRelationship",
+                    "receivedOn",
+                    "informationReceivedOn",
+                    "pausedDays",
+                    "dueOn",
+                    "extended",
+                    "extendedDueOn",
+                    "effectiveDueOn",
+                    "daysRemaining",
+                    "overdue",
+                    "extensionAllowed",
+                    "extensionNoticeBy",
+                    "extensionReason",
+                    "rule",
+                    "identityVerifiedAt",
+                    "identityMethod",
+                    "identityNote",
+                    "details",
+                    "outcome",
+                    "exportReady",
+                    "createdAt",
+                    "completedAt"
                   ],
                   "properties": {
-                    "jobId": {
+                    "id": {
                       "type": "string",
                       "format": "uuid"
                     },
+                    "kind": {
+                      "type": "string"
+                    },
                     "status": {
                       "type": "string"
+                    },
+                    "subjectEmployeeId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "subjectUserId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "subjectName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "jurisdiction": {
+                      "type": "string"
+                    },
+                    "channel": {
+                      "type": "string"
+                    },
+                    "requesterRelationship": {
+                      "type": "string"
+                    },
+                    "receivedOn": {
+                      "type": "string"
+                    },
+                    "informationReceivedOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "pausedDays": {
+                      "type": "integer"
+                    },
+                    "dueOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "extended": {
+                      "type": "boolean"
+                    },
+                    "extendedDueOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "effectiveDueOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "daysRemaining": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "overdue": {
+                      "type": "boolean"
+                    },
+                    "extensionAllowed": {
+                      "type": "boolean"
+                    },
+                    "extensionNoticeBy": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "extensionReason": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "rule": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "jurisdiction",
+                            "key",
+                            "effectiveFrom",
+                            "effectiveTo",
+                            "packVersion",
+                            "source",
+                            "verifiedOn"
+                          ],
+                          "properties": {
+                            "jurisdiction": {
+                              "type": "string"
+                            },
+                            "key": {
+                              "type": "string"
+                            },
+                            "effectiveFrom": {
+                              "type": "string"
+                            },
+                            "effectiveTo": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "packVersion": {
+                              "type": "integer"
+                            },
+                            "source": {
+                              "type": "object",
+                              "required": [
+                                "url",
+                                "title"
+                              ],
+                              "properties": {
+                                "url": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "verifiedOn": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "identityVerifiedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "identityMethod": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "identityNote": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "details": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "outcome": {
+                      "anyOf": [
+                        {},
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "exportReady": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "completedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }
