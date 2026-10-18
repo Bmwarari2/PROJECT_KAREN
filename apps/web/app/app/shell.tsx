@@ -8,7 +8,7 @@ import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
-import type { ThemeChoice } from '@/lib/i18n';
+import type { ThemeChoice } from '@/lib/i18n-shared';
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
