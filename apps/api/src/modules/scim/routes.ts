@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import { authorize } from '../../http/context';
+import { ApiError } from '../../http/errors';
 import { Problem } from '../../http/schemas';
 import { composeToken, hashToken, newToken, parseToken } from '../auth/tokens';
 import { assignRole } from '../authz/principal';
@@ -380,6 +381,33 @@ export async function scimRoutes(app: FastifyInstance) {
         return r;
       });
       return reply.status(201).send({ id: row.id, token: composeToken(SCIM_PREFIX, auth.tenantId, secret) });
+    },
+  );
+
+  // Listing never returns the token or its hash: a token is shown once, when it is created.
+  const TokenOut = Type.Object({ id: Type.String(), name: Type.String(), createdAt: Type.String(), lastUsedAt: Type.Union([Type.String(), Type.Null()]), revokedAt: Type.Union([Type.String(), Type.Null()]) });
+  app.get('/v1/settings/scim-tokens', { schema: { tags: ['settings'], response: { 200: Type.Array(TokenOut), 403: Problem } } }, async (req) => {
+    authorize(req, 'settings.read');
+    const rows = await app.tenantTx(
+      req,
+      (tx) => tx.query<{ id: string; name: string; created_at: string; last_used_at: string | null; revoked_at: string | null }>('SELECT id, name, created_at, last_used_at, revoked_at FROM app.scim_tokens ORDER BY created_at DESC LIMIT 200'),
+      { readOnly: true },
+    );
+    return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at, lastUsedAt: r.last_used_at, revokedAt: r.revoked_at }));
+  });
+
+  app.delete(
+    '/v1/settings/scim-tokens/:id',
+    { config: { selfAudited: true }, schema: { tags: ['settings'], summary: 'Revokes a SCIM token (it stops working immediately)', params: Type.Object({ id: Type.String({ format: 'uuid' }) }), response: { 204: Type.Null(), 403: Problem, 404: Problem } } },
+    async (req, reply) => {
+      authorize(req, 'settings.manage');
+      const { id } = req.params as { id: string };
+      await app.tenantTx(req, async (tx) => {
+        const n = await tx.exec('UPDATE app.scim_tokens SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [id]);
+        if (!n) throw new ApiError('notFound');
+        await app.audit(tx, req, { action: 'scim.token_revoked', targetType: 'scim_token', targetId: id });
+      });
+      return reply.status(204).send(null);
     },
   );
 }

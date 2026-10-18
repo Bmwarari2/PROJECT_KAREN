@@ -2480,6 +2480,152 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "protocol",
+                      "name",
+                      "enabled",
+                      "jitProvisioning",
+                      "createdAt",
+                      "idpUrl",
+                      "clientId",
+                      "hasClientSecret",
+                      "acsUrl",
+                      "redirectUri",
+                      "spEntityId"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "protocol": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "jitProvisioning": {
+                        "type": "boolean"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "idpUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "clientId": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "hasClientSecret": {
+                        "type": "boolean"
+                      },
+                      "acsUrl": {
+                        "type": "string"
+                      },
+                      "redirectUri": {
+                        "type": "string"
+                      },
+                      "spEntityId": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/settings/security": {
@@ -2536,6 +2682,613 @@
             }
           },
           "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Tenant sign-in policy (SSO enforcement, session timeouts, lockout, IdP MFA trust)",
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ssoEnforced",
+                    "sessionIdleMinutes",
+                    "sessionAbsoluteHours",
+                    "lockoutThreshold",
+                    "lockoutMinutes",
+                    "trustIdpMfa"
+                  ],
+                  "properties": {
+                    "ssoEnforced": {
+                      "type": "boolean"
+                    },
+                    "sessionIdleMinutes": {
+                      "type": "integer"
+                    },
+                    "sessionAbsoluteHours": {
+                      "type": "integer"
+                    },
+                    "lockoutThreshold": {
+                      "type": "integer"
+                    },
+                    "lockoutMinutes": {
+                      "type": "integer"
+                    },
+                    "trustIdpMfa": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/sso-connections/{id}": {
+      "patch": {
+        "tags": [
+          "settings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "jitProvisioning": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "protocol",
+                    "name",
+                    "enabled",
+                    "jitProvisioning",
+                    "createdAt",
+                    "idpUrl",
+                    "clientId",
+                    "hasClientSecret",
+                    "acsUrl",
+                    "redirectUri",
+                    "spEntityId"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "protocol": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "jitProvisioning": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "idpUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "clientId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hasClientSecret": {
+                      "type": "boolean"
+                    },
+                    "acsUrl": {
+                      "type": "string"
+                    },
+                    "redirectUri": {
+                      "type": "string"
+                    },
+                    "spEntityId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "settings"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -3544,6 +4297,268 @@
             }
           },
           "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "createdAt",
+                      "lastUsedAt",
+                      "revokedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "lastUsedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "revokedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/scim-tokens/{id}": {
+      "delete": {
+        "summary": "Revokes a SCIM token (it stops working immediately)",
+        "tags": [
+          "settings"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -14520,6 +15535,1033 @@
             }
           }
         }
+      },
+      "get": {
+        "summary": "Approval chains, in the order they are matched (priority, then age)",
+        "tags": [
+          "approvals"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "subject",
+                      "name",
+                      "condition",
+                      "priority",
+                      "enabled",
+                      "steps",
+                      "createdAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "subject": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "condition": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "field",
+                              "op"
+                            ],
+                            "properties": {
+                              "field": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "op": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "present"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "eq"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "neq"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "gt"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "gte"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "lt"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "lte"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "in"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "value": {}
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "priority": {
+                        "type": "integer"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "steps": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "approver"
+                          ],
+                          "properties": {
+                            "approver": {
+                              "type": "object",
+                              "required": [
+                                "type"
+                              ],
+                              "properties": {
+                                "type": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "manager"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "skip_level"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "role"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "user"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "value": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "timeoutHours": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 720
+                            },
+                            "escalateTo": {
+                              "type": "object",
+                              "required": [
+                                "type"
+                              ],
+                              "properties": {
+                                "type": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "manager"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "skip_level"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "role"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "user"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "value": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "condition": {
+                              "type": "object",
+                              "required": [
+                                "field",
+                                "op"
+                              ],
+                              "properties": {
+                                "field": {
+                                  "type": "string",
+                                  "maxLength": 60
+                                },
+                                "op": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "present"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "eq"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "neq"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "gt"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "gte"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "lt"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "lte"
+                                      ]
+                                    },
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "in"
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "value": {}
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/approval-policies/{id}": {
+      "put": {
+        "summary": "Replaces an approval chain. Requests already in progress keep the steps they started with.",
+        "tags": [
+          "approvals"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subject",
+                  "name",
+                  "steps"
+                ],
+                "properties": {
+                  "subject": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "condition": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "field",
+                          "op"
+                        ],
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "op": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "present"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "eq"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "neq"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "gt"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "gte"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "lt"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "lte"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "in"
+                                ]
+                              }
+                            ]
+                          },
+                          "value": {}
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "priority": {
+                    "type": "integer"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "approver"
+                      ],
+                      "properties": {
+                        "approver": {
+                          "type": "object",
+                          "required": [
+                            "type"
+                          ],
+                          "properties": {
+                            "type": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "manager"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "skip_level"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "role"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "user"
+                                  ]
+                                }
+                              ]
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "timeoutHours": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 720
+                        },
+                        "escalateTo": {
+                          "type": "object",
+                          "required": [
+                            "type"
+                          ],
+                          "properties": {
+                            "type": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "manager"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "skip_level"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "role"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "user"
+                                  ]
+                                }
+                              ]
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "condition": {
+                          "type": "object",
+                          "required": [
+                            "field",
+                            "op"
+                          ],
+                          "properties": {
+                            "field": {
+                              "type": "string",
+                              "maxLength": 60
+                            },
+                            "op": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "present"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "eq"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "neq"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "gt"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "gte"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "lt"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "lte"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "in"
+                                  ]
+                                }
+                              ]
+                            },
+                            "value": {}
+                          }
+                        }
+                      }
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "subject",
+                    "name",
+                    "condition",
+                    "priority",
+                    "enabled",
+                    "steps",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "subject": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "condition": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "field",
+                            "op"
+                          ],
+                          "properties": {
+                            "field": {
+                              "type": "string",
+                              "maxLength": 60
+                            },
+                            "op": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "present"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "eq"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "neq"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "gt"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "gte"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "lt"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "lte"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "in"
+                                  ]
+                                }
+                              ]
+                            },
+                            "value": {}
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "priority": {
+                      "type": "integer"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "approver"
+                        ],
+                        "properties": {
+                          "approver": {
+                            "type": "object",
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "manager"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "skip_level"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "role"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "user"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "value": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "timeoutHours": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 720
+                          },
+                          "escalateTo": {
+                            "type": "object",
+                            "required": [
+                              "type"
+                            ],
+                            "properties": {
+                              "type": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "manager"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "skip_level"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "role"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "user"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "value": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "condition": {
+                            "type": "object",
+                            "required": [
+                              "field",
+                              "op"
+                            ],
+                            "properties": {
+                              "field": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "op": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "present"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "eq"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "neq"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "gt"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "gte"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "lt"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "lte"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "in"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "value": {}
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/approvals": {
@@ -15079,6 +17121,221 @@
                     }
                   },
                   "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "The caller's delegations: given to someone else, or received from someone (most recent first)",
+        "tags": [
+          "approvals"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "fromUserId",
+                      "fromName",
+                      "toUserId",
+                      "toName",
+                      "startsAt",
+                      "endsAt",
+                      "direction"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "fromUserId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "fromName": {
+                        "type": "string"
+                      },
+                      "toUserId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "toName": {
+                        "type": "string"
+                      },
+                      "startsAt": {
+                        "type": "string"
+                      },
+                      "endsAt": {
+                        "type": "string"
+                      },
+                      "direction": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "given"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "received"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/delegations/{id}": {
+      "delete": {
+        "summary": "Ends a delegation you gave: an active one ends now, a future one is removed",
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/delegations/candidates": {
+      "get": {
+        "summary": "Active colleagues who can receive approval authority (name and job title only)",
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "q",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "userId",
+                      "displayName",
+                      "jobTitle"
+                    ],
+                    "properties": {
+                      "userId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "displayName": {
+                        "type": "string"
+                      },
+                      "jobTitle": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -19571,6 +21828,317 @@
             }
           }
         }
+      },
+      "get": {
+        "summary": "Leave policies with the number of employees currently assigned to each",
+        "tags": [
+          "leave"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "leaveTypeId",
+                      "leaveTypeKey",
+                      "entityId",
+                      "entityName",
+                      "country",
+                      "config",
+                      "effectiveFrom",
+                      "effectiveTo",
+                      "assignedEmployees"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "leaveTypeId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "leaveTypeKey": {
+                        "type": "string"
+                      },
+                      "entityId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "entityName": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "country": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "config": {
+                        "type": "object",
+                        "required": [
+                          "accrual",
+                          "unit",
+                          "yearStart",
+                          "proRata",
+                          "includesPublicHolidays",
+                          "waitingDays",
+                          "allowNegativeDays",
+                          "rounding"
+                        ],
+                        "properties": {
+                          "accrual": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "method",
+                                  "days"
+                                ],
+                                "properties": {
+                                  "method": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "annual_upfront"
+                                        ]
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "monthly"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  "days": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 366
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "method",
+                                  "percent"
+                                ],
+                                "properties": {
+                                  "method": {
+                                    "type": "string",
+                                    "enum": [
+                                      "per_hour_worked"
+                                    ]
+                                  },
+                                  "percent": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "days"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "hours"
+                                ]
+                              }
+                            ]
+                          },
+                          "yearStart": {
+                            "type": "string",
+                            "pattern": "^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+                          },
+                          "proRata": {
+                            "type": "boolean"
+                          },
+                          "includesPublicHolidays": {
+                            "type": "boolean"
+                          },
+                          "waitingDays": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 365
+                          },
+                          "carryOver": {
+                            "type": "object",
+                            "required": [
+                              "maxDays"
+                            ],
+                            "properties": {
+                              "maxDays": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "expiresAfterMonths": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 24
+                              }
+                            }
+                          },
+                          "capDays": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "allowNegativeDays": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 30
+                          },
+                          "rounding": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "none"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "up_half_day"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "nearest_half_day"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "up_whole_day"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "effectiveFrom": {
+                        "type": "string"
+                      },
+                      "effectiveTo": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "assignedEmployees": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/leave/policies/{id}/assign": {
@@ -23290,9 +25858,261 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "absence"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "bradfordThreshold",
+                      "spellsThreshold",
+                      "windowDays",
+                      "notifyRole",
+                      "notifyManager"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "bradfordThreshold": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "spellsThreshold": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "windowDays": {
+                        "type": "integer"
+                      },
+                      "notifyRole": {
+                        "type": "string"
+                      },
+                      "notifyManager": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/leave/cover-rules": {
+      "get": {
+        "tags": [
+          "leave"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "departmentId",
+                      "locationId",
+                      "minPresent",
+                      "enforcement"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "departmentId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "locationId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "minPresent": {
+                        "type": "integer"
+                      },
+                      "enforcement": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "leave"
@@ -23385,6 +26205,143 @@
       }
     },
     "/v1/settings/company-calendars": {
+      "get": {
+        "summary": "Company closure days (on top of public holidays), per entity or location",
+        "tags": [
+          "leave"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "entityId",
+                      "locationId",
+                      "days"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "entityId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "locationId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "days": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "date",
+                            "name"
+                          ],
+                          "properties": {
+                            "date": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "leave"

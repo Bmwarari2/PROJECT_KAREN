@@ -295,4 +295,117 @@ export async function ssoRoutes(app: FastifyInstance) {
       });
     },
   );
+
+  // ---- Admin screens: read the policy, list / enable / remove connections ----------------------
+  const SecurityOut = Type.Object({
+    ssoEnforced: Type.Boolean(),
+    sessionIdleMinutes: Type.Integer(),
+    sessionAbsoluteHours: Type.Integer(),
+    lockoutThreshold: Type.Integer(),
+    lockoutMinutes: Type.Integer(),
+    trustIdpMfa: Type.Boolean(),
+  });
+  app.get('/v1/settings/security', { schema: { tags: ['settings'], summary: 'Tenant sign-in policy (SSO enforcement, session timeouts, lockout, IdP MFA trust)', response: { 200: SecurityOut, 403: Problem } } }, async (req) => {
+    authorize(req, 'settings.read');
+    const s = await app.tenantTx(req, (tx) => loadSecurity(tx), { readOnly: true });
+    return { ssoEnforced: s.ssoEnforced, sessionIdleMinutes: s.sessionIdleMinutes, sessionAbsoluteHours: s.sessionAbsoluteHours, lockoutThreshold: s.lockoutThreshold, lockoutMinutes: s.lockoutMinutes, trustIdpMfa: s.trustIdpMfa };
+  });
+
+  const ConnectionOut = Type.Object({
+    id: Type.String(),
+    protocol: Type.String(),
+    name: Type.String(),
+    enabled: Type.Boolean(),
+    jitProvisioning: Type.Boolean(),
+    createdAt: Type.String(),
+    /** OIDC issuer or SAML IdP sign-in URL (never the client secret or certificate). */
+    idpUrl: Type.Union([Type.String(), Type.Null()]),
+    clientId: Type.Union([Type.String(), Type.Null()]),
+    hasClientSecret: Type.Boolean(),
+    acsUrl: Type.String(),
+    redirectUri: Type.String(),
+    spEntityId: Type.String(),
+  });
+  type ConnRow = { id: string; protocol: 'oidc' | 'saml'; name: string; enabled: boolean; jit_provisioning: boolean; created_at: string; config: Partial<OidcConfig & SamlConfig> };
+  const connectionOut = (tenantId: string, r: ConnRow) => ({
+    id: r.id,
+    protocol: r.protocol,
+    name: r.name,
+    enabled: r.enabled,
+    jitProvisioning: r.jit_provisioning,
+    createdAt: r.created_at,
+    idpUrl: (r.protocol === 'oidc' ? r.config.issuer : r.config.entryPoint) ?? null,
+    clientId: r.protocol === 'oidc' ? (r.config.clientId ?? null) : null,
+    hasClientSecret: !!r.config.clientSecretEnc,
+    acsUrl: samlAcs,
+    redirectUri: oidcCallback,
+    spEntityId: spEntityId(tenantId, r.id),
+  });
+  const CONN_COLUMNS = 'id, protocol, name, enabled, jit_provisioning, created_at, config';
+
+  app.get('/v1/settings/sso-connections', { schema: { tags: ['settings'], response: { 200: Type.Array(ConnectionOut), 403: Problem } } }, async (req) => {
+    const auth = authorize(req, 'settings.read');
+    const rows = await app.tenantTx(req, (tx) => tx.query<ConnRow>(`SELECT ${CONN_COLUMNS} FROM app.sso_connections ORDER BY created_at`), { readOnly: true });
+    return rows.map((r) => connectionOut(auth.tenantId, r));
+  });
+
+  /** Refuses a change that would leave SSO enforced with no enabled connection (everyone would be locked out). */
+  async function assertNotLastEnforced(tx: Tx, id: string) {
+    const security = await loadSecurity(tx);
+    if (!security.ssoEnforced) return;
+    const others = await tx.maybe('SELECT 1 FROM app.sso_connections WHERE enabled AND id <> $1', [id]);
+    if (!others) throw new ApiError('unprocessable', 'Stop enforcing SSO before turning off or removing the last enabled connection');
+  }
+
+  app.patch(
+    '/v1/settings/sso-connections/:id',
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['settings'],
+        params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
+        body: Type.Object({ name: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })), enabled: Type.Optional(Type.Boolean()), jitProvisioning: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
+        response: { 200: ConnectionOut, 403: Problem, 404: Problem, 422: Problem },
+      },
+    },
+    async (req) => {
+      const auth = authorize(req, 'settings.manage');
+      const { id } = req.params as { id: string };
+      const b = req.body as { name?: string; enabled?: boolean; jitProvisioning?: boolean };
+      return app.tenantTx(req, async (tx) => {
+        const before = await tx.maybe<ConnRow>(`SELECT ${CONN_COLUMNS} FROM app.sso_connections WHERE id = $1 FOR UPDATE`, [id]);
+        if (!before) throw new ApiError('notFound');
+        if (b.enabled === false && before.enabled) await assertNotLastEnforced(tx, id);
+        const row = await tx.one<ConnRow>(
+          `UPDATE app.sso_connections SET name = coalesce($2, name), enabled = coalesce($3, enabled), jit_provisioning = coalesce($4, jit_provisioning), updated_at = now()
+            WHERE id = $1 RETURNING ${CONN_COLUMNS}`,
+          [id, b.name ?? null, b.enabled ?? null, b.jitProvisioning ?? null],
+        );
+        await app.audit(tx, req, {
+          action: 'sso.connection_updated',
+          targetType: 'sso_connection',
+          targetId: id,
+          diff: { before: { name: before.name, enabled: before.enabled, jitProvisioning: before.jit_provisioning }, after: { name: row.name, enabled: row.enabled, jitProvisioning: row.jit_provisioning } },
+        });
+        return connectionOut(auth.tenantId, row);
+      });
+    },
+  );
+
+  app.delete(
+    '/v1/settings/sso-connections/:id',
+    { config: { selfAudited: true }, schema: { tags: ['settings'], params: Type.Object({ id: Type.String({ format: 'uuid' }) }), response: { 204: Type.Null(), 403: Problem, 404: Problem, 422: Problem } } },
+    async (req, reply) => {
+      authorize(req, 'settings.manage');
+      const { id } = req.params as { id: string };
+      await app.tenantTx(req, async (tx) => {
+        const row = await tx.maybe<{ name: string; protocol: string; enabled: boolean }>('SELECT name, protocol, enabled FROM app.sso_connections WHERE id = $1 FOR UPDATE', [id]);
+        if (!row) throw new ApiError('notFound');
+        if (row.enabled) await assertNotLastEnforced(tx, id);
+        await tx.exec('DELETE FROM app.sso_connections WHERE id = $1', [id]);
+        await app.audit(tx, req, { action: 'sso.connection_deleted', targetType: 'sso_connection', targetId: id, diff: { name: row.name, protocol: row.protocol } });
+      });
+      return reply.status(204).send(null);
+    },
+  );
 }

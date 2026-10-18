@@ -4,7 +4,7 @@ import { Type } from 'typebox';
 import { can } from '@thapsus/core/permissions';
 import { addDays, addMonths, compareDates, dateParts, daysBetween, maxDate, minDate, monthsBetween, today } from '@thapsus/core/time';
 import { enqueueJob, withTenant, writeAudit, type Tx } from '@thapsus/db';
-import { authorize, requireAuth } from '../../http/context';
+import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
@@ -113,6 +113,37 @@ export async function leaveRoutes(app: FastifyInstance) {
       return reply.status(201).send({ id: row.id, warnings });
     },
   );
+
+  const PolicyOut = Type.Object({
+    id: Uuid,
+    name: Type.String(),
+    leaveTypeId: Uuid,
+    leaveTypeKey: Type.String(),
+    entityId: Nullable(Uuid),
+    entityName: Nullable(Type.String()),
+    country: Nullable(Type.String()),
+    config: PolicyConfig,
+    effectiveFrom: Type.String(),
+    effectiveTo: Nullable(Type.String()),
+    assignedEmployees: Type.Integer(),
+  });
+  app.get('/v1/leave/policies', { schema: { tags: ['leave'], summary: 'Leave policies with the number of employees currently assigned to each', response: { 200: Type.Array(PolicyOut), 403: Problem } } }, async (req) => {
+    const auth = authorizeSome(req, 'leave.manage');
+    const asOf = today(auth.user.timeZone ?? 'Europe/London');
+    const book = await ruleBook(app);
+    return app.tenantTx(req, async (tx) => {
+      await ensureLeaveDefaults(tx, book);
+      const rows = await tx.query<{ id: string; name: string; leave_type_id: string; key: string; entity_id: string | null; entity_name: string | null; country: string | null; config: LeavePolicy; effective_from: string; effective_to: string | null; assigned: number }>(
+        `SELECT p.id, p.name, p.leave_type_id, t.key, p.entity_id, le.name AS entity_name, p.country, p.config, p.effective_from::text, p.effective_to::text,
+                (SELECT count(DISTINCT a.employee_id)::int FROM app.leave_policy_assignments a WHERE a.policy_id = p.id AND a.valid_from <= $1::date AND (a.valid_to IS NULL OR a.valid_to > $1::date)) AS assigned
+           FROM app.leave_policies p JOIN app.leave_types t ON t.tenant_id = p.tenant_id AND t.id = p.leave_type_id
+           LEFT JOIN app.legal_entities le ON le.tenant_id = p.tenant_id AND le.id = p.entity_id
+          ORDER BY t.key, p.effective_from DESC, p.name`,
+        [asOf],
+      );
+      return rows.map((r) => ({ id: r.id, name: r.name, leaveTypeId: r.leave_type_id, leaveTypeKey: r.key, entityId: r.entity_id, entityName: r.entity_name, country: r.country, config: r.config, effectiveFrom: r.effective_from, effectiveTo: r.effective_to, assignedEmployees: r.assigned }));
+    });
+  });
 
   app.post(
     '/v1/leave/policies/:id/assign',
@@ -901,6 +932,36 @@ export async function leaveRoutes(app: FastifyInstance) {
         return row;
       });
       return reply.status(201).send(r);
+    },
+  );
+
+  app.get(
+    '/v1/absence/triggers',
+    { schema: { tags: ['absence'], response: { 200: Type.Array(Type.Object({ id: Uuid, name: Type.String(), bradfordThreshold: Nullable(Type.Integer()), spellsThreshold: Nullable(Type.Integer()), windowDays: Type.Integer(), notifyRole: Type.String(), notifyManager: Type.Boolean() })), 403: Problem } } },
+    async (req) => {
+      authorize(req, 'absence.manage');
+      const rows = await app.tenantTx(req, (tx) => tx.query<{ id: string; name: string; bradford_threshold: number | null; spells_threshold: number | null; window_days: number; notify_role: string; notify_manager: boolean }>('SELECT * FROM app.absence_triggers ORDER BY name'), { readOnly: true });
+      return rows.map((r) => ({ id: r.id, name: r.name, bradfordThreshold: r.bradford_threshold, spellsThreshold: r.spells_threshold, windowDays: r.window_days, notifyRole: r.notify_role, notifyManager: r.notify_manager }));
+    },
+  );
+
+  app.get(
+    '/v1/leave/cover-rules',
+    { schema: { tags: ['leave'], response: { 200: Type.Array(Type.Object({ id: Uuid, name: Type.String(), departmentId: Nullable(Uuid), locationId: Nullable(Uuid), minPresent: Type.Integer(), enforcement: Type.String() })), 403: Problem } } },
+    async (req) => {
+      authorizeSome(req, 'leave.manage');
+      const rows = await app.tenantTx(req, (tx) => tx.query<{ id: string; name: string; department_id: string | null; location_id: string | null; min_present: number; enforcement: string }>('SELECT * FROM app.cover_rules ORDER BY name'), { readOnly: true });
+      return rows.map((r) => ({ id: r.id, name: r.name, departmentId: r.department_id, locationId: r.location_id, minPresent: r.min_present, enforcement: r.enforcement }));
+    },
+  );
+
+  app.get(
+    '/v1/settings/company-calendars',
+    { schema: { tags: ['leave'], summary: 'Company closure days (on top of public holidays), per entity or location', response: { 200: Type.Array(Type.Object({ id: Uuid, name: Type.String(), entityId: Nullable(Uuid), locationId: Nullable(Uuid), days: Type.Array(Type.Object({ date: Type.String(), name: Type.String() })) })), 403: Problem } } },
+    async (req) => {
+      authorizeSome(req, 'leave.manage');
+      const rows = await app.tenantTx(req, (tx) => tx.query<{ id: string; name: string; entity_id: string | null; location_id: string | null; days: Array<{ date: string; name: string }> }>('SELECT * FROM app.company_calendars ORDER BY name'), { readOnly: true });
+      return rows.map((r) => ({ id: r.id, name: r.name, entityId: r.entity_id, locationId: r.location_id, days: [...r.days].sort((a, b) => compareDates(a.date, b.date)) }));
     },
   );
 
