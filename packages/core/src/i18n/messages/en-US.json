@@ -30,6 +30,65 @@
   "orgSettings": {
     "title": "Organization"
   },
+  "admin": {
+    "group": {
+      "workspace": {
+        "body": "Your organization’s structure."
+      }
+    },
+    "section": {
+      "organisation": {
+        "title": "Organization structure"
+      },
+      "absence": {
+        "body": "Doctor’s notes, trigger alerts and minimum staff on duty."
+      }
+    },
+    "sso": {
+      "entryPointHint": "The single sign-on URL from your provider’s SAML setup."
+    },
+    "workflows": {
+      "anchor": {
+        "offboarding": "last day"
+      },
+      "autoStartHint": {
+        "offboarding": "Starts when a departure is recorded."
+      }
+    },
+    "leave": {
+      "categories": {
+        "annual": "Vacation",
+        "sickness": "Sick leave",
+        "toil": "Comp time"
+      },
+      "includesPublicHolidaysHint": "For example, a vacation allowance that already counts public holidays.",
+      "countryHint": "Two-letter code, for example US. Leave blank for every country.",
+      "toilHint": "Comp time is earned through balance adjustments on a person’s profile."
+    },
+    "balances": {
+      "adjustBody": "Add or take away leave, for example comp time earned or a correction. It is recorded with your reason.",
+      "kinds": {
+        "toil": "Comp time earned"
+      }
+    },
+    "absence": {
+      "lead": "Absence settings for sick leave and family leave, and alerts when absence reaches a level you choose.",
+      "fitNote": "Ask for a doctor’s note after (calendar days)",
+      "triggersBody": "Alerts HR, and the person’s manager if you choose, when sick leave reaches a threshold."
+    },
+    "time": {
+      "countryHint": "Two-letter code, for example US.",
+      "siteBody": "The center of the site and how far from it a clock-in still counts as on site.",
+      "radius": "Radius (meters)",
+      "radiusHint": "Between 25 and 5,000 meters."
+    },
+    "leaver": {
+      "start": "Record departure",
+      "title": "Record a departure for {name}",
+      "confirm": "Record departure",
+      "done": "Departure recorded for {name}. Last working day: {date}."
+    }
+  },
   "timeOff": {
     "kind": {
       "annual": "Vacation"
