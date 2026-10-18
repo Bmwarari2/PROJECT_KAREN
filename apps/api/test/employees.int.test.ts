@@ -414,3 +414,69 @@ describe('fuzzy search', () => {
     expect(none).not.toContain(id);
   });
 });
+
+describe('organisation: cost centres, matrix reporting and org-chart search', () => {
+  it('cost centres are managed reference data with unique codes, audit and permission checks', async () => {
+    const code = `CC-${Math.random().toString(36).slice(2, 7)}`;
+    const created = await api('POST', '/v1/org/cost-centres', { code, name: 'People operations', entityId: entityUk });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({ code, name: 'People operations', entityId: entityUk });
+    const id = created.json().id;
+    expect((await api('POST', '/v1/org/cost-centres', { code, name: 'Duplicate' })).statusCode).toBe(409);
+    expect((await api('POST', '/v1/org/cost-centres', { code: `${code}x`, name: 'Bad entity', entityId: '00000000-0000-4000-8000-0000000000ee' })).statusCode).toBe(422);
+    const renamed = await api('PATCH', `/v1/org/cost-centres/${id}`, { name: 'People ops' });
+    expect(renamed.json()).toMatchObject({ id, name: 'People ops' });
+    const listed = (await api('GET', '/v1/org/cost-centres')).json() as Array<{ id: string; name: string }>;
+    expect(listed.find((c) => c.id === id)?.name).toBe('People ops');
+    const audit = await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.query<{ action: string }>(`SELECT action FROM audit.events WHERE target_id = $1 ORDER BY id`, [id]));
+    expect(audit.map((a) => a.action)).toEqual(['org.cost-centres.created', 'org.cost-centres.updated']);
+    // managers can read reference data but not change it
+    const mgrEmp = await hire({ legalFirstName: 'Costless' });
+    const mgr = await userFor(mgrEmp, 'manager', { type: 'own_team' });
+    expect((await api('GET', '/v1/org/cost-centres', undefined, mgr)).statusCode).toBe(200);
+    expect((await api('POST', '/v1/org/cost-centres', { code: `${code}m`, name: 'Nope' }, mgr)).statusCode).toBe(403);
+  });
+
+  it('matrix and dotted lines are effective-dated and give the matrix manager team read access only while in force', async () => {
+    const lineMgr = await hire({ legalFirstName: 'Solid' });
+    const matrixMgr = await hire({ legalFirstName: 'Matrix' });
+    const laterMgr = await hire({ legalFirstName: 'Later' });
+    const emp = await hire({ legalFirstName: 'Dual', managerId: lineMgr });
+    expect((await api('POST', `/v1/employees/${emp}/reporting-lines`, { managerId: matrixMgr, kind: 'matrix', effectiveDate: '2026-02-01' })).statusCode).toBe(201);
+    expect((await api('POST', `/v1/employees/${emp}/reporting-lines`, { managerId: laterMgr, kind: 'matrix', effectiveDate: '2030-01-01' })).statusCode).toBe(201);
+    // overlapping identical matrix line is rejected by the exclusion constraint
+    expect((await api('POST', `/v1/employees/${emp}/reporting-lines`, { managerId: matrixMgr, kind: 'matrix', effectiveDate: '2026-06-01' })).statusCode).toBe(409);
+    const hist = (await api('GET', `/v1/employees/${emp}/history`)).json();
+    expect(hist.reporting.map((r: { kind: string; manager_id: string }) => `${r.kind}:${r.manager_id}`).sort()).toEqual([`matrix:${laterMgr}`, `matrix:${matrixMgr}`, `solid:${lineMgr}`].sort());
+    // the solid line is unchanged and the org chart (solid lines) still places them under the line manager
+    expect((await api('GET', `/v1/employees/${emp}`)).json().employee.managerId).toBe(lineMgr);
+    expect((await api('GET', `/v1/org-chart/${lineMgr}/children`)).json().map((c: { id: string }) => c.id)).toContain(emp);
+    expect((await api('GET', `/v1/org-chart/${matrixMgr}/children`)).json().map((c: { id: string }) => c.id)).not.toContain(emp);
+    const matrix = await userFor(matrixMgr, 'manager', { type: 'own_team' });
+    const later = await userFor(laterMgr, 'manager', { type: 'own_team' });
+    const seen = await api('GET', `/v1/employees/${emp}`, undefined, matrix);
+    expect(seen.statusCode).toBe(200);
+    expect(seen.json().employee.payAmountMinor).toBeUndefined();
+    expect((await api('GET', '/v1/employees', undefined, matrix)).json().data.map((e: { id: string }) => e.id)).toContain(emp);
+    expect((await api('POST', `/v1/employees/${emp}/changes`, { effectiveDate: '2026-11-01', jobTitle: 'Matrixed' }, matrix)).statusCode).toBe(403);
+    // a matrix line that starts in the future grants nothing yet
+    expect((await api('GET', `/v1/employees/${emp}`, undefined, later)).statusCode).toBe(403);
+  });
+
+  it('org-chart search finds active people by name, misspelling, number and title, with report counts', async () => {
+    const boss = await hire({ legalFirstName: 'Philippa', legalLastName: 'Orgsearch', jobTitle: 'Chief cartographer', employeeNumber: `ORG${Math.floor(Math.random() * 1e6)}` });
+    await hire({ legalFirstName: 'Report', managerId: boss });
+    await hire({ legalFirstName: 'Report', managerId: boss });
+    const leaver = await hire({ legalFirstName: 'Philippa', legalLastName: 'Orgsearchleft', startDate: '2024-01-08' });
+    expect((await api('POST', `/v1/employees/${leaver}/terminate`, { endDate: '2025-03-31', reason: 'Resignation' })).statusCode).toBe(200);
+    const search = async (q: string) => (await api('GET', `/v1/org-chart/search?q=${encodeURIComponent(q)}`)).json() as Array<{ id: string; directReports: number; jobTitle: string }>;
+    for (const q of ['Orgsearch', 'Philipa Orgserch', 'cartographer']) expect((await search(q)).map((n) => n.id), q).toContain(boss);
+    const hit = (await search('Orgsearch')).find((n) => n.id === boss)!;
+    expect(hit).toMatchObject({ directReports: 2, jobTitle: 'Chief cartographer' });
+    expect((await search('Orgsearch')).map((n) => n.id)).not.toContain(leaver);
+    // every signed-in person may search the chart; anonymous callers may not
+    const self = await userFor(boss, 'employee', { type: 'self' });
+    expect((await api('GET', '/v1/org-chart/search?q=Orgsearch', undefined, self)).statusCode).toBe(200);
+    expect((await ctx.app.inject({ method: 'GET', url: '/v1/org-chart/search?q=Orgsearch' })).statusCode).toBe(401);
+  });
+});

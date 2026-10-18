@@ -170,7 +170,11 @@ export async function orgRoutes(app: FastifyInstance) {
     const { q } = req.query as { q: string };
     const rows = await app.tenantTx(
       req,
-      (tx) => tx.query<Parameters<typeof mapNode>[0]>(`${nodeSql} WHERE e.status = 'active' AND (e.search @@ plainto_tsquery('simple', $1) OR e.display_name ILIKE $2) ORDER BY e.display_name LIMIT 20`, [q, `%${q.replace(/[%_\\]/g, '\\$&')}%`]),
+      (tx) =>
+        tx.query<Parameters<typeof mapNode>[0]>(
+          `${nodeSql} WHERE e.status = 'active' AND (e.search @@ plainto_tsquery('simple', $1) OR e.display_name ILIKE $2 OR $1 <% e.display_name) ORDER BY e.display_name LIMIT 20`,
+          [q, `%${q.replace(/[%_\\]/g, '\\$&')}%`],
+        ),
       { readOnly: true },
     );
     return rows.map(mapNode);
