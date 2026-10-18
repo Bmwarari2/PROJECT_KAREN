@@ -1,0 +1,34 @@
+{
+  "name": "@thapsus/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./regions": "./src/regions.ts",
+    "./time": "./src/time.ts",
+    "./money": "./src/money.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./scrub": "./src/scrub.ts",
+    "./logger": "./src/logger.ts",
+    "./aws": "./src/aws.ts",
+    "./tracing": "./src/tracing.ts",
+    "./config": "./src/config.ts",
+    "./permissions": "./src/permissions.ts",
+    "./roles": "./src/roles.ts",
+    "./residency": "./src/residency.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
+    "@opentelemetry/resources": "^2.12.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
+    "@opentelemetry/sdk-trace-base": "^2.12.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
+    "pino": "^10.4.0"
+  }
+}

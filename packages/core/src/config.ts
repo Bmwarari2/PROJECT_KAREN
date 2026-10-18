@@ -1,0 +1,42 @@
+import { isHomeRegion, type HomeRegion } from './regions';
+
+/**
+ * Runtime configuration read from the environment. Secrets come from AWS Secrets Manager in
+ * deployed environments (injected by ECS) and from git-ignored .env files locally.
+ */
+export interface CellConfig {
+  env: 'dev' | 'test' | 'staging' | 'prod';
+  cell: HomeRegion;
+  /** Product domain — not yet chosen, so always configuration. */
+  domain: string;
+  appBaseUrl: string;
+  apiBaseUrl: string;
+  globalBaseUrl: string;
+}
+
+export function env(name: string, fallback?: string): string {
+  const v = process.env[name] ?? fallback;
+  if (v === undefined) throw new Error(`Missing required environment variable ${name}`);
+  return v;
+}
+
+export function loadCellConfig(): CellConfig {
+  const cell = env('CELL_REGION', 'uk');
+  if (!isHomeRegion(cell)) throw new Error(`CELL_REGION must be one of uk, eu, us (got ${cell})`);
+  const domain = env('THAPSUS_HR_DOMAIN', 'thapsus-hr.localhost');
+  const e = env('APP_ENV', 'dev');
+  if (!['dev', 'test', 'staging', 'prod'].includes(e)) throw new Error(`Invalid APP_ENV ${e}`);
+  return {
+    env: e as CellConfig['env'],
+    cell,
+    domain,
+    appBaseUrl: env('APP_BASE_URL', 'http://localhost:3000'),
+    apiBaseUrl: env('API_BASE_URL', 'http://localhost:4000'),
+    globalBaseUrl: env('GLOBAL_BASE_URL', 'http://localhost:3000'),
+  };
+}
+
+/** Regional host names derived from the configured domain, e.g. app.uk.<domain>. */
+export function regionalHosts(domain: string, cell: HomeRegion) {
+  return { app: `app.${cell}.${domain}`, api: `api.${cell}.${domain}` };
+}

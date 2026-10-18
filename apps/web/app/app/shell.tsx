@@ -1,0 +1,102 @@
+'use client';
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Bell, Home, LogOut, Menu, Settings, ShieldCheck } from 'lucide-react';
+import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
+import { Logo } from '@/components/logo';
+import { LocaleSwitch, ThemeSwitch } from '@/components/client';
+import { api, ApiProblem, type SessionInfo } from '@/lib/api';
+import { useT } from '@/lib/i18n-client';
+import type { ThemeChoice } from '@/lib/i18n';
+
+export const SessionContext = React.createContext<SessionInfo | null>(null);
+export const useSession = () => React.useContext(SessionContext);
+
+/** Navigation entries; each feature phase adds its own (permission-filtered). */
+export function navItems(t: (k: string) => string, s: SessionInfo, path: string): NavItem[] {
+  const has = (p: string) => s.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
+  const items: Array<NavItem & { show: boolean }> = [
+    { href: '/app', label: t('app.nav.home'), icon: <Home aria-hidden />, show: true },
+    { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
+    { href: '/app/security', label: t('app.nav.security'), icon: <ShieldCheck aria-hidden />, show: true },
+    { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') },
+  ];
+  return items.filter((i) => i.show).map(({ show: _show, ...i }) => ({ ...i, active: i.href === '/app' ? path === '/app' : path.startsWith(i.href) }));
+}
+
+export function AppShell({ children, theme }: { children: React.ReactNode; theme: ThemeChoice }) {
+  const t = useT();
+  const router = useRouter();
+  const path = usePathname();
+  const [session, setSession] = React.useState<SessionInfo | null>(null);
+
+  React.useEffect(() => {
+    api<SessionInfo>('/v1/auth/session')
+      .then((s) => {
+        setSession(s);
+        // Admins must complete MFA before using anything but the security page.
+        if (s.isAdmin && !s.mfaVerified && !path.startsWith('/app/security')) router.replace('/app/security?setup=1');
+      })
+      .catch((err) => {
+        if (err instanceof ApiProblem && err.status === 401) router.replace(`/signin`);
+      });
+  }, [path, router]);
+
+  const signOut = async () => {
+    await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
+    router.replace('/signin');
+  };
+
+  const nav = session ? navItems(t, session, path) : [];
+  const renderLink = (item: NavItem, className: string, children: React.ReactNode) => (
+    <Link href={item.href} className={`${className} no-underline`} aria-current={item.active ? 'page' : undefined}>
+      {children}
+    </Link>
+  );
+
+  return (
+    <SessionContext.Provider value={session}>
+      <div className="flex min-h-dvh">
+        <Sidebar>
+          <Link href="/app" className="px-3 no-underline">
+            <Logo label={t('common.appName')} />
+          </Link>
+          {session ? <SidebarNav items={nav} label={t('app.nav.label')} renderLink={renderLink} /> : <Skeleton className="h-40" />}
+        </Sidebar>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('common.openMenu')}>
+                  <Menu aria-hidden className="h-5 w-5 stroke-[1.5]" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" title={t('common.appName')} closeLabel={t('common.closeMenu')}>
+                {session ? <SidebarNav items={nav} label={t('app.nav.label')} renderLink={renderLink} /> : null}
+              </SheetContent>
+            </Sheet>
+            <span className="truncate text-callout font-semibold lg:hidden">{t('common.appName')}</span>
+            <div className="ml-auto flex items-center gap-3">
+              <div className="hidden md:block">
+                <LocaleSwitch />
+              </div>
+              <ThemeSwitch initial={theme} />
+              {session ? (
+                <span className="hidden max-w-[16ch] truncate text-footnote text-text-secondary sm:inline" title={session.email}>
+                  {session.displayName}
+                </span>
+              ) : null}
+              <Button variant="ghost" size="icon" onClick={signOut} aria-label={t('common.signOut')} title={t('common.signOut')}>
+                <LogOut aria-hidden className="h-5 w-5 stroke-[1.5]" />
+              </Button>
+            </div>
+          </TopBar>
+          <main id="main" className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8">
+            {session ? children : <Skeleton className="h-64 w-full" />}
+          </main>
+        </div>
+      </div>
+    </SessionContext.Provider>
+  );
+}

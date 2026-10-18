@@ -1,0 +1,20 @@
+{
+  "name": "@thapsus/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for the Thapsus-HR public API (generated from openapi.json)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./openapi.json": "./openapi.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate": "openapi-typescript openapi.json -o src/generated/schema.ts"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "thapsus-hr",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "turbo run dev --env-mode=loose --parallel --filter=@thapsus/web --filter=@thapsus/api --filter=@thapsus/worker",
+    "build": "turbo run build",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "turbo run typecheck",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "verify": "node scripts/verify.mjs",
+    "db:migrate": "pnpm --filter @thapsus/db migrate",
+    "db:seed": "pnpm --filter @thapsus/db seed",
+    "synth:enterprise": "pnpm --filter @thapsus/db synth:enterprise",
+    "smoke:staging": "node scripts/smoke-staging.mjs",
+    "loadtest": "node scripts/loadtest.mjs",
+    "format": "prettier --write .",
+    "setup": "node scripts/dev-setup.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "pg": "^8.23.1",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.5",
+    "web-push": "^3.6.7"
+  }
+}

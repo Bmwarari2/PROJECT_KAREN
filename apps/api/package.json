@@ -1,0 +1,60 @@
+{
+  "name": "@thapsus/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts",
+    "./testing": "./test/helpers.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
+    "build": "tsx ../../scripts/bundle.mjs src/main.ts dist/main.mjs",
+    "start": "node dist/main.mjs",
+    "typecheck": "tsc --noEmit",
+    "openapi": "tsx src/cli/openapi.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1152.0",
+    "@aws-sdk/client-kms": "^3.1152.0",
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/client-sesv2": "^3.1152.0",
+    "@aws-sdk/client-sqs": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/cors": "^11.3.1",
+    "@fastify/formbody": "^9.0.1",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/multipart": "^10.1.4",
+    "@fastify/swagger": "^9.9.2",
+    "@fastify/swagger-ui": "^6.1.2",
+    "@fastify/type-provider-typebox": "^6.3.0",
+    "@node-rs/argon2": "^2.2.2",
+    "@node-saml/node-saml": "^5.1.0",
+    "@simplewebauthn/server": "^14.0.3",
+    "@thapsus/core": "workspace:*",
+    "@thapsus/db": "workspace:*",
+    "fastify": "^5.12.7",
+    "fastify-plugin": "^6.0.1",
+    "iovalkey": "^0.4.0",
+    "jose": "^6.2.12",
+    "nodemailer": "^10.1.2",
+    "openid-client": "^6.8.8",
+    "otpauth": "^9.5.2",
+    "pg": "^8.23.1",
+    "pg-copy-streams": "^7.0.0",
+    "typebox": "^1.4.1",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@peculiar/x509": "^2.2.0",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
+    "@types/pg-copy-streams": "^1.2.5",
+    "@types/web-push": "^3.6.4",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "xml-crypto": "^6.4.0"
+  }
+}

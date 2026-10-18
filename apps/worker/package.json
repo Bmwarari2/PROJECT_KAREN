@@ -1,0 +1,22 @@
+{
+  "name": "@thapsus/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
+    "build": "tsx ../../scripts/bundle.mjs src/main.ts dist/main.mjs",
+    "start": "node dist/main.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-eventbridge": "^3.1152.0",
+    "@aws-sdk/client-sqs": "^3.1152.0",
+    "@thapsus/api": "workspace:*",
+    "@thapsus/core": "workspace:*",
+    "@thapsus/db": "workspace:*"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "env": "prod",
+  "account": "247115937622",
+  "domain": null,
+  "hostedZoneId": null,
+  "alarmEmail": null,
+  "globalBaseUrl": null,
+  "regionalUrls": {},
+  "logRetentionDays": 400,
+  "natGateways": 3,
+  "aurora": { "minAcu": 2, "maxAcu": 64, "backupRetentionDays": 35, "deletionProtection": true },
+  "valkey": { "nodeType": "cache.r7g.large", "replicas": 2 },
+  "backup": { "dailyRetentionDays": 35, "continuousRetentionDays": 35, "copyRetentionDays": 35 },
+  "services": {
+    "api": { "cpu": 1024, "memoryMiB": 2048, "desiredCount": 3, "minCapacity": 3, "maxCapacity": 40 },
+    "worker": { "cpu": 1024, "memoryMiB": 2048, "desiredCount": 2, "minCapacity": 2, "maxCapacity": 20 },
+    "web": { "cpu": 1024, "memoryMiB": 2048, "desiredCount": 3, "minCapacity": 3, "maxCapacity": 30 }
+  },
+  "wafRateLimitPer5Min": 5000,
+  "global": {
+    "certificateArn": null,
+    "monthlyBudgetUsd": 500,
+    "services": {
+      "api": { "cpu": 512, "memoryMiB": 1024, "desiredCount": 2, "minCapacity": 2, "maxCapacity": 10 },
+      "web": { "cpu": 512, "memoryMiB": 1024, "desiredCount": 2, "minCapacity": 2, "maxCapacity": 10 }
+    }
+  },
+  "cells": {
+    "uk": { "certificateArn": null, "monthlyBudgetUsd": 5000 },
+    "eu": { "certificateArn": null, "monthlyBudgetUsd": 5000 },
+    "us": { "certificateArn": null, "monthlyBudgetUsd": 5000 }
+  },
+  "billingConfigLocation": "builtin:billing-config-v1",
+  "ci": { "githubRepository": "Bmwarari2/PROJECT_KAREN", "githubEnvironment": "production", "oidcProviderArn": null }
+}

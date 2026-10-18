@@ -1,0 +1,26 @@
+{
+  "name": "@thapsus/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx --env-file-if-exists=../../.env src/cli/migrate.ts",
+    "seed": "tsx --env-file-if-exists=../../.env ../../apps/api/src/cli/seed.ts",
+    "synth:enterprise": "tsx --env-file-if-exists=../../.env ../../apps/api/src/cli/synth-enterprise.ts",
+    "move-tenant": "tsx --env-file-if-exists=../../.env src/cli/move-tenant.ts"
+  },
+  "dependencies": {
+    "@thapsus/core": "workspace:*",
+    "pg": "^8.23.1",
+    "pg-copy-streams": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "@types/pg-copy-streams": "^1.2.5"
+  }
+}
