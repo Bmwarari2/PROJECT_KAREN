@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { CalendarPlus, Link2, Stethoscope } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
-import { formatDate } from '@thapsus/core/i18n';
+import { formatDate, formatUnit } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -140,7 +140,7 @@ export default function TimeOffPage() {
     setBusy(true);
     try {
       const r = await api<{ status: string; amountDays: number }>('/v1/leave/requests', { method: 'POST', json: { ...form, leaveTypeId: form.leaveTypeId || types.data?.find((x) => x.key === 'annual')?.id, note: form.note || undefined } });
-      toast({ title: t(r.status === 'approved' ? 'timeOff.bookedToast' : 'timeOff.requested', { days: r.amountDays }), tone: 'success' });
+      toast({ title: t(r.status === 'approved' ? 'timeOff.bookedToast' : 'timeOff.requested', { amount: formatUnit(r.amountDays, 'day', locale) }), tone: 'success' });
       balances.reload();
       mine.reload();
       team.reload();

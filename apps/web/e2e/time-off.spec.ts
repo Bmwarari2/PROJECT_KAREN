@@ -52,7 +52,7 @@ test.describe('time off', () => {
     await page.getByLabel('To', { exact: true }).fill(day);
     await page.getByLabel('Note (optional)').fill('Fictional day out');
     await page.getByRole('button', { name: 'Send request' }).click();
-    await expect(page.getByText('Request sent for approval (1 days).')).toBeVisible();
+    await expect(page.getByText('Request sent for approval (1 day).', { exact: true })).toBeVisible();
     const row = page.getByRole('row').filter({ hasText: 'Annual leave' });
     await expect(row).toContainText('Waiting');
     await expect(row.getByRole('button', { name: 'Cancel' })).toBeVisible();

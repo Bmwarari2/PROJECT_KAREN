@@ -14,7 +14,7 @@ import { createLogger } from '../src/logger';
 import { scrubSpanAttributes } from '../src/tracing';
 import * as time from '../src/time';
 import { money, add, multiplyRatio, allocate, parseDecimal, toDecimalString } from '../src/money';
-import { CATALOGUES, flatten, formatMoney, formatDate, formatDateTime, formatNumber, resolveLocale, t } from '../src/i18n';
+import { CATALOGUES, flatten, formatMoney, formatDate, formatDateTime, formatNumber, formatUnit, resolveLocale, t } from '../src/i18n';
 
 describe('residency map', () => {
   it('pins each home region to the brief', () => {
@@ -203,6 +203,12 @@ describe('i18n', () => {
   it('formats dates per locale without zone drift', () => {
     expect(formatDate('2027-07-04', 'en-US', 'short')).toBe('7/4/27');
     expect(formatDate('2027-07-04', 'en-GB', 'short')).toBe('04/07/2027');
+  });
+  it('formats counts with their unit, pluralised per locale', () => {
+    expect(formatUnit(1, 'day', 'en-GB')).toBe('1 day');
+    expect(formatUnit(2, 'day', 'en-US')).toBe('2 days');
+    expect(formatUnit(0.5, 'day', 'en-GB')).toBe('0.5 days');
+    expect(formatUnit(1, 'hour', 'en-US')).toBe('1 hour');
   });
   it('formats numbers per locale', () => {
     expect(formatNumber(1234567.891, 'en-GB', { maximumFractionDigits: 2 })).toBe('1,234,567.89');

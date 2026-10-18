@@ -77,6 +77,11 @@ export function formatNumber(value: number, locale: Locale, opts: Intl.NumberFor
 }
 
 /** Formats integer minor units without converting to floating point. */
+/** A count with its unit, pluralised for the locale: "1 day", "2.5 days", "1 hour". */
+export function formatUnit(value: number, unit: 'day' | 'hour', locale: Locale): string {
+  return new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'long', maximumFractionDigits: 2 }).format(value);
+}
+
 export function formatMoney(m: Money, locale: Locale): string {
   const digits = currencyExponent(m.currency);
   const nf = new Intl.NumberFormat(locale, {
