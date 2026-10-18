@@ -392,3 +392,48 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Decision.** The dev script runs `turbo run dev --env-mode=loose`. Builds and other cached tasks keep strict mode.
 
 **Consequences.** Local dev and the dev smoke check (`scripts/dev-smoke.mjs`, a verify step) honour explicit environment overrides.
+
+## ADR-0120 — Role and access management: catalogue, API and migration (2026-10-18)
+
+**Context.** The permission engine supported built-in and custom roles with scopes and field-level access (PROGRESS 0.10), but customers had no way to create a custom role or give anyone a role: roles were only assigned automatically (owner at sign-up, employee through SSO, SCIM and onboarding).
+
+**Decision.**
+- `packages/core/src/access.ts` (`@thapsus/core/access`) holds the **permission catalogue** (every key a role may hold, grouped by product area, admin-grade keys marked) and the **employee field catalogue** (`employee.<key>`, plus the `pay`, `contract`, `custom` and reserved `bank` groups). A custom role may hold catalogue keys, area wildcards (`leave.*`) and category wildcards (`vault.read:*`); anything else is refused with 400. `*` (permissions and fields) is the owner's alone. Field keys `employee.custom.<key>` are checked against the tenant's custom fields and objects. Unit tests prove every built-in role is expressible in the catalogue and that the API's employee field model is covered by it.
+- API (tag `roles`, OpenAPI 3.1): `GET /v1/roles/catalogue`, `GET|POST /v1/roles`, `GET|PATCH|DELETE /v1/roles/{id}`, `GET /v1/users`, `GET|POST /v1/users/{userId}/role-assignments`, `DELETE /v1/users/{userId}/role-assignments/{assignmentId}`. New keys `roles.read`, `roles.manage` (define custom roles) and `roles.assign` (assign and revoke). The owner holds them through `*`; the HR admin holds `roles.read`.
+- Built-in roles stay defined in code (`packages/core/src/roles.ts`) and are read-only through the API (409 `builtInRole`); customers copy them instead. A custom role cannot reuse a built-in key, and built-in seeding never overwrites a row that is not `built_in`.
+- A role that is still assigned cannot be deleted (409 `roleInUse` with the count).
+- Migration `0018_role_management.sql` is expand-only: `role_assignments.created_by`, an index on `(tenant_id, role_id)`, and an idempotent append of the role-management keys to existing tenants' built-in rows. Keys are appended, never replaced, so other releases' additions survive. No new tables, so no new RLS policies are needed; `app.roles` keeps FORCE RLS (asserted by the test that re-runs the migration).
+- The principal is loaded from the database on every request (`resolveSession` → `loadPrincipal`); there is no principal cache, so a role change applies to the person's very next request. The integration tests prove grant, edit and revoke each take effect immediately.
+- Every change writes an audit entry (`role.created`, `role.updated`, `role.deleted`, `role.assigned`, `role.revoked`) with a before/after diff. Field access is recorded as `key=level` strings so keys such as `employee.bank.*` are not caught by the audit redaction of key names. The entries appear in the customer's audit export.
+
+**Consequences.** Customers can run their own workspace access. New permission keys must be added to the catalogue (and labelled in both message catalogues; a unit test fails otherwise) before a custom role can hold them.
+
+## ADR-0121 — Privilege-escalation guards for roles (2026-10-18)
+
+**Context.** Role management is itself a privilege. Without guards, anyone allowed to manage roles could grant themselves or others more than they hold.
+
+**Decision.** Implemented once in `@thapsus/core/access` and enforced by the API:
+- **Subset rule.** Creating, editing or deleting a custom role requires that every permission and every field-access level it grants (before and after the change) is held by the caller. A wildcard is covered only by an equal or wider wildcard. Field access is probed for every key either side mentions and every catalogue field, resolved the way the engine resolves it, so a broad `employee.*` cannot hide a narrower denial such as `employee.pay.*: none`.
+- **Scope rule.** Assigning a role at a scope requires that the caller holds `roles.assign` and every permission and field level of the role in grants whose scope covers the requested one: `all` covers everything; value scopes (entity, country, department, location) cover the same type with a subset of values; `self` is covered when the caller's grant covers the assignee's own record; `own_team` is covered only by the caller's own `own_team` grant for themselves or someone in their solid-line team. Delegated authority never counts, so a temporary delegate cannot hand out lasting access. Access a caller holds only for their own record (for example their own pay, through the employee role) therefore lets them define such a role but never hand it out for a department.
+- **Edits reach holders.** An edit that adds anything must also pass the scope rule at every existing assignment's scope (editing a role assigned company-wide by the owner cannot widen it beyond the editor's scope). Narrowing is always allowed.
+- **Revocation is symmetric.** You may revoke only an assignment you could have made.
+- **Last owner.** The built-in owner role is assigned only at scope `all`. Revoking an owner assignment is refused (409 `lastOwner`) when no other active user holds the owner role; the owner role row is locked first so concurrent revocations cannot both pass.
+- Refusals return 403 with `reason` (`exceedsYourAccess` or `scopeTooWide`) and the permission and field keys that were not held, so the UI can say exactly why.
+
+**Consequences.** Delegated access administration (for example "Engineering access admin") is safe. Proof: `apps/api/test/roles.int.test.ts` (subset rule, scope rule, edits that widen holders, revocation, last owner, tenant isolation) and `packages/core/test/access.test.ts`.
+
+## ADR-0122 — Admin-grade permissions always make a role an admin role (2026-10-18)
+
+**Context.** Admin roles require a verified second factor (CLAUDE.md: MFA mandatory for admin roles). If `is_admin` were only a checkbox, a customer could create "HR admin lite" with `is_admin = false` and avoid MFA.
+
+**Decision.** Catalogue keys that configure the workspace, manage access, or reach bulk or special-category data (for example `settings.manage`, `roles.*`, `users.invite`, `employees.create|update|terminate`, `payroll.read`, `vault.*`, `audit.*`, `imports.run`, `exports.run`) are marked admin-grade. A role holding any of them, directly or through a wildcard, is stored as an admin role whatever the request says; the flag can still be set for other roles. The built-in roles' flags agree with this rule (unit-tested). Assigning an admin role to someone without MFA is allowed; the existing gate then refuses everything but MFA setup until they verify (`mfaEnrollmentRequired`), from their next request.
+
+**Consequences.** MFA cannot be avoided through custom roles. The role editor shows the admin box ticked and explains why when an admin-grade permission is chosen, and warns before an admin role is given to someone without MFA.
+
+## ADR-0123 — Who can see the users list (2026-10-18)
+
+**Context.** Access management needs a list of everyone who can sign in, with their roles and MFA status.
+
+**Decision.** `GET /v1/users` and a person's assignments are visible to any holder of `roles.read`, whatever the scope of that grant. The list shows name, sign-in email, status, role keys and whether a second factor is set up. It holds no HR record data (employee fields stay behind field-level access), and names and work emails are already visible to every signed-in person in the directory. Whether a listed assignment may be revoked is computed for the caller with the same scope rule.
+
+**Consequences.** A scoped access administrator can see who holds which role across the company (useful for audits), but can change only what is inside their scope.
