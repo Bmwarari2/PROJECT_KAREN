@@ -92,7 +92,7 @@ export async function tenancyRoutes(app: FastifyInstance) {
     '/v1/internal/find-workspace',
     { config: { auth: 'public', selfAudited: true }, schema: { hide: true, body: Type.Object({ email: Type.String({ format: 'email' }), locale: Type.Optional(Type.String()) }) } },
     async (req, reply) => {
-      const expected = process.env.INTERNAL_TOKEN ?? 'dev-internal-token';
+      const expected = deps.config.internalToken;
       const got = String(req.headers['x-internal-token'] ?? '');
       if (got.length !== expected.length || !timingSafeEqual(Buffer.from(got), Buffer.from(expected))) throw new ApiError('forbidden');
       const { email, locale } = req.body as { email: string; locale?: string };
@@ -203,7 +203,7 @@ export async function globalRoutes(app: FastifyInstance) {
         (Object.keys(REGIONS) as HomeRegion[]).map((r) =>
           deps.fetch(`${deps.regionalApiUrls[r]}/v1/internal/find-workspace`, {
             method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-internal-token': process.env.INTERNAL_TOKEN ?? 'dev-internal-token' },
+            headers: { 'content-type': 'application/json', 'x-internal-token': deps.config.internalToken },
             body: JSON.stringify({ email, locale }),
             signal: AbortSignal.timeout(5000),
           }),

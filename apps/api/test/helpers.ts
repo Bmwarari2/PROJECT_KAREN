@@ -50,7 +50,7 @@ export async function startTestApp(
     },
   };
   const deps: Deps = {
-    config: { env: 'test', cell, domain: 'thapsus-hr.test', appBaseUrl: 'http://localhost:3000', apiBaseUrl: base, globalBaseUrl: 'http://localhost:3000' },
+    config: { env: 'test', cell, domain: 'thapsus-hr.test', appBaseUrl: 'http://localhost:3000', apiBaseUrl: base, globalBaseUrl: 'http://localhost:3000', internalToken: 'fictional-test-internal-token' },
     router: testRouter(cell),
     directory,
     mailer,

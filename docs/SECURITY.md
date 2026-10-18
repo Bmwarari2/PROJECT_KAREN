@@ -1,6 +1,6 @@
 # Security
 
-Target: OWASP ASVS level 2. This document records the security controls and where each is proven, and will include the STRIDE threat model (Phase 12).
+Target: OWASP ASVS level 2. This document records the security controls and where each is proven, the STRIDE threat model with owners, and the accepted risks.
 
 ## Controls
 
@@ -21,6 +21,73 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Secrets | AWS Secrets Manager in AWS; git-ignored `.env` locally; secret scan in `pnpm verify`; GitHub OIDC for deploys with one role per region, trusted only for this repository's GitHub environment and limited to that region's CDK bootstrap roles (no long-lived keys, no IAM users) | `scripts/secret-scan.mjs`, `infra/test/infra.test.ts` (CI stack), `.github/workflows/deploy.yml` |
 | Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI | verify `security` step |
 | Infrastructure | WAF (AWS managed rules plus a rate limit) on every ALB; KMS everywhere; S3 public access blocked; no `*` action on `*` resource in IAM | `infra/test` |
+
+## Threat model (STRIDE)
+
+Reviewed 2026-10-18. Re-review it whenever a new trust boundary, third party or data category is added, and after every post-incident review (`docs/runbooks/incident-response.md` §6).
+
+### Assets
+
+| Asset | Why it matters |
+| --- | --- |
+| Employee personal data (core HR, leave, time, documents) | Confidentiality and integrity duties we owe each controller (GDPR / UK GDPR Art. 28, CCPA service-provider terms) |
+| Sensitive data in the vault (health, sickness and fit notes, disability, diversity/EEO, immigration documents) | Special-category data: the highest harm if disclosed |
+| Credentials and sessions (passwords, TOTP secrets, passkeys, session tokens, SSO and SCIM tokens, kiosk tokens and PINs, API keys, OAuth client secrets) | Account takeover leads to every other asset |
+| Audit log | Evidence for customers, regulators and our own incident response; must not be altered |
+| Jurisdiction rule data | Wrong values mean wrong leave, pay inputs or compliance alerts for whole populations |
+| Tenant directory and billing references (global layer) | Availability of sign-in for everyone; must never hold employee personal data |
+| Secrets and KMS keys | Unlock everything above |
+
+### Trust boundaries
+
+1. **Internet → cell** (WAF → ALB → web / api): browsers, PWA, kiosks, API clients, IdPs (SAML/OIDC), SCIM clients, Stripe webhooks.
+2. **api / worker → data stores**: PostgreSQL through RDS Proxy as `thapsus_app` (RLS forced), Valkey, S3, KMS, SES, EventBridge / SQS.
+3. **Cell ↔ global layer**: directory registration and find-workspace fan-out over the internal token.
+4. **Cell → third parties**: sub-processors in `docs/SUBPROCESSORS.md` (SES, Stripe, Amazon Bedrock), and controller-chosen destinations (webhooks, SIEM, customer S3 / SFTP, payroll and IT connectors).
+5. **Back-office staff → cell**: separate staff accounts with MFA; tenant personal data only through customer-granted support access.
+6. **CI/CD → AWS**: GitHub Actions through OIDC deploy roles, per region.
+
+### Threats and mitigations
+
+Owners are roles: **Platform** (platform engineering lead), **Security** (security lead), **DPO** (data protection officer), **Product** (product owner).
+
+| ID | Boundary / component | STRIDE | Threat | Mitigations | Evidence | Owner | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| T1 | 1 · sign-in | S | Credential stuffing and password spraying | Argon2id; per-IP and per-account throttles; lockout after N failures; constant-time unknown-user path; MFA mandatory for admins; tenant-enforced SSO | `auth.int.test.ts` | Security | Mitigated |
+| T2 | 1 · sessions | S | Session theft or fixation | 256-bit opaque tokens, only SHA-256 stored; HttpOnly, Secure, SameSite=Lax; rotated at sign-in; idle and absolute expiry; revoked on logout, password change and deprovisioning | `auth.int.test.ts` | Security | Mitigated |
+| T3 | 1 · SSO | S | Forged or replayed SAML assertion / OIDC token; IdP mix-up | Signed assertions, audience and recipient checks, one-time RelayState, assertion replay cache; OIDC PKCE, state, nonce, issuer check; JIT only for verified domains | `sso.int.test.ts` | Security | Mitigated |
+| T4 | 1 · client IP | S | Spoofed `X-Forwarded-For` to dodge throttles or forge audit IPs | Only the first private hop (the ALB) is trusted; the web proxy drops client-supplied forwarding headers | `proxy-trust.test.ts` | Platform | Mitigated |
+| T5 | 1 · kiosks | S | Clocking in as someone else at a shared kiosk; PIN brute force | Device token (hash stored, revocable) plus employee number and Argon2id PIN; per-IP and per-kiosk throttles; lockout with identical answers for unknown numbers; every attempt audited | `time.int.test.ts` (kiosk), `kiosk.spec.ts` | Security | Mitigated |
+| T6 | 1 · API clients | S | Stolen API key or OAuth client secret used from anywhere | Keys and secrets stored hashed, prefix-identifiable, scoped, revocable, last-used tracking; short-lived bearer tokens; per-tenant rate limits | Phase 9 branch | Security | Mitigated at integration |
+| T7 | 2 · data layer | I / E | A bug or injection reads or writes another tenant's rows | RLS enabled and forced on every tenant table; app role without BYPASSRLS that owns nothing; transaction-local tenant context; composite tenant foreign keys; parameterised SQL only; the isolation suite enumerates every table | `rls.isolation.test.ts` | Platform | Mitigated |
+| T8 | 2 · authorisation | E | A user reads or changes records outside their scope (IDOR, missing check) | Deny-by-default permission engine with scopes, delegation and field-level access shared by API and UI; every route authorises before loading data | `permissions.test.ts`, `scope-predicate.test.ts`, module integration tests | Platform | Mitigated |
+| T9 | 2 · vault | I | Sensitive data read by roles that do not need it, or leaked from a dump | Separate vault schema; per-value envelope encryption with the regional KMS key and AAD binding; category permissions; every decrypt audited; reporting role has no vault access | `platform.int.test.ts` | DPO | Mitigated |
+| T10 | 2 · audit | T / R | Someone alters or deletes audit entries to hide actions; a user denies an action | Append-only (no UPDATE / DELETE grants plus a trigger for every role); per-tenant SHA-256 hash chain with verification; every mutation and sensitive view audited; customers can export | `audit.int.test.ts` | Security | Mitigated |
+| T11 | 2 · residency | I | Personal data written to, cached in or backed up to another region | Residency-guarded AWS client factory; startup endpoint check; router refuses foreign tenants; CDK region and backup-copy assertions; tests for every region pair | `*.residency.test.ts`, `infra/test` | DPO | Mitigated |
+| T12 | 1 · caching | I | An authenticated page or API response cached at a shared edge and shown to another user | `Cache-Control: private, no-store` on every API response and authenticated page; no CDN in front of cells | `auth.int.test.ts`, e2e | Platform | Mitigated |
+| T13 | 1 · web | T / I | XSS or clickjacking in the app | React escaping; CSP with `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`; `nosniff`; strict referrer policy. CSP still allows inline scripts (see accepted risks) | e2e headers check | Security | Partial |
+| T14 | 1 · uploads | T / I | Malicious or oversized files (imports, documents, payslips) | Size limits; content checked against the file's magic bytes; files stored in the home-region bucket under the tenant prefix; downloads are short-lived presigned URLs with `Content-Disposition: attachment` | Phase 1 branch (documents and imports tests) | Platform | Mitigated at integration |
+| T15 | 1 · imports | T | Spreadsheet formula injection when exports are opened in Excel | Values a spreadsheet would run as a formula are prefixed with `'` in CSV and Excel exports | Phase 1 branch (export tests) | Platform | Mitigated at integration |
+| T16 | 4 · outbound calls | I / E | SSRF through webhook, SIEM or IdP URLs reaching the metadata service or internal hosts | HTTPS only; private, loopback, link-local and metadata addresses refused after DNS resolution; no redirects to them | Phase 9 branch | Security | Mitigated at integration |
+| T17 | 4 · webhooks | S / T | Forged or replayed webhook deliveries to customers | HMAC-SHA256 signature over timestamp and body, two active secrets during rotation, documented verification with a tolerance window | Phase 9 branch | Platform | Mitigated at integration |
+| T18 | 1 · Stripe webhooks | S / T | Forged billing events changing a tenant's plan | Stripe signature verification; idempotent per event id; only billing fields kept | Phase 10 branch | Platform | Mitigated at integration |
+| T19 | 4 · sub-processors | I | Employee data sent to a third party not listed or not needed | `docs/SUBPROCESSORS.md` entry before any integration; tests assert payloads to Stripe hold no employee fields; AI assistant only in-region and never sees sensitive or other employees' data | Phase 10 and 11 branches | DPO | Mitigated at integration |
+| T20 | 4 · AI assistant | T / I | Prompt injection in a policy document makes the assistant reveal other data or give employment decisions | Retrieval limited to documents the asking user may read; no tools with side effects; sensitive categories excluded; refuses employment-decision questions; answers cite their source; clear AI notice; off by default | Phase 11 branch | Product | Mitigated at integration |
+| T21 | 4 · customer destinations | I | Scheduled exports or audit streams sent to the wrong account or region | Cross-account role with ExternalId; destination bucket must be in the tenant's home region; SFTP host key pinning; delivery log; configured only by admins, audited | Phases 7 and 9 branches | DPO | Mitigated at integration |
+| T22 | 4 · payroll / IT connectors | E | Over-privileged Microsoft 365 or Google Workspace credentials misused | Least-privilege scopes documented; credentials encrypted; dry-run preview; every operation logged and audited; idempotent | Phase 6 branch | Security | Mitigated at integration |
+| T23 | 5 · back office | E / I | Thapsus staff browse customer personal data | Staff accounts separate from tenant users, MFA mandatory; personal data only through customer-granted, time-limited, revocable support access; read-only grants run read-only transactions; audited in the customer log and the staff trail | `platform.int.test.ts` | Security | Mitigated |
+| T24 | 5 · rule data | T | Wrong or malicious rule values entered in the back office | Append-only rule versions with source URL and reviewer; golden tests; content-hash manifest forces version bumps; staff edits audited | `rules.int.test.ts`, `packages/rules/test` | Product | Mitigated |
+| T25 | 3 · global layer | I | Employee personal data stored or logged in the global layer | Directory holds ids, slugs, regions, plan and verified domains only; find-workspace sends the email in transit and the cell emails the user; tests | `directory.test.ts`, residency suite | DPO | Mitigated |
+| T26 | 3 · internal token | S / E | Forged global→cell or cell→global calls | Internal token in Secrets Manager, copied into each cell's own secret by the deploy script; compared in constant time; only the internal find-workspace endpoint accepts it; staging, load-test and production refuse to start without it (the local default exists only for dev and test) | `foundation.int.test.ts` (internal calls), `packages/core/test/config.test.ts`, `infra/test` | Platform | Mitigated |
+| T27 | 1 · availability | D | Request floods, expensive queries or job storms | WAF managed rules and a rate rule; per-IP, per-account and per-tenant limits; keyset pagination; statement timeouts; idempotent background jobs with backoff and dead-letter queues; autoscaling | `infra/test`, rate-limit tests, `docs/PERFORMANCE.md` | Platform | Mitigated |
+| T28 | 2 · availability | D | Loss of an availability zone or the database writer | Multi-AZ Aurora, Valkey and ECS; RDS Proxy; PITR and AWS Backup (RPO ≤ 15 min, RTO ≤ 4 h) | `docs/runbooks/az-failure.md`, `backup-restore.md` (drills in PROGRESS 12.8) | Platform | Mitigated; drills pending AWS |
+| T29 | 2 · logs | I | Personal data or tokens in logs and traces | Shared logger and tracer scrub emails, phones, national identifiers, tokens and known personal fields; request bodies never logged | `core.test.ts` | Security | Mitigated |
+| T30 | 6 · CI/CD | E / T | Stolen CI credentials or a malicious workflow deploys code or reads data | GitHub OIDC only, no long-lived keys; one role per region trusted only for this repository's environment; production needs manual approval; pinned lockfile; `pnpm audit` and secret scan in verify | `infra/test` (CI stack), `.github/workflows/deploy.yml` | Security | Mitigated |
+| T31 | 6 · supply chain | T | Compromised dependency | Lockfile pinning; `pnpm audit --audit-level high`; maintained, permissively licensed packages only; dependency updates through pull requests with the full verify gate | verify `security` step | Security | Mitigated |
+| T32 | 2 · secrets | I | Secrets committed to git or baked into images | Secrets Manager only; git-ignored `.env` locally; secret scan in verify; task definitions reference secrets by ARN | `scripts/secret-scan.mjs`, `infra/test` | Security | Mitigated |
+| T33 | 2 · privacy operations | I / R | A data-subject export or erasure reaches the wrong person, or a deletion cannot be proven | Requester identity verification step; exports stored in the home region with short-lived links; deletion log and deletion certificate; legal holds honoured | Phase 8 branch | DPO | Mitigated at integration |
+
+"Mitigated at integration" means the control is built and tested on its phase branch and the evidence link is filled in here when that branch merges to `main`.
 
 ## Accepted risks and follow-ups
 

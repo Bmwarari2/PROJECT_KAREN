@@ -12,7 +12,7 @@ export const PUBLIC_SERVER = 'https://api.{region}.{domain}';
 /** Builds the public OpenAPI document from the route schemas (no database connection needed). */
 export async function buildSpec(): Promise<Record<string, unknown>> {
   const deps: Deps = {
-    config: { env: 'test', cell: 'uk', domain: 'example.test', appBaseUrl: 'http://localhost', apiBaseUrl: 'https://api.uk.thapsus-hr.example', globalBaseUrl: 'http://localhost' },
+    config: { env: 'test', cell: 'uk', domain: 'example.test', appBaseUrl: 'http://localhost', apiBaseUrl: 'https://api.uk.thapsus-hr.example', globalBaseUrl: 'http://localhost', internalToken: 'unused' },
     router: new TenantRouter({ databases: { shared: 'postgres://unused@127.0.0.1:1/none' } }),
     directory: new InMemoryDirectory(),
     mailer: new MemoryMailer('uk'),

@@ -122,3 +122,14 @@ describe('schema rules', () => {
     expect(cols).toEqual([]);
   });
 });
+
+describe('global ↔ cell internal calls', () => {
+  it('find-workspace refuses a missing or wrong internal token and accepts the configured one', async () => {
+    const call = (token?: string) =>
+      ctx.app.inject({ method: 'POST', url: '/v1/internal/find-workspace', headers: token ? { 'x-internal-token': token } : {}, payload: { email: 'nobody@fictional.example.test' } });
+    expect((await call()).statusCode).toBe(403);
+    expect((await call(`${ctx.deps.config.internalToken}x`)).statusCode).toBe(403);
+    expect((await call('x'.repeat(ctx.deps.config.internalToken.length))).statusCode).toBe(403);
+    expect((await call(ctx.deps.config.internalToken)).statusCode).toBe(202);
+  });
+});

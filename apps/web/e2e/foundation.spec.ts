@@ -112,6 +112,13 @@ test.describe('sign-up, MFA and the app shell', () => {
     expect(res.headers()['cache-control']).toBe('private, no-store');
     const html = await page.request.get('/app');
     expect(html.headers()['cache-control']).toContain('no-store');
+    // security headers on every page (threat model T13)
+    const h = html.headers();
+    expect(h['content-security-policy']).toMatch(/frame-ancestors 'none'/);
+    expect(h['content-security-policy']).toMatch(/object-src 'none'/);
+    expect(h['x-content-type-options']).toBe('nosniff');
+    expect(h['x-frame-options']).toBe('DENY');
+    expect(h['strict-transport-security']).toMatch(/max-age=\d+/);
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await page.waitForURL(/\/signin/);
