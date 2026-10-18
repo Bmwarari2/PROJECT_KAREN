@@ -1,0 +1,443 @@
+{
+  "jurisdiction": "FI",
+  "parent": "EU",
+  "name": "Finland",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Vuosilomalaki 5 §: 2.5 arkipäivää per full holiday-credit month (2 if employment lasted under one year by the end of the holiday-credit year) — 30/24 days per year on a 6-day basis",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrualPerMonth": 2.5,
+            "accrualPerMonthIfServiceUnderOneYear": 2,
+            "dayUnit": "arkipaiva",
+            "weekBasisDays": 6,
+            "fullYearDays": 30,
+            "fullYearDaysIfServiceUnderOneYear": 24,
+            "roundingPartDayUp": true
+          },
+          "source": {
+            "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+            "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "5 §: \"kaksi ja puoli arkipäivää kultakin täydeltä lomanmääräytymiskuukaudelta\"; two days if the employment has lasted less than a year by the end of the holiday-credit year; part days rounded up. Holiday-credit year (1 April – 31 March) and full-month (14 days / 35 hours) rules not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "draft",
+            "law": "HE 129/2026 (Government proposal amending the Act on Equality between Women and Men and related acts)",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://finlex.fi/fi/hallituksen-esitykset/2026/129",
+            "title": "HE 129/2026: hallituksen esitys naisten ja miesten välisestä tasa-arvosta annetun lain muuttamisesta (palkka-avoimuusdirektiivi)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Finlex lists government proposal HE 129/2026; EUR-Lex lists no notified Finnish measures (checked 2026-10-18). Proposed entry into force 1 January 2027 per government release (valtioneuvosto.fi returned 403 and is not on the allow-list) — not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Uudenvuodenpäivä",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Loppiainen",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Pitkäperjantai",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "easter-saturday",
+      "name": "Easter Saturday",
+      "localName": "Pääsiäislauantai",
+      "rule": {
+        "type": "easter",
+        "offset": -1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+        "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Vuosilomalaki 4 §: excluded from arkipäivät (with Sundays, church holidays, Independence Day, Christmas Eve, Midsummer Eve, Easter Saturday and May Day)."
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Pääsiäispäivä",
+      "rule": {
+        "type": "easter",
+        "offset": 0,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Toinen pääsiäispäivä",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "may-day",
+      "name": "May Day",
+      "localName": "Vapunpäivä",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+        "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Vuosilomalaki 4 §: excluded from arkipäivät (with Sundays, church holidays, Independence Day, Christmas Eve, Midsummer Eve, Easter Saturday and May Day)."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Helatorstai",
+      "rule": {
+        "type": "easter",
+        "offset": 39,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Helluntai",
+      "rule": {
+        "type": "easter",
+        "offset": 49,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "midsummer-eve",
+      "name": "Midsummer Eve",
+      "localName": "Juhannusaatto",
+      "rule": {
+        "type": "weekday_on_or_after",
+        "month": 6,
+        "day": 19,
+        "weekday": 5
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+        "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Vuosilomalaki 4 §: excluded from arkipäivät (with Sundays, church holidays, Independence Day, Christmas Eve, Midsummer Eve, Easter Saturday and May Day). Date = the Friday before Midsummer Day (Fri 19–25 June), derived."
+    },
+    {
+      "id": "midsummer-day",
+      "name": "Midsummer Day",
+      "localName": "Juhannuspäivä",
+      "rule": {
+        "type": "weekday_on_or_after",
+        "month": 6,
+        "day": 20,
+        "weekday": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §. Celebrated on the Saturday following 19 June (20–26 June) per HE 19/2019 text indexed on finlex.fi — date rule not seen in the fetched 652/2023 text."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Pyhäinpäivä",
+      "rule": {
+        "type": "weekday_on_or_after",
+        "month": 10,
+        "day": 31,
+        "weekday": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §. Celebrated on the Saturday following 30 October (31 Oct – 6 Nov) per HE 19/2019 text indexed on finlex.fi."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence Day",
+      "localName": "Itsenäisyyspäivä",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+        "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Vuosilomalaki 4 §: excluded from arkipäivät (with Sundays, church holidays, Independence Day, Christmas Eve, Midsummer Eve, Easter Saturday and May Day)."
+    },
+    {
+      "id": "christmas-eve",
+      "name": "Christmas Eve",
+      "localName": "Jouluaatto",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 24
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+        "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Vuosilomalaki 4 §: excluded from arkipäivät (with Sundays, church holidays, Independence Day, Christmas Eve, Midsummer Eve, Easter Saturday and May Day)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Joulupäivä",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "Toinen joulupäivä (Tapaninpäivä)",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+        "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Kirkollinen juhlapäivä (Kirkkolaki 652/2023); not an arkipäivä under Vuosilomalaki 4 §."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation"
+    ],
+    "notes": "Finnish holiday set = days excluded from arkipäivät by Vuosilomalaki 4 § (church holidays per Kirkkolaki + named secular days). Pay for holidays is mostly by collective agreement."
+  }
+}

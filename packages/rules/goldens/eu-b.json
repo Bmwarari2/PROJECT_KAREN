@@ -1,0 +1,831 @@
+{
+  "holidays": [
+    {
+      "jurisdiction": "IE",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-02-02",
+        "2026-03-17",
+        "2026-04-06",
+        "2026-05-04",
+        "2026-06-01",
+        "2026-08-03",
+        "2026-10-26",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Official dated 2026 list on citizensinformation.ie (Public holidays)."
+    },
+    {
+      "jurisdiction": "NL",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-04-27",
+        "2026-05-05",
+        "2026-05-14",
+        "2026-05-24",
+        "2026-05-25",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Official dated 2026 list on rijksoverheid.nl (Feestdagen 2026)."
+    },
+    {
+      "jurisdiction": "ES",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-05-01",
+        "2026-08-15",
+        "2026-10-12",
+        "2026-11-01",
+        "2026-12-06",
+        "2026-12-08",
+        "2026-12-25"
+      ],
+      "source": "BOE-A-2025-21667 annex: days marked * (national, non-substitutable) for 2026 — 1 Jan, 3 Apr, 1 May, 15 Aug, 12 Oct, 8 Dec, 25 Dec — plus 1 Nov and 6 Dec, which RD 2001/1983 art. 45.1 lists as national holidays but fall on Sundays in 2026 (the BOE table lists only the Monday transfers chosen per community)."
+    },
+    {
+      "jurisdiction": "ES",
+      "region": "ES-MD",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-02",
+        "2026-04-03",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-08-15",
+        "2026-10-12",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-12-06",
+        "2026-12-07",
+        "2026-12-08",
+        "2026-12-25"
+      ],
+      "source": "BOE-A-2025-21667 annex, Com. Madrid column (12 dates) plus the Sunday national holidays 1 Nov and 6 Dec (RD 2001/1983 art. 45.1) whose rest moves to 2 Nov / 7 Dec."
+    },
+    {
+      "jurisdiction": "ES",
+      "region": "ES-CT",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-06-24",
+        "2026-08-15",
+        "2026-09-11",
+        "2026-10-12",
+        "2026-11-01",
+        "2026-12-06",
+        "2026-12-08",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "BOE-A-2025-21667 annex, Cataluña column (12 dates) plus the Sunday national holidays 1 Nov and 6 Dec (RD 2001/1983 art. 45.1; Catalonia substituted their Monday transfers)."
+    },
+    {
+      "jurisdiction": "IT",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-06",
+        "2026-04-25",
+        "2026-05-01",
+        "2026-06-02",
+        "2026-08-15",
+        "2026-10-04",
+        "2026-11-01",
+        "2026-12-08",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from L. 260/1949 art. 2 as amended by L. 151/2025 (GU), with L. 54/1977, DPR 792/1985 and L. 336/2000 (normattiva.it); Easter Monday 2026 = 6 April. Sundays (also festive) not listed."
+    },
+    {
+      "jurisdiction": "PL",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-03",
+        "2026-05-24",
+        "2026-06-04",
+        "2026-08-15",
+        "2026-11-01",
+        "2026-11-11",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from Ustawa o dniach wolnych od pracy art. 1 (Dz.U. 2025 poz. 296) with Easter 2026 = 5 April (Whit Sunday +49, Corpus Christi +60)."
+    },
+    {
+      "jurisdiction": "PT",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-05",
+        "2026-04-25",
+        "2026-05-01",
+        "2026-06-04",
+        "2026-06-10",
+        "2026-08-15",
+        "2026-10-05",
+        "2026-11-01",
+        "2026-12-01",
+        "2026-12-08",
+        "2026-12-25"
+      ],
+      "source": "Derived from Código do Trabalho art. 234.º n.º 1 as worded by Lei 8/2016 (Diário da República) with Easter 2026 = 5 April (Corpus Christi +60). Optional Carnival and municipal holidays excluded."
+    },
+    {
+      "jurisdiction": "SE",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-03",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-24",
+        "2026-06-06",
+        "2026-06-20",
+        "2026-10-31",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from Lag (1989:253) om allmänna helgdagar 1–2 §§ (riksdagen.se): Midsummer Day = Saturday 20–26 June, All Saints = Saturday 31 Oct–6 Nov; Easter 2026 = 5 April. Ordinary Sundays not listed."
+    },
+    {
+      "jurisdiction": "SK",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-07-05",
+        "2026-08-29",
+        "2026-11-01",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from Act 241/1993 version in force from 2025-11-01 (slov-lex.sk): § 1–2 days of rest, minus § 2(3) (1 Sep, 28 Oct, 17 Nov not days of rest) and § 4b (8 May and 15 Sep not days of rest in 2026)."
+    },
+    {
+      "jurisdiction": "SI",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-02",
+        "2026-02-08",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-04-27",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-24",
+        "2026-06-25",
+        "2026-08-15",
+        "2026-10-31",
+        "2026-11-01",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "gov.si \"Državni prazniki, dela prosti dnevi\" — holidays that are non-working days, with the page's own 2026 dates for Easter Sunday/Monday (5/6 April) and Whit Sunday (24 May)."
+    },
+    {
+      "jurisdiction": "LV",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-04",
+        "2026-05-10",
+        "2026-05-24",
+        "2026-06-23",
+        "2026-06-24",
+        "2026-11-18",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26",
+        "2026-12-31"
+      ],
+      "source": "Derived from the law \"Par svētku, atceres un atzīmējamām dienām\" art. 1 (likumi.lv); Easter 2026 = 5 April; Mother's Day = second Sunday of May; no Song and Dance Festival closing day in 2026; 4 May and 18 Nov fall on weekdays."
+    },
+    {
+      "jurisdiction": "LU",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-09",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-06-23",
+        "2026-08-15",
+        "2026-11-01",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the 11 legal public holidays listed on Guichet.lu (Code du travail) with Easter 2026 = 5 April."
+    },
+    {
+      "jurisdiction": "MT",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-02-10",
+        "2026-03-19",
+        "2026-03-31",
+        "2026-04-03",
+        "2026-05-01",
+        "2026-06-07",
+        "2026-06-29",
+        "2026-08-15",
+        "2026-09-08",
+        "2026-09-21",
+        "2026-12-08",
+        "2026-12-13",
+        "2026-12-25"
+      ],
+      "source": "Derived from Cap. 252 art. 2 (national holidays) and Schedule (public holidays) on legislation.mt; Good Friday 2026 = 3 April."
+    }
+  ],
+  "rules": [
+    {
+      "jurisdiction": "IE",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "maxWorkingWeeks": 4,
+        "methods.0.minHoursInLeaveYear": 1365,
+        "methods.1.minHoursInCalendarMonth": 117,
+        "methods.2.percent": 8
+      }
+    },
+    {
+      "jurisdiction": "IE",
+      "key": "sick_pay.statutory",
+      "date": "2026-06-01",
+      "expectPath": {
+        "daysPerYear": 5,
+        "ratePercent": 70,
+        "dailyCap.amountMinor": 11000,
+        "dailyCap.currency": "EUR",
+        "qualifyingServiceWeeks": 13
+      }
+    },
+    {
+      "jurisdiction": "IE",
+      "key": "employment.notice_period",
+      "date": "2026-06-01",
+      "expectPath": {
+        "minServiceWeeksForEntitlement": 13,
+        "employerByService.0.weeks": 1,
+        "employerByService.1.weeks": 2,
+        "employerByService.2.weeks": 4,
+        "employerByService.3.weeks": 6,
+        "employerByService.4.weeks": 8
+      }
+    },
+    {
+      "jurisdiction": "IE",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "NL",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "multipleOfWeeklyHours": 4
+      }
+    },
+    {
+      "jurisdiction": "NL",
+      "key": "sick_pay.statutory",
+      "date": "2026-06-01",
+      "expectPath": {
+        "continuedPayPercent": 70,
+        "maxWeeks": 104,
+        "minimumWageFloorFirstWeeks": 52
+      }
+    },
+    {
+      "jurisdiction": "NL",
+      "key": "employment.notice_period",
+      "date": "2026-06-01",
+      "expectPath": {
+        "employerByService.0.months": 1,
+        "employerByService.1.months": 2,
+        "employerByService.2.months": 3,
+        "employerByService.3.months": 4,
+        "employeeMonths": 1
+      }
+    },
+    {
+      "jurisdiction": "NL",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "draft",
+        "inForceFrom": null
+      }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "calendarDays": 30
+      }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "sick_pay.statutory",
+      "date": "2026-06-01",
+      "expectPath": {
+        "benefitFromDay": 4,
+        "employerPaysDays.from": 4,
+        "employerPaysDays.to": 15,
+        "maxDurationDays": 365
+      }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "employment.notice_period",
+      "date": "2026-06-01",
+      "expectPath": {
+        "objectiveDismissal.days": 15
+      }
+    },
+    {
+      "jurisdiction": "ES",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "IT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "weeks": 4
+      }
+    },
+    {
+      "jurisdiction": "IT",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expect": {
+        "status": "transposed",
+        "law": "Decreto legislativo 7 maggio 2026, n. 96",
+        "inForceFrom": "2026-06-07"
+      }
+    },
+    {
+      "jurisdiction": "PL",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "byService.0.days": 20,
+        "byService.1.minServiceYears": 10,
+        "byService.1.days": 26
+      }
+    },
+    {
+      "jurisdiction": "PL",
+      "key": "sick_pay.statutory",
+      "date": "2026-06-01",
+      "expectPath": {
+        "continuedPayPercent": 80,
+        "maxDaysPerCalendarYear": 33,
+        "maxDaysPerCalendarYearAge50Plus": 14
+      }
+    },
+    {
+      "jurisdiction": "PL",
+      "key": "employment.notice_period",
+      "date": "2026-06-01",
+      "expectPath": {
+        "byService.0.weeks": 2,
+        "byService.1.minServiceMonths": 6,
+        "byService.1.months": 1,
+        "byService.2.minServiceMonths": 36,
+        "byService.2.months": 3
+      }
+    },
+    {
+      "jurisdiction": "PL",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "partially_transposed",
+        "inForceFrom": "2025-12-24"
+      }
+    },
+    {
+      "jurisdiction": "PT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "workingDays": 22
+      }
+    },
+    {
+      "jurisdiction": "SE",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 25
+      }
+    },
+    {
+      "jurisdiction": "SE",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "draft"
+      }
+    },
+    {
+      "jurisdiction": "SK",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "weeks": 4,
+        "increasedWeeks": 5
+      }
+    },
+    {
+      "jurisdiction": "SK",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "transposed",
+        "inForceFrom": "2026-06-07"
+      }
+    },
+    {
+      "jurisdiction": "SI",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "weeks": 4,
+        "fiveDayWeekDays": 20
+      }
+    },
+    {
+      "jurisdiction": "LV",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "calendarWeeks": 4
+      }
+    },
+    {
+      "jurisdiction": "LU",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "workingDays": 26
+      }
+    },
+    {
+      "jurisdiction": "MT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "hours": 192
+      }
+    },
+    {
+      "jurisdiction": "MT",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "transposed"
+      }
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "transposed",
+        "inForceFrom": null
+      }
+    },
+    {
+      "jurisdiction": "RO",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "LU",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "PT",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "LV",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "SI",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectPath": {
+        "days": 20,
+        "sixDayWeekDays": 24,
+        "excludesPublicHolidays": true,
+        "oneUnbrokenPartMinDays": 10
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-lithuania_en",
+      "notes": "Same source as the pack (EURES); the primary Labour Code text could not be fetched, so this vector is not independent."
+    },
+    {
+      "jurisdiction": "LT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-17",
+      "expectJurisdiction": "EU",
+      "expectPath": {
+        "weeks": 4
+      },
+      "notes": "Before the verification date Lithuania falls back to the EU baseline."
+    },
+    {
+      "jurisdiction": "RO",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectPath": {
+        "days": 20,
+        "dayUnit": "working_days",
+        "additionalDaysMin": 3
+      },
+      "source": "https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-romania_en",
+      "notes": "Same source as the pack (EURES); the primary Labour Code text could not be fetched, so this vector is not independent."
+    }
+  ],
+  "notes": "EU part B (IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE). expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). Holiday vectors list holiday dates (ordinary Sundays excluded). RO and LT have no holiday vectors: no official statutory text could be fetched (see packs coverage); their annual leave comes from EURES. Weekend-observance moves: none occur in 2026 for LV (4 May Mon, 18 Nov Wed).",
+  "sources": [
+    {
+      "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+      "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+      "title": "Citizens Information (Ireland): Public holidays",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/annual-leave/",
+      "title": "Citizens Information (Ireland): Annual leave (Organisation of Working Time Act 1997)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/sick-leave-and-sick-pay/",
+      "title": "Citizens Information (Ireland): Sick leave and sick pay (Sick Leave Act 2022)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.irishstatutebook.ie/eli/1973/act/4/section/4/enacted/en/html",
+      "title": "Minimum Notice and Terms of Employment Act 1973, s. 4 (Irish Statute Book)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.rijksoverheid.nl/vraag-en-antwoord/arbeidsovereenkomst-en-cao/officiele-feestdagen",
+      "title": "Rijksoverheid: Wanneer zijn de officiële feestdagen in Nederland? (2026 en 2027)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.rijksoverheid.nl/documenten/vraag-en-antwoord/arbeidsovereenkomst-en-cao/koningsdag-27-april-vrije-dag",
+      "title": "Rijksoverheid: Is Koningsdag (27 april) een vrije dag?",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://wetten.overheid.nl/BWBR0005290/2026-01-01",
+      "title": "Burgerlijk Wetboek Boek 7 (wetten.overheid.nl), versie 2026-01-01 — art. 7:629, 7:634, 7:672",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://wetgevingskalender.overheid.nl/Regeling/WGK025384",
+      "title": "Wetgevingskalender: Implementatie richtlijn loontransparantie (Kamerstuk 36949)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+      "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+      "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+      "title": "Estatuto de los Trabajadores (RDL 2/2015), arts. 38 y 53 — texto consolidado BOE",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11724",
+      "title": "Ley General de la Seguridad Social (RDL 8/2015), arts. 169 y 173 — texto consolidado BOE",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+      "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2003-04-14&atto.codiceRedazionale=003G0091",
+      "title": "D.Lgs. 8 aprile 2003, n. 66 (GU n. 87 del 14-04-2003, S.O. n. 61), art. 10 Ferie annuali",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2026-06-01&atto.codiceRedazionale=26G00112",
+      "title": "D.Lgs. 7 maggio 2026, n. 96 — attuazione della direttiva (UE) 2023/970 (GU n. 125 del 01-06-2026)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://eli.gov.pl/eli/DU/2026/1245/ogl",
+      "title": "Kodeks pracy — tekst jednolity, Dz.U. 2026 poz. 1245 (art. 36, 92, 154, 18[3ca])",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+      "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://eli.gov.pl/eli/DU/2025/807/ogl",
+      "title": "Ustawa z dnia 4 czerwca 2025 r. o zmianie ustawy – Kodeks pracy (Dz.U. 2025 poz. 807)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+      "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/pt/html",
+      "title": "Lei n.º 7/2009 (Código do Trabalho), art. 238.º — Diário da República n.º 30, 12-02-2009",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1989253-om-allmanna-helgdagar_sfs-1989-253/",
+      "title": "Lag (1989:253) om allmänna helgdagar (t.o.m. SFS 2004:1320)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+      "title": "Semesterlag (1977:480), 4 §",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.regeringen.se/pressmeddelanden/2026/03/mer-tid-for-forberedelser-infor-genomforandet-av-lonetransparensdirektivet/",
+      "title": "Regeringen: Mer tid för förberedelser inför genomförandet av lönetransparensdirektivet (11 mars 2026)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/1993/241/20251101",
+      "title": "Zákon 241/1993 Z. z. o štátnych sviatkoch, dňoch pracovného pokoja a pamätných dňoch (znenie účinné od 01.11.2025)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/1993/241/20240101",
+      "title": "Zákon 241/1993 Z. z. (znenie účinné 01.01.2024 – 31.10.2025)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/1993/241/20230101",
+      "title": "Zákon 241/1993 Z. z. (znenie účinné 01.01.2023 – 31.12.2023)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2001/311/20260901",
+      "title": "Zákonník práce 311/2001 Z. z., § 103 (znenie účinné od 01.09.2026)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2026/76/20260607",
+      "title": "Zákon 76/2026 Z. z. o rovnakom odmeňovaní mužov a žien za rovnakú prácu alebo za prácu rovnakej hodnoty",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gov.si/teme/drzavni-prazniki-in-dela-prosti-dnevi/",
+      "title": "GOV.SI: Državni prazniki, dela prosti dnevi in dan žalovanja (ZPDPD)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gov.si/assets/ministrstva/MDDSZ/Delovna-razmerja/Letni-dopust-in-regres.pdf",
+      "title": "MDDSZ (GOV.SI): Letni dopust in regres — ZDR-1, 159. člen",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://likumi.lv/ta/id/72608",
+      "title": "Likums \"Par svētku, atceres un atzīmējamām dienām\" (likumi.lv, redakcija ar grozījumiem līdz 29.05.2023), 1. pants",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://likumi.lv/ta/id/26019",
+      "title": "Darba likums, 149. pants (likumi.lv)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+      "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/annuel/conge-legal-annuel.html",
+      "title": "Guichet.lu: Congé légal annuel (Code du travail)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+      "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://legislation.mt/eli/sl/452.87/20241126/eng",
+      "title": "Organisation of Working Time Regulations (S.L. 452.87), reg. 8 (point in time 26/11/2024)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://legislation.mt/eli/ln/2026/173/eng",
+      "title": "L.N. 173 of 2026 — Equal Pay (Transparency and Reporting) Regulations, 2026",
+      "verifiedOn": "2026-10-18"
+    }
+  ]
+}

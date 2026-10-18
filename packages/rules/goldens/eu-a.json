@@ -1,0 +1,862 @@
+{
+  "holidays": [
+    {
+      "jurisdiction": "DE",
+      "region": "DE-BY",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-06-04",
+        "2026-10-03",
+        "2026-11-01",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Official BALM 2026 list (balm.bund.de) for all dates except 6 Jan; Epiphany from Bayerisches Feiertagsgesetz Art. 1(1) Nr. 1 (https://www.gesetze-bayern.de/Content/Document/BayFTG-1, fetched 2026-10-18). Assumption (15 Aug) excluded: only in predominantly Catholic municipalities."
+    },
+    {
+      "jurisdiction": "DE",
+      "region": "DE-BE",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-03-08",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-10-03",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Official BALM 2026 list (nationwide holidays) + International Women's Day in Berlin (bundesregierung.de; since 2019)."
+    },
+    {
+      "jurisdiction": "DE",
+      "region": "DE-NI",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-10-03",
+        "2026-10-31",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Official BALM 2026 list (balm.bund.de): nationwide holidays + Reformationstag (NI)."
+    },
+    {
+      "jurisdiction": "FR",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-08",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-07-14",
+        "2026-08-15",
+        "2026-11-01",
+        "2026-11-11",
+        "2026-12-25"
+      ],
+      "source": "Official dated list for 2026 on Service-Public.fr F2405 (cas général)."
+    },
+    {
+      "jurisdiction": "FR",
+      "region": "FR-57",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-08",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-07-14",
+        "2026-08-15",
+        "2026-11-01",
+        "2026-11-11",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Service-Public.fr F2405: general list + Alsace-Moselle Vendredi saint (3 avril 2026, communes with a Protestant temple or mixed church) and 26 décembre."
+    },
+    {
+      "jurisdiction": "AT",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-06-04",
+        "2026-08-15",
+        "2026-10-26",
+        "2026-11-01",
+        "2026-12-08",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (Arbeitsruhegesetz § 7 as listed by usp.gv.at) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "BE",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-25",
+        "2026-07-21",
+        "2026-08-15",
+        "2026-11-01",
+        "2026-11-11",
+        "2026-12-25"
+      ],
+      "source": "Derived from the statutory rule list (loi du 4 janvier 1974, list per SPF BOSA / SPF Emploi) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source. Replacement days for holidays on Sunday/inactive days (15 Aug 2026 is a Saturday, 1 Nov a Sunday) are set per company/sector and not included."
+    },
+    {
+      "jurisdiction": "BG",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-03-03",
+        "2026-04-10",
+        "2026-04-11",
+        "2026-04-12",
+        "2026-04-13",
+        "2026-05-01",
+        "2026-05-06",
+        "2026-05-24",
+        "2026-09-06",
+        "2026-09-22",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "substituteNonWorkingDays": [
+        "2026-05-25",
+        "2026-09-07",
+        "2026-12-28"
+      ],
+      "source": "Derived from the statutory rule list (Кодекс на труда чл. 154(1)) for 2026 with Orthodox Easter = 12 April 2026 — no official dated list for 2026 found on an allow-listed source. Substitute days per чл. 154(2): 24 May (Sun) → 25 May; 6 Sep (Sun) → 7 Sep; 26 Dec (Sat) → 28 Dec. Council of Ministers one-off days not included."
+    },
+    {
+      "jurisdiction": "HR",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-30",
+        "2026-06-04",
+        "2026-06-22",
+        "2026-08-05",
+        "2026-08-15",
+        "2026-11-01",
+        "2026-11-18",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (Zakon o blagdanima NN 110/2019 čl. 1) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "CZ",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-08",
+        "2026-07-05",
+        "2026-07-06",
+        "2026-09-28",
+        "2026-10-28",
+        "2026-11-17",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (zákon 245/2000 Sb. §§ 1–2) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "DK",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-02",
+        "2026-04-03",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-14",
+        "2026-05-24",
+        "2026-05-25",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (helligdage enumerated in lov nr. 214/2023 § 7) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "EE",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-02-24",
+        "2026-04-03",
+        "2026-04-05",
+        "2026-05-01",
+        "2026-05-24",
+        "2026-06-23",
+        "2026-06-24",
+        "2026-08-20",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (Pühade ja tähtpäevade seadus §§ 1–2) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "FI",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-04-03",
+        "2026-04-04",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-14",
+        "2026-05-24",
+        "2026-06-19",
+        "2026-06-20",
+        "2026-10-31",
+        "2026-12-06",
+        "2026-12-24",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (Kirkkolaki 652/2023 church holidays + Vuosilomalaki 4 § named days; Midsummer Day = Saturday 20–26 June, All Saints = Saturday 31 Oct – 6 Nov) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "GR",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-06",
+        "2026-03-25",
+        "2026-04-13",
+        "2026-05-01",
+        "2026-08-15",
+        "2026-10-28",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (art. 60 ν. 4808/2021 mandatory holidays, per hli.gov.gr) for 2026 with Orthodox Easter = 12 April 2026 — no official dated list for 2026 found on an allow-listed source."
+    },
+    {
+      "jurisdiction": "HU",
+      "region": "*",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-03-15",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-25",
+        "2026-08-20",
+        "2026-10-23",
+        "2026-11-01",
+        "2026-12-25",
+        "2026-12-26"
+      ],
+      "source": "Derived from the statutory rule list (Mt. 102. § (1)) for 2026 with Western Easter = 5 April 2026 — no official dated list for 2026 found on an allow-listed source. Government working-day swap decrees not included."
+    }
+  ],
+  "rules": [
+    {
+      "jurisdiction": "EU",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expect": {
+        "weeks": 4,
+        "payInLieuOnlyOnTermination": true
+      }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-06-01",
+      "expect": {
+        "maxAverageWeeklyHours": 48,
+        "includesOvertime": true,
+        "referencePeriodMaxMonths": 4
+      }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.daily_rest",
+      "date": "2026-06-01",
+      "expect": {
+        "minConsecutiveHours": 11,
+        "perHours": 24
+      }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.time_recording",
+      "date": "2018-12-31",
+      "expect": null
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.weekly_rest",
+      "date": "2026-06-01",
+      "expect": {
+        "minUninterruptedHours": 24,
+        "plusDailyRestHours": 11,
+        "perDays": 7,
+        "referencePeriodMaxDays": 14,
+        "reducedMinimumHoursIfJustified": 24
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32003L0088",
+      "notes": "Derived from the Directive text (same source as the pack, re-read 2026-10-18): Art. 5 \"per each seven-day period ... a minimum uninterrupted rest period of 24 hours plus the 11 hours' daily rest\"; \"a minimum rest period of 24 hours may be applied\" if justified; Art. 16(a) reference period \"not exceeding 14 days\"."
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.rest_break",
+      "date": "2026-06-01",
+      "expect": {
+        "triggerWorkingDayHoursOver": 6,
+        "durationSetBy": "collective_agreement_or_national_law"
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32003L0088",
+      "notes": "Derived from the Directive text: Art. 4 \"where the working day is longer than six hours ... a rest break, the details of which ... shall be laid down in collective agreements ... or, failing that, by national legislation\"."
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "working_time.time_recording",
+      "date": "2019-05-14",
+      "expectPath": {
+        "required": true,
+        "scope": "daily_working_time_each_worker"
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:62018CJ0055",
+      "notes": "Operative part of C-55/18 (14 May 2019): the Directive precludes national law that \"does not require employers to set up a system enabling the duration of time worked each day by each worker to be measured\"."
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "working_time.weekly_rest",
+      "date": "2026-06-01",
+      "expectJurisdiction": "EU",
+      "expectPath": {
+        "minUninterruptedHours": 24
+      },
+      "notes": "No German pack value: Germany falls back to the EU baseline."
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "transpositionDeadline": "2026-06-07",
+        "gapReporting[0].firstReportBy": "2027-06-07",
+        "gapReporting[2].minWorkers": 100,
+        "gapReporting[2].firstReportBy": "2031-06-07"
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 24,
+        "dayUnit": "werktage",
+        "weekBasisDays": 6
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "sick_pay.statutory",
+      "date": "2026-06-01",
+      "expectPath": {
+        "continuedPayPercent": 100,
+        "maxWeeksPerIncapacity": 6,
+        "qualifyingServiceWeeks": 4
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "employment.notice_period",
+      "date": "2026-06-01",
+      "expectPath": {
+        "base.weeks": 4,
+        "employerByService[6].minServiceYears": 20,
+        "employerByService[6].months": 7,
+        "probation.noticeWeeks": 2
+      }
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "FR",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "accrualPerMonth": 2.5,
+        "maxDaysPerYear": 30,
+        "dayUnit": "jours_ouvrables"
+      }
+    },
+    {
+      "jurisdiction": "FR",
+      "key": "sick_pay.statutory",
+      "date": "2026-06-01",
+      "expectPath": {
+        "socialSecurityDailyAllowance.waitingDays": 3,
+        "employerComplement.waitingDays": 7,
+        "employerComplement.minServiceYears": 1,
+        "employerComplement.bandsByServiceYears[0].days90": 30
+      }
+    },
+    {
+      "jurisdiction": "FR",
+      "key": "employment.notice_period",
+      "date": "2026-06-01",
+      "expectPath": {
+        "bands[1].months": 1,
+        "bands[2].months": 2
+      }
+    },
+    {
+      "jurisdiction": "FR",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "draft"
+      }
+    },
+    {
+      "jurisdiction": "AT",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 30,
+        "fiveDayWeekEquivalentDays": 25,
+        "extended.days": 36
+      }
+    },
+    {
+      "jurisdiction": "AT",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "partially_transposed"
+      }
+    },
+    {
+      "jurisdiction": "BE",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 20,
+        "sixDayWeekDays": 24
+      }
+    },
+    {
+      "jurisdiction": "BE",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "partially_transposed"
+      }
+    },
+    {
+      "jurisdiction": "BG",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 20
+      }
+    },
+    {
+      "jurisdiction": "BG",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "partially_transposed"
+      }
+    },
+    {
+      "jurisdiction": "HR",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "weeks": 4
+      }
+    },
+    {
+      "jurisdiction": "HR",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "CY",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 20,
+        "sixDayWeekDays": 24
+      }
+    },
+    {
+      "jurisdiction": "CY",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "CZ",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "weeks": 4,
+        "publicSectorWeeks": 5
+      }
+    },
+    {
+      "jurisdiction": "CZ",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "partially_transposed"
+      }
+    },
+    {
+      "jurisdiction": "DK",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 25,
+        "accrualPerMonth": 2.08
+      }
+    },
+    {
+      "jurisdiction": "DK",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    },
+    {
+      "jurisdiction": "EE",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 28,
+        "dayUnit": "calendar_days"
+      }
+    },
+    {
+      "jurisdiction": "EE",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "partially_transposed",
+        "inForceFrom": "2026-07-13"
+      }
+    },
+    {
+      "jurisdiction": "FI",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "accrualPerMonth": 2.5,
+        "accrualPerMonthIfServiceUnderOneYear": 2
+      }
+    },
+    {
+      "jurisdiction": "FI",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "draft"
+      }
+    },
+    {
+      "jurisdiction": "GR",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 20,
+        "sixDayWeekDays": 24,
+        "statutoryMaxDays": 22
+      }
+    },
+    {
+      "jurisdiction": "GR",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "transposed",
+        "inForceFrom": "2026-11-01"
+      }
+    },
+    {
+      "jurisdiction": "HU",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-06-01",
+      "expectPath": {
+        "days": 20
+      }
+    },
+    {
+      "jurisdiction": "HU",
+      "key": "reporting.pay_transparency",
+      "date": "2026-10-18",
+      "expectPath": {
+        "status": "not_transposed"
+      }
+    }
+  ],
+  "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack (none at present).",
+  "sources": [
+    {
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
+      "title": "Directive 2003/88/EC concerning certain aspects of the organisation of working time (EUR-Lex)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023L0970",
+      "title": "Directive (EU) 2023/970 on pay transparency (EUR-Lex)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:62018CJ0055",
+      "title": "CJEU judgment of 14 May 2019, CCOO v Deutsche Bank SAE, C-55/18 (EUR-Lex)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+      "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+      "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.bundesregierung.de/breg-de/suche/bas-internationaler-frauentag-2414216",
+      "title": "Bundesregierung: Rede Bundesarbeitsministerin Bas zum Internationalen Frauentag (Feiertag in Berlin seit 2019)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gesetze-im-internet.de/burlg/__3.html",
+      "title": "Bundesurlaubsgesetz (BUrlG) § 3 Dauer des Urlaubs",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gesetze-im-internet.de/entgfg/__3.html",
+      "title": "Entgeltfortzahlungsgesetz (EFZG) § 3 Anspruch auf Entgeltfortzahlung im Krankheitsfall",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.gesetze-im-internet.de/bgb/__622.html",
+      "title": "Bürgerliches Gesetzbuch (BGB) § 622 Kündigungsfristen bei Arbeitsverhältnissen",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+      "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2258",
+      "title": "Service-Public.fr: Congés payés du salarié dans le secteur privé (C. trav. L3141-3 s.)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F3053",
+      "title": "Service-Public.fr: Arrêt maladie – indemnités journalières et complément employeur (CSS; C. trav. L1226-1, D1226-1 à D1226-8)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2855",
+      "title": "Service-Public.fr: Préavis de licenciement d'un salarié (C. trav. L1234-1 à L1234-8)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+      "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/urlaub.html",
+      "title": "Unternehmensserviceportal (USP): Urlaub (Urlaubsgesetz § 2)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+      "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.onva-rjv.fgov.be/fr/ouvriers/duree-de-vacances/calcul-des-jours-de-vacances",
+      "title": "ONVA/RJV: Calcul des jours de vacances (AR du 30 mars 1967)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://lex.bg/laws/ldoc/1594373121",
+      "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+      "title": "Zakon o blagdanima, spomendanima i neradnim danima u Republici Hrvatskoj (NN 110/2019), čl. 1",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/full/2023_04_46_788.html",
+      "title": "Hrvatski sabor: Odluka o nedavanju vjerodostojnog tumačenja članka 77. stavka 1. Zakona o radu (NN 46/2023)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.mlsi.gov.cy/mlsi/dlr/dlr.nsf/All/41C9AFE72E7CCBD9C22586E10038B097?OpenDocument=",
+      "title": "Cyprus Department of Labour Relations: Working Time / Minimum Paid Annual Holidays",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+      "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.zakonyprolidi.cz/cs/2006-262",
+      "title": "Zákon č. 262/2006 Sb., zákoník práce, § 213 (výměra dovolené)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+      "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.borger.dk/arbejde-dagpenge-ferie/Oversigt-ferie/loenmodtager-og-ferie",
+      "title": "borger.dk: Lønmodtager og ferie (ferieloven)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.riigiteataja.ee/akt/PTS",
+      "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.riigiteataja.ee/akt/TLS",
+      "title": "Töölepingu seadus (Employment Contracts Act), § 55",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.finlex.fi/fi/laki/ajantasa/2005/20050162",
+      "title": "Vuosilomalaki 162/2005 (Annual Holidays Act), 4 § ja 5 §",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.finlex.fi/fi/lainsaadanto/2023/652",
+      "title": "Kirkkolaki 652/2023 (Church Act) – kirkolliset juhlapäivät",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://finlex.fi/fi/hallituksen-esitykset/2026/129",
+      "title": "HE 129/2026: hallituksen esitys naisten ja miesten välisestä tasa-arvosta annetun lain muuttamisesta (palkka-avoimuusdirektiivi)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+      "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/adeies-ergasiakes-scheseis/etisia-kanoniki-adeia/imeres-adeias/",
+      "title": "Επιθεώρηση Εργασίας: Ημέρες Άδειας (άρθρο 1 ν. 3302/2004)",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://ypergasias.gov.gr/odigies-gia-tin-orthi-efarmogi-tis-misthologikis-diafaneias-kai-tis-isis-amoivis-gynaikon-kai-andron-apo-tin-1i-noemvriou-2026/",
+      "title": "Υπουργείο Εργασίας: Οδηγίες για την εφαρμογή της μισθολογικής διαφάνειας (ν. 5316/2026) από την 1η Νοεμβρίου 2026",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://njt.hu/jogszabaly/2012-1-00-00",
+      "title": "A munka törvénykönyvéről szóló 2012. évi I. törvény (Mt.), 102. § és 116. §",
+      "verifiedOn": "2026-10-18"
+    },
+    {
+      "url": "https://www.senat.fr/dossier-legislatif/pjl25-944.html",
+      "title": "Sénat: Transposition de la directive (UE) 2023/970 — projet de loi n° 944 (2025-2026)",
+      "verifiedOn": "2026-10-18",
+      "note": "not on validator allow-list"
+    },
+    {
+      "url": "https://www.gesetze-bayern.de/Content/Document/BayFTG-1",
+      "title": "Bayerisches Feiertagsgesetz Art. 1",
+      "verifiedOn": "2026-10-18",
+      "note": "not on validator allow-list"
+    },
+    {
+      "url": "https://emploi.belgique.be/fr/themes/jours-feries-et-conges/jours-feries",
+      "title": "SPF Emploi: Jours fériés",
+      "verifiedOn": "2026-10-18",
+      "note": "not on validator allow-list"
+    },
+    {
+      "url": "https://www.mkm.ee/en/work-and-equal-opportunities/employment-relationships-and-work-environment/pay-transparency",
+      "title": "Estonian Ministry of Economic Affairs: Pay transparency",
+      "verifiedOn": "2026-10-18",
+      "note": "not on validator allow-list"
+    }
+  ]
+}

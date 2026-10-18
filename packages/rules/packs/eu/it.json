@@ -1,0 +1,343 @@
+{
+  "jurisdiction": "IT",
+  "parent": "EU",
+  "name": "Italy",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Paid annual leave (D.Lgs. 66/2003 art. 10)",
+      "versions": [
+        {
+          "effectiveFrom": "2003-04-29",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 4,
+            "minWeeksInAccrualYear": 2,
+            "remainingWeeksWithinMonthsAfterYear": 18,
+            "payInLieuOnlyOnTermination": true
+          },
+          "source": {
+            "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2003-04-14&atto.codiceRedazionale=003G0091",
+            "title": "D.Lgs. 8 aprile 2003, n. 66 (GU n. 87 del 14-04-2003, S.O. n. 61), art. 10 Ferie annuali"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "At least 4 weeks; at least 2 weeks (consecutive if the worker asks) taken in the accrual year, the rest within 18 months after its end (art. 10 c. 1). Article text verified on normattiva.it; decree in force 29-04-2003 per GU page."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "transposed",
+            "law": "Decreto legislativo 7 maggio 2026, n. 96",
+            "inForceFrom": "2026-06-07"
+          },
+          "source": {
+            "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2026-06-01&atto.codiceRedazionale=26G00112",
+            "title": "D.Lgs. 7 maggio 2026, n. 96 — attuazione della direttiva (UE) 2023/970 (GU n. 125 del 01-06-2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Published GU n. 125 of 2026-06-01; GU states \"Entrata in vigore del provvedimento: 07/06/2026\". Also notified on EUR-Lex."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Capodanno",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Epifania",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Lunedì dell'Angelo",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "liberation-day",
+      "name": "Liberation Day",
+      "localName": "Anniversario della Liberazione",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Festa del Lavoro",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "republic-day",
+      "name": "Republic Day",
+      "localName": "Festa della Repubblica",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption of Mary",
+      "localName": "Ferragosto / Assunzione",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "st-francis-day",
+      "name": "Feast of St Francis of Assisi",
+      "localName": "Festa nazionale di San Francesco d'Assisi",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 4
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Added to L. 260/1949 art. 2 by L. 151/2025 (GU 10-10-2025); first observed 4 October 2026."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Ognissanti",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "immaculate-conception",
+      "name": "Immaculate Conception",
+      "localName": "Immacolata Concezione",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Natale",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "Santo Stefano",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=25G00153&atto.dataPubblicazioneGazzetta=2025-10-10&atto.tipoProvvedimento=LEGGE",
+        "title": "Legge 8 ottobre 2025, n. 151 (GU n. 236 del 10-10-2025) — festa nazionale di San Francesco; note riportano art. 2 L. 260/1949 come modificato"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "L. 260/1949 art. 2 as amended; L. 54/1977 removed civil effects of Epiphany, St Joseph, Ascension, Corpus Domini, Sts Peter & Paul, 2 June and 4 Nov; Epiphany restored by DPR 792/1985 and 2 June by L. 336/2000 (from 2001). Those instruments were verified on normattiva.it (official, but not on the validator allow-list)."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "sick_pay.statutory (INPS indemnity 50%/66.66% + CCNL top-up) — official sources inps.it / normattiva.it are not on the validator allow-list",
+      "employment.notice_period (art. 2118 c.c.: notice set by CCNL; no statutory minimum) — normattiva.it not allow-listed",
+      "Local patron-saint holidays (e.g. Rome 29 June, Milan 7 Dec)",
+      "family_leave.maternity / paternity",
+      "working_time.max_weekly_hours",
+      "reporting.gender_pay_gap (biennial report, D.Lgs. 198/2006 art. 46)"
+    ],
+    "notes": "All Sundays are also festive days (L. 260/1949). Validator allow-list lacks normattiva.it (official Italian legislation portal) — recommend adding."
+  }
+}

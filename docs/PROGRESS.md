@@ -12,7 +12,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | --- | --- | --- | --- |
 | 0 | Foundations | `phase-0-foundations` | [h] |
 | 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
-| 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [ ] |
+| 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h] |
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [ ] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [ ] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [ ] |
@@ -169,19 +169,22 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 2 — Jurisdiction pack framework (6.4 framework)
 
-- [ ] **2.1 Pack framework**
+- [x] **2.1 Pack framework**
   - Rule data versioned per country (and per US state/locality), with effective-from/to dates, official source URL, verified-on date and reviewer.
   - Rule lookup by (jurisdiction, rule key, date) with layered resolution (EU baseline → member state; US federal → state → locality; UK → nation).
   - Every rule has golden tests (input → expected output) that run in `pnpm verify`.
   - `docs/COVERAGE.md` generated from pack data showing which rules exist per jurisdiction and their verification dates.
   - Edits create new versions (never overwrite); API for back-office editing (UI in Phase 10).
-- [ ] **2.2 UK pack (base data)**
+  - _Evidence:_ `packages/rules/src/schema.ts` + `scripts/validate.ts` (every version carries effective dates, an official https source, verified-on date and reviewer; `coverage.test.ts` runs the validator); `test/engine.test.ts` and `test/goldens.test.ts` "layered resolution" (EU → member state, US federal → state → locality, UK nations, explicit failures instead of guesses); `test/goldens.test.ts` "golden coverage" (fails if any rule version or holiday pack lacks a vector) plus the vectors in `packages/rules/goldens/*.json`, all in verify `unit`; `coverage.test.ts` (COVERAGE.md is generated from pack data, with a per-rule verification log); `test/manifest.test.ts` (content changes need a version bump); `apps/api/test/rules.int.test.ts` "back-office rule editing" (staff MFA, append-only versions that take effect for lookups).
+- [x] **2.2 UK pack (base data)**
   - Public holidays for England and Wales, Scotland and Northern Ireland; statutory annual leave; SSP parameters; working-time limits; right-to-work document rules — each value verified against gov.uk / legislation.gov.uk with source URLs.
-- [ ] **2.3 US pack (base data)**
+  - _Evidence:_ `packages/rules/packs/gb/gb.json` and `gb-nir.json` (sources on gov.uk, legislation.gov.uk and nidirect.gov.uk; each version lists the UK nations it was checked for); `packages/rules/goldens/gb.json` (bank holidays for England and Wales, Scotland and Northern Ireland, annual leave, SSP before and after 6 April 2026, working-time limits, right-to-work rules); `rules.int.test.ts` "keeps UK nations apart".
+- [x] **2.3 US pack (base data)**
   - Federal holidays; FLSA overtime thresholds; FMLA parameters; Form I-9 retention rule; state/local layer structure with initial states recorded in COVERAGE.md — each value verified against dol.gov, uscis.gov, eeoc.gov or the relevant state source.
-- [ ] **2.4 EU pack (base data)**
+  - _Evidence:_ `packages/rules/packs/us/us.json`, `states/*.json` and `localities/us-ny-nyc.json` (sources on ecfr.gov, dol.gov, uscis.gov, eeoc.gov and state sites); `packages/rules/goldens/us.json` (federal holidays, FLSA thresholds, FMLA, I-9 retention, state values); initial states listed in `docs/COVERAGE.md`; `rules.int.test.ts` "accepts locality codes".
+- [h] **2.4 EU pack (base data)**
   - EU baseline (minimum four weeks' paid annual leave, Working Time Directive limits) plus public holidays and statutory annual leave for all 27 member states, with official sources; deeper rules prioritised in COVERAGE.md.
-
+  - _Evidence:_ the EU baseline (four weeks' leave, Working Time Directive limits, from eur-lex.europa.eu) statutory annual leave for all 27 member states, and public holidays for 24 of them, in `packages/rules/packs/eu/*.json` with vectors in `goldens/eu-a.json` and `eu-b.json`; deeper rules prioritised in `docs/COVERAGE.md`. _Human:_ Lithuanian, Romanian and Cypriot public holidays need a person, because their official portals block automated access (HUMAN_TODO 3.2, steps 1–6).
 ---
 
 ## Phase 3 — Time off and absence (6.2)

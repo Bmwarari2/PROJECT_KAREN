@@ -1,0 +1,198 @@
+{
+  "jurisdiction": "US-CA",
+  "parent": "US",
+  "name": "California",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "overtime.daily",
+      "description": "California daily overtime: >8h at 1.5x, >12h at 2x",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "tiers": [
+              {
+                "afterHours": 8,
+                "multiplier": 1.5
+              },
+              {
+                "afterHours": 12,
+                "multiplier": 2
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/dlse/faq_overtime.htm",
+            "title": "California DIR/DLSE — Overtime FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+        }
+      ]
+    },
+    {
+      "key": "overtime.seventh_day",
+      "description": "California seventh consecutive day: first 8h at 1.5x, beyond 8h at 2x",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "appliesTo": "seventh_consecutive_day_of_work_in_workweek",
+            "tiers": [
+              {
+                "afterHours": 0,
+                "multiplier": 1.5
+              },
+              {
+                "afterHours": 8,
+                "multiplier": 2
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/dlse/faq_overtime.htm",
+            "title": "California DIR/DLSE — Overtime FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "California Healthy Workplaces, Healthy Families Act paid sick leave",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 30
+            },
+            "annualUseCap": {
+              "hours": 40,
+              "days": 5,
+              "rule": "greater_of"
+            },
+            "accrualCap": {
+              "hours": 80,
+              "days": 10,
+              "rule": "greater_of"
+            },
+            "frontloadAlternative": {
+              "hours": 40,
+              "days": 5,
+              "rule": "greater_of",
+              "newHireMinimums": [
+                {
+                  "byDay": 120,
+                  "hours": 24,
+                  "days": 3
+                },
+                {
+                  "byDay": 200,
+                  "hours": 40,
+                  "days": 5
+                }
+              ]
+            },
+            "eligibility": {
+              "minDaysWorkedInStateWithinYear": 30,
+              "employmentPeriodDaysBeforeUse": 90
+            },
+            "localOrdinancesMayBeMoreGenerous": true
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/dlse/Paid_Sick_Leave.htm",
+            "title": "California DIR/DLSE — Paid Sick Leave"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "From 1 Jan 2024 the use cap rose from 24 hours/3 days to 40 hours/5 days. Pre-2024 version not modelled."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "California state minimum wage (all employer sizes)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": "2025-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1600
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/dlse/faq_minimumwage.htm",
+            "title": "California DIR/DLSE — Minimum Wage FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": "2026-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1650
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/dlse/faq_minimumwage.htm",
+            "title": "California DIR/DLSE — Minimum Wage FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1690
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dir.ca.gov/dlse/faq_minimumwage.htm",
+            "title": "California DIR/DLSE — Minimum Wage FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "2027 rate not yet verified. Industry (fast food, health care) and local minimum wages are higher and not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "CA exempt salary threshold (2x state minimum wage for full-time)",
+      "Meal and rest periods",
+      "Alternative workweek schedules"
+    ],
+    "notes": "Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks."
+  }
+}

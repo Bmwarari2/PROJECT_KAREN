@@ -1,0 +1,375 @@
+{
+  "jurisdiction": "AT",
+  "parent": "EU",
+  "name": "Austria",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Urlaubsgesetz § 2: 30 Werktage on a 6-day week (25 Arbeitstage on a 5-day week); 36 Werktage / 30 Arbeitstage after more than 25 years of service",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 30,
+            "dayUnit": "werktage",
+            "weekBasisDays": 6,
+            "fiveDayWeekEquivalentDays": 25,
+            "weeks": 5,
+            "extended": {
+              "afterServiceYears": 25,
+              "days": 36,
+              "fiveDayWeekEquivalentDays": 30,
+              "weeks": 6
+            }
+          },
+          "source": {
+            "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/urlaub.html",
+            "title": "Unternehmensserviceportal (USP): Urlaub (Urlaubsgesetz § 2)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "USP: \"30 Werktagen bei einer Sechs-Tage-Woche (bzw. 25 Arbeitstagen bei einer Fünf-Tage-Woche)\"; more than 25 years at the same company: 36 Werktage / 30 Arbeitstage. ris.bka.gv.at returned 503 during verification. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "partially_transposed",
+            "law": "Only Land-level public-service laws notified (Styria, Burgenland, Lower Austria); no federal private-sector transposition act",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists 30 Austrian measures, all Land public-service/equal-treatment laws (latest Burgenland 2026-09-30). No federal law covering private employers had been notified as of 2026-10-18."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Neujahr",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Heilige Drei Könige",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Ostermontag",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "state-holiday",
+      "name": "State Holiday (Labour Day)",
+      "localName": "Staatsfeiertag",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Christi Himmelfahrt",
+      "rule": {
+        "type": "easter",
+        "offset": 39,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Pfingstmontag",
+      "rule": {
+        "type": "easter",
+        "offset": 50,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "corpus-christi",
+      "name": "Corpus Christi",
+      "localName": "Fronleichnam",
+      "rule": {
+        "type": "easter",
+        "offset": 60,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption Day",
+      "localName": "Mariä Himmelfahrt",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "national-day",
+      "name": "National Day",
+      "localName": "Nationalfeiertag",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Allerheiligen",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "immaculate-conception",
+      "name": "Immaculate Conception",
+      "localName": "Mariä Empfängnis",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Weihnachten",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "Stefanitag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+        "title": "Unternehmensserviceportal (USP): Ruhezeiten – gesetzliche Feiertage (Arbeitsruhegesetz § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Statutory holiday under Arbeitsruhegesetz § 7 as listed by the federal USP."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "leave: persönlicher Feiertag (ARG § 7a)"
+    ]
+  }
+}

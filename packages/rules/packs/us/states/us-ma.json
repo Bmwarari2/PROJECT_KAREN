@@ -1,0 +1,71 @@
+{
+  "jurisdiction": "US-MA",
+  "parent": "US",
+  "name": "Massachusetts",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Massachusetts Earned Sick Time law",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 30
+            },
+            "annualCapHours": 40,
+            "paidIfEmployeesAtLeast": 11,
+            "useBeginsAfterDays": 90
+          },
+          "source": {
+            "url": "https://www.mass.gov/info-details/earned-sick-time",
+            "title": "Mass.gov — Earned Sick Time"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Employers with fewer than 11 employees must provide earned sick time but it may be unpaid. Verified via mass.gov content (direct page fetch blocked by bot protection; content confirmed through official-site search results) — reconfirm in legal review."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Massachusetts minimum wage",
+      "versions": [
+        {
+          "effectiveFrom": "2023-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1500
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.mass.gov/minimum-wage-program",
+            "title": "Mass.gov — Minimum Wage Program"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "No scheduled increases after 2023. Must remain at least $0.50 above the federal minimum. Tipped service rate $6.75 and agricultural $8.00 not modelled. Verified via mass.gov content and DOL state table (https://www.dol.gov/agencies/whd/minimum-wage/state)."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Massachusetts PFML",
+      "Pay transparency law"
+    ],
+    "notes": "Local ordinances: none identified for sick leave or minimum wage (not verified). Massachusetts Paid Family and Medical Leave (PFML) and the Sunday/holiday premium pay phase-out (blue laws) are not modelled. No daily overtime."
+  }
+}

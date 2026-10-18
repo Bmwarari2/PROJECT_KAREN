@@ -1,0 +1,389 @@
+{
+  "jurisdiction": "MT",
+  "parent": "EU",
+  "name": "Malta",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Paid annual leave (S.L. 452.87 reg. 8)",
+      "versions": [
+        {
+          "effectiveFrom": "2021-01-01",
+          "effectiveTo": null,
+          "value": {
+            "hours": 192,
+            "basis": "four_weeks_plus_32_hours_on_40_hour_week",
+            "minNonReplaceableWeeks": 4,
+            "extraDayForHolidayOnWeekendOrRestDay": true,
+            "carryOverMaxPercent": 50
+          },
+          "source": {
+            "url": "https://legislation.mt/eli/sl/452.87/20241126/eng",
+            "title": "Organisation of Working Time Regulations (S.L. 452.87), reg. 8 (point in time 26/11/2024)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "4 weeks + 32 hours on a 40-hour / 8-hour-day basis (= 192 hours); adjusted pro rata if average weekly hours differ. From 1 Jan 2021 an extra day of leave for each national/public holiday falling on a Saturday, Sunday or weekly rest day (Cap. 252 art. 6(c))."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "transposed",
+            "law": "Equal Pay (Transparency and Reporting) Regulations, 2026 (L.N. 173 of 2026)",
+            "inForceFrom": "2026-06-05"
+          },
+          "source": {
+            "url": "https://legislation.mt/eli/ln/2026/173/eng",
+            "title": "L.N. 173 of 2026 — Equal Pay (Transparency and Reporting) Regulations, 2026"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Published Government Gazette No. 21,661 on 2026-06-05 (EUR-Lex). The LN has no separate commencement clause, so in force on publication (inference, pending legal review; some commentators cite 7 June 2026). First pay-gap report for 250+ employers due 2027-06-07 covering 2026."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "L-Ewwel tas-Sena",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "st-pauls-shipwreck",
+      "name": "Feast of St Paul's Shipwreck",
+      "localName": "Nawfraġju ta’ San Pawl",
+      "rule": {
+        "type": "fixed",
+        "month": 2,
+        "day": 10
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "st-joseph",
+      "name": "Feast of St Joseph",
+      "localName": "San Ġużepp",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 19
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "freedom-day",
+      "name": "Freedom Day",
+      "localName": "Jum il-Ħelsien",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 31
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Il-Ġimgħa l-Kbira",
+      "rule": {
+        "type": "easter",
+        "offset": -2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "workers-day",
+      "name": "Workers' Day",
+      "localName": "Jum il-Ħaddiem",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "sette-giugno",
+      "name": "Sette Giugno",
+      "localName": "Sette Giugno",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 7
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "sts-peter-and-paul",
+      "name": "Feast of St Peter and St Paul",
+      "localName": "L-Imnarja",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 29
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Feast of the Assumption",
+      "localName": "Santa Marija",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "victory-day",
+      "name": "Victory Day",
+      "localName": "Jum il-Vittorja",
+      "rule": {
+        "type": "fixed",
+        "month": 9,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence Day",
+      "localName": "Jum l-Indipendenza",
+      "rule": {
+        "type": "fixed",
+        "month": 9,
+        "day": 21
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "immaculate-conception",
+      "name": "Feast of the Immaculate Conception",
+      "localName": "Il-Kunċizzjoni",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "republic-day",
+      "name": "Republic Day",
+      "localName": "Jum ir-Repubblika",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 13
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Il-Milied",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://legislation.mt/eli/cap/252/20210212/eng",
+        "title": "National Holidays and other Public Holidays Act (Cap. 252), point in time 12/02/2021"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Not moved when on a weekend; since 2021 each national/public holiday on a Saturday/Sunday gives an extra day of vacation leave (Cap. 252 art. 6(c); S.L. 452.87 reg. 8)."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "Extra leave day per holiday falling on a weekend (leave accrual, not a moved holiday)",
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "minimum_wage.rates (national minimum wage + COLA)",
+      "family_leave.*"
+    ],
+    "notes": "National holidays (art. 2) and Schedule public holidays per Cap. 252."
+  }
+}

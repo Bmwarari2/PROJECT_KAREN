@@ -1,0 +1,195 @@
+{
+  "jurisdiction": "US-CO",
+  "parent": "US",
+  "name": "Colorado",
+  "version": 2,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "overtime.daily",
+      "description": "Colorado COMPS Order Rule 4: time and a half over 40/week, 12/workday or 12 consecutive hours (whichever pays more)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "tiers": [
+              {
+                "afterHours": 12,
+                "multiplier": 1.5
+              }
+            ],
+            "consecutiveHoursThreshold": 12,
+            "consecutiveMultiplier": 1.5,
+            "rule": "whichever_of_weekly_daily_or_consecutive_pays_more"
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+            "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Weekly 40h rule matches FLSA (inherited). Agricultural, ski, medical transport and other partial exemptions not modelled."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Colorado Healthy Families and Workplaces Act accrued paid sick leave",
+      "versions": [
+        {
+          "effectiveFrom": "2022-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 30
+            },
+            "annualCapHours": 48,
+            "allEmployerSizes": true
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/dlss/labor-laws-by-topic/wage-and-hour-laws-including-paid-sick-leave",
+            "title": "Colorado CDLE — Wage and Hour Laws (including Paid Sick Leave)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Accrual requirement took effect 1 Jan 2021 for larger employers and from 1 Jan 2022 for all employers; 2021 phase not modelled. Public health emergency leave (80h) not in effect."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Colorado state minimum wage (CPI-U indexed annually)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": "2025-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1442
+              }
+            ]
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+            "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": "2026-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1481
+              }
+            ]
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+            "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": "2027-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1516
+              }
+            ]
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+            "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2027-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1571
+              }
+            ]
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/press-releases/press-release-colorado-minimum-wage-will-increase-to-1571/hour-in-2027",
+            "title": "Colorado CDLE press release — Colorado Minimum Wage will Increase to $15.71/hour in 2027"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Announced by CDLE for 2027; tipped $12.69. Local minimums (Denver $19.84 in 2027, Edgewater, Boulder County etc.) are higher and not modelled."
+        }
+      ]
+    },
+    {
+      "key": "overtime.exempt_salary_threshold",
+      "description": "Colorado COMPS Order EAP exempt salary (annual)",
+      "versions": [
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": "2026-01-01",
+          "value": {
+            "annual": {
+              "amountMinor": 5648500,
+              "currency": "USD"
+            }
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+            "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Cross-checked 2026-10-18 with the 2025 PAY CALC Order (7 CCR 1103-14, effective 1 Jan 2025, https://cdle.colorado.gov/sites/cdle/files/adopted_2025_pay_calc_order_7_ccr_1103-14_11.7.24_accessible.pdf): $1,086.25/week, $56,485 rounded annual."
+        },
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "annual": {
+              "amountMinor": 5778400,
+              "currency": "USD"
+            }
+          },
+          "source": {
+            "url": "https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf",
+            "title": "Colorado CDLE INFO #1 — Key Wage and Hour Rights (2026 COMPS & PAY CALC Orders, updated 18 Dec 2025)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Inflation-adjusted in future years; 2027 amount not yet verified. Cross-checked 2026-10-18 with the adopted 2026 PAY CALC Order (7 CCR 1103-14, adopted 8 Dec 2025, https://cdle.colorado.gov/sites/cdle/files/adopted_2026_pay_calc_order_7_ccr_1103-14_redline_12.8.25.docx): $1,111.23/week, $57,784 rounded annual. That order states \"effective February 1, 2026\"; whether the 2026 level applies from 1 January (as modelled, per INFO #1) or 1 February 2026 needs legal review."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Colorado FAMLI",
+      "Meal and rest periods (COMPS Rule 5)"
+    ],
+    "notes": "Local ordinances not yet modelled: Denver minimum wage (and Denver civil wage theft ordinance), Edgewater, Boulder County and City of Boulder minimum wages; Colorado FAMLI paid family leave."
+  }
+}

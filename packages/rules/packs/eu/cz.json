@@ -1,0 +1,366 @@
+{
+  "jurisdiction": "CZ",
+  "parent": "EU",
+  "name": "Czechia",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Zákoník práce § 213(1): annual leave of at least 4 weeks per calendar year (5 weeks for public-sector employers under § 109(3))",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 4,
+            "perCalendarYear": true,
+            "publicSectorWeeks": 5
+          },
+          "source": {
+            "url": "https://www.zakonyprolidi.cz/cs/2006-262",
+            "title": "Zákon č. 262/2006 Sb., zákoník práce, § 213 (výměra dovolené)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "§ 213: \"Výměra dovolené činí nejméně 4 týdny v kalendářním roce\"; employees of employers under § 109(3) (public sector): 5 weeks. Hours-based leave calculation (since 2021) not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "partially_transposed",
+            "law": "Existing legislation notified (65 measures, latest Act No. 314/2025 Coll.); dedicated Labour Code amendment not yet adopted",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists 65 Czech measures (latest 2025-09-02), i.e. existing law notified as partial transposition. Press reports a Labour Code amendment draft (March 2026) targeting 1 January 2027 — not verified on an official Czech site."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day / Restoration Day of the Independent Czech State",
+      "localName": "Nový rok / Den obnovy samostatného českého státu",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1). Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Velký pátek",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Velikonoční pondělí",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Svátek práce",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    },
+    {
+      "id": "victory-day",
+      "name": "Victory Day",
+      "localName": "Den vítězství",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1)."
+    },
+    {
+      "id": "cyril-methodius-day",
+      "name": "Saints Cyril and Methodius Day",
+      "localName": "Den slovanských věrozvěstů Cyrila a Metoděje",
+      "rule": {
+        "type": "fixed",
+        "month": 7,
+        "day": 5
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1)."
+    },
+    {
+      "id": "jan-hus-day",
+      "name": "Jan Hus Day",
+      "localName": "Den upálení mistra Jana Husa",
+      "rule": {
+        "type": "fixed",
+        "month": 7,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1)."
+    },
+    {
+      "id": "statehood-day",
+      "name": "Czech Statehood Day",
+      "localName": "Den české státnosti",
+      "rule": {
+        "type": "fixed",
+        "month": 9,
+        "day": 28
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1)."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independent Czechoslovak State Day",
+      "localName": "Den vzniku samostatného československého státu",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 28
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1)."
+    },
+    {
+      "id": "freedom-democracy-day",
+      "name": "Struggle for Freedom and Democracy Day",
+      "localName": "Den boje za svobodu a demokracii",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 17
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Státní svátek (zákon 245/2000 Sb. § 1)."
+    },
+    {
+      "id": "christmas-eve",
+      "name": "Christmas Eve",
+      "localName": "Štědrý den",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 24
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "1. svátek vánoční",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "2. svátek vánoční",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.zakonyprolidi.cz/cs/2000-245",
+        "title": "Zákon č. 245/2000 Sb., o státních svátcích, o ostatních svátcích, o významných dnech a o dnech pracovního klidu, §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Ostatní svátek (zákon 245/2000 Sb. § 2)."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation"
+    ]
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "jurisdiction": "US",
+  "parent": null,
+  "name": "United States",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "overtime.weekly",
+      "description": "FLSA: overtime for hours over 40 in a workweek at not less than 1.5x the regular rate",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "thresholdHours": 40,
+            "multiplier": 1.5,
+            "averagingAcrossWorkweeksAllowed": false
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/overtime",
+            "title": "U.S. DOL WHD — Overtime Pay"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+        }
+      ]
+    },
+    {
+      "key": "overtime.exempt_salary_threshold",
+      "description": "FLSA EAP exemption salary level and HCE total annual compensation (29 CFR 541.600 / 541.601)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": "2024-07-01",
+          "value": {
+            "standardWeekly": {
+              "amountMinor": 68400,
+              "currency": "USD"
+            },
+            "standardAnnualEquivalent": {
+              "amountMinor": 3556800,
+              "currency": "USD"
+            },
+            "hceAnnualTotalCompensation": {
+              "amountMinor": 10743200,
+              "currency": "USD"
+            },
+            "hceMinimumWeeklySalary": {
+              "amountMinor": 68400,
+              "currency": "USD"
+            }
+          },
+          "source": {
+            "url": "https://www.govinfo.gov/content/pkg/FR-2026-05-15/html/2026-09839.htm",
+            "title": "91 FR 27833 (15 May 2026) — Defining and Delimiting the Exemptions …; Implementation of Federal Court Judgments"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "2019 rule (84 FR, published 27 Sep 2019), effective 1 Jan 2020."
+        },
+        {
+          "effectiveFrom": "2024-07-01",
+          "effectiveTo": "2024-11-15",
+          "value": {
+            "standardWeekly": {
+              "amountMinor": 84400,
+              "currency": "USD"
+            },
+            "hceAnnualTotalCompensation": {
+              "amountMinor": 13296400,
+              "currency": "USD"
+            }
+          },
+          "source": {
+            "url": "https://www.govinfo.gov/content/pkg/FR-2026-05-15/html/2026-09839.htm",
+            "title": "91 FR 27833 (15 May 2026) — Defining and Delimiting the Exemptions …; Implementation of Federal Court Judgments"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "2024 rule (published 26 Apr 2024) effective 1 Jul 2024 except as applied to the State of Texas as an employer. VACATED nationwide by E.D. Tex. (Texas v. U.S. DOL, 15 Nov 2024) and N.D. Tex. (Flint Avenue, LLC v. U.S. DOL, 30 Dec 2024); Fifth Circuit dismissed the appeals 5 and 7 May 2026. Retained only as history; legal review needed on whether to treat it as void ab initio. The scheduled 1 Jan 2025 step ($1,128/wk, HCE $151,164) never took effect."
+        },
+        {
+          "effectiveFrom": "2024-11-15",
+          "effectiveTo": null,
+          "value": {
+            "standardWeekly": {
+              "amountMinor": 68400,
+              "currency": "USD"
+            },
+            "standardAnnualEquivalent": {
+              "amountMinor": 3556800,
+              "currency": "USD"
+            },
+            "hceAnnualTotalCompensation": {
+              "amountMinor": 10743200,
+              "currency": "USD"
+            },
+            "hceMinimumWeeklySalary": {
+              "amountMinor": 68400,
+              "currency": "USD"
+            }
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/overtime/salary-levels",
+            "title": "U.S. DOL WHD — Earnings thresholds for the EAP exemption"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "DOL enforces the 2019 levels after the vacatur. 91 FR 27833 (effective 15 May 2026) removed the vacated 2024 text from 29 CFR part 541 and restored the 2019 text. Territories: $455/wk (PR, Guam, USVI, CNMI); American Samoa $380/wk — not modelled. Duties tests still apply."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Federal minimum wage (FLSA section 6)",
+      "versions": [
+        {
+          "effectiveFrom": "2009-07-24",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 725
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/minimum-wage",
+            "title": "U.S. DOL WHD — Minimum Wage"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Tipped cash wage not modelled here."
+        }
+      ]
+    },
+    {
+      "key": "family_leave.fmla",
+      "description": "FMLA employer coverage, employee eligibility, entitlement and 12-month period methods",
+      "versions": [
+        {
+          "effectiveFrom": "2008-01-28",
+          "effectiveTo": null,
+          "value": {
+            "coveredEmployer": {
+              "privateSectorMinEmployees": 50,
+              "inWorkweeks": 20,
+              "publicAgenciesCoveredRegardlessOfSize": true,
+              "localEducationalAgenciesCovered": true
+            },
+            "eligibility": {
+              "minMonthsOfService": 12,
+              "minHoursInPrior12Months": 1250,
+              "minEmployeesWithinRadius": 50,
+              "radiusMiles": 75
+            },
+            "entitlementWorkweeks": 12,
+            "militaryCaregiverWorkweeks": 26,
+            "leaveYearMethods": [
+              "calendar_year",
+              "fixed_12_month_period",
+              "forward_from_first_leave_date",
+              "rolling_backward_from_leave_date"
+            ],
+            "leaveYearMethodMustBeUniform": true,
+            "defaultIfNoMethodSelected": "most_beneficial_to_employee",
+            "militaryCaregiverPeriod": "single_12_month_period_from_first_day_of_caregiver_leave"
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/fact-sheets/28-fmla",
+            "title": "U.S. DOL WHD Fact Sheet #28 — The Family and Medical Leave Act"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Leave-year methods and military caregiver single 12-month period per DOL Fact Sheet #28H (https://www.dol.gov/agencies/whd/fact-sheets/28h-fmla-12-month-period). Military caregiver leave (26 workweeks) added by NDAA FY2008 effective 28 Jan 2008; later expansions (FY2010 NDAA, 2013 rule covering veterans) not modelled separately. Changing method requires 60 days notice."
+        }
+      ]
+    },
+    {
+      "key": "i9.retention",
+      "description": "Form I-9 retention: later of 3 years after hire or 1 year after employment ends",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "rule": "later_of",
+            "afterHireYears": 3,
+            "afterEmploymentEndsYears": 1,
+            "hireDateField": "first_day_of_employment"
+          },
+          "source": {
+            "url": "https://www.uscis.gov/i-9-central/form-i-9-resources/handbook-for-employers-m-274/100-retaining-form-i-9",
+            "title": "USCIS M-274 Handbook for Employers — 10.0 Retaining Form I-9"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+        }
+      ]
+    },
+    {
+      "key": "i9.reverification",
+      "description": "Form I-9 reverification of expiring employment authorization (Supplement B)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "deadline": "earlier_of_section1_authorization_expiry_or_section2_list_a_or_c_document_expiry",
+            "acceptableLists": [
+              "A",
+              "C"
+            ],
+            "employeeChoosesDocument": true,
+            "recordedOn": "supplement_b",
+            "doNotReverify": [
+              "us_citizens",
+              "noncitizen_nationals",
+              "lawful_permanent_residents_who_presented_form_i_551",
+              "cnmi_long_term_residents_with_c37_ead",
+              "list_b_identity_documents"
+            ],
+            "temporaryI551": "reverify_no_later_than_temporary_i_551_expiry",
+            "suggestedAdvanceNoticeDays": 90
+          },
+          "source": {
+            "url": "https://www.uscis.gov/i-9-central/completing-form-i-9/completing-supplement-b-reverification-and-rehires-formerly-section-3",
+            "title": "USCIS I-9 Central — Completing Supplement B, Reverification and Rehires"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Supplement B replaced Section 3 with the 08/01/23 edition of Form I-9. Reverification due no later than the date employment authorization expires (USCIS M-274 section 6.1)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.eeo1",
+      "description": "EEO-1 Component 1 annual workforce demographic report",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "required": true,
+            "privateEmployerMinEmployees": 100,
+            "federalContractorMinEmployees": 50,
+            "federalContractorCriteria": "federal contractors with 50 or more employees meeting certain criteria (EEOC)"
+          },
+          "source": {
+            "url": "https://www.eeoc.gov/data/eeo-data-collections",
+            "title": "EEOC — EEO Data Collections"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. STATUS (Oct 2026): 2024 collection closed; EEOC says updates on the 2025 collection will be posted. On 21 Jul 2026 the EEOC voted to issue an NPRM to rescind EEO-1 to EEO-6 reporting (see https://www.eeoc.gov/newsroom/eeoc-proposes-rescission-annual-race-and-sex-reporting-requirements). The requirement remains in the regulations until a final rule; review when the rule is finalised. Federal contractor criteria (e.g. contract value) not modelled."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Federal paid sick leave for private employers",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "federal": false
+          },
+          "source": {
+            "url": "https://www.dol.gov/general/topic/workhours/sickleave",
+            "title": "U.S. DOL — Sick Leave"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "DOL: \"Currently, there are no federal legal requirements for paid sick leave.\" FMLA requires unpaid leave. Federal contractor paid sick leave (EO 13706) not modelled. State and local laws apply via state packs."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "martin-luther-king-jr-day",
+      "name": "Birthday of Martin Luther King, Jr.",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 1,
+        "weekday": 1,
+        "n": 3
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "washingtons-birthday",
+      "name": "Washington's Birthday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 3
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "memorial-day",
+      "name": "Memorial Day",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": 1,
+        "n": -1
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "juneteenth",
+      "name": "Juneteenth National Independence Day",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 19
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2021-06-17",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Added to 5 U.S.C. 6103(a) by Pub. L. 117-17 (17 Jun 2021)."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence Day",
+      "rule": {
+        "type": "fixed",
+        "month": 7,
+        "day": 4
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "labor-day",
+      "name": "Labor Day",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 9,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "columbus-day",
+      "name": "Columbus Day",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 10,
+        "weekday": 1,
+        "n": 2
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "veterans-day",
+      "name": "Veterans Day",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 11
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "thanksgiving-day",
+      "name": "Thanksgiving Day",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 11,
+        "weekday": 4,
+        "n": 4
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "us_federal",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+        "title": "OPM — Federal Holidays (5 U.S.C. 6103)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "Inauguration Day (5 U.S.C. 6103(c), DC-area federal employees only, every 4 years) — not modelled",
+      "Tipped cash wage and tip credit (FLSA 3(m))",
+      "Territories salary levels ($455/wk PR, Guam, USVI, CNMI; $380/wk American Samoa)",
+      "Federal contractor paid sick leave (EO 13706) and contractor minimum wage",
+      "FMLA history before 2008 and military-family amendments (2009, 2013)",
+      "EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM",
+      "COBRA, WARN Act, PWFA, PUMP Act"
+    ],
+    "notes": "Federal holidays follow 5 U.S.C. 6103(a); weekend observance per OPM (Saturday -> preceding Friday, Sunday -> following Monday). Note: when 1 Jan falls on a Saturday the observed day is 31 Dec of the previous year (e.g. New Year 2028 -> Fri 31 Dec 2027); OPM lists it under the following year. FLSA exempt salary: 2024 rule vacated; 2019 levels ($684/wk, HCE $107,432) enforced and restored in the CFR on 15 May 2026."
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "jurisdiction": "BE",
+  "parent": "EU",
+  "name": "Belgium",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Annual holidays (AR 30 March 1967): maximum statutory 20 days in a 5-day regime (24 in a 6-day regime) = 4 weeks, earned from days worked/assimilated",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 20,
+            "weekBasisDays": 5,
+            "sixDayWeekDays": 24,
+            "weeks": 4,
+            "fullEntitlementWorkedDays5DayRegime": 231
+          },
+          "source": {
+            "url": "https://www.onva-rjv.fgov.be/fr/ouvriers/duree-de-vacances/calcul-des-jours-de-vacances",
+            "title": "ONVA/RJV: Calcul des jours de vacances (AR du 30 mars 1967)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "ONVA/RJV: maximum 24 working days per year in a 6-day regime or 4 weeks in any regime (20 days in the 5-day regime); 231+ worked/assimilated days (5-day regime) give 20 days. The reference year (previous calendar year, \"exercice de vacances\") was not stated on the fetched page and is not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "partially_transposed",
+            "law": "Community/regional measures only (incl. Flemish pay transparency decree of 2026-06-17, Brussels and French Community measures); no federal private-sector act notified",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists 6 Belgian measures, all regional/community (Wallonia, Flanders, French Community, Brussels-Capital). No federal law for private-sector employers notified as of 2026-10-18; press reports a 6-month extension request in June 2026 (not verified on an official site)."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Nouvel An / Nieuwjaar",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Lundi de Pâques / Paasmaandag",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Fête du Travail / Feest van de Arbeid",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Ascension / O.L.H. Hemelvaart",
+      "rule": {
+        "type": "easter",
+        "offset": 39,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Lundi de Pentecôte / Pinkstermaandag",
+      "rule": {
+        "type": "easter",
+        "offset": 50,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "national-day",
+      "name": "National Day",
+      "localName": "Fête nationale / Nationale feestdag",
+      "rule": {
+        "type": "fixed",
+        "month": 7,
+        "day": 21
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption Day",
+      "localName": "Assomption / O.L.V. Hemelvaart",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Toussaint / Allerheiligen",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "armistice-day",
+      "name": "Armistice Day",
+      "localName": "Armistice / Wapenstilstand",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 11
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Noël / Kerstmis",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/temps-de-travail-conges-et-absences/jours-feries-et",
+        "title": "SPF BOSA: Jours fériés (loi du 4 janvier 1974 relative aux jours fériés)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "One of the 10 legal public holidays (loi du 4 janvier 1974). When it falls on a Sunday or usual inactive day it must be replaced by another usual working day (decided by joint committee/works council/agreement, default: first usual working day after) — replacement not modelled (observance \"none\")."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation"
+    ],
+    "notes": "emploi.belgique.be (SPF Emploi, official) confirmed the list and replacement rule but is not on the validator allow-list; SPF BOSA (belgium.be) cited instead."
+  }
+}

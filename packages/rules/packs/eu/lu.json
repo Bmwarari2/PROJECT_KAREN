@@ -1,0 +1,318 @@
+{
+  "jurisdiction": "LU",
+  "parent": "EU",
+  "name": "Luxembourg",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Statutory annual leave (Code du travail)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "workingDays": 26,
+            "dayUnit": "jours_ouvrables",
+            "irrespectiveOfAge": true,
+            "disabledOrWarInvalidExtraDays": 6
+          },
+          "source": {
+            "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/annuel/conge-legal-annuel.html",
+            "title": "Guichet.lu: Congé légal annuel (Code du travail)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "26 working days per year regardless of age; 6 extra days for war invalids, workplace-accident victims and disabled employees (conditions apply)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). No Luxembourg measure notified."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Nouvel An",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Lundi de Pâques",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Fête du travail",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "europe-day",
+      "name": "Europe Day",
+      "localName": "Journée de l'Europe",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 9
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Ascension",
+      "rule": {
+        "type": "easter",
+        "offset": 39
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Lundi de Pentecôte",
+      "rule": {
+        "type": "easter",
+        "offset": 50
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "national-day",
+      "name": "National Day",
+      "localName": "Fête nationale",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 23
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption of Mary",
+      "localName": "Assomption",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Toussaint",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "1er jour de Noël",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "2e jour de Noël",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/jours-feries/travail-jours-feries.html",
+        "title": "Guichet.lu: Travail pendant les jours fériés — jours fériés légaux (Code du travail)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Holiday not moved when it falls on a Sunday or non-working day: the employee gets a compensatory day off instead (Code du travail; Guichet.lu)."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "Compensatory day off for holidays falling on a Sunday / non-working day (within 3 months)",
+      "Employer may swap holidays for local/professional feasts keeping 11 per year",
+      "Banking-sector extra holidays (Good Friday, 24 Dec afternoon) via collective agreement",
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "minimum_wage.rates (salaire social minimum)"
+    ],
+    "notes": "Legilux (legilux.public.lu) is JavaScript-only; values verified on Guichet.lu (official portal)."
+  }
+}

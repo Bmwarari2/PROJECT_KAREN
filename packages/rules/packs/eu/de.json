@@ -1,0 +1,493 @@
+{
+  "jurisdiction": "DE",
+  "parent": "EU",
+  "name": "Germany",
+  "version": 2,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "BUrlG § 3: at least 24 Werktage (Mon–Sat basis) per year = 20 days on a 5-day week",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 24,
+            "dayUnit": "werktage",
+            "weekBasisDays": 6,
+            "fiveDayWeekEquivalentDays": 20
+          },
+          "source": {
+            "url": "https://www.gesetze-im-internet.de/burlg/__3.html",
+            "title": "Bundesurlaubsgesetz (BUrlG) § 3 Dauer des Urlaubs"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "§ 3(1) \"Der Urlaub beträgt jährlich mindestens 24 Werktage\"; § 3(2) Werktage = all calendar days that are not Sundays or statutory holidays (6-day basis). 20 days on a 5-day week is the pro-rata conversion 24 × 5/6. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "EFZG § 3/§ 4: employer continues 100% pay for up to 6 weeks of incapacity; entitlement arises after 4 weeks uninterrupted employment",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "payer": "employer",
+            "continuedPayPercent": 100,
+            "maxWeeksPerIncapacity": 6,
+            "qualifyingServiceWeeks": 4,
+            "payBasis": "pay_for_regular_working_time"
+          },
+          "source": {
+            "url": "https://www.gesetze-im-internet.de/entgfg/__3.html",
+            "title": "Entgeltfortzahlungsgesetz (EFZG) § 3 Anspruch auf Entgeltfortzahlung im Krankheitsfall"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "§ 3(1): continued pay for the period of incapacity up to six weeks; § 3(3): entitlement arises after four weeks of uninterrupted employment; § 4(1) (https://www.gesetze-im-internet.de/entgfg/__4.html): the pay due for the employee's regular working time is continued (100%). Repeat-illness rules (§ 3(1) sentence 2) and statutory health-insurance Krankengeld after week 6 not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "BGB § 622: 4 weeks to the 15th or month-end; longer employer notice by length of service; 2 weeks during probation (max 6 months)",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "base": {
+              "weeks": 4,
+              "terminationDate": "15th_or_end_of_calendar_month",
+              "appliesTo": [
+                "employer",
+                "employee"
+              ]
+            },
+            "employerByService": [
+              {
+                "minServiceYears": 2,
+                "months": 1
+              },
+              {
+                "minServiceYears": 5,
+                "months": 2
+              },
+              {
+                "minServiceYears": 8,
+                "months": 3
+              },
+              {
+                "minServiceYears": 10,
+                "months": 4
+              },
+              {
+                "minServiceYears": 12,
+                "months": 5
+              },
+              {
+                "minServiceYears": 15,
+                "months": 6
+              },
+              {
+                "minServiceYears": 20,
+                "months": 7
+              }
+            ],
+            "employerByServiceTerminationDate": "end_of_calendar_month",
+            "probation": {
+              "maxMonths": 6,
+              "noticeWeeks": 2
+            }
+          },
+          "source": {
+            "url": "https://www.gesetze-im-internet.de/bgb/__622.html",
+            "title": "Bürgerliches Gesetzbuch (BGB) § 622 Kündigungsfristen bei Arbeitsverhältnissen"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "§ 622(1) base; § 622(2) employer notice after 2/5/8/10/12/15/20 years in the business or undertaking: 1/2/3/4/5/6/7 months to the end of a calendar month; § 622(3) agreed probation up to six months: two weeks. Collective-agreement deviations (§ 622(4)) and small-business rules (§ 622(5)) not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists no national transposition measures for Germany (checked 2026-10-18). The existing Entgelttransparenzgesetz (2017) remains in force but is not a notified transposition. Press/official reports (Bundestag Drs. 21/7026, 8 July 2026 — bundestag.de not on the allow-list) say the ministry draft was still in preparation."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Neujahr",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Heilige Drei Könige (Epiphanias)",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "DE-BY"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.gesetze-bayern.de/Content/Document/BayFTG-1",
+        "title": "Bayerisches Feiertagsgesetz (FTG) Art. 1 — Gesetzliche Feiertage (BAYERN.RECHT)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Art. 1(1) Nr. 1 lists \"Heilige Drei Könige (Epiphanias)\" as a statutory holiday \"im ganzen Staatsgebiet\" (all of Bavaria); BAYERN.RECHT shows the text in force from 01.08.2013. effectiveFrom follows the DE pack's 2026 modelling baseline. Not modelled: Mariä Himmelfahrt (Art. 1(1) Nr. 2, only in predominantly Catholic municipalities) and the Augsburg Friedensfest (Art. 1(2), 8 August, city of Augsburg only). Epiphany in DE-BW and DE-ST is not verified yet."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Karfreitag",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Ostermontag",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Tag der Arbeit",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Christi Himmelfahrt",
+      "rule": {
+        "type": "easter",
+        "offset": 39,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Pfingstmontag",
+      "rule": {
+        "type": "easter",
+        "offset": 50,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "german-unity-day",
+      "name": "German Unity Day",
+      "localName": "Tag der Deutschen Einheit",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 3
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "The only holiday set by federal law (BMI). Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "1. Weihnachtstag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day (Second Day of Christmas)",
+      "localName": "2. Weihnachtstag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Listed as a nationwide holiday in the BALM 2026 list; holidays are set by the Länder (BMI) except German Unity Day."
+    },
+    {
+      "id": "corpus-christi",
+      "name": "Corpus Christi",
+      "localName": "Fronleichnam",
+      "rule": {
+        "type": "easter",
+        "offset": 60,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "DE-BW",
+        "DE-BY",
+        "DE-HE",
+        "DE-NW",
+        "DE-RP",
+        "DE-SL"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "BALM 2026: BW, BY, HE, NW, RP, SL. Also a holiday in certain predominantly Catholic municipalities of Saxony and Thuringia under Land law — municipal level not modelled."
+    },
+    {
+      "id": "reformation-day",
+      "name": "Reformation Day",
+      "localName": "Reformationstag",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 31
+      },
+      "observance": "none",
+      "regions": [
+        "DE-BB",
+        "DE-HB",
+        "DE-HH",
+        "DE-MV",
+        "DE-NI",
+        "DE-SN",
+        "DE-ST",
+        "DE-SH",
+        "DE-TH"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "BALM 2026: BB, HB, HH, MV, NI, SN, ST, SH, TH. HB/HH/NI/SH added it in 2018 — earlier history not modelled."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Allerheiligen",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "DE-BW",
+        "DE-BY",
+        "DE-NW",
+        "DE-RP",
+        "DE-SL"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.balm.bund.de/DE/Themen/RechtsentwicklungRechtsvorschriften/Rechtsvorschriften/Strassenverkehrsrecht/LKW-Fahrverbote/Feiertagsfahrverbote2024/Feiertagsfahrverbote2026neu.html",
+        "title": "Bundesamt für Logistik und Mobilität: Feiertage 2026 nach Bundesländern (Feiertags-Fahrverbote 2026)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "international-womens-day",
+      "name": "International Women's Day",
+      "localName": "Internationaler Frauentag",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "DE-BE"
+      ],
+      "effectiveFrom": "2019-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.bundesregierung.de/breg-de/suche/bas-internationaler-frauentag-2414216",
+        "title": "Bundesregierung: Rede Bundesarbeitsministerin Bas zum Internationalen Frauentag (Feiertag in Berlin seit 2019)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Federal Government source states it has been a holiday in Berlin since 2019. Primary source Berliner Feiertagsgesetz § 1 (gesetze.berlin.de) is not on the validator allow-list. Mecklenburg-Vorpommern (DE-MV) also reportedly observes it — NOT verified, not modelled."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "working_time.time_recording",
+      "minimum_wage.rates",
+      "leave.carry_over",
+      "holidays: Epiphany (DE-BW/DE-ST), Repentance Day (DE-SN), World Children's Day (DE-TH), Women's Day (DE-MV), Assumption (DE-SL; Catholic municipalities of DE-BY), Augsburg Peace Festival — Land-law portals other than gesetze-bayern.de are not on the validator allow-list yet"
+    ],
+    "notes": "Epiphany (6 Jan) in Bavaria is modelled from BayFTG Art. 1 on gesetze-bayern.de (allow-listed 2026-10-18, ADR-0023)."
+  }
+}

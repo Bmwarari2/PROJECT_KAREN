@@ -1,0 +1,92 @@
+{
+  "jurisdiction": "US-IL",
+  "parent": "US",
+  "name": "Illinois",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Illinois Paid Leave for All Workers Act",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "statute": "Paid Leave for All Workers Act",
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 40
+            },
+            "capHoursPer12Months": 40,
+            "useBeginsAfterDays": 90,
+            "localOrdinanceCarveOut": "Employers covered by a paid leave ordinance in force before 1 Jan 2024 (City of Chicago, Cook County) are not subject to PLAWA where that ordinance requires paid leave"
+          },
+          "source": {
+            "url": "https://labor.illinois.gov/faqs/paidleavefaq.html",
+            "title": "Illinois Department of Labor — Paid Leave for All Workers Act FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "PLAWA leave may be used for any reason. Frontloading allowed. Pending bill HB5128 (2026) not enacted as of verification."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Illinois minimum wage (workers 18+)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": "2025-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1400
+              }
+            ]
+          },
+          "source": {
+            "url": "https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf",
+            "title": "Illinois Department of Labor — Minimum Wage Rates (historic)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1500
+              }
+            ]
+          },
+          "source": {
+            "url": "https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf",
+            "title": "Illinois Department of Labor — Minimum Wage Rates (historic)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "IDOL lists $15.00 for 1/1/2025 and 1/1/2026. Youth (<18, <650h) $13.00 and tipped rates not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Illinois state holidays",
+      "Day and Temporary Labor Services Act",
+      "Illinois Equal Pay registration certificates"
+    ],
+    "notes": "Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA)."
+  }
+}

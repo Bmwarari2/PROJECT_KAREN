@@ -1,0 +1,503 @@
+{
+  "jurisdiction": "FR",
+  "parent": "EU",
+  "name": "France",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "C. trav. L3141-3: 2.5 jours ouvrables per month of actual work, 30 jours ouvrables (5 weeks) per full year",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrualPerMonth": 2.5,
+            "dayUnit": "jours_ouvrables",
+            "weekBasisDays": 6,
+            "maxDaysPerYear": 30,
+            "weeks": 5,
+            "fiveDayWeekEquivalentDays": 25
+          },
+          "source": {
+            "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2258",
+            "title": "Service-Public.fr: Congés payés du salarié dans le secteur privé (C. trav. L3141-3 s.)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Service-Public (vérifié le 30 avril 2026): 2,5 jours ouvrables par mois de travail effectif chez le même employeur; 30 jours ouvrables (5 semaines) pour une année complète; employer may count in jours ouvrés provided the result is at least equal. 25 jours ouvrés is the 5-day-week equivalent of 5 weeks. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Sickness: social security daily allowance (IJSS, 3 waiting days, 50% of daily basic wage) plus employer complement after 1 year of service (7 waiting days; 90% then 66.66% by seniority band)",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "socialSecurityDailyAllowance": {
+              "payer": "cpam",
+              "waitingDays": 3,
+              "waitingDaysPerStoppage": true,
+              "percentOfDailyBasicWage": 50,
+              "dailyCap": "set_by_regulation_not_modelled"
+            },
+            "employerComplement": {
+              "payer": "employer",
+              "minServiceYears": 1,
+              "waitingDays": 7,
+              "noWaitingDaysFor": [
+                "work_accident",
+                "occupational_disease"
+              ],
+              "medicalCertificateWithinHours": 48,
+              "firstRatePercentOfGross": 90,
+              "secondRatePercentOfGross": 66.66,
+              "ijssDeducted": true,
+              "priorDaysInRolling12MonthsDeducted": true,
+              "bandsByServiceYears": [
+                {
+                  "minServiceYears": 1,
+                  "days90": 30,
+                  "days6666": 30
+                },
+                {
+                  "minServiceYears": 6,
+                  "days90": 40,
+                  "days6666": 40
+                },
+                {
+                  "minServiceYears": 11,
+                  "days90": 50,
+                  "days6666": 50
+                },
+                {
+                  "minServiceYears": 16,
+                  "days90": 60,
+                  "days6666": 60
+                },
+                {
+                  "minServiceYears": 21,
+                  "days90": 70,
+                  "days6666": 70
+                },
+                {
+                  "minServiceYears": 26,
+                  "days90": 80,
+                  "days6666": 80
+                },
+                {
+                  "minServiceYears": 31,
+                  "days90": 90,
+                  "days6666": 90
+                }
+              ],
+              "collectiveAgreementMayBeMoreFavourable": true
+            }
+          },
+          "source": {
+            "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F3053",
+            "title": "Service-Public.fr: Arrêt maladie – indemnités journalières et complément employeur (CSS; C. trav. L1226-1, D1226-1 à D1226-8)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Service-Public F3053 (vérifié le 1 juin 2026): IJ = 50 % du salaire journalier de base after a 3-day délai de carence per stoppage; employer complement (C. trav. L1226-1, L1226-1-1, D1226-1 à D1226-8) after 1 year of service, 7-day waiting period (none for work accident/occupational disease), 90% then 66.66% of gross pay less IJ, durations 30+30 days (1-5 yrs) rising by 10+10 per 5-year band to 90+90 (31+ yrs). IJ eligibility hours/contribution thresholds and the IJ daily cap (page showed EUR 42.97 gross) are not modelled because their effective dates were not verified. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "C. trav. L1234-1: dismissal notice by seniority — under 6 months per agreement/custom; 6 months–2 years: 1 month; 2 years+: 2 months",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "appliesTo": "dismissal_by_employer_cdi",
+            "bands": [
+              {
+                "minServiceMonths": 0,
+                "maxServiceMonthsExclusive": 6,
+                "months": null,
+                "setBy": "collective_agreement_or_custom"
+              },
+              {
+                "minServiceMonths": 6,
+                "maxServiceMonthsExclusive": 24,
+                "months": 1
+              },
+              {
+                "minServiceMonths": 24,
+                "maxServiceMonthsExclusive": null,
+                "months": 2
+              }
+            ],
+            "serviceMeasuredAt": "date_dismissal_letter_sent",
+            "noNoticeFor": [
+              "faute_grave",
+              "faute_lourde",
+              "inaptitude",
+              "force_majeure",
+              "csp_acceptance"
+            ],
+            "disabledWorker": {
+              "doubled": true,
+              "capMonths": 3
+            },
+            "moreFavourableTermsPrevail": true
+          },
+          "source": {
+            "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2855",
+            "title": "Service-Public.fr: Préavis de licenciement d'un salarié (C. trav. L1234-1 à L1234-8)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Service-Public F2855 (vérifié le 7 août 2026); C. trav. L1234-1 à L1234-8; L5213-9 doubles notice for recognised disabled workers (max 3 months). Alsace-Moselle local law (L1234-15 s.), journalists and VRP not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "draft",
+            "law": "Projet de loi n° 944 (2025-2026) portant transposition de la directive (UE) 2023/970 — filed in the Senate 10 September 2026, accelerated procedure",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists no notified French transposition measures (checked 2026-10-18). Draft status verified on the Senate legislative file https://www.senat.fr/dossier-legislatif/pjl25-944.html (first reading in the Senate, no vote recorded as of the page update on 8 October 2026) — senat.fr is not on the validator allow-list. The bill would replace the index égalité with pay indicators for employers with 50+ employees (per Senate text; not modelled)."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Jour de l'An",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Lundi de Pâques",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Fête du Travail",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "victory-1945",
+      "name": "Victory in Europe Day",
+      "localName": "Victoire 1945",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Ascension",
+      "rule": {
+        "type": "easter",
+        "offset": 39,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "Lundi de Pentecôte",
+      "rule": {
+        "type": "easter",
+        "offset": 50,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer. Often used as the journée de solidarité (L3133-7 s.), not modelled."
+    },
+    {
+      "id": "bastille-day",
+      "name": "National Day",
+      "localName": "Fête nationale",
+      "rule": {
+        "type": "fixed",
+        "month": 7,
+        "day": 14
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption Day",
+      "localName": "Assomption",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Toussaint",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "armistice-day",
+      "name": "Armistice Day",
+      "localName": "Armistice 1918",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 11
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Noël",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Fête légale (C. trav. L3133-1) per Service-Public (vérifié le 1 janvier 2026). Only 1 May is compulsorily non-working (chômé) by law; other days chômés per agreement or employer."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day (Alsace-Moselle)",
+      "localName": "2e jour de Noël",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "FR-57",
+        "FR-67",
+        "FR-68"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Alsace-Moselle local law (Moselle, Bas-Rhin, Haut-Rhin) per Service-Public."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday (Alsace-Moselle)",
+      "localName": "Vendredi saint",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "FR-57",
+        "FR-67",
+        "FR-68"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+        "title": "Service-Public.fr: Jours fériés et ponts dans le secteur privé (C. trav. L3133-1)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Service-Public: only in communes having a Protestant temple or mixed church (Alsace-Moselle). Commune-level condition is not modelled — confirm per site."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "leave.carry_over",
+      "holidays: overseas departments abolition-of-slavery days",
+      "sick_pay.statutory: IJ daily cap and eligibility thresholds"
+    ],
+    "notes": "legifrance.gouv.fr returned HTTP 403 to the fetcher; Service-Public (DILA, official) used instead."
+  }
+}

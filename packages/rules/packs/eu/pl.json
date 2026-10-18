@@ -1,0 +1,459 @@
+{
+  "jurisdiction": "PL",
+  "parent": "EU",
+  "name": "Poland",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Annual leave (Kodeks pracy art. 154 §1)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "byService": [
+              {
+                "minServiceYears": 0,
+                "days": 20
+              },
+              {
+                "minServiceYears": 10,
+                "days": 26
+              }
+            ],
+            "dayUnit": "working_days",
+            "partTimeProRataRoundUp": true
+          },
+          "source": {
+            "url": "https://eli.gov.pl/eli/DU/2026/1245/ogl",
+            "title": "Kodeks pracy — tekst jednolity, Dz.U. 2026 poz. 1245 (art. 36, 92, 154, 18[3ca])"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Service (\"okres zatrudnienia\") includes periods credited under art. 155 (education) and, from 2026, art. 302[1] (Dz.U. 2025 poz. 1423) — crediting rules not modelled."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Employer-paid sickness remuneration (Kodeks pracy art. 92)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "payer": "employer",
+            "continuedPayPercent": 80,
+            "maxDaysPerCalendarYear": 33,
+            "maxDaysPerCalendarYearAge50Plus": 14,
+            "hundredPercentCases": [
+              "commuting_accident",
+              "illness_during_pregnancy",
+              "organ_donor_examinations"
+            ],
+            "payBasis": "sickness_benefit_assessment_base",
+            "paidForEveryDayIncludingNonWorkingDays": true,
+            "thereafter": "ZUS sickness benefit (not modelled)"
+          },
+          "source": {
+            "url": "https://eli.gov.pl/eli/DU/2026/1245/ogl",
+            "title": "Kodeks pracy — tekst jednolity, Dz.U. 2026 poz. 1245 (art. 36, 92, 154, 18[3ca])"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Notice for open-ended and fixed-term contracts (Kodeks pracy art. 36 §1)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "appliesTo": [
+              "employer",
+              "employee"
+            ],
+            "byService": [
+              {
+                "minServiceMonths": 0,
+                "weeks": 2
+              },
+              {
+                "minServiceMonths": 6,
+                "months": 1
+              },
+              {
+                "minServiceMonths": 36,
+                "months": 3
+              }
+            ]
+          },
+          "source": {
+            "url": "https://eli.gov.pl/eli/DU/2026/1245/ogl",
+            "title": "Kodeks pracy — tekst jednolity, Dz.U. 2026 poz. 1245 (art. 36, 92, 154, 18[3ca])"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "partially_transposed",
+            "law": "Ustawa z dnia 4 czerwca 2025 r. o zmianie ustawy – Kodeks pracy (Dz.U. 2025 poz. 807)",
+            "inForceFrom": "2025-12-24"
+          },
+          "source": {
+            "url": "https://eli.gov.pl/eli/DU/2025/807/ogl",
+            "title": "Ustawa z dnia 4 czerwca 2025 r. o zmianie ustawy – Kodeks pracy (Dz.U. 2025 poz. 807)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Pre-employment pay information, gender-neutral job adverts and the ban on asking about pay history (Kodeks pracy art. 18[3ca]) in force 2025-12-24 (Sejm ELI API entryIntoForce). Gap reporting / joint pay assessment not yet in the Labour Code (consolidated text Dz.U. 2026 poz. 1245). Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness)."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Nowy Rok",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Święto Trzech Króli",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Pierwszy dzień Wielkiej Nocy",
+      "rule": {
+        "type": "easter",
+        "offset": 0
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Drugi dzień Wielkiej Nocy",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "labour-day",
+      "name": "State Holiday (Labour Day)",
+      "localName": "Święto Państwowe",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "constitution-day",
+      "name": "Constitution Day",
+      "localName": "Święto Narodowe Trzeciego Maja",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 3
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Pierwszy dzień Zielonych Świątek",
+      "rule": {
+        "type": "easter",
+        "offset": 49
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "corpus-christi",
+      "name": "Corpus Christi",
+      "localName": "Boże Ciało",
+      "rule": {
+        "type": "easter",
+        "offset": 60
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption of Mary",
+      "localName": "Wniebowzięcie Najświętszej Maryi Panny",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Wszystkich Świętych",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "independence-day",
+      "name": "National Independence Day",
+      "localName": "Narodowe Święto Niepodległości",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 11
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "christmas-eve",
+      "name": "Christmas Eve",
+      "localName": "Wigilia Bożego Narodzenia",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 24
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2025-02-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Added by the Act of 6 Dec 2024 (Dz.U. 2024 poz. 1965), in force 1 Feb 2025. A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Pierwszy dzień Bożego Narodzenia",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    },
+    {
+      "id": "second-christmas-day",
+      "name": "Second Day of Christmas",
+      "localName": "Drugi dzień Bożego Narodzenia",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://eli.gov.pl/eli/DU/2025/296/ogl",
+        "title": "Ustawa o dniach wolnych od pracy — tekst jednolity, Dz.U. 2025 poz. 296"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "A holiday falling on a Saturday entitles employees to another day off (Kodeks pracy art. 130 §2) — not a moved holiday, so observance is \"none\"."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "Day off in lieu for holidays on Saturday (art. 130 §2)",
+      "leave service-crediting rules (art. 155, 302[1])",
+      "family_leave.maternity / paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.notice_period for fixed-term contracts concluded before 2023 and probation contracts (art. 34)"
+    ]
+  }
+}
