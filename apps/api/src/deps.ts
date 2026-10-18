@@ -7,6 +7,8 @@ import { keyProviderFromEnv, LocalKeyProvider, type KeyProvider } from './lib/km
 import { mailerFromEnv, type Mailer } from './lib/mailer';
 import { rateLimiterFromEnv, type RateLimiter } from './lib/rate-limit';
 import { objectStoreFromEnv, type ObjectStore } from './lib/object-store';
+import { STRICT_OUTBOUND, type OutboundPolicy } from './lib/outbound';
+import { crossAccountS3FromEnv, type CrossAccountS3 } from './modules/platform/siem-s3';
 
 export interface DnsResolver {
   resolveTxt(name: string): Promise<string[][]>;
@@ -33,6 +35,17 @@ export interface Deps {
   /** Enables the built-in mock OIDC/SAML identity provider (dev, test and staging smoke only). */
   mockIdp: boolean;
   webPush?: { publicKey: string; privateKey: string; subject: string };
+  /** SSRF policy for customer-configured destinations (webhooks, SIEM). Strict when omitted. */
+  outbound?: OutboundPolicy;
+  /** Writes audit batches to customer S3 buckets through a cross-account role (home region only). */
+  siemS3?: CrossAccountS3;
+}
+
+/** Dev/test-only relaxations (a local webhook receiver); refused in production. */
+export function outboundPolicyFromEnv(appEnv: string, env: NodeJS.ProcessEnv = process.env): OutboundPolicy {
+  const policy = { allowHttp: env.OUTBOUND_ALLOW_HTTP === 'true', allowPrivateNetworks: env.OUTBOUND_ALLOW_PRIVATE_NETWORKS === 'true' };
+  if (appEnv === 'prod' && (policy.allowHttp || policy.allowPrivateNetworks)) throw new Error('Outbound SSRF relaxations may never be enabled in production');
+  return policy.allowHttp || policy.allowPrivateNetworks ? policy : STRICT_OUTBOUND;
 }
 
 export function regionalUrlsFromEnv(prefix: string, fallback: (r: HomeRegion) => string): Record<HomeRegion, string> {
@@ -66,5 +79,7 @@ export async function depsFromEnv(): Promise<Deps> {
     webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,
+    outbound: outboundPolicyFromEnv(config.env, env),
+    siemS3: crossAccountS3FromEnv(config.cell, env),
   };
 }
