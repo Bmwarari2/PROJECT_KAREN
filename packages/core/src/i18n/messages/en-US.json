@@ -33,6 +33,24 @@
   "timeOff": {
     "kind": {
       "annual": "Vacation"
+    },
+    "hoursAvailable": "hours available",
+    "sickness": {
+      "title": "Record sick leave",
+      "employee": "Employee",
+      "firstDay": "First day off",
+      "lastDay": "Last day off (if known)",
+      "submit": "Record sick leave",
+      "recorded": "Sick leave recorded.",
+      "fitNoteRequired": "Sick leave recorded. A doctor's note is needed for an absence this long.",
+      "recent": "Recent sick leave",
+      "none": "No sick leave recorded.",
+      "ongoing": "ongoing",
+      "rtw": {
+        "due": "Return-to-work due",
+        "completed": "Return-to-work done",
+        "not_required": "Still out"
+      }
     }
   },
   "notify": {

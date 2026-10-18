@@ -1,0 +1,95 @@
+{
+  "jurisdiction": "US-NY-NYC",
+  "parent": "US-NY",
+  "name": "New York City",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "NYC Earned Safe and Sick Time Act (Protected Time Off Law), NYC Administrative Code Title 20 Chapter 8",
+      "versions": [
+        {
+          "effectiveFrom": "2026-02-22",
+          "effectiveTo": null,
+          "value": {
+            "statute": "NYC Earned Safe and Sick Time Act (Protected Time Off Law)",
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 30
+            },
+            "accrualStartedOn": "2014-04-01",
+            "period": "calendar_year_as_determined_by_employer",
+            "tiers": [
+              {
+                "minEmployees": 0,
+                "maxEmployees": 4,
+                "netIncomeBelowMinor": 100000000,
+                "hours": 40,
+                "paid": false
+              },
+              {
+                "minEmployees": 0,
+                "maxEmployees": 4,
+                "netIncomeAtLeastMinor": 100000000,
+                "hours": 40,
+                "paid": true
+              },
+              {
+                "minEmployees": 5,
+                "maxEmployees": 99,
+                "hours": 40,
+                "paid": true
+              },
+              {
+                "minEmployees": 100,
+                "maxEmployees": null,
+                "hours": 56,
+                "paid": true
+              }
+            ],
+            "netIncomeCurrency": "USD",
+            "netIncomeMeasuredOn": "previous_tax_year",
+            "domesticWorkersPaidRegardlessOfEmployerIncome": true,
+            "employerSizeCountsAllEmployeesNationwide": true,
+            "immediatelyAvailableUnpaidHours": {
+              "hours": 32,
+              "grantedOn": [
+                "first_day_of_employment",
+                "first_day_of_each_calendar_year"
+              ],
+              "proratedForMidYearHires": false,
+              "carriesOver": false
+            },
+            "carryOverUpToTierHours": true,
+            "employerMayLimitUseToTierHoursPerYear": true,
+            "waitingPeriodAllowed": false,
+            "separatePaidPrenatalLeave": {
+              "hours": 20,
+              "per": "52_weeks_from_first_use"
+            }
+          },
+          "source": {
+            "url": "https://www.nyc.gov/site/dca/about/paid-sick-leave-FAQs.page",
+            "title": "NYC Department of Consumer and Worker Protection — Protected Time Off Law: Frequently Asked Questions (02/2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "DCWP FAQ: accrual \"1 hour for every 30 hours worked\" since 1 April 2014; employers with 4 or fewer employees: 40 hours unpaid if net income is less than $1 million in the previous tax year, 40 hours paid if $1 million or more, and 40 hours paid to a domestic worker regardless of income; 5 or more employees: up to 40 hours paid (99 or fewer) or 56 hours paid (100 or more); employer size counts all employees nationwide; \"As of February 22, 2026, employers must provide employees with 32 hours of unpaid protected time off immediately available for use\", again on the first day of each Calendar Year, not prorated and not carried over; carry-over of accrued time up to 40 or 56 hours, use may be limited to 40 or 56 hours per Calendar Year; probation or waiting periods are not allowed; paid prenatal leave of 20 hours per 52 weeks is in addition. DCWP page https://www.nyc.gov/site/dca/about/paid-sick-leave-law.page: \"up to 40 or 56 hours of paid protected time off per year\" and \"32 hours of unpaid protected time off from the beginning of employment\". effectiveFrom = the date the 32-hour bank took effect; the law before 22 February 2026 is NOT modelled for the city, so earlier dates fall back to the New York State rule (US-NY). Front-loading options, collective-bargaining waivers and reasons for use are not encoded."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "notes": "First locality pack (code US-NY-NYC = state ISO 3166-2 code + locality, ADR-0021). City minimum wage is the New York State rate for the \"nyc\" region (US-NY pack). Sources: NYC DCWP (nyc.gov). Pending legal review.",
+    "deeperRulesTodo": [
+      "ESSTA history before 22 February 2026 (2014 Act, 2020 and 2024 amendments)",
+      "NYC Fair Workweek (fast food and retail)",
+      "NYC Temporary Schedule Change Law",
+      "NYC pay transparency in job listings",
+      "Other localities: San Francisco, Los Angeles, Seattle, Chicago, Cook County, Denver, Portland (see state pack notes)"
+    ]
+  }
+}
