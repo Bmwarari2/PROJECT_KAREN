@@ -17,7 +17,7 @@ Work on `phase-4-rotas-time`. Merge to `main` in order (0 → 4) through PRs onc
 
 ## Immediate next steps
 
-1. `pnpm install && docker compose up -d && pnpm setup` (writes git-ignored `.env`, creates the DBs and runs migrations). Node ≥ 24, pnpm 12.14.
+1. `pnpm install && docker compose up -d && pnpm run setup` (writes git-ignored `.env`, creates the DBs and runs migrations). Node ≥ 24, pnpm 12.14.
 2. Run `pnpm typecheck`. Then run `pnpm test:integration` for `rules.int.test.ts` and `leave.int.test.ts`, and fix what fails.
 3. Missing visual baselines `apps/web/e2e/__screenshots__/visual-desktop-{light,dark}/home.png`:
    - Generate them with `UPDATE_SNAPSHOTS=missing VISUAL_PROJECTS=visual-desktop-light,visual-desktop-dark node scripts/visual.mjs`. This uses the Playwright container, ADR-0009.
