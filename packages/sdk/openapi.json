@@ -6600,6 +6600,7 @@
     },
     "/v1/employees/{id}/emergency-contacts": {
       "put": {
+        "summary": "Replace the emergency contact list in force from a date (default today); later future-dated lists are kept",
         "tags": [
           "employees"
         ],
@@ -6673,6 +6674,16 @@
           {
             "schema": {
               "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "effectiveDate",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
               "format": "uuid"
             },
             "in": "path",
@@ -6739,9 +6750,89 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 9
+                      },
+                      "validFrom": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "validTo": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
                 }
               }
             }
@@ -6816,6 +6907,16 @@
           {
             "schema": {
               "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "asOf",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
               "format": "uuid"
             },
             "in": "path",
@@ -6882,6 +6983,26 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 9
+                      },
+                      "validFrom": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "validTo": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }

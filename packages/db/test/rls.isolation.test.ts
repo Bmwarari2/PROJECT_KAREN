@@ -101,6 +101,13 @@ describe('catalog-wide isolation checks', () => {
     expect(role.rows[0]).toEqual({ rolsuper: false, rolbypassrls: false });
     const owned = await owner.query(`SELECT count(*)::int AS n FROM pg_class WHERE relowner = 'thapsus_app'::regrole`);
     expect(owned.rows[0].n).toBe(0);
+    // extension operators resolve (USAGE on public), but nothing can be created there and the
+    // migration bookkeeping table stays unreadable
+    const pub = await owner.query(
+      `SELECT has_schema_privilege('thapsus_app', 'public', 'USAGE') AS usage, has_schema_privilege('thapsus_app', 'public', 'CREATE') AS create,
+              has_table_privilege('thapsus_app', 'public.schema_migrations', 'SELECT') AS read_migrations`,
+    );
+    expect(pub.rows[0]).toEqual({ usage: true, create: false, read_migrations: false });
   });
 
   it('policies granted to other roles are limited to the reviewed allowlist', async () => {

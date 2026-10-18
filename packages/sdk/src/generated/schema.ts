@@ -3421,7 +3421,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    asOf?: string;
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -3444,6 +3446,8 @@ export interface paths {
                             phone?: string | null;
                             email?: string | null;
                             priority?: number;
+                            validFrom?: string | null;
+                            validTo?: string | null;
                         }[];
                     };
                 };
@@ -3474,9 +3478,12 @@ export interface paths {
                 };
             };
         };
+        /** Replace the emergency contact list in force from a date (default today); later future-dated lists are kept */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    effectiveDate?: string;
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -3511,7 +3518,34 @@ export interface paths {
                             phone?: string | null;
                             email?: string | null;
                             priority?: number;
+                            validFrom?: string | null;
+                            validTo?: string | null;
                         }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
                     };
                 };
                 /** @description Default Response */

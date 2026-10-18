@@ -9,6 +9,9 @@ import { FIELDS } from './model';
 import {
   applySectionChange,
   assertWritable,
+  contactsAsOf,
+  replaceContacts,
+  type ContactInput,
   employeeAsOf,
   filterFields,
   history,
@@ -79,7 +82,10 @@ export async function employeeRoutes(app: FastifyInstance) {
       if (q.country) where.push(`e.country = ${add(q.country)}`);
       if (q.q) {
         const term = q.q.trim();
-        where.push(`(e.search @@ plainto_tsquery('simple', ${add(term)}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${add(term)})`);
+        // Full-text (words, number, email, title), substring, and trigram word similarity so a misspelt
+        // name still matches (`<%` uses the gin_trgm_ops index on display_name).
+        const t = add(term);
+        where.push(`(e.search @@ plainto_tsquery('simple', ${t}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${t} OR ${t} <% e.display_name)`);
       }
       const after = decodeCursor<[string, string]>(q.cursor);
       if (after) where.push(`(e.display_name, e.id) > (${add(after[0])}, ${add(after[1])}::uuid)`);
@@ -179,6 +185,9 @@ export async function employeeRoutes(app: FastifyInstance) {
           // Field access map so the UI shows exactly what the API allows (identical enforcement).
           const access: Record<string, string> = {};
           for (const k of Object.keys(FIELDS)) access[k] = fieldAccess(auth.principal, 'employee', FIELDS[k]!.perm, target);
+          for (const k of ['emergencyContacts', 'manager']) access[k] = fieldAccess(auth.principal, 'employee', k, target);
+          const customKeys = await tx.query<{ key: string }>(`SELECT key FROM app.custom_field_definitions WHERE entity_type = 'employee' AND NOT archived`);
+          for (const { key } of customKeys) access[`custom.${key}`] = fieldAccess(auth.principal, 'employee', `custom.${key}`, target);
           return { employee: filtered, asOf, access };
         },
         { readOnly: true },
@@ -201,6 +210,7 @@ export async function employeeRoutes(app: FastifyInstance) {
           // strip sections the caller cannot read
           if (fieldAccess(auth.principal, 'employee', 'pay.amount', target) === 'none') delete h.pay;
           if (fieldAccess(auth.principal, 'employee', 'dateOfBirth', target) === 'none') delete h.personal;
+          if (fieldAccess(auth.principal, 'employee', 'emergencyContacts', target) === 'none') delete h.emergencyContacts;
           return h;
         },
         { readOnly: true },
@@ -358,37 +368,47 @@ export async function employeeRoutes(app: FastifyInstance) {
 
   // ---- emergency contacts -------------------------------------------------------------------------
   const Contact = Type.Object({ id: Type.Optional(Uuid), name: Type.String({ minLength: 1, maxLength: 120 }), relationship: Type.Optional(Nullable(Type.String({ maxLength: 60 }))), phone: Type.Optional(Nullable(Type.String({ maxLength: 40 }))), email: Type.Optional(Nullable(Type.String({ maxLength: 254 }))), priority: Type.Optional(Type.Integer({ minimum: 1, maximum: 9 })) });
+  const ContactOut = Type.Object({ ...Contact.properties, validFrom: Type.Optional(Nullable(Type.String())), validTo: Type.Optional(Nullable(Type.String())) });
   app.put(
     '/v1/employees/:id/emergency-contacts',
-    { config: { selfAudited: true }, schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), body: Type.Array(Contact, { maxItems: 9 }), response: { 200: Type.Array(Contact), 403: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['employees'],
+        summary: 'Replace the emergency contact list in force from a date (default today); later future-dated lists are kept',
+        params: Type.Object({ id: Uuid }),
+        querystring: Type.Object({ effectiveDate: Type.Optional(CivilDate) }),
+        body: Type.Array(Contact, { maxItems: 9 }),
+        response: { 200: Type.Array(ContactOut), 400: Problem, 403: Problem },
+      },
+    },
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
-      const body = req.body as Array<{ name: string; relationship?: string | null; phone?: string | null; email?: string | null; priority?: number }>;
+      const date = (req.query as { effectiveDate?: string }).effectiveDate ?? today(zoneOf(req));
+      const body = req.body as ContactInput[];
       return app.tenantTx(req, async (tx) => {
         const target = await loadTarget(tx, id);
         if (fieldAccess(auth.principal, 'employee', 'emergencyContacts', target) !== 'write') throw new ApiError('forbidden');
-        await tx.exec('DELETE FROM app.emergency_contacts WHERE employee_id = $1', [id]);
-        for (const [i, c] of body.entries()) {
-          await tx.exec(`INSERT INTO app.emergency_contacts (tenant_id, employee_id, name, relationship, phone, email, priority) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6)`, [id, c.name, c.relationship ?? null, c.phone ?? null, c.email ?? null, c.priority ?? i + 1]);
-        }
-        await app.audit(tx, req, { action: 'employee.emergency_contacts_updated', targetType: 'employee', targetId: id, diff: { count: body.length } });
-        return tx.query('SELECT id, name, relationship, phone, email, priority FROM app.emergency_contacts WHERE employee_id = $1 ORDER BY priority', [id]);
+        await replaceContacts(tx, id, date, body, auth.userId);
+        await app.audit(tx, req, { action: 'employee.emergency_contacts_updated', targetType: 'employee', targetId: id, diff: { effectiveDate: date, count: body.length } });
+        return contactsAsOf(tx, id, date);
       });
     },
   );
   app.get(
     '/v1/employees/:id/emergency-contacts',
-    { schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), response: { 200: Type.Array(Contact), 403: Problem } } },
+    { schema: { tags: ['employees'], params: Type.Object({ id: Uuid }), querystring: Type.Object({ asOf: Type.Optional(CivilDate) }), response: { 200: Type.Array(ContactOut), 403: Problem } } },
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
+      const asOf = (req.query as { asOf?: string }).asOf ?? today(zoneOf(req));
       return app.tenantTx(
         req,
         async (tx) => {
           const target = await loadTarget(tx, id);
           if (fieldAccess(auth.principal, 'employee', 'emergencyContacts', target) === 'none') throw new ApiError('forbidden');
-          return tx.query('SELECT id, name, relationship, phone, email, priority FROM app.emergency_contacts WHERE employee_id = $1 ORDER BY priority', [id]);
+          return contactsAsOf(tx, id, asOf);
         },
         { readOnly: true },
       );
