@@ -10,7 +10,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 | Phase | Scope | Branch | Status |
 | --- | --- | --- | --- |
-| 0 | Foundations | `phase-0-foundations` | [ ] |
+| 0 | Foundations | `phase-0-foundations` | [h] |
 | 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [ ] |
 | 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [ ] |
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [ ] |
@@ -28,38 +28,45 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 0 — Foundations
 
-- [ ] **0.1 Monorepo and tooling**
+- [x] **0.1 Monorepo and tooling**
   - pnpm workspaces + Turborepo containing `apps/web`, `apps/api`, `apps/worker`, `packages/db`, `packages/rules`, `packages/ui`, `packages/sdk`, shared config packages and `infra`.
   - TypeScript strict mode everywhere; ESLint + Prettier; a clean clone runs `pnpm install && pnpm verify` without manual steps (beyond documented prerequisites).
   - `pnpm verify` runs every step listed in brief §8 (lint, typecheck, unit, integration, contract, tenant-isolation, residency, e2e, visual regression, Lighthouse, security scan, build, `cdk synth`) and ends with a pass/fail table; exit code is non-zero if any step fails.
-- [ ] **0.2 CI/CD**
+  - _Evidence:_ `scripts/verify.mjs` (15 steps, pass/fail table, non-zero exit); strict `tsconfig.base.json`; shared config at the root (ADR-0042); Prettier configured, formatting gate added after the phase merges (ADR-0041).
+- [h] **0.2 CI/CD**
   - GitHub Actions runs `pnpm verify` on every pull request and push to `main`.
   - Deploy workflow assumes per-account, per-region IAM roles via GitHub OIDC; repository contains no AWS access keys (secret scan proves it).
   - Staging deploys per region from `main`; production deploys only through a manual approval environment gate.
   - Dependency audit and secret scanning run in CI.
-- [ ] **0.3 Local development**
+  - _Evidence:_ `.github/workflows/ci.yml` (verify on PR and push to main); `infra/lib/ci-stack.ts` + `infra/test/infra.test.ts` "CI stack" (OIDC, one role per region, no IAM users or keys); `scripts/deploy.mjs` with `scripts/test/deploy-plan.test.ts`; secret scan in verify. _Human:_ HUMAN_TODO 1.5 (deploy the CI stack, GitHub variables and the `production` approval environment).
+- [x] **0.3 Local development**
   - `docker compose up` starts Postgres, Valkey, an S3 emulator, an SQS emulator and a mail catcher.
   - `pnpm dev` runs web, api and worker with hot reload; `pnpm db:migrate && pnpm db:seed` produce a working demo company.
   - Integration tests run against real PostgreSQL (Docker, or native binaries when Docker images are unavailable — see DECISIONS.md).
   - README quick start works from a clean clone.
-- [ ] **0.4 Regional cell stack (AWS CDK)**
+  - _Evidence:_ verify `deps` (all five services, `--wait`) and `dev` (`scripts/dev-smoke.mjs`: migrate, seed, `pnpm dev`, sign-in through the web proxy, Mailpit delivery, api/worker hot reload).
+- [x] **0.4 Regional cell stack (AWS CDK)**
   - One parameterised `CellStack` per environment × region (dev/staging/prod × UK/EU/US): VPC across 3 AZs; ECS Fargate services (web, api, worker) with autoscaling; ALB with ACM TLS and AWS WAF; Aurora PostgreSQL Multi-AZ with a reporting read replica and RDS Proxy; ElastiCache Valkey Multi-AZ; SQS (+ DLQs) and EventBridge; EventBridge Scheduler; S3 (private, versioned, SSE-KMS, block public access); SES configuration set; Secrets Manager; per-region KMS keys; CloudWatch logs (KMS-encrypted, retention set), X-Ray / OpenTelemetry collector; AWS Backup plan; AWS Budgets alarm.
   - CDK assertion tests prove: Multi-AZ and encryption on Aurora and Valkey; S3 public access blocked; WAF associated with every ALB; no CloudFront distribution in front of authenticated origins; every resource in the cell's home region; backup copy rules target only the permitted region (EU→eu-west-1, US→us-west-1, UK→none); IAM policies contain no `*` actions on `*` resources.
   - `cdk synth` succeeds for every environment × region combination.
-- [ ] **0.5 Global stack (AWS CDK)**
+  - _Evidence:_ `infra/test/infra.test.ts` (per env × cell: Multi-AZ/encryption, S3, WAF, no CloudFront, home region only, backup copy targets, IAM, logs, autoscaling, SQS DLQs, event bus, scheduler, SES, budget, 3 AZs, TLS certificate); verify `synth`.
+- [x] **0.5 Global stack (AWS CDK)**
   - Route 53 hosted zone (domain from configuration), tenant directory, region-aware sign-in routing, marketing site hosting and billing service placeholders.
   - Tenant directory schema holds only tenant ID, slug, home region, status, plan reference and verified domains; a test fails if a personal-data field is added.
   - Marketing site may use a CDN; app and API hostnames are regional and bypass any edge cache (asserted in tests).
-- [ ] **0.6 Tenancy with Row Level Security**
+  - _Evidence:_ `infra/test/infra.test.ts` global stack tests; `apps/api/test/directory.test.ts` (directory schema is exactly the reviewed allow-list); `apps/api/test/auth.int.test.ts` (no-store).
+- [x] **0.6 Tenancy with Row Level Security**
   - Every tenant-scoped table has `tenant_id`, RLS enabled and forced, and a tenant policy; the application role has no `BYPASSRLS` and owns no tables.
   - Isolation test suite enumerates all tables from the catalog and fails if any tenant-scoped table lacks RLS or a policy.
   - Tests prove a session for tenant A cannot select, insert, update or delete tenant B rows, and that a session with no tenant context sees zero rows.
   - Tenant context is set per transaction with `set_config('app.tenant_id', …, true)` (safe with RDS Proxy connection reuse); a test proves context does not leak between pooled transactions.
-- [ ] **0.7 Dedicated-database routing**
+  - _Evidence:_ `packages/db/test/rls.isolation.test.ts`.
+- [x] **0.7 Dedicated-database routing**
   - Tenant → database routing comes from configuration (regional tenant registry), not code.
   - Integration test: a tenant is moved from the shared database to a second database using the move script, routing is switched, and the same API test suite passes for that tenant with no code change.
   - Runbook draft `docs/runbooks/move-tenant-to-dedicated-db.md`.
-- [ ] **0.8 Authentication**
+  - _Evidence:_ `apps/api/test/dedicated-db.int.test.ts` (auth, MFA, domains incl. DNS verification, SCIM, preferences, push, magic link, audit export + chain verification — before and after the move); `docs/runbooks/move-tenant-to-dedicated-db.md`.
+- [x] **0.8 Authentication**
   - Maintained auth library (default Better Auth) with organisations, email + password, TOTP MFA, passkeys and magic links; all auth data stored in the home-region database.
   - Sign-up flow asks for the home region and creates the tenant only in that region's cell.
   - MFA enforced for admin roles: admin routes are refused until a second factor is enrolled and verified (tested).
@@ -67,44 +74,55 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
   - SCIM 2.0 inbound provisioning: `/Users` and `/Groups` support create, get, list with filter, PATCH and deactivate; bearer tokens scoped per tenant; conformance tests pass.
   - Verified domains via DNS TXT record (DNS lookup mocked in tests).
   - Sessions expire on idle and absolute timeouts (configurable per tenant); sign-in rate limiting and account lockout are tested.
-- [ ] **0.9 Region-aware sign-in routing**
+  - _Evidence:_ `auth.int.test.ts`, `sso.int.test.ts`, `scim.int.test.ts`, `platform.int.test.ts` (passkeys); library choice in ADR-0003.
+- [x] **0.9 Region-aware sign-in routing**
   - Global sign-in resolves slug or verified domain → home region and redirects to the regional host.
   - "Find my workspace" by email fans out to each region, which emails the user from that region; the global layer never stores the email address (tested).
   - A request for a tenant arriving at the wrong regional cell is refused/redirected without touching that tenant's data.
-- [ ] **0.10 Roles and permissions**
+  - _Evidence:_ `platform.int.test.ts` "region-aware sign-in routing"; `apps/api/test/residency.residency.test.ts`.
+- [x] **0.10 Roles and permissions**
   - Built-in roles seeded: Thapsus super-admin (back office), company owner, HR admin, country/entity HR admin, payroll admin, manager (own team, with delegation), employee.
   - Custom roles with field-level permissions (read/write/none per field) scoped by entity, country, department or location; deny by default; permission engine covered by unit tests including scope and delegation cases.
   - Thapsus support access model: customer-granted, time-limited, revocable, every action audit-logged; no back-office path to tenant personal data without an active grant (tested).
-- [ ] **0.11 Audit log**
+  - _Evidence:_ `apps/api/test/foundation.int.test.ts` (seeded built-in roles, delegation expiry); `packages/core/test/permissions.test.ts` (scopes incl. department and location, field-level); `platform.int.test.ts` (support access).
+- [x] **0.11 Audit log**
   - Append-only: application role cannot UPDATE or DELETE audit rows (privileges revoked and trigger blocks it — tested); entries are hash-chained per tenant and a verification command detects tampering.
   - Every mutating API call writes an audit entry (actor, tenant, action, target, before/after diff with sensitive fields redacted, IP, user agent, request ID); every view of sensitive data writes an entry.
   - Customers can export the audit log (CSV and JSON) filtered by date range.
-- [ ] **0.12 Sensitive data vault (framework)**
+  - _Evidence:_ `packages/db/test/audit.int.test.ts`; `foundation.int.test.ts` (actor, IP, user agent, request id; the safety-net hook); `platform.int.test.ts` (export).
+- [x] **0.12 Sensitive data vault (framework)**
   - Separate schema for sensitive categories with field-level envelope encryption using per-region KMS keys (local KMS mock in dev/test).
   - Raw table reads show ciphertext only (tested); roles without the sensitive-data permission cannot decrypt (tested); every decrypt writes an audit entry (tested).
-- [ ] **0.13 Internationalisation**
+  - _Evidence:_ `platform.int.test.ts` vault tests; KMS residency in `apps/api/test/residency.residency.test.ts`.
+- [x] **0.13 Internationalisation**
   - Message catalogues for en-GB and en-US; lint fails on hardcoded user-facing strings in UI code.
   - Locale-aware formatting helpers for dates, numbers and currencies (GBP, EUR, USD plus at least SEK, PLN, DKK, CHF, CZK, HUF, RON) with unit tests.
   - Instants stored in UTC; users and locations carry IANA time zones; DST-boundary tests pass.
-- [ ] **0.14 Design system**
+  - _Evidence:_ `packages/core/test/core.test.ts` (catalogue parity, money in 10 currencies, dates, numbers, date-times across DST); `tools/eslint/test`; `foundation.int.test.ts` (no `timestamp without time zone` columns).
+- [x] **0.14 Design system**
   - `docs/DESIGN.md` written before any screen: tokens (colour, type scale, spacing, radii, shadows, motion), components, light/dark rules, motion and reduced-motion rules.
   - Tokens implemented as CSS variables consumed by Tailwind; `packages/ui` provides restyled shadcn/ui components (button, input, select, card, table, dialog, sheet, tabs, toast, sidebar, top bar, empty state, skeleton).
   - Automated contrast test proves every text/background token pair meets WCAG 2.2 AA in light and dark mode.
   - Component gallery page used for visual regression (light/dark × phone/desktop).
-- [ ] **0.15 PWA shell and marketing skeleton**
+  - _Evidence:_ `docs/DESIGN.md`; `packages/ui` tokens and components; `packages/ui/test/tokens.test.ts` (contrast); `/design/gallery` in visual regression (4 projects) and e2e axe.
+- [x] **0.15 PWA shell and marketing skeleton**
   - Installable PWA: web app manifest, service worker, offline fallback page, web push subscription (VAPID) with a test notification in dev.
   - App shell: sidebar + top bar, signed-in home, theme switch (system/light/dark), locale switch.
   - Marketing homepage skeleton: sticky translucent blurred nav, hero, alternating full-width sections, scroll reveals that respect `prefers-reduced-motion`.
   - Lighthouse mobile ≥90 performance and ≥95 accessibility on the marketing home page and app shell; axe checks pass in e2e.
-- [ ] **0.16 Observability and residency guard**
+  - _Evidence:_ `apps/web/e2e/foundation.spec.ts` (manifest, service worker, offline; theme and locale controls; scroll reveals vs reduced motion; axe); `foundation.int.test.ts` (push subscription + VAPID test notification); verify `lighthouse`.
+- [x] **0.16 Observability and residency guard**
   - OpenTelemetry tracing and structured logging with personal-data scrubbing (unit tests cover emails, names in known fields, phone numbers, NI numbers, SSNs, tokens).
   - Residency-guarded AWS client factory refuses any region other than the cell's home region (and the permitted backup region for backup tooling).
   - Residency test matrix covers every region pair (UK↔EU, UK↔US, EU↔US) across database, object storage, cache, queues, email, logs and backups.
-- [ ] **0.17 Seed data and synthetic enterprise generator**
+  - _Evidence:_ `packages/core/test/core.test.ts` (scrubbing, client factory); residency matrices in `packages/core/test/residency.residency.test.ts` and `apps/api/test/residency.residency.test.ts`.
+- [x] **0.17 Seed data and synthetic enterprise generator**
   - `pnpm db:seed` creates a small fictional demo company (about 25 employees, UK-based, one legal entity).
   - `pnpm synth:enterprise` deterministically generates a 200,000-employee tenant with 50 legal entities across UK, EU and US (bulk COPY); runtime recorded in docs/PERFORMANCE.md.
-- [ ] **0.18 Foundation documents**
+  - _Evidence:_ `apps/api/test/cli.int.test.ts` (seed: 25 employees, 1 GB entity, idempotent; generator: deterministic, 50 entities); 200,000-employee runtime in `docs/PERFORMANCE.md` §2.1.
+- [x] **0.18 Foundation documents**
   - First versions of README, ARCHITECTURE (with diagrams), DESIGN, SECURITY, DECISIONS, COSTS (per environment and region), SUBPROCESSORS (per region), HUMAN_TODO.
+  - _Evidence:_ README, ARCHITECTURE (mermaid diagrams), DESIGN, SECURITY, DECISIONS, COSTS, SUBPROCESSORS and HUMAN_TODO in `docs/`.
 
 ---
 

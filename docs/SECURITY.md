@@ -18,13 +18,14 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Sensitive data | Envelope encryption (per-value data key, regional KMS key, AAD binding); category permissions; every decrypt audited; reporting role has no vault access | `platform.int.test.ts` |
 | Transport and headers | TLS 1.2+ at the ALB; HSTS (preload); CSP; `frame-ancestors 'none'`; `nosniff`; strict referrer policy; `Cache-Control: private, no-store` on all API responses and authenticated pages | `auth.int.test.ts`, e2e |
 | Logging | Shared logger and tracer scrub emails, phone numbers, NI numbers, SSNs, tokens and known personal fields; request bodies are never logged | `packages/core/test/core.test.ts` |
-| Secrets | AWS Secrets Manager in AWS; git-ignored `.env` locally; secret scan in `pnpm verify`; GitHub OIDC for deploys (no long-lived keys) | `scripts/secret-scan.mjs`, `.github/workflows/deploy.yml` |
+| Secrets | AWS Secrets Manager in AWS; git-ignored `.env` locally; secret scan in `pnpm verify`; GitHub OIDC for deploys with one role per region, trusted only for this repository's GitHub environment and limited to that region's CDK bootstrap roles (no long-lived keys, no IAM users) | `scripts/secret-scan.mjs`, `infra/test/infra.test.ts` (CI stack), `.github/workflows/deploy.yml` |
 | Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI | verify `security` step |
 | Infrastructure | WAF (AWS managed rules plus a rate limit) on every ALB; KMS everywhere; S3 public access blocked; no `*` action on `*` resource in IAM | `infra/test` |
 
 ## Accepted risks and follow-ups
 
 - **CSP allows `'unsafe-inline'` scripts** because of Next.js inline bootstrap scripts. The fix is nonce-based CSP through Next middleware. That forces dynamic rendering, so it is scheduled for the Phase 12 hardening pass with a Lighthouse re-check.
+- **CDK bootstrap execution policy.** By default `cdk bootstrap` grants the CloudFormation execution role AdministratorAccess. HUMAN_TODO 1.5 asks for a scoped policy at bootstrap time. The deploy roles themselves can only assume the bootstrap roles in their own region.
 - **Logger scrubbing is allow-list based for class instances.** Request and reply objects are reduced by serializers, and plain objects are scrubbed recursively. Code review rule: never log ORM or row objects directly.
 
 ## Reporting a vulnerability

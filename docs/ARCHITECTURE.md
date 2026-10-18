@@ -106,3 +106,29 @@ sequenceDiagram
 ```
 
 "Find my workspace" fans out from the global API to every cell. Each cell looks up the email with a narrowly scoped `SECURITY DEFINER` function that returns tenant ids only, then emails the user from its own region. The global layer stores nothing.
+
+## 6. Delivery pipeline
+
+```mermaid
+flowchart LR
+  PR[Pull request] --> CI[GitHub Actions CI\npnpm verify]
+  CI -->|merge to main, green| D[Deploy workflow]
+  D -->|OIDC, no keys| R1[thapsus-hr-env-deploy-eu-west-1]
+  D --> R2[thapsus-hr-env-deploy-us-west-1]
+  D --> R3[thapsus-hr-env-deploy-eu-west-2]
+  D --> R4[thapsus-hr-env-deploy-eu-central-1]
+  D --> R5[thapsus-hr-env-deploy-us-east-2]
+  R1 --> BC1[backup-copy-eu]
+  R2 --> BC2[backup-copy-us]
+  R3 --> GL[global] --> UK[cell-uk]
+  R4 --> EU[cell-eu]
+  R5 --> US[cell-us]
+  PROD{{production environment\nmanual approval}} -.-> D
+```
+
+`ThapsusHr-<env>-ci` holds the GitHub OIDC provider and one deploy role per region. Each role:
+- is trusted only by this repository's matching GitHub environment;
+- can only assume that region's CDK bootstrap roles;
+- in cell regions, can also run the post-deploy steps.
+
+`scripts/deploy.mjs` runs each target in dependency order: backup copy vaults, then global, then the cells. For each cell it runs `cdk deploy`, copies the internal token, fills the key material, runs the migrator task, restarts the services and checks health. Production refuses to run without explicit approval (ADR-0043).
