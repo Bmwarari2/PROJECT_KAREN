@@ -12,6 +12,14 @@ export interface WorkflowTaskDef {
 }
 
 /**
+ * Called after a workflow instance and its template tasks are created, in the same transaction. Feature
+ * modules add their own steps here (e.g. the asset register adds one return task per issued asset when
+ * an offboarding workflow starts). Hooks must be idempotent (use task dedupe keys).
+ */
+export type WorkflowStartHook = (tx: Tx, instance: { id: string; kind: string; employeeId: string; anchorDate: string }) => Promise<void>;
+export const workflowStartHooks: WorkflowStartHook[] = [];
+
+/**
  * Starts a workflow instance (idempotent per template + employee + anchor date) and creates its tasks
  * with due dates relative to the anchor (start date, leave date or transfer date).
  */
@@ -59,6 +67,7 @@ export async function startWorkflow(tx: Tx, templateId: string, employeeId: stri
     }
     if (assignees.length) await notify(tx, { userIds: assignees, kind: 'task.assigned', titleKey: 'notify.taskAssigned', params: { title: task.title }, link: '/app/tasks', dedupeKey: `wf:${inst.id}:${task.key}` });
   }
+  for (const hook of workflowStartHooks) await hook(tx, { id: inst.id, kind: tpl.kind, employeeId, anchorDate });
   return inst.id;
 }
 
