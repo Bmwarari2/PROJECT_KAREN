@@ -1,0 +1,9 @@
+{
+  "common": {
+    "organisation": "Organization"
+  },
+  "errors": {
+    "unauthorised": "Please sign in to continue.",
+    "ssoRequired": "Your organization requires single sign-on."
+  }
+}

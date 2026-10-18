@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+cdk.out/
+*.log
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+.lighthouse/
+.tmp/
+*.tsbuildinfo
