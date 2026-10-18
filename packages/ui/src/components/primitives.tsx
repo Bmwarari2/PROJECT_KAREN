@@ -2,7 +2,17 @@ import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
+
+// Teach tailwind-merge our type scale and colour tokens so text-<size> and text-<colour> never collide.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [{ text: ['display', 'headline', 'title-1', 'title-2', 'title-3', 'body-lg', 'body', 'callout', 'footnote'] }],
+      'text-color': [{ text: ['text', 'text-secondary', 'text-inverse', 'accent', 'on-accent', 'on-danger', 'success', 'warning', 'danger', 'current'] }],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

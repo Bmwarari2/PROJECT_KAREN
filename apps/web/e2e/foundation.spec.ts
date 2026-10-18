@@ -26,7 +26,7 @@ test.describe('public pages', () => {
   test('locale switch changes spelling (en-GB → en-US)', async ({ page, context }) => {
     await context.addCookies([{ name: 'thr_locale', value: 'en-US', url: page.url() === 'about:blank' ? 'http://127.0.0.1:3100' : page.url() }]);
     await page.goto('/');
-    await expect(page.getByText('People and organization')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'People and organization' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en-US');
   });
 
@@ -45,6 +45,9 @@ test.describe('PWA', () => {
     await page.goto('/');
     const scope = await page.evaluate(async () => (await navigator.serviceWorker.ready).scope);
     expect(scope).toMatch(/\/$/);
+    // the page is controlled once the worker has claimed it
+    await page.reload();
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
     await page.context().setOffline(true);
     await page.goto('/app/somewhere-uncached').catch(() => undefined);
     await expect(page.getByRole('heading', { name: 'You are offline' })).toBeVisible();
@@ -80,6 +83,6 @@ test.describe('sign-up, MFA and the app shell', () => {
     await page.getByLabel('Email').fill('nobody@example.test');
     await page.getByLabel('Password').fill('not-the-password');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.locator('p[role="alert"]')).toBeVisible();
   });
 });

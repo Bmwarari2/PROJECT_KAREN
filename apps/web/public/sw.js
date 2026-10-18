@@ -4,7 +4,7 @@
  * - Navigations are network-first; on failure the offline page is shown.
  * - Handles web push notifications.
  */
-const VERSION = 'thr-v1';
+const VERSION = 'thr-v2';
 const OFFLINE_URL = '/offline';
 const PRECACHE = [OFFLINE_URL, '/icons/icon-192.png', '/fonts/inter-latin-wght-normal.woff2'];
 
@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
   // API and auth traffic always goes to the network (no caching of personal data).
   if (/^\/(v1|scim|global|__mock-idp)\//.test(url.pathname)) return;
   if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
+    event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL, { ignoreVary: true })));
     return;
   }
   // Immutable build assets: cache-first.

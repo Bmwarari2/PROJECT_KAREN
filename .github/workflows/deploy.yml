@@ -1,0 +1,57 @@
+name: Deploy
+
+# Staging deploys automatically from main after CI passes; production only through the
+# `production` environment, which requires a manual approval (configured in GitHub settings).
+# AWS access uses GitHub OIDC role assumption — there are no AWS keys in this repository.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment == 'prod' && 'production' || 'staging' }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        # Order matters: backup copy vaults, then the global stack, then the cells.
+        target:
+          - { stacks: 'backupcopy', region: 'eu-west-1' }
+          - { stacks: 'backupcopy', region: 'us-west-1' }
+          - { stacks: 'global', region: 'eu-west-2' }
+          - { stacks: 'cell-uk', region: 'eu-west-2' }
+          - { stacks: 'cell-eu', region: 'eu-central-1' }
+          - { stacks: 'cell-us', region: 'us-east-2' }
+    env:
+      TARGET_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars[format('AWS_DEPLOY_ROLE_{0}', env.TARGET_ENV)] }}
+          aws-region: ${{ matrix.target.region }}
+      - name: Deploy ${{ matrix.target.stacks }} (${{ env.TARGET_ENV }})
+        run: node scripts/deploy.mjs --env "$TARGET_ENV" --only "${{ matrix.target.stacks }}"

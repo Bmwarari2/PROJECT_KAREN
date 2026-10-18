@@ -1,12 +1,5 @@
 import type { NextConfig } from 'next';
 
-/**
- * Locally (and in e2e) the API runs separately, so API paths are proxied to it. In AWS the ALB
- * routes those paths to the API service directly and API_PROXY_URL is unset.
- */
-const api = process.env.API_PROXY_URL;
-const API_PATHS = ['/v1/:path*', '/scim/:path*', '/__mock-idp/:path*', '/global/:path*', '/openapi.json'];
-
 const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -38,9 +31,6 @@ const config: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@thapsus/ui', '@thapsus/core'],
   images: { formats: ['image/avif', 'image/webp'] },
-  async rewrites() {
-    return api ? API_PATHS.map((source) => ({ source, destination: `${api}${source.replace('/:path*', '/:path*')}` })) : [];
-  },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
