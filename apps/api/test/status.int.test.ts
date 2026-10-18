@@ -10,7 +10,7 @@ import { injector, staffSession } from './phase10-helpers';
  * (ADR-0105); staff post incidents and maintenance for this region, every post audited.
  */
 let ctx: TestContext;
-let api: (method: string, url: string, payload: unknown, cookie: string) => ReturnType<TestContext['app']['inject']>;
+let api: ReturnType<typeof injector>;
 const status = () => ctx.app.inject({ method: 'GET', url: '/v1/status' });
 
 beforeAll(async () => {

@@ -16,7 +16,7 @@ const cfg = loadBillingConfig('builtin:billing-config-v1');
 let ctx: TestContext;
 let fake: FakeBillingProvider;
 let owner: Awaited<ReturnType<typeof ownerSession>>;
-let api: (method: string, url: string, payload: unknown, cookie: string) => ReturnType<TestContext['app']['inject']>;
+let api: ReturnType<typeof injector>;
 let support: Awaited<ReturnType<typeof staffSession>>;
 let billingStaff: Awaited<ReturnType<typeof staffSession>>;
 let entityA: string;

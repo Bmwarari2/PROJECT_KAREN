@@ -17,7 +17,7 @@ let ctx: TestContext;
 let owner: Awaited<ReturnType<typeof ownerSession>>;
 let employee: Awaited<ReturnType<typeof userSession>>;
 let colleague: Awaited<ReturnType<typeof userSession>>;
-let api: (method: string, url: string, payload: unknown, cookie: string) => ReturnType<TestContext['app']['inject']>;
+let api: ReturnType<typeof injector>;
 const objects = () => ctx.deps.objects as MemoryObjectStore;
 
 beforeAll(async () => {

@@ -17,7 +17,7 @@ const cfg = loadBillingConfig('builtin:billing-config-v1');
 let ctx: TestContext;
 let fake: FakeBillingProvider;
 let owner: Awaited<ReturnType<typeof ownerSession>>;
-let api: (method: string, url: string, payload?: unknown, cookie?: string) => ReturnType<TestContext['app']['inject']>;
+let api: (method: string, url: string, payload?: unknown, cookie?: string) => ReturnType<ReturnType<typeof injector>>;
 let entityId: string;
 const people = [
   { legalFirstName: 'Ada', legalLastName: 'Fictionalson', workEmail: 'ada.fictionalson@billing-people.example.test', employeeNumber: 'FIC-0001', jobTitle: 'Payroll analyst' },
