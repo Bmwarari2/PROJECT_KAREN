@@ -24,7 +24,7 @@ For Aurora point-in-time restore, any second within the retention window is vali
 
 ## 2. Restore Aurora (whole cell)
 
-1. Declare an incident (`incident-response.md`). Stop the writers:
+1. Declare an incident (`incident-and-breach-response.md`). Stop the writers:
    - scale `…-worker` to 0;
    - put the ALB maintenance rule in front of `/v1/*`, or scale `…-api` to 0.
 2. Restore to a NEW cluster at the chosen time:

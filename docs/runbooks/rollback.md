@@ -4,7 +4,7 @@ Rolling back application code is safe at any time because migrations are expand-
 
 ## 1. Decide
 
-Roll back when a release causes user-visible errors, data-integrity risk or a security regression and the fix is not minutes away. Record the decision in the incident log (`incident-response.md`).
+Roll back when a release causes user-visible errors, data-integrity risk or a security regression and the fix is not minutes away. Record the decision in the incident log (`incident-and-breach-response.md`).
 
 ## 2. Roll back the services (one cell or all)
 
@@ -37,4 +37,4 @@ If only one feature misbehaves, turn it off for the affected tenants with its pe
 ## 5. After a rollback
 
 - Keep `main` deployable: revert the bad commit through a PR. Never force-push `main`.
-- Write the post-incident review (`incident-response.md` §6).
+- Write the post-incident review (`incident-and-breach-response.md` §6).
