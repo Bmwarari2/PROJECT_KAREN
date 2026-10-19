@@ -90,7 +90,7 @@ export default function IncidentsPage() {
       <Card>
         <CardTitle>{t('privacy.ui.incidents.newTitle')}</CardTitle>
         <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.incidents.newLead')}</p>
-        <form onSubmit={create} className="mt-4 grid gap-3 md:grid-cols-2">
+        <form onSubmit={create} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           <Field id="inc-title" label={t('privacy.ui.incidents.titleField')}>
             {(p) => <Input {...p} required minLength={3} maxLength={200} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />}
           </Field>
@@ -102,7 +102,7 @@ export default function IncidentsPage() {
           </Field>
           <Field id="inc-breach" label={t('privacy.ui.incidents.type')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.breach ? 'yes' : 'no'} onChange={(e) => setForm({ ...form, breach: e.target.value === 'yes' })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.breach ? 'yes' : 'no'} onChange={(e) => setForm({ ...form, breach: e.target.value === 'yes' })}>
                 <option value="yes">{t('privacy.ui.incidents.breach')}</option>
                 <option value="no">{t('privacy.ui.incidents.notBreach')}</option>
               </select>

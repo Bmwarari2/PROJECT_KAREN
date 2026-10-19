@@ -126,7 +126,7 @@ export default function LegalPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <Field id="notice-template" label={t('privacy.ui.legal.templateLabel')}>
                 {(p) => (
-                  <select {...p} className={SELECT_CLASS} value={template} onChange={(e) => setTemplate(e.target.value as Notice['template'])}>
+                  <select {...p} className={`${SELECT_CLASS} w-full`} value={template} onChange={(e) => setTemplate(e.target.value as Notice['template'])}>
                     {notices.data!.map((n) => (
                       <option key={n.template} value={n.template}>
                         {t(`privacy.ui.legal.template.${n.template}`)}

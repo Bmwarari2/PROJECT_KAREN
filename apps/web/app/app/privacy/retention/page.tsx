@@ -149,7 +149,7 @@ export default function RetentionPage() {
         <CardTitle>{t('privacy.ui.retention.policiesTitle')}</CardTitle>
         <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.retention.policiesLead')}</p>
         <form
-          className="mt-4 grid gap-3 md:grid-cols-5 md:items-end"
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5 md:items-end"
           onSubmit={async (e) => {
             e.preventDefault();
             await run('policy', () => api('/v1/privacy/retention/policies', { method: 'PUT', json: { category: form.category, jurisdiction: form.jurisdiction, period: form.years ? `P${form.years}Y` : null, enabled: form.enabled } }), t('privacy.ui.retention.saved'));
@@ -158,7 +158,7 @@ export default function RetentionPage() {
         >
           <Field id="pol-category" label={t('privacy.ui.retention.category')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                 {view.data!.categories.map((c) => (
                   <option key={c.category} value={c.category}>
                     {t(`privacy.ui.category.${c.category}`)}
@@ -169,7 +169,7 @@ export default function RetentionPage() {
           </Field>
           <Field id="pol-jurisdiction" label={t('privacy.ui.retention.jurisdiction')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.jurisdiction} onChange={(e) => setForm({ ...form, jurisdiction: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.jurisdiction} onChange={(e) => setForm({ ...form, jurisdiction: e.target.value })}>
                 <option value="*">{t('privacy.ui.retention.everywhere')}</option>
                 {view.data!.jurisdictions.map((j) => (
                   <option key={j} value={j}>
@@ -231,7 +231,7 @@ export default function RetentionPage() {
         <CardTitle>{t('privacy.ui.holds.title')}</CardTitle>
         <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.holds.lead')}</p>
         <form
-          className="mt-4 grid gap-3 md:grid-cols-[1fr_2fr_auto] md:items-end"
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_2fr_auto] md:items-end"
           onSubmit={async (e) => {
             e.preventDefault();
             await run('hold', () => api('/v1/privacy/legal-holds', { method: 'POST', json: { category: hold.category || null, reason: hold.reason } }), t('privacy.ui.holds.created'));
@@ -241,7 +241,7 @@ export default function RetentionPage() {
         >
           <Field id="hold-category" label={t('privacy.ui.retention.category')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={hold.category} onChange={(e) => setHold({ ...hold, category: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={hold.category} onChange={(e) => setHold({ ...hold, category: e.target.value })}>
                 <option value="">{t('privacy.ui.holds.allCategories')}</option>
                 {view.data!.categories.map((c) => (
                   <option key={c.category} value={c.category}>
