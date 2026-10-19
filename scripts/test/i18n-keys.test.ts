@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import enGB from '../../packages/core/src/i18n/messages/en-GB.json';
+import { pluralBase } from '../../packages/core/src/i18n/format';
 
 /**
  * Every literal message key the code passes to `t('…')` exists in the en-GB catalogue (en-US falls back
@@ -11,9 +12,10 @@ import enGB from '../../packages/core/src/i18n/messages/en-GB.json';
  */
 const root = join(__dirname, '..', '..');
 
+/** Plural forms (`org.reports_one`, `org.reports_other`) are looked up by their base key (ADR-0151). */
 function flatten(o: unknown, prefix = '', out = new Set<string>()): Set<string> {
   if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) flatten(v, prefix ? `${prefix}.${k}` : k, out);
-  else out.add(prefix);
+  else out.add(pluralBase(prefix));
   return out;
 }
 

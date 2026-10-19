@@ -7,5 +7,5 @@ export async function serverContext() {
   const locale = pickLocale(c.get(LOCALE_COOKIE)?.value, h.get('accept-language'));
   const theme = pickTheme(c.get(THEME_COOKIE)?.value);
   const messages = messagesFor(locale);
-  return { locale, theme, t: (key: string, vars?: Record<string, string | number>) => translate(messages, key, vars) };
+  return { locale, theme, t: (key: string, vars?: Record<string, string | number>) => translate(messages, key, vars, locale) };
 }

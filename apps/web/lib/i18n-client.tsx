@@ -18,8 +18,8 @@ export function I18nProvider({ locale, messages, children }: I18nValue & { child
 }
 
 export function useT() {
-  const { messages } = React.useContext(Ctx);
-  return React.useCallback((key: string, vars?: Record<string, string | number>) => translate(messages, key, vars), [messages]);
+  const { messages, locale } = React.useContext(Ctx);
+  return React.useCallback((key: string, vars?: Record<string, string | number>) => translate(messages, key, vars, locale), [messages, locale]);
 }
 
 export function useLocale() {

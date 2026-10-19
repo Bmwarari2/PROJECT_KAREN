@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import ts from 'typescript';
+import { pluralBase } from '../../packages/core/src/i18n/format';
 
 /**
  * Static analysis of which message keys each web route needs on the client (ADR-0150).
@@ -37,9 +38,10 @@ const SPECIAL = ['layout.tsx', 'template.tsx', 'loading.tsx', 'error.tsx', 'not-
 const PERMISSION_CALLS = new Set(['has', 'hasPermission', 'can']);
 const toPosix = (p: string) => p.split(sep).join('/');
 
+/** Every message key, with plural forms (`org.reports_one`, `org.reports_other`) counted as their base key (`org.reports`). */
 export function flattenKeys(o: unknown, prefix = '', out = new Set<string>()): Set<string> {
   if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) flattenKeys(v, prefix ? `${prefix}.${k}` : k, out);
-  else out.add(prefix);
+  else out.add(pluralBase(prefix));
   return out;
 }
 

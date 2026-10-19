@@ -7,6 +7,7 @@ export const DEFAULT_LOCALE: Locale = 'en-GB';
 // The catalogues live in their own module so client bundles that only format dates and money
 // never include them (the package is side-effect free).
 export { CATALOGUES, flatten, t, type Messages } from './catalogues';
+export { formatMessage, interpolate, lookupMessage, pluralBase, PLURAL_CATEGORIES, type MessageVars } from './format';
 
 export function isLocale(v: unknown): v is Locale {
   return typeof v === 'string' && (LOCALES as readonly string[]).includes(v);
