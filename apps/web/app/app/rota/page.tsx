@@ -218,7 +218,7 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
     setBusy(true);
     try {
       const r = await api<{ published: number; notified: number }>('/v1/rota/publish', { method: 'POST', json: { from: days[0], to: days[6], ...(locationId ? { locationId } : {}) } });
-      toast({ title: t('rota.publishedToast', { count: r.published, notified: r.notified }), tone: 'success' });
+      toast({ title: t('rota.publishedToast', { shifts: t('rota.shiftsPublished', { count: r.published }), people: t('rota.peopleNotified', { count: r.notified }) }), tone: 'success' });
       reset();
     } catch (err) {
       toast({ title: errorText(err, t('common.error')), tone: 'danger' });
@@ -274,7 +274,7 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
           {(p) => <Input {...p} type="search" value={q} onChange={(e) => setQ(e.target.value)} />}
         </Field>
         <span className="text-footnote text-text-secondary sm:mr-auto" aria-live="polite">
-          {total === null ? t('common.loading') : t('rota.peopleCount', { count: formatNumber(total, locale) })}
+          {total === null ? t('common.loading') : t('rota.peopleCount', { n: formatNumber(total, locale), count: total })}
         </span>
         {canEdit ? (
           <div className="flex flex-wrap gap-2">

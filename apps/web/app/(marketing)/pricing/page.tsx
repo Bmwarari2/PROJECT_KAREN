@@ -39,7 +39,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
     <>
       <Section tone="bg" className="pt-16 md:pt-24" labelledBy="pricing-title">
         <div className="flex flex-col items-center text-center">
-          <Badge tone="accent">{t('pricing.trialBadge', { days: cfg.trial.days })}</Badge>
+          <Badge tone="accent">{t('pricing.trialBadge', { days: cfg.trial.days, count: cfg.trial.days })}</Badge>
           <h1 id="pricing-title" className="mt-5 max-w-[18ch] text-title-1 md:text-headline">
             {t('pricing.title')}
           </h1>
@@ -152,9 +152,9 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
         </h2>
         <dl className="mt-8 grid gap-6 md:grid-cols-2">
           {[
-            ['trial', { days: cfg.trial.days }],
-            ['monthly', { days: cfg.terms.monthly.cancellationNoticeDays }],
-            ['annual', { days: cfg.terms.annual.cancellationNoticeDays, percent: percent(cfg.discounts.terms.annual) }],
+            ['trial', { days: cfg.trial.days, count: cfg.trial.days }],
+            ['monthly', { days: cfg.terms.monthly.cancellationNoticeDays, count: cfg.terms.monthly.cancellationNoticeDays }],
+            ['annual', { days: cfg.terms.annual.cancellationNoticeDays, count: cfg.terms.annual.cancellationNoticeDays, percent: percent(cfg.discounts.terms.annual) }],
             ['changes', {}],
             ['tax', {}],
             ['currency', {}],

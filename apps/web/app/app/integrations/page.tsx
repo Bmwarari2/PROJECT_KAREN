@@ -175,7 +175,7 @@ function ProviderCard({ c, canManage, onChange }: { c: Connection; canManage: bo
             <ul className="mt-2 flex flex-col gap-1 text-callout">
               {rules.data.map((r) => (
                 <li key={r.id}>
-                  <span className="font-semibold">{r.name}</span> <span className="text-text-secondary">{t('integrations.ruleSummary', { licences: r.licences.length, groups: r.groups.length })}</span>
+                  <span className="font-semibold">{r.name}</span> <span className="text-text-secondary">{t('integrations.ruleSummary', { licences: t('integrations.ruleLicences', { count: r.licences.length }), groups: t('integrations.ruleGroups', { count: r.groups.length }) })}</span>
                 </li>
               ))}
             </ul>

@@ -72,7 +72,7 @@ export default async function TrustPage() {
               <Card size="marketing" className="h-full bg-surface shadow-none">
                 <span className="text-accent">{c.icon}</span>
                 <h3 className="mt-4 text-title-3">{t(`trust.security.${c.key}.title`)}</h3>
-                <p className="mt-2 text-callout text-text-secondary">{t(`trust.security.${c.key}.body`, { days: LEGAL.backupRetentionDays.prod })}</p>
+                <p className="mt-2 text-callout text-text-secondary">{t(`trust.security.${c.key}.body`, { days: LEGAL.backupRetentionDays.prod, count: LEGAL.backupRetentionDays.prod })}</p>
               </Card>
             </li>
           ))}
@@ -111,7 +111,7 @@ export default async function TrustPage() {
           <div className="grid gap-4">
             <Card size="marketing" className="bg-surface shadow-none">
               <h3 className="text-title-3">{t('trust.links.subprocessors.title')}</h3>
-              <p className="mt-2 text-callout text-text-secondary">{t('trust.links.subprocessors.body', { days: LEGAL.subprocessorNoticeDays })}</p>
+              <p className="mt-2 text-callout text-text-secondary">{t('trust.links.subprocessors.body', { days: LEGAL.subprocessorNoticeDays, count: LEGAL.subprocessorNoticeDays })}</p>
               <Link href="/trust/subprocessors" className="mt-3 inline-flex items-center gap-1 text-callout font-semibold">
                 {t('trust.links.subprocessors.cta')}
                 <ArrowRight aria-hidden className="h-4 w-4 stroke-[1.5]" />

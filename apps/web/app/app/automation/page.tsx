@@ -39,7 +39,7 @@ export default function AutomationPage() {
 
   async function dryRun(id: string) {
     const r = await api<{ matched: boolean; candidates: number; actions: unknown[] }>(`/v1/automation/rules/${id}/dry-run`, { method: 'POST', json: {} });
-    setDry((d) => ({ ...d, [id]: t('automation.dryResult', { candidates: r.candidates, actions: r.actions.length }) }));
+    setDry((d) => ({ ...d, [id]: t('automation.dryResult', { people: t('automation.dryPeople', { count: r.candidates }), actions: t('automation.dryActions', { count: r.actions.length }) }) }));
   }
 
   return (

@@ -68,7 +68,7 @@ export default function PayTransparencyPage() {
               {e.transposition.law ? <p className="text-callout">{e.transposition.law}</p> : null}
               {e.transposition.inForceFrom ? <p className="text-footnote text-text-secondary">{t('compliance.pt.inForce', { date: formatDate(e.transposition.inForceFrom, locale) })}</p> : null}
               <SourceLink source={e.transposition.source} verifiedOn={e.transposition.verifiedOn} />
-              <p className="text-callout">{i.obligation.reportingRequired && i.obligation.firstReportBy ? t('compliance.pt.required', { date: formatDate(i.obligation.firstReportBy, locale), years: i.obligation.frequencyYears ?? 1 }) : t('compliance.pt.notRequired', { workers: i.population.workers })}</p>
+              <p className="text-callout">{i.obligation.reportingRequired && i.obligation.firstReportBy ? t('compliance.pt.required', { date: formatDate(i.obligation.firstReportBy, locale), years: i.obligation.frequencyYears ?? 1, count: i.obligation.frequencyYears ?? 1 }) : t('compliance.pt.notRequired', { workers: i.population.workers, count: i.population.workers })}</p>
               <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 {(
                   [

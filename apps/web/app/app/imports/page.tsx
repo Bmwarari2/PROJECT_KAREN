@@ -88,7 +88,7 @@ export default function ImportsPage() {
       </Card>
       {up ? (
         <Card className="flex flex-col gap-3">
-          <CardTitle>{t('imports.step2', { rows: up.rowCount })}</CardTitle>
+          <CardTitle>{t('imports.step2', { rows: up.rowCount, count: up.rowCount })}</CardTitle>
           <div className="grid gap-2 sm:grid-cols-2">
             {up.headers.map((h) => (
               <label key={h} className="flex items-center gap-2 text-callout">
@@ -114,7 +114,7 @@ export default function ImportsPage() {
       {preview ? (
         <Card className="flex flex-col gap-3">
           <CardTitle>{t('imports.step3')}</CardTitle>
-          <p className="text-callout">{t('imports.summary', { creates: preview.creates, updates: preview.updates, errors: preview.errors.length })}</p>
+          <p className="text-callout">{t('imports.summary', { creates: preview.creates, updates: preview.updates, problems: t('imports.problems', { count: preview.errors.length }) })}</p>
           {preview.errors.length ? (
             <Table dense>
               <THead>
@@ -146,7 +146,7 @@ export default function ImportsPage() {
           {job ? (
             <div role="status" className="flex flex-col gap-2">
               <progress className="h-2 w-full accent-[var(--color-accent)]" value={job.done} max={job.total ?? undefined} />
-              <p className="text-footnote text-text-secondary">{t('imports.progress', { done: job.done, total: job.total ?? '…', status: t(`imports.status.${job.status}`) })}</p>
+              <p className="text-footnote text-text-secondary">{t('imports.progress', { done: job.done, total: job.total ?? '…', count: job.total ?? '…', status: t(`imports.status.${job.status}`) })}</p>
               {job.errorUrl ? (
                 <a href={job.errorUrl} className="text-callout">
                   {t('imports.errorReport')}

@@ -948,12 +948,12 @@ registerJob('privacy.reminders', async (ctx) => {
       const left = daysBetween(date, due);
       const recipients = [...new Set([...admins, ...(r.created_by ? [r.created_by] : [])])];
       if (left < 0) sent += (await notify(tx, { userIds: recipients, kind: 'privacy.dsr', titleKey: 'notify.dsrOverdue', params: { date: due }, link: `/app/privacy?request=${r.id}`, dedupeKey: `dsr:${r.id}:overdue:${due}` })).length;
-      else if (LEGAL.dsrReminderDaysBefore.includes(left)) sent += (await notify(tx, { userIds: recipients, kind: 'privacy.dsr', titleKey: 'notify.dsrDue', params: { days: left, date: due }, link: `/app/privacy?request=${r.id}`, dedupeKey: `dsr:${r.id}:${due}:${left}` })).length;
+      else if (LEGAL.dsrReminderDaysBefore.includes(left)) sent += (await notify(tx, { userIds: recipients, kind: 'privacy.dsr', titleKey: 'notify.dsrDue', params: { days: left, count: left, date: due }, link: `/app/privacy?request=${r.id}`, dedupeKey: `dsr:${r.id}:${due}:${left}` })).length;
     }
     const closure = await tx.maybe<{ id: string; purge_after: string }>(`SELECT id, purge_after FROM app.account_closures WHERE status = 'scheduled'`);
     if (closure) {
       const left = daysBetween(date, instantToDate(closure.purge_after, 'UTC'));
-      if (left === 7 || left === 1) sent += (await notify(tx, { userIds: admins, kind: 'privacy.closure', titleKey: 'notify.closureReminder', params: { days: left }, link: '/app/privacy/exports', dedupeKey: `closure:${closure.id}:${left}` })).length;
+      if (left === 7 || left === 1) sent += (await notify(tx, { userIds: admins, kind: 'privacy.closure', titleKey: 'notify.closureReminder', params: { days: left, count: left }, link: '/app/privacy/exports', dedupeKey: `closure:${closure.id}:${left}` })).length;
     }
     const region = await homeRegion(tx);
     const current = TRUST.dpa[templateForRegion(region)].version;
@@ -978,7 +978,7 @@ registerJob('privacy.incident_reminders', async (ctx) => {
         const within = LEGAL.incidentReminderHoursBefore.filter((h) => hoursLeft <= h);
         const threshold = hoursLeft < 0 ? 'overdue' : within.length ? Math.min(...within) : undefined;
         if (threshold === undefined) continue;
-        sent += (await notify(tx, { userIds: admins, kind: 'privacy.incident', titleKey: threshold === 'overdue' ? 'notify.incidentOverdue' : 'notify.incidentDeadline', params: { title: r.title, jurisdiction: d.jurisdiction, hours: Math.max(0, hoursLeft) }, link: '/app/privacy/incidents', dedupeKey: `incident:${r.id}:${d.jurisdiction}:${d.audience}:${threshold}` })).length;
+        sent += (await notify(tx, { userIds: admins, kind: 'privacy.incident', titleKey: threshold === 'overdue' ? 'notify.incidentOverdue' : 'notify.incidentDeadline', params: { title: r.title, jurisdiction: d.jurisdiction, hours: Math.max(0, hoursLeft), count: Math.max(0, hoursLeft) }, link: '/app/privacy/incidents', dedupeKey: `incident:${r.id}:${d.jurisdiction}:${d.audience}:${threshold}` })).length;
       }
     }
     return { at, sent };

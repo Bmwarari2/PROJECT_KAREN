@@ -489,7 +489,7 @@ registerJob('documents.expiry_reminders', async (ctx) => {
       for (const d of docs) {
         const hr = await tx.query<{ user_id: string }>(`SELECT DISTINCT a.user_id FROM app.role_assignments a JOIN app.roles r ON r.tenant_id = a.tenant_id AND r.id = a.role_id WHERE r.key IN ('hr_admin', 'owner')`);
         const owner = await userForEmployee(tx, d.employee_id);
-        sent += (await notify(tx, { userIds: [...new Set([...hr.map((h) => h.user_id), ...(owner ? [owner] : [])])], kind: 'document.expiring', titleKey: days === 0 ? 'notify.documentExpired' : 'notify.documentExpiring', params: { title: d.title, days }, link: `/app/documents`, dedupeKey: `expiry:${d.id}:${days}` })).length;
+        sent += (await notify(tx, { userIds: [...new Set([...hr.map((h) => h.user_id), ...(owner ? [owner] : [])])], kind: 'document.expiring', titleKey: days === 0 ? 'notify.documentExpired' : 'notify.documentExpiring', params: { title: d.title, days, count: days }, link: `/app/documents`, dedupeKey: `expiry:${d.id}:${days}` })).length;
       }
     }
     return { date, sent };

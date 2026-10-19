@@ -185,7 +185,7 @@ export default function MatrixPage() {
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>{r.expiresOn ? `${formatDate(r.expiresOn, locale)}${r.daysLeft !== null && r.daysLeft >= 0 ? ` · ${t('compliance.matrix.daysLeft', { days: r.daysLeft })}` : ''}` : '—'}</TD>
+                  <TD>{r.expiresOn ? `${formatDate(r.expiresOn, locale)}${r.daysLeft !== null && r.daysLeft >= 0 ? ` · ${t('compliance.matrix.daysLeft', { days: r.daysLeft, count: r.daysLeft })}` : ''}` : '—'}</TD>
                   <TD className="text-right">
                     <Button size="sm" variant="secondary" onClick={() => { setRecForm({ issuedOn: '', expiresOn: '', reference: '' }); setRecording(r); }} aria-label={t('compliance.matrix.recordFor', { requirement: r.requirementName, name: r.employeeName })}>
                       {t('compliance.matrix.record')}
@@ -206,7 +206,7 @@ export default function MatrixPage() {
                 <span className="font-semibold">{r.name}</span>
                 <Badge>{t(`compliance.kind.${r.kind}`)}</Badge>
                 <span className="text-text-secondary">{r.appliesTo.jobTitles?.length ? r.appliesTo.jobTitles.join(', ') : t('compliance.matrix.everyone')}</span>
-                {r.validityMonths ? <span className="text-text-secondary">{t('compliance.matrix.validFor', { months: r.validityMonths })}</span> : null}
+                {r.validityMonths ? <span className="text-text-secondary">{t('compliance.matrix.validFor', { months: r.validityMonths, count: r.validityMonths })}</span> : null}
               </li>
             ))}
           </ul>
