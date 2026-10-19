@@ -447,7 +447,7 @@ export async function rotaRoutes(app: FastifyInstance) {
         for (const r of rows) if (r.employee_id) (byEmp.get(r.employee_id) ?? byEmp.set(r.employee_id, []).get(r.employee_id)!).push(r.id);
         // One notification per employee per publish; the key covers exactly the shifts published, so a retry never duplicates.
         const digest = (e: string) => createHash('sha256').update(byEmp.get(e)!.sort().join(',')).digest('hex').slice(0, 24);
-        const notified = await notifyEmployees(tx, [...byEmp.keys()], { kind: 'rota.published', titleKey: 'notify.rotaPublished', params: (e) => ({ from: b.from, to: b.to, shifts: byEmp.get(e)!.length }), link: '/app/rota', dedupe: (e) => `rota-published:${e}:${digest(e)}` });
+        const notified = await notifyEmployees(tx, [...byEmp.keys()], { kind: 'rota.published', titleKey: 'notify.rotaPublished', params: (e) => ({ from: b.from, to: b.to, shifts: byEmp.get(e)!.length, count: byEmp.get(e)!.length }), link: '/app/rota', dedupe: (e) => `rota-published:${e}:${digest(e)}` });
         await app.audit(tx, req, { action: 'rota.published', targetType: 'rota', diff: { from: b.from, to: b.to, published: rows.length, employees: byEmp.size, locationId: b.locationId ?? null, departmentId: b.departmentId ?? null } });
         return { published: rows.length, notified };
       });

@@ -19,8 +19,10 @@ interface DayDraft {
   date: string;
   name: string;
 }
-let nextKey = 1;
-const newDay = (): DayDraft => ({ key: nextKey++, date: '', name: '' });
+// Row keys (and the field ids built from them) come from a counter per form, not from module state:
+// a module counter keeps counting across server renders, so the server's ids would not match the client's
+// and React keeps the server's id attributes on hydration, which gave two rows the same id.
+const newDay = (key: number): DayDraft => ({ key, date: '', name: '' });
 
 function AddCalendar({ onCreated }: { onCreated: () => void }) {
   const t = useT();
@@ -30,7 +32,8 @@ function AddCalendar({ onCreated }: { onCreated: () => void }) {
   const [name, setName] = React.useState('');
   const [entityId, setEntityId] = React.useState('');
   const [locationId, setLocationId] = React.useState('');
-  const [days, setDays] = React.useState<DayDraft[]>(() => [newDay()]);
+  const nextKey = React.useRef(1);
+  const [days, setDays] = React.useState<DayDraft[]>(() => [newDay(0)]);
   const setDay = (key: number, patch: Partial<DayDraft>) => setDays((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)));
 
   async function submit(e: React.FormEvent) {
@@ -38,7 +41,7 @@ function AddCalendar({ onCreated }: { onCreated: () => void }) {
     const body = { name: name.trim(), entityId: entityId || null, locationId: locationId || null, days: days.filter((x) => x.date).map((x) => ({ date: x.date, name: x.name.trim() })) };
     if (await action.run(() => api('/v1/settings/company-calendars', { method: 'POST', json: body }), t('admin.calendars.created'))) {
       setName('');
-      setDays([newDay()]);
+      setDays([newDay(nextKey.current++)]);
       onCreated();
     }
   }
@@ -93,7 +96,7 @@ function AddCalendar({ onCreated }: { onCreated: () => void }) {
             ))}
           </ol>
           {days.length < 366 ? (
-            <Button type="button" variant="secondary" className="self-start" onClick={() => setDays((xs) => [...xs, newDay()])}>
+            <Button type="button" variant="secondary" className="self-start" onClick={() => setDays((xs) => [...xs, newDay(nextKey.current++)])}>
               <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
               {t('admin.calendars.addDay')}
             </Button>

@@ -1,6 +1,7 @@
 import enGB from './messages/en-GB.json' with { type: 'json' };
 import enUS from './messages/en-US.json' with { type: 'json' };
 import type { Locale } from './index';
+import { formatMessage, type MessageVars } from './format';
 
 export type Messages = { [key: string]: string | Messages };
 
@@ -31,14 +32,12 @@ export function flatten(messages: Messages, prefix = ''): Record<string, string>
 
 const flatCache = new Map<Locale, Record<string, string>>();
 
-/** Server-side translation with {placeholder} interpolation. */
-export function t(locale: Locale, key: string, vars: Record<string, string | number> = {}): string {
+/** Server-side translation with {placeholder} interpolation and plural forms (`count`, ADR-0151). */
+export function t(locale: Locale, key: string, vars: MessageVars = {}): string {
   let flat = flatCache.get(locale);
   if (!flat) {
     flat = flatten(CATALOGUES[locale]);
     flatCache.set(locale, flat);
   }
-  const template = flat[key];
-  if (template === undefined) return key;
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? `{${name}}`));
+  return formatMessage(flat, key, vars, locale);
 }

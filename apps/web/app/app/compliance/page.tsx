@@ -125,7 +125,7 @@ export default function ComplianceDashboard() {
           <ul className="mt-3 flex flex-col gap-3 text-callout">
             {x.reporting.genderPayGap ? (
               <li>
-                <Link href="/app/compliance/reports/gender-pay-gap">{t('compliance.dashboard.gpg', { headcount: x.reporting.genderPayGap.headcount, threshold: x.reporting.genderPayGap.threshold, date: formatDate(x.reporting.genderPayGap.snapshotDate, locale) })}</Link>
+                <Link href="/app/compliance/reports/gender-pay-gap">{t('compliance.dashboard.gpg', { headcount: x.reporting.genderPayGap.headcount, count: x.reporting.genderPayGap.headcount, threshold: x.reporting.genderPayGap.threshold, date: formatDate(x.reporting.genderPayGap.snapshotDate, locale) })}</Link>
                 <p className="text-footnote text-text-secondary">{x.reporting.genderPayGap.required ? t('compliance.dashboard.reportBy', { date: formatDate(x.reporting.genderPayGap.deadline, locale) }) : t('compliance.dashboard.belowThreshold')}</p>
               </li>
             ) : null}
@@ -138,7 +138,7 @@ export default function ComplianceDashboard() {
             {x.reporting.payTransparency.map((p) => (
               <li key={p.entityId}>
                 <Link href="/app/compliance/reports/pay-transparency">{t('compliance.dashboard.pt', { entity: p.entityName, country: p.country, status: t(`compliance.ptStatus.${p.status}`) })}</Link>
-                <p className="text-footnote text-text-secondary">{p.reportingRequired && p.firstReportBy ? t('compliance.dashboard.reportBy', { date: formatDate(p.firstReportBy, locale) }) : t('compliance.dashboard.ptBelow', { workers: p.workers })}</p>
+                <p className="text-footnote text-text-secondary">{p.reportingRequired && p.firstReportBy ? t('compliance.dashboard.reportBy', { date: formatDate(p.firstReportBy, locale) }) : t('compliance.dashboard.ptBelow', { workers: p.workers, count: p.workers })}</p>
               </li>
             ))}
             {!x.reporting.genderPayGap && !x.reporting.eeo1 && !x.reporting.payTransparency.length ? <li className="text-text-secondary">{t('compliance.dashboard.noReporting')}</li> : null}
@@ -160,11 +160,11 @@ export default function ComplianceDashboard() {
                   <span className="ml-auto text-footnote text-text-secondary">{t('compliance.coverage.employees', { count: p.employees })}</span>
                 </li>
               ))}
-              {cov.data.us.fmla ? <li>{cov.data.us.fmla.coveredEmployer ? t('compliance.coverage.fmlaCovered', { cases: cov.data.us.fmla.openCases }) : t('compliance.coverage.fmlaNotCovered', { count: cov.data.us.fmla.usEmployees, min: cov.data.us.fmla.minEmployees })}</li> : null}
+              {cov.data.us.fmla ? <li>{cov.data.us.fmla.coveredEmployer ? t('compliance.coverage.fmlaCovered', { cases: cov.data.us.fmla.openCases, count: cov.data.us.fmla.openCases }) : t('compliance.coverage.fmlaNotCovered', { count: cov.data.us.fmla.usEmployees, min: cov.data.us.fmla.minEmployees })}</li> : null}
               {cov.data.eu.map((c) => (
                 <li key={c.country} className="flex flex-wrap items-center gap-2">
                   <Badge>{c.country}</Badge>
-                  <span>{t('compliance.coverage.eu', { modelled: c.rules.filter((r) => r.modelled).length, total: c.rules.length, holidays: c.publicHolidays })}</span>
+                  <span>{t('compliance.coverage.eu', { rules: t('compliance.coverage.euRules', { modelled: c.rules.filter((r) => r.modelled).length, count: c.rules.length }), holidays: t('compliance.coverage.euHolidays', { count: c.publicHolidays }) })}</span>
                   <span className="ml-auto text-footnote text-text-secondary">{t('compliance.coverage.employees', { count: c.employees })}</span>
                 </li>
               ))}
@@ -190,7 +190,7 @@ export default function ComplianceDashboard() {
           <Landmark aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
           <Link href="/app/compliance/law-changes">{t('compliance.dashboard.lawChangesTitle')}</Link>
         </CardTitle>
-        <p className="mt-2 text-callout text-text-secondary">{t('compliance.dashboard.lawChanges', { open: x.lawChanges.unacknowledged, total: x.lawChanges.relevant })}</p>
+        <p className="mt-2 text-callout text-text-secondary">{t('compliance.dashboard.lawChanges', { open: x.lawChanges.unacknowledged, total: x.lawChanges.relevant, count: x.lawChanges.relevant })}</p>
       </Card>
     </div>
   );

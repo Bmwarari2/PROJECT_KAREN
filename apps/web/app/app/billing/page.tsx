@@ -140,7 +140,7 @@ export default function BillingPage() {
       {b.contract ? (
         <Card>
           <CardTitle>{t('billing.contractTitle')}</CardTitle>
-          <p className="mt-2 text-callout">{t('billing.contractBody', { reference: b.contract.reference, plan: planName(b.contract.planId), start: formatDate(b.contract.startsOn, locale), end: formatDate(b.contract.endsOn, locale), days: b.contract.paymentTermsDays })}</p>
+          <p className="mt-2 text-callout">{t('billing.contractBody', { reference: b.contract.reference, plan: planName(b.contract.planId), start: formatDate(b.contract.startsOn, locale), end: formatDate(b.contract.endsOn, locale), days: b.contract.paymentTermsDays, count: b.contract.paymentTermsDays })}</p>
         </Card>
       ) : null}
 
@@ -193,7 +193,7 @@ export default function BillingPage() {
               ) : null}
             </div>
           ) : null}
-          {a.collection === 'send_invoice' ? <p className="mt-3 text-footnote text-text-secondary">{t('billing.invoiceCollection', { days: a.paymentTermsDays ?? 0, po: a.poNumber ?? '—' })}</p> : null}
+          {a.collection === 'send_invoice' ? <p className="mt-3 text-footnote text-text-secondary">{t('billing.invoiceCollection', { days: a.paymentTermsDays ?? 0, count: a.paymentTermsDays ?? 0, po: a.poNumber ?? '—' })}</p> : null}
           <BillingDetails account={a} onSaved={() => billing.reload()} />
         </Card>
       ))}
@@ -201,7 +201,7 @@ export default function BillingPage() {
       {b.selfServe ? (
         <Card>
           <CardTitle>{live ? t('billing.changeTitle') : t('billing.chooseTitle')}</CardTitle>
-          <p className="mt-1 text-callout text-text-secondary">{live ? t('billing.changeRules') : t('billing.chooseLead', { days: plans.data.trialDays })}</p>
+          <p className="mt-1 text-callout text-text-secondary">{live ? t('billing.changeRules') : t('billing.chooseLead', { days: plans.data.trialDays, count: plans.data.trialDays })}</p>
           <form
             className="mt-4 grid gap-4 md:grid-cols-4"
             onSubmit={(e) => {
