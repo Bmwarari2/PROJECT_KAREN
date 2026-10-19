@@ -214,7 +214,7 @@ export default function UserAccessPage() {
               </fieldset>
             ) : null}
             {chosen?.isAdmin && !user.hasMfa ? (
-              <p role="status" className="max-w-[680px] text-callout text-warning">
+              <p role="status" className="max-w-[var(--prose-width)] text-callout text-warning">
                 {t('access.users.adminNoMfa')}
               </p>
             ) : null}

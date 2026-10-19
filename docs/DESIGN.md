@@ -25,7 +25,8 @@ Semantic tokens only; components never use raw hex values.
 | `--color-text` | `#1d1d1f` | `#f5f5f7` | Primary text |
 | `--color-text-secondary` | `#5f5f66` | `#a8a8ae` | Secondary text, captions |
 | `--color-text-inverse` | `#f5f5f7` | `#111113` | Text on inverse surfaces |
-| `--color-border` | `#d2d2d7` | `#3a3a3f` | Hairlines, inputs |
+| `--color-border` | `#d2d2d7` | `#3a3a3f` | Hairlines, dividers |
+| `--color-border-strong` | `#8e8e93` | `#6e6e73` | Borders of inputs, selects and other controls (≥ 3:1 against `bg` and `surface-raised`) |
 | `--color-accent` | `#0b6b63` | `#5fd3c6` | The single accent: links, primary buttons, focus ring |
 | `--color-accent-hover` | `#085650` | `#86e0d6` | Hover or pressed accent |
 | `--color-on-accent` | `#ffffff` | `#04201d` | Text on accent backgrounds |
@@ -63,7 +64,7 @@ Reading width is at most 680px for prose. Never use text smaller than 13px.
 - **Breakpoints:** `sm` 640, `md` 768, `lg` 1024, `xl` 1280.
 - **Radii:** `--radius-sm` 8 (inputs, small chips) · `--radius-md` 12 (buttons in dense UI, menus) · `--radius-lg` 18 (cards in the app) · `--radius-xl` 28 (large marketing cards) · `--radius-pill` 9999 (primary buttons, badges).
 - **Shadows (subtle):** `--shadow-sm` `0 1px 2px rgb(0 0 0 / .06)`; `--shadow-md` `0 4px 16px rgb(0 0 0 / .08)`; `--shadow-lg` `0 12px 40px rgb(0 0 0 / .12)`. Dark mode uses a 1px `--color-border` outline instead of heavier shadows.
-- **App chrome:** a sidebar 248px wide that collapses to a sheet below `lg`. The top bar is 56px. Marketing nav is 48px, sticky, with a translucent `--color-bg` at 72% opacity and `backdrop-filter: saturate(180%) blur(20px)`. Where `backdrop-filter` is unsupported it falls back to an opaque background.
+- **App chrome:** a sidebar 248px wide that collapses to a sheet below `lg`. On desktop it is sticky at full viewport height and scrolls on its own, so the page height never depends on how many navigation entries a user has. The top bar is 56px and sticky; the page keeps `scroll-padding-top` of top bar + 8px so focused or linked content is never hidden under it (WCAG 2.4.11). Marketing nav is 48px, sticky, with a translucent `--color-bg` at 72% opacity and `backdrop-filter: saturate(180%) blur(20px)`. Where `backdrop-filter` is unsupported it falls back to an opaque background.
 
 ## 5. Motion
 

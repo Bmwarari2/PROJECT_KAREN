@@ -44,7 +44,7 @@ export default function UsersPage() {
           {t('app.settings.rolesLink')}
         </Link>
       </div>
-      <p className="max-w-[680px] text-callout text-text-secondary">{t('access.users.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.users.intro')}</p>
       <div className="relative max-w-md">
         <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 stroke-[1.5] text-text-secondary" />
         <Input type="search" aria-label={t('access.users.search')} placeholder={t('access.users.search')} value={q} onChange={(e) => setQ(e.target.value)} className="h-10 pl-9" />

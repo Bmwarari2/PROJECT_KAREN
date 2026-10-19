@@ -50,7 +50,7 @@ export default async function Home() {
       <Section tone="inverse" labelledBy="residency-title">
         <div className="grid gap-12 md:grid-cols-2 md:items-center">
           <div>
-            <Globe2 aria-hidden className="h-10 w-10 stroke-[1.25]" />
+            <Globe2 aria-hidden className="h-10 w-10 stroke-[1.5]" />
             <h2 id="residency-title" className="mt-6 text-headline">
               {t('marketing.residency.title')}
             </h2>

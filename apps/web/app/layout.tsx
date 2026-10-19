@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { ToastProvider } from '@thapsus/ui';
+import { colors } from '@thapsus/ui/tokens';
 import { I18nProvider } from '@/lib/i18n-client';
 import { serverContext } from '@/lib/server';
 import { ServiceWorkerRegister } from '@/components/client';
@@ -21,8 +22,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0b' },
+    { media: '(prefers-color-scheme: light)', color: colors.bg.light },
+    { media: '(prefers-color-scheme: dark)', color: colors.bg.dark },
   ],
 };
 

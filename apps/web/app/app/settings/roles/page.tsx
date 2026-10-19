@@ -29,7 +29,7 @@ export default function RolesPage() {
           </Link>
         ) : null}
       </div>
-      <p className="max-w-[680px] text-callout text-text-secondary">{t('access.roles.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.roles.intro')}</p>
       {!data ? (
         <Skeleton className="h-64 w-full" />
       ) : data.length === 0 ? (

@@ -160,7 +160,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <Link href="/app/settings/roles" className="text-callout">
         {t('access.roles.back')}
       </Link>
-      {role?.builtIn ? <p className="max-w-[680px] text-callout text-text-secondary">{t('access.roles.readOnly')}</p> : null}
+      {role?.builtIn ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.roles.readOnly')}</p> : null}
 
       <Card className="flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2">

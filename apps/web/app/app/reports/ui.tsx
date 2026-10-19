@@ -55,11 +55,11 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
             const text = label(r);
             return (
               <g key={i}>
-                <text x={labelW - 8} y={yy + 17} textAnchor="end" className="fill-text-secondary text-[13px]">
+                <text x={labelW - 8} y={yy + 17} textAnchor="end" className="fill-text-secondary text-footnote">
                   {text.length > 26 ? `${text.slice(0, 25)}…` : text}
                 </text>
                 <rect x={labelW} y={yy + 4} width={w} height={rowH - 10} rx={4} className="fill-accent" />
-                <text x={labelW + w + 6} y={yy + 17} className="fill-text text-[13px] tabular-nums">
+                <text x={labelW + w + 6} y={yy + 17} className="fill-text text-footnote tabular-nums">
                   {displayCell(t, locale, y, r[y.key] ?? null)}
                 </text>
               </g>
@@ -83,7 +83,7 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
         {[0, 0.5, 1].map((f) => (
           <g key={f}>
             <line x1={pad.l} x2={W - pad.r} y1={pad.t + (H - pad.t - pad.b) * (1 - f)} y2={pad.t + (H - pad.t - pad.b) * (1 - f)} className="stroke-border" strokeWidth={1} />
-            <text x={pad.l - 6} y={pad.t + (H - pad.t - pad.b) * (1 - f) + 4} textAnchor="end" className="fill-text-secondary text-[12px] tabular-nums">
+            <text x={pad.l - 6} y={pad.t + (H - pad.t - pad.b) * (1 - f) + 4} textAnchor="end" className="fill-text-secondary text-footnote tabular-nums">
               {numberFormatShort(max * f, locale)}
             </text>
           </g>
@@ -94,7 +94,7 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
           return <circle key={i} cx={cx} cy={cy} r={3.5} className="fill-accent" />;
         })}
         {[0, rows.length - 1].filter((i, k, a) => a.indexOf(i) === k).map((i) => (
-          <text key={i} x={pt(i, 0)[0]} y={H - 10} textAnchor={i === 0 ? 'start' : 'end'} className="fill-text-secondary text-[12px]">
+          <text key={i} x={pt(i, 0)[0]} y={H - 10} textAnchor={i === 0 ? 'start' : 'end'} className="fill-text-secondary text-footnote">
             {label(rows[i]!)}
           </text>
         ))}
