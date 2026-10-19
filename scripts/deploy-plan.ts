@@ -1,5 +1,5 @@
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '../packages/core/src/regions';
-import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, names, type EnvName } from '../infra/lib/config';
+import { dedicatedDatabasesFor, ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvConfig, type EnvName } from '../infra/lib/config';
 
 /**
  * Pure deployment planner used by scripts/deploy.mjs (and unit-tested). It turns
@@ -15,7 +15,8 @@ export type Step =
   | { kind: 'sync-internal-token'; from: string; fromSecret: string; to: string; toSecret: string }
   | { kind: 'ensure-vapid'; region: string; secretName: string }
   | { kind: 'ensure-mock-idp'; region: string; secretName: string }
-  | { kind: 'run-migrator'; stack: string; region: string }
+  /** Migrates one database of the cell: `shared` (the migrator task) or a dedicated database (its tools task). */
+  | { kind: 'run-migrator'; stack: string; region: string; database: string; taskDefinitionOutput: string }
   | { kind: 'restart-services'; stack: string; region: string }
   | { kind: 'health-check'; stack: string; region: string; insecureTls: boolean };
 
@@ -30,6 +31,8 @@ export interface PlanInput {
   parameters?: Partial<Record<'global' | `cell-${HomeRegion}`, Record<string, string>>>;
   /** Staging without a domain uses an imported self-signed certificate; health checks accept it explicitly. */
   selfSignedTls?: boolean;
+  /** The environment config (tests); default: infra/config/<env>.json. Supplies the dedicated databases. */
+  config?: EnvConfig;
 }
 
 export class PlanError extends Error {}
@@ -84,6 +87,13 @@ function planTarget(env: EnvName, t: Target, input: PlanInput): Step[] {
   ];
   // The mock IdP only ever exists outside production (for SSO smoke tests).
   if (env !== 'prod') steps.push({ kind: 'ensure-mock-idp', region, secretName: `thapsus-hr/${env}/mock-idp` });
-  steps.push({ kind: 'run-migrator', stack, region }, { kind: 'restart-services', stack, region }, { kind: 'health-check', stack, region, insecureTls: !!input.selfSignedTls });
+  // Every database of the cell is migrated before the services restart: the shared one, then each dedicated
+  // database (ADR-0068) through its tools task, so a tenant on a dedicated database never lags a release.
+  const cell = t.slice(5) as HomeRegion;
+  steps.push({ kind: 'run-migrator', stack, region, database: 'shared', taskDefinitionOutput: 'MigratorTaskDefinitionArn' });
+  for (const d of dedicatedDatabasesFor(input.config ?? loadConfig(env), cell)) {
+    steps.push({ kind: 'run-migrator', stack, region, database: d.key, taskDefinitionOutput: names.dedicatedOutputs(d.key).toolsTaskDefinitionArn });
+  }
+  steps.push({ kind: 'restart-services', stack, region }, { kind: 'health-check', stack, region, insecureTls: !!input.selfSignedTls });
   return steps;
 }
