@@ -23,7 +23,9 @@ describe('compliance message keys', () => {
       for (const m of s.matchAll(/['"`](notify\.[A-Za-z0-9_.]+)['"`]/g)) keys.add(m[1]!);
     }
     expect(keys.size).toBeGreaterThan(100);
-    const missing = [...keys].filter((k) => !(k in gb) || !(k in us));
+    // a plural family (ADR-0151) is used by its base key: compliance.matrix.daysLeft → daysLeft_one / daysLeft_other
+    const has = (flat: Record<string, string>, k: string) => k in flat || `${k}_other` in flat;
+    const missing = [...keys].filter((k) => !has(gb, k) || !has(us, k));
     expect(missing).toEqual([]);
   });
 

@@ -83,7 +83,7 @@ function PolicySummary({ p, typeName }: { p: Policy; typeName: (k: string) => st
     [t('admin.leave.accrual'), accrual],
     [t('admin.leave.yearStart'), t('admin.leave.yearStartText', { day: dd ?? 1, month: months[(mm ?? 1) - 1] ?? '' })],
     [t('admin.leave.waiting'), c.waitingDays ? formatUnit(c.waitingDays, 'day', locale) : t('common.none')],
-    [t('admin.leave.carryOver'), c.carryOver ? (c.carryOver.expiresAfterMonths ? t('admin.leave.carryOverExpires', { amount: formatUnit(c.carryOver.maxDays, 'day', locale), months: c.carryOver.expiresAfterMonths }) : t('admin.leave.carryOverText', { amount: formatUnit(c.carryOver.maxDays, 'day', locale) })) : t('common.none')],
+    [t('admin.leave.carryOver'), c.carryOver ? (c.carryOver.expiresAfterMonths ? t('admin.leave.carryOverExpires', { amount: formatUnit(c.carryOver.maxDays, 'day', locale), months: c.carryOver.expiresAfterMonths, count: c.carryOver.expiresAfterMonths }) : t('admin.leave.carryOverText', { amount: formatUnit(c.carryOver.maxDays, 'day', locale) })) : t('common.none')],
     [t('admin.leave.cap'), c.capDays !== undefined ? formatUnit(c.capDays, 'day', locale) : t('common.none')],
     [t('admin.leave.negative'), c.allowNegativeDays ? formatUnit(c.allowNegativeDays, 'day', locale) : t('common.none')],
     [t('admin.leave.options'), [c.proRata ? t('admin.leave.proRata') : null, c.includesPublicHolidays ? t('admin.leave.includesPublicHolidays') : null, t(`admin.leave.roundingText.${c.rounding}`)].filter(Boolean).join(' · ')],

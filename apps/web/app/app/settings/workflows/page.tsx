@@ -37,8 +37,10 @@ interface TaskDraft {
   due: string;
   reminder: string;
 }
-let nextKey = 1;
-const newTask = (): TaskDraft => ({ key: nextKey++, title: '', description: '', assignee: { type: 'manager', value: '' }, due: '0', reminder: '' });
+// Row keys (and the field ids built from them) come from a counter per form, not from module state:
+// a module counter keeps counting across server renders, so the server's ids would not match the client's
+// and React keeps the server's id attributes on hydration, which gave two rows the same id.
+const newTask = (key: number): TaskDraft => ({ key, title: '', description: '', assignee: { type: 'manager', value: '' }, due: '0', reminder: '' });
 
 function useDue() {
   const t = useT();
@@ -60,7 +62,8 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
   const [name, setName] = React.useState('');
   const [entityId, setEntityId] = React.useState('');
   const [autoStart, setAutoStart] = React.useState(true);
-  const [tasks, setTasks] = React.useState<TaskDraft[]>(() => [newTask()]);
+  const nextKey = React.useRef(1);
+  const [tasks, setTasks] = React.useState<TaskDraft[]>(() => [newTask(0)]);
   React.useEffect(() => heading.current?.focus(), []);
   const setTask = (key: number, patch: Partial<TaskDraft>) => setTasks((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)));
 
@@ -153,7 +156,7 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
           ))}
         </ol>
         {tasks.length < 100 ? (
-          <Button type="button" variant="secondary" className="self-start" onClick={() => setTasks((xs) => [...xs, newTask()])}>
+          <Button type="button" variant="secondary" className="self-start" onClick={() => setTasks((xs) => [...xs, newTask(nextKey.current++)])}>
             <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('admin.workflows.addTask')}
           </Button>

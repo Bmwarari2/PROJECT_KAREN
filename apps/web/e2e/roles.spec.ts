@@ -24,7 +24,7 @@ test.describe('roles and access', () => {
 
     // the owner creates the role in settings
     await page.goto('/app/settings');
-    await page.getByRole('link', { name: 'Roles and permissions' }).click();
+    await page.getByRole('link', { name: 'Roles and permissions', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Roles and permissions' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Company owner' })).toBeVisible();
     await expectAccessible(page);

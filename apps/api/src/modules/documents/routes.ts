@@ -4,7 +4,7 @@ import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
 import { formatDate, formatMoney, isLocale, t, type Locale } from '@thapsus/core/i18n';
 import { money } from '@thapsus/core';
-import { today } from '@thapsus/core/time';
+import { instantToDate } from '@thapsus/core/time';
 import { enqueueJob, type Tx } from '@thapsus/db';
 import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
@@ -484,15 +484,16 @@ registerJob('documents.expiry_reminders', async (ctx) => {
       for (const d of docs) {
         const hr = await tx.query<{ user_id: string }>(`SELECT DISTINCT a.user_id FROM app.role_assignments a JOIN app.roles r ON r.tenant_id = a.tenant_id AND r.id = a.role_id WHERE r.key IN ('hr_admin', 'owner')`);
         const owner = await userForEmployee(tx, d.employee_id);
-        sent += (await notify(tx, { userIds: [...new Set([...hr.map((h) => h.user_id), ...(owner ? [owner] : [])])], kind: 'document.expiring', titleKey: days === 0 ? 'notify.documentExpired' : 'notify.documentExpiring', params: { title: d.title, days }, link: `/app/documents`, dedupeKey: `expiry:${d.id}:${days}` })).length;
+        sent += (await notify(tx, { userIds: [...new Set([...hr.map((h) => h.user_id), ...(owner ? [owner] : [])])], kind: 'document.expiring', titleKey: days === 0 ? 'notify.documentExpired' : 'notify.documentExpiring', params: { title: d.title, days, count: days }, link: `/app/documents`, dedupeKey: `expiry:${d.id}:${days}` })).length;
       }
     }
     return { date, sent };
   });
 });
 
-periodic.push(async (tx, now) => {
-  const date = today('UTC');
-  void now;
+/** Enqueues the expiry-reminder sweep for the UTC date of the time the scheduler passes (never the real clock). */
+export async function enqueueExpiryReminders(tx: Tx, now: Date) {
+  const date = instantToDate(now.toISOString(), 'UTC');
   await enqueueJob(tx, 'documents.expiry_reminders', date, { date });
-});
+}
+periodic.push(enqueueExpiryReminders);

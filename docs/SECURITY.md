@@ -157,7 +157,7 @@ ASVS V15.1.1. Every pull request and `main` run `pnpm audit --audit-level high` 
 
 ## Threat model (STRIDE)
 
-Reviewed 2026-10-18. Re-review it whenever a new trust boundary, third party or data category is added, and after every post-incident review (`docs/runbooks/incident-response.md` §6).
+Reviewed 2026-10-18. Re-review it whenever a new trust boundary, third party or data category is added, and after every post-incident review (`docs/runbooks/incident-and-breach-response.md` §6).
 
 ### Assets
 
