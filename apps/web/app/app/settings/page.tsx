@@ -6,6 +6,7 @@ import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Table, TD, TH
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { hasPermission, useSession } from '../shell';
+import { PlatformSettingsLinks } from './platform-links';
 
 interface Domain {
   id: string;
@@ -67,6 +68,7 @@ export default function SettingsPage() {
           </>
         ) : null}
       </nav>
+      <PlatformSettingsLinks />
       {/* Workspace settings need settings.read; a role-management-only role sees just the links above. */}
       <Card hidden={!canSettings}>
         <CardTitle>{t('app.settings.domainsTitle')}</CardTitle>

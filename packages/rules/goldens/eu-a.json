@@ -712,6 +712,20 @@
         "maxAverageWeeklyHours": 48,
         "referencePeriodMaxMonths": 4
       }
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "reporting.pay_transparency",
+      "date": "2027-06-07",
+      "expectPath": {
+        "indicators.length": 7,
+        "indicators[6].id": "gender_pay_gap_by_category_of_workers",
+        "jointPayAssessment.minDifferencePercent": 5,
+        "jointPayAssessment.notRemediedWithinMonthsOfReporting": 6,
+        "payLevel": "gross_annual_pay_and_corresponding_gross_hourly_pay"
+      },
+      "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023L0970",
+      "notes": "Directive (EU) 2023/970 Art. 3(1), 9(1) and 10(1); derived from the same text as the pack."
     }
   ],
   "notes": "expect = full value equality; expectPath = dotted-path subset assertions (values copied from the cited official sources). EU working_time.time_recording before 2019-05-14 resolves to no rule (expect null). Holiday vectors list holiday dates (not substitute days); BG substitute days are in substituteNonWorkingDays. packGaps = official dates not yet representable in the pack (none at present).",

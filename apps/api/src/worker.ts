@@ -3,3 +3,4 @@ import './modules';
 
 export { jobHandlers, eventSubscribers, periodic, registerJob, subscribe } from './jobs/registry';
 export { depsFromEnv } from './deps';
+export { recordHeartbeat } from './modules/status/service';

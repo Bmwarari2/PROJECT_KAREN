@@ -18,5 +18,8 @@
     "@thapsus/api": "workspace:*",
     "@thapsus/core": "workspace:*",
     "@thapsus/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@thapsus/sdk": "workspace:*"
   }
 }

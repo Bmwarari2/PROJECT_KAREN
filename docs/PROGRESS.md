@@ -15,7 +15,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h] |
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
-| 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [ ] |
+| 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
 | 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [ ] |
 | 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [ ] |
 | 8 | Privacy and trust (6.9) | `phase-8-privacy` | [ ] |
@@ -231,27 +231,31 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 5 — Compliance centre content (rest of 6.4)
 
-- [ ] **5.1 UK compliance**
+- [x] **5.1 UK compliance**
   - Right-to-work checks with follow-up dates and retention period.
   - Holiday rules including irregular-hours and part-year accrual.
   - SSP rules wired to sickness records.
   - Probation and service-length alerts, including the six-month unfair dismissal qualifying period from 1 January 2027 under the Employment Rights Act 2025 (rule effective-dated and verified against legislation.gov.uk / gov.uk).
   - Gender pay gap data for employers with 250+ staff (snapshot date per sector, calculations with golden tests).
-- [ ] **5.2 US compliance**
+  - _Evidence:_ `apps/api/test/compliance.int.test.ts` ("5.1 UK right-to-work checks": methods, document lists, follow-up and retention from the GB pack, evidence only in the vault with audited decrypts, idempotent reminders and tasks, two-year retention after leaving; "5.1 probation and service-length alerts" with the ERA 2025 qualifying period effective-dated; "5.1 holiday accrual and SSP": irregular-hours 12.07% check and the SSP view reading the leave module; "5.1 / 5.3 pay reporting": UK gender pay gap with sex decrypted from the vault and audited); `apps/api/test/compliance-engine.test.ts` (right-to-work follow-up dates, reg. 15B irregular-hours accrual, the unfair dismissal qualifying period on both sides of 1 January 2027 and for Northern Ireland, and the gender pay gap reproducing the GOV.UK worked example); GB pack v4 vectors in `packages/rules/goldens/gb.json`.
+- [x] **5.2 US compliance**
   - Form I-9 tracking with reverification dates and retention calculation (golden tests).
   - Exempt and non-exempt classification with FLSA and state overtime.
   - State and local paid sick leave; FMLA.
   - EEO-1 data with voluntary self-identification stored as sensitive data.
   - State coverage table in COVERAGE.md.
-- [ ] **5.3 EU compliance**
+  - _Evidence:_ `apps/api/test/compliance.int.test.ts` ("5.2 US Form I-9, FLSA, EEO-1 and leave coverage": Section 2 deadline, reverification, retention for leavers; California exempt threshold and duties attestation deciding overtime eligibility; EEO-1 self-identification only in the vault with small-cell suppression; state and local paid sick leave and FMLA coverage); `compliance-engine.test.ts` (I-9 dates including the USCIS retention example, federal and state exempt thresholds, EEO-1 aggregation); `packages/rules/test/coverage.test.ts` (the US state coverage table in COVERAGE.md lists every state and DC).
+- [x] **5.3 EU compliance**
   - EU baseline rules plus member-state public holidays and statutory leave.
   - Deeper member-state rules (sick pay, notice periods) for prioritised states, tracked in COVERAGE.md.
   - EU Pay Transparency Directive reporting data, with each member state's implementation status verified and recorded.
-- [ ] **5.4 Compliance matrix**
+  - _Evidence:_ member-state holidays and leave from Phase 2 (`goldens/eu-a.json`, `eu-b.json`); deeper rules for prioritised states (sick pay for DE, NL, IE, ES, FR, PL, IT; notice periods) with vectors and the priority list in `docs/COVERAGE.md`; `compliance.int.test.ts` ("EU pay transparency": indicators from payroll data with the member state's transposition status) and `compliance-engine.test.ts` ("EU Pay Transparency Directive"); `coverage.test.ts` (every member state has a recorded transposition status).
+- [x] **5.4 Compliance matrix**
   - Licences, certifications, background checks and training per role/location with expiry tracking, reminders and a status dashboard.
-- [ ] **5.5 Law-changes feed**
+  - _Evidence:_ `compliance.int.test.ts` ("5.4 compliance matrix": requirements per job title and location, records with expiry, status dashboard with filters, evidence documents checked per employee and scoped by role, idempotent expiry reminders to HR and the employee) and `compliance-engine.test.ts` ("compliance matrix"); `apps/web/e2e/compliance.spec.ts` (dashboard and matrix pages, axe in light and dark).
+- [x] **5.5 Law-changes feed**
   - Back-office-maintained feed entries (jurisdiction, effective date, summary, what to do, linked rule versions); customers see entries relevant to their jurisdictions with read/acknowledged state.
-
+  - _Evidence:_ `compliance.int.test.ts` ("5.5 law-changes feed": back-office entries with staff MFA, relevance by the tenant's entities, locations and employees, read and acknowledged state per admin with audit, other tenants and managers see nothing, withdrawal, one notification per new relevant entry); `apps/web/e2e/compliance.spec.ts` (an admin acknowledges a relevant law change).
 ---
 
 ## Phase 6 — Payroll handoff and IT automation (6.5, 6.6)

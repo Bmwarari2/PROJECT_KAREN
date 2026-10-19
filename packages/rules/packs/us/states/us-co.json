@@ -2,7 +2,7 @@
   "jurisdiction": "US-CO",
   "parent": "US",
   "name": "Colorado",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -178,6 +178,41 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Inflation-adjusted in future years; 2027 amount not yet verified. Cross-checked 2026-10-18 with the adopted 2026 PAY CALC Order (7 CCR 1103-14, adopted 8 Dec 2025, https://cdle.colorado.gov/sites/cdle/files/adopted_2026_pay_calc_order_7_ccr_1103-14_redline_12.8.25.docx): $1,111.23/week, $57,784 rounded annual. That order states \"effective February 1, 2026\"; whether the 2026 level applies from 1 January (as modelled, per INFO #1) or 1 February 2026 needs legal review."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "Colorado notification of security breach (C.R.S. 6-1-716)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": 30,
+              "from": "determination",
+              "standard": "in the most expedient time possible and without unreasonable delay, but not later than thirty days after the date of determination that a security breach occurred"
+            },
+            "regulator": {
+              "body": "Colorado Attorney General",
+              "deadlineDays": 30,
+              "from": "determination",
+              "minAffected": 500,
+              "standard": "in the most expedient time possible and without unreasonable delay, but not later than thirty days after the date of determination"
+            },
+            "processorToController": {
+              "standard": "in the most expedient time possible, and without unreasonable delay following discovery of a security breach"
+            },
+            "lawEnforcementDelay": true
+          },
+          "source": {
+            "url": "https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+            "title": "Colorado Revised Statutes 2024, Title 6, section 6-1-716"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "6-1-716(2)(a) residents within thirty days after determination that a security breach occurred; (2)(b) third-party service providers notify the covered entity in the most expedient time possible and without unreasonable delay following discovery; (2)(f)(I) the Colorado attorney general within thirty days if five hundred Colorado residents or more. Verified in the CRS 2024 (uncertified printout); modelling baseline 2024-01-01."
         }
       ]
     }

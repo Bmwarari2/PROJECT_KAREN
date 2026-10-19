@@ -35,3 +35,16 @@ export function personName(r: () => number) {
 export function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
+
+// Syllable-built names for sandboxes: clearly invented, from a space large enough that a sandbox
+// generator can skip any candidate that collides with a name in the source tenant.
+const SYL_START = ['Al', 'Bri', 'Cor', 'Dav', 'El', 'Fen', 'Gar', 'Hal', 'Is', 'Jor', 'Kel', 'Lin', 'Mor', 'Nev', 'Or', 'Pel', 'Quin', 'Ros', 'Sil', 'Tor', 'Ul', 'Ver', 'Wil', 'Yor', 'Zan'];
+const SYL_MID = ['a', 'an', 'en', 'ia', 'in', 'is', 'o', 'on', 'or', 'ra', 'ri', 'us', 'yn', 'eth', 'ix'];
+const SYL_END = ['by', 'dale', 'ford', 'ham', 'ley', 'mere', 'more', 'ridge', 'stead', 'ton', 'well', 'wick', 'worth', 'combe', 'field'];
+const pick = <T>(r: () => number, xs: readonly T[]) => xs[Math.floor(r() * xs.length)]!;
+
+export function syntheticPersonName(r: () => number) {
+  const first = `${pick(r, SYL_START)}${pick(r, SYL_MID)}${r() < 0.4 ? pick(r, SYL_MID) : ''}`;
+  const last = `${pick(r, SYL_START)}${r() < 0.5 ? pick(r, SYL_MID) : ''}${pick(r, SYL_END)}`;
+  return { first, last };
+}
