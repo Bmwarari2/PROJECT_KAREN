@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
+import { Slot, Slottable } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
@@ -22,7 +22,7 @@ const focusRing = 'outline-none focus-visible:outline-2 focus-visible:outline-of
 
 // ---- Button ---------------------------------------------------------------------------------
 export const buttonVariants = cva(
-  `inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 ${focusRing}`,
+  `inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 ${focusRing}`,
   {
     variants: {
       variant: {
@@ -52,12 +52,24 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   { className, variant, size, asChild, loading, children, disabled, ...props },
   ref,
 ) {
-  const Comp = asChild ? Slot : 'button';
+  const spinner = loading ? <span aria-hidden className="h-4 w-4 animate-spin rounded-pill border-2 border-current border-r-transparent" /> : null;
+  const classes = cn(buttonVariants({ variant, size }), className);
+  if (asChild) {
+    // Slot needs exactly one element child, so the spinner goes inside that child through Slottable.
+    // Links have no `disabled` attribute: a disabled or loading link gets aria-disabled and leaves the tab order.
+    const inert = disabled || loading;
+    return (
+      <Slot ref={ref} className={classes} aria-busy={loading || undefined} aria-disabled={inert || undefined} tabIndex={inert ? -1 : undefined} {...props}>
+        {spinner}
+        <Slottable>{children}</Slottable>
+      </Slot>
+    );
+  }
   return (
-    <Comp ref={ref} className={cn(buttonVariants({ variant, size }), className)} aria-busy={loading || undefined} disabled={disabled || loading} {...props}>
-      {loading ? <span aria-hidden className="h-4 w-4 animate-spin rounded-pill border-2 border-current border-r-transparent" /> : null}
+    <button ref={ref} className={classes} aria-busy={loading || undefined} disabled={disabled || loading} {...props}>
+      {spinner}
       {children}
-    </Comp>
+    </button>
   );
 });
 
