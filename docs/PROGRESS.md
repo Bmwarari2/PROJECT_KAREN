@@ -18,7 +18,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
 | 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
 | 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [x] |
-| 8 | Privacy and trust (6.9) | `phase-8-privacy` | [ ] |
+| 8 | Privacy and trust (6.9) | `phase-8-privacy` | [h] |
 | 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [ ] |
 | 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-backoffice-billing` | [ ] |
 | 11 | AI assistant behind a feature flag (6.13) | `phase-11-ai-assistant` | [ ] |
@@ -301,17 +301,22 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 8 — Privacy and trust (6.9)
 
-- [ ] **8.1 Data subject requests**
+- [x] **8.1 Data subject requests**
   - Per-person access export (machine-readable JSON plus PDF), correction and deletion workflows; deadlines tracked per law (GDPR, UK GDPR, CCPA/CPRA) with extensions and reminders.
-- [ ] **8.2 Retention engine**
+  - _Evidence:_ `apps/api/test/privacy-dsr.int.test.ts` ("uses the law of the subject: UK GDPR Art. 12A, CCPA 45 days, none in Texas"; "restarts the UK clock when identity information arrives and stops it for access clarification"; "allows one extension, only before the initial deadline, with a reason"; "sends deadline reminders once per threshold and an overdue notice (idempotent daily job)"; "exports every table about the person as JSON plus a PDF, decrypting vault values with an audit entry each"; "withholds vault categories the person running it cannot read…"; "applies the correction as an effective-dated change through the employees service, with audit"; "refuses while a legal hold applies, then erases what no statutory minimum keeps and logs counts only"); `packages/rules/test/privacy.test.ts` (UK before and after Article 12A, "EU member states use the GDPR baseline", "California: 45 days, extendable once by 45 days (90 in total)"); `privacy-coverage.int.test.ts` ("maps every person reference in the live catalog"); `privacy.residency.test.ts` (the export stays in the home cell for every region pair); `apps/web/e2e/privacy.spec.ts` ("an admin logs an access request with its legal deadline and downloads the export"). The rule values are pending legal review (HUMAN_TODO 3.16).
+- [h] **8.2 Retention engine**
   - Retention rules per data category and jurisdiction with suggested defaults documented with sources and marked for legal review; automatic deletion or anonymisation jobs; deletion log.
-- [ ] **8.3 Company data export and account closure**
+  - _Evidence:_ `apps/api/test/privacy-retention.int.test.ts` ("lists pack rules per category and jurisdiction with sources, marked for legal review"; "rejects tenant periods below a statutory minimum but accepts longer ones and periods for suggested defaults"; "dry run counts what would go, deletes nothing and is logged"; "deletes only for enabled categories, honours legal holds and logs the rule version without personal data"; "anonymises leavers once the personnel-records period has passed"; "automatic retention (worker schedule)": no scheduled run until a policy is enabled, then exactly one per UTC date, which applies the policy and is logged); GB and US retention values in the packs with sources and `legalReview: pending` (review in HUMAN_TODO 3.16). _Human:_ EU member-state retention periods are a recorded coverage gap (`docs/COVERAGE.md`, HUMAN_TODO 3.16 step 7); until they are added, EU tenants get the engine with tenant-chosen periods and no statutory minimum.
+- [x] **8.3 Company data export and account closure**
   - Full company data export at any time (background job, downloadable archive); account closure with a grace period, then verified deletion across database, files, caches, search and backups (backup expiry documented).
-- [ ] **8.4 Legal and incident tooling**
+  - _Evidence:_ `apps/api/test/privacy-closure.int.test.ts` ("exports every tenant table, decrypted sensitive data and stored files as a zip with a manifest", run as the `privacy.company_export` job with a download link; "requires typing the workspace name, can be cancelled, and is owner-only", 30-day grace period; "after the grace period deletes the tenant everywhere, verifies it and issues a certificate": no rows in any tenant table, which also holds the PostgreSQL search columns, no files, no rate-limit cache keys, and the other tenant is untouched); `apps/worker/test/closed-tenant.int.test.ts` ("finishes without errors and the tenant is no longer processed"); backup expiry in `packages/core/test/trust.test.ts` ("the backup expiry stated to customers matches the longest backup retention in the infrastructure config").
+- [x] **8.4 Legal and incident tooling**
   - DPA acceptance tracking; sub-processor list per region (public page + change notifications); privacy notice templates per jurisdiction (for legal review).
   - Incident and breach log with deadline reminders (72 hours under GDPR and UK GDPR; US state notification rules recorded).
-- [ ] **8.5 Trust page and compliance mapping**
+  - _Evidence:_ `apps/api/test/privacy-legal.int.test.ts` ("records acceptance of the current version at sign-up, requires re-acceptance of a new version, owner only"; "serves the per-region list and notifies subscribed admins of changes once, for their region only"; "serves UK, EU and US templates marked for legal review and saves an editable tenant copy"; "computes deadlines per jurisdiction from the packs, flags unmodelled ones and reminds before they pass"; "records the Thapsus-side breach register (staff only) and notifies affected controllers in their own log"); `packages/rules/test/privacy.test.ts` ("72 hours from awareness under UK GDPR and GDPR; processor without undue delay", "US state day limits and thresholds"); `packages/core/test/trust.test.ts` (sub-processors for every region, notice period, DRAFT banners); `apps/web/e2e/privacy.spec.ts` ("the sub-processor list shows only the chosen region’s locations", axe in light and dark). Legal review of the drafts and rule values is HUMAN_TODO 3.3 and 3.16.
+- [x] **8.5 Trust page and compliance mapping**
   - Public security and trust page; SOC 2 and ISO 27001 controls mapping in `docs/COMPLIANCE.md`.
+  - _Evidence:_ `apps/web/e2e/privacy.spec.ts` ("/trust renders and passes axe (light and dark)"; "the trust page shows residency per region and links to the sub-processor list"); `docs/COMPLIANCE.md` maps the controls to the SOC 2 Trust Services Criteria and ISO/IEC 27001:2022 Annex A, with a status, evidence paths and test names for each control (all resolve) and a table of gaps with owners.
 
 ---
 
