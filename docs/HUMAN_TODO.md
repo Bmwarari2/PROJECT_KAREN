@@ -56,7 +56,13 @@ Things only a person with the right accounts or authority can do. The build runs
   4. **Romania annual leave.** Check Codul muncii art. 145(1) (EURES says at least 20 working days) and art. 147 (3 additional days); confirm or correct the pack value through a back-office rule version.
   5. **Cyprus holidays.** Ask the Department of Labour Relations (https://www.mlsi.gov.cy/mlsi/dlr/dlr.nsf) whether there is an official public-holiday list for private-sector employment. If there is, add it to `packages/rules/packs/eu/cy.json`; if holidays are only by collective agreement, record that in the pack's coverage note.
   6. **Colorado and other CDLE documents.** cdle.colorado.gov returned HTTP 403 to automated fetches without a browser user agent; when updating Colorado values, download the current INFO #1 and PAY CALC Order manually.
-- [ ] 3.3 Review the DPA, privacy notice templates, DPIA template, records of processing, sub-processor notice period and retention defaults in `docs/legal/`.
+- [ ] 3.3 **Legal review of the privacy and trust drafts** (every file starts with "DRAFT — for legal review"):
+  1. DPAs: `docs/legal/dpa-uk.md`, `docs/legal/dpa-eu.md`, `docs/legal/dpa-us.md`. Fill the bracketed terms (legal entity, liability, governing law, audit terms, sub-processor objection remedy) and confirm the transfer position for remote support access.
+  2. Employee privacy notice templates: `docs/legal/privacy-notice-uk.md`, `docs/legal/privacy-notice-eu.md`, `docs/legal/privacy-notice-us.md`. Confirm the lawful-basis table and the US sensitive-information wording.
+  3. `docs/legal/dpia-template.md` and `docs/legal/records-of-processing.md` (Art. 30(2) processor record). Also write the separate Art. 30(1) record for Thapsus's own controller activities.
+  4. Contractual settings in `packages/core/src/trust/legal.json`: sub-processor notice (30 days), processor breach notification target (48 hours), closure grace period (30 days), reminder thresholds. Change the values there, then run `pnpm --filter @thapsus/core trust-data` if documents changed.
+  5. When the DPA wording changes, bump the `Version YYYY-MM-DD` line in each DPA file and regenerate. Customers are then asked to re-accept in Privacy → DPA and notices.
+  6. Set `legalReview` to `reviewed` in `legal.json` once done.
 - [ ] 3.4 Review the time-off and absence calculation interpretations (ADR-0027 to ADR-0032), which a person must confirm against the law:
   1. **UK SSP:** the per-day application across 6 April 2026, the S.I. 2026/373 reg. 4 protected rate condition, and the reg. 5/6 Schedule 11 exclusion, which is not modelled.
   2. **France:** the employer complement durations treated as calendar days; the IJSS daily cap (not in the pack).
@@ -90,6 +96,15 @@ Things only a person with the right accounts or authority can do. The build runs
   Confirm by adding a back-office rule version with your name as reviewer.
 - [ ] 3.14 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
 - [ ] 3.15 **Holiday liability method (ADR-0073).** Ask finance and an employment lawyer to confirm the valuation used by the Holiday liability report (accrued-to-date leave less leave taken, at contractual basic pay ÷ (52 × working days per week), rounded once per person, negative when over-taken, no employer on-costs or variable pay) is acceptable for each market's accounting practice, and whether variable pay should be included for UK workers (holiday pay rules). Record the outcome in ADR-0073.
+- [ ] 3.16 **Privacy rule values in the jurisdiction packs** (`privacy.dsr_deadline`, `privacy.breach_notification`, `retention.*`; reviewer `research-agent (pending legal review)`):
+  1. Confirm the UK Article 12A reading (clock start, clarification stop) and the conservative choices in ADR-0080 (no next-working-day rollover; earlier reading of "two further months").
+  2. **California:** open Civ. Code §1798.82 on leginfo.legislature.ca.gov in a browser (automated access was blocked). Confirm the consumer-notice timing after SB 446 (2025), the Attorney General timing and the duty of a business maintaining data it does not own. Record them as a back-office rule version. Also confirm the CCPA regulations' confirmation-of-receipt timing (11 CCR §7021).
+  3. **Illinois:** open 815 ILCS 530/10 on ilga.gov (unreachable during research). Confirm the Attorney General threshold and deadline for private data collectors, and the duty of a data collector maintaining data it does not own.
+  4. **Georgia:** check O.C.G.A. §10-1-912 in the official code (published by LexisNexis for the General Assembly, not on the allow-list) and decide whether to allow-list that host or record it by back-office edit.
+  5. **New York:** confirm the effective date of the current 30-day rule in GBL §899-aa and the duty of a person maintaining data it does not own.
+  6. **Oregon:** confirm that the 45-day limit in ORS 646A.604(3)(a) also applies to the Attorney General notice.
+  7. **Retention:** confirm the suggested UK personnel-records default (6 years after employment ends, Limitation Act 1980 s. 5; England and Wales only) and add Scottish and Northern Irish periods. Confirm that 29 CFR 1602.14 keeps the personnel records of current US employees. Add member-state retention periods for the EU (coverage to-do).
+  8. Confirm the erasure semantics in ADR-0082 (what is anonymised versus deleted versus kept for accountability).
 
 ## 4. Payments, partners and integrations
 

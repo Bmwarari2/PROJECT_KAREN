@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, Bell, CalendarClock, CalendarDays, ClipboardList, Clock, DoorOpen, FileText, Home, Inbox, Laptop, ListChecks, LogOut, Menu, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, UserRound, Users, Wallet, Zap } from 'lucide-react';
+import { BarChart3, Bell, CalendarClock, CalendarDays, ClipboardList, Clock, DoorOpen, FileText, Home, Inbox, Laptop, ListChecks, Lock, LogOut, Menu, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, UserRound, Users, Wallet, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
@@ -42,6 +42,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/reports', label: t('app.nav.reports'), icon: <BarChart3 aria-hidden />, show: has('reports.run') || has('reports.read_team') },
     { href: '/app/imports', label: t('app.nav.imports'), icon: <Upload aria-hidden />, show: has('imports.run') },
     { href: '/app/automation', label: t('app.nav.automation'), icon: <Zap aria-hidden />, show: has('automation.read') },
+    { href: '/app/privacy', label: t('app.nav.privacy'), icon: <Lock aria-hidden />, show: has('privacy.read') },
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
     { href: '/app/security', label: t('app.nav.security'), icon: <ShieldCheck aria-hidden />, show: true },
     { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') },

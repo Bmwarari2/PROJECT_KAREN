@@ -1,6 +1,6 @@
 # Sub-processors
 
-Thapsus-HR is the processor and each customer is the controller. Personal data goes to a third party only if that party is listed here, with its purpose and location for each home region. Every entry is added **before** the integration is written. Customers are notified of changes through the in-app sub-processor page (`/trust#subprocessors`) at least 30 days before a new sub-processor starts processing their data. That notice period is a draft pending legal review; see HUMAN_TODO.md.
+Thapsus-HR is the processor and each customer is the controller. Personal data goes to a third party only if that party is listed here, with its purpose and location for each home region. Every entry is added **before** the integration is written. The public list per region is rendered from this file at `/trust/subprocessors` (generated data: `packages/core/src/trust/generated.json`, refreshed with `pnpm --filter @thapsus/core trust-data`; a unit test fails if it is stale). Customers are notified of changes at least 30 days before a new sub-processor starts processing their data: every change is added to the change log below, and administrators who subscribe in Privacy → Legal receive an in-app and email notice. The notice period (`subprocessorNoticeDays` in `packages/core/src/trust/legal.json`) is a draft pending legal review; see HUMAN_TODO.md.
 
 ## Core infrastructure (all customers)
 
@@ -36,3 +36,11 @@ These are services the customer contracts with directly and connects to Thapsus-
 | Customer-designated payroll providers (ADP, Workday, UKG, Gusto, DATEV) | Payroll handoff (connector stubs only; no data is sent until a partner integration is built and listed here with its locations) | Not active | Not active | Not active | None today. |
 | Customer S3 bucket (the customer's own AWS account) | Scheduled data exports to the customer's data warehouse (Phase 7) | Written from eu-west-2 to a bucket that **must be in eu-west-2**; any other region is refused | Written from eu-central-1 to a bucket that must be in eu-central-1 | Written from us-east-2 to a bucket that must be in us-east-2 | The report-builder datasets and fields the customer selects (CSV or JSON Lines), limited to what the export's run-as user may see; vault-backed fields are never exported. Access is by assuming a role in the customer's account (`thapsus-hr-export-*`, with an ExternalId) through AWS STS in the home region; no long-lived keys are stored. |
 | Customer SIEM (HTTPS or S3) | Audit log streaming | Customer-chosen endpoint | Customer-chosen endpoint | Customer-chosen endpoint | Audit events (sensitive values redacted). |
+
+## Change log
+
+Each change is announced here first. `Effective from` must be at least the notice period after `Announced`, except for the baseline list. Regions are the home regions whose customers are notified.
+
+| Id | Type | Announced | Effective from | Regions | Change |
+| --- | --- | --- | --- | --- | --- |
+| 2026-10-18-baseline | baseline | 2026-10-18 | 2026-10-18 | uk, eu, us | Initial published list |

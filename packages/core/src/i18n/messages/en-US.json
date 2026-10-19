@@ -55,8 +55,8 @@
   },
   "notify": {
     "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
-    "shiftCancelled": "Your shift on {date} was canceled",
     "shiftChanged": "Your shift on {date} has changed",
+    "shiftCancelled": "Your shift on {date} was canceled",
     "swapOffered": "A colleague asked you to swap a shift on {date}",
     "swapDeclined": "Your shift swap was declined",
     "swapApproved": "Your shift swap on {date} was approved",
@@ -66,6 +66,54 @@
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned",
     "payslipAvailable": "Your pay stub for {label} is ready"
+  },
+  "privacy": {
+    "ui": {
+      "action": {
+        "anonymise": "Anonymize"
+      },
+      "form": {
+        "identityNoteHint": "Describe the check. Never record ID numbers or copies of documents."
+      },
+      "retention": {
+        "policiesLead": "Automatic deletion is off until you turn it on for a category. You can keep data longer than the law requires, never shorter."
+      },
+      "incidents": {
+        "affectedHint": "For example US-CA=12, US-TX=40",
+        "affectedInvalid": "Use the form US-CA=12, US-TX=40"
+      },
+      "detail": {
+        "willErase": "Will erase or anonymize: {list}."
+      },
+      "legal": {
+        "noticesLead": "Start from a template for each jurisdiction, edit it for your company and publish it. Templates are drafts for legal review."
+      },
+      "category": {
+        "immigration_records": "Work authorization and immigration records"
+      },
+      "lead": "Handle data subject requests within their legal deadlines, keep data only as long as needed, and manage your account data, incidents and legal terms."
+    },
+    "exportPdf": {
+      "table": {
+        "app_workflow_instances": "Onboarding and offboarding"
+      },
+      "vault": {
+        "immigration": "Work authorization and immigration"
+      }
+    },
+    "closure": {
+      "certificateBody": "All data of workspace {workspace} was deleted from the database, file storage and caches on {date}. Backups expire automatically by {expires}. The certificate follows."
+    }
+  },
+  "trust": {
+    "hero": {
+      "lead": "Choose where your data lives. We keep it there, encrypt it, isolate it from every other customer and give you the tools to meet your own privacy obligations."
+    },
+    "privacy": {
+      "dsr": {
+        "body": "Access exports, corrections and erasure, with legal deadlines for CCPA, UK GDPR and GDPR."
+      }
+    }
   },
   "app": {
     "nav": {

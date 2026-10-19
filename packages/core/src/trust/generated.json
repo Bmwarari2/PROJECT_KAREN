@@ -1,0 +1,193 @@
+{
+  "subprocessors": {
+    "sections": [
+      {
+        "title": "Core infrastructure (all customers)",
+        "columns": [
+          "Sub-processor",
+          "Purpose",
+          "UK tenants",
+          "EU tenants",
+          "US tenants",
+          "Personal data"
+        ],
+        "rows": [
+          [
+            "Amazon Web Services EMEA SARL / Amazon Web Services, Inc.",
+            "Hosting, database, file storage, cache, queues, logs, backups, key management (KMS)",
+            "eu-west-2 (London) only; backups stay in London across availability zones",
+            "eu-central-1 (Frankfurt); backup copies in eu-west-1 (Ireland)",
+            "us-east-2 (Ohio); backup copies in us-west-1 (N. California)",
+            "All customer data, encrypted at rest and in transit"
+          ],
+          [
+            "Amazon Web Services (Amazon SES)",
+            "Transactional email: sign-in links, notifications, workspace lists",
+            "SES in eu-west-2",
+            "SES in eu-central-1",
+            "SES in us-east-2",
+            "Recipient email address and message content"
+          ]
+        ]
+      },
+      {
+        "title": "Billing (company-level data only)",
+        "columns": [
+          "Sub-processor",
+          "Purpose",
+          "Location",
+          "Personal data"
+        ],
+        "rows": [
+          [
+            "Stripe Payments Europe Ltd / Stripe, Inc.",
+            "Subscription billing and tax calculation (Stripe Billing, Stripe Tax)",
+            "Stripe's own infrastructure (EU / US)",
+            "Billing contact name, billing email and company address of the customer's account owner. No employee data is ever sent. This is enforced by the billing module tests."
+          ]
+        ]
+      },
+      {
+        "title": "Optional features (only when the customer turns them on)",
+        "columns": [
+          "Sub-processor",
+          "Purpose",
+          "UK tenants",
+          "EU tenants",
+          "US tenants",
+          "Personal data"
+        ],
+        "rows": [
+          [
+            "Amazon Web Services (Amazon Bedrock, Anthropic Claude models)",
+            "\"Ask HR\" assistant (off by default)",
+            "eu-west-2 where the model is available, otherwise disabled. To be verified at enablement (Phase 11).",
+            "eu-central-1",
+            "us-east-2",
+            "The question asked and excerpts of the company's own policy documents. Never sensitive data or other employees' data."
+          ]
+        ]
+      },
+      {
+        "title": "Customer-directed integrations",
+        "columns": [
+          "Integration",
+          "Purpose",
+          "UK tenants",
+          "EU tenants",
+          "US tenants",
+          "Personal data sent"
+        ],
+        "rows": [
+          [
+            "Microsoft 365 / Microsoft Entra ID (Microsoft Graph, `graph.microsoft.com`, token from `login.microsoftonline.com`)",
+            "Joiner and leaver account automation (create account, licences, groups; block sign-in, revoke sessions, remove licences)",
+            "Sent from eu-west-2 to the customer's own Microsoft 365 tenant; stored where that tenant's data location is (chosen by the customer in Microsoft 365)",
+            "Sent from eu-central-1; stored in the customer's Microsoft 365 data location (EU Data Boundary if the customer uses it)",
+            "Sent from us-east-2; stored in the customer's Microsoft 365 data location",
+            "First and last name, display name, work email / user principal name, job title, department, usage location (country code). Never pay, absence, sensitive or national-identifier data. The initial password is generated per call and never stored or logged."
+          ],
+          [
+            "Google Workspace (Admin SDK Directory API `admin.googleapis.com`, Enterprise License Manager `licensing.googleapis.com`, token from `oauth2.googleapis.com`)",
+            "Joiner and leaver account automation (create user, licences, groups; suspend, sign out, remove licences)",
+            "Sent from eu-west-2 to the customer's Google Workspace account; stored per the customer's Google Workspace data regions policy",
+            "Sent from eu-central-1; as for UK",
+            "Sent from us-east-2; as for UK",
+            "As for Microsoft 365, plus the organisational unit path."
+          ],
+          [
+            "Xero Payroll (UK) (`api.xero.com`, OAuth via `identity.xero.com` / `login.xero.com`)",
+            "Payroll handoff: approved timesheets and leave pushed to the customer's Xero organisation",
+            "Sent from eu-west-2 to the customer's Xero organisation; Xero hosts it on its own infrastructure (reported as AWS in the United States; the customer's Xero agreement governs the transfer; see HUMAN_TODO 4.4)",
+            "Not offered (Xero Payroll UK serves UK employers)",
+            "Not offered",
+            "Xero employee id, timesheet dates and hours per earnings rate, leave type, leave dates and a short non-medical description. Sickness reasons, fit notes and other vault data are never sent."
+          ],
+          [
+            "Customer-controlled SFTP host (customer-designated destination)",
+            "Payroll export files and scheduled data exports (Phase 7)",
+            "Sent from eu-west-2 to the host the customer configures; location and retention are the customer's responsibility",
+            "Sent from eu-central-1; as for UK",
+            "Sent from us-east-2; as for UK",
+            "Payroll: exactly the fields chosen in the connector's field mapping (for example employee number, name, hours, absences, statutory sick pay amounts, pay changes, starters and leavers). Data exports: the report-builder datasets and fields the customer selects, limited to what the export's run-as user may see; vault-backed (special-category) fields are never exported. The host key must be pinned."
+          ],
+          [
+            "Customer-designated payroll providers (ADP, Workday, UKG, Gusto, DATEV)",
+            "Payroll handoff (connector stubs only; no data is sent until a partner integration is built and listed here with its locations)",
+            "Not active",
+            "Not active",
+            "Not active",
+            "None today."
+          ],
+          [
+            "Customer S3 bucket (the customer's own AWS account)",
+            "Scheduled data exports to the customer's data warehouse (Phase 7)",
+            "Written from eu-west-2 to a bucket that must be in eu-west-2; any other region is refused",
+            "Written from eu-central-1 to a bucket that must be in eu-central-1",
+            "Written from us-east-2 to a bucket that must be in us-east-2",
+            "The report-builder datasets and fields the customer selects (CSV or JSON Lines), limited to what the export's run-as user may see; vault-backed fields are never exported. Access is by assuming a role in the customer's account (`thapsus-hr-export-*`, with an ExternalId) through AWS STS in the home region; no long-lived keys are stored."
+          ],
+          [
+            "Customer SIEM (HTTPS or S3)",
+            "Audit log streaming",
+            "Customer-chosen endpoint",
+            "Customer-chosen endpoint",
+            "Customer-chosen endpoint",
+            "Audit events (sensitive values redacted)."
+          ]
+        ]
+      }
+    ],
+    "changes": [
+      {
+        "id": "2026-10-18-baseline",
+        "type": "baseline",
+        "announced": "2026-10-18",
+        "effectiveFrom": "2026-10-18",
+        "regions": [
+          "uk",
+          "eu",
+          "us"
+        ],
+        "change": "Initial published list"
+      }
+    ]
+  },
+  "notices": {
+    "uk": {
+      "title": "Employee privacy notice — {{companyName}} (United Kingdom)",
+      "version": "2026-10-18",
+      "body": "# Employee privacy notice — {{companyName}} (United Kingdom)\n\n> **DRAFT — for legal review.** Template version 2026-10-18, prepared from the information UK GDPR Articles 13 and 14 require (https://www.legislation.gov.uk/eur/2016/679/article/13). {{companyName}} is the controller and must check and complete every section before publishing it. Thapsus-HR provides this template and is not your lawyer.\n\n## Who we are\n\n{{companyName}}, {{companyAddress}}, is the controller of the personal data described in this notice. Contact us about your data at {{privacyContactEmail}}. Our data protection officer, if we have appointed one: {{dpoContact}}\n\n## What we collect\n\n- Identity and contact details: name, preferred name, pronouns, date of birth, home address, personal email and phone, emergency contacts.\n- Employment details: job title, department, location, manager, contract, start and end dates, working pattern, performance and training records.\n- Pay details: salary, pay changes and the information our payroll provider needs.\n- Time off, absence and sickness, including fit notes and return-to-work records.\n- Working time: rotas, clock-in and clock-out times and, only at sites where we have told you location checks apply, your location when you clock in.\n- Right-to-work checks and copies of documents.\n- Equality and diversity information, only if you choose to give it.\n- Records of your use of our HR system for security (sign-in times, IP address, device).\n\n## Why we use it and our lawful basis\n\n| Purpose | Lawful basis | Condition for special category data |\n| --- | --- | --- |\n| Managing your employment contract, pay and benefits | Contract (Art. 6(1)(b)) | — |\n| Meeting legal duties such as right-to-work checks, working-time records, tax and statutory pay | Legal obligation (Art. 6(1)(c)) | Employment law (Art. 9(2)(b)) for health data |\n| Managing absence and making adjustments | Legal obligation / legitimate interests | Employment law (Art. 9(2)(b)) |\n| Equality monitoring | `[legitimate interests or consent — legal to decide]` | `[condition to be confirmed]` |\n| Security of our systems | Legitimate interests (Art. 6(1)(f)) | — |\n\n`[Replace or extend this table with your own purposes and bases.]`\n\n## Who we share it with\n\n- Thapsus-HR, which hosts our HR system as our processor in the United Kingdom (London). Its sub-processors are listed at {{subprocessorListUrl}}.\n- Our payroll provider, pension provider and IT providers, where we have connected them.\n- HMRC and other authorities when the law requires it.\n\nWe do not transfer your data outside the UK through our HR system. `[Add any transfers you make yourselves and the safeguard used.]`\n\n## How long we keep it\n\nWe keep each type of record for the period in our retention schedule: {{retentionSchedule}}. Some periods are set by law (for example working-time records are kept for two years from the date they were made under the Working Time Regulations 1998, regulation 9).\n\n## Your rights\n\nYou can ask us for a copy of your data, to correct it, to delete it, to restrict or object to our use of it, and to move it to another organisation. We will respond within one month, which we may extend by two further months for complex or numerous requests; we will tell you if we do. Contact {{privacyContactEmail}}.\n\nYou can complain to us (UK GDPR Article 12(4) and section 164A of the Data Protection Act 2018) and to the Information Commission (formerly the Information Commissioner's Office), which regulates data protection in the UK.\n\n## Changes to this notice\n\nWe will tell you about important changes. Last updated: {{publishedDate}}.\n",
+      "sha256": "22471dc51c181c3f0c94b0e257817c97be605c063b9d96b65e5ac4a5ea0785cd"
+    },
+    "eu": {
+      "title": "Employee privacy notice — {{companyName}} (European Union)",
+      "version": "2026-10-18",
+      "body": "# Employee privacy notice — {{companyName}} (European Union)\n\n> **DRAFT — for legal review.** Template version 2026-10-18, prepared from the information GDPR Articles 13 and 14 require (https://eur-lex.europa.eu/eli/reg/2016/679/oj). {{companyName}} is the controller and must check and complete every section before publishing it. Thapsus-HR provides this template and is not your lawyer.\n\n## Who we are\n\n{{companyName}}, {{companyAddress}}, is the controller of the personal data described in this notice. Contact us about your data at {{privacyContactEmail}}. Our data protection officer, if we have appointed one: {{dpoContact}}\n\n## What we collect\n\n- Identity and contact details: name, preferred name, pronouns, date of birth, home address, personal email and phone, emergency contacts.\n- Employment details: job title, department, location, manager, contract, start and end dates, working pattern, performance and training records.\n- Pay details: salary, pay changes and the information our payroll provider needs.\n- Time off, absence and sickness, including fit notes and return-to-work records.\n- Working time: rotas, clock-in and clock-out times and, only at sites where we have told you location checks apply, your location when you clock in.\n- Work permits and residence documents where the law requires us to check them.\n- Equality and diversity information, only if you choose to give it.\n- Records of your use of our HR system for security (sign-in times, IP address, device).\n\n## Why we use it and our lawful basis\n\n| Purpose | Lawful basis | Condition for special category data |\n| --- | --- | --- |\n| Managing your employment contract, pay and benefits | Contract (Art. 6(1)(b)) | — |\n| Meeting legal duties such as working-time records, tax, social security and statutory pay | Legal obligation (Art. 6(1)(c)) | Employment and social security law (Art. 9(2)(b)) for health data |\n| Managing absence and making adjustments | Legal obligation / legitimate interests | Employment law (Art. 9(2)(b)) |\n| Equality monitoring | `[legitimate interests or consent — legal to decide]` | `[condition to be confirmed]` |\n| Security of our systems | Legitimate interests (Art. 6(1)(f)) | — |\n\n`[Replace or extend this table with your own purposes and bases.]`\n\n## Who we share it with\n\n- Thapsus-HR, which hosts our HR system as our processor in the European Union (Frankfurt, with backup copies in Ireland). Its sub-processors are listed at {{subprocessorListUrl}}.\n- Our payroll provider, pension provider and IT providers, where we have connected them.\n- Tax, social security and other authorities when the law requires it.\n\nWe do not transfer your data outside the EU through our HR system. `[Add any transfers you make yourselves and the safeguard used.]`\n\n## How long we keep it\n\nWe keep each type of record for the period in our retention schedule: {{retentionSchedule}}. Some periods are set by national law. `[List them for each country you employ people in.]`\n\n## Your rights\n\nYou can ask us for a copy of your data, to correct it, to delete it, to restrict or object to our use of it, and to move it to another organisation. We will respond within one month, which we may extend by two further months for complex or numerous requests; we will tell you if we do. Contact {{privacyContactEmail}}.\n\nYou can complain to the data protection supervisory authority in the member state where you live or work, or where you believe the infringement happened: {{supervisoryAuthority}}.\n\n## Changes to this notice\n\nWe will tell you about important changes. Last updated: {{publishedDate}}.\n",
+      "sha256": "1def029b5e9826db70877843ea46fc067cd398f56411160dbfd2a546108ce4a4"
+    },
+    "us": {
+      "title": "Workforce privacy notice — {{companyName}} (United States, including California)",
+      "version": "2026-10-18",
+      "body": "# Workforce privacy notice — {{companyName}} (United States, including California)\n\n> **DRAFT — for legal review.** Template version 2026-10-18, prepared from the California Consumer Privacy Act as published by the California Privacy Protection Agency (https://cppa.ca.gov/regulations/pdf/ccpa_statute.pdf). {{companyName}} is the business responsible for this notice and must check and complete every section before publishing it, including any other state's requirements. Thapsus-HR provides this template and is not your lawyer.\n\n## Who we are\n\n{{companyName}}, {{companyAddress}}. Contact us about your information at {{privacyContactEmail}} or {{privacyContactPhone}}.\n\n## Information we collect about job applicants, employees and contractors\n\n| Category | Examples | Why we use it | How long we keep it |\n| --- | --- | --- | --- |\n| Identifiers | Name, address, email, phone, employee number | Employment administration | {{retentionIdentifiers}} |\n| Employment information | Job, manager, location, contract, performance | Managing your employment | {{retentionEmployment}} |\n| Compensation | Pay rate, pay changes, payroll information | Paying you; tax and wage-and-hour compliance | {{retentionPayroll}} |\n| Time and attendance | Schedules, clock-in/out times, time off | Scheduling, overtime and leave law compliance | {{retentionTime}} |\n| Sensitive personal information | Government ID for Form I-9, health information for leave, voluntary race/ethnicity and sex for EEO reporting | Legal compliance only | {{retentionSensitive}} |\n| Internet or system activity | Sign-in times, IP address, device | Security of our systems | {{retentionSecurity}} |\n\nWe do not sell your personal information or share it for cross-context behavioral advertising. `[Confirm.]` We use sensitive personal information only for the purposes listed above. `[Legal to confirm whether the right to limit applies.]`\n\n## Who receives it\n\n- Thapsus-HR, our HR system provider, acting as our service provider and storing data in the United States (Ohio, with backup copies in N. California). Its sub-processors are listed at {{subprocessorListUrl}}.\n- Payroll, benefits and IT providers we connect, and government agencies where the law requires.\n\n## Your rights (California residents)\n\nYou can ask us to tell you what personal information we hold and how we use it, to give you a copy, to correct it, and to delete it, subject to legal exceptions. We will not retaliate against you for using these rights.\n\nTo make a request, contact {{privacyContactEmail}} or call {{privacyContactPhone}}. We will verify your request and respond within 45 days of receiving it; if we need more time we will tell you within those 45 days and may take up to 45 more days (California Civil Code §1798.130(a)(2)).\n\nYou can use an authorized agent; we may ask for proof of their authority.\n\n## Other states\n\n`[Add any rights your employees have under other state laws.]`\n\n## Changes to this notice\n\nLast updated: {{publishedDate}}.\n",
+      "sha256": "41912ab3a1cafae3f214a052f81bc8b320fb30831f202593cef6124a2e8af041"
+    }
+  },
+  "dpa": {
+    "uk": {
+      "version": "2026-10-18",
+      "sha256": "7f4f31fd3f30c4874214821d96056ff10b0e6d3baed6dfeedf94760813961b07",
+      "path": "docs/legal/dpa-uk.md"
+    },
+    "eu": {
+      "version": "2026-10-18",
+      "sha256": "65221211f5530fcd4ae0e916e380971810f8072658be098052fb681b466ef6d9",
+      "path": "docs/legal/dpa-eu.md"
+    },
+    "us": {
+      "version": "2026-10-18",
+      "sha256": "92b7cbadb59dffd937b82c8489165e1578a1f6d34955b17c4aad7864583e6590",
+      "path": "docs/legal/dpa-us.md"
+    }
+  }
+}

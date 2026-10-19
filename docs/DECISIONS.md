@@ -97,8 +97,6 @@ Dated records of implementation choices, especially where they differ from the d
 
 **Consequences.** Visual runs are deterministic and offline-capable. Baselines are unchanged.
 
----
-
 ## ADR-0013 — Lettered migrations; USAGE (not CREATE) on schema public (2026-10-18)
 
 **Context.** Phase 1 fixes need migrations after `0007` but before Phase 2's `0008`. The loader only accepted `\d{4}_name.sql`, so a file named `0007b_…` would have been skipped without any error. Separately, trigram word similarity (`<%`) failed for the application role: extensions live in schema `public`, on which 0001 revoked everything from PUBLIC, so extension operators did not resolve. `citext` comparisons from the app role were silently falling back to case-sensitive `text` equality for the same reason.
@@ -676,3 +674,111 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Decision.** The shared calculations were extracted into `apps/api/src/modules/compliance/reporting.ts` and are called by both the compliance routes and the ready-made reports, on the writer (vault access, audited), returning only aggregates with the compliance centre's small-cell suppression. Reports add no new calculation or access path for special-category data; EEO-1 output is always marked as not an exact filing.
 
 **Consequences.** Changes to the statutory methods are made once, in the compliance module.
+
+## ADR-0080 — Privacy deadlines and retention as pack rules in their own keys; conservative date maths (2026-10-18)
+
+**Context.** Data subject request (DSR) deadlines, breach notification deadlines and retention periods are law. They must come from the jurisdiction packs with official sources, like employment rules. Another workstream is changing the pack engine at the same time.
+
+**Decision.** New keys live in `packages/rules/src/privacy-keys.ts` and are spread into `RULE_KEYS`: `privacy.dsr_deadline`, `privacy.breach_notification` and `retention.*`. The packs hold the values, each with its source, verification date and the reviewer `research-agent (pending legal review)`. Golden vectors are in `goldens/privacy.json`. The date maths lives in `packages/rules/src/privacy.ts`; the engine itself is unchanged. Where a statute can be read two ways, the code takes the earlier date:
+- months are counted to the corresponding date;
+- no rollover to the next working day is applied;
+- "two further months" is the earlier of due date + 2 months and start + 3 months.
+
+The UK has two versions: Article 12(3) until 4 February 2026, then Article 12A from 5 February 2026, which moves the clock start to the information or fee and stops the clock for clarification. California is modelled from 1 January 2023, when the CCPA employee exemption became inoperative.
+
+**Consequences.** The deadline shown is never later than the law allows. Values from sources that could not be reached are not recorded (see ADR-0089).
+
+## ADR-0081 — One catalog-checked map of person data drives export, erasure and coverage (2026-10-18)
+
+**Context.** An access export must include every table about the person, and a new table must not be silently missed.
+
+**Decision.** `apps/api/src/modules/privacy/subject-map.ts` classifies every tenant table that references a person:
+- **subject columns:** rows exported in full, with credentials omitted;
+- **actor columns:** exported as counts only, so other people's data is never disclosed;
+- **an erasure action:** delete, anonymise or keep with a reason;
+- **a retention category.**
+
+`personColumns()` enumerates the catalog: foreign keys to `app.employees` and `app.users`, plus uuid columns named like `*_employee_id`, `*_user_id` or `*_by`. The test `apps/api/test/privacy-coverage.int.test.ts` fails when a column is not mapped. Vault values are decrypted in the export, and each decrypt is audited with its purpose. Categories the exporter may not read are withheld, and that is audited too.
+
+**Consequences.** Every phase that adds a table referencing people must add a line to the map, or the test fails.
+
+## ADR-0082 — Erasure semantics (2026-10-18)
+
+**Decision.** Erasure decides per category:
+- **Legal holds** block everything, or one category.
+- **Statutory minimums** (`statutoryMinimum: true` in the packs) keep a category until it expires. Examples: WTR reg. 9 for time records, 29 CFR 1602.14 for US personnel records (kept while employment continues).
+- **Suggested defaults and tenant policies** never block an erasure request.
+
+When a category is erased:
+- identity is **anonymised**: names, contact details, date of birth, employee number, work email and the search vector are replaced or cleared, and the user account is deactivated with an `erased.invalid` address;
+- emergency contacts, credentials, sessions, documents, files and vault values are **deleted**;
+- pseudonymous job and contract history is kept for workforce statistics.
+
+The audit trail and the DSR record are kept for accountability. The deletion log (`app.retention_runs`) records categories and counts only.
+
+**Consequences.** Erasure is safe to run for current employees in the US, where identity is kept by law. The legal reading is flagged for review (HUMAN_TODO 3.16).
+
+## ADR-0083 — Retention engine is opt-in per category and evaluates groups of records (2026-10-18)
+
+**Decision.** For each category, jurisdiction and record date, the sweep combines the pack rules with the tenant policy. The tenant policy can lengthen a statutory minimum but never shorten it; the API refuses a shorter period with 422 and lists the minimums. Automatic deletion runs only for categories the tenant enabled. The daily job is enqueued only when a policy is enabled. A dry run is always available, and is logged. Rows are grouped by jurisdiction, record date and employment end, so the cost grows with the number of distinct dates, not the number of rows. Leavers' personnel records are anonymised through the erasure path.
+
+**Consequences.** Nothing is deleted without an explicit tenant decision. Statutory minimums still bind when the tenant sets a shorter period.
+
+## ADR-0084 — Company export as a zip built with fflate 0.8.3 (2026-10-18)
+
+**Context.** Customers can export all their data at any time.
+
+**Decision.**
+- **Format:** a background job writes `tables/<schema.table>.csv` for every tenant table (enumerated from the catalog like the tenant-move tool), `sensitive/vault-records.jsonl` (decrypted, with one audit entry per category), every stored file under the tenant prefix, `files/manifest.csv` and `manifest.json` (row counts and SHA-256 per file).
+- **Omitted:** credential hashes, tokens and wrapped keys are never exported.
+- **Library:** `fflate` 0.8.3 is MIT-licensed with no dependencies. It is pinned exactly and is a direct dependency of `@thapsus/api`.
+- **Delivery:** the archive is stored at `<tenant>/exports/<id>.zip` in the home-region bucket and downloaded through a 300-second presigned URL.
+
+**Consequences.** The archive is built in memory. That is fine for typical tenants, but the 200,000-employee profile needs streaming S3 multipart upload, which is a Phase 12 follow-up. Tables are read one statement at a time, not as a single snapshot, and the manifest says so.
+
+## ADR-0085 — Account closure: grace period, guarded audit purge, verified deletion and certificate (2026-10-18)
+
+**Decision.**
+- **Scheduling:** `POST /v1/privacy/closure` (owner only) schedules deletion after `closureGraceDays` (30, pending legal review), with a cancellable job whose `run_after` is the purge time.
+- **Blocking access:** the purge first sets the registry status to `closing`, which blocks sign-in and API use.
+- **Audit log:** the log is purged by `audit.purge_closed_tenant()`. It is a `SECURITY DEFINER` function that refuses any tenant not `closing` with a closure in `purging`. The append-only trigger allows that delete only, and the app role still has no DELETE privilege.
+- **Database:** every other tenant table is deleted children-first.
+- **Files and caches:** object deletion removes all versions under the tenant prefix. Rate-limit and lockout keys are removed by prefix.
+- **Verification and certificate:** each store is checked empty. A deletion certificate with counts, backup expiry, log retention and region is written to `registry.deletion_certificates`, which is allow-listed in the isolation test, and emailed to the requester from the home region.
+- **Final state:** the registry and the global directory are marked `deleted`. The directory holds no personal data.
+- **Worker:** the engine tolerates a tenant deleted by its own job.
+
+**Consequences.** Backups are not edited. They expire within `backupRetentionDays`, which a unit test ties to `infra/config/*.json`, and the certificate states that window.
+
+## ADR-0086 — Per-person export generated inline; signed local downloads in dev and test (2026-10-18)
+
+**Context.** One person's data is bounded. Local development and e2e have no S3, and the worker would hold a separate in-memory store.
+
+**Decision.** `POST /v1/privacy/requests/{id}/export` builds the JSON and PDF inline and stores them in the home-region object store. The `privacy.dsr_export` job does the same for automation. In dev and test only, `MemoryObjectStore` issues HMAC-signed, 300-second URLs served by the hidden `/v1/dev/objects` route that Phase 6 introduced for payroll files (one mechanism; Phase 8's separate `/v1/local-objects` route was folded into it when the branches merged). The route is never registered with S3, and only when `APP_ENV` is `dev` or `test`.
+
+**Consequences.** The Playwright flow downloads real files. Production behaviour (S3 presigned URLs) is unchanged.
+
+## ADR-0087 — Trust data generated from the documents; contractual settings in configuration (2026-10-18)
+
+**Decision.** `packages/core/scripts/trust-data.ts` generates `packages/core/src/trust/generated.json` from `docs/SUBPROCESSORS.md`, `docs/legal/privacy-notice-*.md` and `docs/legal/dpa-*.md`. That covers the sub-processor tables, a new change log, the templates and the DPA versions with hashes. `packages/core/test/trust.test.ts` fails if the file is stale, if a change gives less than the notice period, or if the backup expiry drifts from the infrastructure config. Contractual values that are Thapsus policy rather than law live in `packages/core/src/trust/legal.json`, all pending legal review: notice days, processor breach hours, grace days, reminder thresholds and retention windows. The public `/trust/subprocessors` page renders the published rows as data, with translated headings.
+
+**Consequences.** Other phases add sub-processors in `docs/SUBPROCESSORS.md`, add a change-log row, and run `pnpm --filter @thapsus/core trust-data`. A DPA version change in `docs/legal` prompts re-acceptance. The DPA is accepted at sign-up for the home-region template, and an owner-only endpoint handles later versions.
+
+## ADR-0088 — Incidents: controller deadlines per tenant, processor register in the back office (2026-10-18)
+
+**Decision.** `app.incidents` is the customer's own incident and breach log. Deadlines come from `breachDeadlines()`, with day limits applied as 24-hour multiples from awareness. Thresholds are checked against the affected counts. The processor-to-controller rows are left out, because the customer is the controller. Jurisdictions without a modelled rule are listed. The Thapsus-side register is `backoffice.breach_register` and holds no personal data or tenant content. Notifying controllers opens a `processor` incident in each affected tenant of the cell and notifies its admins. Reminders are deduplicated per deadline and threshold.
+
+## ADR-0089 — Unreachable official sources recorded as gaps, not values (2026-10-18)
+
+**Context.** Some official sources refused automated access during research:
+- `leginfo.legislature.ca.gov` returned a bot challenge;
+- `ilga.gov` was unavailable;
+- the official Georgia Code is hosted outside the allow-list.
+
+`ico.org.uk` guidance is not on the validator allow-list.
+
+**Decision.** Only what an official, allow-listed page confirmed was recorded. California's breach rule records the Attorney General sample-copy threshold, with its timing listed in `unverified`. Illinois records the individual-notice standard only. Georgia is a coverage to-do. The UK DSR rule cites legislation.gov.uk only. Each gap is in the pack's coverage notes (docs/COVERAGE.md) and in HUMAN_TODO 3.16.
+
+**Consequences.** The UI shows "not yet recorded, check with your adviser" for those jurisdictions instead of a guessed deadline.
+
+---

@@ -2,7 +2,7 @@
   "jurisdiction": "US",
   "parent": null,
   "name": "United States",
-  "version": 2,
+  "version": 3,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -239,6 +239,119 @@
       ]
     },
     {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Federal paid sick leave for private employers",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "federal": false
+          },
+          "source": {
+            "url": "https://www.dol.gov/general/topic/workhours/sickleave",
+            "title": "U.S. DOL — Sick Leave"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "DOL: \"Currently, there are no federal legal requirements for paid sick leave.\" FMLA requires unpaid leave. Federal contractor paid sick leave (EO 13706) not modelled. State and local laws apply via state packs."
+        }
+      ]
+    },
+    {
+      "key": "retention.payroll_records",
+      "description": "FLSA payroll records preserved 3 years (29 CFR 516.5)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P3Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.5",
+            "title": "29 CFR 516.5 — Records to be preserved 3 years"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "'Each employer shall preserve for at least 3 years: (a) Payroll records. From the last date of entry ...'. Text verified through the eCFR API (up to date as of 2026-10-15). Modelling baseline; earlier history not modelled."
+        }
+      ]
+    },
+    {
+      "key": "retention.time_records",
+      "description": "FLSA basic time and earnings records preserved 2 years (29 CFR 516.6)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P2Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.6",
+            "title": "29 CFR 516.6 — Records to be preserved 2 years"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "516.6(a)(1): 'basic time and earning cards or sheets on which are entered the daily starting and stopping time of individual employees' preserved at least 2 years 'From the date of last entry'. Verified through the eCFR API. Modelling baseline."
+        }
+      ]
+    },
+    {
+      "key": "retention.leave_records",
+      "description": "FMLA records kept no less than 3 years (29 CFR 825.500)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P3Y",
+            "from": "record_date",
+            "statutoryMinimum": true,
+            "legalReview": "pending"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/part-825/subpart-E/section-825.500",
+            "title": "29 CFR 825.500 — Recordkeeping requirements"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "825.500(b): 'employers must keep the records specified by these regulations for no less than three years'. Applies to FMLA leave and related medical certification records (kept as confidential medical records). Verified through the eCFR API. Modelling baseline."
+        }
+      ]
+    },
+    {
+      "key": "retention.personnel_records",
+      "description": "Title VII / ADA / GINA personnel records preserved 1 year (29 CFR 1602.14)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "period": "P1Y",
+            "from": "later_of_record_and_employment_end",
+            "statutoryMinimum": true,
+            "legalReview": "pending",
+            "afterEmploymentEnds": "P1Y"
+          },
+          "source": {
+            "url": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1602/subpart-C/section-1602.14",
+            "title": "29 CFR 1602.14 — Preservation of records made or kept"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Personnel or employment records preserved 'for a period of one year from the date of the making of the record or the personnel action involved, whichever occurs later'; on involuntary termination 'one year from the date of termination'; records relevant to a charge kept until final disposition (use a legal hold). Verified through the eCFR API. Modelling baseline."
+        }
+      ]
+    },
+    {
       "key": "reporting.eeo1",
       "description": "EEO-1 Component 1 annual workforce demographic report",
       "versions": [
@@ -296,26 +409,6 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. STATUS (Oct 2026): 2024 collection closed; EEOC says updates on the 2025 collection will be posted. On 21 Jul 2026 the EEOC voted to issue an NPRM to rescind EEO-1 to EEO-6 reporting (see https://www.eeoc.gov/newsroom/eeoc-proposes-rescission-annual-race-and-sex-reporting-requirements). The requirement remains in the regulations until a final rule; review when the rule is finalised. Federal contractor criteria (e.g. contract value) not modelled. Phase 5 (verified 2026-10-18): job categories (Officials and Managers split into Executive/Senior Level and First/Mid Level, ten in all), race/ethnicity categories (Hispanic or Latino, then not Hispanic or Latino: White, Black or African American, Native Hawaiian or Other Pacific Islander, Asian, American Indian or Alaska Native, Two or More Races), male/female columns, self-identification preferred and employment records or observer identification if the employee declines: EEO-1 Instruction Booklet on eeoc.gov (https://www.eeoc.gov/sites/default/files/migrated_files/employers/eeo1/instruction_rev_2006.pdf). Its July-September payroll period is superseded: the workforce snapshot is one pay period from 1 October to 31 December of the reporting year (EEOC Commission meeting transcript, 11 August 2026, https://www.eeoc.gov/meetings/notice-commission-hearing-August-11/transcript). The current booklet is on eeocdata.org (not allow-listed): legal review."
-        }
-      ]
-    },
-    {
-      "key": "sick_pay.paid_sick_leave_accrual",
-      "description": "Federal paid sick leave for private employers",
-      "versions": [
-        {
-          "effectiveFrom": "2024-01-01",
-          "effectiveTo": null,
-          "value": {
-            "federal": false
-          },
-          "source": {
-            "url": "https://www.dol.gov/general/topic/workhours/sickleave",
-            "title": "U.S. DOL — Sick Leave"
-          },
-          "verifiedOn": "2026-10-18",
-          "reviewer": "research-agent (pending legal review)",
-          "notes": "DOL: \"Currently, there are no federal legal requirements for paid sick leave.\" FMLA requires unpaid leave. Federal contractor paid sick leave (EO 13706) not modelled. State and local laws apply via state packs."
         }
       ]
     },
@@ -693,6 +786,7 @@
       "FMLA history before 2008 and military-family amendments (2009, 2013)",
       "EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM",
       "COBRA, WARN Act, PWFA, PUMP Act",
+      "privacy: federal sector-specific breach rules (e.g. HIPAA) are not modelled; no federal employee data-subject-request law",
       "FLSA teachers and practitioners of law or medicine (no salary test, 29 CFR 541.303-304); ecfr.gov blocks automated fetching",
       "EEO-1: current instruction booklet on eeocdata.org (not allow-listed); NAICS/establishment reporting"
     ],

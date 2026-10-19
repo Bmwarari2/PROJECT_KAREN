@@ -2,7 +2,7 @@
   "jurisdiction": "US-FL",
   "parent": "US",
   "name": "Florida",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -67,6 +67,43 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "From 30 Sep 2027 the rate is inflation-adjusted annually and the adjusted rate takes effect the following 1 January (first adjustment 1 Jan 2028). Tipped direct wage not modelled."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "Florida security of confidential personal information (s. 501.171, F.S.)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": 30,
+              "from": "determination",
+              "standard": "as expeditiously as practicable and without unreasonable delay, but no later than 30 days after the determination of a breach or reason to believe a breach occurred"
+            },
+            "regulator": {
+              "body": "Florida Department of Legal Affairs",
+              "deadlineDays": 30,
+              "from": "determination",
+              "minAffected": 500,
+              "standard": "as expeditiously as practicable, but no later than 30 days after the determination of the breach; 15 additional days if good cause is given in writing within 30 days"
+            },
+            "processorToController": {
+              "deadlineDays": 10,
+              "from": "determination",
+              "standard": "as expeditiously as practicable, but no later than 10 days following the determination of the breach of security or reason to believe the breach occurred"
+            },
+            "lawEnforcementDelay": true
+          },
+          "source": {
+            "url": "https://www.flsenate.gov/Laws/Statutes/2025/501.171",
+            "title": "The 2025 Florida Statutes, section 501.171"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Subs. (3) notice to the Department for 500 or more individuals in Florida; subs. (4) individuals within 30 days; subs. (6) third-party agents notify the covered entity within 10 days. History: s. 3, ch. 2014-189 ... s. 25, ch. 2023-201. Modelling baseline 2024-01-01 (text verified in the 2025 statutes)."
         }
       ]
     }

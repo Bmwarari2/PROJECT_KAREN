@@ -243,6 +243,7 @@
       "imports": "Imports",
       "automation": "Automation",
       "timeOff": "Time off",
+      "privacy": "Privacy",
       "rota": "Rota",
       "clock": "Clock in",
       "timesheets": "Timesheets",
@@ -412,6 +413,18 @@
     "shiftClaimRejected": "Your open shift request was not approved",
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned",
+    "dsrDue": "A privacy request is due in {days} days ({date})",
+    "dsrOverdue": "A privacy request is overdue (was due {date})",
+    "dsrExportReady": "The access export for a privacy request is ready",
+    "closureScheduled": "Account closure is scheduled for {date}",
+    "closureCancelled": "Account closure was cancelled",
+    "closureReminder": "Your account will be closed and deleted in {days} days",
+    "companyExportReady": "Your company data export is ready to download",
+    "incidentDeadline": "Breach notification due in {hours} hours for {jurisdiction}: {title}",
+    "incidentOverdue": "Breach notification deadline passed for {jurisdiction}: {title}",
+    "subprocessorChange": "Sub-processor change from {date}: {change}",
+    "dpaReaccept": "A new data processing agreement ({version}) needs your acceptance",
+    "processorBreach": "Thapsus-HR reported a security incident affecting your data: {title}",
     "payslipAvailable": "Your payslip for {label} is ready",
     "yearEndAvailable": "Your year-end document for {label} is ready",
     "assetAssigned": "Please confirm you received {asset}",
@@ -670,6 +683,516 @@
         "completed": "Return-to-work done",
         "not_required": "Still off"
       }
+    }
+  },
+  "privacy": {
+    "exportPdf": {
+      "title": "Your personal data — access request summary",
+      "intro": "This summary accompanies the machine-readable export of the personal data held about {name}.",
+      "reference": "Request reference",
+      "received": "Request received",
+      "generated": "Generated (UTC)",
+      "jurisdiction": "Law applied",
+      "categoriesHeading": "Records held, by type:",
+      "sensitiveHeading": "Special category and sensitive data included:",
+      "none": "None",
+      "withheld": "Some sensitive categories were withheld because the person who ran the export may not view them: {categories}. Ask an administrator with access to run it again.",
+      "activity": "Records you created or changed about other people (counts only, their content is not disclosed)",
+      "audit": "Audit trail entries included",
+      "machineReadable": "The complete data is in the accompanying JSON file (SHA-256 {sha256}).",
+      "table": {
+        "app_employees": "Employee record",
+        "app_employee_personal": "Personal details (history)",
+        "app_employee_jobs": "Job history",
+        "app_employee_contracts": "Contracts",
+        "app_employee_pay": "Pay history",
+        "app_reporting_lines": "Reporting lines",
+        "app_emergency_contacts": "Emergency contacts",
+        "app_custom_field_values": "Custom fields",
+        "app_custom_object_records": "Custom records",
+        "app_documents": "Documents",
+        "app_signature_requests": "Signatures",
+        "app_workflow_instances": "Onboarding and offboarding",
+        "app_approval_requests": "Approvals about you",
+        "app_approval_steps": "Approval decisions",
+        "app_tasks": "Tasks",
+        "app_leave_requests": "Time off requests",
+        "app_leave_adjustments": "Leave adjustments",
+        "app_leave_policy_assignments": "Leave policies",
+        "app_fmla_cases": "FMLA cases",
+        "app_sickness_records": "Sickness records",
+        "app_shifts": "Shifts",
+        "app_shift_swaps": "Shift swaps",
+        "app_availability": "Availability",
+        "app_clock_events": "Clock-ins and clock-outs",
+        "app_timesheets": "Timesheets",
+        "app_working_time_opt_outs": "Working-time opt-outs",
+        "app_kiosk_pins": "Kiosk PIN (set or not)",
+        "app_users": "User account",
+        "app_sessions": "Sign-in sessions",
+        "app_passkeys": "Passkeys",
+        "app_password_credentials": "Password (set or not)",
+        "app_totp_factors": "Authenticator app",
+        "app_magic_links": "Sign-in links",
+        "app_auth_challenges": "Sign-in challenges",
+        "app_ics_tokens": "Calendar feeds",
+        "app_push_subscriptions": "Push notification devices",
+        "app_notifications": "Notifications",
+        "app_group_members": "Groups",
+        "app_role_assignments": "Roles",
+        "app_delegations": "Delegations",
+        "app_subprocessor_subscriptions": "Sub-processor notices",
+        "app_dsr_requests": "Privacy requests",
+        "app_legal_holds": "Legal holds"
+      },
+      "vault": {
+        "health": "Health",
+        "sickness": "Sickness details",
+        "disability": "Disability",
+        "diversity": "Diversity",
+        "eeo": "EEO self-identification",
+        "immigration": "Right to work and immigration"
+      }
+    },
+    "closure": {
+      "certificateSubject": "Deletion certificate for workspace {workspace}",
+      "certificateBody": "All data of workspace {workspace} was deleted from the database, file storage and caches on {date}. Backups expire automatically by {expires}. The certificate follows."
+    },
+    "ui": {
+      "title": "Privacy",
+      "lead": "Handle data subject requests within their legal deadlines, keep data only as long as needed, and manage your account data, incidents and legal terms.",
+      "sections": "Privacy sections",
+      "tab": {
+        "requests": "Requests",
+        "retention": "Retention",
+        "incidents": "Incidents",
+        "legal": "DPA and notices",
+        "exports": "Export and closure"
+      },
+      "kind": {
+        "access": "Access (copy of data)",
+        "correction": "Correction",
+        "deletion": "Deletion"
+      },
+      "channel": {
+        "email": "Email",
+        "portal": "Self-service portal",
+        "letter": "Letter",
+        "phone": "Phone",
+        "in_person": "In person",
+        "other": "Other"
+      },
+      "identity": {
+        "signed_in_account": "Signed in to their own account",
+        "known_contact_details": "Confirmed through known contact details",
+        "document_check": "Document checked (no copy kept)",
+        "agent_authorisation": "Agent authority checked",
+        "other": "Other method"
+      },
+      "status": {
+        "received": "Received",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled"
+      },
+      "statusFilter": {
+        "open": "Open",
+        "all": "All",
+        "completed": "Completed",
+        "rejected": "Rejected"
+      },
+      "category": {
+        "time_records": "Working-time records",
+        "leave_records": "Leave records",
+        "sickness_records": "Sickness records",
+        "payroll_records": "Payroll records",
+        "immigration_records": "Right-to-work and immigration records",
+        "personnel_records": "Personnel records",
+        "notifications": "Notifications",
+        "contact": "Emergency contacts",
+        "account": "Sign-in account",
+        "accountability": "Accountability records",
+        "other": "Other records",
+        "health": "Health data",
+        "sickness": "Sickness details",
+        "disability": "Disability data",
+        "diversity": "Diversity data",
+        "eeo": "EEO self-identification",
+        "immigration": "Immigration data"
+      },
+      "anchor": {
+        "record_date": "from the record date",
+        "end_of_tax_year": "after the end of the tax year",
+        "employment_end": "after employment ends",
+        "later_of_record_and_employment_end": "from the later of the record and the end of employment",
+        "end_of_following_pay_reference_period": "after the following pay period"
+      },
+      "action": {
+        "delete": "Delete",
+        "anonymise": "Anonymise",
+        "retain": "Kept"
+      },
+      "period": {
+        "years": "{n} yr",
+        "months": "{n} mo",
+        "weeks": "{n} wk",
+        "days": "{n} d"
+      },
+      "form": {
+        "title": "Log a request",
+        "lead": "The deadline is calculated from the law that applies to the person (UK GDPR, GDPR or CCPA) and shown with its official source.",
+        "kind": "Request type",
+        "findPerson": "Find the person",
+        "findHint": "Type at least two letters of their name",
+        "subject": "Person",
+        "choose": "Choose a person",
+        "pickSubject": "Choose the person the request is about",
+        "received": "Date received",
+        "channel": "Received by",
+        "identity": "Identity verified by",
+        "notYet": "Not verified yet",
+        "identityNote": "How identity was checked",
+        "identityNoteHint": "Describe the check. Never record ID numbers or copies of documents.",
+        "details": "Details of the request",
+        "submit": "Log request"
+      },
+      "created": "Request logged. Respond by {date}.",
+      "createdNoDeadline": "Request logged. No statutory deadline applies in this jurisdiction.",
+      "queue": "Request queue",
+      "filter": "Show",
+      "col": {
+        "subject": "Person",
+        "kind": "Type",
+        "received": "Received",
+        "due": "Due"
+      },
+      "noDeadline": "No statutory deadline",
+      "overdue": "Overdue",
+      "daysLeft": "{days} days left",
+      "open": "Open",
+      "openFor": "Open request for {name}",
+      "empty": "No open requests",
+      "emptyBody": "Requests you log appear here with their deadlines.",
+      "detail": {
+        "title": "{kind} request — {name}",
+        "law": "Law applied",
+        "source": "Deadline source",
+        "noLaw": "No data subject request law covers employees in {jurisdiction}; set your own target.",
+        "identity": "Identity",
+        "verified": "Verified: {method}",
+        "notVerified": "Not verified yet",
+        "informationReceived": "Information received on",
+        "recordIdentity": "Record verification",
+        "identitySaved": "Verification recorded; the deadline was recalculated.",
+        "extendReason": "Reason for extending",
+        "extendBy": "Tell the person before {date}",
+        "extend": "Extend deadline",
+        "extended": "Deadline extended",
+        "exportTitle": "Access export",
+        "exportSummary": "Covers {tables} kinds of records and {sensitive} sensitive values.",
+        "generate": "Generate export",
+        "regenerate": "Generate again",
+        "exportReady": "The export is ready to download",
+        "downloadJson": "Download JSON",
+        "downloadPdf": "Download PDF summary",
+        "field": "Field",
+        "newValue": "Correct value",
+        "effective": "Correct from",
+        "applyCorrection": "Apply correction",
+        "corrected": "Correction applied with a full history entry",
+        "reviewPlan": "Review what will be erased",
+        "willErase": "Will erase or anonymise: {list}.",
+        "nothingToErase": "Nothing can be erased yet.",
+        "keptHold": "{category}: kept because of a legal hold.",
+        "keptUntil": "{category}: kept until {date} by law.",
+        "keptOpen": "{category}: kept while employment continues, by law.",
+        "confirmErase": "I understand this cannot be undone",
+        "erase": "Erase now",
+        "erased": "Erasure completed and logged",
+        "complete": "Mark completed",
+        "reject": "Reject request",
+        "closed": "Request closed"
+      },
+      "retention": {
+        "rulesTitle": "Retention rules from the law",
+        "rulesLead": "Statutory minimums and suggested defaults from the jurisdiction packs, each with its official source. All values are pending legal review.",
+        "category": "Data category",
+        "jurisdiction": "Jurisdiction",
+        "period": "Keep for",
+        "kind": "Type",
+        "source": "Source",
+        "statutory": "Statutory minimum",
+        "suggested": "Suggested default",
+        "legalReview": "For legal review",
+        "noRule": "No rule in the packs: kept until you set a policy.",
+        "policiesTitle": "Your retention policies",
+        "policiesLead": "Automatic deletion is off until you switch it on for a category. You can keep data longer than the law requires, never shorter.",
+        "everywhere": "All jurisdictions",
+        "years": "Keep for (years)",
+        "yearsHint": "Leave empty to follow the law only",
+        "enableAuto": "Delete automatically",
+        "saved": "Policy saved",
+        "belowMinimum": "That is shorter than the statutory minimum: {list}",
+        "policyLine": "{category} ({jurisdiction}): {period}, automatic deletion {state}",
+        "on": "on",
+        "off": "off",
+        "packOnly": "law only",
+        "dryRun": "Dry run",
+        "runNow": "Run now",
+        "runQueued": "Retention run started",
+        "dryResult": "Dry run result (nothing was deleted)",
+        "dryLine": "{category}, {jurisdiction}: {rows} records would be affected ({action})",
+        "dryNothing": "Nothing is due for deletion today.",
+        "logTitle": "Deletion log",
+        "logLead": "What was deleted or kept, when and under which rule version. It never records personal data.",
+        "logEmpty": "No runs yet",
+        "when": "When",
+        "what": "Outcome",
+        "rows": "Records",
+        "dryTag": "dry run"
+      },
+      "holds": {
+        "title": "Legal holds",
+        "lead": "A legal hold stops retention and erasure for everyone or for one category until it is released.",
+        "reason": "Reason",
+        "add": "Add hold",
+        "created": "Legal hold added",
+        "allCategories": "All categories",
+        "everyone": "Everyone",
+        "line": "{who} — {category}: {reason}",
+        "release": "Release",
+        "released": "Released",
+        "releasedToast": "Legal hold released"
+      },
+      "exports": {
+        "title": "Export all company data",
+        "lead": "Download everything in your workspace at any time: every table as CSV, sensitive data decrypted, stored files and a manifest with checksums. Large exports run in the background.",
+        "start": "Start export",
+        "started": "Export started",
+        "requested": "Requested",
+        "size": "Size",
+        "ready": "Ready: {tables} tables, {files} files",
+        "failed": "Failed",
+        "progress": "Working: {done} of {total} steps",
+        "download": "Download",
+        "ownerOnlyTitle": "Only the company owner can export or close the account",
+        "ownerOnly": "Ask the owner of your workspace to do this."
+      },
+      "closure": {
+        "title": "Close the account",
+        "lead": "After a {days}-day grace period, every record, file and cache entry is deleted and a deletion certificate is emailed to you. Backups expire automatically within {backups} days. Export your data first.",
+        "confirmLabel": "Type {workspace} to confirm",
+        "reason": "Reason (optional)",
+        "schedule": "Schedule closure",
+        "scheduledToast": "Account closure scheduled",
+        "scheduled": "Your account will be closed and deleted on {date}. You can cancel until then.",
+        "afterwards": "Backups expire within {days} days of deletion.",
+        "cancel": "Cancel closure",
+        "cancelled": "Closure cancelled"
+      },
+      "incidents": {
+        "newTitle": "Log an incident",
+        "newLead": "For personal data breaches the notification deadlines are calculated from the jurisdiction packs for each place where people are affected.",
+        "titleField": "What happened",
+        "awareAt": "When you became aware",
+        "awareHint": "The clock for regulators starts here",
+        "affected": "People affected by jurisdiction",
+        "affectedHint": "For example GB=40, US-CA=12",
+        "affectedInvalid": "Use the form GB=40, US-CA=12",
+        "type": "Type",
+        "breach": "Personal data breach",
+        "notBreach": "Other security incident",
+        "description": "Description",
+        "log": "Log incident",
+        "created": "Incident logged",
+        "fromProcessor": "Reported by Thapsus-HR",
+        "awareLine": "Aware since {at}",
+        "dueBy": "due by {at}",
+        "source": "Source",
+        "markNotified": "Mark notified",
+        "unmodelled": "Notification rules not yet recorded for: {list}. Check with your adviser.",
+        "empty": "No incidents logged",
+        "status": {
+          "open": "Open",
+          "contained": "Contained",
+          "closed": "Closed"
+        },
+        "audience": {
+          "regulator": "{jurisdiction} regulator ({body})",
+          "individuals": "{jurisdiction} affected people",
+          "consumerReportingAgencies": "{jurisdiction} consumer reporting agencies",
+          "processorToController": "{jurisdiction} controller"
+        }
+      },
+      "legal": {
+        "dpaTitle": "Data processing agreement",
+        "dpaCurrent": "Current version: {version} ({template})",
+        "accepted": "Version {version} accepted by {name} on {date}",
+        "reaccept": "A new version needs your acceptance",
+        "accept": "Accept the new DPA",
+        "acceptedToast": "DPA accepted",
+        "ownerOnly": "Only the company owner can do this",
+        "template": {
+          "uk": "United Kingdom",
+          "eu": "European Union",
+          "us": "United States"
+        },
+        "subTitle": "Sub-processors",
+        "subLead": "Changes are announced at least {days} days before they take effect for customers in the {region} region.",
+        "subList": "View the full list",
+        "subscribe": "Notify me of changes",
+        "unsubscribe": "Stop notifications",
+        "subscribedToast": "You will be notified of changes",
+        "unsubscribed": "Notifications stopped",
+        "changeLine": "From {date}: {change}",
+        "noticesTitle": "Employee privacy notice",
+        "noticesLead": "Start from a template for each jurisdiction, edit it for your company and publish it. Templates are drafts for legal review.",
+        "templateLabel": "Template",
+        "noticeStatus": {
+          "draft": "Draft",
+          "published": "Published"
+        },
+        "notStarted": "Not started",
+        "outdated": "A newer template is available",
+        "noticeTitle": "Title",
+        "noticeBody": "Notice text",
+        "noticeHint": "Replace the {{merge fields}} with your details.",
+        "saveDraft": "Save draft",
+        "publish": "Publish",
+        "savedDraft": "Draft saved",
+        "published": "Notice published"
+      }
+    }
+  },
+  "trust": {
+    "meta": {
+      "title": "Security and trust — Thapsus-HR",
+      "description": "Where your data lives, how it is protected, our sub-processors and how we handle privacy."
+    },
+    "hero": {
+      "eyebrow": "Security and trust",
+      "title": "Your people’s data, kept close and kept safe",
+      "lead": "Choose where your data lives. We keep it there, encrypt it, isolate it from every other customer and give you the tools to meet your own privacy obligations.",
+      "subprocessors": "View sub-processors",
+      "contact": "Report a security issue"
+    },
+    "residency": {
+      "title": "Data stays in the region you choose",
+      "lead": "At sign-up you choose the United Kingdom, the European Union or the United States. Records, files, backups, logs, search indexes, caches, queues and emails stay there.",
+      "primary": "Stored and processed in AWS {region}",
+      "backup": "Backup copies only in AWS {region}",
+      "backupHome": "Backups stay in the same region, across availability zones",
+      "global": "A small global service only knows which region your workspace lives in. It holds no employee personal data."
+    },
+    "security": {
+      "title": "How your data is protected",
+      "isolation": {
+        "title": "Isolated from other customers",
+        "body": "Every table is protected by database row-level security, proven by automated tests on every change."
+      },
+      "encryption": {
+        "title": "Encrypted everywhere",
+        "body": "TLS in transit and encryption at rest with keys held in each region’s key management service."
+      },
+      "vault": {
+        "title": "Sensitive data in a separate vault",
+        "body": "Health, sickness, diversity and immigration data are encrypted field by field and every access is logged."
+      },
+      "access": {
+        "title": "Strong sign-in",
+        "body": "Multi-factor authentication for administrators, single sign-on, session timeouts and lockout."
+      },
+      "audit": {
+        "title": "Append-only audit trail",
+        "body": "Every change and every view of sensitive data is recorded in a tamper-evident log you can export."
+      },
+      "backups": {
+        "title": "Resilient backups",
+        "body": "Continuous backups in your region. After deletion, backups expire automatically within {days} days."
+      }
+    },
+    "privacy": {
+      "title": "Privacy tools for your team",
+      "lead": "You are the controller of your HR data. These tools help you meet your obligations.",
+      "dsr": {
+        "title": "Data subject requests",
+        "body": "Access exports, corrections and erasure, with legal deadlines for UK GDPR, GDPR and CCPA."
+      },
+      "retention": {
+        "title": "Retention",
+        "body": "Statutory minimums per country with sources, your own policies, dry runs and a deletion log."
+      },
+      "export": {
+        "title": "Export everything",
+        "body": "Download all of your company’s data at any time, with a manifest and checksums."
+      },
+      "closure": {
+        "title": "Verified deletion",
+        "body": "Close your account with a {grace}-day grace period, then receive a deletion certificate."
+      },
+      "incidents": {
+        "title": "Incident and breach log",
+        "body": "Deadlines such as the 72-hour regulator notice, with reminders before they pass."
+      },
+      "dpa": {
+        "title": "Legal terms",
+        "body": "Data processing agreements, privacy notice templates per jurisdiction and sub-processor notices."
+      }
+    },
+    "compliance": {
+      "title": "Compliance",
+      "body": "Our controls are mapped to recognised frameworks, with the evidence for each kept alongside the product.",
+      "soc2": "SOC 2 Trust Services Criteria: controls mapped to evidence",
+      "iso": "ISO/IEC 27001:2022 Annex A: controls mapped to evidence",
+      "gdpr": "UK GDPR, GDPR and CCPA: processor terms and privacy tools",
+      "status": "No independent audit or certification has been completed yet."
+    },
+    "links": {
+      "subprocessors": {
+        "title": "Sub-processors",
+        "body": "The third parties that process data for us, per region. Changes are announced {days} days in advance.",
+        "cta": "See the list"
+      },
+      "status": {
+        "title": "Service status",
+        "body": "Live availability for each region.",
+        "cta": "Check status"
+      },
+      "security": {
+        "title": "Security contact",
+        "body": "Found a vulnerability? Tell us and we will acknowledge it within two business days."
+      }
+    },
+    "sub": {
+      "meta": {
+        "title": "Sub-processors — Thapsus-HR",
+        "description": "Third parties that process personal data for Thapsus-HR, by region."
+      },
+      "back": "Security and trust",
+      "title": "Sub-processors",
+      "lead": "We use these third parties to provide the service. We tell customers at least {days} days before a new sub-processor starts processing their data.",
+      "regionLabel": "Region",
+      "listTitle": "Sub-processors for {region}",
+      "col": {
+        "subprocessor": "Sub-processor",
+        "purpose": "Purpose",
+        "location": "Location",
+        "personalData": "Personal data",
+        "integration": "Integration",
+        "dataSent": "Data sent"
+      },
+      "section": {
+        "core": "Core infrastructure",
+        "billing": "Billing (company data only)",
+        "optional": "Optional features",
+        "integrations": "Integrations you connect"
+      },
+      "changes": "Change log",
+      "announced": "Announced",
+      "effective": "Effective from",
+      "change": "Change",
+      "subscribe": "Administrators can subscribe to change notices in Privacy → DPA and notices."
     }
   },
   "rota": {

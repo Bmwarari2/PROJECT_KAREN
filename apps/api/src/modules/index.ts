@@ -21,6 +21,8 @@ import { assetRoutes } from './assets/routes';
 import { reportRoutes } from './reports/routes';
 import { dataExportRoutes } from './data-export/routes';
 import { essRoutes } from './me/ess-routes';
+import { privacyRoutes } from './privacy/routes';
+import { privacyBackofficeRoutes } from './privacy/backoffice';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -47,4 +49,7 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(reportRoutes);
   await app.register(dataExportRoutes);
   await app.register(essRoutes);
+  // Phase 8: privacy operations
+  await app.register(privacyRoutes);
+  await app.register(privacyBackofficeRoutes);
 }

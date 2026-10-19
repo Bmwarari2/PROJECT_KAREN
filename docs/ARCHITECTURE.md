@@ -135,3 +135,31 @@ flowchart LR
 - in cell regions, can also run the post-deploy steps.
 
 `scripts/deploy.mjs` runs each target in dependency order: backup copy vaults, then global, then the cells. For each cell it runs `cdk deploy`, copies the internal token, fills the key material, runs the migrator task, restarts the services and checks health. Production refuses to run without explicit approval (ADR-0043).
+
+## 7. Privacy operations
+
+- **Data subject requests** (`apps/api/src/modules/privacy`):
+  - Deadlines are computed from the jurisdiction packs for the person's jurisdiction (a US state where known, otherwise the country, then the home-region regime).
+  - The table map in `subject-map.ts` drives the access export (JSON plus PDF, stored under `<tenant>/privacy/dsr/<id>/` in the home-region bucket) and erasure. A catalog test keeps the map complete.
+- **Retention:** a daily job applies enabled tenant policies over the pack minimums and writes a counts-only deletion log.
+- **Company export:** a background job writes a zip under `<tenant>/exports/` (CSV per table, decrypted vault values, files, manifest).
+- **Account closure:**
+
+```mermaid
+sequenceDiagram
+  participant O as Owner
+  participant A as API (home cell)
+  participant W as Worker
+  participant R as Regional registry
+  participant G as Global directory
+  O->>A: POST /v1/privacy/closure {confirmWorkspace}
+  A->>A: account_closures (grace period), job run_after = purge time
+  A->>G: status closing (no personal data)
+  W->>R: status closing (blocks sign-in)
+  W->>A: audit.purge_closed_tenant(), delete every tenant table, all object versions, cache keys
+  W->>W: verify every store is empty
+  W->>R: deletion certificate, status deleted
+  W->>G: status deleted
+  W-->>O: certificate by email (home-region SES)
+```
+
