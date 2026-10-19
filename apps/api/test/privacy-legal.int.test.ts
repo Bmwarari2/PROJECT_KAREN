@@ -66,6 +66,21 @@ describe('sub-processors', () => {
       changes.splice(changes.length - 2, 2);
     }
   });
+
+  it('the worker schedule queues one notice run per UTC date, which notifies subscribers of a change once', async () => {
+    await c.api('PUT', '/v1/privacy/subprocessors/subscription', { subscribed: true });
+    const changes = TRUST.subprocessors.changes;
+    changes.push({ id: 'test-uk-scheduled', type: 'addition', announced: '2026-11-03', effectiveFrom: '2026-12-03', regions: ['uk'], change: 'Fictional Rota Reminders Ltd for shift reminders' });
+    try {
+      await c.runPeriodic('2026-11-03T00:10:00Z');
+      await c.runPeriodic('2026-11-03T13:00:00Z');
+      expect((await c.jobsOf('privacy.subprocessor_notices', '2026-11-03')).map((j) => [j.idempotency_key, j.input])).toEqual([['2026-11-03', { date: '2026-11-03' }]]);
+      await c.runQueued('privacy.subprocessor_notices', '2026-11-03');
+      expect(await notifications('subprocessor:test-uk-scheduled')).toEqual([{ user_id: c.owner.userId, title_key: 'notify.subprocessorChange' }]);
+    } finally {
+      changes.pop();
+    }
+  });
 });
 
 describe('privacy notice templates', () => {
@@ -113,6 +128,22 @@ describe('incident and breach log', () => {
     const patched = await c.api('PATCH', `/v1/privacy/incidents/${inc.id}`, { status: 'closed', affected: { GB: 40 } });
     expect(patched.json()).toMatchObject({ status: 'closed', unmodelled: [] });
     expect(patched.json().closedAt).not.toBeNull();
+  });
+
+  it('the worker schedule queues one reminder run per UTC hour, which reminds before the deadline', async () => {
+    const res = await c.api('POST', '/v1/privacy/incidents', { title: 'Fictional misdirected payslip email', personalDataBreach: true, riskLevel: 'high_risk', awareAt: '2026-10-11T09:30:00Z', affected: { GB: 2 }, dataCategories: ['pay'] });
+    expect(res.statusCode, res.body).toBe(201);
+    const inc = res.json();
+    expect(inc.deadlines.find((d: { jurisdiction: string; audience: string }) => d.jurisdiction === 'GB' && d.audience === 'regulator')).toMatchObject({ dueAt: '2026-10-14T09:30:00Z' });
+    await c.runPeriodic('2026-10-13T10:05:00Z');
+    await c.runPeriodic('2026-10-13T10:55:00Z');
+    await c.runPeriodic('2026-10-13T11:05:00Z');
+    expect((await c.jobsOf('privacy.incident_reminders', '2026-10-13')).map((j) => [j.idempotency_key, j.input])).toEqual([
+      ['2026-10-13T10', { at: '2026-10-13T10:00:00Z' }],
+      ['2026-10-13T11', { at: '2026-10-13T11:00:00Z' }],
+    ]);
+    await c.runQueued('privacy.incident_reminders', '2026-10-13');
+    expect((await notifications(`incident:${inc.id}:GB:regulator`)).map((n) => n.title_key)).toEqual(['notify.incidentDeadline']); // under 24 hours left
   });
 
   it('records the Thapsus-side breach register (staff only) and notifies affected controllers in their own log', async () => {

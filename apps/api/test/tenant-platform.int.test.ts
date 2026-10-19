@@ -165,7 +165,11 @@ describe('dedicated database option (back office → move runner → tenant keep
     expect(req.json()).toMatchObject({ status: 'requested', targetKey: 'dedicated', tenantId: o.tenantId });
     expect((await api('POST', `/v1/backoffice/tenants/${o.tenantId}/database-moves`, { targetKey: 'dedicated', reason: 'Duplicate' }, { cookie: admin.cookie })).statusCode).toBe(409);
 
-    // the runner (a one-off task with owner credentials: `move-tenant --process-requests`)
+    // a runner without the target's owner URL (another dedicated database's tools task) leaves it queued
+    expect(await processMoveRequests({ ownerUrls: { shared: ownerUrl(TEST_DBS.shared) } })).toEqual([]);
+    expect((await api('GET', `/v1/backoffice/database-moves/${req.json().id}`, undefined, { cookie: admin.cookie })).json().status).toBe('requested');
+
+    // the runner (the dedicated database's tools task: `node dist/move-tenant.mjs --process-requests`)
     const outcomes = await processMoveRequests({ ownerUrls: { shared: ownerUrl(TEST_DBS.shared), dedicated: ownerUrl(TEST_DBS.dedicated) } });
     expect(outcomes.find((x) => x.id === req.json().id)).toMatchObject({ status: 'succeeded' });
     const status = (await api('GET', `/v1/backoffice/database-moves/${req.json().id}`, undefined, { cookie: admin.cookie })).json();

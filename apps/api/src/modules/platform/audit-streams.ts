@@ -13,7 +13,7 @@ import { newSigningSecret, signatureHeader } from '../../lib/signing';
 import { newToken } from '../auth/tokens';
 import { periodic, registerJob } from '../../jobs/registry';
 import { platformConfig } from './config';
-import { crossAccountS3FromEnv } from './siem-s3';
+import { AUDIT_STREAM_ROLE_PREFIX, crossAccountS3FromEnv, isAuditStreamRoleArn } from './siem-s3';
 import { urlOrigin } from './webhooks';
 
 /**
@@ -313,7 +313,7 @@ export async function auditStreamRoutes(app: FastifyInstance) {
             bucket: Type.Optional(Type.String({ maxLength: 63 })),
             prefix: Type.Optional(Type.String({ maxLength: 200, pattern: '^[A-Za-z0-9!_.*\'()/-]*$' })),
             region: Type.Optional(Type.String({ maxLength: 30 })),
-            roleArn: Type.Optional(Type.String({ maxLength: 600 })),
+            roleArn: Type.Optional(Type.String({ maxLength: 600, description: `S3 streams: the IAM role in your account; its name must start with ${AUDIT_STREAM_ROLE_PREFIX}` })),
             filters: Type.Optional(Filters),
             startFrom: Type.Optional(Type.Union([Type.Literal('now'), Type.Literal('beginning')], { description: 'Stream only new events (default) or back-fill the whole sealed log' })),
           },
@@ -337,6 +337,8 @@ export async function auditStreamRoutes(app: FastifyInstance) {
       } else {
         if (!b.bucket || !BUCKET.test(b.bucket)) throw new ApiError('validation', 'bucket is required');
         if (!b.roleArn || !ROLE_ARN.test(b.roleArn)) throw new ApiError('validation', 'roleArn must be an IAM role ARN');
+        // The cell worker may assume only customer roles named thapsus-hr-audit-* (IAM policy in the cell stack, ADR-0069).
+        if (!isAuditStreamRoleArn(b.roleArn)) throw new ApiError('unprocessable', 'roleNotAllowed', { rolePrefix: AUDIT_STREAM_ROLE_PREFIX });
         // Residency: the bucket must be in the tenant's home region (the guarded AWS factory refuses any other).
         if ((b.region ?? homeAws) !== homeAws) throw new ApiError('unprocessable', 'regionNotAllowed', { region: b.region, allowed: [homeAws] });
         config = { bucket: b.bucket, prefix: b.prefix ?? '', region: homeAws, roleArn: b.roleArn, externalId: `thapsus-${newToken(18)}` };

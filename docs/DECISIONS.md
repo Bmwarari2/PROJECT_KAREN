@@ -597,6 +597,48 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 
 ---
 
+## ADR-0068 — Dedicated databases are declared in the infra env config; one tools task per database migrates it and runs the move (2026-10-19)
+
+Numbered from the unused 0067–0069 range because 0100–0129 are reserved by other branches. Completes ADR-0099 and Phase 0.7 for AWS.
+
+**Context.** The router already reads `DEDICATED_DATABASE_HOSTS`, and the move tool and back-office requests exist (ADR-0099). But the runbook told operators to add `dedicatedDatabases` to `infra/config/<env>.json`, a setting infra did not have. The cluster, its migrations, the owner credentials for the move runner and a task to run it were all left to hand work. The router's handling of the setting and its residency check had no tests.
+
+**Decision.**
+- **Config:** `dedicatedDatabases?: [{ key, cell, minAcu?, maxAcu? }]` in the env config, validated by `validateConfig` (`infra/lib/config.ts`). The key must be lower-case letters, digits and single hyphens, start with a letter, be at most 24 characters and not be `shared`, and keys must be unique ignoring hyphens. The cell must be a home cell and capacity must be 0.5–256 ACU with min ≤ max. Unknown fields are refused. The committed configs declare none.
+- **Per entry, in that cell's stack only:** an Aurora PostgreSQL 17 Serverless v2 cluster `thapsus-hr-<env>-<cell>-<key>` and its RDS Proxy. Both come from the same helper as the shared cluster: writer and reporting reader in two AZs, the cell's data KMS key, backup retention and deletion protection from `aurora`, isolated subnets and the cell's database security group, TLS on the proxy, encrypted log groups. The cluster is added to the cell's AWS Backup selection and gets a CPU alarm. Each cluster has its **own owner secret**. The app, back-office and reporting role secrets are the cell's shared ones, so the migrator sets the same passwords everywhere.
+- **Routing:** the api and worker get `DEDICATED_DATABASE_HOSTS={"<key>":"<proxy endpoint>"}` and `DEDICATED_READER_HOSTS={"<key>":"<reader endpoint>"}`, the JSON form `TenantRouter.fromEnv` reads with `DATABASE_SECRET` and `REPORTING_DATABASE_SECRET`. The variables are absent when a cell has no entry.
+- **Router hardening:** `fromEnv` refuses `DEDICATED_DATABASE_HOSTS` without `DATABASE_SECRET` (it was silently ignored before), a `shared` key, invalid keys and non-object JSON. It also applies the residency check to every database and reader when `CELL_REGION` is set, so CLIs that skip `depsFromEnv` cannot be pointed at another region either.
+- **Tools task** `thapsus-hr-<env>-<cell>-db-<key>` (api image, migrator subnets and security group):
+  - The default command `node dist/migrate.mjs` migrates the dedicated database.
+  - The command override `node dist/move-tenant.mjs --process-requests` runs the move runner. It gets the owner URLs of both databases from `ownerUrlsFromEnv` (`SHARED_OWNER_DATABASE_SECRET` + `SHARED_DATABASE_HOST`, and `OWNER_DATABASE_SECRET` + `DATABASE_HOST` for `DEDICATED_DB_KEY`).
+  - The api image now also bundles `dist/move-tenant.mjs`.
+  - The runner only claims requests whose current and target databases both have an owner URL, so several dedicated databases' tasks never fail each other's requests.
+- **Deploys:** `scripts/deploy-plan.ts` adds a `run-migrator` step for each dedicated database of the cell, after the shared migrator and before the restart. A dedicated tenant therefore never runs on an unmigrated schema.
+
+**Consequences.**
+- Moving a tenant is a config entry, a cell deploy, a back-office request and one `run-task` (runbook). It needs no code change and no hand-built AWS resources.
+- Each entry is recurring cost (`docs/COSTS.md`) and needs approval first.
+- Removing an entry deletes the cluster (retained in prod, snapshotted elsewhere), so ask first.
+
+---
+
+## ADR-0069 — S3 audit streams assume only customer roles named `thapsus-hr-audit-*`, from the worker only (2026-10-19)
+
+Numbered from the unused 0067–0069 range because 0100–0129 are reserved by other branches. Refines ADR-0095.
+
+**Context.** ADR-0095 left the IAM grant for S3 audit streaming to a person (HUMAN_TODO 6.2 asked for `sts:AssumeRole` on `arn:aws:iam::*:role/*`). The API accepted any role ARN, so a stream only worked once someone granted every role in every account. Data export (ADR-0077) already solved the same problem in code with a role-name prefix.
+
+**Decision.**
+- **Prefix:** an S3 audit stream's role must be named `thapsus-hr-audit-…` (`AUDIT_STREAM_ROLE_PREFIX` in `apps/api/src/modules/platform/siem-s3.ts`), in the `aws` partition, with no role path (IAM matches the prefix against the whole path and name). The name may be at most 64 characters.
+- **API:** `POST /v1/settings/audit-streams` refuses any other role with **422**, `detail: "roleNotAllowed"` and `rolePrefix: "thapsus-hr-audit-"`. A value that is not a role ARN at all is still a 400. Nothing is stored.
+- **Writer:** `AwsCrossAccountS3.put` checks the prefix again after the residency checks and before calling STS, so a stored stream with another role fails with `role_not_allowed` and sends nothing.
+- **IAM:** the cell stack grants `sts:AssumeRole` on `arn:aws:iam::*:role/thapsus-hr-audit-*` (sid `AssumeCustomerAuditStreamRoles`) to the **worker** task role only, because only the `audit_streams.sync` job writes to S3. The API task role does not get it. The export grant (`thapsus-hr-export-*`, api and worker) is unchanged, and the two prefixes are separate, so an export role cannot be used for audit streams or the other way round. `infra/test/infra.test.ts` pins the three `sts:` statements exactly.
+- **Customer setup:** the role name, trust policy (our account and the stream's ExternalId) and permissions policy are documented in `docs/api.md`.
+
+**Consequences.** No IAM change is left for a person (HUMAN_TODO 6.2 now only covers publishing the account ids and an end-to-end review). Customers must name the role with the prefix; the hint in the app and the 422 say so.
+
+---
+
 ## ADR-0070 — Ready-made reports are a typed registry proven by golden tests (2026-10-18)
 
 **Context.** Phase 7 needs headcount, turnover, absence, holiday liability, overtime and the statutory reports, reproducible for any date, permission-aware and exportable in several formats.
@@ -861,7 +903,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 - **New dependency:** `@aws-sdk/client-sts` **3.1152.0** (Apache-2.0, AWS, same version line as the other AWS SDK clients).
 - **Scheduling:** a periodic enqueuer schedules one sync per stream per minute while the tenant is active, and the 5-minute sweep covers idle tenants.
 
-**Consequences.** Customers whose SIEM bucket lives in another region must replicate it themselves; we never write cross-region. Cell task roles need `sts:AssumeRole` on customer role ARNs (HUMAN_TODO 6.2).
+**Consequences.** Customers whose SIEM bucket lives in another region must replicate it themselves; we never write cross-region. The cell worker needs `sts:AssumeRole` on customer roles: ADR-0069 limits this to roles named `thapsus-hr-audit-*`.
 
 ## ADR-0096 — Sandboxes: classified tables, configuration copy, synthetic people (2026-10-18)
 
@@ -902,7 +944,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** The move tool needs owner (migrator) credentials. The API runs as `thapsus_app` and must never hold them.
 
 **Decision.**
-- **Request:** super-admin staff create a request in `backoffice.tenant_moves`. The target key must already be in the router configuration (runbook step 3), and at most one request can be open per tenant.
+- **Request:** super-admin staff create a request in `backoffice.tenant_moves`. The target key must already be in the router configuration (runbook step 2, ADR-0068), and at most one request can be open per tenant.
 - **Runner:** `pnpm --filter @thapsus/db move-tenant -- --process-requests` runs as a one-off task with owner credentials. It claims requests with `FOR UPDATE SKIP LOCKED`, runs `moveTenant`, and records progress lines, the report or the error.
 - **Status and cancellation:** staff follow the status at `/v1/backoffice/database-moves/{id}` and can cancel a request that has not started.
 

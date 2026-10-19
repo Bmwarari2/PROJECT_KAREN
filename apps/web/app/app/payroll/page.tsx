@@ -182,7 +182,7 @@ export default function PayrollPage() {
                           </select>
                           <Button size="sm" variant="secondary" loading={busy === `export:${p.id}`} onClick={() => exportPeriod(p)} aria-label={t('payroll.exportPeriod', { name: p.name })}>
                             <FileSpreadsheet aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                            {t('common.export')}
+                            {t('payroll.export')}
                           </Button>
                         </>
                       ) : null}
