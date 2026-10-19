@@ -9,6 +9,7 @@ import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
 import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
+import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
 import type { ThemeChoice } from '@/lib/i18n-shared';
 import { visibleSections } from './settings/sections';
@@ -31,6 +32,14 @@ export function useFeature(key: FeatureKey): boolean {
 }
 
 /** True when one of the session's grants covers the action (scope is enforced by the API). */
+/**
+ * The second factor still has to be used in this session: anyone who has one must verify it, and
+ * admins must set one up (the API refuses everything else until then; ASVS V6.3.3).
+ */
+export function needsSecondFactor(s: SessionInfo | null | undefined): boolean {
+  return !!s && !s.mfaVerified && (s.hasMfaFactor || s.isAdmin);
+}
+
 export function hasPermission(s: SessionInfo | null | undefined, p: string): boolean {
   return !!s?.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
 }
@@ -78,8 +87,8 @@ export function AppShell({ children, theme, initialSession = null }: { children:
   const path = usePathname();
   // Rendered on the server when it could read the session, so the first HTML already has the page.
   const [session, setSession] = React.useState<SessionInfo | null>(initialSession);
-  // Admins must complete MFA before using anything but the security page.
-  const mfaSetupPending = !!session?.isAdmin && !session.mfaVerified && !path.startsWith('/app/security');
+  // A second factor must be verified (or, for admins, set up) before anything but the security page.
+  const mfaSetupPending = needsSecondFactor(session) && !path.startsWith('/app/security');
   const [experience, setExperience] = React.useState<Experience | null>(null);
   const [experienceTick, setExperienceTick] = React.useState(0);
 
@@ -87,7 +96,7 @@ export function AppShell({ children, theme, initialSession = null }: { children:
     api<SessionInfo>('/v1/auth/session')
       .then((s) => {
         setSession(s);
-        if (s.isAdmin && !s.mfaVerified && !path.startsWith('/app/security')) router.replace('/app/security?setup=1');
+        if (needsSecondFactor(s) && !path.startsWith('/app/security')) router.replace(s.hasMfaFactor ? '/app/security?verify=1' : '/app/security?setup=1');
       })
       .catch((err) => {
         if (err instanceof ApiProblem && err.status === 401) router.replace(`/signin`);
@@ -95,7 +104,7 @@ export function AppShell({ children, theme, initialSession = null }: { children:
   }, [path, router]);
 
   React.useEffect(() => {
-    if (!session || (session.isAdmin && !session.mfaVerified)) return;
+    if (!session || needsSecondFactor(session)) return;
     api<Experience>('/v1/tenant/experience')
       .then(setExperience)
       .catch(() => undefined);
@@ -112,9 +121,12 @@ export function AppShell({ children, theme, initialSession = null }: { children:
       .catch(() => setAskHr(false));
   }, [aiFlag, experienceTick, path]);
 
+  // Signing out sends any offline clock punches first, ends the session (the API answers with
+  // Clear-Site-Data) and reloads the page so nothing from the session stays in memory (ASVS V14.3.1).
   const signOut = async () => {
+    if (session) await syncQueue(session.userId).catch(() => undefined);
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
-    router.replace('/signin');
+    window.location.replace('/signin');
   };
 
   const nav = session ? navItems(t, session, path, { askHr }) : [];

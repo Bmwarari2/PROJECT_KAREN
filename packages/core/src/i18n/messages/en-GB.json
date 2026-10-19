@@ -293,7 +293,53 @@
       "totpStart": "Set up authenticator app",
       "passkeyTitle": "Passkeys",
       "passkeyBody": "Sign in with your fingerprint, face or device PIN. Passkeys cannot be phished.",
-      "passkeyAdd": "Add a passkey"
+      "passkeyAdd": "Add a passkey",
+      "stepUp": {
+        "title": "Confirm it is you",
+        "passwordLead": "Enter your password to continue. You will not be asked again for 10 minutes.",
+        "codeLead": "Enter a code from your authenticator app to continue. You will not be asked again for 10 minutes.",
+        "signInAgain": "For your security, sign out and sign in again, then try once more.",
+        "confirm": "Confirm"
+      },
+      "sessions": {
+        "title": "Where you are signed in",
+        "body": "These are the devices and browsers signed in to your account. Sign out of any you do not recognise as yours.",
+        "device": "{browser} on {os}",
+        "unknownDevice": "Unknown device",
+        "current": "This device",
+        "signedIn": "Signed in {when} with {method}",
+        "lastActive": "Last active {when}",
+        "endOne": "Sign out",
+        "endOneLabel": "Sign out of {device}",
+        "ended": "That session has been signed out.",
+        "endOthers": "Sign out of all other sessions",
+        "endedOthers": "All your other sessions have been signed out.",
+        "onlyThis": "You are not signed in anywhere else.",
+        "method": {
+          "password": "a password",
+          "passkey": "a passkey",
+          "magic_link": "an emailed link",
+          "oidc": "single sign-on",
+          "saml": "single sign-on"
+        }
+      },
+      "password": {
+        "title": "Password",
+        "changeBody": "Change the password you sign in with. Every other session is signed out.",
+        "setBody": "You sign in with a link, a passkey or single sign-on. You can also set a password.",
+        "current": "Current password",
+        "new": "New password",
+        "hint": "At least 12 characters. Avoid common passwords and your own or your company’s name.",
+        "change": "Change password",
+        "set": "Set password",
+        "changed": "Your password has been saved. Your other sessions have been signed out.",
+        "problem": {
+          "tooShort": "Use at least 12 characters.",
+          "tooLong": "Use 128 characters or fewer.",
+          "tooCommon": "That password is too common. Choose one that is harder to guess.",
+          "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
+        }
+      }
     },
     "notifications": {
       "title": "Notifications",
@@ -1185,7 +1231,12 @@
       "mfaBody": "Two-step verification is always required for administrator roles.",
       "trustIdpMfa": "Trust two-step verification done by the identity provider",
       "trustIdpMfaHint": "People who sign in with single sign-on are not asked again.",
-      "range": "Between {min} and {max}."
+      "range": "Between {min} and {max}.",
+      "endAllTitle": "Sign everyone out",
+      "endAllBody": "Ends every session in the workspace except yours, for example after a suspected compromise.",
+      "endAll": "Sign everyone out",
+      "endAllConfirm": "Everyone else will need to sign in again on every device.",
+      "endAllDone": "{count} sessions have been signed out."
     },
     "scim": {
       "lead": "Connect your directory (for example Microsoft Entra ID or Okta) so accounts are created, updated and deactivated automatically.",
@@ -4861,7 +4912,20 @@
       "assign": "Assign role",
       "assigned": "Role assigned.",
       "adminNoMfa": "This person has not set up two-step verification. With an admin role they must set it up before they can continue.",
-      "scopeSummary": "{type}: {values}"
+      "scopeSummary": "{type}: {values}",
+      "signIn": {
+        "title": "Sign-in and security",
+        "body": "Sign this person out on every device, or reset two-step verification if they have lost their authenticator.",
+        "endSessions": "Sign out everywhere",
+        "endSessionsTitle": "Sign {name} out everywhere?",
+        "endSessionsBody": "They will need to sign in again on every device.",
+        "sessionsEnded": "They have been signed out everywhere.",
+        "resetMfa": "Reset two-step verification",
+        "resetMfaTitle": "Reset two-step verification for {name}?",
+        "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
+        "resetMfaConfirm": "I have confirmed who they are. Reset it",
+        "mfaReset": "Two-step verification has been reset."
+      }
     },
     "errors": {
       "exceedsYourAccess": "You can only grant access you hold yourself.",

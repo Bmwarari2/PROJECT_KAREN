@@ -1,10 +1,11 @@
 'use client';
 import * as React from 'react';
-import { Button, Field, Input, Skeleton } from '@thapsus/ui';
+import { Button, Field, Input, Skeleton, useToast } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { Checkbox, FormError, PageHeader, ReadOnlyNote, SettingsCard, useAction, usePermission } from '../kit';
+import { Checkbox, ConfirmAction, FormError, PageHeader, ReadOnlyNote, SettingsCard, useAction, usePermission } from '../kit';
+import { useStepUp } from '../../step-up';
 
 interface Security {
   ssoEnforced: boolean;
@@ -72,6 +73,34 @@ function PolicyForm({ initial, canManage, onSaved }: { initial: Security; canMan
   );
 }
 
+/** Sign everyone in the workspace out (ASVS V7.4.5), for example after a suspected compromise. */
+function EndAllSessions() {
+  const t = useT();
+  const toast = useToast();
+  const stepUp = useStepUp();
+  return (
+    <SettingsCard id="policy-end-all" title={t('admin.policy.endAllTitle')} description={t('admin.policy.endAllBody')}>
+      <div>
+        <ConfirmAction
+          label={t('admin.policy.endAll')}
+          title={t('admin.policy.endAllTitle')}
+          body={t('admin.policy.endAllConfirm')}
+          confirmLabel={t('admin.policy.endAll')}
+          onConfirm={async () => {
+            void stepUp
+              .run(async () => {
+                const r = await api<{ ended: number }>('/v1/settings/sessions/end-all', { method: 'POST' });
+                toast({ title: t('admin.policy.endAllDone', { count: r.ended }), tone: 'success' });
+              })
+              .catch(() => toast({ title: t('common.error'), tone: 'danger' }));
+          }}
+        />
+      </div>
+      {stepUp.dialog}
+    </SettingsCard>
+  );
+}
+
 export default function SignInPolicyPage() {
   const t = useT();
   const has = usePermission();
@@ -80,6 +109,7 @@ export default function SignInPolicyPage() {
     <>
       <PageHeader title={t('admin.section.signInPolicy.title')} lead={t('admin.policy.lead')} />
       {security.data ? <PolicyForm initial={security.data} canManage={has('settings.manage')} onSaved={security.reload} /> : <Skeleton className="h-64" />}
+      {has('settings.manage') ? <EndAllSessions /> : null}
     </>
   );
 }

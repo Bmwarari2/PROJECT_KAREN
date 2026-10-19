@@ -38,6 +38,7 @@ export interface SessionInfo {
   method: string;
   mfaVerified: boolean;
   hasMfaFactor: boolean;
+  hasPassword: boolean;
   isAdmin: boolean;
   roles: string[];
   permissions: string[];
