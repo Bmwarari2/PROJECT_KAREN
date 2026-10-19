@@ -37349,6 +37349,7 @@ export interface paths {
                         bucket?: string;
                         prefix?: string;
                         region?: string;
+                        /** @description S3 streams: the IAM role in your account; its name must start with thapsus-hr-audit- */
                         roleArn?: string;
                         filters?: {
                             /** @description Action prefixes, e.g. "auth." or "employee.changed" */

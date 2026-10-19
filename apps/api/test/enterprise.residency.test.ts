@@ -25,10 +25,10 @@ describe.each(regionPairs())('enterprise platform stays home (%s → %s)', (home
     const url = `http://127.0.0.1:${(mock.address() as AddressInfo).port}`;
     const writer = new AwsCrossAccountS3(home, { s3: url, sts: url });
     await expect(
-      writer.put({ region: REGIONS[other].awsRegion, roleArn: 'arn:aws:iam::123456789012:role/Audit', externalId: 'x', bucket: 'fictional', key: 'k', body: '{}', contentType: 'application/json', sessionName: 's' }),
+      writer.put({ region: REGIONS[other].awsRegion, roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-audit-siem', externalId: 'x', bucket: 'fictional', key: 'k', body: '{}', contentType: 'application/json', sessionName: 's' }),
     ).rejects.toBeInstanceOf(ResidencyViolationError);
     if (REGIONS[home].backupRegion) {
-      await expect(writer.put({ region: REGIONS[home].backupRegion!, roleArn: 'arn:aws:iam::123456789012:role/Audit', externalId: 'x', bucket: 'fictional', key: 'k', body: '{}', contentType: 'application/json', sessionName: 's' })).rejects.toBeInstanceOf(ResidencyViolationError);
+      await expect(writer.put({ region: REGIONS[home].backupRegion!, roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-audit-siem', externalId: 'x', bucket: 'fictional', key: 'k', body: '{}', contentType: 'application/json', sessionName: 's' })).rejects.toBeInstanceOf(ResidencyViolationError);
     }
     expect(requests).toBe(0);
     mock.close();
@@ -39,10 +39,10 @@ describe.each(regionPairs())('enterprise platform stays home (%s → %s)', (home
     try {
       const s = await signup(cell);
       await enrolTotp(cell, s.cookie);
-      const res = await cell.app.inject({ method: 'POST', url: '/v1/settings/audit-streams', headers: { cookie: s.cookie }, payload: { name: 'Elsewhere', kind: 's3', bucket: 'fictional-audit', region: REGIONS[other].awsRegion, roleArn: 'arn:aws:iam::123456789012:role/Audit' } });
+      const res = await cell.app.inject({ method: 'POST', url: '/v1/settings/audit-streams', headers: { cookie: s.cookie }, payload: { name: 'Elsewhere', kind: 's3', bucket: 'fictional-audit', region: REGIONS[other].awsRegion, roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-audit-siem' } });
       expect(res.statusCode).toBe(422);
       expect(res.json()).toMatchObject({ detail: 'regionNotAllowed', allowed: [REGIONS[home].awsRegion] });
-      const ok = await cell.app.inject({ method: 'POST', url: '/v1/settings/audit-streams', headers: { cookie: s.cookie }, payload: { name: 'Home', kind: 's3', bucket: 'fictional-audit', roleArn: 'arn:aws:iam::123456789012:role/Audit' } });
+      const ok = await cell.app.inject({ method: 'POST', url: '/v1/settings/audit-streams', headers: { cookie: s.cookie }, payload: { name: 'Home', kind: 's3', bucket: 'fictional-audit', roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-audit-siem' } });
       expect(ok.json().s3.region).toBe(REGIONS[home].awsRegion);
 
       const sb = await cell.app.inject({ method: 'POST', url: '/v1/sandboxes', headers: { cookie: s.cookie }, payload: { syntheticPeople: 2 } });
