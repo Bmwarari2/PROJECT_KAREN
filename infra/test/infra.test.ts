@@ -499,12 +499,19 @@ function expectWafOnEveryAlb(t: Json) {
 }
 
 function expectHttpsOnly(t: Json) {
-  const listeners = resources(t, 'AWS::ElasticLoadBalancingV2::Listener').map(([, r]) => r.Properties!);
+  const all = resources(t, 'AWS::ElasticLoadBalancingV2::Listener');
+  const listeners = all.map(([, r]) => r.Properties!);
   for (const l of listeners) {
     if (l.Protocol === 'HTTPS') expect(l.SslPolicy).toMatch(/TLS13-1-2|TLS-1-2/);
     else expect(l.DefaultActions[0].Type).toBe('redirect');
   }
   expect(listeners.some((l) => l.Protocol === 'HTTPS')).toBe(true);
+  // ASVS V4.1.2: only browser pages redirect; API paths on plain HTTP fail visibly (400), never redirect
+  const httpIds = all.filter(([, r]) => r.Properties!.Protocol === 'HTTP').map(([id]) => id);
+  const rules = resources(t, 'AWS::ElasticLoadBalancingV2::ListenerRule').map(([, r]) => r.Properties!).filter((r) => httpIds.includes(r.ListenerArn?.Ref));
+  const refused = rules.flatMap((r) => (r.Actions[0].Type === 'fixed-response' && r.Actions[0].FixedResponseConfig.StatusCode === '400' ? r.Conditions.flatMap((c: Json) => c.PathPatternConfig?.Values ?? c.Values ?? []) : []));
+  expect(refused).toEqual(expect.arrayContaining(['/health/api']));
+  expect(refused.some((p: string) => p === '/v1/*' || p === '/global/*')).toBe(true);
 }
 
 /** Actions AWS only supports on Resource "*", plus what CDK's ECS execution role needs. */

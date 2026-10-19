@@ -97,7 +97,7 @@ export class GlobalStack extends Stack {
     vpc.addFlowLog('FlowLog', { destination: ec2.FlowLogDestination.toCloudWatchLogs(flowLogs) });
 
     const logs_ = logsBucket(this, `thapsus-hr-${env}-${GLOBAL_REGION}-global-logs-${this.account}`, cfg);
-    const { alb, https } = publicAlb(this, { vpc, logs: logs_, certificateArn: certificateArn(this, cfg.global.certificateArn), name: prefix });
+    const { alb, https } = publicAlb(this, { vpc, logs: logs_, certificateArn: certificateArn(this, cfg.global.certificateArn), name: prefix, noRedirectPaths: ['/global/*', '/health/api'] });
     regionalWaf(this, alb, `${prefix}-web-acl`, cfg.wafRateLimitPer5Min);
 
     // ---------------------------------------------------------------- Secrets + billing placeholders

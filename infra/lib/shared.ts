@@ -135,10 +135,14 @@ export function certificateArn(scope: Construct, fromConfig: string | null): str
   }).valueAsString;
 }
 
-/** Internet-facing ALB: HTTPS (TLS 1.2+) only, HTTP redirects, access logs, invalid headers dropped. */
+/**
+ * Internet-facing ALB: HTTPS (TLS 1.2+) only, access logs, invalid headers dropped. Plain HTTP
+ * redirects browsers to HTTPS, except API paths (`noRedirectPaths`), which get a 400 instead: an API
+ * client that sends a request without TLS must fail visibly, not be silently redirected (ASVS V4.1.2).
+ */
 export function publicAlb(
   scope: Construct,
-  opts: { vpc: ec2.IVpc; logs: s3.IBucket; certificateArn: string; name: string },
+  opts: { vpc: ec2.IVpc; logs: s3.IBucket; certificateArn: string; name: string; noRedirectPaths?: string[] },
 ): { alb: elbv2.ApplicationLoadBalancer; https: elbv2.ApplicationListener; sg: ec2.SecurityGroup } {
   const sg = new ec2.SecurityGroup(scope, 'AlbSg', { vpc: opts.vpc, description: 'Public ALB', allowAllOutbound: false });
   sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'HTTPS');
@@ -152,7 +156,25 @@ export function publicAlb(
     loadBalancerName: opts.name,
   });
   alb.logAccessLogs(opts.logs, 'alb');
-  alb.addRedirect({ sourcePort: 80, sourceProtocol: elbv2.ApplicationProtocol.HTTP, targetPort: 443, targetProtocol: elbv2.ApplicationProtocol.HTTPS });
+  // Same construct id as alb.addRedirect() used, so the listener is updated in place, not replaced.
+  const http = alb.addListener('Redirect80To443', {
+    port: 80,
+    protocol: elbv2.ApplicationProtocol.HTTP,
+    open: false,
+    defaultAction: elbv2.ListenerAction.redirect({ protocol: elbv2.ApplicationProtocol.HTTPS, port: '443', permanent: true }),
+  });
+  const noRedirect = opts.noRedirectPaths ?? [];
+  // an ALB rule matches at most five path patterns
+  for (let i = 0; i < noRedirect.length; i += 5) {
+    http.addAction(`HttpsRequired${i / 5}`, {
+      priority: 1 + i / 5,
+      conditions: [elbv2.ListenerCondition.pathPatterns(noRedirect.slice(i, i + 5))],
+      action: elbv2.ListenerAction.fixedResponse(400, {
+        contentType: 'application/problem+json',
+        messageBody: JSON.stringify({ type: 'about:blank#httpsRequired', title: 'HTTPS is required', status: 400, code: 'httpsRequired' }),
+      }),
+    });
+  }
   const https = alb.addListener('Https', {
     port: 443,
     protocol: elbv2.ApplicationProtocol.HTTPS,
