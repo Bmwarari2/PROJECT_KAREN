@@ -72,8 +72,10 @@ function fromConditionDraft(d: ConditionDraft): Condition | undefined {
 }
 const toAssignee = (a?: Approver): AssigneeDraft => ({ type: a?.type ?? 'manager', value: a?.value ?? '' });
 const fromAssignee = (a: AssigneeDraft): Approver => ({ type: a.type as Approver['type'], ...(a.type === 'role' || a.type === 'user' ? { value: a.value } : {}) });
-let nextKey = 1;
-const newStep = (s?: Step): StepDraft => ({ key: nextKey++, approver: toAssignee(s?.approver), timeout: s?.timeoutHours ? String(s.timeoutHours) : '', escalate: toAssignee(s?.escalateTo ?? { type: 'role', value: 'hr_admin' }), condition: toConditionDraft(s?.condition) });
+// Row keys (and the field ids built from them) come from a counter per form, not from module state:
+// a module counter keeps counting across server renders, so the server's ids would not match the client's
+// and React keeps the server's id attributes on hydration, which gave two rows the same id.
+const newStep = (key: number, s?: Step): StepDraft => ({ key, approver: toAssignee(s?.approver), timeout: s?.timeoutHours ? String(s.timeoutHours) : '', escalate: toAssignee(s?.escalateTo ?? { type: 'role', value: 'hr_admin' }), condition: toConditionDraft(s?.condition) });
 
 function useDescribe() {
   const t = useT();
@@ -138,7 +140,8 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
   const [priority, setPriority] = React.useState(String(policy?.priority ?? 100));
   const [enabled, setEnabled] = React.useState(policy?.enabled ?? true);
   const [condition, setCondition] = React.useState(toConditionDraft(policy?.condition));
-  const [steps, setSteps] = React.useState<StepDraft[]>(() => (policy?.steps.length ? policy.steps.map(newStep) : [newStep()]));
+  const nextKey = React.useRef(Math.max(1, policy?.steps.length ?? 0));
+  const [steps, setSteps] = React.useState<StepDraft[]>(() => (policy?.steps.length ? policy.steps.map((s, i) => newStep(i, s)) : [newStep(0)]));
   React.useEffect(() => heading.current?.focus(), []);
   const setStep = (key: number, patch: Partial<StepDraft>) => setSteps((xs) => xs.map((s) => (s.key === key ? { ...s, ...patch } : s)));
 
@@ -213,7 +216,7 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
           ))}
         </ol>
         {steps.length < 10 ? (
-          <Button type="button" variant="secondary" className="self-start" onClick={() => setSteps((xs) => [...xs, newStep()])}>
+          <Button type="button" variant="secondary" className="self-start" onClick={() => setSteps((xs) => [...xs, newStep(nextKey.current++)])}>
             <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('admin.approvals.addStep')}
           </Button>
