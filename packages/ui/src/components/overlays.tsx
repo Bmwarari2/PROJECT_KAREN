@@ -68,7 +68,7 @@ export function Select({ id, value, onValueChange, options, placeholder, label, 
         id={id}
         aria-label={label}
         aria-describedby={rest['aria-describedby']}
-        className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-sm border border-border-strong bg-surface-raised px-3 text-callout text-text outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-sm border border-border-strong bg-surface-raised px-3 text-callout text-text focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon>
@@ -96,7 +96,7 @@ export function Select({ id, value, onValueChange, options, placeholder, label, 
 // ---- Tabs ------------------------------------------------------------------------------------
 export const Tabs = TabsPrimitive.Root;
 export function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
-  return <TabsPrimitive.List className={cn('flex gap-6 border-b border-border', className)} {...props} />;
+  return <TabsPrimitive.List className={cn('flex flex-wrap gap-x-6 border-b border-border', className)} {...props} />;
 }
 export function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   return (

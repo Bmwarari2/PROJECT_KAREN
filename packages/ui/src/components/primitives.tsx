@@ -18,11 +18,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const focusRing = 'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+// Tailwind v4's `outline-none` sets --tw-outline-style: none, which `focus-visible:outline-2` then inherits:
+// combining them removed every focus ring (WCAG 2.4.7). Set the style explicitly instead.
+export const focusRing = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 // ---- Button ---------------------------------------------------------------------------------
 export const buttonVariants = cva(
-  `inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 ${focusRing}`,
+  `inline-flex items-center justify-center gap-2 font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 ${focusRing}`,
   {
     variants: {
       variant: {
@@ -33,9 +35,10 @@ export const buttonVariants = cva(
         link: 'text-accent underline-offset-4 hover:underline px-0',
       },
       size: {
-        sm: 'h-8 px-3 text-callout',
-        md: 'h-10 px-5 text-callout',
-        lg: 'h-12 px-7 text-body',
+        sm: 'h-8 whitespace-nowrap px-3 text-callout',
+        md: 'h-10 whitespace-nowrap px-5 text-callout',
+        // Marketing CTAs may wrap onto two lines at 320 CSS px (WCAG 1.4.10) instead of overflowing.
+        lg: 'min-h-12 px-7 py-2 text-center text-body',
         icon: 'h-10 w-10 rounded-md',
       },
     },
@@ -134,11 +137,13 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 }
 
 // ---- Empty state -----------------------------------------------------------------------------
-export function EmptyState({ icon, title, body, action }: { icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode }) {
+/** `level` sets the heading element (default h3, inside a page); a page that is only an empty state uses 1. */
+export function EmptyState({ icon, title, body, action, level = 3 }: { icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode; level?: 1 | 2 | 3 }) {
+  const Heading = `h${level}` as const;
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg bg-surface px-6 py-12 text-center">
       {icon ? <div className="text-text-secondary [&_svg]:h-8 [&_svg]:w-8 [&_svg]:stroke-[1.5]">{icon}</div> : null}
-      <h3 className="text-title-3 text-text">{title}</h3>
+      <Heading className="text-title-3 text-text">{title}</Heading>
       {body ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{body}</p> : null}
       {action}
     </div>

@@ -1,7 +1,7 @@
 import { createElement as h } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { Button } from '../src/components/primitives';
+import { Button, buttonVariants } from '../src/components/primitives';
 
 describe('Button', () => {
   it('renders a native button, with a hidden spinner and aria-busy while loading', () => {
@@ -35,5 +35,19 @@ describe('Button', () => {
     expect(html).toContain('mt-3');
     expect(html).toContain('no-underline');
     expect(html).toContain('aria-label="Go"');
+  });
+});
+
+describe('focus ring', () => {
+  it('sets the outline style explicitly: Tailwind v4 outline-none would otherwise hide every focus ring', () => {
+    const classes = buttonVariants({ variant: 'primary', size: 'md' }).split(' ');
+    expect(classes).toContain('focus-visible:outline-solid');
+    expect(classes).toContain('focus-visible:outline-2');
+    expect(classes).not.toContain('outline-none');
+  });
+
+  it('lets large marketing CTAs wrap instead of overflowing narrow screens', () => {
+    expect(buttonVariants({ size: 'lg' }).split(' ')).not.toContain('whitespace-nowrap');
+    expect(buttonVariants({ size: 'md' }).split(' ')).toContain('whitespace-nowrap');
   });
 });
