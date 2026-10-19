@@ -597,6 +597,23 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 
 ---
 
+## ADR-0069 — S3 audit streams assume only customer roles named `thapsus-hr-audit-*`, from the worker only (2026-10-19)
+
+Numbered from the unused 0067–0069 range because 0100–0129 are reserved by other branches. Refines ADR-0095.
+
+**Context.** ADR-0095 left the IAM grant for S3 audit streaming to a person (HUMAN_TODO 6.2 asked for `sts:AssumeRole` on `arn:aws:iam::*:role/*`). The API accepted any role ARN, so a stream only worked once someone granted every role in every account. Data export (ADR-0077) already solved the same problem in code with a role-name prefix.
+
+**Decision.**
+- **Prefix:** an S3 audit stream's role must be named `thapsus-hr-audit-…` (`AUDIT_STREAM_ROLE_PREFIX` in `apps/api/src/modules/platform/siem-s3.ts`), in the `aws` partition, with no role path (IAM matches the prefix against the whole path and name). The name may be at most 64 characters.
+- **API:** `POST /v1/settings/audit-streams` refuses any other role with **422**, `detail: "roleNotAllowed"` and `rolePrefix: "thapsus-hr-audit-"`. A value that is not a role ARN at all is still a 400. Nothing is stored.
+- **Writer:** `AwsCrossAccountS3.put` checks the prefix again after the residency checks and before calling STS, so a stored stream with another role fails with `role_not_allowed` and sends nothing.
+- **IAM:** the cell stack grants `sts:AssumeRole` on `arn:aws:iam::*:role/thapsus-hr-audit-*` (sid `AssumeCustomerAuditStreamRoles`) to the **worker** task role only, because only the `audit_streams.sync` job writes to S3. The API task role does not get it. The export grant (`thapsus-hr-export-*`, api and worker) is unchanged, and the two prefixes are separate, so an export role cannot be used for audit streams or the other way round. `infra/test/infra.test.ts` pins the three `sts:` statements exactly.
+- **Customer setup:** the role name, trust policy (our account and the stream's ExternalId) and permissions policy are documented in `docs/api.md`.
+
+**Consequences.** No IAM change is left for a person (HUMAN_TODO 6.2 now only covers publishing the account ids and an end-to-end review). Customers must name the role with the prefix; the hint in the app and the 422 say so.
+
+---
+
 ## ADR-0070 — Ready-made reports are a typed registry proven by golden tests (2026-10-18)
 
 **Context.** Phase 7 needs headcount, turnover, absence, holiday liability, overtime and the statutory reports, reproducible for any date, permission-aware and exportable in several formats.
@@ -861,7 +878,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 - **New dependency:** `@aws-sdk/client-sts` **3.1152.0** (Apache-2.0, AWS, same version line as the other AWS SDK clients).
 - **Scheduling:** a periodic enqueuer schedules one sync per stream per minute while the tenant is active, and the 5-minute sweep covers idle tenants.
 
-**Consequences.** Customers whose SIEM bucket lives in another region must replicate it themselves; we never write cross-region. Cell task roles need `sts:AssumeRole` on customer role ARNs (HUMAN_TODO 6.2).
+**Consequences.** Customers whose SIEM bucket lives in another region must replicate it themselves; we never write cross-region. The cell worker needs `sts:AssumeRole` on customer roles: ADR-0069 limits this to roles named `thapsus-hr-audit-*`.
 
 ## ADR-0096 — Sandboxes: classified tables, configuration copy, synthetic people (2026-10-18)
 
