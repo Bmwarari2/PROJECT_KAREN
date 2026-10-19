@@ -135,7 +135,7 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
       const { tenantId } = req.params as { tenantId: string };
       const b = req.body as { targetKey: string; purgeSource?: boolean; reason: string };
       const entry = await registryEntry(tenantId);
-      // Step 3 of the runbook must be done first: the target must already be in the routing configuration.
+      // Step 2 of the runbook (deploy the cell with the dedicated database) comes first: the target must already be in the routing configuration.
       if (!(b.targetKey in deps.router.config.databases)) throw new ApiError('unprocessable', 'targetNotConfigured');
       if (entry.db_key === b.targetKey) throw new ApiError('unprocessable', 'alreadyOnTarget');
       if (entry.status !== 'active') throw new ApiError('conflict', 'tenantNotActive');
