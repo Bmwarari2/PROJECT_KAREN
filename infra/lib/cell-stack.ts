@@ -39,6 +39,8 @@ import {
 
 /** Customer-owned roles the api/worker may assume for data exports (documented in docs/guides/data-export.md). */
 export const EXPORT_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-export-*';
+/** Customer-owned roles the worker may assume for S3 audit streams (ADR-0069, documented in docs/api.md). */
+export const AUDIT_STREAM_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-audit-*';
 
 export interface CellStackProps extends StackProps {
   config: EnvConfig;
@@ -602,6 +604,16 @@ export class CellStack extends Stack {
       }),
     );
     schedulerRole.grantPassRole(worker.task.taskRole);
+    // S3 audit streams (ADR-0069): only the worker writes them, and only through customer roles named
+    // thapsus-hr-audit-* (the customer's trust policy pins our account and the stream's ExternalId). The API
+    // refuses any other role name when a stream is saved; the bucket must be in this cell's region.
+    worker.task.taskRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'AssumeCustomerAuditStreamRoles',
+        actions: ['sts:AssumeRole'],
+        resources: [AUDIT_STREAM_ROLE_ARN_PATTERN],
+      }),
+    );
 
     // ---------------------------------------------------------------- Routing
     const apiTg = https.addTargets('Api', {

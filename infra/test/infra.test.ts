@@ -8,7 +8,7 @@ import { buildApp } from '../lib/app';
 import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvName } from '../lib/config';
 import { DIRECTORY_ATTRIBUTES } from '../lib/global-stack';
 import { XRAY_ACTIONS } from '../lib/shared';
-import { EXPORT_ROLE_ARN_PATTERN } from '../lib/cell-stack';
+import { AUDIT_STREAM_ROLE_ARN_PATTERN, EXPORT_ROLE_ARN_PATTERN } from '../lib/cell-stack';
 
 type Json = Record<string, any>;
 type Res = { Type: string; Properties?: Json };
@@ -198,14 +198,23 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     if (env === 'prod') expect(cfg.natGateways).toBe(3);
   });
 
-  it('data export: api and worker may assume only customer roles named thapsus-hr-export-* (sts:AssumeRole, no wildcard actions)', () => {
-    const statements = resources(t, 'AWS::IAM::Policy').flatMap(([, r]) => asArray(r.Properties!.PolicyDocument.Statement as Json[]));
-    const assume = statements.filter((s) => asArray(s.Action as string[]).some((a) => a.startsWith('sts:')));
-    expect(assume.length).toBe(2); // api and worker task roles
-    for (const s of assume) {
-      expect(s).toMatchObject({ Effect: 'Allow', Action: 'sts:AssumeRole', Resource: EXPORT_ROLE_ARN_PATTERN, Sid: 'AssumeCustomerExportRoles' });
+  it('cross-account roles: api and worker may assume only thapsus-hr-export-* (data export), the worker only thapsus-hr-audit-* (S3 audit streams); sts:AssumeRole, no wildcard actions', () => {
+    const policies = resources(t, 'AWS::IAM::Policy').map(([, r]) => r.Properties!);
+    const sts = policies.flatMap((p) => asArray(p.PolicyDocument.Statement as Json[]).filter((s) => asArray(s.Action as string[]).some((a) => a.startsWith('sts:'))).map((s) => ({ s, roles: asArray(p.Roles as Json[]) })));
+    expect(sts.length).toBe(3); // export: api + worker task roles; audit streams: worker task role
+    const taskRole = (family: string) => resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))![1].Properties!.TaskRoleArn['Fn::GetAtt'][0];
+    const holders = (sid: string) => sts.filter((x) => x.s.Sid === sid).flatMap((x) => x.roles.map((r) => r.Ref)).sort();
+    for (const { s } of sts) {
+      expect(Object.keys(s).sort()).toEqual(['Action', 'Effect', 'Resource', 'Sid']); // no conditions to widen or narrow it silently
+      expect(s.Effect).toBe('Allow');
+      expect(s.Action).toBe('sts:AssumeRole');
+      expect(s.Resource).toBe(s.Sid === 'AssumeCustomerAuditStreamRoles' ? AUDIT_STREAM_ROLE_ARN_PATTERN : EXPORT_ROLE_ARN_PATTERN);
     }
+    expect(sts.map((x) => x.s.Sid).sort()).toEqual(['AssumeCustomerAuditStreamRoles', 'AssumeCustomerExportRoles', 'AssumeCustomerExportRoles']);
+    expect(holders('AssumeCustomerExportRoles')).toEqual([taskRole('-api'), taskRole('-worker')].sort());
+    expect(holders('AssumeCustomerAuditStreamRoles')).toEqual([taskRole('-worker')]);
     expect(EXPORT_ROLE_ARN_PATTERN).toBe('arn:aws:iam::*:role/thapsus-hr-export-*');
+    expect(AUDIT_STREAM_ROLE_ARN_PATTERN).toBe('arn:aws:iam::*:role/thapsus-hr-audit-*');
   });
 
   it('the rest of the cell: autoscaling, SQS with DLQs, event bus, scheduler group, SES configuration set, budget alarm, 3 AZs, TLS certificate', () => {
