@@ -90,8 +90,13 @@ describe('tickets in the home region', () => {
 
   it('stores attachments in the home-region object store under the tenant prefix, with type and size limits', async () => {
     const boundary = 'fictionalboundary';
-    const body = (name: string, type: string, content: string) => `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: ${type}\r\n\r\n${content}\r\n--${boundary}--\r\n`;
-    const up = await ctx.app.inject({ method: 'POST', url: `/v1/support/tickets/${ticketId}/attachments`, headers: { cookie: employee.cookie, 'content-type': `multipart/form-data; boundary=${boundary}` }, payload: body('screen.png', 'image/png', 'fictional-png-bytes') });
+    const body = (name: string, type: string, content: string | Buffer) =>
+      Buffer.concat([Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: ${type}\r\n\r\n`), Buffer.from(content), Buffer.from(`\r\n--${boundary}--\r\n`)]);
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('fictional-png-bytes')]);
+    // the bytes must match the declared type (ASVS V5.2.2)
+    const fake = await ctx.app.inject({ method: 'POST', url: `/v1/support/tickets/${ticketId}/attachments`, headers: { cookie: employee.cookie, 'content-type': `multipart/form-data; boundary=${boundary}` }, payload: body('screen.png', 'image/png', 'not-really-a-png') });
+    expect(fake.statusCode).toBe(400);
+    const up = await ctx.app.inject({ method: 'POST', url: `/v1/support/tickets/${ticketId}/attachments`, headers: { cookie: employee.cookie, 'content-type': `multipart/form-data; boundary=${boundary}` }, payload: body('screen.png', 'image/png', png) });
     expect(up.statusCode, up.body).toBe(201);
     const keys = [...objects().objects.keys()].filter((k) => k.includes('/support/'));
     expect(keys).toHaveLength(1);
