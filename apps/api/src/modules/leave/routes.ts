@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { matchesMagic } from '../../lib/file-types';
 import multipart from '@fastify/multipart';
 import { Type } from 'typebox';
 import { can } from '@thapsus/core/permissions';
@@ -697,6 +698,7 @@ export async function leaveRoutes(app: FastifyInstance) {
       const file = await req.file();
       if (!file || !['application/pdf', 'image/png', 'image/jpeg'].includes(file.mimetype)) throw new ApiError('validation', 'Upload a PDF or image');
       const buf = await file.toBuffer();
+      if (!matchesMagic(file.mimetype, buf)) throw new ApiError('validation', 'The file content does not match its type');
       const out = await app.tenantTx(req, async (tx) => {
         const rec = await tx.maybe<{ employee_id: string }>('SELECT employee_id FROM app.sickness_records WHERE id = $1', [id]);
         if (!rec) throw new ApiError('notFound');
