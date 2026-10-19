@@ -98379,7 +98379,8 @@
                   },
                   "roleArn": {
                     "type": "string",
-                    "maxLength": 600
+                    "maxLength": 600,
+                    "description": "S3 streams: the IAM role in your account; its name must start with thapsus-hr-audit-"
                   },
                   "filters": {
                     "type": "object",

@@ -293,6 +293,7 @@
     },
     "notifications": {
       "title": "Notifications",
+      "intro": "Messages about your requests, approvals and shifts, and how you would like to receive them.",
       "pushTitle": "Notifications on this device",
       "enable": "Turn on",
       "test": "Send a test",
@@ -653,6 +654,7 @@
       "unsafeUrl": "That address cannot be used. Use a public https:// address without a user name or password.",
       "unknownEventType": "One of the event types is not recognised.",
       "regionNotAllowed": "The bucket must be in your workspace’s home region.",
+      "roleNotAllowed": "The IAM role name must start with thapsus-hr-audit-. Thapsus-HR can only use roles with this prefix.",
       "insufficientContrast": "That colour does not meet the contrast requirements.",
       "staffManagedFeature": "This feature is managed by Thapsus support.",
       "sandboxLimitReached": "You have reached the maximum number of sandboxes for your plan.",
@@ -824,7 +826,7 @@
       "bucketHint": "Must be in your workspace’s home region.",
       "prefix": "Key prefix",
       "roleArn": "IAM role ARN",
-      "roleArnHint": "A role in your AWS account that allows s3:PutObject on the bucket.",
+      "roleArnHint": "A role in your AWS account whose name starts with thapsus-hr-audit- and that may write to the bucket (s3:PutObject). Add the external ID shown after saving to its trust policy.",
       "actions": "Only these actions",
       "actionsHint": "Optional, comma-separated prefixes such as auth., employee.",
       "sensitiveOnly": "Only views and changes of sensitive data",
@@ -2808,6 +2810,7 @@
     "closed": "{name} is closed. Its inputs are now frozen.",
     "connectorFor": "Connector for {name}",
     "exportPeriod": "Export: {name}",
+    "export": "Export",
     "exported": "Export ready",
     "connectors": "Connectors",
     "noConnectors": "No connectors yet. Add one to send payroll inputs in the format your payroll needs.",
@@ -3554,6 +3557,7 @@
   },
   "ess": {
     "title": "Me",
+    "intro": "Your details, time off, shifts, documents and pay, in one place.",
     "noEmployee": "Your account is not linked to an employee record.",
     "details": {
       "title": "My details",

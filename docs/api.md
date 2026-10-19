@@ -156,7 +156,31 @@ const ok = verifyWebhookSignature({ payload: rawBody, header: req.headers['thaps
 | Destination | How it works |
 | --- | --- |
 | HTTPS | `POST` of `{ streamId, batchId, fromSeq, toSeq, count, events: [...] }`, signed exactly like webhooks. `Idempotency-Key` and `Thapsus-Batch-Id` are both the batch id. |
-| Amazon S3 | Your bucket, **in your workspace's home region**. Thapsus assumes an IAM role in your account (`sts:AssumeRole` with the external id shown when you create the stream) and writes NDJSON objects to `<prefix>YYYY/MM/DD/<fromSeq>-<toSeq>.ndjson`. |
+| Amazon S3 | Your bucket, **in your workspace's home region**. Thapsus assumes an IAM role in your account whose **name starts with `thapsus-hr-audit-`** (`sts:AssumeRole` with the external id shown when you create the stream) and writes NDJSON objects to `<prefix>YYYY/MM/DD/<fromSeq>-<toSeq>.ndjson`. |
+
+**Setting up an S3 stream:**
+
+1. Create the stream with your bucket name, an optional key prefix and the ARN of the role you are about to create. The bucket must be in your home region: `eu-west-2` (UK), `eu-central-1` (EU) or `us-east-2` (US); any other region is refused with `422 regionNotAllowed`. After saving, the stream shows an **External ID** (`thapsus-…`). Copy it.
+2. In your AWS account, create an IAM role whose **name starts with `thapsus-hr-audit-`** (for example `thapsus-hr-audit-siem`), without a path. Thapsus-HR can only assume roles with this prefix: any other name is refused with `422 roleNotAllowed` (the problem also carries `rolePrefix`). Within the Thapsus-HR account, only the worker of your home region may call `sts:AssumeRole`, and only on `arn:aws:iam::*:role/thapsus-hr-audit-*`. This prefix is separate from the data-export prefix (`thapsus-hr-export-`).
+3. Trust policy (replace the account ID with the Thapsus-HR account for your region, which support gives you, and the External ID with yours):
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": { "AWS": "arn:aws:iam::<THAPSUS_HR_ACCOUNT_ID>:root" },
+         "Action": "sts:AssumeRole",
+         "Condition": { "StringEquals": { "sts:ExternalId": "<external id from step 1>" } }
+       }
+     ]
+   }
+   ```
+
+4. Permissions policy (least privilege; replace the bucket and prefix): allow `s3:PutObject` on `arn:aws:s3:::<bucket>/<prefix>*`. Objects are written with `x-amz-server-side-encryption: aws:kms`; if the bucket's default key is your own KMS key, also allow `kms:GenerateDataKey` on that key.
+
+Sessions last 15 minutes and are created per delivery. Thapsus-HR stores no long-lived AWS keys for your account. A delivery that cannot assume the role is recorded as failed in the delivery log and retried on the next sync.
 
 **Delivery:**
 

@@ -166,8 +166,10 @@ Things only a person with the right accounts or authority can do. The build runs
 - [ ] 6.1 **Outbound egress for webhooks and audit streams.** Customer destinations are called from the cell's worker tasks, which need internet egress (NAT gateways, already in the cell config).
   1. If you publish a list of egress IPs for customers' allow-lists, allocate Elastic IPs for the NAT gateways in each cell: eu-west-2, eu-central-1, us-east-2.
   2. Record them on the trust page.
-- [ ] 6.2 **IAM for S3 audit streaming.** Grant the cell worker task role `sts:AssumeRole` on `arn:aws:iam::*:role/*` with the condition `sts:ExternalId` present (`StringLike: thapsus-*`). Review this against your least-privilege policy before production.
-  1. Publish the customer trust-policy template in the admin guide. Principal = the cell task role ARN; condition `sts:ExternalId` = the value shown when the stream is created.
+- [ ] 6.2 **Customer roles for S3 audit streaming (ADR-0069, docs/api.md).** No IAM change is needed: the cell stack already grants the worker task role `sts:AssumeRole` on `arn:aws:iam::*:role/thapsus-hr-audit-*` only, and the API refuses other role names.
+  1. Publish the Thapsus-HR AWS account id for each environment and cell, as for 4.5 step 1 (it replaces `<THAPSUS_HR_ACCOUNT_ID>` in the trust policy in docs/api.md).
+  2. Optionally tighten the documented trust policy with an `aws:PrincipalArn` condition naming the cell's worker task role ARN (printed by `cdk deploy` of the cell stack).
+  3. Have a customer-facing reviewer try it end to end against a test AWS account in each home region (eu-west-2, eu-central-1, us-east-2): create a `thapsus-hr-audit-*` role with the documented trust and permissions policies, add an S3 stream, press Deliver now and confirm the NDJSON object and the delivery log.
 - [ ] 6.3 **Publish the SDK** (optional). Create the `@thapsus` organisation on npmjs.com and add an automation token to GitHub Actions secrets (`NPM_TOKEN`).
   1. Remove `"private"` handling from `packages/sdk/package.json` (it has none today) and add a publish job.
   2. Until then, customers use the OpenAPI document at `/openapi.json`.

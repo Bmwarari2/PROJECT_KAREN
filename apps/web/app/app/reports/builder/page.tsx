@@ -81,7 +81,22 @@ export default function BuilderPage() {
   }, [catalogue.data, saved.data, saved.error, savedId, spec, zone]);
 
   if (catalogue.error) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
-  if (!catalogue.data || !spec) return <Skeleton className="h-96 w-full" />;
+  // Same back link and heading as the loaded page, so React keeps these nodes when the form arrives
+  // (they are the largest paint on a phone and must not be re-created later).
+  if (!catalogue.data || !spec)
+    return (
+      <div className="flex flex-col gap-6">
+        <Link href="/app/reports" className="inline-flex w-fit items-center gap-1 text-callout">
+          <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
+          {t('reports.title')}
+        </Link>
+        <div>
+          <h1 className="text-title-2">{t('reports.builder.title')}</h1>
+          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.builder.intro')}</p>
+        </div>
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
   if (!catalogue.data.datasets.length) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.builder.noDatasets')} />;
   const ds = catalogue.data.datasets.find((d) => d.key === spec.dataset) ?? catalogue.data.datasets[0]!;
   const fieldOf = (k: string) => ds.fields.find((f) => f.key === k);

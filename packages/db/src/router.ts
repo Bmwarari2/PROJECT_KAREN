@@ -1,4 +1,6 @@
 import type pg from 'pg';
+import { HOME_REGIONS, type HomeRegion } from '@thapsus/core/regions';
+import { endpointViolations } from '@thapsus/core/residency';
 import { getPool } from './client';
 
 export class TenantNotFoundError extends Error {
@@ -59,13 +61,25 @@ export class TenantRouter {
       else if (env.DATABASE_URL) databases.shared = env.DATABASE_URL;
       else throw new Error('DATABASE_URL, DATABASE_SECRET or DATABASES must be configured');
     }
-    // Dedicated databases: DEDICATED_DATABASE_HOSTS={"acme": "host"} reuse the app role secret.
-    if (env.DEDICATED_DATABASE_HOSTS && env.DATABASE_SECRET) {
-      for (const [key, host] of Object.entries(JSON.parse(env.DEDICATED_DATABASE_HOSTS) as Record<string, string>)) {
+    // Dedicated databases (ADR-0068): DEDICATED_DATABASE_HOSTS={"acme": "<RDS Proxy endpoint>"}, set by the cell
+    // stack from infra/config/<env>.json → dedicatedDatabases. They reuse the app role secret (the migrator sets
+    // the same role passwords on every database of the cell).
+    if (env.DEDICATED_DATABASE_HOSTS) {
+      if (!env.DATABASE_SECRET) throw new Error('DEDICATED_DATABASE_HOSTS needs DATABASE_SECRET (the app role secret shared by every database of the cell)');
+      for (const [key, host] of Object.entries(hostMap('DEDICATED_DATABASE_HOSTS', env.DEDICATED_DATABASE_HOSTS))) {
+        if (key === 'shared') throw new Error('DEDICATED_DATABASE_HOSTS may not redefine the "shared" database');
         databases[key] = secretToUrl(env.DATABASE_SECRET, host);
       }
     }
-    return new TenantRouter({ databases, readers: readersFromEnv(env), poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined, cell: env.CELL_REGION });
+    const readers = readersFromEnv(env);
+    // Startup residency guard (also in depsFromEnv, which CLIs such as seed do not use): every database and
+    // reader of a cell must be in its home region; local hosts carry no region.
+    const cell = env.CELL_REGION;
+    if (cell && (HOME_REGIONS as readonly string[]).includes(cell)) {
+      const v = endpointViolations(cell as HomeRegion, [...Object.values(databases), ...Object.values(readers)].map((resource) => ({ kind: 'database' as const, resource })));
+      if (v.length) throw new Error(`Residency violation for ${cell} cell: ${v.map((x) => `database in ${x.region}`).join(', ')}`);
+    }
+    return new TenantRouter({ databases, readers, poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined, cell });
   }
 
   registryPool(): pg.Pool {
@@ -148,11 +162,30 @@ export function readersFromEnv(env: NodeJS.ProcessEnv = process.env): Record<str
     else if (env.REPORTING_DATABASE_SECRET && env.REPORTING_DATABASE_HOST) readers.shared = secretToUrl(env.REPORTING_DATABASE_SECRET, env.REPORTING_DATABASE_HOST);
   }
   if (env.DEDICATED_READER_HOSTS && env.REPORTING_DATABASE_SECRET) {
-    for (const [key, host] of Object.entries(JSON.parse(env.DEDICATED_READER_HOSTS) as Record<string, string>)) {
+    for (const [key, host] of Object.entries(hostMap('DEDICATED_READER_HOSTS', env.DEDICATED_READER_HOSTS))) {
       readers[key] ??= secretToUrl(env.REPORTING_DATABASE_SECRET, host);
     }
   }
   return readers;
+}
+
+/** Router keys a dedicated database may use (the same rule as back-office move requests). */
+const DB_KEY = /^[a-z0-9][a-z0-9_-]{0,62}$/;
+
+/** Parses a `{"<db key>": "<host>"}` map from the environment, refusing anything else. */
+function hostMap(name: string, json: string): Record<string, string> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error(`${name} must be a JSON object of database key to host`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(`${name} must be a JSON object of database key to host`);
+  for (const [key, host] of Object.entries(parsed)) {
+    if (!DB_KEY.test(key)) throw new Error(`${name}: invalid database key "${key.slice(0, 64)}"`);
+    if (typeof host !== 'string' || !host) throw new Error(`${name}: the host for "${key}" must be a non-empty string`);
+  }
+  return parsed as Record<string, string>;
 }
 
 /** Builds a connection URL from a Secrets Manager database secret ({username, password, host, port, dbname}). */
