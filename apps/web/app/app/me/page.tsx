@@ -71,10 +71,12 @@ export default function MePage() {
     if (l.pending) parts.push(t('ess.leave.pending', { n: count(l.pending) }));
     return parts.join(' · ') || t('ess.leave.none');
   };
+  // The summary gives a shift's start and end as local wall-clock timestamps ('YYYY-MM-DDTHH:MM').
+  const timeOf = (local: string) => formatTimeOfDay((local.includes('T') ? local.split('T')[1]! : local).slice(0, 5), locale);
   const shiftStatus = () => {
     const r = data.rota!;
     const s = r.nextShift;
-    const parts = [s ? t('ess.rota.next', { date: formatDate(s.date, locale), start: formatTimeOfDay(s.start, locale), end: formatTimeOfDay(s.end, locale) }) : t('ess.rota.none')];
+    const parts = [s ? t('ess.rota.next', { date: formatDate(s.date, locale), start: timeOf(s.start), end: timeOf(s.end) }) : t('ess.rota.none')];
     if (r.pendingSwaps) parts.push(t('ess.rota.swaps', { n: count(r.pendingSwaps) }));
     return parts.join(' · ');
   };
