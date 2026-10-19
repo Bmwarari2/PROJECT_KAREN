@@ -6,11 +6,10 @@ import spec from '@thapsus/sdk/openapi.json';
 import { serverContext } from '@/lib/server';
 
 /**
- * Public API reference generated at build time from the published OpenAPI 3.1 document
- * (packages/sdk/openapi.json). Rendered on the server: no third-party script, nothing for the CSP to
- * allow, and the raw spec stays downloadable at /openapi.json.
+ * Public API reference built from the published OpenAPI 3.1 document (packages/sdk/openapi.json).
+ * Rendered on the server per request like every page, so its framework scripts carry the CSP nonce
+ * (ADR-0130): no third-party script, and the raw spec stays downloadable at /openapi.json.
  */
-export const dynamic = 'force-static';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await serverContext();

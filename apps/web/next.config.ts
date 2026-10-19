@@ -1,4 +1,8 @@
 import type { NextConfig } from 'next';
+import { STATIC_ASSET_CSP } from './lib/csp';
+
+// Pages get a per-request nonce-based Content-Security-Policy from proxy.ts (ADR-0130); the static
+// assets below, which the proxy skips, get a fixed policy under which nothing can run or be framed.
 
 const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
@@ -6,23 +10,6 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), payment=()' },
-  {
-    key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self'",
-      "worker-src 'self'",
-      "manifest-src 'self'",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "base-uri 'self'",
-      "object-src 'none'",
-    ].join('; '),
-  },
 ];
 
 const config: NextConfig = {
@@ -34,7 +21,16 @@ const config: NextConfig = {
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
-      { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }, { key: 'Service-Worker-Allowed', value: '/' }] },
+      ...['/_next/static/:path*', '/fonts/:path*', '/icons/:path*'].map((source) => ({ source, headers: [{ key: 'Content-Security-Policy', value: STATIC_ASSET_CSP }] })),
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+          // a worker script's own policy governs what it may fetch and import
+          { key: 'Content-Security-Policy', value: "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'" },
+        ],
+      },
     ];
   },
 };
