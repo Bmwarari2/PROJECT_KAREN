@@ -45,7 +45,7 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 
 ## Threat model (STRIDE)
 
-Reviewed 2026-10-18. Re-review it whenever a new trust boundary, third party or data category is added, and after every post-incident review (`docs/runbooks/incident-response.md` §6).
+Reviewed 2026-10-18. Re-review it whenever a new trust boundary, third party or data category is added, and after every post-incident review (`docs/runbooks/incident-and-breach-response.md` §6).
 
 ### Assets
 

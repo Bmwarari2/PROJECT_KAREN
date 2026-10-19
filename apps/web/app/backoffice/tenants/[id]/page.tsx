@@ -160,7 +160,7 @@ export default function TenantDetail() {
                   {a.name} {a.isDefault ? <Badge>{t('backoffice.tenant.default')}</Badge> : null} {!a.detailsComplete ? <Badge tone="warning">{t('backoffice.tenant.detailsMissing')}</Badge> : null}
                 </TD>
                 <TD>{a.currency}</TD>
-                <TD>{a.collection === 'send_invoice' ? t('backoffice.tenant.byInvoice', { days: a.paymentTermsDays ?? 0 }) : t('backoffice.tenant.byCard')}</TD>
+                <TD>{a.collection === 'send_invoice' ? t('backoffice.tenant.byInvoice', { days: a.paymentTermsDays ?? 0, count: a.paymentTermsDays ?? 0 }) : t('backoffice.tenant.byCard')}</TD>
                 <TD>{a.poNumber ?? '—'}</TD>
                 <TD>{a.isDefault && !a.entityIds.length ? t('backoffice.tenant.unassigned') : a.entityIds.map(entityName).join(', ')}</TD>
                 <TD>{a.subscription ? `${t(`pricing.plans.${a.subscription.planId}.name`)} · ${t(`billing.status.${a.subscription.status}`)} · ${a.subscription.quantity}` : '—'}</TD>

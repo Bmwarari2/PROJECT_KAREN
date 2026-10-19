@@ -111,9 +111,9 @@ export default function WelcomePage() {
           <label htmlFor="onboarding-progress" className="text-callout font-semibold">
             {t('onboarding.progressLabel')}
           </label>
-          <progress id="onboarding-progress" max={data.progress.total || 1} value={data.progress.done} className="h-2 w-full accent-[var(--color-accent)]" aria-valuetext={t('onboarding.progress', data.progress)} />
+          <progress id="onboarding-progress" max={data.progress.total || 1} value={data.progress.done} className="h-2 w-full accent-[var(--color-accent)]" aria-valuetext={t('onboarding.progress', { ...data.progress, count: data.progress.total })} />
           <p className="text-footnote text-text-secondary" role="status">
-            {t('onboarding.progress', data.progress)}
+            {t('onboarding.progress', { ...data.progress, count: data.progress.total })}
           </p>
         </div>
       </header>

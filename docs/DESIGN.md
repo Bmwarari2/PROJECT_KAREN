@@ -117,4 +117,4 @@ Icons come from Lucide (ISC licence): 1.5px stroke, 20px in the app and 24px on 
 
 ## 9. Content style
 
-Plain, friendly and specific. Sentence case for headings and buttons. UK and US variants live in the message catalogues (`packages/core/src/i18n/messages`). Never use idioms that do not translate.
+Plain, friendly and specific. Sentence case for headings and buttons. UK and US variants live in the message catalogues (`packages/core/src/i18n/messages`). A number next to a noun is always a plural family (`key_one` / `key_other`, chosen by `count`; ADR-0151), so one reads “1 day”, never “1 days”. Never use idioms that do not translate.

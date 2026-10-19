@@ -48,7 +48,7 @@ export default async function SubprocessorsPage({ searchParams }: { searchParams
         <h1 id="sub-title" className="mt-4 text-title-1">
           {t('trust.sub.title')}
         </h1>
-        <p className="mt-4 max-w-[var(--prose-width)] text-body text-text-secondary">{t('trust.sub.lead', { days: LEGAL.subprocessorNoticeDays })}</p>
+        <p className="mt-4 max-w-[var(--prose-width)] text-body text-text-secondary">{t('trust.sub.lead', { days: LEGAL.subprocessorNoticeDays, count: LEGAL.subprocessorNoticeDays })}</p>
         <nav aria-label={t('trust.sub.regionLabel')} className="mt-6 flex flex-wrap gap-2">
           {HOME_REGIONS.map((r) => (
             <Link

@@ -66,7 +66,7 @@ export default function MePage() {
   const leaveStatus = () => {
     const l = data.leave!;
     const parts: string[] = [];
-    if (l.available !== null) parts.push(t(l.unit === 'hours' ? 'ess.leave.availableHours' : 'ess.leave.availableDays', { n: numberFormat(locale, { maximumFractionDigits: 2 }).format(Number(l.available)) }));
+    if (l.available !== null) parts.push(t(l.unit === 'hours' ? 'ess.leave.availableHours' : 'ess.leave.availableDays', { n: numberFormat(locale, { maximumFractionDigits: 2 }).format(Number(l.available)), count: Number(l.available) }));
     if (l.next) parts.push(t('ess.leave.next', { from: formatDate(l.next.start, locale), to: formatDate(l.next.end, locale) }));
     if (l.pending) parts.push(t('ess.leave.pending', { n: count(l.pending) }));
     return parts.join(' · ') || t('ess.leave.none');

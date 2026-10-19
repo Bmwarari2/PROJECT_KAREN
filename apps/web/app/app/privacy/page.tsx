@@ -25,7 +25,7 @@ function DueBadge({ r }: { r: Dsr }) {
   if (!r.effectiveDueOn) return <Badge>{t('privacy.ui.noDeadline')}</Badge>;
   if (r.overdue) return <Badge tone="danger">{t('privacy.ui.overdue')}</Badge>;
   if (['completed', 'rejected', 'cancelled'].includes(r.status)) return null;
-  return <Badge tone={r.daysRemaining !== null && r.daysRemaining <= 7 ? 'warning' : 'neutral'}>{t('privacy.ui.daysLeft', { days: r.daysRemaining ?? 0 })}</Badge>;
+  return <Badge tone={r.daysRemaining !== null && r.daysRemaining <= 7 ? 'warning' : 'neutral'}>{t('privacy.ui.daysLeft', { days: r.daysRemaining ?? 0, count: r.daysRemaining ?? 0 })}</Badge>;
 }
 
 export default function PrivacyRequestsPage() {
@@ -335,7 +335,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
           <h3 className="text-callout font-semibold">{t('privacy.ui.detail.exportTitle')}</h3>
           {d.outcome?.export ? (
             <p className="mt-1 text-footnote text-text-secondary">
-              {t('privacy.ui.detail.exportSummary', { tables: Object.values(d.outcome.export.summary.tables).filter((n) => n > 0).length, sensitive: d.outcome.export.summary.sensitiveValues })}
+              {t('privacy.ui.detail.exportSummary', { kinds: t('privacy.ui.detail.exportKinds', { count: Object.values(d.outcome.export.summary.tables).filter((n) => n > 0).length }), values: t('privacy.ui.detail.exportValues', { count: d.outcome.export.summary.sensitiveValues }) })}
             </p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">

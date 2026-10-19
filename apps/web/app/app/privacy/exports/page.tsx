@@ -95,11 +95,11 @@ export default function ExportsPage() {
                     <TD className="tabular-nums">{formatDate(e.createdAt.slice(0, 10), locale)}</TD>
                     <TD>
                       {e.status === 'ready' ? (
-                        <Badge tone="success">{t('privacy.ui.exports.ready', { tables: e.tables ?? 0, files: e.files ?? 0 })}</Badge>
+                        <Badge tone="success">{t('privacy.ui.exports.ready', { tables: t('privacy.ui.exports.readyTables', { count: e.tables ?? 0 }), files: t('privacy.ui.exports.readyFiles', { count: e.files ?? 0 }) })}</Badge>
                       ) : e.status === 'failed' ? (
                         <Badge tone="danger">{t('privacy.ui.exports.failed')}</Badge>
                       ) : (
-                        <span role="status">{t('privacy.ui.exports.progress', { done: e.progressDone ?? 0, total: e.progressTotal ?? '…' })}</span>
+                        <span role="status">{t('privacy.ui.exports.progress', { done: e.progressDone ?? 0, total: e.progressTotal ?? '…', count: e.progressTotal ?? '…' })}</span>
                       )}
                     </TD>
                     <TD className="text-right tabular-nums">{e.sizeBytes !== null ? formatNumber(e.sizeBytes / 1_000_000, locale, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 }) : '—'}</TD>
@@ -141,7 +141,7 @@ export default function ExportsPage() {
             <p className="text-callout" role="status">
               {t('privacy.ui.closure.scheduled', { date: formatDate(c.purgeAfter.slice(0, 10), locale, 'long') })}
             </p>
-            <p className="text-footnote text-text-secondary">{t('privacy.ui.closure.afterwards', { days: closure.data.backupRetentionDays })}</p>
+            <p className="text-footnote text-text-secondary">{t('privacy.ui.closure.afterwards', { days: closure.data.backupRetentionDays, count: closure.data.backupRetentionDays })}</p>
             <div>
               <Button variant="secondary" loading={busy === 'cancel'} onClick={() => act('cancel', () => api('/v1/privacy/closure/cancel', { method: 'POST' }).then(closure.reload), t('privacy.ui.closure.cancelled'))}>
                 <Undo2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -157,7 +157,7 @@ export default function ExportsPage() {
               void act('close', () => api('/v1/privacy/closure', { method: 'POST', json: { confirmWorkspace: confirm, reason: reason || undefined } }).then(closure.reload), t('privacy.ui.closure.scheduledToast'));
             }}
           >
-            <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('privacy.ui.closure.lead', { days: closure.data.graceDays, backups: closure.data.backupRetentionDays })}</p>
+            <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('privacy.ui.closure.lead', { days: closure.data.graceDays, backups: closure.data.backupRetentionDays, count: closure.data.backupRetentionDays })}</p>
             <Field id="close-confirm" label={t('privacy.ui.closure.confirmLabel', { workspace: closure.data.workspace })}>
               {(p) => <Input {...p} autoComplete="off" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
             </Field>

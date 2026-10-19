@@ -45,6 +45,20 @@ The output is deterministic: two runs with the same size produce byte-identical 
 | App home (signed in) | 100 | 100 | 96 | 964 ms | 0.000 | 84 ms |
 | App security (signed in) | 100 | 100 | 96 | 957 ms | 0.000 | 53 ms |
 
+#### Message catalogue in the page payload (Phase 12, ADR-0150)
+
+Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.
+
+| Page | HTML before | HTML after | RSC before | RSC after |
+| --- | --- | --- | --- | --- |
+| Marketing home `/` | 277.1 KB (69.4 KB gz) | 51.8 KB (9.8 KB gz) | 235.1 KB (63.7 KB gz) | 25.1 KB (6.5 KB gz) |
+| App home `/app` | 265.8 KB (66.8 KB gz) | 42.5 KB (8.8 KB gz) | 218.6 KB (60.5 KB gz) | 10.4 KB (3.9 KB gz) |
+| Assets `/app/assets` | 268.3 KB (67.2 KB gz) | 48.1 KB (10.1 KB gz) | 219.0 KB (60.6 KB gz) | 13.6 KB (4.8 KB gz) |
+| Time off `/app/time-off` | 268.4 KB (67.3 KB gz) | 47.4 KB (9.8 KB gz) | 219.0 KB (60.6 KB gz) | 12.9 KB (4.5 KB gz) |
+| Reports `/app/reports` | 264.9 KB (66.7 KB gz) | 73.5 KB (17.1 KB gz) | 219.0 KB (60.6 KB gz) | 40.6 KB (12.1 KB gz) |
+
+Reports keeps the whole `reports` namespace (and the compliance groups its ready-made reports use) because report definitions, columns and enum values arrive from the API as message keys.
+
 ### 2.3 Core HR at 200,000 employees (Phase 1)
 
 These runs use the API in-process (Fastify `inject`, so no network hop). They show the order of magnitude and catch regressions; production latency comes from `pnpm loadtest` (§3).

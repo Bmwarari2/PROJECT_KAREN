@@ -92,7 +92,7 @@ export default function LegalPage() {
           <Skeleton className="mt-3 h-16" />
         ) : (
           <div className="mt-2 grid gap-3 text-callout">
-            <p className="text-text-secondary">{t('privacy.ui.legal.subLead', { days: subs.data.noticeDays, region: t(`regions.${subs.data.region}`) })}</p>
+            <p className="text-text-secondary">{t('privacy.ui.legal.subLead', { days: subs.data.noticeDays, count: subs.data.noticeDays, region: t(`regions.${subs.data.region}`) })}</p>
             <div className="flex flex-wrap items-center gap-3">
               <Link href={`/trust/subprocessors?region=${subs.data.region}`}>{t('privacy.ui.legal.subList')}</Link>
               <Button size="sm" variant="secondary" loading={busy === 'sub'} onClick={() => act('sub', () => api('/v1/privacy/subprocessors/subscription', { method: 'PUT', json: { subscribed: !subs.data!.subscribed } }), t(subs.data!.subscribed ? 'privacy.ui.legal.unsubscribed' : 'privacy.ui.legal.subscribedToast'), subs.reload)}>

@@ -23,7 +23,7 @@ test.describe('rota builder', () => {
     await expectAccessible(page);
 
     await page.getByRole('button', { name: 'Publish week' }).click();
-    await expect(page.getByText('1 shifts published. 1 people notified.', { exact: true })).toBeVisible();
+    await expect(page.getByText('1 shift published. 1 person notified.', { exact: true })).toBeVisible();
     await expect(grid.getByRole('button', { name: /^Published shift for Ada Fictional/ })).toBeVisible();
     const notified = () => sql(`SELECT n.id FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE lower(u.email) = lower($1) AND n.kind = 'rota.published'`, [co.email]);
     expect(await notified()).toHaveLength(1);

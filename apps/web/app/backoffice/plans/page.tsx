@@ -87,7 +87,7 @@ export default function PlansPage() {
           {plans.data.plans.map((p) => (
             <Card key={p.id}>
               <CardTitle>{t(`pricing.plans.${p.id}.name`)}</CardTitle>
-              <p className="mt-1 text-footnote text-text-secondary">{p.selfServe ? t('backoffice.plans.selfServe', { min: p.minimumEmployees }) : t('backoffice.plans.contractOnly')}</p>
+              <p className="mt-1 text-footnote text-text-secondary">{p.selfServe ? t('backoffice.plans.selfServe', { min: p.minimumEmployees, count: p.minimumEmployees }) : t('backoffice.plans.contractOnly')}</p>
               {p.bands.length ? (
                 <Table dense className="mt-3" scrollLabel={t(`pricing.plans.${p.id}.name`)}>
                   <caption className="sr-only">{t('pricing.bands.caption', { currency })}</caption>
@@ -111,7 +111,7 @@ export default function PlansPage() {
           ))}
         </div>
       ) : null}
-      {plans.data ? <p className="text-footnote text-text-secondary">{t('backoffice.plans.discounts', { annual: pct(plans.data.discounts.terms.annual ?? 0), codes: plans.data.discounts.codes.map((d) => `${d.code} (${pct(d.basisPoints)})`).join(', ') || '—', trial: plans.data.trialDays })}</p> : null}
+      {plans.data ? <p className="text-footnote text-text-secondary">{t('backoffice.plans.discounts', { annual: pct(plans.data.discounts.terms.annual ?? 0), codes: plans.data.discounts.codes.map((d) => `${d.code} (${pct(d.basisPoints)})`).join(', ') || '—', trial: plans.data.trialDays, count: plans.data.trialDays })}</p> : null}
 
       <section aria-labelledby="contracts-title" className="flex flex-col gap-3">
         <h2 id="contracts-title" className="text-title-3">
@@ -146,7 +146,7 @@ export default function PlansPage() {
                 <TD className="text-footnote">
                   {formatDate(k.startsOn, locale)} – {formatDate(k.endsOn, locale)} · {t(`backoffice.contracts.renewal.${k.renewal}`)}
                 </TD>
-                <TD className="text-footnote">{k.collection === 'send_invoice' ? t('backoffice.tenant.byInvoice', { days: k.paymentTermsDays }) : t('backoffice.tenant.byCard')}</TD>
+                <TD className="text-footnote">{k.collection === 'send_invoice' ? t('backoffice.tenant.byInvoice', { days: k.paymentTermsDays, count: k.paymentTermsDays }) : t('backoffice.tenant.byCard')}</TD>
                 <TD>
                   {k.status === 'draft' ? (
                     <Button size="sm" loading={busy} onClick={() => run(() => api(`/v1/backoffice/contracts/${k.id}/activate`, { method: 'POST' }), t('backoffice.contracts.activated'))}>

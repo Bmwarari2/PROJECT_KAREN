@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Messages } from '@/lib/i18n-scope';
 import { serverContext } from '@/lib/server';
 import { BackofficeShell } from './shell';
 
@@ -13,5 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function BackofficeLayout({ children }: { children: React.ReactNode }) {
   const { theme } = await serverContext();
-  return <BackofficeShell theme={theme}>{children}</BackofficeShell>;
+  return (
+    <Messages ns={['backoffice.*', 'backoffice.nav', 'backoffice.cell', 'backoffice.roles', 'backoffice.overview']}>
+      <BackofficeShell theme={theme}>{children}</BackofficeShell>
+    </Messages>
+  );
 }

@@ -217,7 +217,7 @@ export default function RetentionPage() {
                 {dry
                   .filter((l) => l.rows > 0)
                   .map((l) => (
-                    <li key={`${l.category}-${l.jurisdiction}`}>{t('privacy.ui.retention.dryLine', { category: t(`privacy.ui.category.${l.category}`), jurisdiction: l.jurisdiction, rows: formatNumber(l.rows, locale), action: t(`privacy.ui.action.${l.action}`) })}</li>
+                    <li key={`${l.category}-${l.jurisdiction}`}>{t('privacy.ui.retention.dryLine', { category: t(`privacy.ui.category.${l.category}`), jurisdiction: l.jurisdiction, rows: formatNumber(l.rows, locale), count: l.rows, action: t(`privacy.ui.action.${l.action}`) })}</li>
                   ))}
               </ul>
             ) : (

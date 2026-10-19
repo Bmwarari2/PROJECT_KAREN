@@ -1,0 +1,5 @@
+import { Messages } from '@/lib/i18n-scope';
+
+export default function SupportLayout({ children }: { children: React.ReactNode }) {
+  return <Messages ns={['support', 'pricing.plans']}>{children}</Messages>;
+}

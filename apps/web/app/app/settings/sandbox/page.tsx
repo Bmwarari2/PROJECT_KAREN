@@ -95,7 +95,7 @@ export default function SandboxPage() {
           <div className="flex flex-wrap items-start gap-3">
             <div className="mr-auto">
               <CardTitle>{s.name}</CardTitle>
-              <p className="mt-1 text-footnote text-text-secondary">{t('platform.sandbox.meta', { slug: s.slug, people: s.report?.syntheticPeople ?? s.syntheticPeople, created: when(s.createdAt) })}</p>
+              <p className="mt-1 text-footnote text-text-secondary">{t('platform.sandbox.meta', { slug: s.slug, people: s.report?.syntheticPeople ?? s.syntheticPeople, count: s.report?.syntheticPeople ?? s.syntheticPeople, created: when(s.createdAt) })}</p>
               {s.error ? <p className="mt-1 text-footnote text-danger">{s.error}</p> : null}
             </div>
             <StatusBadge status={s.status} />
