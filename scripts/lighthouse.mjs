@@ -146,8 +146,15 @@ try {
           const a = res.lhr.audits[id];
           if (typeof a?.numericValue !== 'number') throw new Error(`Lighthouse audit ${id} failed on ${p.path}: ${a?.errorMessage ?? 'no value'}`);
         }
+        // The largest-paint element, printed for failing pages (and every run with LIGHTHOUSE_DEBUG=1).
+        const lcpNode = Object.entries(res.lhr.audits)
+          .filter(([id]) => /lcp|largest/i.test(id))
+          .map(([, a]) => a.details?.items?.flatMap?.((x) => x.items ?? [x]).map((x) => (x?.type === 'node' ? x : x?.node)).find(Boolean))
+          .find(Boolean);
+        const lcpElement = lcpNode ? `${lcpNode.selector} "${String(lcpNode.nodeLabel ?? '').slice(0, 60)}"` : 'unknown';
+        if (process.env.LIGHTHOUSE_DEBUG) console.log(`  ${p.path} run ${run + 1}: LCP element ${lcpElement}`);
         const c = res.lhr.categories;
-        scores.push({ performance: Math.round(c.performance.score * 100), accessibility: Math.round(c.accessibility.score * 100), bestPractices: Math.round(c['best-practices'].score * 100), lcp: res.lhr.audits['largest-contentful-paint'].numericValue, cls: res.lhr.audits['cumulative-layout-shift'].numericValue, tbt: res.lhr.audits['total-blocking-time'].numericValue });
+        scores.push({ lcpElement, performance: Math.round(c.performance.score * 100), accessibility: Math.round(c.accessibility.score * 100), bestPractices: Math.round(c['best-practices'].score * 100), lcp: res.lhr.audits['largest-contentful-paint'].numericValue, cls: res.lhr.audits['cumulative-layout-shift'].numericValue, tbt: res.lhr.audits['total-blocking-time'].numericValue });
       }
       scores.sort((a, b) => a.performance - b.performance);
       const median = scores[1];
@@ -155,6 +162,7 @@ try {
       if (!pass) failed = true;
       report.push({ ...p, ...median, pass });
       console.log(`${pass ? 'PASS' : 'FAIL'}  ${p.label.padEnd(28)} perf ${median.performance}  a11y ${median.accessibility}  best ${median.bestPractices}  LCP ${Math.round(median.lcp)}ms  CLS ${median.cls.toFixed(3)}  TBT ${Math.round(median.tbt)}ms`);
+      if (!pass) console.log(`      largest paint: ${median.lcpElement}`);
     }
   } finally {
     await chrome.kill();
