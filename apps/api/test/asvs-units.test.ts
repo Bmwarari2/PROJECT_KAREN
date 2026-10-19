@@ -5,6 +5,7 @@ import { checkZipBounds, declaredEntryCount, InflateBudget, openZip } from '../s
 import { COMMON_PASSWORD_COUNT, contextWords, passwordProblems } from '../src/modules/auth/password-policy';
 import { expandUploads, MAX_ARCHIVE_ENTRIES, MAX_FILE_BYTES } from '../src/modules/payslips/matching';
 import { mfaGate, type AuthContext } from '../src/modules/auth/sessions';
+import { WEAK_XMLDSIG } from '../src/modules/auth/sso';
 
 const zip = async (files: Record<string, Buffer | string>) => {
   const z = new JSZip();
@@ -141,5 +142,14 @@ describe('V6.3.3 and V6.4.3 second-factor gate', () => {
     expect(mfaGate(auth({}, true))).toBe('mfaEnrollmentRequired');
     expect(mfaGate(auth({}))).toBe('ok');
     expect(mfaGate(auth({ hasMfaFactor: true, mfaVerified: true }))).toBe('ok');
+  });
+});
+
+describe('V11.4.1 SAML algorithms', () => {
+  it('flags SHA-1 and MD5 signature or digest algorithms, accepts SHA-2', () => {
+    for (const weak of ['http://www.w3.org/2000/09/xmldsig#rsa-sha1', 'http://www.w3.org/2000/09/xmldsig#sha1', 'http://www.w3.org/2001/04/xmldsig-more#rsa-md5'])
+      expect(WEAK_XMLDSIG.test(`<ds:SignatureMethod Algorithm="${weak}"/>`), weak).toBe(true);
+    for (const strong of ['http://www.w3.org/2001/04/xmldsig-more#rsa-sha256', 'http://www.w3.org/2001/04/xmlenc#sha256', 'http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384'])
+      expect(WEAK_XMLDSIG.test(`<ds:DigestMethod Algorithm="${strong}"/>`), strong).toBe(false);
   });
 });

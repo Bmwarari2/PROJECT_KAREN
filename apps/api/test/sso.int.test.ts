@@ -125,6 +125,10 @@ describe('SAML 2.0 single sign-on (mock IdP)', () => {
     expect((await postAcs(good)).status).toBe(302);
     const fresh = await samlAssertion(owner.slug, conn, owner.email);
     expect((await postAcs({ SAMLResponse: good.SAMLResponse, RelayState: fresh.RelayState })).status).toBe(401);
+    // a response signed with SHA-1 is refused (ASVS V11.4.1)
+    const weak = await samlAssertion(owner.slug, conn, owner.email);
+    const sha1 = Buffer.from(Buffer.from(weak.SAMLResponse, 'base64').toString().replaceAll('http://www.w3.org/2001/04/xmldsig-more#rsa-sha256', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1')).toString('base64');
+    expect((await postAcs({ ...weak, SAMLResponse: sha1 })).status).toBe(401);
   });
 });
 

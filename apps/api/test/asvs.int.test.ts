@@ -1,5 +1,5 @@
 import type { InjectOptions } from 'fastify';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { withTenant } from '@thapsus/db';
 import { closeDb, cookieFrom, enrolTotp, ownerSession, PASSWORD, signup, startTestApp, totpCode, type TestContext } from './helpers';
 import { hashPassword } from '../src/modules/auth/tokens';
@@ -230,7 +230,13 @@ describe('V7.4 and V7.5 sessions', () => {
     expect(stale.statusCode).toBe(403);
     expect(stale.json().code).toBe('reauthenticationRequired');
     expect((await inject(ctx, { method: 'POST', url: '/v1/auth/reauth', headers: { cookie: p.cookie }, payload: { password: 'not-the-fictional-password' } })).statusCode).toBe(401);
-    expect((await inject(ctx, { method: 'POST', url: '/v1/auth/reauth', headers: { cookie: p.cookie }, payload: { password: PASSWORD } })).statusCode).toBe(204);
+    const reauth = await inject(ctx, { method: 'POST', url: '/v1/auth/reauth', headers: { cookie: p.cookie }, payload: { password: PASSWORD } });
+    expect(reauth.statusCode).toBe(204);
+    // V7.2.4: re-authentication issues a new token for the same session; the old token stops working
+    const rotated = cookieFrom(reauth);
+    expect(rotated).not.toBe(p.cookie);
+    expect((await inject(ctx, { method: 'GET', url: '/v1/auth/session', headers: { cookie: p.cookie } })).statusCode).toBe(401);
+    p.cookie = rotated;
     expect((await inject(ctx, { method: 'DELETE', url: `/v1/auth/sessions/${other.id}`, headers: { cookie: p.cookie } })).statusCode).toBe(204);
     expect((await inject(ctx, { method: 'GET', url: '/v1/auth/sessions', headers: { cookie: p.cookie } })).json().data).toHaveLength(2);
     const ended = await inject(ctx, { method: 'POST', url: '/v1/auth/sessions/end-others', headers: { cookie: p.cookie } });
@@ -255,7 +261,9 @@ describe('V7.4 and V7.5 sessions', () => {
     expect(again.json().code).toBe('reauthenticationRequired');
     const passkey = await inject(ctx, { method: 'POST', url: '/v1/auth/passkeys/register/options', headers: { cookie: p.cookie } });
     expect(passkey.json().code).toBe('reauthenticationRequired');
-    expect((await inject(ctx, { method: 'POST', url: '/v1/auth/reauth', headers: { cookie: p.cookie }, payload: { code: totpCode(secret, ctx.clock.now) } })).statusCode).toBe(204);
+    const reauth = await inject(ctx, { method: 'POST', url: '/v1/auth/reauth', headers: { cookie: p.cookie }, payload: { code: totpCode(secret, ctx.clock.now) } });
+    expect(reauth.statusCode).toBe(204);
+    p.cookie = cookieFrom(reauth);
     expect((await inject(ctx, { method: 'POST', url: '/v1/auth/mfa/totp/enroll', headers: { cookie: p.cookie } })).statusCode).toBe(200);
   });
 
@@ -302,3 +310,63 @@ describe('V6.4.4 lost second factor', () => {
     expect(audit).toMatchObject({ actor_id: owner.userId, diff: { removedFactors: 1, endedSessions: 1, identityConfirmedBy: owner.userId } });
   });
 });
+
+describe('V7.2.4 new session tokens', () => {
+  it('signing in again from the same browser ends the session it held before', async () => {
+    const owner = await ownerSession(ctx);
+    const p = await person(ctx, owner);
+    const again = await inject(ctx, { method: 'POST', url: '/v1/auth/login', headers: { cookie: p.cookie }, payload: { tenant: owner.slug, email: p.email, password: PASSWORD }, remoteAddress: ip() });
+    expect(again.statusCode).toBe(200);
+    expect(cookieFrom(again)).not.toBe(p.cookie);
+    expect((await inject(ctx, { method: 'GET', url: '/v1/auth/session', headers: { cookie: p.cookie } })).statusCode).toBe(401);
+    expect((await inject(ctx, { method: 'GET', url: '/v1/auth/session', headers: { cookie: cookieFrom(again) } })).statusCode).toBe(200);
+  });
+});
+
+describe('V15.3 defensive request handling', () => {
+  it('refuses prototype-pollution keys in JSON bodies', async () => {
+    const s = await signup(ctx);
+    const res = await inject(ctx, { method: 'POST', url: '/v1/auth/login', headers: { 'content-type': 'application/json' }, payload: `{"tenant":"${s.slug}","email":"${s.email}","password":"x","__proto__":{"isAdmin":true}}` });
+    expect(res.statusCode).toBe(400);
+    expect(({} as Record<string, unknown>).isAdmin).toBeUndefined();
+  });
+
+  it('a repeated query parameter does not change its type (HTTP parameter pollution)', async () => {
+    const owner = await ownerSession(ctx);
+    const res = await inject(ctx, { method: 'GET', url: '/v1/users?q=a&q=b', headers: { cookie: owner.cookie } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('a document must be named like its type (an .exe cannot be filed as a PDF)', async () => {
+    const owner = await ownerSession(ctx);
+    const res = await inject(ctx, { method: 'POST', url: '/v1/documents', headers: { cookie: owner.cookie }, payload: { title: 'Fictional', fileName: 'tool.exe', contentType: 'application/pdf', sizeBytes: 10 } });
+    expect(res.statusCode).toBe(400);
+    const ok = await inject(ctx, { method: 'POST', url: '/v1/documents', headers: { cookie: owner.cookie }, payload: { title: 'Fictional', fileName: 'Handbook.PDF', contentType: 'application/pdf', sizeBytes: 10 } });
+    expect(ok.statusCode).toBe(201);
+  });
+});
+
+describe('V16.3 security events', () => {
+  it('refused requests are logged as structured security events with pseudonymous ids only', async () => {
+    const owner = await ownerSession(ctx);
+    const p = await person(ctx, owner);
+    const events: Array<Record<string, unknown>> = [];
+    const spy = vi.spyOn(ctx.app.log, 'warn').mockImplementation(((o: Record<string, unknown>) => void events.push(o)) as never);
+    const info = vi.spyOn(ctx.app.log, 'info').mockImplementation(((o: Record<string, unknown>) => void events.push(o)) as never);
+    try {
+      await inject(ctx, { method: 'GET', url: '/v1/settings/security', headers: { cookie: p.cookie } });
+      await inject(ctx, { method: 'POST', url: '/v1/auth/logout', headers: { cookie: p.cookie, origin: 'https://attacker.example.test' } });
+      await inject(ctx, { method: 'POST', url: '/v1/auth/login', payload: { tenant: owner.slug, email: 'not-an-email', password: 'x' } });
+    } finally {
+      spy.mockRestore();
+      info.mockRestore();
+    }
+    expect(events).toContainEqual(expect.objectContaining({ securityEvent: 'authz.denied', code: 'forbidden', route: '/v1/settings/security', tenantId: owner.tenantId, actorId: p.userId }));
+    expect(events).toContainEqual(expect.objectContaining({ securityEvent: 'authz.denied', reason: 'untrustedOrigin', route: '/v1/auth/logout' }));
+    expect(events).toContainEqual(expect.objectContaining({ securityEvent: 'input.rejected', route: '/v1/auth/login' }));
+    const security = JSON.stringify(events.filter((e) => e && typeof e === 'object' && 'securityEvent' in e));
+    expect(security).not.toContain(p.email);
+    expect(security).not.toContain('not-an-email');
+  });
+});
+
