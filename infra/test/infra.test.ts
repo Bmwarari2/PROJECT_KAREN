@@ -8,6 +8,7 @@ import { buildApp } from '../lib/app';
 import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvName } from '../lib/config';
 import { DIRECTORY_ATTRIBUTES } from '../lib/global-stack';
 import { XRAY_ACTIONS } from '../lib/shared';
+import { EXPORT_ROLE_ARN_PATTERN } from '../lib/cell-stack';
 
 type Json = Record<string, any>;
 type Res = { Type: string; Properties?: Json };
@@ -197,6 +198,16 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     if (env === 'prod') expect(cfg.natGateways).toBe(3);
   });
 
+  it('data export: api and worker may assume only customer roles named thapsus-hr-export-* (sts:AssumeRole, no wildcard actions)', () => {
+    const statements = resources(t, 'AWS::IAM::Policy').flatMap(([, r]) => asArray(r.Properties!.PolicyDocument.Statement as Json[]));
+    const assume = statements.filter((s) => asArray(s.Action as string[]).some((a) => a.startsWith('sts:')));
+    expect(assume.length).toBe(2); // api and worker task roles
+    for (const s of assume) {
+      expect(s).toMatchObject({ Effect: 'Allow', Action: 'sts:AssumeRole', Resource: EXPORT_ROLE_ARN_PATTERN, Sid: 'AssumeCustomerExportRoles' });
+    }
+    expect(EXPORT_ROLE_ARN_PATTERN).toBe('arn:aws:iam::*:role/thapsus-hr-export-*');
+  });
+
   it('the rest of the cell: autoscaling, SQS with DLQs, event bus, scheduler group, SES configuration set, budget alarm, 3 AZs, TLS certificate', () => {
     // web, api and worker scale automatically
     const targets = resources(t, 'AWS::ApplicationAutoScaling::ScalableTarget');
@@ -257,6 +268,17 @@ describe.each(combos)('%s cell %s', (env, cell) => {
       expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'INTEGRATION_SIGNING_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
     );
     expect((apiTask.Properties!.ContainerDefinitions as Json[]).map((c) => c.Name)).toContain('otel-collector');
+    // Phase 7: reports and data exports read through the Aurora reader endpoint (reporting role), on api AND worker.
+    const [readerId] = resources(t, 'AWS::RDS::DBCluster')[0]!;
+    for (const family of ['-api', '-worker']) {
+      const [, task] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))!;
+      const c = (task.Properties!.ContainerDefinitions as Json[]).find((x) => x.Name === 'app')!;
+      const reader = (c.Environment as Json[]).find((e) => e.Name === 'REPORTING_DATABASE_HOST')!;
+      expect(reader.Value, family).toEqual({ 'Fn::GetAtt': [readerId, 'ReadEndpoint.Address'] });
+      const writer = (c.Environment as Json[]).find((e) => e.Name === 'DATABASE_HOST')!;
+      expect(JSON.stringify(writer.Value)).toContain('Endpoint'); // the RDS Proxy (writer)
+      expect((c.Secrets as Json[]).map((s) => s.Name)).toContain('REPORTING_DATABASE_SECRET');
+    }
     const [, migrator] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-migrator'))!;
     const m = (migrator.Properties!.ContainerDefinitions as Json[])[0]!;
     expect(m.Command).toEqual(['node', 'dist/migrate.mjs']);

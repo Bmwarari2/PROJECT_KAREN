@@ -75,6 +75,7 @@ flowchart TB
 - **Effective dating:** core HR records use `[valid_from, valid_to)` with exclusion constraints. `app.employees` holds denormalised *current* values for fast lists and search at 200,000 rows; a daily idempotent job refreshes them for future-dated changes.
 - **Audit:** `audit.events` is append-only. Privileges and a trigger block changes, and asynchronous sealing builds a per-tenant SHA-256 chain (ADR-0004).
 - **Sensitive data vault:** `vault.records` holds envelope-encrypted values with per-value data keys wrapped by the regional KMS vault key. The AAD binds each value to its tenant, subject, category and field. Every decrypt is audited.
+- **Reporting reader:** reports and data exports run in read-only transactions on the Aurora reader endpoint as `thapsus_reporting` (SELECT only, no BYPASSRLS, no vault or credential tables), with the same tenant context and forced RLS. Reader URLs are per database key in the routing config; a key without a reader falls back to its own writer (ADR-0071).
 - **Outbox:** domain events are written in the same transaction as the change. The worker dispatches them to in-process subscribers and EventBridge, exactly once per event id.
 
 ## 4. Services and packages

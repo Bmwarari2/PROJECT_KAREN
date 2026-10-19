@@ -92,7 +92,8 @@ export function isAdmin(principal: Principal): boolean {
   return principal.grants.some((g) => g.isAdmin);
 }
 
-function grantFieldAccess(grant: RoleGrant, key: string): FieldAccess | undefined {
+/** Access one grant gives to a field key (most specific wildcard wins); undefined when it says nothing. */
+export function grantFieldAccess(grant: RoleGrant, key: string): FieldAccess | undefined {
   if (key in grant.fieldAccess) return grant.fieldAccess[key];
   // most specific wildcard: employee.pay.salary → employee.pay.* → employee.*  → *
   const parts = key.split('.');

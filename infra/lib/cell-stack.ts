@@ -36,6 +36,10 @@ import {
   RUNTIME_PLATFORM,
 } from './shared';
 
+
+/** Customer-owned roles the api/worker may assume for data exports (documented in docs/guides/data-export.md). */
+export const EXPORT_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-export-*';
+
 export interface CellStackProps extends StackProps {
   config: EnvConfig;
   cell: HomeRegion;
@@ -419,6 +423,7 @@ export class CellStack extends Stack {
     const backendEnv: Record<string, string> = {
       ...commonEnv,
       DATABASE_HOST: proxy.endpoint,
+      // Reports and data exports run on the Aurora reader endpoint as thapsus_reporting (ADR-0071).
       REPORTING_DATABASE_HOST: cluster.clusterReadEndpoint.hostname,
       VALKEY_URL: valkeyUrl,
       FILES_BUCKET: filesBucket.bucketName,
@@ -558,6 +563,16 @@ export class CellStack extends Stack {
           sid: 'TenantDirectory',
           actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query'],
           resources: [directoryTableArn, `${directoryTableArn}/index/*`],
+        }),
+      );
+      // Scheduled data export (ADR-0077): assume ONLY customer roles named thapsus-hr-export-* (any customer
+      // account; the customer's trust policy pins this task role and our ExternalId). STS is regional and the
+      // bucket must be in this cell's region, which the application checks before writing.
+      role.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          sid: 'AssumeCustomerExportRoles',
+          actions: ['sts:AssumeRole'],
+          resources: [EXPORT_ROLE_ARN_PATTERN],
         }),
       );
       // The directory table is encrypted with the global stack's key (alias-scoped, DynamoDB only).

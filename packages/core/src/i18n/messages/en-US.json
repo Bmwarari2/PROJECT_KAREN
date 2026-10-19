@@ -56,7 +56,45 @@
   "notify": {
     "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
     "shiftCancelled": "Your shift on {date} was canceled",
+    "shiftChanged": "Your shift on {date} has changed",
+    "swapOffered": "A colleague asked you to swap a shift on {date}",
+    "swapDeclined": "Your shift swap was declined",
+    "swapApproved": "Your shift swap on {date} was approved",
+    "swapRejected": "Your shift swap was not approved",
+    "shiftClaimApproved": "You have the open shift on {date}",
+    "shiftClaimRejected": "Your open shift request was not approved",
+    "timesheetApproved": "Your timesheet for the week of {week} was approved",
+    "timesheetRejected": "Your timesheet for the week of {week} was returned",
     "payslipAvailable": "Your pay stub for {label} is ready"
+  },
+  "app": {
+    "nav": {
+      "rota": "Schedule",
+      "clock": "Time clock",
+      "payslips": "Pay stubs"
+    }
+  },
+  "rota": {
+    "title": "Schedule",
+    "tabTeam": "Team schedule",
+    "gridLabel": "Schedule for the week of {date}",
+    "legend": "Dashed shifts are drafts that employees can’t see until you publish the week.",
+    "status": {
+      "cancelled": "Canceled"
+    },
+    "swapStatus": {
+      "cancelled": "Canceled"
+    },
+    "requestCancelled": "Request canceled."
+  },
+  "clock": {
+    "title": "Time clock"
+  },
+  "kiosk": {
+    "invalid": "Employee number or PIN not recognized."
+  },
+  "timesheets": {
+    "scheduled": "Scheduled"
   },
   "payroll": {
     "frequencies": {
@@ -76,13 +114,6 @@
       "payslip": "Pay stubs"
     },
     "labelHint": "Shown to employees, for example “May 2026” or “2025”"
-  },
-  "app": {
-    "nav": {
-      "payslips": "Pay stubs",
-      "rota": "Schedule",
-      "clock": "Time clock"
-    }
   },
   "integrations": {
     "licenceSku": "License SKU ID",
@@ -115,27 +146,40 @@
       }
     }
   },
-  "rota": {
-    "title": "Schedule",
-    "tabTeam": "Team schedule",
-    "gridLabel": "Schedule for the week of {date}",
-    "legend": "Dashed shifts are drafts that employees can’t see until you publish the week.",
-    "status": {
-      "cancelled": "Canceled"
+  "reports": {
+    "note": {
+      "absenceMethod": "Approved absence overlapping the period, in working days of each person's work pattern, excluding public holidays. Vacation and comp time are not included.",
+      "liabilityMethod": "Leave earned but not taken by the date, valued at contractual base pay: annual pay ÷ (52 × working days per week)."
     },
-    "swapStatus": {
-      "cancelled": "Canceled"
+    "ready": {
+      "holidayLiability": {
+        "title": "Vacation liability",
+        "description": "The value of time off earned but not yet taken, per currency."
+      }
     },
-    "requestCancelled": "Request canceled."
+    "enum": {
+      "leaveCategory": {
+        "annual": "Vacation",
+        "toil": "Comp time"
+      },
+      "requestStatus": {
+        "cancelled": "Canceled"
+      }
+    },
+    "builder": {
+      "modeSummary": "Summarize",
+      "intro": "Choose what to report on, the fields to show, filters and how to summarize. You only see people and fields your access allows."
+    }
   },
-  "clock": {
-    "title": "Time clock"
-  },
-  "kiosk": {
-    "invalid": "Employee number or PIN not recognized."
-  },
-  "timesheets": {
-    "scheduled": "Scheduled"
+  "ess": {
+    "details": {
+      "status_cancelled": "Canceled"
+    },
+    "notifications": {
+      "cat": {
+        "rota": "Schedules and swaps"
+      }
+    }
   },
   "onboarding": {
     "addressPostcode": "ZIP code",

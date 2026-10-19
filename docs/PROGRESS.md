@@ -17,7 +17,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
 | 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
-| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [ ] |
+| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [x] |
 | 8 | Privacy and trust (6.9) | `phase-8-privacy` | [ ] |
 | 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [ ] |
 | 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-backoffice-billing` | [ ] |
@@ -283,15 +283,19 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 7 — Reports, analytics and self-service (6.7, 6.8)
 
-- [ ] **7.1 Ready-made reports per jurisdiction**
+- [x] **7.1 Ready-made reports per jurisdiction**
   - Headcount, turnover, absence, holiday liability, overtime, compliance status, gender pay gap, EEO-1 and pay transparency data; golden tests for calculations.
-- [ ] **7.2 Report builder**
+  - _Evidence:_ `apps/api/test/reports-goldens.test.ts` pins every calculation to explicit dates (headcount by entity and at month ends, turnover split voluntary/involuntary, absence by type with the Bradford factor S² × D, overtime, and holiday liability per currency in integer minor units); `apps/api/test/reports.int.test.ts` ("7.1 ready-made reports": effective-dated headcount, turnover, absence with the tenant-enabled Bradford factor, holiday liability per currency, overtime from approved timesheets, manager scope; "7.1 statutory reports from the compliance centre": gender pay gap, EEO-1, pay transparency and compliance status from the compliance calculators with small cells withheld). The holiday liability method is pending finance and legal review (HUMAN_TODO 3.15).
+- [x] **7.2 Report builder**
   - Fields, filters, grouping and charts; runs on read replicas; permission-aware (field-level and scope); CSV, Excel and PDF export; scheduled delivery.
   - Large reports run as background jobs with progress tracking.
-- [ ] **7.3 Scheduled data export**
+  - _Evidence:_ `reports.int.test.ts` ("7.2 report builder": catalogue by row permission, hidden fields null and not filterable, entity scope with money grouped by currency, audited vault reads, invalid specs refused; "7.2 reports run on the read replica": SQL on the reader pool as `thapsus_reporting` with forced RLS, writer fallback; "7.2 background runs": progress, home-region file, short-lived links, CSV/Excel/PDF, expiry; "7.2 saved reports and scheduled delivery": sharing, per-recipient permissions, once per period, email without personal data); `reports.isolation.test.ts` (reporting role has no BYPASSRLS, no writes, no vault or credentials); `reports-units.test.ts` (DST-safe schedules, relative periods, rendering); `infra/test/infra.test.ts` (`REPORTING_DATABASE_HOST` is the Aurora reader endpoint); `apps/web/e2e/reports-ess.spec.ts` (builder with a chart, saved report and delivery, axe in light and dark).
+- [x] **7.3 Scheduled data export**
   - Scheduled export to the customer's own S3 bucket (cross-account role) or SFTP; delivery log.
-- [ ] **7.4 Employee self-service (PWA)**
+  - _Evidence:_ `apps/api/test/exports.int.test.ts` (S3: ExternalId generated, other regions and roles outside `thapsus-hr-export-*` refused, delivery once per period by assuming the role, a bucket in another region refused before any write, run-as user permissions and no vault fields; SFTP: pinned host key, sealed password, key mismatch refused and logged without personal data; the delivery log); `reports-exports.residency.test.ts` (refusal for every region pair); `infra/test/infra.test.ts` ("data export": the API and worker may assume only customer roles named `thapsus-hr-export-*`); customer setup in `docs/guides/data-export.md`.
+- [x] **7.4 Employee self-service (PWA)**
   - Own details, leave, rota, shift swaps, clock-in, payslips, documents, signing, checklists; notifications by email and web push; all localised; WCAG 2.2 AA and Lighthouse targets met on key ESS screens.
+  - _Evidence:_ `apps/api/test/ess.int.test.ts` (the Me hub summarises leave, next shift, clock, documents to sign, tasks, notifications and payslips; notifications in the user's language; own details with contact changes applied directly and legal details sent to HR for approval; per-category email and push preferences honoured at delivery); leave, rota, shift swaps, clock-in, payslips, documents, signing and checklists are proven by their phase suites (Phases 1, 3, 4 and 6); `apps/web/e2e/reports-ess.spec.ts` (Me hub, my details with a change request and notification preferences, axe in light and dark); Lighthouse in `pnpm verify` covers `/app/me` and `/app/notifications`; visual baselines for `/app/me` and the reports screens.
 
 ---
 

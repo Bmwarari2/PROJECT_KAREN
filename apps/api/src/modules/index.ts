@@ -18,6 +18,9 @@ import { payrollRoutes } from './payroll/routes';
 import { payslipRoutes } from './payslips/routes';
 import { itRoutes } from './it/routes';
 import { assetRoutes } from './assets/routes';
+import { reportRoutes } from './reports/routes';
+import { dataExportRoutes } from './data-export/routes';
+import { essRoutes } from './me/ess-routes';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -40,4 +43,8 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(payslipRoutes);
   await app.register(itRoutes);
   await app.register(assetRoutes);
+  // Phase 7: reports, analytics, data export and employee self-service
+  await app.register(reportRoutes);
+  await app.register(dataExportRoutes);
+  await app.register(essRoutes);
 }

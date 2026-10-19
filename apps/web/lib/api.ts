@@ -18,8 +18,10 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
     headers: { accept: 'application/json', ...(json !== undefined ? { 'content-type': 'application/json' } : {}), ...headers },
     body: json !== undefined ? JSON.stringify(json) : rest.body,
   });
-  if (res.status === 204 || res.status === 202) return undefined as T;
+  if (res.status === 204) return undefined as T;
   const text = await res.text();
+  // 202 Accepted may carry the accepted resource (e.g. a background report run to poll) or nothing
+  if (res.status === 202 && !text) return undefined as T;
   const body = text ? JSON.parse(text) : {};
   if (!res.ok) throw new ApiProblem(res.status, body.code ?? 'error', body.title ?? res.statusText, body);
   return body as T;
