@@ -160,6 +160,7 @@ export function secretToUrl(secretJson: string, hostOverride?: string): string {
   const s = JSON.parse(secretJson) as { username: string; password: string; host?: string; port?: number; dbname?: string };
   const host = hostOverride ?? s.host;
   if (!host) throw new Error('database secret has no host');
-  const sslmode = /amazonaws\.com$/.test(host) ? '?sslmode=require' : '';
+  // verify-full: TLS with certificate and host name checks (never the libpq "require" that skips them)
+  const sslmode = /amazonaws\.com$/.test(host) ? '?sslmode=verify-full' : '';
   return `postgres://${encodeURIComponent(s.username)}:${encodeURIComponent(s.password)}@${host}:${s.port ?? 5432}/${s.dbname ?? 'thapsus'}${sslmode}`;
 }
