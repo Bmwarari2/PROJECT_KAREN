@@ -4,8 +4,12 @@ import { isAdmin } from '@thapsus/core/permissions';
 import { composeToken, hashToken, newToken, parseToken } from './tokens';
 import { loadPrincipal } from '../authz/principal';
 
-export const SESSION_COOKIE = 'thr_sid';
 export const SESSION_PREFIX = 's_';
+/**
+ * Sensitive account changes (second factors, a first password, ending sessions) need an
+ * authentication no older than this: the sign-in itself or POST /v1/auth/reauth (ASVS V7.5.1).
+ */
+export const REAUTH_WINDOW_MINUTES = 10;
 
 export interface TenantSecurity {
   ssoEnforced: boolean;
@@ -50,6 +54,8 @@ export interface AuthContext {
   method: AuthMethod;
   mfaVerified: boolean;
   hasMfaFactor: boolean;
+  /** When this session last proved the user's identity (sign-in or re-authentication). */
+  authenticatedAt: Date;
   principal: Principal;
   user: { email: string; displayName: string; locale: string | null; timeZone: string | null; employeeId: string | null };
   apiClient?: ApiClientInfo;
@@ -104,6 +110,8 @@ export async function resolveSession(router: TenantRouter, token: string | undef
         idle_expires_at: string;
         absolute_expires_at: string;
         revoked_at: string | null;
+        created_at: string;
+        reauthenticated_at: string | null;
         email: string;
         display_name: string;
         locale: string | null;
@@ -112,7 +120,7 @@ export async function resolveSession(router: TenantRouter, token: string | undef
         status: string;
       }>(
         `SELECT s.id, s.user_id, s.auth_method, s.mfa_verified_at, s.last_seen_at, s.idle_expires_at, s.absolute_expires_at,
-                s.revoked_at, u.email, u.display_name, u.locale, u.time_zone, u.employee_id, u.status
+                s.revoked_at, s.created_at, s.reauthenticated_at, u.email, u.display_name, u.locale, u.time_zone, u.employee_id, u.status
            FROM app.sessions s JOIN app.users u ON u.tenant_id = s.tenant_id AND u.id = s.user_id
           WHERE s.token_hash = $1`,
         [hashToken(parsed.secret)],
@@ -137,6 +145,7 @@ export async function resolveSession(router: TenantRouter, token: string | undef
         method: s.auth_method,
         mfaVerified: !!s.mfa_verified_at,
         hasMfaFactor: !!factor,
+        authenticatedAt: new Date(Math.max(new Date(s.created_at).getTime(), s.reauthenticated_at ? new Date(s.reauthenticated_at).getTime() : 0)),
         principal,
         user: { email: s.email, displayName: s.display_name, locale: s.locale, timeZone: s.time_zone, employeeId: s.employee_id },
       } satisfies AuthContext;
@@ -146,12 +155,24 @@ export async function resolveSession(router: TenantRouter, token: string | undef
   }
 }
 
-export async function revokeUserSessions(tx: Tx, userId: string) {
-  await tx.exec('UPDATE app.sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
+/** Ends a user's sessions (all of them, or all but `exceptSessionId`); returns how many were ended. */
+export async function revokeUserSessions(tx: Tx, userId: string, exceptSessionId?: string): Promise<number> {
+  return tx.exec('UPDATE app.sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL AND ($2::uuid IS NULL OR id <> $2::uuid)', [userId, exceptSessionId ?? null]);
 }
 
-/** Admins must have a verified second factor in this session before reaching anything but MFA setup. */
+/** True when the session proved the user's identity within REAUTH_WINDOW_MINUTES. */
+export function recentlyAuthenticated(auth: AuthContext, now: Date): boolean {
+  return now.getTime() - auth.authenticatedAt.getTime() <= REAUTH_WINDOW_MINUTES * 60_000;
+}
+
+/**
+ * The second-factor gate, applied to every route except MFA setup (ASVS V6.3.3, V6.4.3):
+ *  - anyone with a verified second factor must use it in this session, whatever the sign-in path
+ *    (password, magic link or SSO without trusted IdP MFA), so no path skips an enabled factor;
+ *  - admins without a factor must enrol one first.
+ */
 export function mfaGate(auth: AuthContext): 'ok' | 'mfaRequired' | 'mfaEnrollmentRequired' {
-  if (!isAdmin(auth.principal) || auth.mfaVerified) return 'ok';
-  return auth.hasMfaFactor ? 'mfaRequired' : 'mfaEnrollmentRequired';
+  if (auth.mfaVerified) return 'ok';
+  if (auth.hasMfaFactor) return 'mfaRequired';
+  return isAdmin(auth.principal) ? 'mfaEnrollmentRequired' : 'ok';
 }

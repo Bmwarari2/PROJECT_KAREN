@@ -14,6 +14,7 @@ export type ErrorCode =
   | 'lockedOut'
   | 'mfaRequired'
   | 'mfaEnrollmentRequired'
+  | 'reauthenticationRequired'
   | 'ssoRequired'
   | 'wrongRegion'
   | 'invalidCredentials'
@@ -30,6 +31,7 @@ const STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
   mfaRequired: 403,
   mfaEnrollmentRequired: 403,
+  reauthenticationRequired: 403,
   ssoRequired: 403,
   notFound: 404,
   conflict: 409,

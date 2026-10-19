@@ -2,7 +2,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
-import { createSession, loadSecurity, SESSION_COOKIE, type AuthMethod } from './sessions';
+import { sessionCookie } from '../../http/security';
+import { createSession, loadSecurity, type AuthMethod } from './sessions';
 
 /**
  * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
@@ -34,15 +35,25 @@ export async function resolveTenantSlug(deps: Deps, slug: string): Promise<strin
   throw new ApiError('notFound');
 }
 
+/**
+ * The session cookie: `__Host-thr_sid` over HTTPS (Secure, Path=/, no Domain), HttpOnly, SameSite=Lax
+ * so top-level navigations from an identity provider or an emailed link keep working (cross-site
+ * requests are refused by the origin check in http/context.ts). ASVS V3.3.1 to V3.3.4.
+ */
 export function setSessionCookie(deps: Deps, reply: FastifyReply, token: string) {
-  const secure = deps.config.apiBaseUrl.startsWith('https');
-  reply.setCookie(SESSION_COOKIE, token, {
+  const c = sessionCookie(deps.config);
+  reply.setCookie(c.name, token, {
     httpOnly: true,
-    secure,
+    secure: c.secure,
     sameSite: 'lax',
-    path: '/',
+    path: c.path,
     // Absolute session lifetime is enforced server-side; the cookie itself is a browser-session cookie.
   });
+}
+
+export function clearSessionCookie(deps: Deps, reply: FastifyReply) {
+  const c = sessionCookie(deps.config);
+  reply.clearCookie(c.name, { path: c.path, secure: c.secure, httpOnly: true, sameSite: 'lax' });
 }
 
 export async function startSession(

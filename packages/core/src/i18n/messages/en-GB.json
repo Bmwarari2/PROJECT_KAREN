@@ -66,7 +66,8 @@
     "gone": "This is no longer available.",
     "unprocessable": "We could not process that request.",
     "internal": "Something went wrong on our side. Please try again.",
-    "notImplemented": "This is not available yet."
+    "notImplemented": "This is not available yet.",
+    "reauthenticationRequired": "For your security, confirm it is you before making this change."
   },
   "auth": {
     "magicLinkSubject": "Your sign-in link for Thapsus-HR",
@@ -127,7 +128,9 @@
     "magic": {
       "title": "Signing you in",
       "invalid": "This link has expired or has already been used."
-    }
+    },
+    "mfaResetSubject": "Your two-step verification was reset",
+    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away."
   },
   "push": {
     "testBody": "Notifications are working on this device."

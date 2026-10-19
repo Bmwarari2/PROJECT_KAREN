@@ -12,6 +12,8 @@ import { Problem } from '../../http/schemas';
 import { requireAuth } from '../../http/context';
 import { resolveTenantSlug, startSession, throttle } from './common';
 import { assertPasswordlessAllowed, consumeChallenge } from './common';
+import { revokeUserSessions } from './sessions';
+import { requireRecentAuth } from './session-routes';
 
 const uuidToBytes = (u: string) => Buffer.from(u.replace(/-/g, ''), 'hex');
 const bytesToUuid = (b: Buffer) => {
@@ -32,6 +34,8 @@ export async function passkeyRoutes(app: FastifyInstance) {
     async (req) => {
       const auth = requireAuth(req);
       if (auth.hasMfaFactor && !auth.mfaVerified) throw new ApiError('mfaRequired');
+      // Adding a factor next to an existing one needs a fresh proof of identity (ASVS V7.5.1).
+      if (auth.hasMfaFactor) requireRecentAuth(auth, deps.now());
       return app.tenantTx(req, async (tx) => {
         const existing = await tx.query<{ credential_id: string; transports: string[] }>(
           'SELECT credential_id, transports FROM app.passkeys WHERE user_id = $1',
@@ -82,7 +86,9 @@ export async function passkeyRoutes(app: FastifyInstance) {
           [auth.userId, cred.id, Buffer.from(cred.publicKey), cred.counter, cred.transports ?? [], body.name ?? null],
         );
         await tx.exec('UPDATE app.sessions SET mfa_verified_at = coalesce(mfa_verified_at, now()) WHERE id = $1', [auth.sessionId]);
-        await app.audit(tx, req, { action: 'auth.passkey_registered', targetType: 'user', targetId: auth.userId });
+        // A new authenticator ends every other session (ASVS V7.4.3).
+        const otherSessionsEnded = await revokeUserSessions(tx, auth.userId, auth.sessionId);
+        await app.audit(tx, req, { action: 'auth.passkey_registered', targetType: 'user', targetId: auth.userId, diff: { otherSessionsEnded } });
       });
       return reply.status(204).send(null);
     },
@@ -92,7 +98,7 @@ export async function passkeyRoutes(app: FastifyInstance) {
     '/v1/auth/passkeys/login/options',
     {
       config: { auth: 'public', selfAudited: true },
-      schema: { tags: ['auth'], body: Type.Object({ tenant: Type.String() }), response: { 200: Type.Object({ challengeId: Type.String(), options: Type.Any() }), 403: Problem, 429: Problem } },
+      schema: { tags: ['auth'], body: Type.Object({ tenant: Type.String({ maxLength: 40 }) }, { additionalProperties: false }), response: { 200: Type.Object({ challengeId: Type.String(), options: Type.Any() }), 403: Problem, 429: Problem } },
     },
     async (req) => {
       await throttle(deps, [[`passkey:ip:${req.ctx.ip}`, 30, 900]]);
