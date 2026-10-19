@@ -19,6 +19,26 @@ export interface CellSettings {
   monthlyBudgetUsd: number;
 }
 
+/**
+ * A dedicated Aurora PostgreSQL cluster for one or more very large tenants (ADR-0068, runbook
+ * docs/runbooks/move-tenant-to-dedicated-db.md). Each entry is recurring cost: add one only with the
+ * product owner's approval (docs/COSTS.md). The committed env configs declare none.
+ */
+export interface DedicatedDatabase {
+  /** Routing key (registry.tenants.db_key and DEDICATED_DATABASE_HOSTS): lower-case letters, digits and single hyphens. */
+  key: string;
+  /** Home cell of the tenants it serves. The cluster is created in that cell's region only. */
+  cell: HomeRegion;
+  /** Aurora Serverless v2 capacity; defaults to the environment's `aurora` settings. */
+  minAcu?: number;
+  maxAcu?: number;
+}
+
+/** Router keys the cell stack can turn into AWS names (cluster, proxy, secrets, task family). */
+export const DEDICATED_DATABASE_KEY = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+export const DEDICATED_DATABASE_KEY_MAX = 24;
+const DEDICATED_DATABASE_FIELDS = new Set(['key', 'cell', 'minAcu', 'maxAcu']);
+
 /** Shape of infra/config/<env>.json. Nothing environment-specific is hardcoded in the stacks. */
 export interface EnvConfig {
   env: EnvName;
@@ -35,6 +55,8 @@ export interface EnvConfig {
   logRetentionDays: number;
   natGateways: number;
   aurora: { minAcu: number; maxAcu: number; backupRetentionDays: number; deletionProtection: boolean };
+  /** Optional dedicated databases (none by default). Same backups and deletion protection as `aurora`. */
+  dedicatedDatabases?: DedicatedDatabase[];
   valkey: { nodeType: string; replicas: number };
   backup: { dailyRetentionDays: number; continuousRetentionDays: number; copyRetentionDays: number };
   services: { api: ServiceSize; worker: ServiceSize; web: ServiceSize };
@@ -49,11 +71,11 @@ export interface EnvConfig {
 export function loadConfig(env: EnvName): EnvConfig {
   const file = join(import.meta.dirname, '..', 'config', `${env}.json`);
   const cfg = JSON.parse(readFileSync(file, 'utf8')) as EnvConfig;
-  validate(cfg, env);
+  validateConfig(cfg, env);
   return cfg;
 }
 
-function validate(cfg: EnvConfig, env: EnvName) {
+export function validateConfig(cfg: EnvConfig, env: EnvName) {
   const fail = (m: string) => {
     throw new Error(`infra/config/${env}.json: ${m}`);
   };
@@ -65,6 +87,7 @@ function validate(cfg: EnvConfig, env: EnvName) {
   }
   if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.ci?.githubRepository ?? '')) fail('ci.githubRepository must be owner/repo');
   if (!cfg.ci.githubEnvironment) fail('ci.githubEnvironment is required');
+  validateDedicatedDatabases(cfg.dedicatedDatabases, fail);
   if (env === 'prod') {
     if (cfg.ci.githubEnvironment !== 'production') fail('prod deploys must come from the "production" GitHub environment (manual approval gate)');
     if (cfg.natGateways < 3) fail('prod needs one NAT gateway per AZ (3)');
@@ -72,6 +95,37 @@ function validate(cfg: EnvConfig, env: EnvName) {
     if (!cfg.aurora.deletionProtection) fail('prod Aurora must have deletion protection');
   }
 }
+
+function validateDedicatedDatabases(list: unknown, fail: (m: string) => never) {
+  if (list === undefined) return;
+  if (!Array.isArray(list)) fail('dedicatedDatabases must be a list');
+  const seen = new Set<string>();
+  for (const [i, d] of (list as DedicatedDatabase[]).entries()) {
+    const at = `dedicatedDatabases[${i}]`;
+    if (!d || typeof d !== 'object') fail(`${at} must be an object`);
+    for (const k of Object.keys(d)) if (!DEDICATED_DATABASE_FIELDS.has(k)) fail(`${at}.${k} is not a known setting`);
+    if (typeof d.key !== 'string' || !DEDICATED_DATABASE_KEY.test(d.key) || d.key.length > DEDICATED_DATABASE_KEY_MAX) {
+      fail(`${at}.key must be lower-case letters, digits and single hyphens, start with a letter, at most ${DEDICATED_DATABASE_KEY_MAX} characters`);
+    }
+    if (d.key === 'shared') fail(`${at}.key "shared" is the cell's shared database`);
+    // Construct ids and stack outputs drop the hyphens, so "big-co" and "bigco" would collide.
+    const id = d.key.replace(/-/g, '');
+    if (seen.has(id)) fail(`${at}.key "${d.key}" is used twice (keys must differ ignoring hyphens)`);
+    seen.add(id);
+    if (!(HOME_REGIONS as readonly string[]).includes(d.cell)) fail(`${at}.cell must be one of ${HOME_REGIONS.join(', ')}`);
+    for (const k of ['minAcu', 'maxAcu'] as const) {
+      const v = d[k];
+      if (v !== undefined && (typeof v !== 'number' || v < 0.5 || v > 256 || (v * 2) % 1 !== 0)) fail(`${at}.${k} must be 0.5 to 256 in steps of 0.5`);
+    }
+    if ((d.minAcu ?? 0) > (d.maxAcu ?? Infinity)) fail(`${at}.minAcu must not exceed maxAcu`);
+  }
+}
+
+/** PascalCase id of a dedicated database key, for construct ids and stack outputs ("big-co" → "BigCo"). */
+export const dedicatedDatabaseId = (key: string) => key.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+
+/** The dedicated databases of one cell. */
+export const dedicatedDatabasesFor = (cfg: EnvConfig, cell: HomeRegion) => (cfg.dedicatedDatabases ?? []).filter((d) => d.cell === cell);
 
 const prefix = <T>(p: string, o: Record<string, T>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [p + k, v]));
 
@@ -83,6 +137,11 @@ export const names = {
   cellInternalTokenSecret: (env: EnvName, cell: HomeRegion) => `thapsus-hr/${env}/${cell}/internal-token`,
   copyVault: (env: EnvName, cell: HomeRegion) => `thapsus-hr-${env}-${cell}-backup-copy`,
   stack: (env: EnvName, kind: string) => `ThapsusHr-${env}-${kind}`,
+  /** Cell stack outputs for a dedicated database (read by scripts/deploy.mjs and the runbook). */
+  dedicatedOutputs: (key: string) => {
+    const id = dedicatedDatabaseId(key);
+    return { proxyEndpoint: `Dedicated${id}ProxyEndpoint`, writerEndpoint: `Dedicated${id}WriterEndpoint`, toolsTaskDefinitionArn: `Dedicated${id}ToolsTaskDefinitionArn` };
+  },
 };
 
 /** AWS regions the organisation SCP denies for workloads (ADR-0001). No stack may target them. */

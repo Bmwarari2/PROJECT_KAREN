@@ -36,6 +36,18 @@ These are services the customer contracts with directly and connects to Thapsus-
 | Customer-designated payroll providers (ADP, Workday, UKG, Gusto, DATEV) | Payroll handoff (connector stubs only; no data is sent until a partner integration is built and listed here with its locations) | Not active | Not active | Not active | None today. |
 | Customer S3 bucket (the customer's own AWS account) | Scheduled data exports to the customer's data warehouse (Phase 7) | Written from eu-west-2 to a bucket that **must be in eu-west-2**; any other region is refused | Written from eu-central-1 to a bucket that must be in eu-central-1 | Written from us-east-2 to a bucket that must be in us-east-2 | The report-builder datasets and fields the customer selects (CSV or JSON Lines), limited to what the export's run-as user may see; vault-backed fields are never exported. Access is by assuming a role in the customer's account (`thapsus-hr-export-*`, with an ExternalId) through AWS STS in the home region; no long-lived keys are stored. |
 | Customer SIEM (HTTPS or S3) | Audit log streaming | Customer-chosen endpoint | Customer-chosen endpoint | Customer-chosen endpoint | Audit events (sensitive values redacted). |
+| Customer webhook endpoints | Event notifications to the customer's systems | Customer-chosen endpoint (called from the home region) | Customer-chosen endpoint (called from the home region) | Customer-chosen endpoint (called from the home region) | Event type, ids and names of changed fields (no field values). |
+| Customer API clients (API keys, OAuth clients) | The customer's own integrations reading or writing through the public API | The customer's client calls the home-region API | The customer's client calls the home-region API | The customer's client calls the home-region API | Whatever the client's role and scopes allow. |
+
+### Destinations the controller configures (webhooks, audit streaming, API clients)
+
+Webhook endpoints, SIEM streams (HTTPS endpoints and S3 buckets) and API clients are chosen and configured by the customer, who is the **controller**. They are not Thapsus sub-processors. Thapsus sends data only to destinations an admin of that workspace has configured, and stops as soon as the destination is disabled, deleted or revoked, or the feature is turned off.
+
+- **Origin:** every outbound call starts in the workspace's **home region**: London for UK workspaces, Frankfurt for EU and Ohio for US. Thapsus never relays it through another region.
+- **S3 audit streams:** these can only target a bucket in the home region. The residency-guarded AWS client factory refuses any other region, and this is tested for every region pair.
+- **What is sent:** webhook payloads carry identifiers and the names of changed fields only. Audit streams omit the values of sensitive changes.
+- **Safety:** destinations must be public `https://` addresses. Private, internal and cloud-metadata addresses are refused (SSRF protection).
+- **Sandboxes:** a sandbox copies no destinations. It gets no webhooks, audit streams or API keys from production.
 
 ## Change log
 

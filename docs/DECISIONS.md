@@ -97,6 +97,8 @@ Dated records of implementation choices, especially where they differ from the d
 
 **Consequences.** Visual runs are deterministic and offline-capable. Baselines are unchanged.
 
+---
+
 ## ADR-0013 — Lettered migrations; USAGE (not CREATE) on schema public (2026-10-18)
 
 **Context.** Phase 1 fixes need migrations after `0007` but before Phase 2's `0008`. The loader only accepted `\d{4}_name.sql`, so a file named `0007b_…` would have been skipped without any error. Separately, trigram word similarity (`<%`) failed for the application role: extensions live in schema `public`, on which 0001 revoked everything from PUBLIC, so extension operators did not resolve. `citext` comparisons from the app role were silently falling back to case-sensitive `text` equality for the same reason.
@@ -595,6 +597,48 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 
 ---
 
+## ADR-0068 — Dedicated databases are declared in the infra env config; one tools task per database migrates it and runs the move (2026-10-19)
+
+Numbered from the unused 0067–0069 range because 0100–0129 are reserved by other branches. Completes ADR-0099 and Phase 0.7 for AWS.
+
+**Context.** The router already reads `DEDICATED_DATABASE_HOSTS`, and the move tool and back-office requests exist (ADR-0099). But the runbook told operators to add `dedicatedDatabases` to `infra/config/<env>.json`, a setting infra did not have. The cluster, its migrations, the owner credentials for the move runner and a task to run it were all left to hand work. The router's handling of the setting and its residency check had no tests.
+
+**Decision.**
+- **Config:** `dedicatedDatabases?: [{ key, cell, minAcu?, maxAcu? }]` in the env config, validated by `validateConfig` (`infra/lib/config.ts`). The key must be lower-case letters, digits and single hyphens, start with a letter, be at most 24 characters and not be `shared`, and keys must be unique ignoring hyphens. The cell must be a home cell and capacity must be 0.5–256 ACU with min ≤ max. Unknown fields are refused. The committed configs declare none.
+- **Per entry, in that cell's stack only:** an Aurora PostgreSQL 17 Serverless v2 cluster `thapsus-hr-<env>-<cell>-<key>` and its RDS Proxy. Both come from the same helper as the shared cluster: writer and reporting reader in two AZs, the cell's data KMS key, backup retention and deletion protection from `aurora`, isolated subnets and the cell's database security group, TLS on the proxy, encrypted log groups. The cluster is added to the cell's AWS Backup selection and gets a CPU alarm. Each cluster has its **own owner secret**. The app, back-office and reporting role secrets are the cell's shared ones, so the migrator sets the same passwords everywhere.
+- **Routing:** the api and worker get `DEDICATED_DATABASE_HOSTS={"<key>":"<proxy endpoint>"}` and `DEDICATED_READER_HOSTS={"<key>":"<reader endpoint>"}`, the JSON form `TenantRouter.fromEnv` reads with `DATABASE_SECRET` and `REPORTING_DATABASE_SECRET`. The variables are absent when a cell has no entry.
+- **Router hardening:** `fromEnv` refuses `DEDICATED_DATABASE_HOSTS` without `DATABASE_SECRET` (it was silently ignored before), a `shared` key, invalid keys and non-object JSON. It also applies the residency check to every database and reader when `CELL_REGION` is set, so CLIs that skip `depsFromEnv` cannot be pointed at another region either.
+- **Tools task** `thapsus-hr-<env>-<cell>-db-<key>` (api image, migrator subnets and security group):
+  - The default command `node dist/migrate.mjs` migrates the dedicated database.
+  - The command override `node dist/move-tenant.mjs --process-requests` runs the move runner. It gets the owner URLs of both databases from `ownerUrlsFromEnv` (`SHARED_OWNER_DATABASE_SECRET` + `SHARED_DATABASE_HOST`, and `OWNER_DATABASE_SECRET` + `DATABASE_HOST` for `DEDICATED_DB_KEY`).
+  - The api image now also bundles `dist/move-tenant.mjs`.
+  - The runner only claims requests whose current and target databases both have an owner URL, so several dedicated databases' tasks never fail each other's requests.
+- **Deploys:** `scripts/deploy-plan.ts` adds a `run-migrator` step for each dedicated database of the cell, after the shared migrator and before the restart. A dedicated tenant therefore never runs on an unmigrated schema.
+
+**Consequences.**
+- Moving a tenant is a config entry, a cell deploy, a back-office request and one `run-task` (runbook). It needs no code change and no hand-built AWS resources.
+- Each entry is recurring cost (`docs/COSTS.md`) and needs approval first.
+- Removing an entry deletes the cluster (retained in prod, snapshotted elsewhere), so ask first.
+
+---
+
+## ADR-0069 — S3 audit streams assume only customer roles named `thapsus-hr-audit-*`, from the worker only (2026-10-19)
+
+Numbered from the unused 0067–0069 range because 0100–0129 are reserved by other branches. Refines ADR-0095.
+
+**Context.** ADR-0095 left the IAM grant for S3 audit streaming to a person (HUMAN_TODO 6.2 asked for `sts:AssumeRole` on `arn:aws:iam::*:role/*`). The API accepted any role ARN, so a stream only worked once someone granted every role in every account. Data export (ADR-0077) already solved the same problem in code with a role-name prefix.
+
+**Decision.**
+- **Prefix:** an S3 audit stream's role must be named `thapsus-hr-audit-…` (`AUDIT_STREAM_ROLE_PREFIX` in `apps/api/src/modules/platform/siem-s3.ts`), in the `aws` partition, with no role path (IAM matches the prefix against the whole path and name). The name may be at most 64 characters.
+- **API:** `POST /v1/settings/audit-streams` refuses any other role with **422**, `detail: "roleNotAllowed"` and `rolePrefix: "thapsus-hr-audit-"`. A value that is not a role ARN at all is still a 400. Nothing is stored.
+- **Writer:** `AwsCrossAccountS3.put` checks the prefix again after the residency checks and before calling STS, so a stored stream with another role fails with `role_not_allowed` and sends nothing.
+- **IAM:** the cell stack grants `sts:AssumeRole` on `arn:aws:iam::*:role/thapsus-hr-audit-*` (sid `AssumeCustomerAuditStreamRoles`) to the **worker** task role only, because only the `audit_streams.sync` job writes to S3. The API task role does not get it. The export grant (`thapsus-hr-export-*`, api and worker) is unchanged, and the two prefixes are separate, so an export role cannot be used for audit streams or the other way round. `infra/test/infra.test.ts` pins the three `sts:` statements exactly.
+- **Customer setup:** the role name, trust policy (our account and the stream's ExternalId) and permissions policy are documented in `docs/api.md`.
+
+**Consequences.** No IAM change is left for a person (HUMAN_TODO 6.2 now only covers publishing the account ids and an end-to-end review). Customers must name the role with the prefix; the hint in the app and the 422 say so.
+
+---
+
 ## ADR-0070 — Ready-made reports are a typed registry proven by golden tests (2026-10-18)
 
 **Context.** Phase 7 needs headcount, turnover, absence, holiday liability, overtime and the statutory reports, reproducible for any date, permission-aware and exportable in several formats.
@@ -782,3 +826,126 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Consequences.** The UI shows "not yet recorded, check with your adviser" for those jurisdictions instead of a guessed deadline.
 
 ---
+
+## ADR-0090 — Public API credentials: hashed, tenant-prefixed API keys and OAuth 2.0 client credentials (2026-10-18)
+
+**Context.** Brief §6.10 asks for OAuth 2.0 client credentials and scoped API keys. Credentials must resolve under forced RLS, so the tenant has to be known before the lookup. They must never be stored in a recoverable form, and they must not let an integration do more than an admin intended.
+
+**Decision.**
+- **Formats:**
+  - API keys are `thr_sk_<tenant id>.<256-bit secret>`.
+  - OAuth clients have `thr_ci_<tenant id>.<key>` ids and `thr_cs_…` secrets.
+  - Access tokens are `thr_at_<tenant id>.<secret>`. They last 1 hour by default, configurable per client between 5 minutes and 24 hours.
+- **Storage:** only SHA-256 hashes are stored. Plain SHA-256 is the standard for high-entropy random tokens and keeps the lookup an index probe; Argon2 stays for human passwords. Secrets are shown once. Client-secret rotation keeps the previous hash valid for a grace period.
+- **Principal:** both credentials resolve to an `api_client` principal whose permissions are **the attached role ∩ the scope permissions** (`packages/core/src/api-scopes.ts`).
+- **Scope:** an optional entity, country, department or location scope narrows the grant.
+- **Creation:** a creator cannot mint permissions they lack.
+- **Reach:** API clients reach only an allow-list of public resource paths. Identity, settings and back-office routes answer `403 apiClientNotAllowed`.
+- **Placement:** the context plugin's auth `preHandler` recognises the `thr_sk_`/`thr_at_` prefixes; everything else is unchanged.
+
+**Consequences.** Machine callers are audited as `api_client`, with the key or client id as the actor. No scope can ever grant settings, user, role, vault or support permissions (unit-tested). A new public resource path must be added to `API_CLIENT_PATH_PREFIXES`.
+
+## ADR-0091 — Per-tenant rate limits and idempotency keys (2026-10-18)
+
+**Decision.**
+- **Rate limits:**
+  - A fixed 60-second window per **tenant** on the existing `deps.limiter`, which is Valkey in AWS. It applies only to API-client requests.
+  - The limit is the per-tenant override (`app.tenants.features->'api'->'rateLimitPerMinute'`, set in the back office) or else the plan default from `platform/config.ts`. Defaults can be overridden with the `API_PLATFORM_CONFIG` environment variable.
+  - Headers: IETF draft `RateLimit-*`. Over the limit: `429` with `Retry-After`.
+- **Idempotency keys:**
+  - Stored in `app.idempotency_keys`, keyed `(tenant, caller, key)`.
+  - The key is claimed in its own transaction before the handler runs.
+  - The response is stored on send. 5xx responses and streamed bodies are dropped so the client can retry.
+  - The same key with a different fingerprint (method, URL, canonical JSON body) gives `422`; a concurrent duplicate gives `409`.
+  - Keys are kept for 24 hours and purged by the hourly `platform.purge_expired` job.
+
+**Consequences.** There is a small window where a handler has committed but its response has not yet been stored. A retry in that window gets `409 idempotencyKeyInProgress` until the record completes or expires; the request is never executed twice. Browser sessions are not rate-limited by this mechanism; WAF rate rules cover them.
+
+## ADR-0092 — API documentation rendered from the spec in the web app; the SDK stays openapi-fetch (2026-10-18)
+
+**Decision.**
+- **Reference page:** `/developers` is a statically rendered Next.js page that imports `packages/sdk/openapi.json` at build time. It renders the guides from the message catalogues and an operation reference grouped by tag, marking operations open to API clients.
+- **No third-party renderer:** there is no Swagger UI or Redoc and no CDN script. This avoids CSP exceptions and JavaScript weight.
+- **Full spec:** stays downloadable at `/openapi.json`.
+- **SDK:** remains the generated `openapi-fetch` client. It gains `getClientCredentialsToken`, `paginate` and `verifyWebhookSignature`, which needs no new dependency (Node crypto only).
+- **Long-form guide:** `docs/api.md`.
+
+**Consequences.** The reference is only as rich as the route schemas, so routes should carry `summary` text. A spec change needs a web rebuild for the reference to update; the contract test already enforces that the published spec is current.
+
+## ADR-0093 — Webhooks driven by the outbox, one idempotent job per attempt, Stripe-style signatures (2026-10-18)
+
+**Decision.**
+- **Fan-out:** a `*` outbox subscriber creates one `app.webhook_deliveries` row per (endpoint, event), unique while not a replay, plus a `webhooks.deliver` job keyed `<delivery>:<attempt>`.
+- **Retries:** the job makes one HTTP attempt and records it in `app.webhook_attempts`. If the attempt failed, it enqueues the next attempt with `run_after` = base × 2^(n−1), capped at 6 h, up to 8 attempts. The engine's generic retry is reserved for infrastructure errors.
+- **Signing secrets:** sealed with the regional KMS key; at most two are active during a rotation.
+- **Signature:** `Thapsus-Signature: t=…,v1=…[,v1=…]` = HMAC-SHA256 over `"<t>.<raw body>"`.
+- **Payload:** only topics in a public catalogue (`platform/events.ts`) are delivered, and payloads are the outbox payload, which holds identifiers and field names only. Audit entries record only the destination origin, because customer URLs can embed their own tokens.
+
+**Consequences.** Delivery is exactly-once per attempt from our side; receivers de-duplicate on `Thapsus-Event-Id`. Phases that add outbox topics must add the public ones to the catalogue and to `docs/api.md`.
+
+## ADR-0094 — SSRF protection for customer-configured destinations (2026-10-18)
+
+**Decision.**
+- **Client:** outbound calls (webhooks, HTTPS SIEM) use `lib/outbound.ts`: node `http`/`https` with a custom DNS `lookup`.
+- **Address check:** every resolved address is checked **at connect time** against a block list, which defeats DNS rebinding. The list covers loopback, RFC 1918 and ULA, link-local, CGNAT, the metadata addresses, multicast, documentation and reserved ranges, and their IPv4-mapped and NAT64 forms.
+- **URL rules:** https only; no credentials in the URL; no redirects followed; 10 s timeout; the response body is read up to 64 KiB, discarded and never stored.
+- **Dev flags:** `OUTBOUND_ALLOW_HTTP` and `OUTBOUND_ALLOW_PRIVATE_NETWORKS` exist for local receivers in tests. `depsFromEnv` refuses them in production.
+
+**Consequences.** Customers cannot target internal services. Test suites run local receivers through the explicit policy override.
+
+## ADR-0095 — Audit streaming: sealed-row cursor, idempotent batches, S3 only in the home region; new dependency `@aws-sdk/client-sts` (2026-10-18)
+
+**Decision.**
+- **Cursor:** `audit_streams.cursor_seq` follows the per-tenant sealed sequence. Each sync seals first, so every streamed event carries its chain hash.
+- **Batches:** a batch is `(stream, from_seq)`-unique and keeps its range, id and S3 key on retries.
+- **Filters:** filtered-out ranges simply advance the cursor. Sensitive events are streamed without their diff.
+- **S3:** writes use STS AssumeRole into a customer role with an **external id generated by Thapsus** (confused-deputy protection). Both the STS and S3 clients are built by the residency-guarded factory, so only the tenant's home region is possible; the API also refuses other regions, and this is tested for every region pair.
+- **New dependency:** `@aws-sdk/client-sts` **3.1152.0** (Apache-2.0, AWS, same version line as the other AWS SDK clients).
+- **Scheduling:** a periodic enqueuer schedules one sync per stream per minute while the tenant is active, and the 5-minute sweep covers idle tenants.
+
+**Consequences.** Customers whose SIEM bucket lives in another region must replicate it themselves; we never write cross-region. The cell worker needs `sts:AssumeRole` on customer roles: ADR-0069 limits this to roles named `thapsus-hr-audit-*`.
+
+## ADR-0096 — Sandboxes: classified tables, configuration copy, synthetic people (2026-10-18)
+
+**Decision.**
+- **Classification:** every table in `app`, `vault` and `audit` is classified in `platform/sandbox-tables.ts` as `config`, `personal`, `operational` or `secret`. A catalog-enumerating test fails for any unclassified table.
+- **Creation:** a sandbox is a new tenant in the **same cell and home region** (registry plus directory, `kind = 'sandbox'`, plan `sandbox`). One transaction copies only the config tables, with their ids, and strips person references. Named approvers and assignees become the HR admin role; `*_by` and employee or user references are nulled. Flags, branding (the logo object is copied) and security settings are copied, with SSO enforcement off.
+- **Synthetic people:** they come from the fixtures generator (new syllable-based `syntheticPersonName`). Candidates that collide with any first, last, display or preferred name, or any employee number, in the source are skipped. Source names are read only for this check and never written.
+- **Excluded tables:** secrets and integrations (SSO, SCIM tokens, verified domains, API keys, webhooks, audit streams, kiosks) are never copied, so a sandbox cannot sign in through production SSO or deliver to production destinations.
+- **Access:** admins open a sandbox with a one-time 15-minute magic link for its synthetic owner, who must enrol MFA.
+
+**Consequences.** Other phases must classify each new table. The test also compares every personal-data column of the populated personal tables between source and sandbox (zero overlap).
+
+## ADR-0097 — Feature flags: core registry, `features->'flags'`, `featureEnabled`, a separate experience endpoint (2026-10-18)
+
+**Decision.**
+- **Registry:** `packages/core/src/features.ts`. Each flag has a key, a default, `managedBy` (`tenant` or `staff`) and catalogue keys.
+- **Storage:** tenant overrides live in `app.tenants.features->'flags'`.
+- **Helpers:**
+  - `featureEnabled(tx, key)`, `loadFeatureFlags(tx)` and `setFeatureFlag(tx, key, value | null)` are in `@thapsus/db`.
+  - `requireFeature(tx, key)` is in `apps/api/src/lib/features.ts` and throws `403 featureDisabled`.
+- **Who can change a flag:** company admins change tenant-managed flags in Settings → Features. Super-admin staff change any flag through `/v1/backoffice/tenants/{id}/features/{key}`, which is recorded in the customer's audit log and in the staff trail.
+- **Web:** the app reads flags and branding from **`GET /v1/tenant/experience`** instead of a widened `/v1/auth/session`, to keep the shared session contract unchanged. `useFeature(key)` in the shell hides disabled features.
+
+**Consequences.** New features add a registry entry, guard their API with `requireFeature`, and use `useFeature` in the UI. The existing top-level `features.aiAssistant` written at sign-up is superseded by `flags.aiAssistant`, which defaults to off.
+
+## ADR-0098 — Custom branding within design-token contrast limits (2026-10-18)
+
+**Decision.**
+- **Accent:** the customer accent replaces the single token accent only if every accent pair the design system tests still passes WCAG 2.2 AA against the token surfaces in **both** modes. That means 4.5:1 for accent, hover, on-accent and subtle-background text, and 3:1 for the focus ring (`packages/ui/src/branding.ts`, reusing `contrast()` from the tokens).
+- **Dark mode:** no single colour can reach 4.5:1 on both the light and dark surfaces, so a dark-mode accent may be given. If it is not, a lighter variant is derived until it passes.
+- **Derived variants and storage:** hover, on-accent and subtle are derived and checked. The validated palette is stored, and the shell applies it as CSS variables for both themes. Values are hex only, so CSS injection is impossible.
+- **Logo:** PNG, JPEG or WebP, checked by content sniffing (SVG is refused because it is scriptable), up to 512 KiB. It is stored in the home-region bucket under the tenant prefix and served by the authenticated API with `no-store`.
+
+**Consequences.** Some brand colours are refused, and the API explains which pairs fail. Turning `customBranding` off falls back to the tokens everywhere.
+
+## ADR-0099 — Dedicated-database moves requested in the back office, run by an owner-credential runner (2026-10-18)
+
+**Context.** The move tool needs owner (migrator) credentials. The API runs as `thapsus_app` and must never hold them.
+
+**Decision.**
+- **Request:** super-admin staff create a request in `backoffice.tenant_moves`. The target key must already be in the router configuration (runbook step 2, ADR-0068), and at most one request can be open per tenant.
+- **Runner:** `pnpm --filter @thapsus/db move-tenant -- --process-requests` runs as a one-off task with owner credentials. It claims requests with `FOR UPDATE SKIP LOCKED`, runs `moveTenant`, and records progress lines, the report or the error.
+- **Status and cancellation:** staff follow the status at `/v1/backoffice/database-moves/{id}` and can cancel a request that has not started.
+
+**Consequences.** Moves are requested, approved and audited without giving the API new privileges. An integration test proves that a tenant moved through this path keeps working.

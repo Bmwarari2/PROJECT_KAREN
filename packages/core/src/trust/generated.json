@@ -134,6 +134,22 @@
             "Customer-chosen endpoint",
             "Customer-chosen endpoint",
             "Audit events (sensitive values redacted)."
+          ],
+          [
+            "Customer webhook endpoints",
+            "Event notifications to the customer's systems",
+            "Customer-chosen endpoint (called from the home region)",
+            "Customer-chosen endpoint (called from the home region)",
+            "Customer-chosen endpoint (called from the home region)",
+            "Event type, ids and names of changed fields (no field values)."
+          ],
+          [
+            "Customer API clients (API keys, OAuth clients)",
+            "The customer's own integrations reading or writing through the public API",
+            "The customer's client calls the home-region API",
+            "The customer's client calls the home-region API",
+            "The customer's client calls the home-region API",
+            "Whatever the client's role and scopes allow."
           ]
         ]
       }

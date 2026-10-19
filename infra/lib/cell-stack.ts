@@ -18,9 +18,9 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
 import * as ses from 'aws-cdk-lib/aws-ses';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
-import type { Construct } from 'constructs';
+import { Construct } from 'constructs';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
-import { GLOBAL_REGION, names, type EnvConfig, type ServiceSize } from './config';
+import { dedicatedDatabaseId, dedicatedDatabasesFor, GLOBAL_REGION, names, type EnvConfig, type ServiceSize } from './config';
 import {
   addOtelSidecar,
   alertTopic,
@@ -39,6 +39,8 @@ import {
 
 /** Customer-owned roles the api/worker may assume for data exports (documented in docs/guides/data-export.md). */
 export const EXPORT_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-export-*';
+/** Customer-owned roles the worker may assume for S3 audit streams (ADR-0069, documented in docs/api.md). */
+export const AUDIT_STREAM_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-audit-*';
 
 export interface CellStackProps extends StackProps {
   config: EnvConfig;
@@ -166,8 +168,6 @@ export class CellStack extends Stack {
     for (const [sg, label] of [[apiSg, 'api'], [workerSg, 'worker']] as const) cacheSg.addIngressRule(sg, ec2.Port.tcp(6379), `${label} to Valkey`);
 
     // ---------------------------------------------------------------- Aurora PostgreSQL 17 (Serverless v2)
-    const clusterIdentifier = prefix;
-    const auroraLogs = encryptedLogGroup(this, 'AuroraLogs', dataKey, cfg, `/aws/rds/cluster/${clusterIdentifier}/postgresql`);
     const roleSecret = (id: string, username: string) =>
       new rds.DatabaseSecret(this, id, {
         username,
@@ -175,65 +175,82 @@ export class CellStack extends Stack {
         encryptionKey: dataKey,
         excludeCharacters: DB_PASSWORD_EXCLUDE,
       });
-    const cluster = new rds.DatabaseCluster(this, 'Aurora', {
-      engine: rds.DatabaseClusterEngine.auroraPostgres({ version: rds.AuroraPostgresEngineVersion.VER_17_7 }),
-      clusterIdentifier,
-      defaultDatabaseName: 'thapsus',
-      credentials: rds.Credentials.fromGeneratedSecret('thapsus_owner', {
-        secretName: `thapsus-hr/${env}/db/thapsus_owner`,
-        encryptionKey: dataKey,
-        excludeCharacters: DB_PASSWORD_EXCLUDE,
-      }),
-      writer: rds.ClusterInstance.serverlessV2('writer', {
-        availabilityZone: azs[0],
-        enablePerformanceInsights: true,
-        performanceInsightEncryptionKey: dataKey,
-        autoMinorVersionUpgrade: true,
-      }),
-      // Reporting replica in a different AZ: also the failover target (Multi-AZ).
-      readers: [
-        rds.ClusterInstance.serverlessV2('reporting', {
-          availabilityZone: azs[1],
-          scaleWithWriter: true,
+    /** One Aurora cluster (writer + reporting reader in another AZ) with its RDS Proxy; shared and dedicated databases alike. */
+    const auroraCluster = (scope: Construct, identifier: string, ownerSecretName: string, acu: { min: number; max: number }) => {
+      const auroraLogs = encryptedLogGroup(scope, 'AuroraLogs', dataKey, cfg, `/aws/rds/cluster/${identifier}/postgresql`);
+      const db = new rds.DatabaseCluster(scope, 'Aurora', {
+        engine: rds.DatabaseClusterEngine.auroraPostgres({ version: rds.AuroraPostgresEngineVersion.VER_17_7 }),
+        clusterIdentifier: identifier,
+        defaultDatabaseName: 'thapsus',
+        credentials: rds.Credentials.fromGeneratedSecret('thapsus_owner', {
+          secretName: ownerSecretName,
+          encryptionKey: dataKey,
+          excludeCharacters: DB_PASSWORD_EXCLUDE,
+        }),
+        writer: rds.ClusterInstance.serverlessV2('writer', {
+          availabilityZone: azs[0],
           enablePerformanceInsights: true,
           performanceInsightEncryptionKey: dataKey,
           autoMinorVersionUpgrade: true,
         }),
-      ],
-      serverlessV2MinCapacity: cfg.aurora.minAcu,
-      serverlessV2MaxCapacity: cfg.aurora.maxAcu,
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
-      securityGroups: [dbSg],
-      storageEncrypted: true,
-      storageEncryptionKey: dataKey,
-      backup: { retention: Duration.days(cfg.aurora.backupRetentionDays), preferredWindow: '01:00-02:00' },
-      preferredMaintenanceWindow: 'Sun:03:00-Sun:04:00',
-      deletionProtection: cfg.aurora.deletionProtection,
-      iamAuthentication: true,
-      cloudwatchLogsExports: ['postgresql'],
-      copyTagsToSnapshot: true,
-      removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.SNAPSHOT,
-    });
-    // Only the DB cluster resource waits for its log group (a construct-level dependency would cycle via the proxy role).
-    cluster.node.defaultChild!.node.addDependency(auroraLogs.node.defaultChild!);
-    const ownerSecret = cluster.secret!;
+        // Reporting replica in a different AZ: also the failover target (Multi-AZ).
+        readers: [
+          rds.ClusterInstance.serverlessV2('reporting', {
+            availabilityZone: azs[1],
+            scaleWithWriter: true,
+            enablePerformanceInsights: true,
+            performanceInsightEncryptionKey: dataKey,
+            autoMinorVersionUpgrade: true,
+          }),
+        ],
+        serverlessV2MinCapacity: acu.min,
+        serverlessV2MaxCapacity: acu.max,
+        vpc,
+        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+        securityGroups: [dbSg],
+        storageEncrypted: true,
+        storageEncryptionKey: dataKey,
+        backup: { retention: Duration.days(cfg.aurora.backupRetentionDays), preferredWindow: '01:00-02:00' },
+        preferredMaintenanceWindow: 'Sun:03:00-Sun:04:00',
+        deletionProtection: cfg.aurora.deletionProtection,
+        iamAuthentication: true,
+        cloudwatchLogsExports: ['postgresql'],
+        copyTagsToSnapshot: true,
+        removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.SNAPSHOT,
+      });
+      // Only the DB cluster resource waits for its log group (a construct-level dependency would cycle via the proxy role).
+      db.node.defaultChild!.node.addDependency(auroraLogs.node.defaultChild!);
+      const proxyName = `${identifier}-proxy`;
+      encryptedLogGroup(scope, 'ProxyLogs', dataKey, cfg, `/aws/rds/proxy/${proxyName}`);
+      const dbProxy = db.addProxy('Proxy', {
+        dbProxyName: proxyName,
+        secrets: [db.secret!, appDbSecret, backofficeDbSecret, reportingDbSecret],
+        vpc,
+        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        securityGroups: [dbSg],
+        requireTLS: true,
+        iamAuth: false,
+        debugLogging: false,
+      });
+      return { cluster: db, proxy: dbProxy, ownerSecret: db.secret! };
+    };
+    // Role secrets are shared by every database of the cell: the migrator sets the same passwords on each,
+    // so TenantRouter.fromEnv reaches a dedicated database with DATABASE_SECRET + DEDICATED_DATABASE_HOSTS.
     const appDbSecret = roleSecret('AppDbSecret', 'thapsus_app');
     const backofficeDbSecret = roleSecret('BackofficeDbSecret', 'thapsus_backoffice');
     const reportingDbSecret = roleSecret('ReportingDbSecret', 'thapsus_reporting');
+    const shared = auroraCluster(this, prefix, `thapsus-hr/${env}/db/thapsus_owner`, { min: cfg.aurora.minAcu, max: cfg.aurora.maxAcu });
+    const { cluster, proxy, ownerSecret } = shared;
 
-    const proxyName = `${prefix}-proxy`;
-    encryptedLogGroup(this, 'ProxyLogs', dataKey, cfg, `/aws/rds/proxy/${proxyName}`);
-    const proxy = cluster.addProxy('Proxy', {
-      dbProxyName: proxyName,
-      secrets: [ownerSecret, appDbSecret, backofficeDbSecret, reportingDbSecret],
-      vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [dbSg],
-      requireTLS: true,
-      iamAuth: false,
-      debugLogging: false,
-    });
+    // Dedicated databases (optional, ADR-0068): one cluster + proxy per `dedicatedDatabases` entry of THIS cell,
+    // in this cell's region, built exactly like the shared one but with its own owner secret. None by default.
+    const dedicated = dedicatedDatabasesFor(cfg, cell).map((d) => ({
+      ...d,
+      ...auroraCluster(new Construct(this, `Dedicated${dedicatedDatabaseId(d.key)}`), `${prefix}-${d.key}`, `thapsus-hr/${env}/db/${d.key}/thapsus_owner`, {
+        min: d.minAcu ?? cfg.aurora.minAcu,
+        max: d.maxAcu ?? cfg.aurora.maxAcu,
+      }),
+    }));
 
     // ---------------------------------------------------------------- Valkey (Multi-AZ, TLS, KMS)
     const valkeyAuth = new secretsmanager.Secret(this, 'ValkeyAuthToken', {
@@ -352,7 +369,11 @@ export class CellStack extends Stack {
     });
     plan.addSelection('Selection', {
       role: backupRole,
-      resources: [backup.BackupResource.fromArn(cluster.clusterArn), backup.BackupResource.fromArn(filesBucket.bucketArn)],
+      resources: [
+        backup.BackupResource.fromArn(cluster.clusterArn),
+        ...dedicated.map((d) => backup.BackupResource.fromArn(d.cluster.clusterArn)),
+        backup.BackupResource.fromArn(filesBucket.bucketArn),
+      ],
     });
 
     // ---------------------------------------------------------------- Secrets for the services
@@ -443,6 +464,14 @@ export class CellStack extends Stack {
       SCHEDULE_GROUP_NAME: scheduleGroup.name!,
       SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
       ...(mockIdpAllowed ? { MOCK_IDP_ENABLED: 'true' } : {}),
+      // Dedicated databases (ADR-0068), in the JSON form TenantRouter.fromEnv reads: router key → RDS Proxy
+      // endpoint (app role, DATABASE_SECRET) and → reader endpoint (reporting role, REPORTING_DATABASE_SECRET).
+      ...(dedicated.length
+        ? {
+            DEDICATED_DATABASE_HOSTS: this.toJsonString(Object.fromEntries(dedicated.map((d) => [d.key, d.proxy.endpoint]))),
+            DEDICATED_READER_HOSTS: this.toJsonString(Object.fromEntries(dedicated.map((d) => [d.key, d.cluster.clusterReadEndpoint.hostname]))),
+          }
+        : {}),
     };
     const backendSecrets: Record<string, ecs.Secret> = {
       DATABASE_SECRET: ecs.Secret.fromSecretsManager(appDbSecret),
@@ -602,6 +631,16 @@ export class CellStack extends Stack {
       }),
     );
     schedulerRole.grantPassRole(worker.task.taskRole);
+    // S3 audit streams (ADR-0069): only the worker writes them, and only through customer roles named
+    // thapsus-hr-audit-* (the customer's trust policy pins our account and the stream's ExternalId). The API
+    // refuses any other role name when a stream is saved; the bucket must be in this cell's region.
+    worker.task.taskRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'AssumeCustomerAuditStreamRoles',
+        actions: ['sts:AssumeRole'],
+        resources: [AUDIT_STREAM_ROLE_ARN_PATTERN],
+      }),
+    );
 
     // ---------------------------------------------------------------- Routing
     const apiTg = https.addTargets('Api', {
@@ -648,6 +687,39 @@ export class CellStack extends Stack {
       },
       logging: ecs.LogDrivers.awsLogs({ logGroup: migratorLogs, streamPrefix: 'migrator' }),
     });
+    // One tools task per dedicated database (runbook): its default command migrates that database (its own
+    // owner secret, the cell's shared role secrets, so the role passwords match); the command override
+    // `node dist/move-tenant.mjs --process-requests` runs the move runner with the owner URLs of both the
+    // shared and the dedicated database. Same subnets and security group as the migrator.
+    const dedicatedTools = dedicated.map((d) => {
+      const task = new ecs.FargateTaskDefinition(this, `Dedicated${dedicatedDatabaseId(d.key)}ToolsTask`, {
+        family: `${prefix}-db-${d.key}`,
+        cpu: 512,
+        memoryLimitMiB: 1024,
+        runtimePlatform: RUNTIME_PLATFORM,
+      });
+      task.addContainer('tools', {
+        image: appImage('api'),
+        command: ['node', 'dist/migrate.mjs'],
+        environment: {
+          APP_ENV: env,
+          CELL_REGION: cell,
+          LOG_LEVEL: 'info',
+          DATABASE_HOST: d.cluster.clusterEndpoint.hostname,
+          DEDICATED_DB_KEY: d.key,
+          SHARED_DATABASE_HOST: cluster.clusterEndpoint.hostname,
+        },
+        secrets: {
+          OWNER_DATABASE_SECRET: ecs.Secret.fromSecretsManager(d.ownerSecret),
+          SHARED_OWNER_DATABASE_SECRET: ecs.Secret.fromSecretsManager(ownerSecret),
+          APP_DATABASE_SECRET: ecs.Secret.fromSecretsManager(appDbSecret),
+          BACKOFFICE_DATABASE_SECRET: ecs.Secret.fromSecretsManager(backofficeDbSecret),
+          REPORTING_DATABASE_SECRET: ecs.Secret.fromSecretsManager(reportingDbSecret),
+        },
+        logging: ecs.LogDrivers.awsLogs({ logGroup: migratorLogs, streamPrefix: `db-${d.key}` }),
+      });
+      return { ...d, task };
+    });
 
     // ---------------------------------------------------------------- DNS (only once a domain + zone exist)
     if (cfg.domain && cfg.hostedZoneId) {
@@ -690,6 +762,14 @@ export class CellStack extends Stack {
       threshold: 80,
       evaluationPeriods: 3,
     });
+    for (const d of dedicated) {
+      alarm(`Dedicated${dedicatedDatabaseId(d.key)}AuroraCpuAlarm`, {
+        alarmDescription: `${prefix} dedicated database ${d.key}: Aurora CPU high`,
+        metric: d.cluster.metricCPUUtilization({ period: Duration.minutes(5) }),
+        threshold: 80,
+        evaluationPeriods: 3,
+      });
+    }
     cellBudget(this, cfg, cell, cfg.cells[cell].monthlyBudgetUsd, topic);
 
     // ---------------------------------------------------------------- Outputs for deploy scripts
@@ -706,5 +786,11 @@ export class CellStack extends Stack {
     out('InternalTokenSecretArn', internalToken.secretArn);
     out('VapidSecretArn', vapid.secretArn);
     if (mockIdp) out('MockIdpSecretArn', mockIdp.secretArn);
+    for (const d of dedicatedTools) {
+      const o = names.dedicatedOutputs(d.key);
+      out(o.proxyEndpoint, d.proxy.endpoint, `Dedicated database ${d.key}: RDS Proxy (DEDICATED_DATABASE_HOSTS)`);
+      out(o.writerEndpoint, d.cluster.clusterEndpoint.hostname, `Dedicated database ${d.key}: writer (owner URL for the move runner)`);
+      out(o.toolsTaskDefinitionArn, d.task.taskDefinitionArn, `Dedicated database ${d.key}: migrate (default) or move runner (command override)`);
+    }
   }
 }

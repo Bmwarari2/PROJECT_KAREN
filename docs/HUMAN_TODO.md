@@ -147,3 +147,20 @@ Things only a person with the right accounts or authority can do. The build runs
 ## 5. Accounts and access for staff
 
 - [ ] 5.1 Create the first Thapsus back-office super admin in each cell: `pnpm --filter @thapsus/api exec tsx src/cli/create-staff.ts <email> "<name>" super_admin`. Store the printed one-time password and TOTP secret in a password manager.
+
+## 6. Enterprise platform (Phase 9)
+
+- [ ] 6.1 **Outbound egress for webhooks and audit streams.** Customer destinations are called from the cell's worker tasks, which need internet egress (NAT gateways, already in the cell config).
+  1. If you publish a list of egress IPs for customers' allow-lists, allocate Elastic IPs for the NAT gateways in each cell: eu-west-2, eu-central-1, us-east-2.
+  2. Record them on the trust page.
+- [ ] 6.2 **Customer roles for S3 audit streaming (ADR-0069, docs/api.md).** No IAM change is needed: the cell stack already grants the worker task role `sts:AssumeRole` on `arn:aws:iam::*:role/thapsus-hr-audit-*` only, and the API refuses other role names.
+  1. Publish the Thapsus-HR AWS account id for each environment and cell, as for 4.5 step 1 (it replaces `<THAPSUS_HR_ACCOUNT_ID>` in the trust policy in docs/api.md).
+  2. Optionally tighten the documented trust policy with an `aws:PrincipalArn` condition naming the cell's worker task role ARN (printed by `cdk deploy` of the cell stack).
+  3. Have a customer-facing reviewer try it end to end against a test AWS account in each home region (eu-west-2, eu-central-1, us-east-2): create a `thapsus-hr-audit-*` role with the documented trust and permissions policies, add an S3 stream, press Deliver now and confirm the NDJSON object and the delivery log.
+- [ ] 6.3 **Publish the SDK** (optional). Create the `@thapsus` organisation on npmjs.com and add an automation token to GitHub Actions secrets (`NPM_TOKEN`).
+  1. Remove `"private"` handling from `packages/sdk/package.json` (it has none today) and add a publish job.
+  2. Until then, customers use the OpenAPI document at `/openapi.json`.
+- [ ] 6.4 **Plan → rate-limit mapping.** Confirm the per-plan API limits in `apps/api/src/modules/platform/config.ts`: trial 120, starter 300, growth 600, enterprise 3,000 requests a minute. Change them per environment with `API_PLATFORM_CONFIG`. Phase 10 billing will write the tenant's plan.
+- [ ] 6.5 **Legal review:**
+  - the sandbox data classification (`apps/api/src/modules/platform/sandbox-tables.ts`), which confirms that no personal data is copied;
+  - the wording that customer-configured destinations are not sub-processors (`docs/SUBPROCESSORS.md`).

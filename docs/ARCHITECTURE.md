@@ -163,3 +163,20 @@ sequenceDiagram
   W-->>O: certificate by email (home-region SES)
 ```
 
+## 8. Enterprise platform (Phase 9)
+
+```mermaid
+flowchart LR
+  C[Customer integration] -- "API key / OAuth token (thr_sk_, thr_at_)" --> API
+  API -- role ∩ scopes, rate limit, Idempotency-Key --> DB[(tenant DB, RLS)]
+  API -- change + outbox event (same tx) --> DB
+  W[worker] -- outbox → webhooks subscriber → job per attempt --> DB
+  W -- "signed POST (SSRF-guarded, home region)" --> WH[Customer webhook endpoint]
+  W -- "sealed audit rows, idempotent batches" --> SIEM[Customer SIEM: HTTPS or S3 in home region via STS]
+```
+
+- **Public API:** API keys and OAuth clients resolve to an `api_client` principal in the context plugin. `platform/http.ts` adds per-tenant rate limits, idempotency replay and deprecation headers. The spec is the route schemas; the SDK and the `/developers` reference are generated from it (`docs/api.md`).
+- **Webhooks and SIEM streams:** both are driven by the outbox and the job engine. Each attempt and each batch is idempotent. All outbound traffic goes through `lib/outbound.ts` (connect-time SSRF guard) from the tenant's home region.
+- **Sandboxes:** a sandbox is a separate tenant in the same cell, built from the config-classified tables (`platform/sandbox-tables.ts`) with synthetic people.
+- **Feature flags:** the registry is `packages/core/src/features.ts`, overrides are stored in `app.tenants.features->'flags'`, and the check is `featureEnabled(tx, key)`. The web shell reads `/v1/tenant/experience`.
+- **Dedicated databases:** back-office move requests are run by `move-tenant --process-requests` (runbook).

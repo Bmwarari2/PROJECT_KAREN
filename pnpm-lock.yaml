@@ -274,6 +274,9 @@ importers:
       '@thapsus/rules':
         specifier: workspace:*
         version: link:../../packages/rules
+      '@thapsus/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       csv-parse:
         specifier: ^7.0.3
         version: 7.0.3
@@ -329,6 +332,9 @@ importers:
       '@peculiar/x509':
         specifier: ^2.2.0
         version: 2.2.0
+      '@thapsus/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@types/nodemailer':
         specifier: ^8.0.2
         version: 8.0.2
@@ -362,6 +368,9 @@ importers:
       '@thapsus/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@thapsus/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@thapsus/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -429,6 +438,10 @@ importers:
       '@thapsus/db':
         specifier: workspace:*
         version: link:../../packages/db
+    devDependencies:
+      '@thapsus/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
 
   infra:
     dependencies:

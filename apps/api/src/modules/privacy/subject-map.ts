@@ -158,6 +158,11 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.report_schedules': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
   'app.data_exports': { subject: [], actor: ['created_by', 'run_as_user_id'], category: 'accountability', erase: { keep: 'company configuration' } },
   'app.export_destinations': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.api_keys': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company integration credential (hash only)' } },
+  'app.oauth_clients': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company integration credential (hash only)' } },
+  'app.webhook_endpoints': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.audit_streams': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company configuration' } },
+  'app.sandboxes': { subject: [], actor: ['created_by'], category: 'accountability', erase: { keep: 'company record' } },
 };
 
 /**
