@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { PERMISSION_KEYS } from '../../../packages/core/src/access';
 import { signUpAndEnrol } from './helpers';
 
 /**
@@ -15,11 +16,14 @@ const catalogue = JSON.parse(readFileSync(join(root, '..', '..', 'packages', 'co
 const keys = new Set<string>();
 const flatten = (o: Record<string, unknown>, prefix = '') => {
   for (const [k, v] of Object.entries(o)) {
-    if (typeof v === 'string') keys.add(prefix + k);
+    // a missing plural family renders as its base key (org.reports for org.reports_one / _other)
+    if (typeof v === 'string') keys.add((prefix + k).replace(/_(?:zero|one|two|few|many|other)$/, ''));
     else flatten(v as Record<string, unknown>, `${prefix}${k}.`);
   }
 };
 flatten(catalogue);
+// permission names (documents.read) appear as text in the API reference; they are not messages
+for (const p of PERMISSION_KEYS) keys.delete(p);
 
 function staticRoutes(dir: string, under: string): string[] {
   const out: string[] = [];
@@ -33,7 +37,7 @@ function staticRoutes(dir: string, under: string): string[] {
 /** Raw catalogue keys in the page's text and in accessible names, labels and placeholders. */
 async function rawKeys(page: Page): Promise<string[]> {
   const text = await page.evaluate(() => {
-    // all text, including screen-reader-only text; code samples (API scopes such as documents.read) are not messages
+    // all text, including screen-reader-only text; code samples are not messages
     const parts = [document.title];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = walker.nextNode(); n; n = walker.nextNode()) if (!n.parentElement?.closest('code,pre,kbd,samp,script,style,noscript')) parts.push(n.textContent ?? '');
