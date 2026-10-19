@@ -3,7 +3,7 @@ import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
 import { formatDate, formatMoney, isLocale, t, type Locale } from '@thapsus/core/i18n';
 import { money } from '@thapsus/core';
-import { today } from '@thapsus/core/time';
+import { instantToDate } from '@thapsus/core/time';
 import { enqueueJob, type Tx } from '@thapsus/db';
 import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
@@ -496,8 +496,9 @@ registerJob('documents.expiry_reminders', async (ctx) => {
   });
 });
 
-periodic.push(async (tx, now) => {
-  const date = today('UTC');
-  void now;
+/** Enqueues the expiry-reminder sweep for the UTC date of the time the scheduler passes (never the real clock). */
+export async function enqueueExpiryReminders(tx: Tx, now: Date) {
+  const date = instantToDate(now.toISOString(), 'UTC');
   await enqueueJob(tx, 'documents.expiry_reminders', date, { date });
-});
+}
+periodic.push(enqueueExpiryReminders);

@@ -7,6 +7,7 @@ import { assignRole } from '../src/modules/authz/principal';
 import { hashPassword } from '../src/modules/auth/tokens';
 import { jobHandlers, eventSubscribers } from '../src/worker';
 import type { MemoryObjectStore } from '../src/lib/object-store';
+import { enqueueExpiryReminders } from '../src/modules/documents/routes';
 import { pdfPageTexts, pdfText } from './pdf-text';
 import { addDays, today } from '@thapsus/core/time';
 
@@ -202,6 +203,15 @@ describe('documents', () => {
     const run = () => jobHandlers['documents.expiry_reminders']!({ tenantId: owner.tenantId, job: { id: 'j', tenant_id: owner.tenantId, kind: 'documents.expiry_reminders', idempotency_key: 'x', input: { date: '2026-10-18' }, attempts: 1, created_by: null }, deps: ctx.deps, tx: (fn) => tx(fn), progress: async () => undefined });
     expect((await run())!.sent).toBeGreaterThan(0);
     expect((await run())!.sent).toBe(0);
+  });
+
+  it('the scheduler enqueues the reminder sweep for the date it passes, not the real clock', async () => {
+    const at = new Date('2031-02-03T23:30:00Z'); // a fixed time far from today
+    await tx((t) => enqueueExpiryReminders(t, at));
+    await tx((t) => enqueueExpiryReminders(t, at)); // one sweep per day
+    const jobs = await tx((t) => t.query<{ idempotency_key: string; input: unknown }>(`SELECT idempotency_key, input FROM app.jobs WHERE kind = 'documents.expiry_reminders' AND input->>'date' >= '2031-01-01'`));
+    expect(jobs).toEqual([{ idempotency_key: '2031-02-03', input: { date: '2031-02-03' } }]);
+    await tx((t) => t.exec(`UPDATE app.jobs SET status = 'succeeded' WHERE kind = 'documents.expiry_reminders' AND idempotency_key = '2031-02-03'`));
   });
 });
 
