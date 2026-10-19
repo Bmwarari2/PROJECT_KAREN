@@ -22,6 +22,7 @@ const SessionInfo = Type.Object({
 });
 
 export { MAGIC_PREFIX };
+export const MAGIC_LINK_MINUTES = 10;
 
 export async function authRoutes(app: FastifyInstance) {
   const deps = app.deps;
@@ -226,7 +227,8 @@ export async function authRoutes(app: FastifyInstance) {
         const secret = newToken();
         await tx.exec(
           `INSERT INTO app.magic_links (tenant_id, user_id, token_hash, expires_at) VALUES (app.current_tenant(), $1, $2, $3)`,
-          [user.id, hashToken(secret), new Date(deps.now().getTime() + 15 * 60_000)],
+          // an emailed (out-of-band) sign-in token lives at most 10 minutes (ASVS V6.5.5)
+          [user.id, hashToken(secret), new Date(deps.now().getTime() + MAGIC_LINK_MINUTES * 60_000)],
         );
         return { token: composeToken(MAGIC_PREFIX, tenantId, secret), locale: user.locale === 'en-US' ? 'en-US' : 'en-GB' } as const;
       });

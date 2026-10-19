@@ -7,9 +7,9 @@ import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { Problem, Uuid } from '../../http/schemas';
 import { loadPrincipal } from '../authz/principal';
-import { throttle } from './common';
-import { recentlyAuthenticated, REAUTH_WINDOW_MINUTES, revokeUserSessions, type AuthContext } from './sessions';
-import { verifyPassword } from './tokens';
+import { setSessionCookie, throttle } from './common';
+import { recentlyAuthenticated, REAUTH_WINDOW_MINUTES, revokeUserSessions, SESSION_PREFIX, type AuthContext } from './sessions';
+import { composeToken, hashToken, newToken, verifyPassword } from './tokens';
 import { checkTotp } from './totp';
 
 /**
@@ -64,11 +64,19 @@ export async function sessionRoutes(app: FastifyInstance) {
       } else if (b.code !== undefined) {
         ok = await checkTotp(deps, auth.tenantId, auth.userId, b.code, 'verified');
       }
-      await app.tenantTx(req, async (tx) => {
-        if (ok) await tx.exec('UPDATE app.sessions SET reauthenticated_at = $2 WHERE id = $1', [auth.sessionId, deps.now()]);
+      const rotated = await app.tenantTx(req, async (tx) => {
+        let token: string | undefined;
+        if (ok) {
+          // re-authentication issues a new session token and the old one stops working (ASVS V7.2.4)
+          const secret = newToken();
+          await tx.exec('UPDATE app.sessions SET reauthenticated_at = $2, token_hash = $3 WHERE id = $1', [auth.sessionId, deps.now(), hashToken(secret)]);
+          token = composeToken(SESSION_PREFIX, auth.tenantId, secret);
+        }
         await app.audit(tx, req, { action: ok ? 'auth.reauthenticated' : 'auth.reauth_failed', targetType: 'user', targetId: auth.userId, diff: { factor: b.password !== undefined ? 'password' : 'totp' } });
+        return token;
       });
-      if (!ok) throw new ApiError('invalidCredentials');
+      if (!rotated) throw new ApiError('invalidCredentials');
+      setSessionCookie(deps, reply, rotated);
       return reply.status(204).send(null);
     },
   );

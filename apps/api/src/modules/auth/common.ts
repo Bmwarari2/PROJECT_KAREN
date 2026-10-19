@@ -3,7 +3,8 @@ import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
 import { sessionCookie } from '../../http/security';
-import { createSession, loadSecurity, type AuthMethod } from './sessions';
+import { createSession, loadSecurity, SESSION_PREFIX, type AuthMethod } from './sessions';
+import { hashToken, parseToken } from './tokens';
 
 /**
  * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
@@ -63,6 +64,13 @@ export async function startSession(
   tx: Tx,
   opts: { tenantId: string; userId: string; method: AuthMethod; mfaVerified: boolean },
 ) {
+  // A sign-in always gets a new token, and the session this browser held before ends (ASVS V7.2.4).
+  const previous = parseToken(SESSION_PREFIX, req.cookies?.[sessionCookie(deps.config).name]);
+  if (previous) {
+    const end = (t: Tx) => t.exec('UPDATE app.sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [hashToken(previous.secret)]);
+    if (previous.tenantId === opts.tenantId) await end(tx);
+    else await withTenant(deps.router, previous.tenantId, end).catch(() => undefined);
+  }
   const token = await createSession(tx, { ...opts, ip: req.ctx.ip, userAgent: req.ctx.userAgent, now: deps.now() });
   await writeAudit(tx, {
     actorType: 'user',

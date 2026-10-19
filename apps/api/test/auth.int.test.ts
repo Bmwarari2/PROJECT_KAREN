@@ -151,11 +151,11 @@ describe('magic links', () => {
     expect((await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link/consume', payload: { token } })).statusCode).toBe(401);
   });
 
-  it('expires after 15 minutes', async () => {
+  it('expires after 10 minutes (ASVS V6.5.5)', async () => {
     const s = await signup(ctx);
     await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link', payload: { tenant: s.slug, email: s.email } });
     const token = decodeURIComponent(/token=([^\s]+)/.exec(ctx.mailer.sent.findLast((m) => m.to === s.email)!.text)![1]!);
-    ctx.clock.advanceMinutes(16);
+    ctx.clock.advanceMinutes(11);
     expect((await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link/consume', payload: { token } })).statusCode).toBe(401);
   });
 });

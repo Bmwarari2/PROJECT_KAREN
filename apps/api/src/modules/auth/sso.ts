@@ -27,6 +27,8 @@ interface SamlConfig {
 }
 
 const oidcCache = new Map<string, { config: oidc.Configuration; at: number }>();
+/** XML signature and digest algorithm URIs built on SHA-1 or MD5. */
+export const WEAK_XMLDSIG = /Algorithm\s*=\s*["']http:\/\/www\.w3\.org\/(2000\/09\/xmldsig#(rsa-sha1|dsa-sha1|hmac-sha1|sha1)|2001\/04\/xmldsig-more#(rsa-md5|md5|hmac-md5)|2009\/xmldsig11#dsa-sha1)["']/i;
 
 export async function ssoRoutes(app: FastifyInstance) {
   const deps = app.deps;
@@ -218,6 +220,11 @@ export async function ssoRoutes(app: FastifyInstance) {
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
       const ch = await consumeChallenge<{ connectionId: string }>(deps, tenantId, challengeId, 'saml');
       if (!ch) throw new ApiError('invalidCredentials');
+      // Only SHA-2 signatures and digests: SHA-1 (or MD5) signed responses are refused (ASVS V11.4.1).
+      if (WEAK_XMLDSIG.test(Buffer.from(body.SAMLResponse, 'base64').toString('utf8'))) {
+        req.log.warn('saml response signed with a weak algorithm');
+        throw new ApiError('invalidCredentials');
+      }
       await withTenant(deps.router, tenantId, async (tx) => {
         const conn = await connection(tx, ch.data.connectionId);
         const result = await samlClient(tenantId, conn.id, conn.config)
