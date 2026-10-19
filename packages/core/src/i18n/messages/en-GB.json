@@ -303,7 +303,8 @@
         "unsupported": "This browser does not support notifications.",
         "subscribed": "Notifications are on for this device.",
         "denied": "Notifications are blocked in your browser settings."
-      }
+      },
+      "intro": "Messages about your requests, approvals and shifts, and how you would like to receive them."
     },
     "settings": {
       "title": "Settings",
@@ -3687,7 +3688,8 @@
       "succeeded": "Delivered",
       "partial": "Partly delivered",
       "failed": "Failed"
-    }
+    },
+    "export": "Export"
   },
   "payslips": {
     "title": "Payslips",
@@ -4465,7 +4467,8 @@
         "asset": "Equipment",
         "report": "Reports"
       }
-    }
+    },
+    "intro": "Your details, time off, shifts, documents and pay, in one place."
   },
   "onboarding": {
     "inviteSubject": "Your sign-in for {company} on Thapsus-HR",

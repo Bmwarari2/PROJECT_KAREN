@@ -16,8 +16,8 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
-| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [ ] |
-| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [ ] |
+| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
+| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [x] |
 | 8 | Privacy and trust (6.9) | `phase-8-privacy` | [ ] |
 | 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [ ] |
 | 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-backoffice-billing` | [ ] |
@@ -260,33 +260,42 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 6 — Payroll handoff and IT automation (6.5, 6.6)
 
-- [ ] **6.1 Payroll connector framework**
+- [x] **6.1 Payroll connector framework**
   - Per-tenant field mapping; pay-period exports of hours, absences, sick pay data, pay changes, starters and leavers; delivery by download, SFTP or API.
   - Exports are reproducible for a closed period and audit-logged.
-- [ ] **6.2 First payroll connectors**
+  - _Evidence:_ `apps/api/test/payroll.int.test.ts` ("validates the mapping…"; "a generic CSV connector with a per-tenant mapping exports hours, absences, sick pay, pay changes, starters and leavers"; "re-exporting a closed period is byte-identical (same SHA-256) even after live data changes"; "snapshots are append-only and closed periods cannot be reopened or moved"; "every export and download is audited and the download is in the delivery log"; permissions by role); delivery by SFTP in `payroll-sftp.int.test.ts` and by API in the Xero tests; rendering and determinism in `phase6-units.test.ts`; `apps/web/e2e/phase6.spec.ts` downloads an export and checks its SHA-256.
+- [x] **6.2 First payroll connectors**
   - Generic CSV/Excel, SFTP and Xero Payroll (UK) connectors, tested against mocks.
   - Documented stubs for ADP, Workday, UKG, Gusto and DATEV; partner-programme steps in HUMAN_TODO.md.
-- [ ] **6.3 Payslip and year-end document upload**
+  - _Evidence:_ CSV and Excel connectors in `payroll.int.test.ts` ("an Excel connector writes one typed sheet per section, reproducibly", "a single enabled section gives a plain CSV with a formula-injection guard"); SFTP in `payroll-sftp.int.test.ts` against an in-process ssh2 server (exact bytes to the pinned host, host-key mismatch refused, wrong credentials, SSRF guard); Xero Payroll UK against a mock of the official API shapes ("connects with OAuth 2.0…", "pushes timesheets per earnings rate and leave…", unmapped items reported, not offered to EU workspaces); ADP, Workday, UKG, Gusto and DATEV stubs ("documented stubs": 501 with a docs anchor) documented in `docs/integrations.md`; partner-programme steps in HUMAN_TODO 4.4.
+- [x] **6.3 Payslip and year-end document upload**
   - Bulk upload with employee matching, employee self-service access and notifications.
-- [ ] **6.4 Microsoft 365 and Google Workspace joiner/leaver automation**
+  - _Evidence:_ `apps/api/test/payslips.int.test.ts` (matching a zip and loose PDFs by employee number; year-end documents by file-name pattern with ambiguous names flagged; only payroll roles upload; hand matching; publishing notifies each employee once; employees list and download only their own documents and every download is audited; withdrawal and discard); `apps/web/e2e/phase6.spec.ts` (an employee sees and downloads their own payslip, axe in light and dark).
+- [x] **6.4 Microsoft 365 and Google Workspace joiner/leaver automation**
   - Joiners: create accounts, assign licences and groups. Leavers: block sign-in, revoke sessions, remove licences.
   - Per-customer admin consent, least-privilege scopes, dry-run preview, audit log; tested against mocked Graph and Admin SDK APIs.
-- [ ] **6.5 Asset register**
+  - _Evidence:_ `apps/api/test/it-automation.int.test.ts` against mocked Microsoft Graph and Google Admin SDK / Licensing endpoints (request shapes cited in `it/plan.ts`): per-customer admin consent with the secret sealed; "the dry run shows the exact Graph calls without calling Graph"; joiner jobs at the configured lead time; idempotent re-runs, failure and retry; safe adoption of existing accounts; backdated imports not provisioned; the leaver job "blocks sign-in, revokes sessions and removes licences"; Google domain-wide delegation with an RS256 JWT and least-privilege scopes; executions audited (`it.joiner_executed`); app registration steps in HUMAN_TODO 4.2 and 4.3; `apps/web/e2e/phase6.spec.ts` (integrations dry run).
+- [x] **6.5 Asset register**
   - Assets with assignment, handover sign-off and a return checklist tied to offboarding.
+  - _Evidence:_ `apps/api/test/assets.int.test.ts` (cost in minor units with a default return checklist per type; assignment with an acknowledgement request; only the employee can sign the handover, recording who, when and which statement; the offboarding workflow creates one return task per issued asset; a return needs every checklist item; lost assets close their task and the workflow completes); `apps/web/e2e/phase6.spec.ts` (asset acknowledgement, axe in light and dark).
 
 ---
 
 ## Phase 7 — Reports, analytics and self-service (6.7, 6.8)
 
-- [ ] **7.1 Ready-made reports per jurisdiction**
+- [x] **7.1 Ready-made reports per jurisdiction**
   - Headcount, turnover, absence, holiday liability, overtime, compliance status, gender pay gap, EEO-1 and pay transparency data; golden tests for calculations.
-- [ ] **7.2 Report builder**
+  - _Evidence:_ `apps/api/test/reports-goldens.test.ts` pins every calculation to explicit dates (headcount by entity and at month ends, turnover split voluntary/involuntary, absence by type with the Bradford factor S² × D, overtime, and holiday liability per currency in integer minor units); `apps/api/test/reports.int.test.ts` ("7.1 ready-made reports": effective-dated headcount, turnover, absence with the tenant-enabled Bradford factor, holiday liability per currency, overtime from approved timesheets, manager scope; "7.1 statutory reports from the compliance centre": gender pay gap, EEO-1, pay transparency and compliance status from the compliance calculators with small cells withheld). The holiday liability method is pending finance and legal review (HUMAN_TODO 3.15).
+- [x] **7.2 Report builder**
   - Fields, filters, grouping and charts; runs on read replicas; permission-aware (field-level and scope); CSV, Excel and PDF export; scheduled delivery.
   - Large reports run as background jobs with progress tracking.
-- [ ] **7.3 Scheduled data export**
+  - _Evidence:_ `reports.int.test.ts` ("7.2 report builder": catalogue by row permission, hidden fields null and not filterable, entity scope with money grouped by currency, audited vault reads, invalid specs refused; "7.2 reports run on the read replica": SQL on the reader pool as `thapsus_reporting` with forced RLS, writer fallback; "7.2 background runs": progress, home-region file, short-lived links, CSV/Excel/PDF, expiry; "7.2 saved reports and scheduled delivery": sharing, per-recipient permissions, once per period, email without personal data); `reports.isolation.test.ts` (reporting role has no BYPASSRLS, no writes, no vault or credentials); `reports-units.test.ts` (DST-safe schedules, relative periods, rendering); `infra/test/infra.test.ts` (`REPORTING_DATABASE_HOST` is the Aurora reader endpoint); `apps/web/e2e/reports-ess.spec.ts` (builder with a chart, saved report and delivery, axe in light and dark).
+- [x] **7.3 Scheduled data export**
   - Scheduled export to the customer's own S3 bucket (cross-account role) or SFTP; delivery log.
-- [ ] **7.4 Employee self-service (PWA)**
+  - _Evidence:_ `apps/api/test/exports.int.test.ts` (S3: ExternalId generated, other regions and roles outside `thapsus-hr-export-*` refused, delivery once per period by assuming the role, a bucket in another region refused before any write, run-as user permissions and no vault fields; SFTP: pinned host key, sealed password, key mismatch refused and logged without personal data; the delivery log); `reports-exports.residency.test.ts` (refusal for every region pair); `infra/test/infra.test.ts` ("data export": the API and worker may assume only customer roles named `thapsus-hr-export-*`); customer setup in `docs/guides/data-export.md`.
+- [x] **7.4 Employee self-service (PWA)**
   - Own details, leave, rota, shift swaps, clock-in, payslips, documents, signing, checklists; notifications by email and web push; all localised; WCAG 2.2 AA and Lighthouse targets met on key ESS screens.
+  - _Evidence:_ `apps/api/test/ess.int.test.ts` (the Me hub summarises leave, next shift, clock, documents to sign, tasks, notifications and payslips; notifications in the user's language; own details with contact changes applied directly and legal details sent to HR for approval; per-category email and push preferences honoured at delivery); leave, rota, shift swaps, clock-in, payslips, documents, signing and checklists are proven by their phase suites (Phases 1, 3, 4 and 6); `apps/web/e2e/reports-ess.spec.ts` (Me hub, my details with a change request and notification preferences, axe in light and dark); Lighthouse in `pnpm verify` covers `/app/me` and `/app/notifications`; visual baselines for `/app/me` and the reports screens.
 
 ---
 

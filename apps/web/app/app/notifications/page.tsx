@@ -46,7 +46,15 @@ function NotificationList() {
     setItems((cur) => cur.map((n) => (body.all || body.ids?.includes(n.id) ? { ...n, read: true } : n)));
     setUnread((u) => (body.all ? 0 : Math.max(0, u - (body.ids?.length ?? 0))));
   }
-  if (!page.data && !items.length) return <Skeleton className="h-40 w-full" />;
+  if (!page.data && !items.length)
+    return (
+      <section aria-labelledby="inbox-h" className="flex flex-col gap-3">
+        <h2 id="inbox-h" className="mr-auto text-title-3">
+          {t('ess.notifications.inbox')}
+        </h2>
+        <Skeleton className="h-40 w-full" />
+      </section>
+    );
   return (
     <section aria-labelledby="inbox-h" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -118,7 +126,16 @@ function Preferences() {
       prefs.reload();
     }
   }
-  if (!prefs.data) return <Skeleton className="h-40 w-full" />;
+  if (!prefs.data)
+    return (
+      <section aria-labelledby="prefs-h" className="flex flex-col gap-3">
+        <h2 id="prefs-h" className="text-title-3">
+          {t('ess.notifications.prefsTitle')}
+        </h2>
+        <p className="text-callout text-text-secondary">{t('ess.notifications.prefsIntro')}</p>
+        <Skeleton className="h-40 w-full" />
+      </section>
+    );
   const p = prefs.data;
   const box = 'h-5 w-5 accent-[var(--color-accent)]';
   return (
@@ -202,7 +219,10 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex max-w-[var(--prose-width)] flex-col gap-8">
-      <h1 className="text-title-2">{t('app.notifications.title')}</h1>
+      <div>
+        <h1 className="text-title-2">{t('app.notifications.title')}</h1>
+        <p className="mt-1 text-callout text-text-secondary">{t('app.notifications.intro')}</p>
+      </div>
       <NotificationList />
       <Card>
         <div className="flex items-center gap-3">
