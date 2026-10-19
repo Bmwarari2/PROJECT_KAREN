@@ -7,7 +7,8 @@ import { can, canSome, type Target } from '@thapsus/core/permissions';
 import { withTenant, writeAudit, type AuditEntry, type Tx } from '@thapsus/db';
 import type { Deps } from '../deps';
 import { ApiError } from './errors';
-import { mfaGate, resolveSession, SESSION_COOKIE, type AuthContext } from '../modules/auth/sessions';
+import { mfaGate, resolveSession, type AuthContext } from '../modules/auth/sessions';
+import { crossSiteRefusal, sessionCookie, trustedOrigins } from './security';
 import { apiClientMayCall } from '@thapsus/core/api-scopes';
 import { isApiCredential, resolveApiCredential } from '../modules/platform/api-auth';
 
@@ -39,6 +40,12 @@ declare module 'fastify' {
      * Cache-Control (edge-cacheable). Only GET /v1/status uses this (ADR-0105).
      */
     edgeCacheable?: boolean;
+    /**
+     * The route is meant to receive cross-site form posts (only the SAML ACS, where the identity
+     * provider's page posts the assertion). Every other state-changing route refuses requests from
+     * other origins (ADR-0130).
+     */
+    crossSite?: boolean;
   }
 }
 
@@ -71,6 +78,9 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
   app.decorateRequest('ctx', null as unknown as RequestCtx);
   app.decorateRequest('auth', undefined);
 
+  const trusted = trustedOrigins(opts.deps.config);
+  const cookie = sessionCookie(opts.deps.config);
+
   app.addHook('onRequest', async (req: FastifyRequest) => {
     const queryLocale = (req.query as Record<string, string> | undefined)?.locale;
     req.ctx = {
@@ -78,6 +88,11 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     };
+    // Browser request forgery (ASVS V3.5.1): state-changing requests from other origins are refused.
+    if (!req.routeOptions.config?.crossSite) {
+      const refusal = crossSiteRefusal(req, trusted);
+      if (refusal) throw new ApiError('forbidden', refusal);
+    }
   });
 
   app.addHook('preHandler', async (req: FastifyRequest) => {
@@ -91,7 +106,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
       auth = await resolveApiCredential(opts.deps, bearer!);
       if (auth && !apiClientMayCall(req.routeOptions.url)) throw new ApiError('forbidden', 'apiClientNotAllowed');
     } else {
-      const token = req.cookies?.[SESSION_COOKIE] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
+      const token = req.cookies?.[cookie.name] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
       auth = await resolveSession(opts.deps.router, token, opts.deps.now());
     }
     if (!auth) throw new ApiError('unauthorised');

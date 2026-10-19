@@ -3,15 +3,15 @@ import { BlockList, isIP } from 'node:net';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
-import formbody from '@fastify/formbody';
 import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { TypeBoxValidatorCompiler } from '@fastify/type-provider-typebox';
 import { createLogger } from '@thapsus/core/logger';
 import { API_SCOPE_KEYS, API_SCOPES } from '@thapsus/core/api-scopes';
 import type { Deps } from './deps';
 import { contextPlugin } from './http/context';
 import { errorHandler } from './http/errors';
+import { charsetOnSend, contentDisposition, SESSION_COOKIE_SECURE } from './http/security';
+import { recordRouteBodies, validatorCompiler } from './http/validation';
 import { Problem } from './http/schemas';
 import { authRoutes } from './modules/auth/routes';
 import { passkeyRoutes } from './modules/auth/passkeys';
@@ -60,8 +60,16 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     ajv: { customOptions: { removeAdditional: false, coerceTypes: 'array', useDefaults: true, allErrors: true } },
   }).withTypeProvider<TypeBoxTypeProvider>();
 
-  app.setValidatorCompiler(TypeBoxValidatorCompiler);
+  // TypeBox validation; request bodies are also cleaned of undeclared fields (mass assignment, ASVS V15.3.3).
+  app.setValidatorCompiler(validatorCompiler);
+  recordRouteBodies(app);
   app.setErrorHandler(errorHandler);
+  // Request bodies are JSON (or multipart on upload routes). The CORS-safelisted text/plain and
+  // urlencoded types are not parsed, so a cross-site form cannot reach a route (ASVS V3.5.2); only the
+  // SAML ACS and the OAuth token endpoint register a urlencoded parser in their own scope.
+  app.removeContentTypeParser(['text/plain']);
+  // text/* and XML responses always declare their charset (ASVS V4.1.1).
+  app.addHook('onSend', charsetOnSend);
   app.setNotFoundHandler((req, reply) =>
     reply.status(404).type('application/problem+json').send({ type: 'about:blank#notFound', title: 'Not found', status: 404, code: 'notFound', requestId: req.id }),
   );
@@ -77,7 +85,7 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
       servers: [{ url: deps.config.apiBaseUrl }],
       components: {
         securitySchemes: {
-          session: { type: 'apiKey', in: 'cookie', name: 'thr_sid' },
+          session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE_SECURE, description: 'Browser session (HttpOnly, Secure, SameSite=Lax). Plain-HTTP local development uses the name thr_sid.' },
           bearer: { type: 'http', scheme: 'bearer', description: 'Scoped API key (thr_sk_…) or OAuth 2.0 access token (thr_at_…). See docs/api.md.' },
           oauth2: {
             type: 'oauth2',
@@ -102,7 +110,6 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
   await app.register(cookie);
-  await app.register(formbody);
   await app.register(contextPlugin, { deps });
   // Public API: per-tenant rate limits, Idempotency-Key replay and deprecation headers (Phase 9).
   await app.register(platformHttpPlugin, { deps });
@@ -131,7 +138,7 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
         const q = req.query as { key?: string; exp?: string; name?: string; sig?: string };
         const o = q.key && q.exp && q.name && q.sig ? store.verify({ key: q.key, exp: q.exp, name: q.name, sig: q.sig }) : undefined;
         if (!o) return reply.status(404).send({ type: 'about:blank#notFound', title: 'Not found', status: 404, code: 'notFound' });
-        return reply.header('content-type', o.contentType).header('content-disposition', `attachment; filename="${q.name!.replace(/["\\\r\n]/g, '')}"`).send(o.body);
+        return reply.header('content-type', o.contentType).header('content-disposition', contentDisposition(q.name!)).send(o.body);
       });
     }
   }

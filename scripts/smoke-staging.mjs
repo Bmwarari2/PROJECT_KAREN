@@ -23,7 +23,8 @@ if (ENV === 'prod') {
 }
 if (args.includes('--insecure-tls')) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const REGIONS = (value('regions') ?? 'uk,eu,us').split(',');
-const PASSWORD = `Smoke-${Math.random().toString(36).slice(2, 10)}-Pw9!`;
+// never built on the workspace name or slug (context-specific words are refused, ASVS V6.2.11)
+const PASSWORD = `Check-${Math.random().toString(36).slice(2, 10)}-Pw9!`;
 
 const output = (stack, key) => {
   const f = `.deploy/${stack}.json`;
@@ -38,10 +39,14 @@ const API = Object.fromEntries(
 );
 
 // ---- tiny HTTP client with a cookie jar per session -------------------------------------------------
+// Keeps every cookie the API sets (the __Host-thr_sid session and the __Host-thr_sso sign-in binding).
 class Session {
   constructor(base) {
     this.base = base;
-    this.cookie = '';
+    this.jar = new Map();
+  }
+  get cookie() {
+    return [...this.jar].map(([k, v]) => `${k}=${v}`).join('; ');
   }
   async req(method, path, body, headers = {}) {
     const res = await fetch(path.startsWith('http') ? path : `${this.base}${path}`, {
@@ -55,11 +60,14 @@ class Session {
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-    const sid = res.headers
-      .getSetCookie()
-      .map((c) => c.split(';')[0])
-      .find((c) => c.startsWith('thr_sid='));
-    if (sid) this.cookie = sid;
+    for (const c of res.headers.getSetCookie()) {
+      const [pair, ...attrs] = c.split(';');
+      const i = pair.indexOf('=');
+      const name = pair.slice(0, i).trim();
+      const value = pair.slice(i + 1);
+      if (!value || attrs.some((a) => /^\s*expires=thu, 01 jan 1970/i.test(a))) this.jar.delete(name);
+      else this.jar.set(name, value);
+    }
     const text = await res.text();
     let json;
     try {
