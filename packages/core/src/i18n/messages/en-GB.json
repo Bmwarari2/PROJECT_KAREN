@@ -1252,7 +1252,8 @@
       "endAllBody": "Ends every session in the workspace except yours, for example after a suspected compromise.",
       "endAll": "Sign everyone out",
       "endAllConfirm": "Everyone else will need to sign in again on every device.",
-      "endAllDone": "{count} sessions have been signed out."
+      "endAllDone_one": "{count} session has been signed out.",
+      "endAllDone_other": "{count} sessions have been signed out."
     },
     "scim": {
       "lead": "Connect your directory (for example Microsoft Entra ID or Okta) so accounts are created, updated and deactivated automatically.",
