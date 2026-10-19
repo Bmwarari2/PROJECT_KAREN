@@ -2,7 +2,7 @@ import { withTenant, type JobRow, type Tx } from '@thapsus/db';
 import { cookieFrom, ownerSession, PASSWORD, type TestContext } from './helpers';
 import { assignRole, loadPrincipal } from '../src/modules/authz/principal';
 import { hashPassword } from '../src/modules/auth/tokens';
-import { jobHandlers } from '../src/worker';
+import { jobHandlers, periodic } from '../src/worker';
 import { Vault } from '../src/modules/vault/service';
 import { loadTarget } from '../src/modules/employees/service';
 
@@ -68,9 +68,9 @@ export async function privacyCompany(ctx: TestContext) {
     return tx(async (t) => vault.put(t, { principal: await loadPrincipal(t, owner.userId), actorType: 'user' }, owner.tenantId, await loadTarget(t, employeeId), category, field, value));
   }
 
-  /** Runs the queued jobs of a kind like the worker would (progress included), returning their results. */
-  async function runQueued(kind: string) {
-    const jobs = await tx((t) => t.query<JobRow>(`UPDATE app.jobs SET status = 'running', attempts = attempts + 1 WHERE status = 'queued' AND kind = $1 RETURNING id, tenant_id, kind, idempotency_key, input, attempts, created_by`, [kind]));
+  /** Runs the queued jobs of a kind (optionally only those whose idempotency key starts with a prefix) like the worker would, progress included, returning their results. */
+  async function runQueued(kind: string, keyPrefix = '') {
+    const jobs = await tx((t) => t.query<JobRow>(`UPDATE app.jobs SET status = 'running', attempts = attempts + 1 WHERE status = 'queued' AND kind = $1 AND starts_with(idempotency_key, $2) RETURNING id, tenant_id, kind, idempotency_key, input, attempts, created_by`, [kind, keyPrefix]));
     const out: Array<Record<string, unknown>> = [];
     for (const job of jobs) {
       const result = (await jobHandlers[kind]!({ tenantId: owner.tenantId, job, deps: ctx.deps, tx: (fn) => withTenant(ctx.deps.router, owner.tenantId, fn, { actorId: job.created_by }), progress: (d, total) => tx((t) => t.exec('UPDATE app.jobs SET progress_done = $2, progress_total = coalesce($3, progress_total) WHERE id = $1', [job.id, d, total ?? null])).then(() => undefined) })) ?? {};
@@ -86,7 +86,24 @@ export async function privacyCompany(ctx: TestContext) {
     return (await jobHandlers[kind]!({ tenantId: owner.tenantId, job, deps: ctx.deps, tx: (fn) => withTenant(ctx.deps.router, owner.tenantId, fn), progress: async () => undefined })) ?? {};
   }
 
-  return { owner, api, tx, sites, hire, loginAs, putSensitive, runQueued, runJob };
+  /** Runs every registered periodic hook for this tenant at a fixed instant, as the worker's sweep does (no real clock). */
+  async function runPeriodic(at: string) {
+    const now = new Date(at);
+    await tx(async (t) => {
+      for (const hook of periodic) await hook(t, now);
+    });
+  }
+
+  /** The tenant's jobs of a kind (optionally only idempotency keys starting with a prefix), ordered by key. */
+  const jobsOf = (kind: string, keyPrefix = '') =>
+    tx((t) =>
+      t.query<{ id: string; idempotency_key: string; input: Record<string, unknown>; status: string; created_by: string | null }>(
+        `SELECT id, idempotency_key, input, status, created_by FROM app.jobs WHERE kind = $1 AND starts_with(idempotency_key, $2) ORDER BY idempotency_key`,
+        [kind, keyPrefix],
+      ),
+    );
+
+  return { owner, api, tx, sites, hire, loginAs, putSensitive, runQueued, runJob, runPeriodic, jobsOf };
 }
 
 export type PrivacyCompany = Awaited<ReturnType<typeof privacyCompany>>;

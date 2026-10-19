@@ -51,8 +51,17 @@ export default function MePage() {
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data, error } = useApi<Summary>('/v1/me/summary');
 
-  if (error) return <EmptyState icon={<UserRound aria-hidden />} title={t('common.error')} />;
-  if (!data) return <Skeleton className="h-96 w-full" />;
+  // The heading renders straight away (it is the largest paint on a phone); the tiles follow the summary.
+  if (error || !data)
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-title-2">{t('ess.title')}</h1>
+          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('ess.intro')}</p>
+        </div>
+        {error ? <EmptyState icon={<UserRound aria-hidden />} title={t('common.error')} /> : <Skeleton className="h-96 w-full" />}
+      </div>
+    );
   const count = (n: number) => numberFormat(locale).format(n);
   const leaveStatus = () => {
     const l = data.leave!;
@@ -79,6 +88,7 @@ export default function MePage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-title-2">{t('ess.title')}</h1>
+        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('ess.intro')}</p>
         <p className="mt-1 text-callout text-text-secondary">{data.employee ? [data.employee.displayName, data.employee.jobTitle].filter(Boolean).join(' · ') : t('ess.noEmployee')}</p>
       </div>
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -9,6 +9,16 @@ import { createAwsClientFactory } from '@thapsus/core/aws';
  * come from the residency-guarded factory, so the bucket must be in the tenant's home region: a client
  * for any other region is refused (ResidencyViolationError) and no request leaves the cell.
  */
+
+/**
+ * Customer roles the cell worker may assume for S3 audit streams. The CDK cell stack grants
+ * sts:AssumeRole on arn:aws:iam::*:role/thapsus-hr-audit-* only (ADR-0069), so the API refuses any
+ * other role name when a stream is saved and the writer refuses it again before calling STS. No role
+ * path: IAM matches the prefix against the whole path-and-name. Role names are at most 64 characters.
+ */
+export const AUDIT_STREAM_ROLE_PREFIX = 'thapsus-hr-audit-';
+const AUDIT_STREAM_ROLE_ARN = new RegExp(`^arn:aws:iam::\\d{12}:role/${AUDIT_STREAM_ROLE_PREFIX}[A-Za-z0-9+=,.@_-]{1,${64 - AUDIT_STREAM_ROLE_PREFIX.length}}$`);
+export const isAuditStreamRoleArn = (arn: string) => AUDIT_STREAM_ROLE_ARN.test(arn);
 export interface CrossAccountPut {
   region: string;
   roleArn: string;
@@ -32,6 +42,7 @@ export class AwsCrossAccountS3 implements CrossAccountS3 {
   async put(o: CrossAccountPut): Promise<void> {
     assertRegionAllowed(this.cell, o.region);
     assertResourceInRegion(this.cell, o.roleArn);
+    if (!isAuditStreamRoleArn(o.roleArn)) throw new Error('role_not_allowed');
     const create = createAwsClientFactory({ cell: this.cell, endpoints: this.endpoints });
     const sts = create(STSClient, 'sts', { region: o.region });
     const assumed = await sts.send(new AssumeRoleCommand({ RoleArn: o.roleArn, ExternalId: o.externalId, RoleSessionName: o.sessionName, DurationSeconds: 900 }));
