@@ -16,9 +16,9 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
 | 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
 | 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
-| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [ ] |
-| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [ ] |
-| 8 | Privacy and trust (6.9) | `phase-8-privacy` | [ ] |
+| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
+| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [x] |
+| 8 | Privacy and trust (6.9) | `phase-8-privacy` | [h] |
 | 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [ ] |
 | 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-backoffice-billing` | [ ] |
 | 11 | AI assistant behind a feature flag (6.13) | `phase-11-ai-assistant` | [ ] |
@@ -260,49 +260,63 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 6 — Payroll handoff and IT automation (6.5, 6.6)
 
-- [ ] **6.1 Payroll connector framework**
+- [x] **6.1 Payroll connector framework**
   - Per-tenant field mapping; pay-period exports of hours, absences, sick pay data, pay changes, starters and leavers; delivery by download, SFTP or API.
   - Exports are reproducible for a closed period and audit-logged.
-- [ ] **6.2 First payroll connectors**
+  - _Evidence:_ `apps/api/test/payroll.int.test.ts` ("validates the mapping…"; "a generic CSV connector with a per-tenant mapping exports hours, absences, sick pay, pay changes, starters and leavers"; "re-exporting a closed period is byte-identical (same SHA-256) even after live data changes"; "snapshots are append-only and closed periods cannot be reopened or moved"; "every export and download is audited and the download is in the delivery log"; permissions by role); delivery by SFTP in `payroll-sftp.int.test.ts` and by API in the Xero tests; rendering and determinism in `phase6-units.test.ts`; `apps/web/e2e/phase6.spec.ts` downloads an export and checks its SHA-256.
+- [x] **6.2 First payroll connectors**
   - Generic CSV/Excel, SFTP and Xero Payroll (UK) connectors, tested against mocks.
   - Documented stubs for ADP, Workday, UKG, Gusto and DATEV; partner-programme steps in HUMAN_TODO.md.
-- [ ] **6.3 Payslip and year-end document upload**
+  - _Evidence:_ CSV and Excel connectors in `payroll.int.test.ts` ("an Excel connector writes one typed sheet per section, reproducibly", "a single enabled section gives a plain CSV with a formula-injection guard"); SFTP in `payroll-sftp.int.test.ts` against an in-process ssh2 server (exact bytes to the pinned host, host-key mismatch refused, wrong credentials, SSRF guard); Xero Payroll UK against a mock of the official API shapes ("connects with OAuth 2.0…", "pushes timesheets per earnings rate and leave…", unmapped items reported, not offered to EU workspaces); ADP, Workday, UKG, Gusto and DATEV stubs ("documented stubs": 501 with a docs anchor) documented in `docs/integrations.md`; partner-programme steps in HUMAN_TODO 4.4.
+- [x] **6.3 Payslip and year-end document upload**
   - Bulk upload with employee matching, employee self-service access and notifications.
-- [ ] **6.4 Microsoft 365 and Google Workspace joiner/leaver automation**
+  - _Evidence:_ `apps/api/test/payslips.int.test.ts` (matching a zip and loose PDFs by employee number; year-end documents by file-name pattern with ambiguous names flagged; only payroll roles upload; hand matching; publishing notifies each employee once; employees list and download only their own documents and every download is audited; withdrawal and discard); `apps/web/e2e/phase6.spec.ts` (an employee sees and downloads their own payslip, axe in light and dark).
+- [x] **6.4 Microsoft 365 and Google Workspace joiner/leaver automation**
   - Joiners: create accounts, assign licences and groups. Leavers: block sign-in, revoke sessions, remove licences.
   - Per-customer admin consent, least-privilege scopes, dry-run preview, audit log; tested against mocked Graph and Admin SDK APIs.
-- [ ] **6.5 Asset register**
+  - _Evidence:_ `apps/api/test/it-automation.int.test.ts` against mocked Microsoft Graph and Google Admin SDK / Licensing endpoints (request shapes cited in `it/plan.ts`): per-customer admin consent with the secret sealed; "the dry run shows the exact Graph calls without calling Graph"; joiner jobs at the configured lead time; idempotent re-runs, failure and retry; safe adoption of existing accounts; backdated imports not provisioned; the leaver job "blocks sign-in, revokes sessions and removes licences"; Google domain-wide delegation with an RS256 JWT and least-privilege scopes; executions audited (`it.joiner_executed`); app registration steps in HUMAN_TODO 4.2 and 4.3; `apps/web/e2e/phase6.spec.ts` (integrations dry run).
+- [x] **6.5 Asset register**
   - Assets with assignment, handover sign-off and a return checklist tied to offboarding.
+  - _Evidence:_ `apps/api/test/assets.int.test.ts` (cost in minor units with a default return checklist per type; assignment with an acknowledgement request; only the employee can sign the handover, recording who, when and which statement; the offboarding workflow creates one return task per issued asset; a return needs every checklist item; lost assets close their task and the workflow completes); `apps/web/e2e/phase6.spec.ts` (asset acknowledgement, axe in light and dark).
 
 ---
 
 ## Phase 7 — Reports, analytics and self-service (6.7, 6.8)
 
-- [ ] **7.1 Ready-made reports per jurisdiction**
+- [x] **7.1 Ready-made reports per jurisdiction**
   - Headcount, turnover, absence, holiday liability, overtime, compliance status, gender pay gap, EEO-1 and pay transparency data; golden tests for calculations.
-- [ ] **7.2 Report builder**
+  - _Evidence:_ `apps/api/test/reports-goldens.test.ts` pins every calculation to explicit dates (headcount by entity and at month ends, turnover split voluntary/involuntary, absence by type with the Bradford factor S² × D, overtime, and holiday liability per currency in integer minor units); `apps/api/test/reports.int.test.ts` ("7.1 ready-made reports": effective-dated headcount, turnover, absence with the tenant-enabled Bradford factor, holiday liability per currency, overtime from approved timesheets, manager scope; "7.1 statutory reports from the compliance centre": gender pay gap, EEO-1, pay transparency and compliance status from the compliance calculators with small cells withheld). The holiday liability method is pending finance and legal review (HUMAN_TODO 3.15).
+- [x] **7.2 Report builder**
   - Fields, filters, grouping and charts; runs on read replicas; permission-aware (field-level and scope); CSV, Excel and PDF export; scheduled delivery.
   - Large reports run as background jobs with progress tracking.
-- [ ] **7.3 Scheduled data export**
+  - _Evidence:_ `reports.int.test.ts` ("7.2 report builder": catalogue by row permission, hidden fields null and not filterable, entity scope with money grouped by currency, audited vault reads, invalid specs refused; "7.2 reports run on the read replica": SQL on the reader pool as `thapsus_reporting` with forced RLS, writer fallback; "7.2 background runs": progress, home-region file, short-lived links, CSV/Excel/PDF, expiry; "7.2 saved reports and scheduled delivery": sharing, per-recipient permissions, once per period, email without personal data); `reports.isolation.test.ts` (reporting role has no BYPASSRLS, no writes, no vault or credentials); `reports-units.test.ts` (DST-safe schedules, relative periods, rendering); `infra/test/infra.test.ts` (`REPORTING_DATABASE_HOST` is the Aurora reader endpoint); `apps/web/e2e/reports-ess.spec.ts` (builder with a chart, saved report and delivery, axe in light and dark).
+- [x] **7.3 Scheduled data export**
   - Scheduled export to the customer's own S3 bucket (cross-account role) or SFTP; delivery log.
-- [ ] **7.4 Employee self-service (PWA)**
+  - _Evidence:_ `apps/api/test/exports.int.test.ts` (S3: ExternalId generated, other regions and roles outside `thapsus-hr-export-*` refused, delivery once per period by assuming the role, a bucket in another region refused before any write, run-as user permissions and no vault fields; SFTP: pinned host key, sealed password, key mismatch refused and logged without personal data; the delivery log); `reports-exports.residency.test.ts` (refusal for every region pair); `infra/test/infra.test.ts` ("data export": the API and worker may assume only customer roles named `thapsus-hr-export-*`); customer setup in `docs/guides/data-export.md`.
+- [x] **7.4 Employee self-service (PWA)**
   - Own details, leave, rota, shift swaps, clock-in, payslips, documents, signing, checklists; notifications by email and web push; all localised; WCAG 2.2 AA and Lighthouse targets met on key ESS screens.
+  - _Evidence:_ `apps/api/test/ess.int.test.ts` (the Me hub summarises leave, next shift, clock, documents to sign, tasks, notifications and payslips; notifications in the user's language; own details with contact changes applied directly and legal details sent to HR for approval; per-category email and push preferences honoured at delivery); leave, rota, shift swaps, clock-in, payslips, documents, signing and checklists are proven by their phase suites (Phases 1, 3, 4 and 6); `apps/web/e2e/reports-ess.spec.ts` (Me hub, my details with a change request and notification preferences, axe in light and dark); Lighthouse in `pnpm verify` covers `/app/me` and `/app/notifications`; visual baselines for `/app/me` and the reports screens.
 
 ---
 
 ## Phase 8 — Privacy and trust (6.9)
 
-- [ ] **8.1 Data subject requests**
+- [x] **8.1 Data subject requests**
   - Per-person access export (machine-readable JSON plus PDF), correction and deletion workflows; deadlines tracked per law (GDPR, UK GDPR, CCPA/CPRA) with extensions and reminders.
-- [ ] **8.2 Retention engine**
+  - _Evidence:_ `apps/api/test/privacy-dsr.int.test.ts` ("uses the law of the subject: UK GDPR Art. 12A, CCPA 45 days, none in Texas"; "restarts the UK clock when identity information arrives and stops it for access clarification"; "allows one extension, only before the initial deadline, with a reason"; "sends deadline reminders once per threshold and an overdue notice (idempotent daily job)"; "exports every table about the person as JSON plus a PDF, decrypting vault values with an audit entry each"; "withholds vault categories the person running it cannot read…"; "applies the correction as an effective-dated change through the employees service, with audit"; "refuses while a legal hold applies, then erases what no statutory minimum keeps and logs counts only"); `packages/rules/test/privacy.test.ts` (UK before and after Article 12A, "EU member states use the GDPR baseline", "California: 45 days, extendable once by 45 days (90 in total)"); `privacy-coverage.int.test.ts` ("maps every person reference in the live catalog"); `privacy.residency.test.ts` (the export stays in the home cell for every region pair); `apps/web/e2e/privacy.spec.ts` ("an admin logs an access request with its legal deadline and downloads the export"). The rule values are pending legal review (HUMAN_TODO 3.16).
+- [h] **8.2 Retention engine**
   - Retention rules per data category and jurisdiction with suggested defaults documented with sources and marked for legal review; automatic deletion or anonymisation jobs; deletion log.
-- [ ] **8.3 Company data export and account closure**
+  - _Evidence:_ `apps/api/test/privacy-retention.int.test.ts` ("lists pack rules per category and jurisdiction with sources, marked for legal review"; "rejects tenant periods below a statutory minimum but accepts longer ones and periods for suggested defaults"; "dry run counts what would go, deletes nothing and is logged"; "deletes only for enabled categories, honours legal holds and logs the rule version without personal data"; "anonymises leavers once the personnel-records period has passed"; "automatic retention (worker schedule)": no scheduled run until a policy is enabled, then exactly one per UTC date, which applies the policy and is logged); GB and US retention values in the packs with sources and `legalReview: pending` (review in HUMAN_TODO 3.16). _Human:_ EU member-state retention periods are a recorded coverage gap (`docs/COVERAGE.md`, HUMAN_TODO 3.16 step 7); until they are added, EU tenants get the engine with tenant-chosen periods and no statutory minimum.
+- [x] **8.3 Company data export and account closure**
   - Full company data export at any time (background job, downloadable archive); account closure with a grace period, then verified deletion across database, files, caches, search and backups (backup expiry documented).
-- [ ] **8.4 Legal and incident tooling**
+  - _Evidence:_ `apps/api/test/privacy-closure.int.test.ts` ("exports every tenant table, decrypted sensitive data and stored files as a zip with a manifest", run as the `privacy.company_export` job with a download link; "requires typing the workspace name, can be cancelled, and is owner-only", 30-day grace period; "after the grace period deletes the tenant everywhere, verifies it and issues a certificate": no rows in any tenant table, which also holds the PostgreSQL search columns, no files, no rate-limit cache keys, and the other tenant is untouched); `apps/worker/test/closed-tenant.int.test.ts` ("finishes without errors and the tenant is no longer processed"); backup expiry in `packages/core/test/trust.test.ts` ("the backup expiry stated to customers matches the longest backup retention in the infrastructure config").
+- [x] **8.4 Legal and incident tooling**
   - DPA acceptance tracking; sub-processor list per region (public page + change notifications); privacy notice templates per jurisdiction (for legal review).
   - Incident and breach log with deadline reminders (72 hours under GDPR and UK GDPR; US state notification rules recorded).
-- [ ] **8.5 Trust page and compliance mapping**
+  - _Evidence:_ `apps/api/test/privacy-legal.int.test.ts` ("records acceptance of the current version at sign-up, requires re-acceptance of a new version, owner only"; "serves the per-region list and notifies subscribed admins of changes once, for their region only"; "serves UK, EU and US templates marked for legal review and saves an editable tenant copy"; "computes deadlines per jurisdiction from the packs, flags unmodelled ones and reminds before they pass"; "records the Thapsus-side breach register (staff only) and notifies affected controllers in their own log"); `packages/rules/test/privacy.test.ts` ("72 hours from awareness under UK GDPR and GDPR; processor without undue delay", "US state day limits and thresholds"); `packages/core/test/trust.test.ts` (sub-processors for every region, notice period, DRAFT banners); `apps/web/e2e/privacy.spec.ts` ("the sub-processor list shows only the chosen region’s locations", axe in light and dark). Legal review of the drafts and rule values is HUMAN_TODO 3.3 and 3.16.
+- [x] **8.5 Trust page and compliance mapping**
   - Public security and trust page; SOC 2 and ISO 27001 controls mapping in `docs/COMPLIANCE.md`.
+  - _Evidence:_ `apps/web/e2e/privacy.spec.ts` ("/trust renders and passes axe (light and dark)"; "the trust page shows residency per region and links to the sub-processor list"); `docs/COMPLIANCE.md` maps the controls to the SOC 2 Trust Services Criteria and ISO/IEC 27001:2022 Annex A, with a status, evidence paths and test names for each control (all resolve) and a table of gaps with owners.
 
 ---
 

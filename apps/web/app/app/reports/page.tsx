@@ -123,7 +123,15 @@ export default function ReportsPage() {
         body={t('reports.noAccessBody')}
       />
     );
-  if (!catalogue.data) return <Skeleton className="h-96 w-full" />;
+  // Heading and intro render before the catalogue arrives (they are the page's largest paint on a phone).
+  if (!catalogue.data)
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-title-2">{t('reports.title')}</h1>
+        <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.intro')}</p>
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
   const ready = [...catalogue.data.ready].sort((a, b) => Number(b.applicable) - Number(a.applicable));
 
   return (
