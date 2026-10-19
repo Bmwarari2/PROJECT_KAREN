@@ -7,10 +7,10 @@
 
 | Jurisdiction | Parent | Priority | Pack version | Rules | Holiday definitions | Latest verification |
 | --- | --- | --- | --- | --- | --- | --- |
-| GB — United Kingdom | — | high | 2 | 17 | 21 | 2026-10-18 |
+| GB — United Kingdom | — | high | 5 | 23 | 21 | 2026-10-18 |
 | GB-NIR — Northern Ireland | GB | high | 1 | 10 | 0 | 2026-10-18 |
-| EU — European Union | — | baseline | 1 | 7 | 0 | 2026-10-18 |
-| US — United States | — | high | 1 | 8 | 11 | 2026-10-18 |
+| EU — European Union | — | baseline | 3 | 9 | 0 | 2026-10-18 |
+| US — United States | — | high | 3 | 14 | 11 | 2026-10-18 |
 | AT — Austria | EU | medium | 1 | 2 | 13 | 2026-10-18 |
 | BE — Belgium | EU | medium | 1 | 2 | 10 | 2026-10-18 |
 | BG — Bulgaria | EU | medium | 1 | 2 | 14 | 2026-10-18 |
@@ -26,7 +26,7 @@
 | HR — Croatia | EU | medium | 1 | 2 | 14 | 2026-10-18 |
 | HU — Hungary | EU | medium | 1 | 2 | 11 | 2026-10-18 |
 | IE — Ireland | EU | high | 1 | 4 | 20 | 2026-10-18 |
-| IT — Italy | EU | high | 1 | 2 | 12 | 2026-10-18 |
+| IT — Italy | EU | high | 2 | 4 | 12 | 2026-10-18 |
 | LT — Lithuania | EU | medium | 2 | 2 | 0 | 2026-10-18 |
 | LU — Luxembourg | EU | medium | 1 | 2 | 11 | 2026-10-18 |
 | LV — Latvia | EU | medium | 1 | 2 | 15 | 2026-10-18 |
@@ -38,73 +38,73 @@
 | SE — Sweden | EU | medium | 1 | 2 | 13 | 2026-10-18 |
 | SI — Slovenia | EU | medium | 1 | 2 | 15 | 2026-10-18 |
 | SK — Slovakia | EU | medium | 1 | 2 | 17 | 2026-10-18 |
-| US-CA — California | US | high | 1 | 4 | 0 | 2026-10-18 |
-| US-CO — Colorado | US | high | 2 | 4 | 0 | 2026-10-18 |
-| US-FL — Florida | US | high | 1 | 1 | 0 | 2026-10-18 |
-| US-GA — Georgia | US | high | 1 | 1 | 0 | 2026-10-18 |
-| US-IL — Illinois | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-MA — Massachusetts | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-NY — New York | US | high | 2 | 2 | 0 | 2026-10-18 |
+| US-CA — California | US | high | 3 | 7 | 0 | 2026-10-18 |
+| US-CO — Colorado | US | high | 3 | 5 | 0 | 2026-10-18 |
+| US-FL — Florida | US | high | 2 | 2 | 0 | 2026-10-18 |
+| US-GA — Georgia | US | high | 2 | 1 | 0 | 2026-10-18 |
+| US-IL — Illinois | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-MA — Massachusetts | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-NY — New York | US | high | 3 | 3 | 0 | 2026-10-18 |
 | US-NY-NYC — New York City | US-NY | high | 1 | 1 | 0 | 2026-10-18 |
-| US-OR — Oregon | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-TX — Texas | US | high | 1 | 2 | 0 | 2026-10-18 |
-| US-WA — Washington | US | high | 1 | 3 | 0 | 2026-10-18 |
+| US-OR — Oregon | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-TX — Texas | US | high | 2 | 3 | 0 | 2026-10-18 |
+| US-WA — Washington | US | high | 2 | 4 | 0 | 2026-10-18 |
 
 ## Rules by jurisdiction
 
-| Jurisdiction | `leave.statutory_annual_minimum` | `leave.irregular_hours_accrual` | `leave.carry_over` | `working_time.max_weekly_hours` | `working_time.daily_rest` | `working_time.weekly_rest` | `working_time.rest_break` | `working_time.opt_out` | `working_time.time_recording` | `overtime.weekly` | `overtime.daily` | `overtime.seventh_day` | `overtime.exempt_salary_threshold` | `sick_pay.statutory` | `sick_pay.paid_sick_leave_accrual` | `family_leave.fmla` | `family_leave.maternity` | `family_leave.paternity` | `right_to_work.document_rules` | `right_to_work.retention` | `i9.retention` | `i9.reverification` | `employment.unfair_dismissal_qualifying_period` | `employment.probation` | `employment.notice_period` | `reporting.gender_pay_gap` | `reporting.eeo1` | `reporting.pay_transparency` | `minimum_wage.rates` |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GB | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |  |  |  |  |  | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  |  | ✔ |  | ✔ | ✔ |  |  | ✔ |
-| GB-NIR | ✔ |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  |  |  |
-| EU | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| US |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  | ✔ | ✔ |  |  |  |  | ✔ | ✔ |  |  |  |  | ✔ |  | ✔ |
-| AT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| BE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| BG | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| CY | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| CZ | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| DE | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| DK | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| EE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| ES | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| FI | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| FR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| GR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| HR | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| HU | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| IE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| IT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| LT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| LU | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| LV | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| MT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| NL | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| PL | ✔ |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
-| PT | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| RO | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| SE | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| SI | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| SK | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
-| US-CA |  |  |  |  |  |  |  |  |  |  | ✔ | ✔ |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-CO |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-FL |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-GA |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-IL |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-MA |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-NY |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-NY-NYC |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| US-OR |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-TX |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
-| US-WA |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| Jurisdiction | `privacy.dsr_deadline` | `privacy.breach_notification` | `retention.time_records` | `retention.payroll_records` | `retention.minimum_wage_records` | `retention.leave_records` | `retention.personnel_records` | `leave.statutory_annual_minimum` | `leave.irregular_hours_accrual` | `leave.carry_over` | `working_time.max_weekly_hours` | `working_time.daily_rest` | `working_time.weekly_rest` | `working_time.rest_break` | `working_time.opt_out` | `working_time.time_recording` | `overtime.weekly` | `overtime.daily` | `overtime.seventh_day` | `overtime.exempt_salary_threshold` | `overtime.exempt_duties_tests` | `sick_pay.statutory` | `sick_pay.paid_sick_leave_accrual` | `family_leave.fmla` | `family_leave.maternity` | `family_leave.paternity` | `right_to_work.document_rules` | `right_to_work.retention` | `i9.retention` | `i9.reverification` | `i9.completion_deadlines` | `employment.unfair_dismissal_qualifying_period` | `employment.probation` | `employment.notice_period` | `reporting.gender_pay_gap` | `reporting.eeo1` | `reporting.pay_transparency` | `minimum_wage.rates` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GB | ✔ | ✔ | ✔ | ✔ | ✔ |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |  |  |  |  |  |  | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  |  |  | ✔ |  | ✔ | ✔ |  |  | ✔ |
+| GB-NIR |  |  |  |  |  |  |  | ✔ |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  |  |  |
+| EU | ✔ | ✔ |  |  |  |  |  | ✔ |  |  | ✔ | ✔ | ✔ | ✔ |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| US |  |  | ✔ | ✔ |  | ✔ | ✔ |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ | ✔ |  | ✔ | ✔ |  |  |  |  | ✔ | ✔ | ✔ |  |  |  |  | ✔ |  | ✔ |
+| AT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| BE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| BG |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| CY |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| CZ |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| DE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| DK |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| EE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| ES |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  | ✔ |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| FI |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| FR |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| GR |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| HR |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| HU |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| IE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| IT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| LT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| LU |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| LV |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| MT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| NL |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| PL |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |
+| PT |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| RO |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| SE |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| SI |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| SK |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |
+| US-CA | ✔ | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ | ✔ | ✔ |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-CO |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  | ✔ |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-FL |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-GA |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-IL |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-MA |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-NY |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-NY-NYC |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| US-OR |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-TX |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
+| US-WA |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |  |  | ✔ |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ✔ |
 
 ✔ = modelled in this pack. Blank cells fall back to the parent layer (EU baseline, US federal) or are not yet modelled.
 
 ## Deeper rules to do (prioritised)
 
-- **GB** (high): Northern Ireland: rules still missing from the GB-NIR pack are listed there; Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026); Statutory Adoption Pay; SMP/SPP rates before 2025-26; Accommodation offset and NMW rates before April 2025; Right to work: full List A / List B document catalogue from the Employer's guide (1 Oct 2026 PDF), civil penalty amounts, extended liability detail; Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9); Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave; Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap; Statutory redundancy pay; flexible working; guaranteed hours / zero-hours (ERA 2025); fire-and-rehire; ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties; Bank holidays before 2019 and future proclaimed holidays; SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full — UK pack: bank holidays for England & Wales, Scotland and Northern Ireland (2019 onwards, checked against gov.uk/bank-holidays.json) and core GB employment rules verified on legislation.gov.uk / gov.uk on 2026-10-18. Includes Employment Rights Act 2025 changes in force (SSP from 6 April 2026; day-one paternity leave from 6 April 2026) and commenced-but-future (unfair dismissal 6 months from 1 January 2027, S.I. 2026/559). Every rule version lists the UK nations it was verified for (`regions`, ADR-0022). Northern Ireland has separate employment legislation: lookups for GB-NIR are answered by the GB-NIR pack and by the UK-wide GB rules only (minimum wage, right to work); every other GB rule is not returned for GB-NIR (it fails explicitly). A bare `GB` lookup returns the Great Britain (England, Wales, Scotland) law. Pending legal review.
+- **GB** (high): Shared parental leave, adoption leave/pay, parental bereavement, neonatal care leave and pay, carer's leave, unpaid parental leave (day-one from 6 April 2026); Statutory Adoption Pay; SMP/SPP rates before 2025-26; Accommodation offset and NMW rates before April 2025; Working time: collective/workforce agreement variations (reference period up to 52 weeks), night work limits (reg. 6), unmeasured working time (reg. 20), record keeping (reg. 9); Holiday pay calculation (reg. 16 normal pay, 52-week reference period) and reg. 15C accrual during sick/statutory leave; Automatically unfair dismissal reasons (no qualifying period); compensation limits until 2027 and annual uprating of a week's pay cap; Statutory redundancy pay; flexible working; guaranteed hours / zero-hours (ERA 2025); fire-and-rehire; ERA 2025 equality action plans alongside gender pay gap reporting; Scottish and Welsh public-sector equality duties; Bank holidays before 2019 and future proclaimed holidays; SSP transitional regs 3, 5 and 6 of S.I. 2026/373 in full; privacy: Northern Ireland and Scottish limitation periods for the suggested personnel-records default; Northern Ireland: rules still missing from the GB-NIR pack are listed there; Right to work: guidance versions before 1 October 2026 (older checks cannot be recorded), civil penalty amounts, extended liability detail; document catalogue ids summarise the Employer's guide titles; Gender pay gap: which sex/gender classification employers should record (GOV.UK gives no rule; HUMAN_TODO 3.6) — UK pack: bank holidays for England & Wales, Scotland and Northern Ireland (2019 onwards, checked against gov.uk/bank-holidays.json) and core GB employment rules verified on legislation.gov.uk / gov.uk on 2026-10-18. Includes Employment Rights Act 2025 changes in force (SSP from 6 April 2026; day-one paternity leave from 6 April 2026) and commenced-but-future (unfair dismissal 6 months from 1 January 2027, S.I. 2026/559). Every rule version lists the UK nations it was verified for (`regions`, ADR-0022). Northern Ireland has separate employment legislation: lookups for GB-NIR are answered by the GB-NIR pack and by the UK-wide GB rules only (minimum wage, right to work); every other GB rule is not returned for GB-NIR (it fails explicitly). A bare `GB` lookup returns the Great Britain (England, Wales, Scotland) law. Pending legal review.
 - **GB-NIR** (high): family_leave.maternity and family_leave.paternity for Northern Ireland (Maternity and Parental Leave etc. Regulations (NI) 1999, Paternity and Adoption Leave Regulations (NI) 2002, NI SMP/SPP rates) — not verified, so GB-NIR lookups fail; sick_pay.statutory before 6 April 2026 (NI lower earnings limit amount not verified); leave.irregular_hours_accrual — no Northern Ireland equivalent of GB reg. 15B found in the WTR (NI) 2016; not modelled, GB-NIR lookups fail; reporting.gender_pay_gap — no commenced Northern Ireland duty verified; GB-NIR lookups fail; Working time records (reg. 11: records kept for two years), night work (regs. 6-8), young-worker weekly limits — Northern Ireland employment law from Northern Ireland legislation on legislation.gov.uk (Working Time Regulations (NI) 2016, Employment Rights (NI) Order 1996, Social Security Contributions and Benefits (NI) Act 1992), cross-checked with nidirect.gov.uk. GB-NIR lookups also get the UK-wide GB rules (minimum wage, right to work); all other GB rules are NOT returned for GB-NIR. Bank holidays for Northern Ireland stay in the GB pack (region GB-NIR). Pending legal review.
-- **EU** (baseline): leave.carry_over; working_time.opt_out — EU minimums only; member-state packs override. No holidays at EU level.
-- **US** (high): Inauguration Day (5 U.S.C. 6103(c), DC-area federal employees only, every 4 years) — not modelled; Tipped cash wage and tip credit (FLSA 3(m)); Territories salary levels ($455/wk PR, Guam, USVI, CNMI; $380/wk American Samoa); Federal contractor paid sick leave (EO 13706) and contractor minimum wage; FMLA history before 2008 and military-family amendments (2009, 2013); EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM; COBRA, WARN Act, PWFA, PUMP Act — Federal holidays follow 5 U.S.C. 6103(a); weekend observance per OPM (Saturday -> preceding Friday, Sunday -> following Monday). Note: when 1 Jan falls on a Saturday the observed day is 31 Dec of the previous year (e.g. New Year 2028 -> Fri 31 Dec 2027); OPM lists it under the following year. FLSA exempt salary: 2024 rule vacated; 2019 levels ($684/wk, HCE $107,432) enforced and restored in the CFR on 15 May 2026.
+- **EU** (baseline): leave.carry_over; working_time.opt_out; privacy: member-state retention periods (time, payroll, personnel records) and national breach-notification additions — EU minimums only; member-state packs override. No holidays at EU level.
+- **US** (high): Inauguration Day (5 U.S.C. 6103(c), DC-area federal employees only, every 4 years) — not modelled; Tipped cash wage and tip credit (FLSA 3(m)); Territories salary levels ($455/wk PR, Guam, USVI, CNMI; $380/wk American Samoa); Federal contractor paid sick leave (EO 13706) and contractor minimum wage; FMLA history before 2008 and military-family amendments (2009, 2013); EEO-1 federal contractor criteria and the outcome of the July 2026 rescission NPRM; COBRA, WARN Act, PWFA, PUMP Act; privacy: federal sector-specific breach rules (e.g. HIPAA) are not modelled; no federal employee data-subject-request law; FLSA teachers and practitioners of law or medicine (no salary test, 29 CFR 541.303-304); ecfr.gov blocks automated fetching; EEO-1: current instruction booklet on eeocdata.org (not allow-listed); NAICS/establishment reporting — Federal holidays follow 5 U.S.C. 6103(a); weekend observance per OPM (Saturday -> preceding Friday, Sunday -> following Monday). Note: when 1 Jan falls on a Saturday the observed day is 31 Dec of the previous year (e.g. New Year 2028 -> Fri 31 Dec 2027); OPM lists it under the following year. FLSA exempt salary: 2024 rule vacated; 2019 levels ($684/wk, HCE $107,432) enforced and restored in the CFR on 15 May 2026.
 - **AT** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; leave: persönlicher Feiertag (ARG § 7a)
 - **BE** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation — emploi.belgique.be (SPF Emploi, official) confirmed the list and replacement rule but is not on the validator allow-list; SPF BOSA (belgium.be) cited instead.
 - **BG** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: one-off non-working days declared by the Council of Ministers (чл. 154(3)) — 1 November (Ден на народните будители) is listed in чл. 154(1) as non-attendance only for educational establishments — intentionally not modelled as a general holiday.
@@ -120,7 +120,7 @@
 - **HR** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; holidays: individual religious non-working days (Orthodox Christmas, Bajram, Yom Kippur etc., čl. 3)
 - **HU** (medium): sick_pay.statutory; employment.notice_period; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; employment.probation; leave.statutory_annual_minimum: 117. § age/children additional days; holidays: government-decreed bridge-day working-day swaps
 - **IE** (high): Public-holiday benefit options (OWTA s. 21) and 40-hours-in-5-weeks qualification for part-timers; employment.notice_period: employee notice and statutory redundancy; family_leave.maternity; family_leave.paternity; working_time.max_weekly_hours; minimum_wage.rates; reporting.gender_pay_gap (Gender Pay Gap Information Act 2021); leave.carry_over — Good Friday is not a public holiday. citizensinformation.ie was fetched directly; gov.ie and irishstatutebook.ie block automated fetch from some clients.
-- **IT** (high): sick_pay.statutory (INPS indemnity 50%/66.66% + CCNL top-up) — official sources inps.it / normattiva.it are not on the validator allow-list; employment.notice_period (art. 2118 c.c.: notice set by CCNL; no statutory minimum) — normattiva.it not allow-listed; Local patron-saint holidays (e.g. Rome 29 June, Milan 7 Dec); family_leave.maternity / paternity; working_time.max_weekly_hours; reporting.gender_pay_gap (biennial report, D.Lgs. 198/2006 art. 46) — All Sundays are also festive days (L. 260/1949). Validator allow-list lacks normattiva.it (official Italian legislation portal) — recommend adding.
+- **IT** (high): employment.notice_period per CCNL (collective agreement tables); primary text of Civil Code art. 2118 on normattiva.it (blocked); sick_pay.statutory: CCNL employer top-ups and other INPS categories (entertainment, maritime); Local patron-saint holidays (e.g. Rome 29 June, Milan 7 Dec); family_leave.maternity / paternity; working_time.max_weekly_hours; reporting.gender_pay_gap (biennial report, D.Lgs. 198/2006 art. 46) — All Sundays are also festive days (L. 260/1949). Validator allow-list lacks normattiva.it (official Italian legislation portal) — recommend adding.
 - **LT** (medium): holidays: Darbo kodeksas art. 123 — NOT modelled: e-tar.lt returns HTTP 403 and e-seimas.lrs.lt is JavaScript-only (re-tried 2026-10-18). The EURES Lithuania page has two holiday lists that disagree (one adds the first Sundays of May and June) and they could not be checked against the Code, so they are not used; leave.statutory_annual_minimum: confirm the EURES figures against Darbo kodeksas art. 126 and record the in-force date; reporting.pay_transparency inForceFrom date; sick_pay.statutory; employment.notice_period; minimum_wage.rates — Pack intentionally minimal: values were not written from memory. Annual leave comes from the European Commission's EURES portal because the national legal portals could not be fetched.
 - **LU** (medium): Compensatory day off for holidays falling on a Sunday / non-working day (within 3 months); Employer may swap holidays for local/professional feasts keeping 11 per year; Banking-sector extra holidays (Good Friday, 24 Dec afternoon) via collective agreement; sick_pay.statutory; employment.notice_period; minimum_wage.rates (salaire social minimum) — Legilux (legilux.public.lu) is JavaScript-only; values verified on Guichet.lu (official portal).
 - **LV** (medium): Closing day of the General Latvian Song and Dance Festival (holiday in festival years, e.g. 2023, next 2028; moved to next working day if on a weekend); Orthodox/Old Believer Easter, Pentecost and Christmas for adherents (law, art. 1); Pre-holiday shortened working day (Darba likums § 135); sick_pay.statutory; employment.notice_period; minimum_wage.rates — One-off holidays in the law (24 Sep 2018, 29 May 2023) are historic and not modelled.
@@ -132,13 +132,13 @@
 - **SE** (medium): Midsummer Eve, Christmas Eve and New Year's Eve: not allmänna helgdagar under Lag 1989:253 (customarily days off via collective agreements) — not modelled; leave.carry_over (sparade semesterdagar); sick_pay.statutory (sjuklön 80% days 2–14, karensavdrag); employment.notice_period (LAS 11 §); family_leave.*; working_time.max_weekly_hours — All Sundays are also allmänna helgdagar (Lag 1989:253, 1 §).
 - **SI** (medium): State holidays that are not days off (8 Jun, 17 Aug, 15 Sep, 23 Sep, 25 Oct, 10 Nov, 23 Nov) — not modelled as holidays; sick_pay.statutory; employment.notice_period (ZDR-1 94. člen); family_leave.*; minimum_wage.rates — Only state holidays and other holidays that are dela prosti dnevi (non-working days) are modelled.
 - **SK** (medium): 28 October is a state holiday but not a day of rest (not modelled as a holiday); Days-of-rest history before 2023; sick_pay.statutory (employer náhrada príjmu days 1–10); employment.notice_period (ZP § 62); family_leave.*; minimum_wage.rates — Holidays = days of rest (dni pracovného pokoja) under Act 241/1993; modelled from the 2023-01-01 version onwards.
-- **US-CA** (high): State holidays (not modelled yet); CA exempt salary threshold (2x state minimum wage for full-time); Meal and rest periods; Alternative workweek schedules — Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks.
+- **US-CA** (high): State holidays (not modelled yet); Meal and rest periods; Alternative workweek schedules; privacy: Civ. Code 1798.82 notification timing (SB 446, 2025) and processor duty — leginfo blocked automated access; CCPA regulations (11 CCR 7021) confirmation-of-receipt timing; Computer professional hourly and physician exempt thresholds (Labor Code 515.5, 515.6) — Local ordinances not yet modelled: Los Angeles City and County, San Francisco, San Diego, Oakland, Berkeley, Emeryville, Santa Monica, San Jose and other city minimum wage and paid sick leave ordinances; fast food and health care minimum wages; meal and rest breaks.
 - **US-CO** (high): State holidays (not modelled yet); Colorado FAMLI; Meal and rest periods (COMPS Rule 5) — Local ordinances not yet modelled: Denver minimum wage (and Denver civil wage theft ordinance), Edgewater, Boulder County and City of Boulder minimum wages; Colorado FAMLI paid family leave.
 - **US-FL** (high): State holidays (not modelled yet); Verify Florida local-preemption statute for leave mandates — No statewide paid sick leave law; no official Florida source stating this explicitly was found, so sick_pay.paid_sick_leave_accrual is omitted (federal rule: none). Local preemption of employee-benefit mandates not verified. No daily overtime.
-- **US-GA** (high): State holidays (not modelled yet); Georgia Family Care Act — No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime.
-- **US-IL** (high): State holidays (not modelled yet); Illinois state holidays; Day and Temporary Labor Services Act; Illinois Equal Pay registration certificates — Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA).
+- **US-GA** (high): State holidays (not modelled yet); Georgia Family Care Act; privacy: O.C.G.A. 10-1-912 breach notification — the official Georgia Code is published on a non-government host (not allow-listed); not modelled, legal review required — No statewide paid sick leave accrual law; no official Georgia source stating this explicitly was verified, so sick_pay.paid_sick_leave_accrual is omitted. The Georgia Family Care Act (use of existing sick leave for family care) is not modelled. No daily overtime.
+- **US-IL** (high): State holidays (not modelled yet); Illinois state holidays; Day and Temporary Labor Services Act; Illinois Equal Pay registration certificates; privacy: 815 ILCS 530/10 Attorney General notice and processor duty — ilga.gov did not respond to automated requests — Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA).
 - **US-MA** (high): State holidays (not modelled yet); Massachusetts PFML; Pay transparency law — Local ordinances: none identified for sick leave or minimum wage (not verified). Massachusetts Paid Family and Medical Leave (PFML) and the Sunday/holiday premium pay phase-out (blue laws) are not modelled. No daily overtime.
-- **US-NY** (high): State holidays (not modelled yet); NY exempt salary thresholds (executive/administrative) by region; NY Paid Family Leave; NY Paid Prenatal Leave — NYC Earned Safe and Sick Time Act (Protected Time Off Law) is modelled in the US-NY-NYC locality pack from 22 Feb 2026 (earlier city history not modelled). Local ordinances not yet modelled: Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited).
+- **US-NY** (high): State holidays (not modelled yet); NY exempt salary thresholds (executive/administrative) by region; NY Paid Family Leave; NY Paid Prenatal Leave; privacy: GBL 899-aa duty of a person maintaining data it does not own — NYC Earned Safe and Sick Time Act (Protected Time Off Law) is modelled in the US-NY-NYC locality pack from 22 Feb 2026 (earlier city history not modelled). Local ordinances not yet modelled: Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited).
 - **US-NY-NYC** (high): ESSTA history before 22 February 2026 (2014 Act, 2020 and 2024 amendments); NYC Fair Workweek (fast food and retail); NYC Temporary Schedule Change Law; NYC pay transparency in job listings; Other localities: San Francisco, Los Angeles, Seattle, Chicago, Cook County, Denver, Portland (see state pack notes) — First locality pack (code US-NY-NYC = state ISO 3166-2 code + locality, ADR-0021). City minimum wage is the New York State rate for the "nyc" region (US-NY pack). Sources: NYC DCWP (nyc.gov). Pending legal review.
 - **US-OR** (high): State holidays (not modelled yet); Oregon Paid Leave; Oregon predictive scheduling; Region (county) mapping for minimum wage — Local ordinances not yet modelled: Portland-area paid sick time threshold is modelled in the rule; Oregon Paid Leave (paid family and medical leave), predictive scheduling, and manufacturing/agriculture overtime rules not modelled.
 - **US-TX** (high): State holidays (not modelled yet) — No statewide paid sick leave. City paid sick leave ordinances (Austin, Dallas, San Antonio) — legal status not verified; not modelled. No daily overtime.
@@ -158,7 +158,13 @@ Rule versions in the GB pack list the subdivisions they were verified for (ADR-0
 | `leave.irregular_hours_accrual` | ✔ GB | ✔ GB | ✔ GB | ✘ |
 | `leave.statutory_annual_minimum` | ✔ GB | ✔ GB | ✔ GB | ✔ GB-NIR pack |
 | `minimum_wage.rates` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
+| `privacy.breach_notification` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
+| `privacy.dsr_deadline` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
 | `reporting.gender_pay_gap` | ✔ GB | ✔ GB | ✔ GB | ✘ |
+| `retention.minimum_wage_records` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
+| `retention.payroll_records` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
+| `retention.personnel_records` | ✔ GB | ✔ GB | ✘ | ✘ |
+| `retention.time_records` | ✔ GB | ✔ GB | ✔ GB | ✘ |
 | `right_to_work.document_rules` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
 | `right_to_work.retention` | ✔ GB | ✔ GB | ✔ GB | ✔ GB |
 | `sick_pay.statutory` | ✔ GB | ✔ GB | ✔ GB | ✔ GB-NIR pack |
@@ -169,7 +175,102 @@ Rule versions in the GB pack list the subdivisions they were verified for (ADR-0
 | `working_time.weekly_rest` | ✔ GB | ✔ GB | ✔ GB | ✔ GB-NIR pack |
 
 ✘ = not verified for that subdivision: lookups fail explicitly (coverage to-do).
-- **GB-NIR** not modelled: `family_leave.maternity`, `family_leave.paternity`, `leave.irregular_hours_accrual`, `reporting.gender_pay_gap`
+- **GB-NIR** not modelled: `family_leave.maternity`, `family_leave.paternity`, `leave.irregular_hours_accrual`, `reporting.gender_pay_gap`, `retention.personnel_records`, `retention.time_records`
+- **GB-SCT** not modelled: `retention.personnel_records`
+
+## US state coverage
+
+Every state and the District of Columbia. A state without a pack gets the federal rules only (FLSA, FMLA, I-9, EEO-1); its own law is a coverage to-do, never filled in from the federal layer.
+
+| State | Pack version | Minimum wage | Daily overtime | Exempt salary threshold | Paid sick leave | Localities | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-AL | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-AK | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-AZ | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-AR | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-CA | 3 | ✔ | ✔ | ✔ | ✔ | — | state layer modelled |
+| US-CO | 3 | ✔ | ✔ | ✔ | ✔ | — | state layer modelled |
+| US-CT | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-DE | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-DC | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-FL | 2 | ✔ |  |  |  | — | state layer modelled |
+| US-GA | 2 | ✔ |  |  |  | — | state layer modelled |
+| US-HI | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-ID | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-IL | 2 | ✔ |  |  | ✔ | — | state layer modelled |
+| US-IN | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-IA | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-KS | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-KY | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-LA | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-ME | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-MD | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-MA | 2 | ✔ |  |  | ✔ | — | state layer modelled |
+| US-MI | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-MN | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-MS | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-MO | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-MT | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-NE | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-NV | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-NH | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-NJ | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-NM | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-NY | 3 | ✔ |  |  | ✔ | US-NY-NYC | state layer modelled |
+| US-NC | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-ND | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-OH | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-OK | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-OR | 2 | ✔ |  |  | ✔ | — | state layer modelled |
+| US-PA | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-RI | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-SC | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-SD | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-TN | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-TX | 2 | ✔ |  |  | ✔ | — | state layer modelled |
+| US-UT | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-VT | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-VA | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-WA | 2 | ✔ |  | ✔ | ✔ | — | state layer modelled |
+| US-WV | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-WI | — |  |  |  |  | — | federal rules only (state law to do) |
+| US-WY | — |  |  |  |  | — | federal rules only (state law to do) |
+
+10 of 51 jurisdictions have a state pack.
+
+## EU Pay Transparency Directive — transposition status
+
+Directive (EU) 2023/970 (transposition deadline in the EU pack). Status per member state from its `reporting.pay_transparency` rule as verified; pending legal review.
+
+| Member state | Status | Law | In force from | Verified on | Source |
+| --- | --- | --- | --- | --- | --- |
+| AT | partially_transposed | Only Land-level public-service laws notified (Styria, Burgenland, Lower Austria); no federal private-sector transposition act | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| BE | partially_transposed | Community/regional measures only (incl. Flemish pay transparency decree of 2026-06-17, Brussels and French Community measures); no federal private-sector act notified | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| BG | partially_transposed | Existing acts notified (incl. Labour Code and Protection against Discrimination Act amendments 2026); main amendment of the Protection against Discrimination Act pending in the National Assembly | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| CY | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| CZ | partially_transposed | Existing legislation notified (65 measures, latest Act No. 314/2025 Coll.); dedicated Labour Code amendment not yet adopted | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| DE | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| DK | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| EE | partially_transposed | Töölepingu seaduse muutmise seadus (Employment Contracts Act amendments adopted by the Riigikogu 17 June 2026) | 2026-07-13 | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| ES | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| FI | draft | HE 129/2026 (Government proposal amending the Act on Equality between Women and Men and related acts) | — | 2026-10-18 | https://finlex.fi/fi/hallituksen-esitykset/2026/129 |
+| FR | draft | Projet de loi n° 944 (2025-2026) portant transposition de la directive (UE) 2023/970 — filed in the Senate 10 September 2026, accelerated procedure | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| GR | transposed | Ν. 5316/2026 (ΦΕΚ Α΄ 105/06.07.2026) | 2026-11-01 | 2026-10-18 | https://ypergasias.gov.gr/odigies-gia-tin-orthi-efarmogi-tis-misthologikis-diafaneias-kai-tis-isis-amoivis-gynaikon-kai-andron-apo-tin-1i-noemvriou-2026/ |
+| HR | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| HU | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| IE | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| IT | transposed | Decreto legislativo 7 maggio 2026, n. 96 | 2026-06-07 | 2026-10-18 | https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2026-06-01&atto.codiceRedazionale=26G00112 |
+| LT | transposed | Darbo kodekso straipsnių pakeitimo įstatymas Nr. XV-969 (2026-05-25) and related laws XV-970, XV-971, XV-972, XV-980 | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| LU | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| LV | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| MT | transposed | Equal Pay (Transparency and Reporting) Regulations, 2026 (L.N. 173 of 2026) | 2026-06-05 | 2026-10-18 | https://legislation.mt/eli/ln/2026/173/eng |
+| NL | draft | Wet implementatie Richtlijn loontransparantie mannen en vrouwen (Kamerstuk 36949), submitted 2026-05-21 | — | 2026-10-18 | https://wetgevingskalender.overheid.nl/Regeling/WGK025384 |
+| PL | partially_transposed | Ustawa z dnia 4 czerwca 2025 r. o zmianie ustawy – Kodeks pracy (Dz.U. 2025 poz. 807) | 2025-12-24 | 2026-10-18 | https://eli.gov.pl/eli/DU/2025/807/ogl |
+| PT | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| RO | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| SE | draft | Lagrådsremiss "Genomförande av lönetransparensdirektivet" (15 januari 2026) — amendments to Diskrimineringslagen (2008:567) | — | 2026-10-18 | https://www.regeringen.se/pressmeddelanden/2026/03/mer-tid-for-forberedelser-infor-genomforandet-av-lonetransparensdirektivet/ |
+| SI | not_transposed | — | — | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
+| SK | transposed | Zákon č. 76/2026 Z. z. o rovnakom odmeňovaní mužov a žien za rovnakú prácu alebo za prácu rovnakej hodnoty | 2026-06-07 | 2026-10-18 | https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2026/76/20260607 |
 
 ## Verification log
 
@@ -189,7 +290,15 @@ Every rule version with the date it was last checked against its official source
 | GB | `leave.statutory_annual_minimum` | 2009-04-01 | — | GB-ENG, GB-WLS, GB-SCT | 2026-10-18 | https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A |
 | GB | `minimum_wage.rates` | 2025-04-01 | 2026-04-01 | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.gov.uk/national-minimum-wage-rates |
 | GB | `minimum_wage.rates` | 2026-04-01 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.gov.uk/national-minimum-wage-rates |
+| GB | `privacy.breach_notification` | 2021-01-01 | 2026-09-30 | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.legislation.gov.uk/eur/2016/679/article/33/2026-09-29 |
+| GB | `privacy.breach_notification` | 2026-09-30 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.legislation.gov.uk/eur/2016/679/article/33 |
+| GB | `privacy.dsr_deadline` | 2021-01-01 | 2026-02-05 | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.legislation.gov.uk/eur/2016/679/article/12/2026-02-04 |
+| GB | `privacy.dsr_deadline` | 2026-02-05 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.legislation.gov.uk/eur/2016/679/article/12A. |
 | GB | `reporting.gender_pay_gap` | 2017-04-06 | — | GB-ENG, GB-WLS, GB-SCT | 2026-10-18 | https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/when-to-report |
+| GB | `retention.minimum_wage_records` | 2021-04-01 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.legislation.gov.uk/uksi/2015/621/regulation/59 |
+| GB | `retention.payroll_records` | 2024-01-01 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.legislation.gov.uk/uksi/2003/2682/regulation/97 |
+| GB | `retention.personnel_records` | 2024-01-01 | — | GB-ENG, GB-WLS | 2026-10-18 | https://www.legislation.gov.uk/ukpga/1980/58/section/5 |
+| GB | `retention.time_records` | 2024-01-01 | — | GB-ENG, GB-WLS, GB-SCT | 2026-10-18 | https://www.legislation.gov.uk/uksi/1998/1833/regulation/9 |
 | GB | `right_to_work.document_rules` | 2026-10-01 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.gov.uk/government/publications/right-to-work-checklist/employers-right-to-work-checklist-accessible-version |
 | GB | `right_to_work.retention` | 2026-10-01 | — | GB-ENG, GB-WLS, GB-SCT, GB-NIR | 2026-10-18 | https://www.gov.uk/check-job-applicant-right-to-work |
 | GB | `sick_pay.statutory` | 2025-04-06 | 2026-04-06 | GB-ENG, GB-WLS, GB-SCT | 2026-10-18 | https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2025-to-2026 |
@@ -210,6 +319,8 @@ Every rule version with the date it was last checked against its official source
 | GB-NIR | `working_time.rest_break` | 2016-02-28 | — | all | 2026-10-18 | https://www.legislation.gov.uk/nisr/2016/49/regulation/14 |
 | GB-NIR | `working_time.weekly_rest` | 2016-02-28 | — | all | 2026-10-18 | https://www.legislation.gov.uk/nisr/2016/49/regulation/13 |
 | EU | `leave.statutory_annual_minimum` | 2004-08-02 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088 |
+| EU | `privacy.breach_notification` | 2018-05-25 | — | all | 2026-10-18 | https://eur-lex.europa.eu/eli/reg/2016/679/oj |
+| EU | `privacy.dsr_deadline` | 2018-05-25 | — | all | 2026-10-18 | https://eur-lex.europa.eu/eli/reg/2016/679/oj |
 | EU | `reporting.pay_transparency` | 2026-06-07 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023L0970 |
 | EU | `working_time.daily_rest` | 2004-08-02 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088 |
 | EU | `working_time.max_weekly_hours` | 2004-08-02 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088 |
@@ -217,14 +328,20 @@ Every rule version with the date it was last checked against its official source
 | EU | `working_time.time_recording` | 2019-05-14 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:62018CJ0055 |
 | EU | `working_time.weekly_rest` | 2004-08-02 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088 |
 | US | `family_leave.fmla` | 2008-01-28 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/fact-sheets/28-fmla |
+| US | `i9.completion_deadlines` | 2024-01-01 | — | all | 2026-10-18 | https://www.uscis.gov/i-9-central/form-i-9-resources/handbook-for-employers-m-274/40-completing-section-2-employer-review-and-verification |
 | US | `i9.retention` | 2024-01-01 | — | all | 2026-10-18 | https://www.uscis.gov/i-9-central/form-i-9-resources/handbook-for-employers-m-274/100-retaining-form-i-9 |
 | US | `i9.reverification` | 2024-01-01 | — | all | 2026-10-18 | https://www.uscis.gov/i-9-central/completing-form-i-9/completing-supplement-b-reverification-and-rehires-formerly-section-3 |
 | US | `minimum_wage.rates` | 2009-07-24 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/minimum-wage |
+| US | `overtime.exempt_duties_tests` | 2024-11-15 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/fact-sheets/17a-overtime |
 | US | `overtime.exempt_salary_threshold` | 2020-01-01 | 2024-07-01 | all | 2026-10-18 | https://www.govinfo.gov/content/pkg/FR-2026-05-15/html/2026-09839.htm |
 | US | `overtime.exempt_salary_threshold` | 2024-07-01 | 2024-11-15 | all | 2026-10-18 | https://www.govinfo.gov/content/pkg/FR-2026-05-15/html/2026-09839.htm |
 | US | `overtime.exempt_salary_threshold` | 2024-11-15 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/overtime/salary-levels |
 | US | `overtime.weekly` | 2024-01-01 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/overtime |
 | US | `reporting.eeo1` | 2024-01-01 | — | all | 2026-10-18 | https://www.eeoc.gov/data/eeo-data-collections |
+| US | `retention.leave_records` | 2024-01-01 | — | all | 2026-10-18 | https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/part-825/subpart-E/section-825.500 |
+| US | `retention.payroll_records` | 2024-01-01 | — | all | 2026-10-18 | https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.5 |
+| US | `retention.personnel_records` | 2024-01-01 | — | all | 2026-10-18 | https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1602/subpart-C/section-1602.14 |
+| US | `retention.time_records` | 2024-01-01 | — | all | 2026-10-18 | https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.6 |
 | US | `sick_pay.paid_sick_leave_accrual` | 2024-01-01 | — | all | 2026-10-18 | https://www.dol.gov/general/topic/workhours/sickleave |
 | AT | `leave.statutory_annual_minimum` | 2026-01-01 | — | all | 2026-10-18 | https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/urlaub.html |
 | AT | `reporting.pay_transparency` | 2026-06-07 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
@@ -266,8 +383,10 @@ Every rule version with the date it was last checked against its official source
 | IE | `leave.statutory_annual_minimum` | 2020-01-01 | — | all | 2026-10-18 | https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/annual-leave/ |
 | IE | `reporting.pay_transparency` | 2023-06-06 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
 | IE | `sick_pay.statutory` | 2024-01-01 | — | all | 2026-10-18 | https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/sick-leave-and-sick-pay/ |
+| IT | `employment.notice_period` | 2026-10-18 | — | all | 2026-10-18 | https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-italy_en |
 | IT | `leave.statutory_annual_minimum` | 2003-04-29 | — | all | 2026-10-18 | https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2003-04-14&atto.codiceRedazionale=003G0091 |
 | IT | `reporting.pay_transparency` | 2023-06-06 | — | all | 2026-10-18 | https://www.gazzettaufficiale.it/atto/serie_generale/caricaDettaglioAtto/originario?atto.dataPubblicazioneGazzetta=2026-06-01&atto.codiceRedazionale=26G00112 |
+| IT | `sick_pay.statutory` | 2026-10-18 | — | all | 2026-10-18 | https://www.inps.it/it/it/dettaglio-approfondimento.schede-informative.indennit--di-malattia-e-visite-mediche-di-controllo.html |
 | LT | `leave.statutory_annual_minimum` | 2026-10-18 | — | all | 2026-10-18 | https://eures.europa.eu/living-and-working/living-and-working-conditions/living-and-working-conditions-lithuania_en |
 | LT | `reporting.pay_transparency` | 2023-06-06 | — | all | 2026-10-18 | https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970 |
 | LU | `leave.statutory_annual_minimum` | 2020-01-01 | — | all | 2026-10-18 | https://guichet.public.lu/fr/citoyens/travail/conges-jours-feries/annuel/conge-legal-annuel.html |
@@ -298,7 +417,10 @@ Every rule version with the date it was last checked against its official source
 | US-CA | `minimum_wage.rates` | 2025-01-01 | 2026-01-01 | all | 2026-10-18 | https://www.dir.ca.gov/dlse/faq_minimumwage.htm |
 | US-CA | `minimum_wage.rates` | 2026-01-01 | — | all | 2026-10-18 | https://www.dir.ca.gov/dlse/faq_minimumwage.htm |
 | US-CA | `overtime.daily` | 2024-01-01 | — | all | 2026-10-18 | https://www.dir.ca.gov/dlse/faq_overtime.htm |
+| US-CA | `overtime.exempt_salary_threshold` | 2024-01-01 | — | all | 2026-10-18 | https://www.dir.ca.gov/IWC/WageOrders2024/IWCArticle04.pdf |
 | US-CA | `overtime.seventh_day` | 2024-01-01 | — | all | 2026-10-18 | https://www.dir.ca.gov/dlse/faq_overtime.htm |
+| US-CA | `privacy.breach_notification` | 2024-01-01 | — | all | 2026-10-18 | https://oag.ca.gov/privacy/databreach/reporting |
+| US-CA | `privacy.dsr_deadline` | 2023-01-01 | — | all | 2026-10-18 | https://cppa.ca.gov/regulations/pdf/ccpa_statute.pdf |
 | US-CA | `sick_pay.paid_sick_leave_accrual` | 2024-01-01 | — | all | 2026-10-18 | https://www.dir.ca.gov/dlse/Paid_Sick_Leave.htm |
 | US-CO | `minimum_wage.rates` | 2024-01-01 | 2025-01-01 | all | 2026-10-18 | https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf |
 | US-CO | `minimum_wage.rates` | 2025-01-01 | 2026-01-01 | all | 2026-10-18 | https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf |
@@ -307,26 +429,33 @@ Every rule version with the date it was last checked against its official source
 | US-CO | `overtime.daily` | 2024-01-01 | — | all | 2026-10-18 | https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf |
 | US-CO | `overtime.exempt_salary_threshold` | 2025-01-01 | 2026-01-01 | all | 2026-10-18 | https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf |
 | US-CO | `overtime.exempt_salary_threshold` | 2026-01-01 | — | all | 2026-10-18 | https://cdle.colorado.gov/sites/cdle/files/info_%231_2026_comps_&_paycalc_orders_12.18.25.pdf |
+| US-CO | `privacy.breach_notification` | 2024-01-01 | — | all | 2026-10-18 | https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf |
 | US-CO | `sick_pay.paid_sick_leave_accrual` | 2022-01-01 | — | all | 2026-10-18 | https://cdle.colorado.gov/dlss/labor-laws-by-topic/wage-and-hour-laws-including-paid-sick-leave |
 | US-FL | `minimum_wage.rates` | 2024-09-30 | 2025-09-30 | all | 2026-10-18 | https://www.flsenate.gov/Laws/Constitution |
 | US-FL | `minimum_wage.rates` | 2025-09-30 | 2026-09-30 | all | 2026-10-18 | https://www.flsenate.gov/Laws/Constitution |
 | US-FL | `minimum_wage.rates` | 2026-09-30 | — | all | 2026-10-18 | https://www.flsenate.gov/Laws/Constitution |
+| US-FL | `privacy.breach_notification` | 2024-01-01 | — | all | 2026-10-18 | https://www.flsenate.gov/Laws/Statutes/2025/501.171 |
 | US-GA | `minimum_wage.rates` | 2024-01-01 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/minimum-wage/state |
 | US-IL | `minimum_wage.rates` | 2024-01-01 | 2025-01-01 | all | 2026-10-18 | https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf |
 | US-IL | `minimum_wage.rates` | 2025-01-01 | — | all | 2026-10-18 | https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf |
+| US-IL | `privacy.breach_notification` | 2024-01-01 | — | all | 2026-10-18 | https://www.illinoisattorneygeneral.gov/consumer-protection/for-businesses/data-breach |
 | US-IL | `sick_pay.paid_sick_leave_accrual` | 2024-01-01 | — | all | 2026-10-18 | https://labor.illinois.gov/faqs/paidleavefaq.html |
 | US-MA | `minimum_wage.rates` | 2023-01-01 | — | all | 2026-10-18 | https://www.mass.gov/minimum-wage-program |
+| US-MA | `privacy.breach_notification` | 2024-01-01 | — | all | 2026-10-18 | https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3 |
 | US-MA | `sick_pay.paid_sick_leave_accrual` | 2024-01-01 | — | all | 2026-10-18 | https://www.mass.gov/info-details/earned-sick-time |
 | US-NY | `minimum_wage.rates` | 2024-01-01 | 2025-01-01 | all | 2026-10-18 | https://dol.ny.gov/history-minimum-wage-new-york-state |
 | US-NY | `minimum_wage.rates` | 2025-01-01 | 2026-01-01 | all | 2026-10-18 | https://dol.ny.gov/history-minimum-wage-new-york-state |
 | US-NY | `minimum_wage.rates` | 2026-01-01 | — | all | 2026-10-18 | https://www.ny.gov/new-york-states-minimum-wage/new-york-states-minimum-wage |
+| US-NY | `privacy.breach_notification` | 2025-03-28 | — | all | 2026-10-18 | https://www.nysenate.gov/legislation/laws/GBS/899-AA |
 | US-NY | `sick_pay.paid_sick_leave_accrual` | 2020-09-30 | — | all | 2026-10-18 | https://www.ny.gov/programs/new-york-paid-sick-leave |
 | US-NY-NYC | `sick_pay.paid_sick_leave_accrual` | 2026-02-22 | — | all | 2026-10-18 | https://www.nyc.gov/site/dca/about/paid-sick-leave-FAQs.page |
 | US-OR | `minimum_wage.rates` | 2024-07-01 | 2025-07-01 | all | 2026-10-18 | https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx |
 | US-OR | `minimum_wage.rates` | 2025-07-01 | 2026-07-01 | all | 2026-10-18 | https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx |
 | US-OR | `minimum_wage.rates` | 2026-07-01 | — | all | 2026-10-18 | https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx |
+| US-OR | `privacy.breach_notification` | 2024-01-01 | — | all | 2026-10-18 | https://www.oregonlegislature.gov/bills_laws/ors/ors646a.html |
 | US-OR | `sick_pay.paid_sick_leave_accrual` | 2024-01-01 | — | all | 2026-10-18 | https://www.oregon.gov/boli/workers/pages/sick-time.aspx |
 | US-TX | `minimum_wage.rates` | 2024-01-01 | — | all | 2026-10-18 | https://www.dol.gov/agencies/whd/minimum-wage/state |
+| US-TX | `privacy.breach_notification` | 2023-09-01 | — | all | 2026-10-18 | https://tcss.legis.texas.gov/resources/BC/htm/BC.521.htm |
 | US-TX | `sick_pay.paid_sick_leave_accrual` | 2024-01-01 | — | all | 2026-10-18 | https://efte.twc.texas.gov/vacation_sick_and_parental_leave_policies.html |
 | US-WA | `minimum_wage.rates` | 2024-01-01 | 2025-01-01 | all | 2026-10-18 | https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage |
 | US-WA | `minimum_wage.rates` | 2025-01-01 | 2026-01-01 | all | 2026-10-18 | https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage |
@@ -334,6 +463,7 @@ Every rule version with the date it was last checked against its official source
 | US-WA | `minimum_wage.rates` | 2027-01-01 | — | all | 2026-10-18 | https://lni.wa.gov/workers-rights/wages/minimum-wage/history-of-washington-states-minimum-wage |
 | US-WA | `overtime.exempt_salary_threshold` | 2026-01-01 | 2027-01-01 | all | 2026-10-18 | https://www.lni.wa.gov/workers-rights/wages/overtime/changes-to-overtime-rules |
 | US-WA | `overtime.exempt_salary_threshold` | 2027-01-01 | — | all | 2026-10-18 | https://www.lni.wa.gov/workers-rights/wages/overtime/changes-to-overtime-rules |
+| US-WA | `privacy.breach_notification` | 2020-03-01 | — | all | 2026-10-18 | https://app.leg.wa.gov/RCW/default.aspx?cite=19.255.010 |
 | US-WA | `sick_pay.paid_sick_leave_accrual` | 2018-01-01 | — | all | 2026-10-18 | https://lni.wa.gov/workers-rights/leave/paid-sick-leave/ |
 
 | Jurisdiction | Holiday definitions | Verified on |

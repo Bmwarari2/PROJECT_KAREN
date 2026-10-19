@@ -1,14 +1,16 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { Building2, CalendarDays, ChevronRight, Clock, GitBranch, KeyRound, Settings } from 'lucide-react';
+import { Building2, CalendarDays, ChevronRight, Clock, GitBranch, KeyRound, Settings, ShieldCheck } from 'lucide-react';
 import { Card, CardTitle, EmptyState } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { SETTINGS_GROUPS, visibleSections, type SettingsGroup } from './sections';
 import { PageHeader, usePermission } from './kit';
+import { PlatformSettingsLinks } from './platform-links';
 
 const ICONS: Record<SettingsGroup, React.ReactNode> = {
   workspace: <Building2 aria-hidden />,
+  access: <ShieldCheck aria-hidden />,
   signIn: <KeyRound aria-hidden />,
   approvals: <GitBranch aria-hidden />,
   timeOff: <CalendarDays aria-hidden />,
@@ -57,6 +59,8 @@ export default function SettingsPage() {
           })}
         </div>
       )}
+      {/* Enterprise platform settings (API, webhooks, streaming, sandboxes, branding, Ask HR, features) */}
+      <PlatformSettingsLinks />
     </>
   );
 }

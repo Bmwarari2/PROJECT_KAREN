@@ -16,7 +16,7 @@ const NON_TENANT_SCHEMAS: Record<string, string> = {
 };
 
 /** Registry tables are routing metadata; any new column must be added here deliberately (no personal data). */
-const REGISTRY_COLUMNS = new Set(['tenant_id', 'slug', 'home_region', 'db_key', 'status', 'created_at', 'updated_at', 'kind', 'signalled_at']);
+const REGISTRY_COLUMNS = new Set(['tenant_id', 'slug', 'home_region', 'db_key', 'status', 'created_at', 'updated_at', 'kind', 'signalled_at', 'issued_at', 'certificate', 'certificate_sha256']);
 
 let owner: pg.Client;
 let router: TenantRouter;
@@ -123,7 +123,20 @@ describe('catalog-wide isolation checks', () => {
       SELECT n.nspname || '.' || p.proname AS fn, has_function_privilege('public', p.oid, 'EXECUTE') AS public
       FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1`);
-    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'audit.seal_pending']);
+    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'app.trgm_word_similarity', 'audit.purge_closed_tenant', 'audit.seal_pending']);
+    // Ask HR retrieval (ADR-0111): a pure, pinned-search-path wrapper over pg_trgm's word_similarity(), for the application role only
+    expect(rows.find((r) => r.fn === 'app.trgm_word_similarity')!.public).toBe(false);
+    const trgm = await owner.query<{ app: boolean; backoffice: boolean; volatility: string; config: string[] }>(
+      `SELECT has_function_privilege('thapsus_app', 'app.trgm_word_similarity(text, text)', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'app.trgm_word_similarity(text, text)', 'EXECUTE') AS backoffice, provolatile AS volatility, proconfig AS config FROM pg_proc WHERE oid = 'app.trgm_word_similarity(text, text)'::regprocedure`,
+    );
+    expect(trgm.rows[0]).toEqual({ app: true, backoffice: false, volatility: 'i', config: ['search_path=pg_catalog, public'] });
+    // verified deletion at account closure (ADR-0085): only the application role, and only for its own tenant once closing
+    expect(rows.find((r) => r.fn === 'audit.purge_closed_tenant')!.public).toBe(false);
+    const purge = await owner.query<{ app: boolean; backoffice: boolean; reporting: boolean }>(
+      `SELECT has_function_privilege('thapsus_app', 'audit.purge_closed_tenant()', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'audit.purge_closed_tenant()', 'EXECUTE') AS backoffice, has_function_privilege('thapsus_reporting', 'audit.purge_closed_tenant()', 'EXECUTE') AS reporting`,
+    );
+    expect(purge.rows[0]).toEqual({ app: true, backoffice: false, reporting: false });
+    await expect(withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()'))).rejects.toThrow(/not being closed/);
     // statistics refresh after bulk imports: the application role only, nobody else
     expect(rows.find((r) => r.fn === 'app.analyze_core_hr')!.public).toBe(false);
     const roles = await owner.query<{ app: boolean; backoffice: boolean }>(
@@ -205,6 +218,23 @@ describe('cross-tenant access is impossible', () => {
     } finally {
       await pool.end();
     }
+  });
+
+  it('the closed-tenant audit purge refuses active tenants and never touches another tenant', async () => {
+    for (const t of [tenantA, tenantB]) {
+      await withTenant(router, t, (tx) => tx.exec(`INSERT INTO audit.events (tenant_id, actor_type, action) VALUES (app.current_tenant(), 'system', 'test.event')`));
+    }
+    await expect(withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()'))).rejects.toThrow(/not being closed/);
+    await expect(withTenant(router, tenantA, (tx) => tx.exec('DELETE FROM audit.events'))).rejects.toThrow(/permission denied/);
+    // Even with the purge flag set by hand the app role has no DELETE privilege on the audit log.
+    await expect(
+      withTenant(router, tenantA, async (tx) => {
+        await tx.query(`SELECT set_config('audit.purging', $1, true)`, [tenantB]);
+        return tx.exec('DELETE FROM audit.events');
+      }),
+    ).rejects.toThrow(/permission denied/);
+    const b = await withTenant(router, tenantB, (tx) => tx.one<{ n: number }>(`SELECT count(*)::int AS n FROM audit.events WHERE action = 'test.event'`));
+    expect(b.n).toBe(1);
   });
 
   it('the find-my-workspace lookup reveals tenant ids only', async () => {

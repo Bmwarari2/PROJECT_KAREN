@@ -20,6 +20,7 @@ import * as ses from 'aws-cdk-lib/aws-ses';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
+import { inRegionModel } from '@thapsus/core/ai-models';
 import { GLOBAL_REGION, names, type EnvConfig, type ServiceSize } from './config';
 import {
   addOtelSidecar,
@@ -35,6 +36,10 @@ import {
   regionalWaf,
   RUNTIME_PLATFORM,
 } from './shared';
+
+
+/** Customer-owned roles the api/worker may assume for data exports (documented in docs/guides/data-export.md). */
+export const EXPORT_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-export-*';
 
 export interface CellStackProps extends StackProps {
   config: EnvConfig;
@@ -372,6 +377,15 @@ export class CellStack extends Stack {
       encryptionKey: dataKey,
       secretObjectValue: { VAPID_PUBLIC_KEY: SecretValue.unsafePlainText(''), VAPID_PRIVATE_KEY: SecretValue.unsafePlainText('') },
     });
+    // Billing lives in the home cell (ADR-0103): this region's own Stripe account, TEST MODE until the
+    // product owner approves live mode. Values are filled by a human (HUMAN_TODO 4.1), never committed;
+    // empty values make dev/staging use the recording fake and production refuse billing calls.
+    const stripe = new secretsmanager.Secret(this, 'StripeKeys', {
+      secretName: names.stripeSecret(env, cell),
+      description: `Stripe test-mode secret key and webhook signing secret of the ${cell} region's Stripe account (HUMAN_TODO 4.1).`,
+      encryptionKey: dataKey,
+      secretObjectValue: { STRIPE_SECRET_KEY: SecretValue.unsafePlainText(''), STRIPE_WEBHOOK_SECRET: SecretValue.unsafePlainText('') },
+    });
     const mockIdpAllowed = env === 'dev' || env === 'staging';
     const mockIdp = mockIdpAllowed
       ? new secretsmanager.Secret(this, 'MockIdpKeys', {
@@ -419,6 +433,7 @@ export class CellStack extends Stack {
     const backendEnv: Record<string, string> = {
       ...commonEnv,
       DATABASE_HOST: proxy.endpoint,
+      // Reports and data exports run on the Aurora reader endpoint as thapsus_reporting (ADR-0071).
       REPORTING_DATABASE_HOST: cluster.clusterReadEndpoint.hostname,
       VALKEY_URL: valkeyUrl,
       FILES_BUCKET: filesBucket.bucketName,
@@ -448,6 +463,8 @@ export class CellStack extends Stack {
       INTEGRATION_SIGNING_KEY: ecs.Secret.fromSecretsManager(integrationKey),
       VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY'),
       VAPID_PRIVATE_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PRIVATE_KEY'),
+      STRIPE_SECRET_KEY: ecs.Secret.fromSecretsManager(stripe, 'STRIPE_SECRET_KEY'),
+      STRIPE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(stripe, 'STRIPE_WEBHOOK_SECRET'),
       ...(mockIdp
         ? {
             MOCK_IDP_KEY_PEM: ecs.Secret.fromSecretsManager(mockIdp, 'MOCK_IDP_KEY_PEM'),
@@ -556,8 +573,19 @@ export class CellStack extends Stack {
       role.addToPrincipalPolicy(
         new iam.PolicyStatement({
           sid: 'TenantDirectory',
-          actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query'],
+          // Scan: the back-office cross-region tenant list (ids, slugs, regions, plan, status only).
+          actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query', 'dynamodb:Scan'],
           resources: [directoryTableArn, `${directoryTableArn}/index/*`],
+        }),
+      );
+      // Scheduled data export (ADR-0077): assume ONLY customer roles named thapsus-hr-export-* (any customer
+      // account; the customer's trust policy pins this task role and our ExternalId). STS is regional and the
+      // bucket must be in this cell's region, which the application checks before writing.
+      role.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          sid: 'AssumeCustomerExportRoles',
+          actions: ['sts:AssumeRole'],
+          resources: [EXPORT_ROLE_ARN_PATTERN],
         }),
       );
       // The directory table is encrypted with the global stack's key (alias-scoped, DynamoDB only).
@@ -587,6 +615,15 @@ export class CellStack extends Stack {
       }),
     );
     schedulerRole.grantPassRole(worker.task.taskRole);
+
+    // Ask HR (ADR-0110): only a cell with an in-region Claude model may call Bedrock, and only that
+    // foundation model (no inference profiles, which route to other regions).
+    const aiModel = inRegionModel(cell);
+    if (aiModel) {
+      api.task.taskRole.addToPrincipalPolicy(
+        new iam.PolicyStatement({ sid: 'AskHrInRegionModel', actions: ['bedrock:InvokeModel'], resources: [`arn:aws:bedrock:${this.region}::foundation-model/${aiModel.modelId}`] }),
+      );
+    }
 
     // ---------------------------------------------------------------- Routing
     const apiTg = https.addTargets('Api', {
@@ -690,6 +727,7 @@ export class CellStack extends Stack {
     out('FilesBucketName', filesBucket.bucketName);
     out('InternalTokenSecretArn', internalToken.secretArn);
     out('VapidSecretArn', vapid.secretArn);
+    out('StripeSecretArn', stripe.secretArn);
     if (mockIdp) out('MockIdpSecretArn', mockIdp.secretArn);
   }
 }

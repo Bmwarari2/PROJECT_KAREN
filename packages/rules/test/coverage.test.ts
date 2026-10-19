@@ -3,12 +3,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-import { coverageMarkdown } from '../scripts/coverage-doc';
+import { coverageMarkdown, US_STATES } from '../scripts/coverage-doc';
 
 describe('jurisdiction packs', () => {
   it('docs/COVERAGE.md is generated from the current pack data', () => {
     const onDisk = readFileSync(join(__dirname, '..', '..', '..', 'docs', 'COVERAGE.md'), 'utf8').replace(/\r\n/g, '\n');
     expect(onDisk).toBe(coverageMarkdown());
+  });
+  it('lists every US state and DC with its coverage status, and every EU member state with its Pay Transparency status', () => {
+    const md = coverageMarkdown();
+    const us = md.slice(md.indexOf('## US state coverage'), md.indexOf('## EU Pay Transparency'));
+    expect(US_STATES).toHaveLength(51);
+    for (const s of US_STATES) expect(us).toMatch(new RegExp(`\\| US-${s} \\|`));
+    expect(us).toMatch(/\| US-CA \| \d+ \| ✔ \| ✔ \| ✔ \| ✔ \| — \| state layer modelled \|/);
+    expect(us).toMatch(/\| US-AL \| — \|.*federal rules only/);
+    const eu = md.slice(md.indexOf('## EU Pay Transparency'), md.indexOf('## Verification log'));
+    const rows = eu.split('\n').filter((l) => /^\| [A-Z]{2} \|/.test(l));
+    expect(rows).toHaveLength(27);
+    expect(rows.every((r) => /\| (transposed|partially_transposed|draft|not_transposed) \|/.test(r))).toBe(true);
   });
   it('every pack passes the validator (official https sources, verification dates, no overlapping versions)', () => {
     const out = execFileSync(process.execPath, ['--import', 'tsx', join(__dirname, '..', 'scripts', 'validate.ts')], { encoding: 'utf8' });

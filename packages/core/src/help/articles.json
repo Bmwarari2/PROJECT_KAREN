@@ -1,0 +1,211 @@
+{
+  "$comment": "In-app help centre articles: versioned content (bump `version` and `updatedOn` on every change), localised per locale. `contexts` are app paths the article is linked from. Fictional examples only.",
+  "articles": [
+    {
+      "slug": "getting-started",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app"],
+      "locales": {
+        "en-GB": {
+          "title": "Getting started with your workspace",
+          "summary": "Set up your organisation, invite your team and turn on multi-factor authentication.",
+          "body": [
+            "Your workspace lives in the home region you chose at sign-up. All of your people data, files and backups stay in that region.",
+            "Start with Settings → Organisation to add your legal entities, locations and departments. Then add people one by one from People, or import a spreadsheet from Imports.",
+            "Admins must turn on multi-factor authentication before they can use the app. Open Security to add an authenticator app or a passkey."
+          ]
+        },
+        "en-US": {
+          "title": "Getting started with your workspace",
+          "summary": "Set up your organization, invite your team and turn on multi-factor authentication.",
+          "body": [
+            "Your workspace lives in the home region you chose at sign-up. All of your people data, files and backups stay in that region.",
+            "Start with Settings → Organization to add your legal entities, locations and departments. Then add people one by one from People, or import a spreadsheet from Imports.",
+            "Admins must turn on multi-factor authentication before they can use the app. Open Security to add an authenticator app or a passkey."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "adding-people",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/people", "/app/imports"],
+      "locales": {
+        "en-GB": {
+          "title": "Adding and importing people",
+          "summary": "Create employee records, schedule future-dated changes and bulk import from CSV or Excel.",
+          "body": [
+            "Choose People → Add person to create a record. Changes can be dated in the future: they take effect automatically on their date and the full history is kept.",
+            "To add many people at once, download the template from Imports, fill it in and upload it. You see a validation preview before anything is saved, and large files run in the background with progress.",
+            "Your bill is based on the number of active employees. Leavers stop counting from their leaving date."
+          ]
+        },
+        "en-US": {
+          "title": "Adding and importing people",
+          "summary": "Create employee records, schedule future-dated changes and bulk import from CSV or Excel.",
+          "body": [
+            "Choose People → Add person to create a record. Changes can be dated in the future: they take effect automatically on their date and the full history is kept.",
+            "To add many people at once, download the template from Imports, fill it in and upload it. You see a validation preview before anything is saved, and large files run in the background with progress.",
+            "Your bill is based on the number of active employees. Terminated employees stop counting from their termination date."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "requesting-time-off",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/time-off", "/app/approvals"],
+      "locales": {
+        "en-GB": {
+          "title": "Requesting and approving time off",
+          "summary": "Book holiday, see your balance and how approvals work.",
+          "body": [
+            "Open Time off and choose Request time off. Your available balance is shown before you send the request, including public holidays where your policy deducts them.",
+            "Your manager is notified and can approve or decline from Approvals. You get a notification either way.",
+            "Statutory minimums come from the jurisdiction rules for your country, each with its official source."
+          ]
+        },
+        "en-US": {
+          "title": "Requesting and approving time off",
+          "summary": "Book vacation, see your balance and how approvals work.",
+          "body": [
+            "Open Time off and choose Request time off. Your available balance is shown before you send the request, including public holidays where your policy deducts them.",
+            "Your manager is notified and can approve or decline from Approvals. You get a notification either way.",
+            "Statutory minimums come from the jurisdiction rules for your state or country, each with its official source."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "rotas-and-clocking-in",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/rota", "/app/clock", "/app/timesheets"],
+      "locales": {
+        "en-GB": {
+          "title": "Rotas, clocking in and timesheets",
+          "summary": "Publish shifts, clock in on your phone or a kiosk, and approve timesheets.",
+          "body": [
+            "Managers build the rota for the week and publish it. Everyone affected is notified.",
+            "Clock in from Clock on your phone, even without a signal: punches are queued on your device and sent when you are back online.",
+            "At the end of the week, submit your timesheet. Your manager approves it and payroll can export the approved hours."
+          ]
+        },
+        "en-US": {
+          "title": "Schedules, clocking in and timesheets",
+          "summary": "Publish shifts, clock in on your phone or a kiosk, and approve timesheets.",
+          "body": [
+            "Managers build the schedule for the week and publish it. Everyone affected is notified.",
+            "Clock in from Clock on your phone, even without a signal: punches are queued on your device and sent when you are back online.",
+            "At the end of the week, submit your timesheet. Your manager approves it and payroll can export the approved hours."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "contacting-support",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/support", "/app/help"],
+      "locales": {
+        "en-GB": {
+          "title": "Contacting Thapsus-HR support",
+          "summary": "Raise a ticket, choose a priority and see our response times for your plan.",
+          "body": [
+            "Open Support and choose New ticket. Describe what happened and attach a screenshot if it helps. Tickets are stored in your workspace's home region.",
+            "Pick the priority that matches the impact: urgent means the service is unusable for your company. Our first-response and resolution targets depend on your plan and are shown on each ticket.",
+            "Our support team can read what you send in a ticket. They cannot see anything else in your workspace unless an admin grants time-limited support access from Settings, and every access is logged."
+          ]
+        },
+        "en-US": {
+          "title": "Contacting Thapsus-HR support",
+          "summary": "Open a ticket, choose a priority and see our response times for your plan.",
+          "body": [
+            "Open Support and choose New ticket. Describe what happened and attach a screenshot if it helps. Tickets are stored in your workspace's home region.",
+            "Pick the priority that matches the impact: urgent means the service is unusable for your company. Our first-response and resolution targets depend on your plan and are shown on each ticket.",
+            "Our support team can read what you send in a ticket. They cannot see anything else in your workspace unless an admin grants time-limited support access from Settings, and every access is logged."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "plans-and-billing",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/billing"],
+      "locales": {
+        "en-GB": {
+          "title": "Plans, billing and cancelling",
+          "summary": "How the free trial, monthly and annual terms, upgrades, downgrades and cancellation work.",
+          "body": [
+            "Every workspace starts with a free trial. Choose a plan, a monthly rolling or annual term and your billing currency from Billing. Prices depend on your number of active employees.",
+            "Upgrades take effect straight away and you pay only the difference for the rest of the period. Downgrades and switching from annual to monthly take effect at the end of the period you have paid for.",
+            "You can cancel at any time. Cancelling takes effect at the end of the billing period after your notice period; you keep full access until then and can reactivate before it ends. VAT or sales tax is added where it applies."
+          ]
+        },
+        "en-US": {
+          "title": "Plans, billing and canceling",
+          "summary": "How the free trial, monthly and annual terms, upgrades, downgrades and cancellation work.",
+          "body": [
+            "Every workspace starts with a free trial. Choose a plan, a monthly or annual term and your billing currency from Billing. Prices depend on your number of active employees.",
+            "Upgrades take effect right away and you pay only the difference for the rest of the period. Downgrades and switching from annual to monthly take effect at the end of the period you have paid for.",
+            "You can cancel at any time. Canceling takes effect at the end of the billing period after your notice period; you keep full access until then and can reactivate before it ends. Sales tax or VAT is added where it applies."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "security-and-sign-in",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/security", "/app/settings"],
+      "locales": {
+        "en-GB": {
+          "title": "Sign-in security, SSO and passkeys",
+          "summary": "Multi-factor authentication, single sign-on and verified domains.",
+          "body": [
+            "Admins must use multi-factor authentication. Everyone can add a passkey for quick, phishing-resistant sign-in.",
+            "To use single sign-on, verify your email domain in Settings and connect your identity provider with SAML 2.0 or OpenID Connect. You can then require SSO for everyone.",
+            "Sessions end after a period of inactivity and after a maximum length that your admins choose."
+          ]
+        },
+        "en-US": {
+          "title": "Sign-in security, SSO and passkeys",
+          "summary": "Multi-factor authentication, single sign-on and verified domains.",
+          "body": [
+            "Admins must use multi-factor authentication. Everyone can add a passkey for quick, phishing-resistant sign-in.",
+            "To use single sign-on, verify your email domain in Settings and connect your identity provider with SAML 2.0 or OpenID Connect. You can then require SSO for everyone.",
+            "Sessions end after a period of inactivity and after a maximum length that your admins choose."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "support-access",
+      "version": 1,
+      "updatedOn": "2026-10-18",
+      "contexts": ["/app/settings", "/app/support"],
+      "locales": {
+        "en-GB": {
+          "title": "Giving Thapsus-HR support temporary access",
+          "summary": "Grant, limit and revoke support access to your workspace data.",
+          "body": [
+            "Sometimes support needs to look at a record to fix a problem. Only an admin can allow this, for one named support person, for up to 30 days, as read-only or read and write.",
+            "Every time support opens your data it is written to your audit log and to our staff audit trail. You can revoke access at any time and it stops immediately."
+          ]
+        },
+        "en-US": {
+          "title": "Giving Thapsus-HR support temporary access",
+          "summary": "Grant, limit and revoke support access to your workspace data.",
+          "body": [
+            "Sometimes support needs to look at a record to fix a problem. Only an admin can allow this, for one named support person, for up to 30 days, as read-only or read and write.",
+            "Every time support opens your data it is written to your audit log and to our staff audit trail. You can revoke access at any time and it stops immediately."
+          ]
+        }
+      }
+    }
+  ]
+}

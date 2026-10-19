@@ -1,4 +1,4 @@
-import { withRegistry, withTenant, type EventSubscriber, type JobHandler, type JobRow, type OutboxEvent, type TenantRouter, type Tx } from '@thapsus/db';
+import { TenantUnavailableError, withRegistry, withTenant, type EventSubscriber, type JobHandler, type JobRow, type OutboxEvent, type TenantRouter, type Tx } from '@thapsus/db';
 import type { Logger } from '@thapsus/core/logger';
 
 /** Publishes domain events beyond the cell database (SQS/EventBridge in AWS). Must tolerate redelivery. */
@@ -71,10 +71,11 @@ export class Engine<D> {
     }
     let more = true;
     let rounds = 0;
-    while (more && rounds++ < 20) {
+    while (more && rounds++ < 20 && !this.closed.has(tenantId)) {
       more = (await this.dispatchOutbox(tenantId)) > 0;
       await withTenant(this.o.router, tenantId, (tx) => tx.query('SELECT audit.seal_pending(5000)'));
       more = (await this.runDueJobs(tenantId)) > 0 || more;
+      if (this.closed.has(tenantId)) return;
     }
   }
 
@@ -110,6 +111,7 @@ export class Engine<D> {
   async runDueJobs(tenantId: string, max = 50): Promise<number> {
     let ran = 0;
     for (; ran < max; ran++) {
+      if (this.closed.has(tenantId)) break;
       const job = await withTenant(this.o.router, tenantId, (tx) =>
         tx.maybe<JobRow>(
           `UPDATE app.jobs SET status = 'running', started_at = now(), attempts = attempts + 1
@@ -124,6 +126,9 @@ export class Engine<D> {
     return ran;
   }
 
+  /** Tenants whose account-closure job deleted them during this process's lifetime. */
+  private readonly closed = new Set<string>();
+
   private async runJob(tenantId: string, job: JobRow) {
     const handler = this.o.handlers[job.kind];
     const finish = (status: string, result: unknown, error: string | null, retryAt?: Date) =>
@@ -133,7 +138,14 @@ export class Engine<D> {
              run_after = coalesce($5, run_after) WHERE id = $1`,
           [job.id, status, result === undefined ? null : JSON.stringify(result), error, retryAt ?? null],
         ),
-      );
+      ).catch((err) => {
+        // A verified-deletion job removes the tenant (and its job rows) itself: nothing left to update.
+        if (err instanceof TenantUnavailableError && err.status === 'deleted') {
+          this.closed.add(tenantId);
+          return 0;
+        }
+        throw err;
+      });
     if (!handler) {
       await finish('failed', null, `No handler for ${job.kind}`);
       return;

@@ -1,4 +1,4 @@
-import { DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import pg from 'pg';
 import type { HomeRegion } from '@thapsus/core';
 
@@ -24,6 +24,8 @@ export interface TenantDirectory {
   byDomain(domain: string): Promise<DirectoryEntry | undefined>;
   byId(tenantId: string): Promise<DirectoryEntry | undefined>;
   update(tenantId: string, patch: Partial<Omit<DirectoryEntry, 'tenantId'>>): Promise<void>;
+  /** Every entry (back-office cross-region view: ids, slugs, regions, plan and status only). */
+  list(limit?: number): Promise<DirectoryEntry[]>;
 }
 
 export class SlugTakenError extends Error {
@@ -51,6 +53,9 @@ export class InMemoryDirectory implements TenantDirectory {
   async update(id: string, patch: Partial<DirectoryEntry>) {
     const e = this.entries.get(id);
     if (e) this.entries.set(id, { ...e, ...patch, tenantId: id });
+  }
+  async list(limit = 5000) {
+    return [...this.entries.values()].slice(0, limit).map((e) => ({ ...e }));
   }
 }
 
@@ -99,6 +104,9 @@ export class PgDirectory implements TenantDirectory {
   }
   async byId(id: string) {
     return this.map((await this.pool.query('SELECT * FROM directory_tenants WHERE tenant_id = $1', [id])).rows[0]);
+  }
+  async list(limit = 5000) {
+    return (await this.pool.query('SELECT * FROM directory_tenants ORDER BY slug LIMIT $1', [limit])).rows.map((r) => this.map(r)!);
   }
   async update(id: string, p: Partial<DirectoryEntry>) {
     await this.pool.query(
@@ -182,6 +190,23 @@ export class DynamoDirectory implements TenantDirectory {
     );
     const id = out.Items?.[0]?.tenantId?.S;
     return id ? this.byId(id) : undefined;
+  }
+  async list(limit = 5000) {
+    const out: DirectoryEntry[] = [];
+    let start: Record<string, { S: string }> | undefined;
+    do {
+      const page = await this.client.send(
+        new ScanCommand({
+          TableName: this.table,
+          FilterExpression: 'begins_with(pk, :p)',
+          ExpressionAttributeValues: { ':p': { S: 'TENANT#' } },
+          ExclusiveStartKey: start,
+        }),
+      );
+      for (const item of page.Items ?? []) out.push(this.map(item as never)!);
+      start = page.LastEvaluatedKey as typeof start;
+    } while (start && out.length < limit);
+    return out.slice(0, limit).sort((a, b) => a.slug.localeCompare(b.slug));
   }
   async update(id: string, p: Partial<DirectoryEntry>) {
     const sets: string[] = [];

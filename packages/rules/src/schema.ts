@@ -1,3 +1,5 @@
+import { PRIVACY_RULE_KEYS } from './privacy-keys';
+
 /**
  * Jurisdiction pack format. Employment rules are DATA: versioned, effective-dated, each version
  * carrying its official source URL, the date it was verified against that source and the reviewer.
@@ -84,6 +86,7 @@ export interface JurisdictionPack {
 
 /** Standard rule keys (extend as packs grow; validated so typos are caught). */
 export const RULE_KEYS = {
+  ...PRIVACY_RULE_KEYS,
   'leave.statutory_annual_minimum': 'Minimum paid annual leave entitlement',
   'leave.irregular_hours_accrual': 'Holiday accrual for irregular-hours / part-year workers',
   'leave.carry_over': 'Statutory carry-over of untaken leave',
@@ -97,6 +100,7 @@ export const RULE_KEYS = {
   'overtime.daily': 'Daily overtime thresholds and multipliers',
   'overtime.seventh_day': 'Seventh consecutive day premium',
   'overtime.exempt_salary_threshold': 'Minimum salary for exempt (white-collar) classification',
+  'overtime.exempt_duties_tests': 'Exemption categories, duties criteria and which salary test applies',
   'sick_pay.statutory': 'Statutory sick pay parameters',
   'sick_pay.paid_sick_leave_accrual': 'Paid sick leave accrual (US state/local)',
   'family_leave.fmla': 'FMLA eligibility and entitlement',
@@ -106,6 +110,7 @@ export const RULE_KEYS = {
   'right_to_work.retention': 'Retention period for right-to-work records',
   'i9.retention': 'Form I-9 retention period',
   'i9.reverification': 'Form I-9 reverification rules',
+  'i9.completion_deadlines': 'Form I-9 Section 1 and Section 2 completion deadlines',
   'employment.unfair_dismissal_qualifying_period': 'Qualifying service for unfair dismissal protection',
   'employment.probation': 'Statutory probation limits',
   'employment.notice_period': 'Statutory minimum notice periods',

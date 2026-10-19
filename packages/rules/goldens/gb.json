@@ -829,6 +829,43 @@
       "date": "2026-10-18",
       "expect": null,
       "notes": "GB reg. 15B is E+W+S; no NI equivalent found: must fail explicitly."
+    },
+    {
+      "key": "right_to_work.document_rules",
+      "date": "2026-10-18",
+      "expectPath": {
+        "followUp.list_b_group_2.excusePeriod": "P6M",
+        "followUp.list_b_group_2.from": "positive_verification_notice_date",
+        "followUp.list_b_group_1.dueBy": "permission_expiry_date",
+        "followUp.list_a": null,
+        "followUp.online_unlimited": null
+      },
+      "source": "https://assets.publishing.service.gov.uk/media/6abd2b2c26660e5f62a7f193/FINAL_-_Employer_s_guide_to_right_to_work_checks.pdf",
+      "notes": "Employer's guide (1 October 2026) pp. 35-36 and 55: PVN excuse '6 months from the date specified in the PVN'; time-limited permission re-checked 'on, or before, the date their permission comes to an end'; no follow-up for settled or EUSS status."
+    },
+    {
+      "key": "reporting.gender_pay_gap",
+      "date": "2027-04-05",
+      "expectPath": {
+        "calculations[0].id": "mean_hourly_pay_gap",
+        "calculations[5].regulation": 13,
+        "hourlyRate.daysPerMonth": 30.44,
+        "hourlyRate.daysPerYear": 365.25,
+        "bonusRelevantPeriodMonthsEndingWithSnapshot": 12,
+        "quartiles.remainderAllocation.2[1]": "upper_middle"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/2017/172/regulation/6/made",
+      "notes": "S.I. 2017/172 regs. 2, 6, 8-13; remainder allocation from GOV.UK Making your calculations (21 May 2026)."
+    },
+    {
+      "key": "leave.irregular_hours_accrual",
+      "date": "2026-10-18",
+      "expectPath": {
+        "accruesOn": "last_day_of_each_pay_period",
+        "rounding.fractionBelowMinutesIsZero": 30
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/15B",
+      "notes": "WTR 1998 reg. 15B(3) and (5)."
     }
   ],
   "sources": [

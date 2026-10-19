@@ -3,7 +3,7 @@
  * API checks decide visibility (the API still enforces them), so the sub-navigation, the settings
  * index and the app sidebar never disagree.
  */
-export type SettingsGroup = 'workspace' | 'signIn' | 'approvals' | 'timeOff' | 'time';
+export type SettingsGroup = 'workspace' | 'access' | 'signIn' | 'approvals' | 'timeOff' | 'time';
 
 export interface SettingsSection {
   key: string;
@@ -12,10 +12,12 @@ export interface SettingsSection {
   visible: (has: (permission: string) => boolean) => boolean;
 }
 
-export const SETTINGS_GROUPS: SettingsGroup[] = ['workspace', 'signIn', 'approvals', 'timeOff', 'time'];
+export const SETTINGS_GROUPS: SettingsGroup[] = ['workspace', 'access', 'signIn', 'approvals', 'timeOff', 'time'];
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   { key: 'organisation', href: '/app/settings/organisation', group: 'workspace', visible: (has) => has('org.manage') },
+  { key: 'roles', href: '/app/settings/roles', group: 'access', visible: (has) => has('roles.read') },
+  { key: 'users', href: '/app/settings/users', group: 'access', visible: (has) => has('roles.read') },
   { key: 'sso', href: '/app/settings/sso', group: 'signIn', visible: (has) => has('settings.read') },
   { key: 'signInPolicy', href: '/app/settings/sign-in-policy', group: 'signIn', visible: (has) => has('settings.read') },
   { key: 'domains', href: '/app/settings/domains', group: 'signIn', visible: (has) => has('settings.read') },

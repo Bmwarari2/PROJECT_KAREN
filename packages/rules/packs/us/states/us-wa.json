@@ -2,7 +2,7 @@
   "jurisdiction": "US-WA",
   "parent": "US",
   "name": "Washington",
-  "version": 1,
+  "version": 2,
   "updatedOn": "2026-10-18",
   "rules": [
     {
@@ -166,6 +166,41 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Phase-in to 2.5x for all employers by 2028 not modelled yet."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "Washington security breach notification (RCW 19.255.010)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-03-01",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": 30,
+              "from": "discovery",
+              "standard": "in the most expedient time possible, without unreasonable delay"
+            },
+            "regulator": {
+              "body": "Washington Attorney General",
+              "deadlineDays": 30,
+              "from": "discovery",
+              "minAffected": 501,
+              "standard": "no more than thirty days after the breach was discovered, updated if information is unknown when due"
+            },
+            "processorToController": {
+              "standard": "immediately following discovery"
+            },
+            "lawEnforcementDelay": true
+          },
+          "source": {
+            "url": "https://app.leg.wa.gov/RCW/default.aspx?cite=19.255.010",
+            "title": "RCW 19.255.010 — Disclosure, notice"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Subs. (8): consumers no more than thirty calendar days after discovery; subs. (7): the Attorney General where more than five hundred Washington residents, no more than thirty days after discovery; subs. (2): a holder of data it does not own notifies the owner immediately following discovery. 2019 c 241 took effect 1 March 2020."
         }
       ]
     }

@@ -7,3 +7,5 @@ export * as time from './time';
 export * from './permissions';
 export * from './roles';
 export * from './residency';
+export * from './features';
+export * from './api-scopes';

@@ -81,6 +81,8 @@ export const names = {
   internalTokenSecret: (env: EnvName) => `thapsus-hr/${env}/internal-token`,
   /** Each cell's copy of the global internal token (distinct name: the UK cell shares eu-west-2 with the global stack). */
   cellInternalTokenSecret: (env: EnvName, cell: HomeRegion) => `thapsus-hr/${env}/${cell}/internal-token`,
+  /** Per-cell Stripe keys (one Stripe account per home region, ADR-0103); distinct from the global stack's name. */
+  stripeSecret: (env: EnvName, cell: HomeRegion) => `thapsus-hr/${env}/stripe/${cell}`,
   copyVault: (env: EnvName, cell: HomeRegion) => `thapsus-hr-${env}-${cell}-backup-copy`,
   stack: (env: EnvName, kind: string) => `ThapsusHr-${env}-${kind}`,
 };
