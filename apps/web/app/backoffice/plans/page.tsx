@@ -89,7 +89,7 @@ export default function PlansPage() {
               <CardTitle>{t(`pricing.plans.${p.id}.name`)}</CardTitle>
               <p className="mt-1 text-footnote text-text-secondary">{p.selfServe ? t('backoffice.plans.selfServe', { min: p.minimumEmployees }) : t('backoffice.plans.contractOnly')}</p>
               {p.bands.length ? (
-                <Table dense className="mt-3">
+                <Table dense className="mt-3" scrollLabel={t(`pricing.plans.${p.id}.name`)}>
                   <caption className="sr-only">{t('pricing.bands.caption', { currency })}</caption>
                   <THead>
                     <tr>
@@ -117,7 +117,7 @@ export default function PlansPage() {
         <h2 id="contracts-title" className="text-title-3">
           {t('backoffice.contracts.title')}
         </h2>
-        <Table>
+        <Table scrollLabel={t('backoffice.contracts.title')}>
           <caption className="sr-only">{t('backoffice.contracts.title')}</caption>
           <THead>
             <tr>

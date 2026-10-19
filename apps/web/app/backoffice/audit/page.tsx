@@ -38,7 +38,7 @@ export default function StaffAudit() {
         <Field id="a-from" label={t('backoffice.audit.from')}>{(p) => <Input {...p} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</Field>
         <Field id="a-to" label={t('backoffice.audit.to')}>{(p) => <Input {...p} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</Field>
       </div>
-      <Table dense>
+      <Table dense scrollLabel={t('backoffice.audit.title')}>
         <caption className="sr-only">{t('backoffice.audit.title')}</caption>
         <THead>
           <tr>
