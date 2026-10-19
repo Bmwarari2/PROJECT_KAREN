@@ -6,8 +6,9 @@ import { readFileSync, realpathSync } from 'node:fs';
 
 const version = JSON.parse(readFileSync('node_modules/.pnpm/node_modules/@playwright/test/package.json', 'utf8')).version;
 const image = `mcr.microsoft.com/playwright:v${version}-noble`;
-const name = 'thr-playwright-server';
-const port = 3333;
+// VISUAL_SERVER_PORT lets parallel checkouts on one machine each run their own browser container.
+const port = Number(process.env.VISUAL_SERVER_PORT ?? 3333);
+const name = port === 3333 ? 'thr-playwright-server' : `thr-playwright-server-${port}`;
 
 const sh = (cmd) => execSync(cmd, { stdio: 'inherit' });
 spawnSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
