@@ -41,9 +41,9 @@
         "rows": [
           [
             "Stripe Payments Europe Ltd / Stripe, Inc.",
-            "Subscription billing and tax calculation (Stripe Billing, Stripe Tax)",
-            "Stripe's own infrastructure (EU / US)",
-            "Billing contact name, billing email and company address of the customer's account owner. No employee data is ever sent. This is enforced by the billing module tests."
+            "Subscription billing, invoicing and tax calculation (Stripe Billing, Stripe Tax), test mode until the product owner approves live mode",
+            "Stripe's own infrastructure (EU / US). One Stripe account per home region (UK, EU, US), called only from that region's cell, so webhooks for a UK customer are delivered only to the UK cell (ADR-0103)",
+            "The primary billing contact's name and email, the company's legal name, company billing address and company tax id, the purchase order number, the plan, term, currency, prices and an aggregate employee count used for banding, plus opaque Thapsus ids (tenant id, billing account id) as metadata. Card details are entered on Stripe-hosted pages and never touch Thapsus-HR. No employee data is ever sent (no names, emails, employee numbers or any employee record field). Enforced by `apps/api/test/billing.int.test.ts` (every payload sent to the billing provider is inspected) and `apps/api/test/billing-stripe.test.ts`."
           ]
         ]
       },

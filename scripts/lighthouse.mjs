@@ -25,6 +25,8 @@ const base = `http://127.0.0.1:${WEB}`;
 const THRESHOLDS = { performance: 90, accessibility: 95 };
 const ALL_PAGES = [
   { path: '/', label: 'Marketing home' },
+  { path: '/pricing', label: 'Pricing' },
+  { path: '/status', label: 'Status page' },
   { path: '/signin', label: 'Sign in' },
   { path: '/signup', label: 'Sign up' },
   { path: '/app', label: 'App home (signed in)', auth: true },

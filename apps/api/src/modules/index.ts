@@ -23,6 +23,10 @@ import { dataExportRoutes } from './data-export/routes';
 import { essRoutes } from './me/ess-routes';
 import { privacyRoutes } from './privacy/routes';
 import { privacyBackofficeRoutes } from './privacy/backoffice';
+import { billingRoutes } from './billing/routes';
+import { supportTicketRoutes } from './support/tickets';
+import { statusRoutes } from './status/routes';
+import { backofficeRoutes } from './backoffice/routes';
 import { platformRoutes } from './platform';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
@@ -55,4 +59,9 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(privacyBackofficeRoutes);
   // Phase 9: enterprise platform (API clients, webhooks, SCIM, sandboxes)
   await app.register(platformRoutes);
+  // Phase 10: support, status page, back office, pricing and billing
+  await app.register(billingRoutes);
+  await app.register(supportTicketRoutes);
+  await app.register(statusRoutes);
+  await app.register(backofficeRoutes);
 }

@@ -123,6 +123,10 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.delegations': { subject: [U('from_user_id'), U('to_user_id')], category: 'account', erase: DEL },
   'app.subprocessor_subscriptions': { subject: [U()], category: 'account', erase: DEL },
   'app.support_grants': { subject: [], actor: ['granted_by_user_id'], category: 'accountability', erase: { keep: 'security record of support access' } },
+  // Support cases are the customer's contract record with Thapsus: kept, and exported to the person who wrote them.
+  'app.support_tickets': { subject: [U('requester_user_id')], category: 'accountability', erase: { keep: 'support case record; the requester appears as the erased user' } },
+  'app.support_ticket_messages': { subject: [U('author_user_id')], category: 'accountability', erase: { keep: 'support case record' } },
+  'app.support_ticket_attachments': { subject: [U('uploaded_by_user_id')], category: 'accountability', erase: { keep: 'support case record' } },
 
   // ---- privacy and accountability records ----------------------------------------------------------------
   'app.dsr_requests': { subject: [E('subject_employee_id'), U('subject_user_id')], actor: ['created_by'], category: 'accountability', erase: { keep: 'record of the request, kept to demonstrate compliance' } },

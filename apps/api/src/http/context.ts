@@ -34,6 +34,11 @@ declare module 'fastify' {
     auth?: 'public' | 'user' | 'mfa-setup';
     /** Skip the fallback audit write (route records its own audit inside its transaction). */
     selfAudited?: boolean;
+    /**
+     * Public, unauthenticated and free of personal data, so the route may set its own shared
+     * Cache-Control (edge-cacheable). Only GET /v1/status uses this (ADR-0105).
+     */
+    edgeCacheable?: boolean;
   }
 }
 
@@ -99,7 +104,8 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
   });
 
   // Authenticated responses are never cacheable anywhere (no CDN/edge caching).
-  app.addHook('onSend', async (_req, reply, payload) => {
+  app.addHook('onSend', async (req, reply, payload) => {
+    if (req.routeOptions.config?.edgeCacheable && req.routeOptions.config.auth === 'public' && reply.statusCode < 400 && reply.getHeader('cache-control')) return payload;
     reply.header('Cache-Control', 'private, no-store');
     reply.header('Pragma', 'no-cache');
     return payload;

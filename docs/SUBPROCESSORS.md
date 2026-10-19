@@ -9,13 +9,13 @@ Thapsus-HR is the processor and each customer is the controller. Personal data g
 | Amazon Web Services EMEA SARL / Amazon Web Services, Inc. | Hosting, database, file storage, cache, queues, logs, backups, key management (KMS) | eu-west-2 (London) only; backups stay in London across availability zones | eu-central-1 (Frankfurt); backup copies in eu-west-1 (Ireland) | us-east-2 (Ohio); backup copies in us-west-1 (N. California) | All customer data, encrypted at rest and in transit |
 | Amazon Web Services (Amazon SES) | Transactional email: sign-in links, notifications, workspace lists | SES in eu-west-2 | SES in eu-central-1 | SES in us-east-2 | Recipient email address and message content |
 
-The global layer runs in AWS eu-west-2. It holds the tenant directory (tenant id, workspace name, home region, status, plan, verified domains) and billing references. It holds **no employee personal data**.
+The global layer runs in AWS eu-west-2. It holds the tenant directory (tenant id, workspace slug, home region, status, plan reference, verified domains). Billing state, billing contacts and invoices live in each tenant's home cell, not in the global layer (ADR-0103). It holds **no employee personal data**.
 
 ## Billing (company-level data only)
 
 | Sub-processor | Purpose | Location | Personal data |
 | --- | --- | --- | --- |
-| Stripe Payments Europe Ltd / Stripe, Inc. | Subscription billing and tax calculation (Stripe Billing, Stripe Tax) | Stripe's own infrastructure (EU / US) | Billing contact name, billing email and company address of the customer's account owner. **No employee data is ever sent.** This is enforced by the billing module tests. |
+| Stripe Payments Europe Ltd / Stripe, Inc. | Subscription billing, invoicing and tax calculation (Stripe Billing, Stripe Tax), test mode until the product owner approves live mode | Stripe's own infrastructure (EU / US). One Stripe account per home region (UK, EU, US), called only from that region's cell, so webhooks for a UK customer are delivered only to the UK cell (ADR-0103) | The primary billing contact's name and email, the company's legal name, company billing address and company tax id, the purchase order number, the plan, term, currency, prices and an aggregate employee **count** used for banding, plus opaque Thapsus ids (tenant id, billing account id) as metadata. Card details are entered on Stripe-hosted pages and never touch Thapsus-HR. **No employee data is ever sent** (no names, emails, employee numbers or any employee record field). Enforced by `apps/api/test/billing.int.test.ts` (every payload sent to the billing provider is inspected) and `apps/api/test/billing-stripe.test.ts`. |
 
 ## Optional features (only when the customer turns them on)
 

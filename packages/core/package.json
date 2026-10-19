@@ -18,6 +18,8 @@
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
     "./residency": "./src/residency.ts",
+    "./billing": "./src/billing/index.ts",
+    "./help": "./src/help/index.ts",
     "./features": "./src/features.ts",
     "./api-scopes": "./src/api-scopes.ts",
     "./trust": "./src/trust/index.ts"

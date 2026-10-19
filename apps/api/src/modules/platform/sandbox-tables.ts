@@ -100,6 +100,12 @@ const PERSONAL = [
   'app.legal_holds',
   'app.incidents',
   'app.subprocessor_subscriptions',
+  'app.i9_records',
+  // phase 10: support tickets (content submitted by people) and billing contacts
+  'app.support_tickets',
+  'app.support_ticket_messages',
+  'app.support_ticket_attachments',
+  'app.billing_contacts',
 ] as const;
 
 const OPERATIONAL = [
@@ -122,6 +128,12 @@ const OPERATIONAL = [
   'app.company_exports',
   'app.retention_runs',
   'app.dpa_acceptances',
+  // phase 10: billing state is never copied (a sandbox must never bill or reach the billing provider)
+  'app.billing_accounts',
+  'app.billing_account_entities',
+  'app.billing_subscriptions',
+  'app.billing_invoices',
+  'app.billing_webhook_events',
 ] as const;
 
 const SECRET = [

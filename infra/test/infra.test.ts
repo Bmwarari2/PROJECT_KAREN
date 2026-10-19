@@ -289,6 +289,27 @@ describe.each(combos)('%s cell %s', (env, cell) => {
       ['APP_DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'OWNER_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET'],
     );
   });
+
+  it("billing: this region's Stripe keys come from the cell's own secret (ADR-0103), never from plain environment values", () => {
+    const secrets = resources(t, 'AWS::SecretsManager::Secret').map(([id, r]) => [id, r.Properties!.Name] as const);
+    const stripe = secrets.find(([, n]) => n === names.stripeSecret(env, cell));
+    expect(stripe, 'cell Stripe secret').toBeDefined();
+    // the global stack owns thapsus-hr/<env>/stripe in eu-west-2; a cell never reuses that name
+    expect(secrets.map(([, n]) => n)).not.toContain(`thapsus-hr/${env}/stripe`);
+    for (const family of ['-api', '-worker']) {
+      const [, task] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))!;
+      const app = (task.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
+      const refs = (app.Secrets as Json[]).filter((x) => String(x.Name).startsWith('STRIPE_'));
+      expect(refs.map((x) => x.Name).sort()).toEqual(['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']);
+      for (const r of refs) expect(JSON.stringify(r.ValueFrom)).toContain(stripe![0]);
+      expect(((app.Environment ?? []) as Json[]).map((e) => e.Name)).not.toContain('STRIPE_SECRET_KEY');
+    }
+    // the cross-region back-office view may scan the directory table only (no other table)
+    const scans = resources(t, 'AWS::IAM::Policy').flatMap(([, p]) => (p.Properties!.PolicyDocument.Statement as Json[]).filter((st) => asArray(st.Action).includes('dynamodb:Scan')));
+    expect(scans.length).toBeGreaterThan(0);
+    const tableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${cfg.account}:table/${names.directoryTable(env)}`;
+    for (const st of scans) expect(asArray(st.Resource).every((r) => r === tableArn || r === `${tableArn}/index/*`)).toBe(true);
+  });
 });
 
 describe('dedicated databases (ADR-0068, runbook move-tenant-to-dedicated-db.md)', () => {

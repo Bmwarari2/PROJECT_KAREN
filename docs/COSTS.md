@@ -15,7 +15,7 @@ These are on-demand list-price estimates (USD per month, about 730 hours, Octobe
 | Public IPv4 addresses | ~$15 |
 | AWS WAF (web ACL and 5 rules) | ~$10 |
 | CloudWatch logs, metrics, alarms and Container Insights | ~$10–25 |
-| Secrets Manager, KMS, Backup, S3, SQS, EventBridge, SES, SNS | ~$10 |
+| Secrets Manager, KMS, Backup, S3, SQS, EventBridge, SES, SNS (includes the per-cell Stripe key secret added in Phase 10, about $0.40) | ~$10 |
 | **Total per cell** | **~$350–400** |
 | **Budget alarm per cell** | **$400** |
 
@@ -62,3 +62,7 @@ The tools task (migrations and the move runner) runs only during deploys and mov
 ## Development
 
 The dev environment matches staging but is only deployed on demand. The default is local Docker, which costs nothing.
+
+## Phase 10 additions
+
+- One Secrets Manager secret per cell for that region's Stripe test-mode keys (`thapsus-hr/<env>/stripe/<cell>`): about $0.40 a month each, $1.20 a month per environment, inside the existing "Secrets Manager, KMS, …" line. No other AWS resource was added. Stripe itself bills per transaction (Billing and Tax fees) only in live mode, which needs the product owner's approval (HUMAN_TODO 4.1).
