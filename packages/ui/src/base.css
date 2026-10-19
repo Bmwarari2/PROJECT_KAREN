@@ -22,9 +22,15 @@
     color: var(--color-accent);
     text-underline-offset: 3px;
   }
-  /* Native file pickers have a wide intrinsic size: keep them inside a 320px screen (WCAG 1.4.10). */
+  /* Native file pickers have a wide intrinsic size: keep them inside a 320px screen (WCAG 1.4.10).
+     A percentage width lets the picker shrink with its container (max-width alone does not). */
   input[type='file'] {
     max-width: 100%;
+  }
+  @media (max-width: 639px) {
+    input[type='file'] {
+      width: 100%;
+    }
   }
   ::selection {
     background: var(--color-accent-subtle);

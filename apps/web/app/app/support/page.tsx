@@ -64,7 +64,7 @@ export default function SupportPage() {
           {t('support.searchHelpFirst')}
         </Link>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card>
           <CardTitle>{t('support.newTitle')}</CardTitle>
           <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
@@ -116,17 +116,17 @@ export default function SupportPage() {
               <p className="mt-2 text-callout text-text-secondary">{t('support.planLine', { plan: t(`pricing.plans.${contact.data.planId}.name`) })}</p>
               <ul className="mt-4 flex flex-col gap-2 text-callout">
                 {contact.data.channels.map((c, i) => (
-                  <li key={i} className="flex items-center gap-2">
+                  <li key={i} className="flex flex-wrap items-center gap-2">
                     {CHANNEL_ICON[c.kind]}
                     <span>{t(`support.channels.${c.kind}`)}</span>
-                    {c.value ? c.kind === 'email' ? <a href={`mailto:${c.value}`}>{c.value}</a> : c.kind === 'phone' ? <a href={`tel:${c.value.replace(/\s/g, '')}`}>{c.value}</a> : <span>{c.value}</span> : null}
+                    {c.value ? c.kind === 'email' ? <a href={`mailto:${c.value}`} className="break-all">{c.value}</a> : c.kind === 'phone' ? <a href={`tel:${c.value.replace(/\s/g, '')}`}>{c.value}</a> : <span>{c.value}</span> : null}
                     {c.hours ? <span className="text-footnote text-text-secondary">({t(`support.coverage.${c.hours}`)})</span> : null}
                   </li>
                 ))}
               </ul>
               <p className="mt-4 text-footnote text-text-secondary">{contact.data.hours ? t('support.hoursLine', { start: contact.data.hours.start, end: contact.data.hours.end, zone: contact.data.hours.timeZone }) : t('support.alwaysLine')}</p>
               <h3 className="mt-4 text-callout font-semibold">{t('support.slaTitle')}</h3>
-              <Table dense className="mt-2">
+              <Table dense className="mt-2" scrollLabel={t('support.slaTitle')}>
                 <caption className="sr-only">{t('support.slaTitle')}</caption>
                 <THead>
                   <tr>

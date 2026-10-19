@@ -123,26 +123,17 @@ export default function ReportsPage() {
         body={t('reports.noAccessBody')}
       />
     );
-  // Heading and intro render before the catalogue arrives (they are the page's largest paint on a phone).
-  if (!catalogue.data)
-    return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-title-2">{t('reports.title')}</h1>
-        <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.intro')}</p>
-        <Skeleton className="h-96 w-full" />
-      </div>
-    );
-  const ready = [...catalogue.data.ready].sort((a, b) => Number(b.applicable) - Number(a.applicable));
-
-  return (
-    <div className="flex flex-col gap-6">
+  // The heading and intro are the page's largest paint on a phone: they render before the catalogue
+  // arrives, in the same elements as the loaded page, so React keeps them (no second paint).
+  const header = (
+    <>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto text-title-2">{t('reports.title')}</h1>
         <Link href="/app/reports/builder" className={`${buttonVariants({ size: 'sm' })} no-underline`}>
           <BarChart3 aria-hidden className="h-4 w-4 stroke-[1.5]" />
           {t('reports.builder.open')}
         </Link>
-        {catalogue.data.canSchedule ? (
+        {catalogue.data?.canSchedule ? (
           <Link
             href="/app/reports/schedules"
             className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} no-underline`}
@@ -151,7 +142,7 @@ export default function ReportsPage() {
             {t('reports.schedules.title')}
           </Link>
         ) : null}
-        {catalogue.data.canExportData ? (
+        {catalogue.data?.canExportData ? (
           <Link
             href="/app/reports/exports"
             className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} no-underline`}
@@ -162,6 +153,20 @@ export default function ReportsPage() {
         ) : null}
       </div>
       <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.intro')}</p>
+    </>
+  );
+  if (!catalogue.data)
+    return (
+      <div className="flex flex-col gap-6">
+        {header}
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  const ready = [...catalogue.data.ready].sort((a, b) => Number(b.applicable) - Number(a.applicable));
+
+  return (
+    <div className="flex flex-col gap-6">
+      {header}
       <Tabs defaultValue="ready">
         <TabsList>
           <TabsTrigger value="ready">{t('reports.tab.ready')}</TabsTrigger>
