@@ -1,0 +1,391 @@
+{
+  "jurisdiction": "BG",
+  "parent": "EU",
+  "name": "Bulgaria",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Кодекс на труда чл. 155(4): basic paid annual leave not less than 20 working days",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 20,
+            "dayUnit": "working_days",
+            "firstUseAfterServiceMonths": 4
+          },
+          "source": {
+            "url": "https://lex.bg/laws/ldoc/1594373121",
+            "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Чл. 155(4) (as amended ДВ 25/2001): \"не по-малко от 20 работни дни\"; чл. 155(2): on first employment the leave may be used after at least 4 months of service. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "partially_transposed",
+            "law": "Existing acts notified (incl. Labour Code and Protection against Discrimination Act amendments 2026); main amendment of the Protection against Discrimination Act pending in the National Assembly",
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists 12 Bulgarian measures (latest 2026-05-26). A law-firm report (cms.law, 14 Sep 2026) says the Council of Ministers submitted the main transposition bill to the National Assembly on 11 Sep 2026 — not verified on an official Bulgarian site; status \"partially_transposed\" reflects notified measures while the main bill is pending."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Нова година",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "liberation-day",
+      "name": "Liberation Day (National Day)",
+      "localName": "Ден на Освобождението",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 3
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Ден на труда",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "st-georges-day",
+      "name": "St George's Day / Army Day",
+      "localName": "Гергьовден",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 6
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "culture-day",
+      "name": "Day of Bulgarian Enlightenment, Culture and Slavonic Literature",
+      "localName": "Ден на светите братя Кирил и Методий",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 24
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "unification-day",
+      "name": "Unification Day",
+      "localName": "Ден на Съединението",
+      "rule": {
+        "type": "fixed",
+        "month": 9,
+        "day": 6
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence Day",
+      "localName": "Ден на Независимостта",
+      "rule": {
+        "type": "fixed",
+        "month": 9,
+        "day": 22
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "christmas-eve",
+      "name": "Christmas Eve",
+      "localName": "Бъдни вечер",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 24
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Рождество Христово",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "christmas-second-day",
+      "name": "Second Day of Christmas",
+      "localName": "Рождество Христово (втори ден)",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "uk_substitute",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1). Чл. 154(2) (in force 2017-01-01): when an official holiday other than the Easter holidays falls on Saturday and/or Sunday, the first or first two working days after it are non-working days — modelled as uk_substitute (next non-holiday weekday)."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday (Orthodox)",
+      "localName": "Велики петък",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "orthodox"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1): Easter holidays as determined for the given year (Bulgarian Orthodox Easter). Чл. 154(2) substitution does not apply to Easter holidays."
+    },
+    {
+      "id": "holy-saturday",
+      "name": "Holy Saturday (Orthodox)",
+      "localName": "Велика събота",
+      "rule": {
+        "type": "easter",
+        "offset": -1,
+        "calendar": "orthodox"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1): Easter holidays as determined for the given year (Bulgarian Orthodox Easter). Чл. 154(2) substitution does not apply to Easter holidays."
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday (Orthodox)",
+      "localName": "Великден",
+      "rule": {
+        "type": "easter",
+        "offset": 0,
+        "calendar": "orthodox"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1): Easter holidays as determined for the given year (Bulgarian Orthodox Easter). Чл. 154(2) substitution does not apply to Easter holidays."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday (Orthodox)",
+      "localName": "Великден (понеделник)",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "orthodox"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://lex.bg/laws/ldoc/1594373121",
+        "title": "Кодекс на труда (Bulgarian Labour Code), чл. 154 и чл. 155"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Кодекс на труда чл. 154(1): Easter holidays as determined for the given year (Bulgarian Orthodox Easter). Чл. 154(2) substitution does not apply to Easter holidays."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "holidays: one-off non-working days declared by the Council of Ministers (чл. 154(3))"
+    ],
+    "notes": "1 November (Ден на народните будители) is listed in чл. 154(1) as non-attendance only for educational establishments — intentionally not modelled as a general holiday."
+  }
+}

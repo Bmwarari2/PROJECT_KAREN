@@ -4,10 +4,12 @@ import { join } from 'node:path';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
+import { inRegionModel } from '@thapsus/core/ai-models';
 import { buildApp } from '../lib/app';
 import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvName } from '../lib/config';
 import { DIRECTORY_ATTRIBUTES } from '../lib/global-stack';
 import { XRAY_ACTIONS } from '../lib/shared';
+import { EXPORT_ROLE_ARN_PATTERN } from '../lib/cell-stack';
 
 type Json = Record<string, any>;
 type Res = { Type: string; Properties?: Json };
@@ -199,6 +201,25 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     if (env === 'prod') expect(cfg.natGateways).toBe(3);
   });
 
+  it('13. Bedrock (Ask HR) only for the in-region foundation model, only in cells that have one', () => {
+    const statements = resources(t, 'AWS::IAM::Policy').flatMap(([, r]) => ((r.Properties!.PolicyDocument as Json).Statement as Json[]));
+    const bedrock = statements.filter((st) => [st.Action].flat().some((a) => String(a).startsWith('bedrock:')));
+    const model = inRegionModel(cell);
+    if (!model) return expect(bedrock).toEqual([]);
+    expect(model.awsRegion).toBe(spec.awsRegion);
+    expect(bedrock).toEqual([{ Sid: 'AskHrInRegionModel', Effect: 'Allow', Action: 'bedrock:InvokeModel', Resource: `arn:aws:bedrock:${spec.awsRegion}::foundation-model/${model.modelId}` }]);
+  });
+
+  it('data export: api and worker may assume only customer roles named thapsus-hr-export-* (sts:AssumeRole, no wildcard actions)', () => {
+    const statements = resources(t, 'AWS::IAM::Policy').flatMap(([, r]) => asArray(r.Properties!.PolicyDocument.Statement as Json[]));
+    const assume = statements.filter((s) => asArray(s.Action as string[]).some((a) => a.startsWith('sts:')));
+    expect(assume.length).toBe(2); // api and worker task roles
+    for (const s of assume) {
+      expect(s).toMatchObject({ Effect: 'Allow', Action: 'sts:AssumeRole', Resource: EXPORT_ROLE_ARN_PATTERN, Sid: 'AssumeCustomerExportRoles' });
+    }
+    expect(EXPORT_ROLE_ARN_PATTERN).toBe('arn:aws:iam::*:role/thapsus-hr-export-*');
+  });
+
   it('the rest of the cell: autoscaling, SQS with DLQs, event bus, scheduler group, SES configuration set, budget alarm, 3 AZs, TLS certificate', () => {
     // web, api and worker scale automatically
     const targets = resources(t, 'AWS::ApplicationAutoScaling::ScalableTarget');
@@ -245,6 +266,23 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     else expect(relaxed).toEqual([]);
   });
 
+  it('the web server reaches the api privately over Service Connect (server-rendered app pages)', () => {
+    const [, ns] = resources(t, 'AWS::ServiceDiscovery::HttpNamespace')[0]!;
+    expect(String(ns.Properties!.Name)).toMatch(/\.internal$/);
+    const svc = (suffix: string) => resources(t, 'AWS::ECS::Service').find(([, r]) => String(r.Properties!.ServiceName).endsWith(suffix))![1];
+    const apiSc = svc('-api').Properties!.ServiceConnectConfiguration as Json;
+    expect(apiSc.Enabled).toBe(true);
+    expect((apiSc.Services as Json[]).map((x) => (x.ClientAliases as Json[])[0])).toEqual([{ DnsName: 'api', Port: 4000 }]);
+    const webSc = svc('-web').Properties!.ServiceConnectConfiguration as Json;
+    expect(webSc.Enabled).toBe(true);
+    expect(webSc.Services).toBeUndefined();
+    const [, webTask] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-web'))!;
+    const webApp = (webTask.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
+    expect((webApp.Environment as Json[]).find((e) => e.Name === 'API_INTERNAL_URL')?.Value).toBe('http://api:4000');
+    const ingress = resources(t, 'AWS::EC2::SecurityGroupIngress').map(([, r]) => r.Properties!);
+    expect(ingress.some((r) => r.FromPort === 4000 && r.ToPort === 4000 && r.Description === 'web to api (Service Connect)')).toBe(true);
+  });
+
   it('services receive the documented configuration', () => {
     const [, apiTask] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-api'))!;
     const app = (apiTask.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
@@ -256,15 +294,47 @@ describe.each(combos)('%s cell %s', (env, cell) => {
       'OTEL_EXPORTER_OTLP_ENDPOINT', 'BACKUP_VAULT_ARN', 'DIRECTORY_TABLE', 'DIRECTORY_REGION',
     ]) expect(envNames, n).toContain(n);
     expect((app.Secrets as Json[]).map((s) => s.Name)).toEqual(
-      expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
+      expect.arrayContaining(['DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'VALKEY_AUTH_TOKEN', 'INTERNAL_TOKEN', 'INTEGRATION_SIGNING_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']),
     );
     expect((apiTask.Properties!.ContainerDefinitions as Json[]).map((c) => c.Name)).toContain('otel-collector');
+    // Phase 7: reports and data exports read through the Aurora reader endpoint (reporting role), on api AND worker.
+    const [readerId] = resources(t, 'AWS::RDS::DBCluster')[0]!;
+    for (const family of ['-api', '-worker']) {
+      const [, task] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))!;
+      const c = (task.Properties!.ContainerDefinitions as Json[]).find((x) => x.Name === 'app')!;
+      const reader = (c.Environment as Json[]).find((e) => e.Name === 'REPORTING_DATABASE_HOST')!;
+      expect(reader.Value, family).toEqual({ 'Fn::GetAtt': [readerId, 'ReadEndpoint.Address'] });
+      const writer = (c.Environment as Json[]).find((e) => e.Name === 'DATABASE_HOST')!;
+      expect(JSON.stringify(writer.Value)).toContain('Endpoint'); // the RDS Proxy (writer)
+      expect((c.Secrets as Json[]).map((s) => s.Name)).toContain('REPORTING_DATABASE_SECRET');
+    }
     const [, migrator] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-migrator'))!;
     const m = (migrator.Properties!.ContainerDefinitions as Json[])[0]!;
     expect(m.Command).toEqual(['node', 'dist/migrate.mjs']);
     expect((m.Secrets as Json[]).map((s) => s.Name).sort()).toEqual(
       ['APP_DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'OWNER_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET'],
     );
+  });
+
+  it("billing: this region's Stripe keys come from the cell's own secret (ADR-0103), never from plain environment values", () => {
+    const secrets = resources(t, 'AWS::SecretsManager::Secret').map(([id, r]) => [id, r.Properties!.Name] as const);
+    const stripe = secrets.find(([, n]) => n === names.stripeSecret(env, cell));
+    expect(stripe, 'cell Stripe secret').toBeDefined();
+    // the global stack owns thapsus-hr/<env>/stripe in eu-west-2; a cell never reuses that name
+    expect(secrets.map(([, n]) => n)).not.toContain(`thapsus-hr/${env}/stripe`);
+    for (const family of ['-api', '-worker']) {
+      const [, task] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))!;
+      const app = (task.Properties!.ContainerDefinitions as Json[]).find((c) => c.Name === 'app')!;
+      const refs = (app.Secrets as Json[]).filter((x) => String(x.Name).startsWith('STRIPE_'));
+      expect(refs.map((x) => x.Name).sort()).toEqual(['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']);
+      for (const r of refs) expect(JSON.stringify(r.ValueFrom)).toContain(stripe![0]);
+      expect(((app.Environment ?? []) as Json[]).map((e) => e.Name)).not.toContain('STRIPE_SECRET_KEY');
+    }
+    // the cross-region back-office view may scan the directory table only (no other table)
+    const scans = resources(t, 'AWS::IAM::Policy').flatMap(([, p]) => (p.Properties!.PolicyDocument.Statement as Json[]).filter((st) => asArray(st.Action).includes('dynamodb:Scan')));
+    expect(scans.length).toBeGreaterThan(0);
+    const tableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${cfg.account}:table/${names.directoryTable(env)}`;
+    for (const st of scans) expect(asArray(st.Resource).every((r) => r === tableArn || r === `${tableArn}/index/*`)).toBe(true);
   });
 });
 

@@ -1,0 +1,311 @@
+{
+  "jurisdiction": "EU",
+  "parent": null,
+  "name": "European Union",
+  "version": 3,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Working Time Directive Art. 7: at least four weeks paid annual leave; no payment in lieu except on termination",
+      "versions": [
+        {
+          "effectiveFrom": "2004-08-02",
+          "effectiveTo": null,
+          "value": {
+            "weeks": 4,
+            "payInLieuOnlyOnTermination": true
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
+            "title": "Directive 2003/88/EC concerning certain aspects of the organisation of working time (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 7(1) \"paid annual leave of at least four weeks\"; Art. 7(2) allowance in lieu only where the employment relationship is terminated. Art. 28: entry into force 2 August 2004."
+        }
+      ]
+    },
+    {
+      "key": "working_time.max_weekly_hours",
+      "description": "Working Time Directive Art. 6 + Art. 16(b): 48-hour average week including overtime, reference period up to 4 months",
+      "versions": [
+        {
+          "effectiveFrom": "2004-08-02",
+          "effectiveTo": null,
+          "value": {
+            "maxAverageWeeklyHours": 48,
+            "includesOvertime": true,
+            "referencePeriodMaxMonths": 4
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
+            "title": "Directive 2003/88/EC concerning certain aspects of the organisation of working time (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 6(b): average working time for each seven-day period, including overtime, does not exceed 48 hours. Art. 16(b): reference period not exceeding four months (derogations in Arts. 17-19 not modelled)."
+        }
+      ]
+    },
+    {
+      "key": "working_time.daily_rest",
+      "description": "Working Time Directive Art. 3: 11 consecutive hours per 24-hour period",
+      "versions": [
+        {
+          "effectiveFrom": "2004-08-02",
+          "effectiveTo": null,
+          "value": {
+            "minConsecutiveHours": 11,
+            "perHours": 24
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
+            "title": "Directive 2003/88/EC concerning certain aspects of the organisation of working time (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        }
+      ]
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "description": "Working Time Directive Art. 5 + Art. 16(a): 24 hours uninterrupted plus the 11 hours daily rest per 7-day period; reference period up to 14 days",
+      "versions": [
+        {
+          "effectiveFrom": "2004-08-02",
+          "effectiveTo": null,
+          "value": {
+            "minUninterruptedHours": 24,
+            "plusDailyRestHours": 11,
+            "perDays": 7,
+            "referencePeriodMaxDays": 14,
+            "reducedMinimumHoursIfJustified": 24
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
+            "title": "Directive 2003/88/EC concerning certain aspects of the organisation of working time (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 5: minimum uninterrupted rest of 24 hours plus the 11 hours daily rest per seven-day period; a minimum of 24 hours may apply if justified by objective, technical or work-organisation conditions. Art. 16(a): reference period not exceeding 14 days."
+        }
+      ]
+    },
+    {
+      "key": "working_time.rest_break",
+      "description": "Working Time Directive Art. 4: rest break where the working day is longer than six hours",
+      "versions": [
+        {
+          "effectiveFrom": "2004-08-02",
+          "effectiveTo": null,
+          "value": {
+            "triggerWorkingDayHoursOver": 6,
+            "durationSetBy": "collective_agreement_or_national_law"
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32003L0088",
+            "title": "Directive 2003/88/EC concerning certain aspects of the organisation of working time (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 4: duration and terms laid down in collective agreements or, failing that, national legislation."
+        }
+      ]
+    },
+    {
+      "key": "working_time.time_recording",
+      "description": "CJEU C-55/18 (CCOO): Member States must require employers to set up an objective, reliable and accessible system measuring daily working time",
+      "versions": [
+        {
+          "effectiveFrom": "2019-05-14",
+          "effectiveTo": null,
+          "value": {
+            "required": true,
+            "scope": "daily_working_time_each_worker",
+            "basis": "CJEU C-55/18 reading Arts. 3, 5, 6 WTD with Art. 31(2) Charter and Directive 89/391/EEC",
+            "nationalImplementationVaries": true
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:62018CJ0055",
+            "title": "CJEU judgment of 14 May 2019, CCOO v Deutsche Bank SAE, C-55/18 (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Judgment of 14 May 2019 (Grand Chamber): the Directive precludes national law that does not require employers to set up a system enabling the duration of time worked each day by each worker to be measured. Obligation applies to Member States; employer-level obligation depends on national implementation (see member-state packs)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "Pay Transparency Directive (EU) 2023/970: transposition deadline and gender pay gap reporting thresholds",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "directive": "(EU) 2023/970",
+            "transpositionDeadline": "2026-06-07",
+            "gapReporting": [
+              {
+                "minWorkers": 250,
+                "maxWorkers": null,
+                "firstReportBy": "2027-06-07",
+                "frequencyYears": 1,
+                "reportsOn": "previous_calendar_year"
+              },
+              {
+                "minWorkers": 150,
+                "maxWorkers": 249,
+                "firstReportBy": "2027-06-07",
+                "frequencyYears": 3,
+                "reportsOn": "previous_calendar_year"
+              },
+              {
+                "minWorkers": 100,
+                "maxWorkers": 149,
+                "firstReportBy": "2031-06-07",
+                "frequencyYears": 3,
+                "reportsOn": "previous_calendar_year"
+              }
+            ],
+            "payLevel": "gross_annual_pay_and_corresponding_gross_hourly_pay",
+            "definitions": {
+              "genderPayGap": "difference in average pay levels between female and male workers, as a percentage of the average pay level of male workers",
+              "medianGenderPayGap": "difference between the median pay level of female and of male workers, as a percentage of the median pay level of male workers",
+              "quartilePayBand": "each of four equal groups of workers divided according to their pay levels, from the lowest to the highest",
+              "categoryOfWorkers": "workers performing the same work or work of equal value, grouped in a non-arbitrary manner on objective gender-neutral criteria (Art. 4(4))"
+            },
+            "indicators": [
+              {
+                "id": "gender_pay_gap",
+                "article": "9(1)(a)"
+              },
+              {
+                "id": "gender_pay_gap_complementary_variable",
+                "article": "9(1)(b)"
+              },
+              {
+                "id": "median_gender_pay_gap",
+                "article": "9(1)(c)"
+              },
+              {
+                "id": "median_gender_pay_gap_complementary_variable",
+                "article": "9(1)(d)"
+              },
+              {
+                "id": "proportion_receiving_complementary_variable",
+                "article": "9(1)(e)"
+              },
+              {
+                "id": "proportion_in_each_quartile_pay_band",
+                "article": "9(1)(f)"
+              },
+              {
+                "id": "gender_pay_gap_by_category_of_workers",
+                "article": "9(1)(g)",
+                "breakdown": [
+                  "ordinary_basic_wage_or_salary",
+                  "complementary_or_variable_components"
+                ]
+              }
+            ],
+            "jointPayAssessment": {
+              "minDifferencePercent": 5,
+              "inAnyCategoryOfWorkers": true,
+              "notJustifiedByObjectiveGenderNeutralCriteria": true,
+              "notRemediedWithinMonthsOfReporting": 6
+            }
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023L0970",
+            "title": "Directive (EU) 2023/970 on pay transparency (EUR-Lex)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 9(2): 250+ workers by 7 June 2027 and every year thereafter; Art. 9(3): 150-249 by 7 June 2027 and every three years; Art. 9(4): 100-149 by 7 June 2031 and every three years; each report concerns the previous calendar year. Art. 34(1): transposition by 7 June 2026. Directive done at Strasbourg 10 May 2023. Other Articles (pay transparency before employment, right to information, joint pay assessment) not modelled. Phase 5 (verified 2026-10-18 on EUR-Lex): Art. 3(1)(b) \"pay level\" = gross annual pay and the corresponding gross hourly pay; (c) gender pay gap and (e) median gender pay gap as a percentage of the male figure; (f) quartile pay band; (h) category of workers; Art. 9(1)(a)-(g) indicators; Art. 10(1) joint pay assessment where a difference of at least 5% in any category of workers is not justified on objective, gender-neutral criteria and not remedied within six months of the submission of the pay reporting."
+        }
+      ]
+    },
+    {
+      "key": "privacy.dsr_deadline",
+      "description": "GDPR time limit for responding to data subject requests (Article 12(3))",
+      "versions": [
+        {
+          "effectiveFrom": "2018-05-25",
+          "effectiveTo": null,
+          "value": {
+            "period": "P1M",
+            "clockStartsAt": [
+              "request_received"
+            ],
+            "extension": {
+              "period": "P2M",
+              "grounds": "where necessary, taking into account the complexity and number of the requests",
+              "noticeBefore": "initial_deadline",
+              "reasonsRequired": true
+            },
+            "clockStopForClarification": null,
+            "appliesTo": [
+              "access",
+              "correction",
+              "deletion"
+            ],
+            "maxTotal": "P3M"
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+            "title": "Regulation (EU) 2016/679 (GDPR), Article 12(3)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 12(3): 'without undue delay and in any event within one month of receipt of the request'; 'may be extended by two further months where necessary, taking into account the complexity and number of the requests', with the data subject informed within one month of receipt, with reasons. Applies from 25 May 2018 (Art. 99(2)). Months are counted to the corresponding date as in Regulation 1182/71 Art. 3(2)(c) (https://eur-lex.europa.eu/eli/reg/1971/1182/oj); the Art. 3(4) extension to the next working day is not applied, so the deadline shown is never later than the law allows."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "GDPR personal data breach notification (Articles 33 and 34)",
+      "versions": [
+        {
+          "effectiveFrom": "2018-05-25",
+          "effectiveTo": null,
+          "value": {
+            "regulator": {
+              "body": "competent supervisory authority",
+              "deadlineHours": 72,
+              "from": "awareness",
+              "standard": "without undue delay and, where feasible, not later than 72 hours after having become aware of it; a later notification must give reasons for the delay",
+              "condition": "unless the breach is unlikely to result in a risk to the rights and freedoms of natural persons"
+            },
+            "individuals": {
+              "standard": "without undue delay",
+              "condition": "likely to result in a high risk to the rights and freedoms of natural persons"
+            },
+            "processorToController": {
+              "standard": "without undue delay after becoming aware of a personal data breach"
+            },
+            "lawEnforcementDelay": false
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+            "title": "Regulation (EU) 2016/679 (GDPR), Articles 33 and 34"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 33(1): notify the competent supervisory authority 'without undue delay and, where feasible, not later than 72 hours after having become aware of it', with reasons if later; Art. 33(2): 'The processor shall notify the controller without undue delay after becoming aware of a personal data breach'; Art. 34(1): communicate to the data subject without undue delay where the breach is 'likely to result in a high risk to the rights and freedoms of natural persons'. Member-state additions are not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "baseline",
+    "deeperRulesTodo": [
+      "leave.carry_over",
+      "working_time.opt_out",
+      "privacy: member-state retention periods (time, payroll, personnel records) and national breach-notification additions"
+    ],
+    "notes": "EU minimums only; member-state packs override. No holidays at EU level."
+  }
+}

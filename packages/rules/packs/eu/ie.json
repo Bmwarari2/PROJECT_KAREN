@@ -1,0 +1,620 @@
+{
+  "jurisdiction": "IE",
+  "parent": "EU",
+  "name": "Ireland",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Statutory annual leave (Organisation of Working Time Act 1997, s. 19)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "maxWorkingWeeks": 4,
+            "leaveYear": "april_to_march",
+            "methods": [
+              {
+                "method": "hours_worked",
+                "minHoursInLeaveYear": 1365,
+                "entitlementWorkingWeeks": 4,
+                "notAvailableIfChangedEmploymentInYear": true
+              },
+              {
+                "method": "per_month",
+                "workingWeekFraction": "1/3",
+                "minHoursInCalendarMonth": 117
+              },
+              {
+                "method": "percent_of_hours",
+                "percent": 8,
+                "capWorkingWeeks": 4
+              }
+            ],
+            "useGreatestOfMethods": true,
+            "unbrokenTwoWeeksAfterMonthsService": 8
+          },
+          "source": {
+            "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/annual-leave/",
+            "title": "Citizens Information (Ireland): Annual leave (Organisation of Working Time Act 1997)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Working week = the number of days the employee usually works in a week. Modelled from 2020-01-01 (rule pre-dates)."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Statutory Sick Pay (Sick Leave Act 2022)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "payer": "employer",
+            "daysPerYear": 5,
+            "ratePercent": 70,
+            "dailyCap": {
+              "amountMinor": 11000,
+              "currency": "EUR"
+            },
+            "qualifyingServiceWeeks": 13,
+            "medicalCertificateRequired": true,
+            "waitingDays": 0
+          },
+          "source": {
+            "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/sick-leave-and-sick-pay/",
+            "title": "Citizens Information (Ireland): Sick leave and sick pay (Sick Leave Act 2022)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "5 days from 1 Jan 2024 (3 days in 2023 — 2023 version not modelled as its cap was not shown on the source)."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Minimum notice by employer (Minimum Notice and Terms of Employment Act 1973, s. 4)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "appliesTo": "employer",
+            "minServiceWeeksForEntitlement": 13,
+            "employerByService": [
+              {
+                "minServiceYears": 0,
+                "weeks": 1
+              },
+              {
+                "minServiceYears": 2,
+                "weeks": 2
+              },
+              {
+                "minServiceYears": 5,
+                "weeks": 4
+              },
+              {
+                "minServiceYears": 10,
+                "weeks": 6
+              },
+              {
+                "minServiceYears": 15,
+                "weeks": 8
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.irishstatutebook.ie/eli/1973/act/4/section/4/enacted/en/html",
+            "title": "Minimum Notice and Terms of Employment Act 1973, s. 4 (Irish Statute Book)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Section 4 as enacted (s. 4(4) lets the Minister vary by order; no variation checked). Employee notice (s. 4(3)) not modelled. Modelled from 2020-01-01."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). No Irish measure notified. Transposition deadline 2026-06-07 missed."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Lá Caille",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2023-01-01",
+      "effectiveTo": "2030-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "one_off",
+        "date": "2030-02-01"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2030-01-01",
+      "effectiveTo": "2031-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2031-01-01",
+      "effectiveTo": "2036-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "one_off",
+        "date": "2036-02-01"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2036-01-01",
+      "effectiveTo": "2037-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2037-01-01",
+      "effectiveTo": "2041-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "one_off",
+        "date": "2041-02-01"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2041-01-01",
+      "effectiveTo": "2042-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2042-01-01",
+      "effectiveTo": "2047-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "one_off",
+        "date": "2047-02-01"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2047-01-01",
+      "effectiveTo": "2048-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2048-01-01",
+      "effectiveTo": "2058-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "one_off",
+        "date": "2058-02-01"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2058-01-01",
+      "effectiveTo": "2059-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-brigids-day",
+      "name": "St Brigid's Day",
+      "localName": "Lá Fhéile Bríde",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 2,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2059-01-01",
+      "effectiveTo": "2061-01-01",
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "First Monday in February, or 1 February if that date falls on a Friday (public holiday since 2023). Schema has no conditional rule, so years where 1 Feb is a Friday are one_off segments; generated through 2060."
+    },
+    {
+      "id": "st-patricks-day",
+      "name": "St Patrick's Day",
+      "localName": "Lá Fhéile Pádraig",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 17
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Luan Cásca",
+      "rule": {
+        "type": "easter",
+        "offset": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "may-bank-holiday",
+      "name": "May public holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "june-bank-holiday",
+      "name": "June public holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 6,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "august-bank-holiday",
+      "name": "August public holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 8,
+        "weekday": 1,
+        "n": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "october-bank-holiday",
+      "name": "October public holiday",
+      "rule": {
+        "type": "nth_weekday",
+        "month": 10,
+        "weekday": 1,
+        "n": -1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Lá Nollag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "Lá Fhéile Stiofáin",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.citizensinformation.ie/en/employment/employment-rights-and-conditions/leave-and-holidays/public-holidays/",
+        "title": "Citizens Information (Ireland): Public holidays"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Weekend holidays are not moved: the employee keeps the public-holiday benefit (paid day off, extra day of leave or extra day's pay) but has no automatic right to the next working day off (OWTA 1997)."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "Public-holiday benefit options (OWTA s. 21) and 40-hours-in-5-weeks qualification for part-timers",
+      "employment.notice_period: employee notice and statutory redundancy",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "reporting.gender_pay_gap (Gender Pay Gap Information Act 2021)",
+      "leave.carry_over"
+    ],
+    "notes": "Good Friday is not a public holiday. citizensinformation.ie was fetched directly; gov.ie and irishstatutebook.ie block automated fetch from some clients."
+  }
+}

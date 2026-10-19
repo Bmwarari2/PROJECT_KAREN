@@ -1,0 +1,200 @@
+{
+  "jurisdiction": "US-NY",
+  "parent": "US",
+  "name": "New York",
+  "version": 3,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "New York State Paid Sick Leave: entitlement by employer size",
+      "versions": [
+        {
+          "effectiveFrom": "2020-09-30",
+          "effectiveTo": null,
+          "value": {
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 30
+            },
+            "period": "calendar_year",
+            "tiers": [
+              {
+                "minEmployees": 0,
+                "maxEmployees": 4,
+                "netIncomeMaxMinor": 100000000,
+                "hours": 40,
+                "paid": false
+              },
+              {
+                "minEmployees": 0,
+                "maxEmployees": 4,
+                "netIncomeAboveMinor": 100000000,
+                "hours": 40,
+                "paid": true
+              },
+              {
+                "minEmployees": 5,
+                "maxEmployees": 99,
+                "hours": 40,
+                "paid": true
+              },
+              {
+                "minEmployees": 100,
+                "maxEmployees": null,
+                "hours": 56,
+                "paid": true
+              }
+            ],
+            "netIncomeCurrency": "USD"
+          },
+          "source": {
+            "url": "https://www.ny.gov/programs/new-york-paid-sick-leave",
+            "title": "New York State — New York Paid Sick Leave"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Accrual began 30 Sep 2020. Employer size tiers; net income threshold applies to 0-4 employee tier. Paid prenatal leave (separate entitlement) not modelled."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "New York State basic minimum wage by region",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": "2025-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "nyc",
+                "hourlyMinor": 1600
+              },
+              {
+                "region": "long_island_westchester",
+                "hourlyMinor": 1600
+              },
+              {
+                "region": "remainder_of_state",
+                "hourlyMinor": 1500
+              }
+            ]
+          },
+          "source": {
+            "url": "https://dol.ny.gov/history-minimum-wage-new-york-state",
+            "title": "NYS DOL — History of the Minimum Wage in New York State"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": "2026-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "nyc",
+                "hourlyMinor": 1650
+              },
+              {
+                "region": "long_island_westchester",
+                "hourlyMinor": 1650
+              },
+              {
+                "region": "remainder_of_state",
+                "hourlyMinor": 1550
+              }
+            ]
+          },
+          "source": {
+            "url": "https://dol.ny.gov/history-minimum-wage-new-york-state",
+            "title": "NYS DOL — History of the Minimum Wage in New York State"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "nyc",
+                "hourlyMinor": 1700
+              },
+              {
+                "region": "long_island_westchester",
+                "hourlyMinor": 1700
+              },
+              {
+                "region": "remainder_of_state",
+                "hourlyMinor": 1600
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.ny.gov/new-york-states-minimum-wage/new-york-states-minimum-wage",
+            "title": "New York State — New York State's Minimum Wage"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "New York State says the rates stay at $17.00 / $16.00 on 1 Jan 2027 because an indexing \"off-ramp\" was triggered; the Governor has proposed legislation to change this. Re-check before 2027. Home care aide and fast food rates not modelled."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "New York security breach notification (General Business Law 899-aa)",
+      "versions": [
+        {
+          "effectiveFrom": "2025-03-28",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": 30,
+              "from": "discovery",
+              "standard": "in the most expedient time possible and without unreasonable delay"
+            },
+            "regulator": {
+              "body": "New York Attorney General, Department of State and Division of State Police (and the Department of Financial Services for covered entities)",
+              "deadlineDays": null,
+              "standard": "notify as to the timing, content and distribution of the notices and the approximate number of affected persons, with a copy of the notice template"
+            },
+            "consumerReportingAgencies": {
+              "minAffected": 5001,
+              "standard": "notify consumer reporting agencies when more than five thousand New York residents are notified at one time"
+            },
+            "processorToController": null,
+            "lawEnforcementDelay": true,
+            "unverified": [
+              "processorToController"
+            ]
+          },
+          "source": {
+            "url": "https://www.nysenate.gov/legislation/laws/GBS/899-AA",
+            "title": "New York General Business Law section 899-AA"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Subd. 2: disclosure 'in the most expedient time possible and without unreasonable delay' and 'within thirty days after the breach has been discovered'; subd. 4 law-enforcement delay; subd. 8(a) notices to the Attorney General, Department of State and Division of State Police; subd. 8(b) consumer reporting agencies where more than 5,000 residents. effectiveFrom = latest revision date shown on nysenate.gov (2025-03-28); earlier versions not modelled. The duty of a person maintaining data it does not own was not verified."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "NY exempt salary thresholds (executive/administrative) by region",
+      "NY Paid Family Leave",
+      "NY Paid Prenatal Leave",
+      "privacy: GBL 899-aa duty of a person maintaining data it does not own"
+    ],
+    "notes": "NYC Earned Safe and Sick Time Act (Protected Time Off Law) is modelled in the US-NY-NYC locality pack from 22 Feb 2026 (earlier city history not modelled). Local ordinances not yet modelled: Westchester County Earned Sick Leave, NY Paid Family Leave, NY Paid Prenatal Leave, NYC Fair Workweek. New York has no daily overtime for most employees (FLSA weekly rule inherited)."
+  }
+}

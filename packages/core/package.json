@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./regions": "./src/regions.ts",
@@ -16,10 +17,18 @@
     "./config": "./src/config.ts",
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
-    "./residency": "./src/residency.ts"
+    "./access": "./src/access.ts",
+    "./residency": "./src/residency.ts",
+    "./billing": "./src/billing/index.ts",
+    "./help": "./src/help/index.ts",
+    "./features": "./src/features.ts",
+    "./api-scopes": "./src/api-scopes.ts",
+    "./ai-models": "./src/ai-models.ts",
+    "./trust": "./src/trust/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "trust-data": "tsx scripts/trust-data.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",

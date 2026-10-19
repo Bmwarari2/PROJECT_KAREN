@@ -1,0 +1,353 @@
+{
+  "jurisdiction": "PT",
+  "parent": "EU",
+  "name": "Portugal",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Annual holidays (Código do Trabalho art. 238.º n.º 1)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "workingDays": 22,
+            "workingDayDefinition": "monday_to_friday_excluding_public_holidays"
+          },
+          "source": {
+            "url": "https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/pt/html",
+            "title": "Lei n.º 7/2009 (Código do Trabalho), art. 238.º — Diário da República n.º 30, 12-02-2009"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Minimum 22 working days (dias úteis). Verified in the original Lei 7/2009 text (DR n.º 30, 2009); the original attendance bonus (art. 238.º n.º 3) was later repealed — current consolidated text on diariodarepublica.pt could not be fetched (JavaScript-only), pending legal review."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). No Portuguese measure notified."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Dia de Ano Novo",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Sexta-Feira Santa",
+      "rule": {
+        "type": "easter",
+        "offset": -2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Domingo de Páscoa",
+      "rule": {
+        "type": "easter",
+        "offset": 0
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "freedom-day",
+      "name": "Freedom Day",
+      "localName": "Dia da Liberdade",
+      "rule": {
+        "type": "fixed",
+        "month": 4,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Dia do Trabalhador",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "corpus-christi",
+      "name": "Corpus Christi",
+      "localName": "Corpo de Deus",
+      "rule": {
+        "type": "easter",
+        "offset": 60
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Restored by Lei 8/2016 (in force 2016-04-02)."
+    },
+    {
+      "id": "portugal-day",
+      "name": "Portugal Day",
+      "localName": "Dia de Portugal, de Camões e das Comunidades Portuguesas",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 10
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption of Mary",
+      "localName": "Assunção de Nossa Senhora",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "republic-day",
+      "name": "Implantation of the Republic",
+      "localName": "Implantação da República",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 5
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Restored by Lei 8/2016."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Dia de Todos-os-Santos",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Restored by Lei 8/2016."
+    },
+    {
+      "id": "restoration-of-independence",
+      "name": "Restoration of Independence",
+      "localName": "Restauração da Independência",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Restored by Lei 8/2016."
+    },
+    {
+      "id": "immaculate-conception",
+      "name": "Immaculate Conception",
+      "localName": "Imaculada Conceição",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Natal",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://data.dre.pt/eli/lei/8/2016/04/01/p/dre/pt/html",
+        "title": "Lei n.º 8/2016, de 1 de abril — altera o art. 234.º do Código do Trabalho (feriados obrigatórios), Diário da República n.º 64"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "Optional holidays: Carnival Tuesday and the municipal holiday (CT art. 235.º)",
+      "Good Friday may be observed on another Easter-period Sunday (art. 234.º n.º 2) — not modelled",
+      "Confirm art. 234.º/238.º against the current consolidated Código do Trabalho (diariodarepublica.pt requires JavaScript)",
+      "sick_pay.statutory (Segurança Social subsídio de doença)",
+      "employment.notice_period (arts. 363.º, 371.º)",
+      "minimum_wage.rates"
+    ],
+    "notes": "Mandatory holiday list per CT art. 234.º n.º 1 as worded by Lei 8/2016 (verified in the official Diário da República PDF). Regional holidays of the Azores and Madeira not modelled."
+  }
+}

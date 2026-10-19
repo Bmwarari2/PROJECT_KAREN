@@ -3,6 +3,7 @@ import { Type } from 'typebox';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { REGIONS, isHomeRegion, type HomeRegion } from '@thapsus/core';
 import { t, isLocale } from '@thapsus/core/i18n';
+import { TRUST, templateForRegion } from '@thapsus/core/trust';
 import { withRegistry, withTenant, writeAudit } from '@thapsus/db';
 import { ApiError } from '../../http/errors';
 import { Problem } from '../../http/schemas';
@@ -75,7 +76,10 @@ export async function tenancyRoutes(app: FastifyInstance) {
         await tx.exec(`INSERT INTO app.password_credentials (tenant_id, user_id, password_hash) VALUES ($1, $2, $3)`, [tenantId, u.id, passwordHash]);
         await assignRole(tx, u.id, 'owner', { type: 'all' });
         await assignRole(tx, u.id, 'employee', { type: 'self' });
-        await writeAudit(tx, { actorType: 'user', actorId: u.id, action: 'tenant.created', targetType: 'tenant', targetId: tenantId, diff: { region: b.region, slug: b.slug, dpaAccepted: true }, ip: req.ctx.ip, requestId: req.id });
+        // The DPA in force for the home region is accepted at sign-up; later versions must be re-accepted.
+        const dpa = TRUST.dpa[templateForRegion(b.region)];
+        await tx.exec(`INSERT INTO app.dpa_acceptances (tenant_id, dpa_version, template, accepted_by, accepted_by_name, ip, document_sha256) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tenantId, dpa.version, templateForRegion(b.region), u.id, b.ownerName, req.ctx.ip, dpa.sha256]);
+        await writeAudit(tx, { actorType: 'user', actorId: u.id, action: 'tenant.created', targetType: 'tenant', targetId: tenantId, diff: { region: b.region, slug: b.slug, dpaAccepted: true, dpaVersion: dpa.version }, ip: req.ctx.ip, requestId: req.id });
         await tx.exec(
           `INSERT INTO app.outbox (tenant_id, topic, aggregate_type, aggregate_id, payload) VALUES ($1::uuid, 'tenant.created', 'tenant', $1::text, '{}')`,
           [tenantId],

@@ -15,10 +15,12 @@ import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
 import * as ses from 'aws-cdk-lib/aws-ses';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
+import { inRegionModel } from '@thapsus/core/ai-models';
 import { GLOBAL_REGION, names, type EnvConfig, type ServiceSize } from './config';
 import {
   addOtelSidecar,
@@ -35,6 +37,10 @@ import {
   regionalWaf,
   RUNTIME_PLATFORM,
 } from './shared';
+
+
+/** Customer-owned roles the api/worker may assume for data exports (documented in docs/guides/data-export.md). */
+export const EXPORT_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-export-*';
 
 export interface CellStackProps extends StackProps {
   config: EnvConfig;
@@ -360,11 +366,26 @@ export class CellStack extends Stack {
       encryptionKey: dataKey,
       generateSecretString: { excludePunctuation: true, passwordLength: 64 },
     });
+    const integrationKey = new secretsmanager.Secret(this, 'IntegrationSigningKey', {
+      // Master key for the per-tenant HMAC keys that sign outbound integration calls (ADR-0018).
+      secretName: `thapsus-hr/${env}/integration-signing-key`,
+      encryptionKey: dataKey,
+      generateSecretString: { excludePunctuation: true, passwordLength: 64 },
+    });
     const vapid = new secretsmanager.Secret(this, 'VapidKeys', {
       secretName: `thapsus-hr/${env}/vapid`,
       description: 'Web push VAPID key pair, filled by a script (empty values disable web push).',
       encryptionKey: dataKey,
       secretObjectValue: { VAPID_PUBLIC_KEY: SecretValue.unsafePlainText(''), VAPID_PRIVATE_KEY: SecretValue.unsafePlainText('') },
+    });
+    // Billing lives in the home cell (ADR-0103): this region's own Stripe account, TEST MODE until the
+    // product owner approves live mode. Values are filled by a human (HUMAN_TODO 4.1), never committed;
+    // empty values make dev/staging use the recording fake and production refuse billing calls.
+    const stripe = new secretsmanager.Secret(this, 'StripeKeys', {
+      secretName: names.stripeSecret(env, cell),
+      description: `Stripe test-mode secret key and webhook signing secret of the ${cell} region's Stripe account (HUMAN_TODO 4.1).`,
+      encryptionKey: dataKey,
+      secretObjectValue: { STRIPE_SECRET_KEY: SecretValue.unsafePlainText(''), STRIPE_WEBHOOK_SECRET: SecretValue.unsafePlainText('') },
     });
     const mockIdpAllowed = env === 'dev' || env === 'staging';
     const mockIdp = mockIdpAllowed
@@ -379,7 +400,14 @@ export class CellStack extends Stack {
     // ---------------------------------------------------------------- ECS cluster
     const clusterName = prefix;
     encryptedLogGroup(this, 'ContainerInsightsLogs', dataKey, cfg, `/aws/ecs/containerinsights/${clusterName}/performance`);
-    const ecsCluster = new ecs.Cluster(this, 'Cluster', { vpc, clusterName, containerInsightsV2: ecs.ContainerInsights.ENABLED });
+    // A private HTTP namespace for ECS Service Connect: the web server reads the session from the api
+    // inside the VPC (server-rendered app pages), never through the public load balancer.
+    const ecsCluster = new ecs.Cluster(this, 'Cluster', {
+      vpc,
+      clusterName,
+      containerInsightsV2: ecs.ContainerInsights.ENABLED,
+      defaultCloudMapNamespace: { name: `${prefix}.internal`, type: servicediscovery.NamespaceType.HTTP, useForServiceConnect: true },
+    });
 
     const directoryTableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${this.account}:table/${names.directoryTable(env)}`;
     const regionalUrls = (kind: 'api' | 'app') => {
@@ -406,6 +434,7 @@ export class CellStack extends Stack {
     const backendEnv: Record<string, string> = {
       ...commonEnv,
       DATABASE_HOST: proxy.endpoint,
+      // Reports and data exports run on the Aurora reader endpoint as thapsus_reporting (ADR-0071).
       REPORTING_DATABASE_HOST: cluster.clusterReadEndpoint.hostname,
       VALKEY_URL: valkeyUrl,
       FILES_BUCKET: filesBucket.bucketName,
@@ -435,8 +464,11 @@ export class CellStack extends Stack {
       REPORTING_DATABASE_SECRET: ecs.Secret.fromSecretsManager(reportingDbSecret),
       VALKEY_AUTH_TOKEN: ecs.Secret.fromSecretsManager(valkeyAuth),
       INTERNAL_TOKEN: ecs.Secret.fromSecretsManager(internalToken),
+      INTEGRATION_SIGNING_KEY: ecs.Secret.fromSecretsManager(integrationKey),
       VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY'),
       VAPID_PRIVATE_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PRIVATE_KEY'),
+      STRIPE_SECRET_KEY: ecs.Secret.fromSecretsManager(stripe, 'STRIPE_SECRET_KEY'),
+      STRIPE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(stripe, 'STRIPE_WEBHOOK_SECRET'),
       ...(mockIdp
         ? {
             MOCK_IDP_KEY_PEM: ecs.Secret.fromSecretsManager(mockIdp, 'MOCK_IDP_KEY_PEM'),
@@ -447,7 +479,7 @@ export class CellStack extends Stack {
 
     const service = (
       name: 'api' | 'worker' | 'web',
-      opts: { size: ServiceSize; sg: ec2.SecurityGroup; port?: number; environment: Record<string, string>; secrets: Record<string, ecs.Secret>; otel: boolean },
+      opts: { size: ServiceSize; sg: ec2.SecurityGroup; port?: number; environment: Record<string, string>; secrets: Record<string, ecs.Secret>; otel: boolean; serviceConnect?: 'server' | 'client' },
     ) => {
       const logGroup = encryptedLogGroup(this, `${name}Logs`, dataKey, cfg, `/thapsus-hr/${env}/${cell}/${name}`);
       const task = new ecs.FargateTaskDefinition(this, `${name}Task`, {
@@ -461,7 +493,7 @@ export class CellStack extends Stack {
         essential: true,
         environment: { ...opts.environment, SERVICE_NAME: `thapsus-${name}`, ...(opts.port ? { PORT: String(opts.port) } : {}) },
         secrets: opts.secrets,
-        portMappings: opts.port ? [{ containerPort: opts.port }] : [],
+        portMappings: opts.port ? [{ containerPort: opts.port, name: 'http' }] : [],
         logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: name }),
         stopTimeout: Duration.seconds(30),
       });
@@ -478,6 +510,15 @@ export class CellStack extends Stack {
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
         propagateTags: ecs.PropagatedTagSource.SERVICE,
+        ...(opts.serviceConnect
+          ? {
+              serviceConnectConfiguration: {
+                namespace: ecsCluster.defaultCloudMapNamespace!.namespaceArn,
+                services: opts.serviceConnect === 'server' && opts.port ? [{ portMappingName: 'http', dnsName: name, port: opts.port }] : undefined,
+                logDriver: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: `${name}-service-connect` }),
+              },
+            }
+          : {}),
       });
       const scaling = svc.autoScaleTaskCount({ minCapacity: opts.size.minCapacity, maxCapacity: opts.size.maxCapacity });
       scaling.scaleOnCpuUtilization('Cpu', { targetUtilizationPercent: 60, scaleOutCooldown: Duration.seconds(60), scaleInCooldown: Duration.seconds(180) });
@@ -493,16 +534,21 @@ export class CellStack extends Stack {
 
     const topic = alertTopic(this, dataKey, cfg);
 
-    const api = service('api', { size: cfg.services.api, sg: apiSg, port: 4000, environment: backendEnv, secrets: backendSecrets, otel: true });
+    const api = service('api', { size: cfg.services.api, sg: apiSg, port: 4000, environment: backendEnv, secrets: backendSecrets, otel: true, serviceConnect: 'server' });
     const worker = service('worker', { size: cfg.services.worker, sg: workerSg, environment: backendEnv, secrets: backendSecrets, otel: true });
     const web = service('web', {
       size: cfg.services.web,
       sg: webSg,
       port: 3000,
-      environment: { ...commonEnv, SITE_MODE: 'app' },
+      environment: { ...commonEnv, SITE_MODE: 'app', API_INTERNAL_URL: 'http://api:4000' },
       secrets: { VAPID_PUBLIC_KEY: ecs.Secret.fromSecretsManager(vapid, 'VAPID_PUBLIC_KEY') },
       otel: false,
+      serviceConnect: 'client',
     });
+    // the web server reads sessions from the api over Service Connect (server-rendered app pages)
+    api.svc.node.addDependency(ecsCluster.defaultCloudMapNamespace!);
+    web.svc.node.addDependency(api.svc);
+    apiSg.addIngressRule(webSg, ec2.Port.tcp(4000), 'web to api (Service Connect)');
 
     // ---------------------------------------------------------------- Least-privilege task roles
     for (const { task } of [api, worker]) {
@@ -531,8 +577,19 @@ export class CellStack extends Stack {
       role.addToPrincipalPolicy(
         new iam.PolicyStatement({
           sid: 'TenantDirectory',
-          actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query'],
+          // Scan: the back-office cross-region tenant list (ids, slugs, regions, plan, status only).
+          actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query', 'dynamodb:Scan'],
           resources: [directoryTableArn, `${directoryTableArn}/index/*`],
+        }),
+      );
+      // Scheduled data export (ADR-0077): assume ONLY customer roles named thapsus-hr-export-* (any customer
+      // account; the customer's trust policy pins this task role and our ExternalId). STS is regional and the
+      // bucket must be in this cell's region, which the application checks before writing.
+      role.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          sid: 'AssumeCustomerExportRoles',
+          actions: ['sts:AssumeRole'],
+          resources: [EXPORT_ROLE_ARN_PATTERN],
         }),
       );
       // The directory table is encrypted with the global stack's key (alias-scoped, DynamoDB only).
@@ -562,6 +619,15 @@ export class CellStack extends Stack {
       }),
     );
     schedulerRole.grantPassRole(worker.task.taskRole);
+
+    // Ask HR (ADR-0110): only a cell with an in-region Claude model may call Bedrock, and only that
+    // foundation model (no inference profiles, which route to other regions).
+    const aiModel = inRegionModel(cell);
+    if (aiModel) {
+      api.task.taskRole.addToPrincipalPolicy(
+        new iam.PolicyStatement({ sid: 'AskHrInRegionModel', actions: ['bedrock:InvokeModel'], resources: [`arn:aws:bedrock:${this.region}::foundation-model/${aiModel.modelId}`] }),
+      );
+    }
 
     // ---------------------------------------------------------------- Routing
     const apiTg = https.addTargets('Api', {
@@ -665,6 +731,7 @@ export class CellStack extends Stack {
     out('FilesBucketName', filesBucket.bucketName);
     out('InternalTokenSecretArn', internalToken.secretArn);
     out('VapidSecretArn', vapid.secretArn);
+    out('StripeSecretArn', stripe.secretArn);
     if (mockIdp) out('MockIdpSecretArn', mockIdp.secretArn);
   }
 }

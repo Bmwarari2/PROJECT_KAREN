@@ -1,0 +1,936 @@
+{
+  "jurisdiction": "GB",
+  "holidays": [
+    {
+      "region": "GB-ENG",
+      "year": 2025,
+      "dates": [
+        "2025-01-01",
+        "2025-04-18",
+        "2025-04-21",
+        "2025-05-05",
+        "2025-05-26",
+        "2025-08-25",
+        "2025-12-25",
+        "2025-12-26"
+      ]
+    },
+    {
+      "region": "GB-ENG",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-04",
+        "2026-05-25",
+        "2026-08-31",
+        "2026-12-25",
+        "2026-12-28"
+      ]
+    },
+    {
+      "region": "GB-ENG",
+      "year": 2027,
+      "dates": [
+        "2027-01-01",
+        "2027-03-26",
+        "2027-03-29",
+        "2027-05-03",
+        "2027-05-31",
+        "2027-08-30",
+        "2027-12-27",
+        "2027-12-28"
+      ]
+    },
+    {
+      "region": "GB-SCT",
+      "year": 2025,
+      "dates": [
+        "2025-01-01",
+        "2025-01-02",
+        "2025-04-18",
+        "2025-05-05",
+        "2025-05-26",
+        "2025-08-04",
+        "2025-12-01",
+        "2025-12-25",
+        "2025-12-26"
+      ]
+    },
+    {
+      "region": "GB-SCT",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-01-02",
+        "2026-04-03",
+        "2026-05-04",
+        "2026-05-25",
+        "2026-06-15",
+        "2026-08-03",
+        "2026-11-30",
+        "2026-12-25",
+        "2026-12-28"
+      ]
+    },
+    {
+      "region": "GB-SCT",
+      "year": 2027,
+      "dates": [
+        "2027-01-01",
+        "2027-01-04",
+        "2027-03-26",
+        "2027-05-03",
+        "2027-05-31",
+        "2027-08-02",
+        "2027-11-30",
+        "2027-12-27",
+        "2027-12-28"
+      ]
+    },
+    {
+      "region": "GB-NIR",
+      "year": 2025,
+      "dates": [
+        "2025-01-01",
+        "2025-03-17",
+        "2025-04-18",
+        "2025-04-21",
+        "2025-05-05",
+        "2025-05-26",
+        "2025-07-14",
+        "2025-08-25",
+        "2025-12-25",
+        "2025-12-26"
+      ]
+    },
+    {
+      "region": "GB-NIR",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-03-17",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-04",
+        "2026-05-25",
+        "2026-07-13",
+        "2026-08-31",
+        "2026-12-25",
+        "2026-12-28"
+      ]
+    },
+    {
+      "region": "GB-NIR",
+      "year": 2027,
+      "dates": [
+        "2027-01-01",
+        "2027-03-17",
+        "2027-03-26",
+        "2027-03-29",
+        "2027-05-03",
+        "2027-05-31",
+        "2027-07-12",
+        "2027-08-30",
+        "2027-12-27",
+        "2027-12-28"
+      ]
+    },
+    {
+      "region": "GB-ENG",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-04-14",
+        "2028-04-17",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-08-28",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json, fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2025,
+      "dates": [
+        "2025-01-01",
+        "2025-04-18",
+        "2025-04-21",
+        "2025-05-05",
+        "2025-05-26",
+        "2025-08-25",
+        "2025-12-25",
+        "2025-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2026,
+      "dates": [
+        "2026-01-01",
+        "2026-04-03",
+        "2026-04-06",
+        "2026-05-04",
+        "2026-05-25",
+        "2026-08-31",
+        "2026-12-25",
+        "2026-12-28"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2027,
+      "dates": [
+        "2027-01-01",
+        "2027-03-26",
+        "2027-03-29",
+        "2027-05-03",
+        "2027-05-31",
+        "2027-08-30",
+        "2027-12-27",
+        "2027-12-28"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-WLS",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-04-14",
+        "2028-04-17",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-08-28",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json (division england-and-wales covers Wales), fetched 2026-10-18"
+    },
+    {
+      "region": "GB-SCT",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-01-04",
+        "2028-04-14",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-08-07",
+        "2028-11-30",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json, fetched 2026-10-18"
+    },
+    {
+      "region": "GB-NIR",
+      "year": 2028,
+      "dates": [
+        "2028-01-03",
+        "2028-03-17",
+        "2028-04-14",
+        "2028-04-17",
+        "2028-05-01",
+        "2028-05-29",
+        "2028-07-12",
+        "2028-08-28",
+        "2028-12-25",
+        "2028-12-26"
+      ],
+      "source": "https://www.gov.uk/bank-holidays.json, fetched 2026-10-18"
+    }
+  ],
+  "rules": [
+    {
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "date": "2026-12-31",
+      "expect": {
+        "qualifyingPeriod": "P2Y"
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1996/18/section/108"
+    },
+    {
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "date": "2027-01-01",
+      "expect": {
+        "qualifyingPeriod": "P6M"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/2026/559/made"
+    },
+    {
+      "key": "sick_pay.statutory",
+      "date": "2026-05-01",
+      "expect": {
+        "weeklyRate": {
+          "amountMinor": 12325,
+          "currency": "GBP"
+        },
+        "percentOfNormalWeeklyEarnings": 80,
+        "waitingDays": 0,
+        "lowerEarningsLimitWeekly": null,
+        "maxWeeks": 28
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1992/4/section/157"
+    },
+    {
+      "key": "sick_pay.statutory",
+      "date": "2025-12-01",
+      "expect": {
+        "weeklyRate": {
+          "amountMinor": 11875,
+          "currency": "GBP"
+        },
+        "waitingDays": 3,
+        "lowerEarningsLimitWeekly": {
+          "amountMinor": 12500,
+          "currency": "GBP"
+        }
+      },
+      "source": "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2025-to-2026"
+    },
+    {
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expect": {
+        "weeks": 5.6,
+        "capDays": 28
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A"
+    },
+    {
+      "key": "leave.irregular_hours_accrual",
+      "date": "2026-10-18",
+      "expect": {
+        "accrualPercentOfHoursWorked": 12.07,
+        "capDaysPerLeaveYear": 28
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/15B"
+    },
+    {
+      "key": "leave.carry_over",
+      "date": "2026-10-18",
+      "expect": {
+        "reg13FourWeeks": {
+          "sickLeave": {
+            "carryOver": true,
+            "mustBeTakenWithinMonthsOfLeaveYearEnd": 18
+          }
+        }
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13"
+    },
+    {
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-10-18",
+      "expect": {
+        "maxAverageHours": 48,
+        "referencePeriodWeeks": 17
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/4"
+    },
+    {
+      "key": "working_time.daily_rest",
+      "date": "2026-10-18",
+      "expect": {
+        "adult": {
+          "consecutiveHours": 11
+        }
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/10"
+    },
+    {
+      "key": "working_time.rest_break",
+      "date": "2026-10-18",
+      "expect": {
+        "adult": {
+          "whenDailyWorkingTimeExceedsHours": 6,
+          "minUninterruptedMinutes": 20
+        }
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/12"
+    },
+    {
+      "key": "employment.notice_period",
+      "date": "2026-10-18",
+      "expect": {
+        "employer": {
+          "maxWeeks": 12
+        },
+        "employee": {
+          "weeks": 1
+        }
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1996/18/section/86"
+    },
+    {
+      "key": "right_to_work.retention",
+      "date": "2026-10-18",
+      "expect": {
+        "retainAfterEmploymentEnds": "P2Y"
+      },
+      "source": "https://www.gov.uk/check-job-applicant-right-to-work"
+    },
+    {
+      "key": "reporting.gender_pay_gap",
+      "date": "2026-10-18",
+      "expect": {
+        "employeeThreshold": 250,
+        "snapshotDates": {
+          "publicAuthority": {
+            "month": 3,
+            "day": 31
+          },
+          "privateAndVoluntary": {
+            "month": 4,
+            "day": 5
+          }
+        }
+      },
+      "source": "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/when-to-report"
+    },
+    {
+      "key": "family_leave.maternity",
+      "date": "2026-10-18",
+      "expect": {
+        "leaveWeeks": 52,
+        "pay": {
+          "weeks": 39,
+          "remaining33Weeks": {
+            "flatRate": {
+              "amountMinor": 19432,
+              "currency": "GBP"
+            }
+          }
+        }
+      },
+      "source": "https://www.gov.uk/maternity-pay-leave/pay"
+    },
+    {
+      "key": "family_leave.paternity",
+      "date": "2026-10-18",
+      "expect": {
+        "leaveWeeksMax": 2,
+        "mustEndWithinWeeksOfBirth": 52,
+        "leaveQualifyingService": null,
+        "pay": {
+          "flatRate": {
+            "amountMinor": 19432,
+            "currency": "GBP"
+          }
+        }
+      },
+      "source": "https://www.gov.uk/paternity-pay-leave/pay"
+    },
+    {
+      "key": "minimum_wage.rates",
+      "date": "2026-04-01",
+      "expect": {
+        "hourly": {
+          "age21Plus": {
+            "amountMinor": 1271,
+            "currency": "GBP"
+          },
+          "age18to20": {
+            "amountMinor": 1085,
+            "currency": "GBP"
+          },
+          "under18": {
+            "amountMinor": 800,
+            "currency": "GBP"
+          },
+          "apprentice": {
+            "amountMinor": 800,
+            "currency": "GBP"
+          }
+        }
+      },
+      "source": "https://www.gov.uk/national-minimum-wage-rates"
+    },
+    {
+      "key": "minimum_wage.rates",
+      "date": "2025-12-01",
+      "expect": {
+        "hourly": {
+          "age21Plus": {
+            "amountMinor": 1221,
+            "currency": "GBP"
+          },
+          "age18to20": {
+            "amountMinor": 1000,
+            "currency": "GBP"
+          },
+          "under18": {
+            "amountMinor": 755,
+            "currency": "GBP"
+          },
+          "apprentice": {
+            "amountMinor": 755,
+            "currency": "GBP"
+          }
+        }
+      },
+      "source": "https://www.gov.uk/national-minimum-wage-rates"
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "date": "2026-10-18",
+      "expect": {
+        "adult": {
+          "uninterruptedHours": 24,
+          "perDays": 7
+        }
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/11"
+    },
+    {
+      "key": "working_time.opt_out",
+      "date": "2026-10-18",
+      "expect": {
+        "permitted": true,
+        "mustBeInWriting": true,
+        "workerMayTerminate": true,
+        "defaultTerminationNoticeDays": 7,
+        "maxAgreedTerminationNoticeMonths": 3
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/5"
+    },
+    {
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-10-18",
+      "expectPath": {
+        "optOutAvailable": true
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/4"
+    },
+    {
+      "key": "working_time.time_recording",
+      "date": "2026-10-18",
+      "expect": null,
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/9",
+      "note": "WTR reg. 9 requires records adequate to show compliance with the limits, not a daily start/finish record; no daily-recording duty is modelled for GB."
+    },
+    {
+      "key": "working_time.opt_out",
+      "date": "2026-10-18",
+      "expectPath": {
+        "permitted": true,
+        "mustBeInWriting": true,
+        "defaultTerminationNoticeDays": 7,
+        "maxAgreedTerminationNoticeMonths": 3,
+        "employerMustKeepUpToDateRecordsOfOptedOutWorkers": true
+      },
+      "source": "https://www.gov.uk/maximum-weekly-working-hours/weekly-maximum-working-hours-and-opting-out",
+      "notes": "GOV.UK (independent of the reg. 5 pack source): opt-out \"must be voluntary and in writing\"; cancel with \"at least 7 days' notice\", \"up to 3 months' notice depending on what's in your agreement\"; employer \"must keep a record that you've opted out\"."
+    },
+    {
+      "key": "working_time.weekly_rest",
+      "date": "2026-10-18",
+      "expectPath": {
+        "adult.uninterruptedHours": 24,
+        "adult.perDays": 7,
+        "adult.employerAlternatives[1].hoursEach": 48,
+        "adult.employerAlternatives[1].perDays": 14
+      },
+      "source": "https://www.gov.uk/rest-breaks-work",
+      "notes": "GOV.UK: \"an uninterrupted 24 hours without any work each week or an uninterrupted 48 hours without any work each fortnight\". Young-worker value not on that page (pack value from reg. 11(3))."
+    },
+    {
+      "key": "right_to_work.document_rules",
+      "date": "2026-10-18",
+      "expectPath": {
+        "timing": "before_employment_starts",
+        "britishAndIrishCitizensCannotUseShareCode": true,
+        "lists.listBGroup1.followUpCheck": "before_permission_expiry",
+        "methods[0].id": "manual_document_check",
+        "methods[1].requires[0]": "share_code"
+      },
+      "source": "https://www.gov.uk/check-job-applicant-right-to-work",
+      "notes": "GOV.UK check page (independent of the checklist used by the pack): check \"before you employ them\"; online check with a share code or check original documents; \"British and Irish citizens cannot get an online share code\"; time-limited right to work -> \"check their documents again when it's due to expire\"."
+    },
+    {
+      "key": "family_leave.maternity",
+      "date": "2025-10-01",
+      "expectPath": {
+        "leaveWeeks": 52,
+        "pay.weeks": 39,
+        "pay.remaining33Weeks.flatRate": {
+          "amountMinor": 18718,
+          "currency": "GBP"
+        },
+        "pay.remaining33Weeks.rule": "lower_of"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1986/1960/regulation/6/2025-04-06",
+      "notes": "SMP prescribed rate £187.18 from the Statutory Maternity Pay (General) Regulations 1986 reg. 6 as at 6 April 2025 (substituted by S.I. 2025/295 art. 9) — independent of the GOV.UK rates page used by the pack."
+    },
+    {
+      "key": "family_leave.paternity",
+      "date": "2025-10-01",
+      "expectPath": {
+        "leaveWeeksMax": 2,
+        "mustEndWithinWeeksOfBirth": 52,
+        "leaveQualifyingService.weeks": 26,
+        "pay.flatRate": {
+          "amountMinor": 18718,
+          "currency": "GBP"
+        },
+        "pay.rule": "lower_of"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/2002/2818/regulation/2/2025-04-06",
+      "notes": "SPP weekly rate: smaller of £187.18 and 90% of normal weekly earnings (Statutory Paternity Pay and Statutory Adoption Pay (Weekly Rates) Regulations 2002 reg. 2 as at 6 April 2025). Leave: PAL Regs 2002 reg. 4(2)(a) 26 weeks' service and reg. 5(1)-(2) one or two weeks within 52 weeks of birth, as at 6 April 2025 (https://www.legislation.gov.uk/uksi/2002/2788/regulation/4/2025-04-06, /regulation/5/2025-04-06)."
+    },
+    {
+      "jurisdiction": "GB-WLS",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB",
+      "expect": {
+        "weeks": 5.6,
+        "capDays": 28
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A",
+      "notes": "WTR 1998 extent E+W+S."
+    },
+    {
+      "jurisdiction": "GB-SCT",
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "date": "2027-01-01",
+      "expectJurisdiction": "GB",
+      "expect": {
+        "qualifyingPeriod": "P6M"
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1996/18/section/108",
+      "notes": "ERA 1996 s.108 extent E+W+S."
+    },
+    {
+      "jurisdiction": "GB-ENG",
+      "key": "reporting.gender_pay_gap",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB",
+      "expectPath": {
+        "employeeThreshold": 250
+      },
+      "source": "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report"
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "leave.statutory_annual_minimum",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "weeks": 5.6,
+        "capDays": 28,
+        "bankHolidaysMayCountTowardsEntitlement": true
+      },
+      "source": "https://www.nidirect.gov.uk/articles/holiday-entitlements",
+      "notes": "nidirect (independent of the WTR (NI) 2016 pack source): \"a minimum of 5.6 weeks paid annual leave (28 days for someone working five days a week)\"; bank and public holidays \"can be included\". The 28-day cap is from reg. 16(2) (statute)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.max_weekly_hours",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "maxAverageHours": 48,
+        "referencePeriodWeeks": 17
+      },
+      "source": "https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week",
+      "notes": "nidirect: \"an average of 48 hours a week\" \"calculated over a 17-week period\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.opt_out",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "mustBeInWriting": true,
+        "defaultTerminationNoticeDays": 7,
+        "maxAgreedTerminationNoticeMonths": 3
+      },
+      "source": "https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week",
+      "notes": "nidirect: opt-out \"must be voluntary and in writing\"; cancel with \"between one week and three months' notice\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.daily_rest",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "adult": {
+          "consecutiveHours": 11,
+          "per": "24h"
+        },
+        "youngWorker": {
+          "consecutiveHours": 12,
+          "per": "24h"
+        }
+      },
+      "source": "https://www.nidirect.gov.uk/articles/rest-breaks",
+      "notes": "nidirect: \"at least 11 hours between working days\"; young workers \"at least 12 hours\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.weekly_rest",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "adult.uninterruptedHours": 24,
+        "adult.employerAlternatives[1].hoursEach": 48,
+        "adult.employerAlternatives[1].perDays": 14,
+        "youngWorker.hours": 48
+      },
+      "source": "https://www.nidirect.gov.uk/articles/rest-breaks",
+      "notes": "nidirect: \"24 hours clear of work each week or 48 hours clear each fortnight\"; young workers \"at least 48 hours clear of work every week\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "working_time.rest_break",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "adult": {
+          "whenDailyWorkingTimeExceedsHours": 6,
+          "minUninterruptedMinutes": 20
+        },
+        "youngWorker": {
+          "whenDailyWorkingTimeExceedsHours": 4.5,
+          "minMinutes": 30
+        }
+      },
+      "source": "https://www.nidirect.gov.uk/articles/rest-breaks",
+      "notes": "nidirect: 20 minutes for more than six hours; young workers 30 minutes for more than four and a half hours."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "leave.carry_over",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "reg15FourWeeks.sickLeave.mustBeTakenWithinMonthsOfLeaveYearEnd": 18,
+        "reg15FourWeeks.statutoryFamilyLeave.carryOver": true,
+        "reg16OnePointSixWeeks.byRelevantAgreement.carryOver": true
+      },
+      "source": "https://www.legislation.gov.uk/nisr/2016/49/regulation/15",
+      "notes": "Derived from statute (same source as the pack): WTR (NI) 2016 reg. 15(10)-(11) and reg. 16(6), in force 1 January 2024. No independent official summary found."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "sick_pay.statutory",
+      "date": "2026-05-01",
+      "expectJurisdiction": "GB-NIR",
+      "expectPath": {
+        "weeklyRate": {
+          "amountMinor": 12325,
+          "currency": "GBP"
+        },
+        "percentOfNormalWeeklyEarnings": 80,
+        "waitingDays": 0,
+        "lowerEarningsLimitWeekly": null,
+        "maxWeeks": 28
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1992/7/section/153",
+      "notes": "Derived from statute (same source as the pack): SSCB (NI) Act 1992 s.153(1) £123.25 / 80% NWE, s.151(1) omitted, Sch. 11 para. 2(c) omitted, all from 6 April 2026. nidirect's SSP page gives no rate."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "sick_pay.statutory",
+      "date": "2025-12-01",
+      "expect": null,
+      "source": "https://www.legislation.gov.uk/ukpga/1992/7/section/153/2025-04-06",
+      "notes": "2025-26 NI SSP not modelled (NI lower earnings limit not verified): must fail rather than inherit the GB (E+W+S) version."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "employment.notice_period",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "minServiceToApply": "P1M",
+        "employer": {
+          "underTwoYearsWeeks": 1,
+          "fromTwoYears": {
+            "weeksPerYearOfContinuousEmployment": 1
+          },
+          "maxWeeks": 12
+        },
+        "employee": {
+          "weeks": 1
+        }
+      },
+      "source": "https://www.legislation.gov.uk/nisi/1996/1919/article/118",
+      "notes": "Derived from statute (same source as the pack); nidirect's unfair dismissal page only says there is \"a minimum notice period\"."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "employment.unfair_dismissal_qualifying_period",
+      "date": "2027-01-01",
+      "expectJurisdiction": "GB-NIR",
+      "expect": {
+        "qualifyingPeriod": "P1Y",
+        "measuredTo": "effective_date_of_termination"
+      },
+      "source": "https://www.legislation.gov.uk/nisi/1996/1919/article/140",
+      "notes": "Derived from statute: ERO 1996 art. 140(1) \"one year\". On 1 January 2027 GB moves to six months; Northern Ireland must stay at one year."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "minimum_wage.rates",
+      "date": "2026-04-01",
+      "expectJurisdiction": "GB",
+      "expectPath": {
+        "hourly.age21Plus": {
+          "amountMinor": 1271,
+          "currency": "GBP"
+        }
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1998/39/section/1",
+      "notes": "National Minimum Wage Act 1998 extends to the UK, so the GB rate answers GB-NIR (rate from https://www.gov.uk/national-minimum-wage-rates)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "right_to_work.retention",
+      "date": "2026-10-18",
+      "expectJurisdiction": "GB",
+      "expectPath": {
+        "retainAfterEmploymentEnds": "P2Y"
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/2006/13/section/15",
+      "notes": "Immigration, Asylum and Nationality Act 2006 extends to the UK."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "reporting.gender_pay_gap",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "GB gender pay gap regulations are E+W+S only; no NI duty verified: must fail explicitly (COVERAGE.md to-do)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "family_leave.maternity",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "NI maternity law not verified yet: must fail explicitly (COVERAGE.md to-do)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "family_leave.paternity",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "NI paternity law not verified yet: must fail explicitly (COVERAGE.md to-do)."
+    },
+    {
+      "jurisdiction": "GB-NIR",
+      "key": "leave.irregular_hours_accrual",
+      "date": "2026-10-18",
+      "expect": null,
+      "notes": "GB reg. 15B is E+W+S; no NI equivalent found: must fail explicitly."
+    },
+    {
+      "key": "right_to_work.document_rules",
+      "date": "2026-10-18",
+      "expectPath": {
+        "followUp.list_b_group_2.excusePeriod": "P6M",
+        "followUp.list_b_group_2.from": "positive_verification_notice_date",
+        "followUp.list_b_group_1.dueBy": "permission_expiry_date",
+        "followUp.list_a": null,
+        "followUp.online_unlimited": null
+      },
+      "source": "https://assets.publishing.service.gov.uk/media/6abd2b2c26660e5f62a7f193/FINAL_-_Employer_s_guide_to_right_to_work_checks.pdf",
+      "notes": "Employer's guide (1 October 2026) pp. 35-36 and 55: PVN excuse '6 months from the date specified in the PVN'; time-limited permission re-checked 'on, or before, the date their permission comes to an end'; no follow-up for settled or EUSS status."
+    },
+    {
+      "key": "reporting.gender_pay_gap",
+      "date": "2027-04-05",
+      "expectPath": {
+        "calculations[0].id": "mean_hourly_pay_gap",
+        "calculations[5].regulation": 13,
+        "hourlyRate.daysPerMonth": 30.44,
+        "hourlyRate.daysPerYear": 365.25,
+        "bonusRelevantPeriodMonthsEndingWithSnapshot": 12,
+        "quartiles.remainderAllocation.2[1]": "upper_middle"
+      },
+      "source": "https://www.legislation.gov.uk/uksi/2017/172/regulation/6/made",
+      "notes": "S.I. 2017/172 regs. 2, 6, 8-13; remainder allocation from GOV.UK Making your calculations (21 May 2026)."
+    },
+    {
+      "key": "leave.irregular_hours_accrual",
+      "date": "2026-10-18",
+      "expectPath": {
+        "accruesOn": "last_day_of_each_pay_period",
+        "rounding.fractionBelowMinutesIsZero": 30
+      },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/15B",
+      "notes": "WTR 1998 reg. 15B(3) and (5)."
+    }
+  ],
+  "sources": [
+    "https://www.gov.uk/bank-holidays.json",
+    "https://www.gov.uk/bank-holidays",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A",
+    "https://www.gov.uk/holiday-entitlement-rights",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/15B",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/16A",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/4",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/5",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/10",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/11",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/12",
+    "https://www.legislation.gov.uk/ukpga/1992/4/section/157",
+    "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2025-to-2026",
+    "https://www.gov.uk/employers-sick-pay",
+    "https://www.legislation.gov.uk/uksi/2026/373/made",
+    "https://www.gov.uk/government/publications/right-to-work-checklist/employers-right-to-work-checklist-accessible-version",
+    "https://www.gov.uk/check-job-applicant-right-to-work",
+    "https://www.legislation.gov.uk/ukpga/1996/18/section/108",
+    "https://www.legislation.gov.uk/ukpga/2025/36/section/25",
+    "https://www.legislation.gov.uk/uksi/2026/559/made",
+    "https://www.legislation.gov.uk/ukpga/1996/18/section/86",
+    "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/when-to-report",
+    "https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report",
+    "https://www.legislation.gov.uk/uksi/1986/1960/regulation/6",
+    "https://www.gov.uk/maternity-pay-leave/leave",
+    "https://www.legislation.gov.uk/uksi/2002/2818/regulation/2",
+    "https://www.gov.uk/paternity-pay-leave/leave",
+    "https://www.legislation.gov.uk/uksi/2002/2788/regulation/4/2025-01-01",
+    "https://www.legislation.gov.uk/uksi/2024/329/note/made",
+    "https://www.legislation.gov.uk/uksi/2026/3/body/made",
+    "https://www.gov.uk/national-minimum-wage-rates",
+    "https://www.legislation.gov.uk/ukpga/1992/4/section/155",
+    "https://www.legislation.gov.uk/ukpga/1992/4/section/155/2022-03-25",
+    "https://www.legislation.gov.uk/ukpga/1992/4/section/152",
+    "https://www.legislation.gov.uk/ukpga/1992/4/section/152/2022-03-25",
+    "https://www.legislation.gov.uk/uksi/2012/989/made",
+    "https://www.legislation.gov.uk/uksi/2017/172/regulation/1/made",
+    "https://www.legislation.gov.uk/uksi/2026/148/article/1/made",
+    "https://www.gov.uk/maternity-pay-leave/pay",
+    "https://www.gov.uk/maternity-pay-leave/eligibility",
+    "https://www.gov.uk/paternity-pay-leave/pay",
+    "https://www.gov.uk/paternity-pay-leave/eligibility",
+    "https://www.gov.uk/statutory-sick-pay/what-youll-get",
+    "https://www.gov.uk/holiday-entitlement-rights/build-up-holiday",
+    "https://www.legislation.gov.uk/uksi/1998/1833/regulation/1/made",
+    "https://www.legislation.gov.uk/uksi/2023/1426/regulation/1/made",
+    "https://www.legislation.gov.uk/ukpga/1996/18/section/243",
+    "https://www.legislation.gov.uk/ukpga/1996/18/introduction/enacted",
+    "https://www.nidirect.gov.uk/articles/holiday-entitlements",
+    "https://www.nidirect.gov.uk/articles/working-time-limits-48-hour-week",
+    "https://www.nidirect.gov.uk/articles/rest-breaks",
+    "https://www.gov.uk/maximum-weekly-working-hours/weekly-maximum-working-hours-and-opting-out",
+    "https://www.gov.uk/rest-breaks-work",
+    "https://www.legislation.gov.uk/nisr/2016/49/regulation/15",
+    "https://www.legislation.gov.uk/nisr/2016/49/regulation/16",
+    "https://www.legislation.gov.uk/ukpga/1992/7/section/153",
+    "https://www.legislation.gov.uk/nisi/1996/1919/article/118",
+    "https://www.legislation.gov.uk/nisi/1996/1919/article/140",
+    "https://www.legislation.gov.uk/uksi/1986/1960/regulation/6/2025-04-06",
+    "https://www.legislation.gov.uk/uksi/2002/2818/regulation/2/2025-04-06",
+    "https://www.legislation.gov.uk/ukpga/1998/39/section/1",
+    "https://www.legislation.gov.uk/ukpga/2006/13/section/15"
+  ]
+}

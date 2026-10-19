@@ -12,9 +12,12 @@ export interface MigrationFile {
   checksum: string;
 }
 
+/** `0007_x.sql`, or `0007b_x.sql` for a migration inserted after 0007 and before 0008 (sorts that way in ASCII). */
+export const MIGRATION_FILE = /^\d{4}[a-z]?_[a-z0-9_]+\.sql$/;
+
 export function loadMigrations(dir = MIGRATIONS_DIR): MigrationFile[] {
   return readdirSync(dir)
-    .filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f))
+    .filter((f) => MIGRATION_FILE.test(f))
     .sort()
     .map((name) => {
       const sql = readFileSync(join(dir, name), 'utf8');

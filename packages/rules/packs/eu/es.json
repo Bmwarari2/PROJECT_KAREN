@@ -1,0 +1,551 @@
+{
+  "jurisdiction": "ES",
+  "parent": "EU",
+  "name": "Spain",
+  "version": 2,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Paid annual holidays (Estatuto de los Trabajadores art. 38.1)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "calendarDays": 30,
+            "payInLieuOnlyOnTermination": true
+          },
+          "source": {
+            "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+            "title": "Estatuto de los Trabajadores (RDL 2/2015), arts. 38 y 53 — texto consolidado BOE"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Never less than 30 calendar days; may be improved by collective agreement or contract. Not replaceable by financial compensation."
+        }
+      ]
+    },
+    {
+      "key": "sick_pay.statutory",
+      "description": "Temporary incapacity (common illness / non-occupational accident) — LGSS arts. 169 and 173",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "payer": "employer_then_social_security",
+            "waitingDays": 3,
+            "benefitFromDay": 4,
+            "employerPaysDays": {
+              "from": 4,
+              "to": 15
+            },
+            "maxDurationDays": 365,
+            "extensionDays": 180,
+            "occupationalAccidentOrDisease": {
+              "benefitFromDay": 2,
+              "employerPaysFullSalaryOnDayOfLeave": true
+            }
+          },
+          "source": {
+            "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11724",
+            "title": "Ley General de la Seguridad Social (RDL 8/2015), arts. 169 y 173 — texto consolidado BOE"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Benefit percentage of the base reguladora (commonly cited 60%/75%) NOT modelled: not confirmed in the consolidated official text fetched."
+        }
+      ]
+    },
+    {
+      "key": "employment.notice_period",
+      "description": "Notice for dismissal on objective grounds (ET art. 53.1.c)",
+      "versions": [
+        {
+          "effectiveFrom": "2020-01-01",
+          "effectiveTo": null,
+          "value": {
+            "objectiveDismissal": {
+              "days": 15,
+              "countedFrom": "personal_delivery_of_written_notice",
+              "jobSearchLeaveHoursPerWeek": 6
+            }
+          },
+          "source": {
+            "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+            "title": "Estatuto de los Trabajadores (RDL 2/2015), arts. 38 y 53 — texto consolidado BOE"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Only objective dismissal modelled; disciplinary dismissal has no statutory notice; temporary-contract end notice (art. 49.1.c) not modelled."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "EU Pay Transparency Directive (EU) 2023/970 — national transposition status (as verified 2026-10-18)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-06-06",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: National transposition measures communicated by the Member States concerning Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Status as at 2026-10-18 from the EUR-Lex national-transposition-measures list (the Commission records notifications; it does not certify completeness). Spain notified only pre-existing measures (Constitution, ET, LO 3/2007, RD 901/2020 and RD 902/2020 on equality plans and pay equality); no dedicated transposition act found. Pending legal review whether these partially transpose the Directive."
+        }
+      ]
+    },
+    {
+      "key": "working_time.time_recording",
+      "description": "Estatuto de los Trabajadores art. 34.9: the employer must guarantee a daily record of working time with the exact start and finish time of each worker; records kept for four years",
+      "versions": [
+        {
+          "effectiveFrom": "2019-05-12",
+          "effectiveTo": null,
+          "value": {
+            "required": true,
+            "scope": "daily_start_and_end_each_worker",
+            "employerObligation": true,
+            "retentionYears": 4,
+            "accessFor": [
+              "workers",
+              "legal_representatives",
+              "labour_inspectorate"
+            ]
+          },
+          "source": {
+            "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430",
+            "title": "Real Decreto Legislativo 2/2015, Estatuto de los Trabajadores, art. 34.9 (BOE consolidated text)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Art. 34.9: \"La empresa garantizará el registro diario de jornada, que deberá incluir el horario concreto de inicio y finalización de la jornada de trabajo de cada persona trabajadora\"; \"La empresa conservará los registros ... durante cuatro años y permanecerán a disposición de las personas trabajadoras, de sus representantes legales y de la Inspección de Trabajo y Seguridad Social.\" Paragraph 9 was added by art. 10 of Real Decreto-ley 8/2019 (BOE-A-2019-3481, published 12 March 2019), which applies it two months after publication (disposición final sexta.4) — 12 May 2019. Organisation of the record by collective agreement or company decision is not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-years-day",
+      "name": "New Year's Day",
+      "localName": "Año Nuevo",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Viernes Santo",
+      "rule": {
+        "type": "easter",
+        "offset": -2
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Fiesta del Trabajo",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Assumption of Mary",
+      "localName": "Asunción de la Virgen",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "national-day",
+      "name": "National Day of Spain",
+      "localName": "Fiesta Nacional de España",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 12
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "all-saints-day",
+      "name": "All Saints' Day",
+      "localName": "Todos los Santos",
+      "rule": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "constitution-day",
+      "name": "Constitution Day",
+      "localName": "Día de la Constitución Española",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "immaculate-conception",
+      "name": "Immaculate Conception",
+      "localName": "Inmaculada Concepción",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 8
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Natividad del Señor",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1983-20906",
+        "title": "Real Decreto 2001/1983, art. 45 (fiestas laborales de ámbito nacional) — texto consolidado BOE"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "National holiday under RD 2001/1983 art. 45.1 a)–c) (not substitutable by the autonomous communities). Art. 45.2: if it falls on a Sunday, rest moves to the following Monday unless the community substitutes another day — Monday transfers are modelled per region/year, not here."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Epifanía del Señor",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-01-06"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-MD",
+        "ES-CT"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Substitutable national holiday (art. 45.1 d) kept by the community in 2026."
+    },
+    {
+      "id": "maundy-thursday",
+      "name": "Maundy Thursday",
+      "localName": "Jueves Santo",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-04-02"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-MD"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "madrid-day",
+      "name": "Community of Madrid Day",
+      "localName": "Fiesta de la Comunidad de Madrid",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-05-02"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-MD"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "all-saints-monday",
+      "name": "Monday after All Saints' Day",
+      "localName": "Día siguiente a Todos los Santos",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-11-02"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-MD"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "1 Nov 2026 is a Sunday; rest moved to Monday (RD 2001/1983 art. 45.2)."
+    },
+    {
+      "id": "constitution-day-monday",
+      "name": "Monday after Constitution Day",
+      "localName": "Lunes siguiente al Día de la Constitución Española",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-12-07"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-MD"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "6 Dec 2026 is a Sunday; rest moved to Monday (RD 2001/1983 art. 45.2)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "Lunes de Pascua",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-04-06"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-CT"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "st-johns-day",
+      "name": "St John's Day",
+      "localName": "Sant Joan",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-06-24"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-CT"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "catalonia-national-day",
+      "name": "National Day of Catalonia",
+      "localName": "Diada Nacional de Catalunya",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-09-11"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-CT"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)"
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "St Stephen's Day",
+      "localName": "Sant Esteve",
+      "rule": {
+        "type": "one_off",
+        "date": "2026-12-26"
+      },
+      "observance": "none",
+      "regions": [
+        "ES-CT"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2027-01-01",
+      "source": {
+        "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+        "title": "BOE-A-2025-21667: Resolución de 17 de octubre de 2025, relación de fiestas laborales para el año 2026"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "In the Val d'Aran replaced by 17 June (Fiesta de Arán) — Orden EMT/66/2025; not modelled."
+    }
+  ],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "Autonomous-community holidays for the other 15 communities and Ceuta/Melilla (annual BOE resolution) and for ES-MD/ES-CT beyond 2026 (BOE-A-2026-21254 for 2027 published 13 Oct 2026)",
+      "Local (municipal) holidays — up to 2 per municipality",
+      "Canary Islands island holidays (Decreto 61/2025)",
+      "sick_pay.statutory benefit percentages (60%/75%)",
+      "family_leave.maternity / paternity (nacimiento y cuidado de menor)",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates (SMI)"
+    ],
+    "notes": "National [\"*\"] holidays are the fixed national list in RD 2001/1983 art. 45.1 a)–c). Autonomous-community holidays are modelled only for ES-MD and ES-CT for 2026 from the BOE 2026 calendar."
+  }
+}

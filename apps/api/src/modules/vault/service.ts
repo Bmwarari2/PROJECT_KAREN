@@ -38,16 +38,16 @@ export class Vault {
     return row.id;
   }
 
-  /** Latest value per field for a subject and category. Throws 403 without the category permission. */
-  async read(tx: Tx, actor: VaultActor, tenantId: string, target: Target & { employeeId: string }, category: VaultCategory) {
+  /** Latest value per field for a subject and category (optionally only `fields`). Throws 403 without the category permission. */
+  async read(tx: Tx, actor: VaultActor, tenantId: string, target: Target & { employeeId: string }, category: VaultCategory, fields?: string[]) {
     if (!can(actor.principal, `vault.read:${category}`, target)) {
       await writeAudit(tx, { actorType: actor.actorType, actorId: actor.principal.userId, action: 'vault.read_denied', targetType: `vault:${category}`, targetId: target.employeeId, sensitive: true, requestId: actor.requestId, ip: actor.ip });
       throw new ApiError('forbidden');
     }
     const rows = await tx.query<{ id: string; field: string; envelope: Envelope; file_key: string | null; created_at: string }>(
       `SELECT DISTINCT ON (field) id, field, envelope, file_key, created_at FROM vault.records
-        WHERE subject_id = $1 AND category = $2 ORDER BY field, created_at DESC`,
-      [target.employeeId, category],
+        WHERE subject_id = $1 AND category = $2 AND ($3::text[] IS NULL OR field = ANY($3::text[])) ORDER BY field, created_at DESC`,
+      [target.employeeId, category, fields ?? null],
     );
     const out: Array<{ id: string; field: string; value: string; fileKey: string | null; recordedAt: string }> = [];
     for (const r of rows) {
@@ -56,5 +56,42 @@ export class Vault {
       out.push({ id: r.id, field: r.field, value, fileKey: r.file_key, recordedAt: r.created_at });
     }
     return out;
+  }
+
+  /**
+   * Every stored value for a subject (all categories and versions) for a data subject access export.
+   * Each decrypt is audited with the purpose; categories the actor may not read are withheld and the
+   * refusal is audited too.
+   */
+  async exportSubject(tx: Tx, actor: VaultActor, tenantId: string, target: Target & { employeeId: string }, purpose: Record<string, unknown>) {
+    const rows = await tx.query<{ id: string; category: VaultCategory; field: string; envelope: Envelope; file_key: string | null; created_at: string }>(
+      `SELECT id, category, field, envelope, file_key, created_at FROM vault.records WHERE subject_id = $1 ORDER BY category, field, created_at`,
+      [target.employeeId],
+    );
+    const values: Array<{ category: string; field: string; value: string; hasFile: boolean; recordedAt: string }> = [];
+    const withheld = new Set<string>();
+    for (const r of rows) {
+      if (!can(actor.principal, `vault.read:${r.category}`, target)) {
+        if (!withheld.has(r.category)) await writeAudit(tx, { actorType: actor.actorType, actorId: actor.principal.userId, action: 'vault.read_denied', targetType: `vault:${r.category}`, targetId: target.employeeId, diff: purpose, sensitive: true, requestId: actor.requestId, ip: actor.ip });
+        withheld.add(r.category);
+        continue;
+      }
+      const value = await open(this.keys, r.envelope, this.ctx(tenantId, target.employeeId, r.category, r.field));
+      await writeAudit(tx, { actorType: actor.actorType, actorId: actor.principal.userId, action: 'vault.read', targetType: `vault:${r.category}`, targetId: r.id, diff: { subjectId: target.employeeId, field: r.field, ...purpose }, sensitive: true, requestId: actor.requestId, ip: actor.ip });
+      values.push({ category: r.category, field: r.field, value, hasFile: !!r.file_key, recordedAt: r.created_at });
+    }
+    return { values, withheld: [...withheld].sort() };
+  }
+
+  /** Erases a subject's vault values except the categories that must be kept; returns file keys to delete. */
+  async eraseSubject(tx: Tx, actor: VaultActor, employeeId: string, keepCategories: string[], purpose: Record<string, unknown>) {
+    const rows = await tx.query<{ category: string; file_key: string | null }>(
+      `DELETE FROM vault.records WHERE subject_id = $1 AND NOT (category = ANY($2::text[])) RETURNING category, file_key`,
+      [employeeId, keepCategories],
+    );
+    const byCategory: Record<string, number> = {};
+    for (const r of rows) byCategory[r.category] = (byCategory[r.category] ?? 0) + 1;
+    await writeAudit(tx, { actorType: actor.actorType, actorId: actor.principal.userId, action: 'vault.erased', targetType: 'employee', targetId: employeeId, diff: { byCategory, kept: keepCategories, ...purpose }, sensitive: true, requestId: actor.requestId, ip: actor.ip });
+    return { deleted: rows.length, byCategory, fileKeys: rows.flatMap((r) => (r.file_key ? [r.file_key] : [])) };
   }
 }

@@ -1,0 +1,343 @@
+{
+  "jurisdiction": "EE",
+  "parent": "EU",
+  "name": "Estonia",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Töölepingu seadus § 55: annual holiday is presumed to be 28 calendar days",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 28,
+            "dayUnit": "calendar_days"
+          },
+          "source": {
+            "url": "https://www.riigiteataja.ee/akt/TLS",
+            "title": "Töölepingu seadus (Employment Contracts Act), § 55"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "§ 55: \"Eeldatakse, et töötaja iga-aastane puhkus on 28 kalendripäeva (põhipuhkus)\". Minors/reduced work ability 35 days (§§ 56-57) and teachers up to 56 days (§ 58) not modelled. Verified via riigiteataja.ee indexed text (the site is a JS application that could not be fetched directly). Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "partially_transposed",
+            "law": "Töölepingu seaduse muutmise seadus (Employment Contracts Act amendments adopted by the Riigikogu 17 June 2026)",
+            "inForceFrom": "2026-07-13"
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists 18 Estonian measures incl. Employment Contracts Act amendments of 2026-07-03. Ministry of Economic Affairs (mkm.ee — not on the validator allow-list) states the amendments partially transpose the Directive and enter into force 13 July 2026: pay information to applicants before interview, ban on asking pay history, ban on preventing pay disclosure. Pay structures, average-pay information right, gap reporting and joint pay assessments are not transposed and not in legislative procedure."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Uusaasta",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence Day",
+      "localName": "Iseseisvuspäev, Eesti Vabariigi aastapäev",
+      "rule": {
+        "type": "fixed",
+        "month": 2,
+        "day": 24
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Rahvuspüha ja puhkepäev (§ 1)."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Suur reede",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Ülestõusmispühade 1. püha",
+      "rule": {
+        "type": "easter",
+        "offset": 0,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "spring-day",
+      "name": "Spring Day",
+      "localName": "Kevadpüha",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Nelipühade 1. püha",
+      "rule": {
+        "type": "easter",
+        "offset": 49,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "victory-day",
+      "name": "Victory Day",
+      "localName": "Võidupüha",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 23
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "midsummer-day",
+      "name": "Midsummer Day",
+      "localName": "Jaanipäev",
+      "rule": {
+        "type": "fixed",
+        "month": 6,
+        "day": 24
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "restoration-of-independence-day",
+      "name": "Day of Restoration of Independence",
+      "localName": "Taasiseseisvumispäev",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 20
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "christmas-eve",
+      "name": "Christmas Eve",
+      "localName": "Jõululaupäev",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 24
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad). Christmas Eve/Christmas days confirmed from riigiteataja.ee indexed text only (search snippet), not a full-page fetch."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Esimene jõulupüha",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    },
+    {
+      "id": "second-day-of-christmas",
+      "name": "Second Day of Christmas",
+      "localName": "Teine jõulupüha",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.riigiteataja.ee/akt/PTS",
+        "title": "Pühade ja tähtpäevade seadus (Public Holidays and Days of National Importance Act), §§ 1–2"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Pühade ja tähtpäevade seadus § 2 (riigipühad ja puhkepäevad)."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "working_time: shortened working day before holidays (Töö- ja puhkeaja / TLS)"
+    ]
+  }
+}

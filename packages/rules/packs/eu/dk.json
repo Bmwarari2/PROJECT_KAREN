@@ -1,0 +1,303 @@
+{
+  "jurisdiction": "DK",
+  "parent": "EU",
+  "name": "Denmark",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "Ferieloven: 2.08 paid holiday days per month of employment = 25 days per full year",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 25,
+            "accrualPerMonth": 2.08,
+            "accrualIndependentOfHours": true,
+            "accrualYear": {
+              "startMonth": 9,
+              "startDay": 1
+            },
+            "takingPeriodEndsDecember31OfFollowingYear": true
+          },
+          "source": {
+            "url": "https://www.borger.dk/arbejde-dagpenge-ferie/Oversigt-ferie/loenmodtager-og-ferie",
+            "title": "borger.dk: Lønmodtager og ferie (ferieloven)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "borger.dk: \"Du optjener 2,08 feriedage pr. måned … 25 feriedage, hvis du er ansat et helt år\"; holiday taken 1 September – 31 December of the following year (ferieperioden). Holiday pay (12.5%) and the 5 extra \"feriefridage\" by agreement not modelled. Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "not_transposed",
+            "law": null,
+            "inForceFrom": null
+          },
+          "source": {
+            "url": "https://eur-lex.europa.eu/legal-content/EN/NIM/?uri=CELEX:32023L0970",
+            "title": "EUR-Lex: national transposition measures communicated for Directive (EU) 2023/970"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "EUR-Lex lists no notified Danish measures (checked 2026-10-18). Industry reports (Dansk Erhverv, 8 Oct 2026) say the government tabled the bill amending ligelønsloven with proposed entry into force 1 March 2027 — not verified on ft.dk/retsinformation.dk."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Nytårsdag",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "maundy-thursday",
+      "name": "Maundy Thursday",
+      "localName": "Skærtorsdag",
+      "rule": {
+        "type": "easter",
+        "offset": -3,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "good-friday",
+      "name": "Good Friday",
+      "localName": "Langfredag",
+      "rule": {
+        "type": "easter",
+        "offset": -2,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "easter-sunday",
+      "name": "Easter Sunday",
+      "localName": "Påskedag",
+      "rule": {
+        "type": "easter",
+        "offset": 0,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday",
+      "localName": "2. påskedag",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "ascension-day",
+      "name": "Ascension Day",
+      "localName": "Kristi himmelfartsdag",
+      "rule": {
+        "type": "easter",
+        "offset": 39,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "whit-sunday",
+      "name": "Whit Sunday",
+      "localName": "Pinsedag",
+      "rule": {
+        "type": "easter",
+        "offset": 49,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "whit-monday",
+      "name": "Whit Monday",
+      "localName": "2. pinsedag",
+      "rule": {
+        "type": "easter",
+        "offset": 50,
+        "calendar": "western"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Juledag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    },
+    {
+      "id": "st-stephens-day",
+      "name": "Second Day of Christmas",
+      "localName": "2. juledag",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2024-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.retsinformation.dk/eli/lta/2023/214",
+        "title": "Lov nr. 214 af 06/03/2023 om konsekvenser ved afskaffelsen af store bededag som helligdag (§ 5, § 7)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Helligdag as enumerated in lov nr. 214/2023 § 7 (amending the shop-opening act) after abolition of Store Bededag from 1 January 2024. Danish law has no general statutory right to paid time off on holidays — usually by collective agreement."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "holidays: Store Bededag before 2024; Grundlovsdag and Christmas Eve (shop-closing days, not helligdage)"
+    ]
+  }
+}

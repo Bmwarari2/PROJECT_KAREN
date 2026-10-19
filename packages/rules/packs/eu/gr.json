@@ -1,0 +1,294 @@
+{
+  "jurisdiction": "GR",
+  "parent": "EU",
+  "name": "Greece",
+  "version": 1,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "leave.statutory_annual_minimum",
+      "description": "ν. 3302/2004 art. 1: 20 working days (5-day week) / 24 (6-day week) for 12 months of service, +1 day per year of service after the first up to 22/26; national general collective agreements (ΕΓΣΣΕ) give 25/30 after 10 years with the employer or 12 years total, 26/31 after 25 years",
+      "versions": [
+        {
+          "effectiveFrom": "2026-01-01",
+          "effectiveTo": null,
+          "value": {
+            "days": 20,
+            "weekBasisDays": 5,
+            "sixDayWeekDays": 24,
+            "accrualBasis": "pro_rata_service_first_year",
+            "incrementPerServiceYearAfterFirst": 1,
+            "statutoryMaxDays": 22,
+            "statutoryMaxSixDayWeekDays": 26,
+            "generalCollectiveAgreement": [
+              {
+                "condition": "10_years_same_employer_or_12_years_any_employer",
+                "days": 25,
+                "sixDayWeekDays": 30,
+                "source": "ΕΓΣΣΕ 23/05/2000"
+              },
+              {
+                "condition": "25_years_service",
+                "days": 26,
+                "sixDayWeekDays": 31,
+                "source": "ΕΓΣΣΕ 02/04/2008"
+              }
+            ],
+            "grantDeadline": "by 31 March of the following calendar year (art. 61 ν. 4808/2021)"
+          },
+          "source": {
+            "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/adeies-ergasiakes-scheseis/etisia-kanoniki-adeia/imeres-adeias/",
+            "title": "Επιθεώρηση Εργασίας: Ημέρες Άδειας (άρθρο 1 ν. 3302/2004)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Labour Inspectorate (hli.gov.gr) \"Ημέρες Άδειας\". Verified as the law in force on the verification date; historical effective date not researched, so effectiveFrom is set to 2026-01-01 (earlier dates resolve to the parent/none)."
+        }
+      ]
+    },
+    {
+      "key": "reporting.pay_transparency",
+      "description": "National transposition status of the EU Pay Transparency Directive (EU) 2023/970",
+      "versions": [
+        {
+          "effectiveFrom": "2026-06-07",
+          "effectiveTo": null,
+          "value": {
+            "status": "transposed",
+            "law": "Ν. 5316/2026 (ΦΕΚ Α΄ 105/06.07.2026)",
+            "inForceFrom": "2026-11-01"
+          },
+          "source": {
+            "url": "https://ypergasias.gov.gr/odigies-gia-tin-orthi-efarmogi-tis-misthologikis-diafaneias-kai-tis-isis-amoivis-gynaikon-kai-andron-apo-tin-1i-noemvriou-2026/",
+            "title": "Υπουργείο Εργασίας: Οδηγίες για την εφαρμογή της μισθολογικής διαφάνειας (ν. 5316/2026) από την 1η Νοεμβρίου 2026"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Ministry of Labour guidance (8 Oct 2026): provisions of ν. 5316/2026 on pay transparency apply from 1 November 2026, when all employers regardless of size must have pay structures ensuring equal pay. EUR-Lex lists the law as notified (2026-07-06). inForceFrom is the date obligations apply; the law itself was published 6 July 2026."
+        }
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "new-year",
+      "name": "New Year's Day",
+      "localName": "Πρωτοχρονιά",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "epiphany",
+      "name": "Epiphany",
+      "localName": "Θεοφάνια",
+      "rule": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "independence-day",
+      "name": "Independence Day",
+      "localName": "25η Μαρτίου",
+      "rule": {
+        "type": "fixed",
+        "month": 3,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "easter-monday",
+      "name": "Easter Monday (Orthodox)",
+      "localName": "Δευτέρα του Πάσχα",
+      "rule": {
+        "type": "easter",
+        "offset": 1,
+        "calendar": "orthodox"
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "labour-day",
+      "name": "Labour Day",
+      "localName": "Πρωτομαγιά",
+      "rule": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "assumption-day",
+      "name": "Dormition of the Theotokos",
+      "localName": "Κοίμηση της Θεοτόκου",
+      "rule": {
+        "type": "fixed",
+        "month": 8,
+        "day": 15
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "ochi-day",
+      "name": "Ochi Day",
+      "localName": "28η Οκτωβρίου",
+      "rule": {
+        "type": "fixed",
+        "month": 10,
+        "day": 28
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "christmas-day",
+      "name": "Christmas Day",
+      "localName": "Χριστούγεννα",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    },
+    {
+      "id": "synaxis-of-theotokos",
+      "name": "Second Day of Christmas",
+      "localName": "26η Δεκεμβρίου",
+      "rule": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "observance": "none",
+      "regions": [
+        "*"
+      ],
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": null,
+      "source": {
+        "url": "https://www.hli.gov.gr/ergasiakes-scheseis/nomothesia-ergasiakes-scheseis/amoivi/kyriaki-argies-amoivi/imeres-argias-2/",
+        "title": "Επιθεώρηση Εργασίας: Ημέρες Αργίας (άρθρο 60 ν. 4808/2021)"
+      },
+      "verifiedOn": "2026-10-18",
+      "reviewer": "research-agent (pending legal review)",
+      "notes": "Mandatory holiday (υποχρεωτική αργία) for all businesses under art. 60 ν. 4808/2021 per Labour Inspectorate. No move to a weekday when it falls on Sunday (except 1 May, which the Minister moves by decision — not modelled)."
+    }
+  ],
+  "coverage": {
+    "priority": "medium",
+    "deeperRulesTodo": [
+      "sick_pay.statutory",
+      "employment.notice_period",
+      "family_leave.maternity",
+      "family_leave.paternity",
+      "working_time.max_weekly_hours",
+      "minimum_wage.rates",
+      "employment.probation",
+      "holidays: optional/customary days (Clean Monday, Good Friday, Whit Monday) and up to 5 extra days per year by ministerial decision; regional holidays"
+    ]
+  }
+}

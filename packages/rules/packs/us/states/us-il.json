@@ -1,0 +1,122 @@
+{
+  "jurisdiction": "US-IL",
+  "parent": "US",
+  "name": "Illinois",
+  "version": 2,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Illinois Paid Leave for All Workers Act",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "statute": "Paid Leave for All Workers Act",
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 40
+            },
+            "capHoursPer12Months": 40,
+            "useBeginsAfterDays": 90,
+            "localOrdinanceCarveOut": "Employers covered by a paid leave ordinance in force before 1 Jan 2024 (City of Chicago, Cook County) are not subject to PLAWA where that ordinance requires paid leave"
+          },
+          "source": {
+            "url": "https://labor.illinois.gov/faqs/paidleavefaq.html",
+            "title": "Illinois Department of Labor — Paid Leave for All Workers Act FAQ"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "PLAWA leave may be used for any reason. Frontloading allowed. Pending bill HB5128 (2026) not enacted as of verification."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Illinois minimum wage (workers 18+)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": "2025-01-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1400
+              }
+            ]
+          },
+          "source": {
+            "url": "https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf",
+            "title": "Illinois Department of Labor — Minimum Wage Rates (historic)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 1500
+              }
+            ]
+          },
+          "source": {
+            "url": "https://labor.illinois.gov/content/dam/soi/en/web/idol/laws-rules/fls/documents/minimumwagehistoricrates.pdf",
+            "title": "Illinois Department of Labor — Minimum Wage Rates (historic)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "IDOL lists $15.00 for 1/1/2025 and 1/1/2026. Youth (<18, <650h) $13.00 and tipped rates not modelled."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "Illinois Personal Information Protection Act (815 ILCS 530) — partially verified",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": null,
+              "standard": "in the most expedient time possible and without unreasonable delay"
+            },
+            "regulator": null,
+            "processorToController": null,
+            "unverified": [
+              "regulator (815 ILCS 530/10(e) threshold and deadline)",
+              "processorToController"
+            ]
+          },
+          "source": {
+            "url": "https://www.illinoisattorneygeneral.gov/consumer-protection/for-businesses/data-breach",
+            "title": "Illinois Attorney General — Data Breach (815 ILCS 530/1 et seq.)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "The Attorney General's page confirms disclosure 'in the most expedient time possible and without unreasonable delay'. The Attorney General notice duty of private data collectors and the duty of a data collector maintaining data it does not own could not be verified: ilga.gov did not respond to automated requests. Legal review must confirm (HUMAN_TODO 3.16)."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Illinois state holidays",
+      "Day and Temporary Labor Services Act",
+      "Illinois Equal Pay registration certificates",
+      "privacy: 815 ILCS 530/10 Attorney General notice and processor duty — ilga.gov did not respond to automated requests"
+    ],
+    "notes": "Local ordinances not yet modelled: Chicago Paid Leave and Paid Sick and Safe Leave Ordinance, Chicago and Cook County minimum wages, Cook County Earned Sick Leave and Paid Leave Ordinance. No state daily overtime (weekly rule matches FLSA)."
+  }
+}

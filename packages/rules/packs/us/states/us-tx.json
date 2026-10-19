@@ -1,0 +1,102 @@
+{
+  "jurisdiction": "US-TX",
+  "parent": "US",
+  "name": "Texas",
+  "version": 2,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Texas: no statewide sick leave requirement for private employers",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "statewide": false
+          },
+          "source": {
+            "url": "https://efte.twc.texas.gov/vacation_sick_and_parental_leave_policies.html",
+            "title": "Texas Workforce Commission — Texas Guidebook for Employers: Vacation, Sick, and Parental Leave Policies"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "TWC: sick and/or parental leave is not required unless it would be a reasonable accommodation under disability- or pregnancy-related laws."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Texas minimum wage (Texas Minimum Wage Act adopts the federal FLSA rate)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "*",
+                "hourlyMinor": 725
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.dol.gov/agencies/whd/minimum-wage/state",
+            "title": "U.S. DOL WHD — State Minimum Wage Laws (updated 1 July 2026)"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Texas Labor Code ch. 62 adopts the FLSA section 6 rate by reference."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "Texas notification of breach of security (Bus. & Com. Code 521.053)",
+      "versions": [
+        {
+          "effectiveFrom": "2023-09-01",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": 60,
+              "from": "determination",
+              "standard": "without unreasonable delay and in each case not later than the 60th day after the date on which the person determines that the breach occurred"
+            },
+            "regulator": {
+              "body": "Texas Attorney General",
+              "deadlineDays": 30,
+              "from": "determination",
+              "minAffected": 250,
+              "standard": "as soon as practicable and not later than the 30th day after the date on which the person determines that the breach occurred, submitted electronically"
+            },
+            "processorToController": {
+              "standard": "immediately after discovering the breach"
+            },
+            "consumerReportingAgencies": {
+              "minAffected": 10001,
+              "standard": "without unreasonable delay, when more than 10,000 persons are notified at one time"
+            },
+            "lawEnforcementDelay": true
+          },
+          "source": {
+            "url": "https://tcss.legis.texas.gov/resources/BC/htm/BC.521.htm",
+            "title": "Texas Business and Commerce Code section 521.053"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "521.053(b) individuals within 60 days of determination; (c) a person maintaining data it does not own notifies the owner 'immediately after discovering the breach'; (h) consumer reporting agencies over 10,000; (i) Attorney General 'not later than the 30th day' if at least 250 Texas residents. effectiveFrom = 1 September 2023, from which the Attorney General requires electronic reports (https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting); earlier versions not modelled."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)"
+    ],
+    "notes": "No statewide paid sick leave. City paid sick leave ordinances (Austin, Dallas, San Antonio) — legal status not verified; not modelled. No daily overtime."
+  }
+}

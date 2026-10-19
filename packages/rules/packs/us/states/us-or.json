@@ -1,0 +1,174 @@
+{
+  "jurisdiction": "US-OR",
+  "parent": "US",
+  "name": "Oregon",
+  "version": 2,
+  "updatedOn": "2026-10-18",
+  "rules": [
+    {
+      "key": "sick_pay.paid_sick_leave_accrual",
+      "description": "Oregon sick time (ORS 653.601-653.661)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "accrual": {
+              "hoursEarned": 1,
+              "perHoursWorked": 30
+            },
+            "annualCapHours": 40,
+            "paidIfOregonEmployeesAtLeast": 10,
+            "paidIfEmployeesAtLeastWithPortlandLocation": 6,
+            "useMayBeDeferredUntilCalendarDay": 91,
+            "employerMayLimitCarryoverHours": 40,
+            "employerMayCapBalanceHours": 80
+          },
+          "source": {
+            "url": "https://www.oregon.gov/boli/workers/pages/sick-time.aspx",
+            "title": "Oregon BOLI — Sick Time"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Long-standing rule; in force before this date. Earlier history is not modelled — effectiveFrom is the modelling baseline, not the date the rule was enacted. Employers may front-load 40 hours instead of accrual."
+        }
+      ]
+    },
+    {
+      "key": "minimum_wage.rates",
+      "description": "Oregon minimum wage by region (adjusted 1 July each year)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-07-01",
+          "effectiveTo": "2025-07-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "standard",
+                "hourlyMinor": 1470
+              },
+              {
+                "region": "portland_metro",
+                "hourlyMinor": 1595
+              },
+              {
+                "region": "nonurban_counties",
+                "hourlyMinor": 1370
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx",
+            "title": "Oregon BOLI — Minimum Wage Schedule"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2025-07-01",
+          "effectiveTo": "2026-07-01",
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "standard",
+                "hourlyMinor": 1505
+              },
+              {
+                "region": "portland_metro",
+                "hourlyMinor": 1630
+              },
+              {
+                "region": "nonurban_counties",
+                "hourlyMinor": 1405
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx",
+            "title": "Oregon BOLI — Minimum Wage Schedule"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)"
+        },
+        {
+          "effectiveFrom": "2026-07-01",
+          "effectiveTo": null,
+          "value": {
+            "currency": "USD",
+            "rates": [
+              {
+                "region": "standard",
+                "hourlyMinor": 1555
+              },
+              {
+                "region": "portland_metro",
+                "hourlyMinor": 1680
+              },
+              {
+                "region": "nonurban_counties",
+                "hourlyMinor": 1455
+              }
+            ]
+          },
+          "source": {
+            "url": "https://www.oregon.gov/boli/workers/pages/minimum-wage-schedule.aspx",
+            "title": "Oregon BOLI — Minimum Wage Schedule"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "Portland Metro = within the urban growth boundary; nonurban county list not modelled. 1 Jul 2027 rate not yet published."
+        }
+      ]
+    },
+    {
+      "key": "privacy.breach_notification",
+      "description": "Oregon notice of breach of security (ORS 646A.604)",
+      "versions": [
+        {
+          "effectiveFrom": "2024-01-01",
+          "effectiveTo": null,
+          "value": {
+            "individuals": {
+              "deadlineDays": 45,
+              "from": "discovery",
+              "standard": "in the most expeditious manner possible, without unreasonable delay, but not later than 45 days after discovering or receiving notification of the breach of security"
+            },
+            "regulator": {
+              "body": "Oregon Attorney General",
+              "deadlineDays": 45,
+              "from": "discovery",
+              "minAffected": 251,
+              "standard": "in writing or electronically, where the number of consumers to be notified exceeds 250"
+            },
+            "processorToController": {
+              "deadlineDays": 10,
+              "from": "discovery",
+              "standard": "as soon as is practicable but not later than 10 days after discovering the breach of security or having a reason to believe that it occurred"
+            },
+            "lawEnforcementDelay": true
+          },
+          "source": {
+            "url": "https://www.oregonlegislature.gov/bills_laws/ors/ors646a.html",
+            "title": "Oregon Revised Statutes chapter 646A, section 646A.604"
+          },
+          "verifiedOn": "2026-10-18",
+          "reviewer": "research-agent (pending legal review)",
+          "notes": "646A.604(1)(b) the Attorney General where more than 250 consumers; (2)(a) vendors notify the covered entity within 10 days; (3)(a) notice 'not later than 45 days after discovering or receiving notification' — applied here to both notices required by subsection (1), which is an interpretation for legal review. Modelling baseline 2024-01-01."
+        }
+      ]
+    }
+  ],
+  "holidays": [],
+  "coverage": {
+    "priority": "high",
+    "deeperRulesTodo": [
+      "State holidays (not modelled yet)",
+      "Oregon Paid Leave",
+      "Oregon predictive scheduling",
+      "Region (county) mapping for minimum wage"
+    ],
+    "notes": "Local ordinances not yet modelled: Portland-area paid sick time threshold is modelled in the rule; Oregon Paid Leave (paid family and medical leave), predictive scheduling, and manufacturing/agriculture overtime rules not modelled."
+  }
+}
