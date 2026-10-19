@@ -27,6 +27,11 @@ Things only a person with the right accounts or authority can do. The build runs
   5. When the first manual staging deploy has worked, set the repository variable `AUTO_DEPLOY_STAGING=true`. From then on every green CI run on `main` deploys staging. Until then the Deploy workflow only runs when started by hand (`workflow_dispatch`).
 - [ ] 1.6 **Separate AWS accounts per environment (recommended).** Create `hr-dev` and `hr-prod` accounts in the organisation, apply the same SCP region allow-list, add SSO access, and put their account ids in `infra/config/dev.json` and `infra/config/prod.json` (currently both use the staging account id as a placeholder).
 
+- [ ] 1.7 **Malware scanning of uploaded files (ASVS V5.4.3; recurring cost, so it needs your approval).** Uploads are size-limited, type-checked by magic bytes, stored privately in the home-region bucket and downloaded only as attachments, but they are not scanned for known malware. Amazon GuardDuty Malware Protection for S3 scans new objects in the same region and tags them; it is billed per GB scanned and per object evaluated (check https://aws.amazon.com/guardduty/pricing/ and add the line to `docs/COSTS.md`). If approved:
+  1. In each cell account and region (eu-west-2, eu-central-1, us-east-2): GuardDuty → Malware Protection for S3 → Enable for the bucket `thapsus-hr-<env>-<region>-files-<account>`, with tagging on, using the service role GuardDuty proposes. Scan results stay in the same region.
+  2. Ask engineering to (a) add the protection plan to `infra/lib/cell-stack.ts` (`AWS::GuardDuty::MalwareProtectionPlan`) so it is under CDK, (b) make downloads refuse objects whose `GuardDutyMalwareScanStatus` tag is not `NO_THREATS_FOUND`, and (c) mark V5.4.3 as met in `docs/ASVS.md`.
+  3. Add GuardDuty (malware scanning, same region, file contents) to `docs/SUBPROCESSORS.md` if your legal review treats it as a processing activity of AWS beyond storage.
+
 ## 2. Domain, TLS and email
 
 - [ ] 2.1 **Choose and register the product domain.** Set `THAPSUS_HR_DOMAIN` (infra config `domain`) and add the Route 53 hosted zone id to `infra/config/<env>.json`. Until then staging uses the load balancer DNS names with an imported self-signed certificate. Browsers will warn; the smoke test accepts it explicitly.
@@ -160,6 +165,10 @@ Things only a person with the right accounts or authority can do. The build runs
 ## 5. Accounts and access for staff
 
 - [ ] 5.1 Create the first Thapsus back-office super admin in each cell: `pnpm --filter @thapsus/api exec tsx src/cli/create-staff.ts <email> "<name>" super_admin`. Store the printed one-time password and TOTP secret in a password manager.
+- [ ] 5.2 **Independent penetration test before production (ASVS review follow-up).** `docs/ASVS.md` is a self-assessment against OWASP ASVS 5.0 level 2. Before the first production customer:
+  1. Commission a CREST- or equivalent-accredited tester for the staging stacks (all three regions), scoped to the app, API, SCIM, SSO, public API (API keys and OAuth) and back office, with fictional data only.
+  2. Share `docs/ASVS.md`, `docs/SECURITY.md` and the OpenAPI document (`/openapi.json`) with them.
+  3. File every finding as an issue; fix or record each one in `docs/SECURITY.md` → "Accepted risks and follow-ups" and update `docs/ASVS.md`.
 
 ## 6. Enterprise platform (Phase 9)
 

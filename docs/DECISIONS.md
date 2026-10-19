@@ -1145,3 +1145,73 @@ Sources:
 **Decision.** `Table` in `packages/ui` takes an optional `scrollLabel`. With it, the overflow wrapper becomes a focusable `region` named by the label, with the standard focus ring. Without it, the table renders exactly as before.
 
 **Consequences.** New screens pass the label on every table that may overflow (all the settings tables and the leave balances table). Existing tables are unchanged; adding the label to them is a safe follow-up.
+
+## ADR-0130 — Browser hardening from the ASVS review: `__Host-` cookies, origin checks, JSON-only bodies and a nonce CSP (2026-10-19)
+
+**Context.** The OWASP ASVS 5.0 level 2 review (PROGRESS 12.3, `docs/ASVS.md`) found: the session cookie `thr_sid` had no `__Host-` prefix (V3.3.1, V3.3.3); every route parsed urlencoded and text bodies, so a same-site page could post a CORS-safelisted form and the only defence was SameSite=Lax (V3.5.1, V3.5.2); the CSP allowed inline scripts and `base-uri 'self'` (V3.4.3); XML and HTML responses could lack a charset (V4.1.1); download names were only stripped of quotes (V5.4.2); plain-HTTP API requests were redirected (V4.1.2).
+
+**Decision.**
+- Behind HTTPS the session cookie is `__Host-thr_sid` (Secure, Path=/, no Domain, HttpOnly, SameSite=Lax) and the staff cookie `__Host-thr_staff` (SameSite=Strict; the prefix needs Path=/, so it is no longer path-scoped). Plain-HTTP local development and e2e keep `thr_sid` / `thr_staff`, which browsers would refuse with the prefix. The API reads only the name that matches its own URL. The OIDC sign-in binding cookie is `__Host-thr_sso`.
+- A state-changing request whose `Origin` is not the app, API or global origin, or whose `Sec-Fetch-Site` says `cross-site` / `same-site` without an Origin, is refused (403) before routing, cookie or not. Requests that authenticate only with an Authorization header, and non-browser clients that send neither header, are not forgeable and pass. The SAML ACS is the one route marked `crossSite`: the identity provider's page posts to it by design, and the signed assertion, one-time RelayState and assertion replay cache protect it.
+- `text/plain` is not parsed at all and `application/x-www-form-urlencoded` only inside the SAML ACS, OAuth token endpoint and mock IdP plugin scopes.
+- Pages get a fresh 128-bit nonce per request from `apps/web/proxy.ts`: `script-src 'self' 'nonce-…' 'strict-dynamic'`, `base-uri 'none'`, `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`. Every page is already rendered per request (the root layout reads cookies), so this costs no static optimisation; `/developers` stops being force-static and a unit test refuses static pages. Styles keep `'unsafe-inline'` (React style attributes cannot carry a nonce; styles cannot run script). Static assets get a policy under which nothing runs.
+- text and XML responses always declare `charset=utf-8`; every Content-Disposition follows RFC 6266 / 8187 (sanitised ASCII `filename` plus exact UTF-8 `filename*`); port 80 answers API paths with a 400 problem instead of a redirect.
+
+**Consequences.** Cookie names differ between local HTTP and deployed HTTPS; scripts (k6, staging smoke, dev smoke, Lighthouse) accept both. Browsers that send neither Origin nor Sec-Fetch-Site on POST (very old ones) still rely on SameSite=Lax. Tests: `apps/api/test/asvs.int.test.ts`, `apps/api/test/asvs-units.test.ts`, `apps/web/test/csp.test.ts`, `apps/web/e2e/security-asvs.spec.ts`, `infra/test/infra.test.ts` (test 3).
+
+## ADR-0131 — Session management, step-up re-authentication and second-factor recovery (2026-10-19)
+
+**Context.** ASVS V6.3.3, V6.4.3, V6.4.4, V7.2.4, V7.4.3, V7.4.5, V7.5.1 and V7.5.2. Before this review a non-admin who had enrolled an authenticator could skip it (the gate only applied to admins), so an emailed sign-in link also skipped it; nobody could see or end their other sessions; admins could not sign a person out; adding a factor needed no fresh proof of identity; and a lost authenticator had no recovery path.
+
+**Decision.**
+- The second-factor gate applies to everyone who has a factor, on every sign-in path (password, magic link, SSO without trusted IdP MFA). Admins without one must still enrol first.
+- "Recent authentication" is the sign-in or `POST /v1/auth/reauth` (password or authenticator code) within 10 minutes. It is required to replace or add a second factor when one exists, to set a first password, to end your own other sessions, to sign everyone out, and to reset someone's factors. Re-authentication issues a new session token (the old one stops working), and a sign-in ends the session the browser presented before.
+- People list their active sessions (device from the user agent, method, signed in, last active) and end one or all of the others. Adding an authenticator or passkey, or changing the password, ends every other session automatically; the current session stays (it just proved the factor).
+- Company-wide `settings.manage` holders can sign one person out everywhere, or everyone except themselves.
+- A lost factor is reset by a company-wide `settings.manage` holder who holds every permission the person holds, never for themselves, after confirming the person's identity out of band the way the employer did at hiring (`identityConfirmed: true` is required and audited). Factors are deleted, sessions end, the person is emailed, and they enrol again at their next sign-in (admins are forced to). A sole owner who loses every factor cannot yet be recovered in the product (Thapsus staff have no route to do it); a staff-assisted, identity-proofed recovery is a recorded follow-up, and customers are advised to keep two owners.
+- Back office: each staff TOTP step is accepted once, staff sessions also end after 30 idle minutes, and failed staff sign-ins are in the staff trail.
+- Emailed sign-in links live 10 minutes (V6.5.5).
+
+**Consequences.** One migration (`0019_asvs_hardening.sql`, expand-only). People who use only SSO or passkeys re-authenticate by signing in again (the dialog says so). Tests: `apps/api/test/asvs.int.test.ts` (V6.3, V6.4, V7.2.4, V7.4, V7.5), `apps/web/e2e/security-asvs.spec.ts`.
+
+## ADR-0132 — Passwords are checked offline against a bundled common-password list and context-specific words (2026-10-19)
+
+**Context.** ASVS V6.2.4, V6.2.11 and V6.2.12 ask for checks against the top 3,000+ passwords, context-specific words and breached passwords. A breach API (for example Have I Been Pwned's range API) would be a new third party outside `docs/SUBPROCESSORS.md`.
+
+**Decision.** The policy stays length-only (12 to 128 characters of any kind, used exactly as typed). New passwords at sign-up and on change are also refused when they are one of the 10,000 most common 12-to-128-character passwords from the SecLists `xato-net-10-million-passwords-1000000.txt` compilation of breached passwords (MIT licence; bundled as `apps/api/src/modules/auth/common-passwords.json`, compared case-insensitively), or when they contain a context-specific word: the product name, the workspace name and slug, or the person's own name and email address (each word of at least four letters or digits, ignoring generic company suffixes and mail-provider labels). No third party is called.
+
+**Consequences.** The list is refreshed by hand (it records its source and retrieval date). A larger breach corpus would need a separate decision and a SUBPROCESSORS.md entry. Tests: `apps/api/test/asvs-units.test.ts` (V6.2), `apps/api/test/asvs.int.test.ts` (V6.2).
+
+## ADR-0133 — Zip uploads are bounded before and while they inflate (2026-10-19)
+
+**Context.** ASVS V5.2.3. Payslip bulk uploads accepted zips and trusted the sizes the archive declared; `.xlsx` imports (zip containers) went straight to ExcelJS, which inflates everything.
+
+**Decision.** `apps/api/src/lib/archive.ts` reads the entry count from the end-of-central-directory record (ZIP64 included) before any parsing, refuses archives over the limit, then inflates entries one at a time with a per-entry and a shared per-upload byte budget counted on the actual bytes. Payslips: 2,000 entries, 10 MB per file, 200 MB inflated per upload, and 200 MB per request. `.xlsx` imports: 5,000 entries, 300 MB per entry, 400 MB inflated, checked before ExcelJS opens the file.
+
+**Consequences.** A zip bomb fails fast with a clear reason. The `.xlsx` check inflates the workbook once more (bounded); acceptable at import sizes.
+
+## ADR-0134 — Request bodies are cleaned of undeclared fields (2026-10-19)
+
+**Context.** ASVS V15.3.3 (mass assignment). Of about 200 JSON request bodies, roughly 150 schemas did not set `additionalProperties: false`, so handlers could receive fields their action never declared. Closing every schema would turn harmless extra fields from existing clients into 400s.
+
+**Decision.** The validator compiler (`apps/api/src/http/validation.ts`) validates with TypeBox as before and then removes every property the route's body schema does not declare, at every level (`Value.Clean`). Closed schemas still refuse unknown fields; records and explicit `additionalProperties: true` keep theirs. A contract test enumerates every registered route body (hidden routes included) and fails when an undeclared field would survive.
+
+**Consequences.** New routes are protected by default. A route that really needs free-form keys must say so in its schema. Tests: `apps/api/test/mass-assignment.contract.test.ts`.
+
+## ADR-0135 — Supply chain and transport: an SBOM in verify, verified database TLS (2026-10-19)
+
+**Context.** ASVS V15.1.2 (SBOM) and V12.3.1 to V12.3.4. Database pools set `rejectUnauthorized: false` for AWS hosts, and URLs used `sslmode=require` (node-postgres currently treats it as verify-full but warns that it will change to libpq semantics, which do not verify). The migrator and the reporting reader connect to Aurora endpoints, whose certificates chain to the Amazon RDS CA, not a public CA.
+
+**Decision.**
+- `pnpm verify` (security step) writes a CycloneDX SBOM of the production dependencies with pnpm's built-in `pnpm sbom` (lockfile only, offline) to `.verify/sbom.cdx.json` and fails if any third-party component does not come from registry.npmjs.org with an integrity hash. CI uploads it as the `sbom-cyclonedx` artifact. No new service.
+- Database connections to AWS always verify certificates: `sslmode=verify-full` and `ssl: { rejectUnauthorized: true }`. The API and worker images add the Amazon RDS global CA bundle, pinned by SHA-256, through `NODE_EXTRA_CA_CERTS` (RDS Proxy already presents a publicly trusted ACM certificate).
+
+**Consequences.** When AWS publishes a new RDS CA bundle, the Dockerfile checksum must be updated (the build fails loudly otherwise). Tests: `scripts/test/sbom.test.ts`, `packages/db/test/tls.test.ts`.
+
+## ADR-0136 — ASVS level 2 gaps accepted for now (2026-10-19)
+
+**Context.** Some ASVS level 2 requirements need recurring cost, AWS resources that cannot be created without approval, or larger redesigns than a review should make.
+
+**Decision.** Record, with owners, in `docs/SECURITY.md` → "Accepted risks and follow-ups" and `docs/HUMAN_TODO.md`, and mark them "Gap" in `docs/ASVS.md`: antivirus scanning of uploads (GuardDuty Malware Protection for S3 is recurring cost: HUMAN_TODO 1.7); TLS between the ALB / Service Connect and the containers (V12.3.3); static database and Valkey passwords instead of IAM authentication (V13.2.1); SSO users linked by email instead of issuer + subject (V6.8.1, V10.5.2); trusting IdP MFA without checking `amr`/`acr` (V6.8.4); the SAML response not bound to the browser (only OIDC is); emailed links not bound to the requesting browser (V6.6.2); credentials in URLs for calendar feeds and emailed links (V14.2.1); the offline clock queue in browser storage (V14.3.3); RSA-2048 keys from authenticators and customer IdPs (V11.2.3); the back office sharing the app's host name (V3.5.4); the generated staff password not being changed at first sign-in (V6.4.1); automation webhooks checked without connect-time DNS validation (V1.3.6); and an independent penetration test (HUMAN_TODO 5.2).
+
+**Consequences.** `docs/ASVS.md` lists each gap next to its requirement, so the next review starts from the same list.

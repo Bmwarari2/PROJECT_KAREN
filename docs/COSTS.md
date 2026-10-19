@@ -56,6 +56,11 @@ There is no fixed cost. Bedrock bills per token through AWS Marketplace, and onl
 
 - One Secrets Manager secret per cell for that region's Stripe test-mode keys (`thapsus-hr/<env>/stripe/<cell>`): about $0.40 a month each, $1.20 a month per environment, inside the existing "Secrets Manager, KMS, …" line. No other AWS resource was added. Stripe itself bills per transaction (Billing and Tax fees) only in live mode, which needs the product owner's approval (HUMAN_TODO 4.1).
 
+## Phase 12 ASVS review
+
+- No AWS resource and no recurring cost were added. The SBOM uses pnpm's built-in generator in CI; the RDS CA bundle is downloaded at image build time; the HTTP-listener rules for API paths are free.
+- Not added, pending approval: GuardDuty Malware Protection for S3 for uploaded files (HUMAN_TODO 1.7). It is billed per GB scanned and per object evaluated; estimate it from https://aws.amazon.com/guardduty/pricing/ against each cell's upload volume and add the line here before enabling it.
+
 ## Load test (temporary, per run)
 
 `pnpm loadtest --provision` creates `ThapsusHr-loadtest-global` and `ThapsusHr-loadtest-cell-uk` (eu-west-2 only; `infra/config/loadtest.json`) and deletes them at the end of the run (`docs/runbooks/load-test.md`). Nothing is left running.
