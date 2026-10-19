@@ -86,7 +86,7 @@ export default function IncidentsPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardTitle>{t('privacy.ui.incidents.newTitle')}</CardTitle>
         <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.incidents.newLead')}</p>

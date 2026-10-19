@@ -60,7 +60,7 @@ export default function Eeo1Page() {
             <SourceLink source={r.data.source} verifiedOn={r.data.verifiedOn} />
           </Card>
           <Card className="p-0">
-            <Table dense>
+            <Table dense scrollLabel={t('compliance.eeo1.tableCaption')}>
               <caption className="px-4 py-3 text-left text-callout font-semibold">{t('compliance.eeo1.tableCaption')}</caption>
               <THead>
                 <tr>

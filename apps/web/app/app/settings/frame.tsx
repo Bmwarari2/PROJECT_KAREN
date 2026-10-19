@@ -29,7 +29,11 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-      <nav aria-label={t('admin.nav.label')} className="lg:sticky lg:top-20 lg:w-60 lg:shrink-0">
+      {/* On large screens the list is sticky and scrolls on its own, so entries below the fold stay reachable (WCAG 2.4.11). */}
+      <nav
+        aria-label={t('admin.nav.label')}
+        className="lg:sticky lg:top-[calc(var(--topbar-height)_+_var(--space-6))] lg:-mx-1 lg:max-h-[calc(100dvh_-_var(--topbar-height)_-_2_*_var(--space-6))] lg:w-60 lg:shrink-0 lg:scroll-py-2 lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:py-1"
+      >
         <button
           type="button"
           className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface-raised px-3 text-callout font-semibold focus-visible:outline-2 focus-visible:outline-accent lg:hidden"

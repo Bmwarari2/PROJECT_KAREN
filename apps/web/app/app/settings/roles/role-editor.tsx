@@ -235,8 +235,8 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <Card className="flex flex-col gap-4">
         <CardTitle>{t('access.editor.fieldsTitle')}</CardTitle>
         <p className="text-callout text-text-secondary">{t('access.editor.fieldsBody')}</p>
-        <div className="overflow-x-auto">
-          <Table dense>
+        <div>
+          <Table dense scrollLabel={t('access.editor.fieldsTitle')}>
             <THead>
               <tr>
                 <TH>{t('access.editor.fieldCol')}</TH>

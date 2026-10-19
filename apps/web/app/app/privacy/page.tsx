@@ -67,7 +67,7 @@ export default function PrivacyRequestsPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardTitle>{t('privacy.ui.form.title')}</CardTitle>
         <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.form.lead')}</p>
@@ -156,8 +156,8 @@ export default function PrivacyRequestsPage() {
         {list.loading && !list.data ? (
           <Skeleton className="mt-4 h-32" />
         ) : list.data?.length ? (
-          <div className="mt-3 overflow-x-auto">
-            <Table dense>
+          <div className="mt-3">
+            <Table dense scrollLabel={t('privacy.ui.queue')}>
               <THead>
                 <tr>
                   <TH>{t('privacy.ui.col.subject')}</TH>

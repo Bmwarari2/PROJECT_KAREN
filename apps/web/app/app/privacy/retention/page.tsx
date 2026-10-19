@@ -87,12 +87,12 @@ export default function RetentionPage() {
 
   if (!view.data) return <Skeleton className="h-64" />;
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardTitle>{t('privacy.ui.retention.rulesTitle')}</CardTitle>
         <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.retention.rulesLead')}</p>
-        <div className="mt-3 overflow-x-auto">
-          <Table dense>
+        <div className="mt-3">
+          <Table dense scrollLabel={t('privacy.ui.retention.rulesTitle')}>
             <THead>
               <tr>
                 <TH>{t('privacy.ui.retention.category')}</TH>
@@ -280,8 +280,8 @@ export default function RetentionPage() {
         <CardTitle>{t('privacy.ui.retention.logTitle')}</CardTitle>
         <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.retention.logLead')}</p>
         {log.data?.length ? (
-          <div className="mt-3 overflow-x-auto">
-            <Table dense>
+          <div className="mt-3">
+            <Table dense scrollLabel={t('privacy.ui.retention.logTitle')}>
               <THead>
                 <tr>
                   <TH>{t('privacy.ui.retention.when')}</TH>
