@@ -7,6 +7,7 @@ import { authorizeSome } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { objectKey } from '../../lib/object-store';
+import { checkZipBounds, isZipArchive } from '../../lib/archive';
 import { registerJob } from '../../jobs/registry';
 import { FIELDS } from '../employees/model';
 import { applyEmployeeChange, applySectionChange, employeeAsOf, refreshCurrent, refreshCurrentMany, setManager } from '../employees/service';
@@ -15,6 +16,8 @@ import { bulkCreatable, bulkCreateEmployees, bulkLinkManagers, currentSectionVal
 import type { Deps } from '../../deps';
 
 const MAX_IMPORT_BYTES = 60 * 1024 * 1024;
+/** Limits for an .xlsx import once unpacked (generous for 200,000 rows; a zip bomb stops here). */
+export const XLSX_LIMITS = { maxEntries: 5000, maxEntryBytes: 300 * 1024 * 1024, maxTotalBytes: 400 * 1024 * 1024 };
 /** Rows per transaction (and per progress update) in the import job; tests lower it to see progress. */
 export const importTuning = { chunkSize: 500 };
 /** Created rows after which the job refreshes table statistics (see migration 0007i). */
@@ -51,6 +54,15 @@ export async function importRoutes(app: FastifyInstance) {
       if (!file) throw new ApiError('validation', 'No file');
       if (!/\.(csv|xlsx)$/i.test(file.filename)) throw new ApiError('validation', 'Upload a .csv or .xlsx file');
       const buf = await file.toBuffer();
+      if (/\.xlsx$/i.test(file.filename)) {
+        // An .xlsx file is a zip archive: its entry count and inflated size are checked before the
+        // spreadsheet parser opens it (ASVS V5.2.2, V5.2.3).
+        if (!isZipArchive(buf)) throw new ApiError('validation', 'The file is not a valid .xlsx workbook');
+        const problem = await checkZipBounds(buf, XLSX_LIMITS);
+        if (problem) throw new ApiError('validation', problem === 'badArchive' ? 'The file is not a valid .xlsx workbook' : 'The workbook is too large once unpacked', { reason: problem });
+      } else if (buf.subarray(0, 4096).includes(0)) {
+        throw new ApiError('validation', 'The file is not a text CSV file');
+      }
       const table = await readTable(buf, file.filename);
       if (!table.headers.length) throw new ApiError('validation', 'The file has no header row');
       const key = objectKey(auth.tenantId, 'imports', /\.xlsx$/i.test(file.filename) ? '.xlsx' : '.csv');

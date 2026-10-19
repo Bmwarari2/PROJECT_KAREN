@@ -1,4 +1,4 @@
-import JSZip from 'jszip';
+import { InflateBudget, isZipArchive, openZip } from '../../lib/archive';
 
 /**
  * Matching uploaded payslip / year-end files to employees.
@@ -61,11 +61,16 @@ export function decide(fileName: string, by: MatchBy, pattern: string | null, nu
 
 // ---- reading uploads (PDFs, or zip archives of PDFs) ----------------------------------------------------------------------
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+/** Most bytes all archives in one upload may inflate to (actual bytes, not the sizes they declare). */
 export const MAX_ARCHIVE_TOTAL = 200 * 1024 * 1024;
 export const MAX_FILES = 1000;
+/** Most entries an archive may list (files, folders and metadata), checked before anything is inflated. */
+export const MAX_ARCHIVE_ENTRIES = 2 * MAX_FILES;
+/** Most bytes one upload request may carry in total (every file part together). */
+export const MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
 
 export const isPdf = (b: Buffer) => b.length > 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46;
-export const isZip = (b: Buffer) => b.length > 4 && b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
+export const isZip = isZipArchive;
 
 export interface UploadedFile {
   name: string;
@@ -76,30 +81,15 @@ export interface Rejected {
   reason: 'notPdf' | 'tooLarge' | 'tooMany' | 'duplicate' | 'badArchive';
 }
 
-/** Inflates one entry, stopping as soon as it exceeds `limit` (header sizes in a zip can lie). */
-function readBounded(entry: JSZip.JSZipObject, limit: number): Promise<Buffer | undefined> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let size = 0;
-    const stream = entry.nodeStream('nodebuffer');
-    stream.on('data', (c: Buffer) => {
-      size += c.length;
-      if (size > limit) {
-        (stream as unknown as { pause(): void }).pause();
-        resolve(undefined);
-        return;
-      }
-      chunks.push(c);
-    });
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-    stream.on('error', reject);
-  });
-}
-
-/** Expands zip archives (guarding against zip bombs by declared sizes) and keeps only real PDFs. */
+/**
+ * Expands zip archives and keeps only real PDFs (ASVS V5.2.2, V5.2.3). An archive listing more than
+ * MAX_ARCHIVE_ENTRIES entries is refused before inflation; each entry is inflated with a bound of
+ * MAX_FILE_BYTES and every archive in the upload shares one MAX_ARCHIVE_TOTAL budget.
+ */
 export async function expandUploads(files: UploadedFile[]): Promise<{ accepted: UploadedFile[]; rejected: Rejected[] }> {
   const accepted: UploadedFile[] = [];
   const rejected: Rejected[] = [];
+  const budget = new InflateBudget(MAX_ARCHIVE_TOTAL);
   const add = (f: UploadedFile) => {
     if (accepted.length >= MAX_FILES) return rejected.push({ name: f.name, reason: 'tooMany' });
     if (f.body.length > MAX_FILE_BYTES) return rejected.push({ name: f.name, reason: 'tooLarge' });
@@ -111,26 +101,25 @@ export async function expandUploads(files: UploadedFile[]): Promise<{ accepted: 
       add(f);
       continue;
     }
-    let zip: JSZip;
-    try {
-      zip = await JSZip.loadAsync(f.body);
-    } catch {
-      rejected.push({ name: f.name, reason: 'badArchive' });
+    const zip = await openZip(f.body, { maxEntries: MAX_ARCHIVE_ENTRIES, maxEntryBytes: MAX_FILE_BYTES, maxTotalBytes: MAX_ARCHIVE_TOTAL }, budget);
+    if (typeof zip === 'string') {
+      rejected.push({ name: f.name, reason: zip === 'tooManyEntries' ? 'tooMany' : zip === 'tooLarge' ? 'tooLarge' : 'badArchive' });
       continue;
     }
-    let total = 0;
-    const entries = Object.values(zip.files).filter((e) => !e.dir && !e.name.startsWith('__MACOSX/') && !(e.name.split('/').pop() ?? '').startsWith('.'));
+    const entries = zip.entries.filter((e) => !e.name.startsWith('__MACOSX/') && !(e.name.split('/').pop() ?? '').startsWith('.'));
     for (const e of entries.sort((a, b) => (a.name < b.name ? -1 : 1))) {
-      const declared = (e as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0;
-      total += declared;
       const name = e.name.split('/').pop()!;
-      if (declared > MAX_FILE_BYTES || total > MAX_ARCHIVE_TOTAL) {
+      if (accepted.length >= MAX_FILES) {
+        rejected.push({ name, reason: 'tooMany' });
+        continue;
+      }
+      if (budget.remaining <= 0) {
         rejected.push({ name, reason: 'tooLarge' });
         continue;
       }
-      const body = await readBounded(e, MAX_FILE_BYTES);
-      if (!body) {
-        rejected.push({ name, reason: 'tooLarge' });
+      const body = await zip.inflate(e);
+      if (body === 'tooLarge' || body === 'badArchive') {
+        rejected.push({ name, reason: body });
         continue;
       }
       add({ name, body });
