@@ -4,6 +4,8 @@ import { Button, Card, CardTitle, Field, Input, Table, TD, TH, THead, TR, useToa
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { useSectionLevel } from '@/components/module-page';
+import { PageTitle } from '../../shell';
 
 type Kind = 'legal-entities' | 'departments' | 'locations';
 const FIELDS: Record<Kind, Array<{ key: string; type?: string; placeholder?: string }>> = {
@@ -24,6 +26,7 @@ const FIELDS: Record<Kind, Array<{ key: string; type?: string; placeholder?: str
 
 function Section({ kind }: { kind: Kind }) {
   const t = useT();
+  const sec = useSectionLevel();
   const toast = useToast();
   const { data, reload } = useApi<Array<Record<string, string>>>(`/v1/org/${kind}`);
   const [v, setV] = React.useState<Record<string, string>>({});
@@ -42,7 +45,7 @@ function Section({ kind }: { kind: Kind }) {
   }
   return (
     <Card className="flex flex-col gap-4">
-      <CardTitle>{t(`orgSettings.${kind}`)}</CardTitle>
+      <CardTitle as={sec.heading}>{t(`orgSettings.${kind}`)}</CardTitle>
       <form onSubmit={add} className="grid gap-3 sm:grid-cols-5 sm:items-end">
         {FIELDS[kind].map((f) => (
           <Field key={f.key} id={`${kind}-${f.key}`} label={t(`orgSettings.field.${f.key}`)}>
@@ -89,7 +92,7 @@ export default function OrganisationSettingsPage() {
   const t = useT();
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-2">{t('orgSettings.title')}</h1>
+      <PageTitle>{t('orgSettings.title')}</PageTitle>
       <Section kind="legal-entities" />
       <Section kind="departments" />
       <Section kind="locations" />

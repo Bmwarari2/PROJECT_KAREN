@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ConfirmAction, FormError, PageHeader, SettingsCard, useAction, useFormat, UserPicker } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Delegation {
   id: string;
@@ -33,6 +34,7 @@ function statusOf(d: Delegation, now: number): 'active' | 'scheduled' | 'ended' 
 /** A manager hands their approvals to a colleague for a period (holiday, leave). */
 export default function DelegationsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const fmt = useFormat();
   const list = useApi<Delegation[]>('/v1/delegations');
   const start = today(fmt.zone);
@@ -183,7 +185,11 @@ export default function DelegationsPage() {
         ) : given.length ? (
           table(given, 'toName', true)
         ) : (
-          <EmptyState icon={<UserRoundCheck aria-hidden />} title={t('admin.delegations.noneGiven')} />
+          <EmptyState
+            level={sec.level}
+            icon={<UserRoundCheck aria-hidden />}
+            title={t('admin.delegations.noneGiven')}
+          />
         )}
       </SettingsCard>
       <SettingsCard

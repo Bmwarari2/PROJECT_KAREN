@@ -19,8 +19,8 @@ export function useInModule(): boolean {
  * The heading level for sections under a page title that is kept (`PageTitle`): h3 under the h2 it is
  * inside a module, h2 under the h1 it is elsewhere, so headings never skip a level (WCAG 1.3.1).
  */
-export function useSectionLevel(): { heading: 'h2' | 'h3'; level: 2 | 3 } {
-  return useInModule() ? { heading: 'h3', level: 3 } : { heading: 'h2', level: 2 };
+export function useSectionLevel(): { heading: 'h2' | 'h3'; sub: 'h3' | 'h4'; level: 2 | 3 } {
+  return useInModule() ? { heading: 'h3', sub: 'h4', level: 3 } : { heading: 'h2', sub: 'h3', level: 2 };
 }
 
 /**

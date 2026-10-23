@@ -17,6 +17,7 @@ import {
   useFormat,
   usePermission,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface ScimToken {
   id: string;
@@ -29,6 +30,7 @@ interface ScimToken {
 /** SCIM 2.0 provisioning from the customer's directory (Microsoft Entra ID, Okta, …). */
 export default function ScimPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const fmt = useFormat();
   const has = usePermission();
   const canManage = has('settings.manage');
@@ -107,7 +109,7 @@ export default function ScimPage() {
         {!tokens.data ? (
           <Skeleton className="h-24" />
         ) : tokens.data.length === 0 ? (
-          <EmptyState icon={<KeyRound aria-hidden />} title={t('admin.scim.none')} />
+          <EmptyState level={sec.level} icon={<KeyRound aria-hidden />} title={t('admin.scim.none')} />
         ) : (
           <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.scim.tokensTitle') })}>
             <THead>

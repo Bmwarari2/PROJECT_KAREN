@@ -5,10 +5,12 @@ import { ArrowLeft, Check, Copy, KeyRound, PowerOff } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { useSession } from '@/app/app/shell';
+import { PageTitle, useSession } from '@/app/app/shell';
+import { useSectionLevel } from '@/components/module-page';
 
 /** Shared building blocks for the enterprise platform settings screens (Phase 9). */
 
+/** The page header of a platform settings screen: its title (`PageTitle`: an h2 under the Settings module header) and lead. */
 export function PageHeader({ title, lead }: { title: string; lead?: string }) {
   const t = useT();
   return (
@@ -17,7 +19,7 @@ export function PageHeader({ title, lead }: { title: string; lead?: string }) {
         <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
         {t('platform.backToSettings')}
       </Link>
-      <h1 className="text-title-2">{title}</h1>
+      <PageTitle>{title}</PageTitle>
       {lead ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{lead}</p> : null}
     </div>
   );
@@ -34,13 +36,14 @@ export function SecretOnce({
   onDone: () => void;
 }) {
   const t = useT();
+  const sec = useSectionLevel();
   const [copied, setCopied] = React.useState<string | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => ref.current?.focus(), []);
   return (
     <Card className="border border-accent" role="region" aria-labelledby="secret-once-title">
       <div ref={ref} tabIndex={-1} className="flex flex-col gap-3 outline-none">
-        <CardTitle id="secret-once-title" className="flex items-center gap-2">
+        <CardTitle id="secret-once-title" as={sec.heading} className="flex items-center gap-2">
           <KeyRound aria-hidden className="h-5 w-5 stroke-[1.5]" />
           {title}
         </CardTitle>
@@ -86,8 +89,10 @@ export function SecretOnce({
 
 export function FeatureOff() {
   const t = useT();
+  const sec = useSectionLevel();
   return (
     <EmptyState
+      level={sec.level}
       icon={<PowerOff aria-hidden />}
       title={t('platform.featureOff.title')}
       body={t('platform.featureOff.body')}

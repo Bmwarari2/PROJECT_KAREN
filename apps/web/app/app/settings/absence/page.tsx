@@ -20,6 +20,7 @@ import {
   usePermission,
   useRoleName,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Trigger {
   id: string;
@@ -159,6 +160,7 @@ function AbsencePolicy() {
 
 function Triggers() {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const roleName = useRoleName();
   const triggers = useApi<Trigger[]>('/v1/absence/triggers');
@@ -208,7 +210,7 @@ function Triggers() {
       {!triggers.data ? (
         <Skeleton className="h-20" />
       ) : triggers.data.length === 0 ? (
-        <EmptyState icon={<BellRing aria-hidden />} title={t('admin.absence.noTriggers')} />
+        <EmptyState level={sec.level} icon={<BellRing aria-hidden />} title={t('admin.absence.noTriggers')} />
       ) : (
         <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.absence.triggersTitle') })}>
           <THead>
@@ -247,7 +249,7 @@ function Triggers() {
         </Table>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4">
-        <h3 className="text-callout font-semibold">{t('admin.absence.addTrigger')}</h3>
+        <sec.sub className="text-callout font-semibold">{t('admin.absence.addTrigger')}</sec.sub>
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="trg-name" label={t('admin.name')}>
             {(p) => (
@@ -330,6 +332,7 @@ function Triggers() {
 
 function CoverRules() {
   const t = useT();
+  const sec = useSectionLevel();
   const rules = useApi<CoverRule[]>('/v1/leave/cover-rules');
   const departments = useOrg('departments');
   const locations = useOrg('locations');
@@ -373,7 +376,7 @@ function CoverRules() {
       {!rules.data ? (
         <Skeleton className="h-20" />
       ) : rules.data.length === 0 ? (
-        <EmptyState icon={<Users aria-hidden />} title={t('admin.absence.noCover')} />
+        <EmptyState level={sec.level} icon={<Users aria-hidden />} title={t('admin.absence.noCover')} />
       ) : (
         <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.absence.coverTitle') })}>
           <THead>
@@ -407,7 +410,7 @@ function CoverRules() {
         </Table>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4">
-        <h3 className="text-callout font-semibold">{t('admin.absence.addCover')}</h3>
+        <sec.sub className="text-callout font-semibold">{t('admin.absence.addCover')}</sec.sub>
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="cover-name" label={t('admin.name')}>
             {(p) => (

@@ -6,6 +6,7 @@ import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { errorText, FeatureOff, PageHeader } from '@/components/platform';
 import { useExperience, useFeature } from '../../shell';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Palette {
   accent: string;
@@ -60,6 +61,7 @@ function Preview({ mode, p }: { mode: 'light' | 'dark'; p: Palette }) {
 
 export default function BrandingPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const toast = useToast();
   const enabled = useFeature('customBranding');
   const { reload } = useExperience();
@@ -143,7 +145,7 @@ export default function BrandingPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('platform.branding.title')} lead={t('platform.branding.lead')} />
       <Card>
-        <CardTitle>{t('platform.branding.accentTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.branding.accentTitle')}</CardTitle>
         <p className="mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">
           {t('platform.branding.accentBody')}
         </p>
@@ -231,7 +233,7 @@ export default function BrandingPage() {
       </Card>
 
       <Card>
-        <CardTitle>{t('platform.branding.logoTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.branding.logoTitle')}</CardTitle>
         <p className="mt-2 text-callout text-text-secondary">{t('platform.branding.logoBody')}</p>
         {branding.data?.logo ? (
           <div className="mt-4 flex items-center gap-4">

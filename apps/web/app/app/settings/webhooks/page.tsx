@@ -27,6 +27,7 @@ import {
   useDateTime,
 } from '@/components/platform';
 import { useFeature } from '../../shell';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Endpoint {
   id: string;
@@ -121,6 +122,7 @@ function DeliveryLog({ endpoint }: { endpoint: Endpoint }) {
 
 export default function WebhooksPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const toast = useToast();
   const enabled = useFeature('webhooks');
   const endpoints = useApi<Page<Endpoint>>(enabled ? '/v1/webhooks?limit=200' : null);
@@ -196,7 +198,7 @@ export default function WebhooksPage() {
       ) : null}
 
       <Card>
-        <CardTitle>{t('platform.webhooks.createTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.webhooks.createTitle')}</CardTitle>
         <form onSubmit={create} className="mt-4 flex flex-col gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Field id="wh-url" label={t('platform.webhooks.url')} hint={t('platform.webhooks.urlHint')}>
@@ -250,6 +252,7 @@ export default function WebhooksPage() {
 
       {endpoints.data && !endpoints.data.data.length ? (
         <EmptyState
+          level={sec.level}
           icon={<Webhook aria-hidden />}
           title={t('platform.webhooks.none')}
           body={t('platform.webhooks.noneBody')}
@@ -259,7 +262,9 @@ export default function WebhooksPage() {
         <Card key={ep.id}>
           <div className="flex flex-wrap items-start gap-3">
             <div className="mr-auto min-w-0">
-              <CardTitle className="break-all">{ep.url}</CardTitle>
+              <CardTitle as={sec.heading} className="break-all">
+                {ep.url}
+              </CardTitle>
               <p className="mt-1 text-footnote text-text-secondary">
                 {ep.description ? `${ep.description} · ` : ''}
                 {ep.eventTypes.join(', ')}
