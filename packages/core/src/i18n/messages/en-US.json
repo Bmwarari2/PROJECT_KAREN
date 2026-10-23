@@ -958,8 +958,13 @@
     },
     "notifications": {
       "cat": {
-        "rota": "Schedules and swaps"
+        "rota": "Schedules and swaps",
+        "payslip": "Pay stubs"
       }
+    },
+    "payslips": {
+      "title": "Pay stubs",
+      "none": "No pay stubs yet."
     }
   },
   "onboarding": {
@@ -971,7 +976,8 @@
       "org": "Organization",
       "rota": "Schedules",
       "absence": "Sick leave and absence",
-      "help": "Help center"
+      "help": "Help center",
+      "payslips": "Pay stubs"
     },
     "perm": {
       "org": {
@@ -990,6 +996,11 @@
       },
       "help": {
         "read": "Read the help center"
+      },
+      "payslips": {
+        "read_own": "View own pay stubs",
+        "read": "View people’s pay stubs",
+        "manage": "Upload and publish pay stubs"
       }
     },
     "field": {
