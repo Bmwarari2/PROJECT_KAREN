@@ -430,7 +430,6 @@
         "askHr": "Ask HR a question"
       },
       "search": {
-        "open": "Search people, pages and actions",
         "title": "Search",
         "label": "Search people, pages, actions and help",
         "placeholder": "Search people, pages and actions",
@@ -453,7 +452,6 @@
       "pending": "pending",
       "collapseRail": "Collapse menu",
       "expandRail": "Expand menu",
-      "account": "Account menu for {name}",
       "yourRoles": "Your roles",
       "myProfile": "My profile",
       "notificationSettings": "Notification settings",
