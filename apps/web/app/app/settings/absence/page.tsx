@@ -142,7 +142,7 @@ function Triggers() {
         </Table>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4">
-        <h4 className="text-callout font-semibold">{t('admin.absence.addTrigger')}</h4>
+        <h3 className="text-callout font-semibold">{t('admin.absence.addTrigger')}</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="trg-name" label={t('admin.name')}>
             {(p) => <Input {...p} required maxLength={120} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} />}
@@ -218,7 +218,7 @@ function CoverRules() {
         </Table>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4">
-        <h4 className="text-callout font-semibold">{t('admin.absence.addCover')}</h4>
+        <h3 className="text-callout font-semibold">{t('admin.absence.addCover')}</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="cover-name" label={t('admin.name')}>
             {(p) => <Input {...p} required maxLength={120} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} />}

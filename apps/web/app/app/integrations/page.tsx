@@ -170,7 +170,7 @@ function ProviderCard({ c, canManage, onChange }: { c: Connection; canManage: bo
       ) : null}
       {c.status !== 'not_configured' ? (
         <div>
-          <h4 className="text-callout font-semibold">{t('integrations.rules')}</h4>
+          <h3 className="text-callout font-semibold">{t('integrations.rules')}</h3>
           {rules.data?.length ? (
             <ul className="mt-2 flex flex-col gap-1 text-callout">
               {rules.data.map((r) => (

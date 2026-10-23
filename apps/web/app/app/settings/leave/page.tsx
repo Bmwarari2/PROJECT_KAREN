@@ -438,7 +438,7 @@ export default function LeaveSettingsPage() {
             {policies.data.map((p) => (
               <li key={p.id} className="flex flex-col gap-2 rounded-md border border-border p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="mr-auto text-callout font-semibold">{p.name}</h4>
+                  <h3 className="mr-auto text-callout font-semibold">{p.name}</h3>
                   <Badge>{t('admin.leave.assignedN', { n: p.assignedEmployees })}</Badge>
                   <Button size="sm" variant="ghost" aria-label={t('admin.leave.assignLabel', { name: p.name })} onClick={() => setAssigning(p)}>
                     <UserPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />

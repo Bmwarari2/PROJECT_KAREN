@@ -77,7 +77,7 @@ export default async function SubprocessorsPage({ searchParams }: { searchParams
                   {title}
                 </h3>
                 <div className="mt-3 rounded-lg bg-surface-raised">
-                  <Table dense scrollLabel={title}>
+                  <Table dense scrollLabel={t('admin.tableScroll', { name: title })}>
                     <THead>
                       <tr>
                         {keep.map(({ c }) => (
@@ -108,7 +108,7 @@ export default async function SubprocessorsPage({ searchParams }: { searchParams
               {t('trust.sub.changes')}
             </h3>
             <div className="mt-3 rounded-lg bg-surface-raised">
-              <Table dense scrollLabel={t('trust.sub.changes')}>
+              <Table dense scrollLabel={t('admin.tableScroll', { name: t('trust.sub.changes') })}>
                 <THead>
                   <tr>
                     <TH scope="col">{t('trust.sub.announced')}</TH>

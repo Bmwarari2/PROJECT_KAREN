@@ -123,8 +123,12 @@ export function Field({ id, label, hint, error, children, className }: FieldProp
 export function Card({ className, size = 'app', ...props }: React.HTMLAttributes<HTMLDivElement> & { size?: 'app' | 'marketing' }) {
   return <div className={cn('bg-surface-raised text-text shadow-sm', size === 'marketing' ? 'rounded-xl p-8 md:p-10' : 'rounded-lg p-5', className)} {...props} />;
 }
-export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-title-3 text-text', className)} {...props} />;
+/**
+ * A card's title. Cards are usually the sections of a page, so the title is an h2 under the page's h1
+ * (WCAG 1.3.1: headings do not skip levels); pass `as="h3"` for cards inside a section with its own h2.
+ */
+export function CardTitle({ className, as: Heading = 'h2', ...props }: React.HTMLAttributes<HTMLHeadingElement> & { as?: 'h2' | 'h3' }) {
+  return <Heading className={cn('text-title-3 text-text', className)} {...props} />;
 }
 
 const badgeTone = { neutral: 'text-text-secondary', accent: 'text-accent', success: 'text-success', warning: 'text-warning', danger: 'text-danger' } as const;
@@ -137,8 +141,8 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 }
 
 // ---- Empty state -----------------------------------------------------------------------------
-/** `level` sets the heading element (default h3, inside a page); a page that is only an empty state uses 1. */
-export function EmptyState({ icon, title, body, action, level = 3 }: { icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode; level?: 1 | 2 | 3 }) {
+/** `level` sets the heading element: 2 (a section of a page) by default, 1 when the empty state is the whole page. */
+export function EmptyState({ icon, title, body, action, level = 2 }: { icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode; level?: 1 | 2 | 3 }) {
   const Heading = `h${level}` as const;
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg bg-surface px-6 py-12 text-center">

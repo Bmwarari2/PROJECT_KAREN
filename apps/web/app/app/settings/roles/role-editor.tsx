@@ -287,7 +287,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
         </div>
         {otherRules.length ? (
           <div>
-            <h4 className="text-callout font-semibold">{t('access.editor.otherRules')}</h4>
+            <h3 className="text-callout font-semibold">{t('access.editor.otherRules')}</h3>
             <ul className="mt-2 flex flex-col gap-1 text-callout text-text-secondary">
               {otherRules.map(([k, v]) => (
                 <li key={k}>
