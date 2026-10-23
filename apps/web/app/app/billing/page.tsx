@@ -22,6 +22,7 @@ import { money } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
+import { PageIntro, useInModule } from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface MoneyT {
@@ -114,6 +115,7 @@ const selectClass =
 
 export default function BillingPage() {
   const t = useT();
+  const inModule = useInModule();
   const locale = useLocale() as Locale;
   const session = useSession();
   const toast = useToast();
@@ -178,19 +180,24 @@ export default function BillingPage() {
   };
 
   if (billing.error?.status === 403)
-    return <EmptyState level={1} icon={<CreditCard aria-hidden />} title={t('billing.ownersOnly')} />;
+    return (
+      <EmptyState
+        level={inModule ? 2 : 1}
+        icon={<CreditCard aria-hidden />}
+        title={t('billing.ownersOnly')}
+      />
+    );
   if (!billing.data || !plans.data || !def) return <Skeleton className="h-64 w-full" />;
   const b = billing.data;
   const planName = (id: string) => t(`pricing.plans.${id}.name`);
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-title-2">{t('billing.title')}</h1>
-        <p className="mt-1 text-callout text-text-secondary">
-          {t('billing.regionNote', { region: t(`regions.${b.region}`) })}
-        </p>
-      </div>
+      <PageIntro
+        title={t('billing.title')}
+        titleIsTab
+        lead={t('billing.regionNote', { region: t(`regions.${b.region}`) })}
+      />
 
       {b.contract ? (
         <Card>
@@ -504,7 +511,7 @@ export default function BillingPage() {
           {t('billing.invoices')}
         </h2>
         {invoices.data && invoices.data.length === 0 ? (
-          <EmptyState icon={<Receipt aria-hidden />} title={t('billing.noInvoices')} />
+          <EmptyState level={3} icon={<Receipt aria-hidden />} title={t('billing.noInvoices')} />
         ) : (
           <Table>
             <caption className="sr-only">{t('billing.invoices')}</caption>
