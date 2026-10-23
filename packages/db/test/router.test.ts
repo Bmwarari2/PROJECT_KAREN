@@ -22,12 +22,12 @@ describe('TenantRouter.fromEnv with dedicated databases', () => {
   it('routes each DEDICATED_DATABASE_HOSTS key to its host with the app role secret, and DEDICATED_READER_HOSTS with the reporting role', () => {
     const router = TenantRouter.fromEnv({ ...cellEnv, DEDICATED_DATABASE_HOSTS: JSON.stringify({ 'big-uk': UK_PROXY }), DEDICATED_READER_HOSTS: JSON.stringify({ 'big-uk': UK_READER }) });
     expect(router.config.databases).toEqual({
-      shared: `postgres://thapsus_app:fictional-app-pw@${cellEnv.DATABASE_HOST}:5432/thapsus?sslmode=require`,
-      'big-uk': `postgres://thapsus_app:fictional-app-pw@${UK_PROXY}:5432/thapsus?sslmode=require`,
+      shared: `postgres://thapsus_app:fictional-app-pw@${cellEnv.DATABASE_HOST}:5432/thapsus?sslmode=verify-full`,
+      'big-uk': `postgres://thapsus_app:fictional-app-pw@${UK_PROXY}:5432/thapsus?sslmode=verify-full`,
     });
     expect(router.config.readers).toEqual({
-      shared: `postgres://thapsus_reporting:fictional-reporting-pw@${cellEnv.REPORTING_DATABASE_HOST}:5432/thapsus?sslmode=require`,
-      'big-uk': `postgres://thapsus_reporting:fictional-reporting-pw@${UK_READER}:5432/thapsus?sslmode=require`,
+      shared: `postgres://thapsus_reporting:fictional-reporting-pw@${cellEnv.REPORTING_DATABASE_HOST}:5432/thapsus?sslmode=verify-full`,
+      'big-uk': `postgres://thapsus_reporting:fictional-reporting-pw@${UK_READER}:5432/thapsus?sslmode=verify-full`,
     });
     expect(router.config.cell).toBe('uk');
     expect(router.registryKey).toBe('shared');
@@ -57,8 +57,8 @@ describe('move runner owner URLs', () => {
       SHARED_DATABASE_HOST: 'thapsus-hr-staging-uk.cluster-abc123.eu-west-2.rds.amazonaws.com',
     };
     expect(ownerUrlsFromEnv(tools)).toEqual({
-      shared: `postgres://thapsus_owner:fictional-shared-owner-pw@${tools.SHARED_DATABASE_HOST}:5432/thapsus?sslmode=require`,
-      'big-uk': `postgres://thapsus_owner:fictional-dedicated-owner-pw@${tools.DATABASE_HOST}:5432/thapsus?sslmode=require`,
+      shared: `postgres://thapsus_owner:fictional-shared-owner-pw@${tools.SHARED_DATABASE_HOST}:5432/thapsus?sslmode=verify-full`,
+      'big-uk': `postgres://thapsus_owner:fictional-dedicated-owner-pw@${tools.DATABASE_HOST}:5432/thapsus?sslmode=verify-full`,
     });
     const explicit = { shared: 'postgres://thapsus_owner:x@localhost:5432/a', 'big-uk': 'postgres://thapsus_owner:x@localhost:5432/b' };
     expect(ownerUrlsFromEnv({ ...tools, OWNER_DATABASES: JSON.stringify(explicit) })).toEqual(explicit);
