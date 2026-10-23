@@ -192,6 +192,8 @@ async function keyboardProblems(page: Page, max = 400): Promise<string[]> {
       break;
     }
     if (step.same) continue;
+    // 2.4.1: on pages with a skip link, the first Tab reaches it
+    if (i === 0 && (await page.locator('a[href="#main"]').count()) && !/skip|main/i.test(step.name)) problems.push(`2.4.1 the first Tab reaches ${step.name}, not the skip link`);
     if (!step.indicator) problems.push(`2.4.7 no visible focus indicator on ${step.name}`);
     if (!step.visible) problems.push(`2.4.11 focused control hidden by other content: ${step.name}`);
   }

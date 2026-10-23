@@ -117,7 +117,7 @@ export default function PlansPage() {
         <h2 id="contracts-title" className="text-title-3">
           {t('backoffice.contracts.title')}
         </h2>
-        <Table scrollLabel={t('backoffice.contracts.title')}>
+        <Table scrollLabel={t('admin.tableScroll', { name: t('backoffice.contracts.title') })}>
           <caption className="sr-only">{t('backoffice.contracts.title')}</caption>
           <THead>
             <tr>
