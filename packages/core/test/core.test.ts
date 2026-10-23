@@ -149,6 +149,42 @@ describe('personal-data scrubbing', () => {
     expect(line).not.toContain('Pat Example');
     expect(line).toContain('/v1/employees');
   });
+  it('LOG_FORMAT=gcp adds the Cloud Logging severity to every line and keeps the scrubbing', async () => {
+    const lines = (format: string | undefined) => {
+      const chunks: string[] = [];
+      const dest = new Writable({
+        write(c, _e, cb) {
+          chunks.push(String(c));
+          cb();
+        },
+      });
+      const log = createLogger({ name: 'test', level: 'trace', format, destination: dest as never });
+      log.trace('t');
+      log.debug('d');
+      log.info({ email: 'pat@example.test', route: '/v1/employees' }, 'created for pat@example.test');
+      log.warn('w');
+      log.error({ err: new Error('failed for pat@example.test') }, 'e');
+      log.fatal('f');
+      return () =>
+        chunks
+          .join('')
+          .trim()
+          .split('\n')
+          .map((l) => JSON.parse(l) as Record<string, unknown>);
+    };
+    const gcp = lines('gcp');
+    await new Promise((r) => setTimeout(r, 10));
+    const out = gcp();
+    expect(out.map((l) => l.severity)).toEqual(['DEBUG', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']);
+    expect(out.map((l) => l.level)).toEqual([10, 20, 30, 40, 50, 60]);
+    expect(out[2]).toMatchObject({ service: 'test', route: '/v1/employees', msg: expect.any(String) });
+    expect(JSON.stringify(out)).not.toContain('pat@example.test');
+    // The default format is unchanged: no severity field.
+    const plain = lines(undefined);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(plain().every((l) => !('severity' in l) && typeof l.level === 'number')).toBe(true);
+    expect(() => createLogger({ name: 'test', format: 'xml' })).toThrow(/LOG_FORMAT/);
+  });
   it('tracer attributes are scrubbed', () => {
     const out = scrubSpanAttributes({
       'user.email': 'a@b.cc',
