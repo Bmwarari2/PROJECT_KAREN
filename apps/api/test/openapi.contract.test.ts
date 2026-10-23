@@ -192,7 +192,8 @@ describe('enterprise platform endpoints match the spec (phase 9)', () => {
 
     const stream = await inj('POST', '/v1/settings/audit-streams', { name: 'Contract SIEM', kind: 'https', url: 'https://siem.example.com/ingest', filters: { actions: ['auth.'] } });
     check('post', '/v1/settings/audit-streams', 201, stream.json());
-    check('post', '/v1/settings/audit-streams', 422, (await inj('POST', '/v1/settings/audit-streams', { name: 'Elsewhere', kind: 's3', bucket: 'fictional-audit', region: 'us-east-2', roleArn: 'arn:aws:iam::123456789012:role/A' })).json());
+    check('post', '/v1/settings/audit-streams', 422, (await inj('POST', '/v1/settings/audit-streams', { name: 'Elsewhere', kind: 's3', bucket: 'fictional-audit', region: 'us-east-2', roleArn: 'arn:aws:iam::123456789012:role/thapsus-hr-audit-contract' })).json());
+    check('post', '/v1/settings/audit-streams', 422, (await inj('POST', '/v1/settings/audit-streams', { name: 'Other role', kind: 's3', bucket: 'fictional-audit', roleArn: 'arn:aws:iam::123456789012:role/A' })).json());
     check('get', '/v1/settings/audit-streams', 200, (await inj('GET', '/v1/settings/audit-streams')).json());
     check('patch', '/v1/settings/audit-streams/{id}', 200, (await inj('PATCH', `/v1/settings/audit-streams/${stream.json().id}`, { status: 'paused' })).json());
     check('get', '/v1/settings/audit-streams/{id}/batches', 200, (await inj('GET', `/v1/settings/audit-streams/${stream.json().id}/batches`)).json());

@@ -71,7 +71,7 @@ const putSecret = (region, id, val) => {
 mkdirSync('.deploy', { recursive: true });
 console.log(`deploy ${env} ${only}${dryRun ? ' (dry run)' : ''}: ${steps.length} step(s)`);
 for (const s of steps) {
-  console.log(`\n── ${s.kind} ${s.stack ?? s.secretName ?? s.toSecret ?? ''} (${s.region ?? s.to})`);
+  console.log(`\n── ${s.kind} ${s.stack ?? s.secretName ?? s.toSecret ?? ''}${s.database ? ` [${s.database}]` : ''} (${s.region ?? s.to})`);
   switch (s.kind) {
     case 'cdk-deploy': {
       const p = Object.entries(s.parameters).flatMap(([k, v]) => ['--parameters', `${s.stack}:${k}=${v}`]);
@@ -107,17 +107,18 @@ for (const s of steps) {
       break;
     }
     case 'run-migrator': {
+      // database "shared": the migrator task; a dedicated database: its tools task (default command = migrate).
       const o = outputs(s.stack);
       const net = `awsvpcConfiguration={subnets=[${o.MigratorSubnetIds ?? '<MigratorSubnetIds>'}],securityGroups=[${o.MigratorSecurityGroupId ?? '<MigratorSecurityGroupId>'}],assignPublicIp=DISABLED}`;
-      const run = aws(s.region, 'ecs', 'run-task', '--cluster', o.EcsClusterName ?? '<EcsClusterName>', '--task-definition', o.MigratorTaskDefinitionArn ?? '<MigratorTaskDefinitionArn>', '--launch-type', 'FARGATE', '--network-configuration', net);
+      const run = aws(s.region, 'ecs', 'run-task', '--cluster', o.EcsClusterName ?? '<EcsClusterName>', '--task-definition', o[s.taskDefinitionOutput] ?? `<${s.taskDefinitionOutput}>`, '--launch-type', 'FARGATE', '--network-configuration', net);
       if (dryRun) break;
       const task = JSON.parse(run).tasks?.[0]?.taskArn;
-      if (!task) throw new Error('migrator task did not start');
+      if (!task) throw new Error(`migrator task for the ${s.database} database did not start`);
       aws(s.region, 'ecs', 'wait', 'tasks-stopped', '--cluster', o.EcsClusterName, '--tasks', task);
       const desc = JSON.parse(aws(s.region, 'ecs', 'describe-tasks', '--cluster', o.EcsClusterName, '--tasks', task));
       const code = desc.tasks?.[0]?.containers?.[0]?.exitCode;
-      if (code !== 0) throw new Error(`migrator exited with ${code} (see /thapsus-hr/${env}/<cell>/migrator logs)`);
-      console.log('migrations applied');
+      if (code !== 0) throw new Error(`migrator for the ${s.database} database exited with ${code} (see /thapsus-hr/${env}/<cell>/migrator logs)`);
+      console.log(`migrations applied (${s.database})`);
       break;
     }
     case 'run-synth': {

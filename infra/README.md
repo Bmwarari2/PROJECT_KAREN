@@ -21,6 +21,13 @@ SQS `jobs`/`webhooks` (+ DLQs), EventBridge bus + Scheduler group, SES configura
 Fargate `api`/`worker`/`web` + a `migrator` task definition, ALB + WAF, AWS Backup (continuous +
 daily), CloudWatch alarms → SNS, and a monthly AWS Budget filtered by the `cell` tag.
 
+Optional `dedicatedDatabases: [{ "key", "cell", "minAcu"?, "maxAcu"? }]` in `config/<env>.json` adds,
+per entry and only in that cell, an Aurora cluster + RDS Proxy built like the shared one, a
+`<prefix>-db-<key>` tools task (migrate by default; `node dist/move-tenant.mjs --process-requests` as a
+command override) and `DEDICATED_DATABASE_HOSTS` / `DEDICATED_READER_HOSTS` on the api and worker. The
+committed configs have none: each entry is recurring cost (docs/COSTS.md, ADR-0068, runbook
+docs/runbooks/move-tenant-to-dedicated-db.md).
+
 ## Commands
 
 ```sh
@@ -48,7 +55,7 @@ Targets in dependency order: `ci` → `backupcopy` (for the current AWS region: 
 1. Runs `cdk deploy`.
 2. Copies the global `thapsus-hr/<env>/internal-token` value into the cell's own `thapsus-hr/<env>/<cell>/internal-token`. The names differ because the UK cell shares eu-west-2 with the global stack.
 3. Generates VAPID keys and, outside production only, the mock IdP signing key and certificate, if the secrets are still empty.
-4. Runs the migrator task and fails if it exits non-zero.
+4. Runs the migrator task, then the tools task of each dedicated database of the cell, and fails if any exits non-zero.
 5. Restarts the services.
 6. Waits for `/health`.
 

@@ -1,18 +1,20 @@
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { App } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
 import { inRegionModel } from '@thapsus/core/ai-models';
+import { TenantRouter } from '../../packages/db/src/router';
 import { buildApp } from '../lib/app';
-import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, type EnvName } from '../lib/config';
+import { ENVS, FORBIDDEN_STACK_REGIONS, GLOBAL_REGION, loadConfig, names, validateConfig, type DedicatedDatabase, type EnvConfig, type EnvName } from '../lib/config';
 import { DIRECTORY_ATTRIBUTES } from '../lib/global-stack';
 import { XRAY_ACTIONS } from '../lib/shared';
-import { EXPORT_ROLE_ARN_PATTERN } from '../lib/cell-stack';
+import { AUDIT_STREAM_ROLE_ARN_PATTERN, CellStack, EXPORT_ROLE_ARN_PATTERN } from '../lib/cell-stack';
 
 type Json = Record<string, any>;
-type Res = { Type: string; Properties?: Json };
+type Res = { Type: string; Properties?: Json; DeletionPolicy?: string };
 
 /** Synthesizes every env × stack ONCE (asset staging off: hashes only, no copies, no docker build). */
 const flags = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'cdk.json'), 'utf8')).context as Json;
@@ -138,15 +140,7 @@ describe.each(combos)('%s cell %s', (env, cell) => {
   });
 
   it('5. no resource names another home region (only the directory in eu-west-2 and the permitted backup copy)', () => {
-    const forbidden = allRegions.filter((r) => r !== spec.awsRegion);
-    const tableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${cfg.account}:table/${names.directoryTable(env)}`;
-    const allowed = new Set([tableArn, `${tableArn}/index/*`, `arn:aws:kms:${GLOBAL_REGION}:${cfg.account}:key/*`, `dynamodb.${GLOBAL_REGION}.amazonaws.com`]);
-    // Copy actions are skipped here and checked precisely in test 6.
-    const skip = (n: unknown) =>
-      (typeof n === 'string' && allowed.has(n)) ||
-      (!!n && typeof n === 'object' && !Array.isArray(n) && ((n as Json).Name === 'DIRECTORY_REGION' || 'DestinationBackupVaultArn' in (n as Json)));
-    const leaks = strings(t, skip).filter((s) => forbidden.some((r) => s.includes(r)));
-    expect(leaks).toEqual([]);
+    expect(regionLeaks(t, cfg, cell)).toEqual([]);
   });
 
   it('6. backup copies go only to the permitted region (EU → eu-west-1, US → us-west-1, UK → none)', () => {
@@ -210,14 +204,23 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     expect(bedrock).toEqual([{ Sid: 'AskHrInRegionModel', Effect: 'Allow', Action: 'bedrock:InvokeModel', Resource: `arn:aws:bedrock:${spec.awsRegion}::foundation-model/${model.modelId}` }]);
   });
 
-  it('data export: api and worker may assume only customer roles named thapsus-hr-export-* (sts:AssumeRole, no wildcard actions)', () => {
-    const statements = resources(t, 'AWS::IAM::Policy').flatMap(([, r]) => asArray(r.Properties!.PolicyDocument.Statement as Json[]));
-    const assume = statements.filter((s) => asArray(s.Action as string[]).some((a) => a.startsWith('sts:')));
-    expect(assume.length).toBe(2); // api and worker task roles
-    for (const s of assume) {
-      expect(s).toMatchObject({ Effect: 'Allow', Action: 'sts:AssumeRole', Resource: EXPORT_ROLE_ARN_PATTERN, Sid: 'AssumeCustomerExportRoles' });
+  it('cross-account roles: api and worker may assume only thapsus-hr-export-* (data export), the worker only thapsus-hr-audit-* (S3 audit streams); sts:AssumeRole, no wildcard actions', () => {
+    const policies = resources(t, 'AWS::IAM::Policy').map(([, r]) => r.Properties!);
+    const sts = policies.flatMap((p) => asArray(p.PolicyDocument.Statement as Json[]).filter((s) => asArray(s.Action as string[]).some((a) => a.startsWith('sts:'))).map((s) => ({ s, roles: asArray(p.Roles as Json[]) })));
+    expect(sts.length).toBe(3); // export: api + worker task roles; audit streams: worker task role
+    const taskRole = (family: string) => resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))![1].Properties!.TaskRoleArn['Fn::GetAtt'][0];
+    const holders = (sid: string) => sts.filter((x) => x.s.Sid === sid).flatMap((x) => x.roles.map((r) => r.Ref)).sort();
+    for (const { s } of sts) {
+      expect(Object.keys(s).sort()).toEqual(['Action', 'Effect', 'Resource', 'Sid']); // no conditions to widen or narrow it silently
+      expect(s.Effect).toBe('Allow');
+      expect(s.Action).toBe('sts:AssumeRole');
+      expect(s.Resource).toBe(s.Sid === 'AssumeCustomerAuditStreamRoles' ? AUDIT_STREAM_ROLE_ARN_PATTERN : EXPORT_ROLE_ARN_PATTERN);
     }
+    expect(sts.map((x) => x.s.Sid).sort()).toEqual(['AssumeCustomerAuditStreamRoles', 'AssumeCustomerExportRoles', 'AssumeCustomerExportRoles']);
+    expect(holders('AssumeCustomerExportRoles')).toEqual([taskRole('-api'), taskRole('-worker')].sort());
+    expect(holders('AssumeCustomerAuditStreamRoles')).toEqual([taskRole('-worker')]);
     expect(EXPORT_ROLE_ARN_PATTERN).toBe('arn:aws:iam::*:role/thapsus-hr-export-*');
+    expect(AUDIT_STREAM_ROLE_ARN_PATTERN).toBe('arn:aws:iam::*:role/thapsus-hr-audit-*');
   });
 
   it('the rest of the cell: autoscaling, SQS with DLQs, event bus, scheduler group, SES configuration set, budget alarm, 3 AZs, TLS certificate', () => {
@@ -335,6 +338,168 @@ describe.each(combos)('%s cell %s', (env, cell) => {
     expect(scans.length).toBeGreaterThan(0);
     const tableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${cfg.account}:table/${names.directoryTable(env)}`;
     for (const st of scans) expect(asArray(st.Resource).every((r) => r === tableArn || r === `${tableArn}/index/*`)).toBe(true);
+  });
+});
+
+describe('dedicated databases (ADR-0068, runbook move-tenant-to-dedicated-db.md)', () => {
+  it('the committed env configs declare none: every cell has exactly one Aurora cluster and proxy, one migrator and no DEDICATED_* variables', () => {
+    for (const [env, cell] of combos) {
+      expect(loadConfig(env).dedicatedDatabases, env).toBeUndefined();
+      const t = templates.get(cellName(env, cell))!;
+      expect(resources(t, 'AWS::RDS::DBCluster').length).toBe(1);
+      expect(resources(t, 'AWS::RDS::DBProxy').length).toBe(1);
+      expect(resources(t, 'AWS::ECS::TaskDefinition').length).toBe(4); // api, worker, web, migrator
+      expect(JSON.stringify(t)).not.toMatch(/DEDICATED_|Dedicated/);
+    }
+  });
+
+  it('env config validation refuses unusable entries', () => {
+    const base = loadConfig('staging');
+    const check = (dedicatedDatabases: unknown) => () => validateConfig({ ...base, dedicatedDatabases } as EnvConfig, 'staging');
+    expect(check([{ key: 'big-uk', cell: 'uk' }, { key: 'big-eu', cell: 'eu', minAcu: 1, maxAcu: 32 }])).not.toThrow();
+    expect(check([])).not.toThrow();
+    for (const bad of [
+      { key: 'big', cell: 'fr' },
+      { key: 'shared', cell: 'uk' },
+      { key: 'Big', cell: 'uk' },
+      { key: 'big_co', cell: 'uk' },
+      { key: 'big--co', cell: 'uk' },
+      { key: '1big', cell: 'uk' },
+      { key: 'b'.repeat(25), cell: 'uk' },
+      { key: 'big', cell: 'uk', minAcu: 8, maxAcu: 4 },
+      { key: 'big', cell: 'uk', maxAcu: 300 },
+      { key: 'big', cell: 'uk', minAcu: 0.25 },
+      { key: 'big', cell: 'uk', Key: 'typo' },
+      { cell: 'uk' },
+    ]) {
+      expect(check([bad]), JSON.stringify(bad)).toThrow(/dedicatedDatabases\[0\]/);
+    }
+    expect(check([{ key: 'big-co', cell: 'uk' }, { key: 'bigco', cell: 'eu' }])).toThrow(/used twice/);
+    expect(check({ key: 'big', cell: 'uk' })).toThrow(/must be a list/);
+  });
+
+  // One dedicated database per cell (fictional keys), synthesized for a cost-lean and a production environment.
+  const DEDICATED: DedicatedDatabase[] = [{ key: 'big-uk', cell: 'uk' }, { key: 'big-eu', cell: 'eu', minAcu: 1, maxAcu: 32 }, { key: 'big-us', cell: 'us' }];
+  const dedicatedCombos = (['staging', 'prod'] as const).flatMap((env) => HOME_REGIONS.map((cell) => [env, cell] as const));
+  const synthesized = new Map<string, { t: Json; region: string; cfg: EnvConfig }>();
+  beforeAll(() => {
+    const app = new App({ context: { ...flags, 'aws:cdk:disable-asset-staging': true }, outdir: mkdtempSync(join(tmpdir(), 'cdk-dedicated-')) });
+    const configs = new Map<EnvName, EnvConfig>();
+    for (const [env, cell] of dedicatedCombos) {
+      if (!configs.has(env)) {
+        const c = { ...loadConfig(env), dedicatedDatabases: DEDICATED };
+        validateConfig(c, env);
+        configs.set(env, c);
+      }
+      const config = configs.get(env)!;
+      new CellStack(app, `Dedicated-${env}-${cell}`, { env: { account: config.account, region: REGIONS[cell].awsRegion }, config, cell, crossRegionReferences: false });
+    }
+    for (const s of app.synth().stacks) {
+      const [, env, cell] = s.stackName.split('-') as [string, EnvName, HomeRegion];
+      synthesized.set(`${env}:${cell}`, { t: s.template as Json, region: s.environment.region, cfg: configs.get(env)! });
+    }
+  }, 600_000);
+
+  describe.each(dedicatedCombos)('%s cell %s with a dedicated database', (env, cell) => {
+    const entry = DEDICATED.find((d) => d.cell === cell)!;
+    const identifier = `thapsus-hr-${env}-${cell}-${entry.key}`;
+    let t: Json;
+    let cfg: EnvConfig;
+    let shared: [string, Res];
+    let mine: [string, Res];
+    beforeAll(() => {
+      ({ t, cfg } = synthesized.get(`${env}:${cell}`)!);
+      const clusters = resources(t, 'AWS::RDS::DBCluster');
+      expect(clusters.length).toBe(2);
+      shared = clusters.find(([, r]) => r.Properties!.DBClusterIdentifier === `thapsus-hr-${env}-${cell}`)!;
+      mine = clusters.find(([, r]) => r.Properties!.DBClusterIdentifier === identifier)!;
+    });
+
+    it('creates its Aurora cluster only in this cell\'s region: cell data key, Multi-AZ, backups, deletion protection per env, same network, behind a TLS RDS Proxy', () => {
+      expect(synthesized.get(`${env}:${cell}`)!.region).toBe(REGIONS[cell].awsRegion);
+      expect(mine, identifier).toBeDefined();
+      const p = mine[1].Properties!;
+      expect(p).toMatchObject({
+        Engine: 'aurora-postgresql',
+        StorageEncrypted: true,
+        KmsKeyId: shared[1].Properties!.KmsKeyId, // the cell's data key
+        EnableIAMDatabaseAuthentication: true,
+        BackupRetentionPeriod: cfg.aurora.backupRetentionDays,
+        DeletionProtection: env === 'prod',
+        VpcSecurityGroupIds: shared[1].Properties!.VpcSecurityGroupIds,
+        ServerlessV2ScalingConfiguration: { MinCapacity: entry.minAcu ?? cfg.aurora.minAcu, MaxCapacity: entry.maxAcu ?? cfg.aurora.maxAcu },
+      });
+      expect(mine[1].DeletionPolicy ?? 'Delete').toBe(shared[1].DeletionPolicy ?? 'Delete');
+      // writer + reporting reader in two AZs of this region
+      const instances = resources(t, 'AWS::RDS::DBInstance').filter(([, r]) => r.Properties!.DBClusterIdentifier?.Ref === mine[0]);
+      expect(instances.length).toBe(2);
+      expect(new Set(instances.map(([, r]) => r.Properties!.AvailabilityZone)).size).toBe(2);
+      for (const [, r] of instances) expect(String(r.Properties!.AvailabilityZone).startsWith(REGIONS[cell].awsRegion)).toBe(true);
+      // isolated subnets of the cell VPC, like the shared cluster
+      const subnets = (id: string) => resources(t, 'AWS::RDS::DBSubnetGroup').find(([sid]) => sid === id)![1].Properties!.SubnetIds;
+      expect(subnets(p.DBSubnetGroupName.Ref)).toEqual(subnets(shared[1].Properties!.DBSubnetGroupName.Ref));
+      // its own owner secret, encrypted with the cell key
+      const secretNames = resources(t, 'AWS::SecretsManager::Secret').map(([, r]) => r.Properties!.Name);
+      expect(secretNames).toContain(`thapsus-hr/${env}/db/${entry.key}/thapsus_owner`);
+      const proxies = resources(t, 'AWS::RDS::DBProxy').map(([, r]) => r.Properties!);
+      expect(proxies.find((x) => x.DBProxyName === `${identifier}-proxy`)).toMatchObject({ RequireTLS: true, EngineFamily: 'POSTGRESQL' });
+      // in the cell's backup plan (continuous + daily, copies only to the permitted region)
+      const [, selection] = resources(t, 'AWS::Backup::BackupSelection')[0]!;
+      expect(JSON.stringify(selection.Properties!.BackupSelection.Resources)).toContain(`{"Ref":"${mine[0]}"}`);
+      // only this cell's entry
+      for (const other of DEDICATED.filter((d) => d.cell !== cell)) expect(JSON.stringify(t)).not.toContain(other.key);
+    });
+
+    it('wires DEDICATED_DATABASE_HOSTS (its proxy) and DEDICATED_READER_HOSTS (its reader) into the api and worker, in the format TenantRouter.fromEnv reads', () => {
+      const [proxyId] = resources(t, 'AWS::RDS::DBProxy').find(([, r]) => r.Properties!.DBProxyName === `${identifier}-proxy`)!;
+      for (const family of ['-api', '-worker']) {
+        const [, task] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith(family))!;
+        const c = (task.Properties!.ContainerDefinitions as Json[]).find((x) => x.Name === 'app')!;
+        const value = (n: string) => resolve((c.Environment as Json[]).find((e) => e.Name === n)?.Value ?? '');
+        expect(JSON.parse(value('DEDICATED_DATABASE_HOSTS')), family).toEqual({ [entry.key]: `<${proxyId}.Endpoint>` });
+        expect(JSON.parse(value('DEDICATED_READER_HOSTS')), family).toEqual({ [entry.key]: `<${mine[0]}.ReadEndpoint.Address>` });
+        expect((c.Secrets as Json[]).map((s) => s.Name)).toEqual(expect.arrayContaining(['DATABASE_SECRET', 'REPORTING_DATABASE_SECRET']));
+        const fictional = (u: string) => JSON.stringify({ username: u, password: 'fictional-pw', port: 5432, dbname: 'thapsus' });
+        const router = TenantRouter.fromEnv({
+          CELL_REGION: cell,
+          DATABASE_SECRET: fictional('thapsus_app'),
+          DATABASE_HOST: 'shared-proxy.internal',
+          REPORTING_DATABASE_SECRET: fictional('thapsus_reporting'),
+          DEDICATED_DATABASE_HOSTS: value('DEDICATED_DATABASE_HOSTS'),
+          DEDICATED_READER_HOSTS: value('DEDICATED_READER_HOSTS'),
+        });
+        expect(router.config.databases[entry.key]).toBe(`postgres://thapsus_app:fictional-pw@<${proxyId}.Endpoint>:5432/thapsus`);
+        expect(router.config.readers?.[entry.key]).toBe(`postgres://thapsus_reporting:fictional-pw@<${mine[0]}.ReadEndpoint.Address>:5432/thapsus`);
+      }
+      // the web tier never gets database configuration
+      const [, web] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-web'))!;
+      expect(JSON.stringify(web.Properties!.ContainerDefinitions)).not.toContain('DEDICATED_');
+    });
+
+    it('has a tools task that migrates it (default command) and runs the move runner with both owner secrets; outputs for the deploy script', () => {
+      const [, task] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => r.Properties!.Family === `thapsus-hr-${env}-${cell}-db-${entry.key}`)!;
+      const c = (task.Properties!.ContainerDefinitions as Json[])[0]!;
+      expect(c.Name).toBe('tools');
+      expect(c.Command).toEqual(['node', 'dist/migrate.mjs']);
+      const envOf = Object.fromEntries((c.Environment as Json[]).map((e) => [e.Name, e.Value]));
+      expect(envOf).toMatchObject({ CELL_REGION: cell, DEDICATED_DB_KEY: entry.key, DATABASE_HOST: { 'Fn::GetAtt': [mine[0], 'Endpoint.Address'] }, SHARED_DATABASE_HOST: { 'Fn::GetAtt': [shared[0], 'Endpoint.Address'] } });
+      const secrets = Object.fromEntries((c.Secrets as Json[]).map((s) => [s.Name, JSON.stringify(s.ValueFrom)]));
+      expect(Object.keys(secrets).sort()).toEqual(['APP_DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'OWNER_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET', 'SHARED_OWNER_DATABASE_SECRET']);
+      expect(secrets.OWNER_DATABASE_SECRET).not.toBe(secrets.SHARED_OWNER_DATABASE_SECRET);
+      // the role secrets are the ones the api, worker and shared migrator use (same passwords on every database)
+      const [, migrator] = resources(t, 'AWS::ECS::TaskDefinition').find(([, r]) => String(r.Properties!.Family).endsWith('-migrator'))!;
+      const m = Object.fromEntries(((migrator.Properties!.ContainerDefinitions as Json[])[0]!.Secrets as Json[]).map((s) => [s.Name, JSON.stringify(s.ValueFrom)]));
+      for (const n of ['APP_DATABASE_SECRET', 'BACKOFFICE_DATABASE_SECRET', 'REPORTING_DATABASE_SECRET']) expect(secrets[n], n).toBe(m[n]);
+      expect(secrets.SHARED_OWNER_DATABASE_SECRET).toBe(m.OWNER_DATABASE_SECRET);
+      const o = names.dedicatedOutputs(entry.key);
+      expect(Object.keys(t.Outputs)).toEqual(expect.arrayContaining([o.proxyEndpoint, o.writerEndpoint, o.toolsTaskDefinitionArn, 'MigratorSubnetIds', 'MigratorSecurityGroupId']));
+    });
+
+    it('still names no other region, keeps IAM least-privilege and encrypts every log group', () => {
+      expect(regionLeaks(t, cfg, cell)).toEqual([]);
+      expectLeastPrivilege(t);
+      expectEncryptedLogs(t, cfg.logRetentionDays);
+    });
   });
 });
 
@@ -482,6 +647,27 @@ describe.each(ENVS)('%s backup copy vaults', (env) => {
 });
 
 // ------------------------------------------------------------------------------------------ helpers
+
+/** Strings in a cell template that name another region (only the directory in eu-west-2 is allowed; backup copy actions are checked in test 6). */
+function regionLeaks(t: Json, cfg: EnvConfig, cell: HomeRegion): string[] {
+  const forbidden = allRegions.filter((r) => r !== REGIONS[cell].awsRegion);
+  const tableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${cfg.account}:table/${names.directoryTable(cfg.env)}`;
+  const allowed = new Set([tableArn, `${tableArn}/index/*`, `arn:aws:kms:${GLOBAL_REGION}:${cfg.account}:key/*`, `dynamodb.${GLOBAL_REGION}.amazonaws.com`]);
+  const skip = (n: unknown) =>
+    (typeof n === 'string' && allowed.has(n)) ||
+    (!!n && typeof n === 'object' && !Array.isArray(n) && ((n as Json).Name === 'DIRECTORY_REGION' || 'DestinationBackupVaultArn' in (n as Json)));
+  return strings(t, skip).filter((s) => forbidden.some((r) => s.includes(r)));
+}
+
+/** Resolves CloudFormation intrinsics in an environment value to readable placeholders (`<LogicalId.Attr>`). */
+function resolve(v: unknown): string {
+  if (typeof v === 'string') return v;
+  const o = v as Json;
+  if (o['Fn::Join']) return (o['Fn::Join'][1] as unknown[]).map(resolve).join(o['Fn::Join'][0]);
+  if (o['Fn::GetAtt']) return `<${o['Fn::GetAtt'].join('.')}>`;
+  if (o.Ref) return `<${o.Ref}>`;
+  throw new Error(`unresolvable ${JSON.stringify(v)}`);
+}
 
 function expectWafOnEveryAlb(t: Json) {
   const albs = resources(t, 'AWS::ElasticLoadBalancingV2::LoadBalancer').map(([id]) => id);
