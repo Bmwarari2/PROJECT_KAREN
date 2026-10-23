@@ -229,3 +229,20 @@ sequenceDiagram
 - **Sources and index:** company documents in policy folders visible to everyone (never personal documents) are chunked into `app.ai_policy_chunks` by the idempotent `ai.index_policies` job. Retrieval is PostgreSQL full-text search plus `pg_trgm` only (ADR-0111).
 - **Model interface:** `deps.ai` (`apps/api/src/modules/ai/provider.ts`): Bedrock in AWS, a deterministic fake in dev and e2e, a capturing mock in tests.
 - **Code:** `apps/api/src/modules/ai` (guard, redaction, extraction, retrieval, prompt, routes), `apps/web/app/app/ask` (employees) and `apps/web/app/app/settings/ask-hr` (admins).
+
+## 11. Google Cloud staging cell (ADR-0156)
+
+Testing runs on one UK cell on Google Cloud in europe-west2 (London), with fictional data only (`infra/gcp`). It has the same three tiers as an AWS cell, mapped as follows:
+
+| AWS cell                                      | Google Cloud staging cell                                                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ALB → web and API Fargate services            | One Cloud Run service: the web container takes the traffic and proxies API paths to the API sidecar on localhost |
+| Worker Fargate service polling the jobs table | Private Cloud Run service; Cloud Scheduler calls `POST /drain` every minute                                      |
+| Migrator ECS task                             | Cloud Run jobs (migrate, seed)                                                                                   |
+| Aurora PostgreSQL behind RDS Proxy            | Cloud SQL for PostgreSQL 17, reached only through the Cloud Run connector                                        |
+| S3 + KMS                                      | Cloud Storage (CMEK) + Cloud KMS                                                                                 |
+| Secrets Manager                               | Secret Manager (London replica only)                                                                             |
+| SES                                           | A private mail bucket (no provider yet)                                                                          |
+| DynamoDB global table (tenant directory)      | `thapsus_global` database on the same instance                                                                   |
+
+The application selects the Google Cloud adapters from the environment: `GCS_FILES_BUCKET`, `GCP_KMS_KEY`, `MAIL_TRANSPORT=bucket`, `DATABASE_HOST=/cloudsql/...` and `WORKER_MODE=http`. Each adapter checks the location of the resource it uses against `gcpRegion` in `packages/core/src/regions.ts`.
