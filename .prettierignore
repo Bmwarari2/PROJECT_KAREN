@@ -11,6 +11,8 @@ packages/sdk/src/generated/
 packages/core/src/trust/generated.json
 packages/ui/src/theme.css
 docs/COVERAGE.md
+# Written by Next.js on every build
+apps/web/next-env.d.ts
 # Written by a repository script (packages/rules/scripts/manifest.ts)
 packages/rules/pack-manifest.json
 # Parsed row by row by scripts/test/asvs-doc.test.ts

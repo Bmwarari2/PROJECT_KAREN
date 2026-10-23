@@ -1404,7 +1404,7 @@ The current entry is scrolled into view on each navigation (in the sidebar and i
 
 **Decision.** The repository is formatted in one `style` commit, and the verify `lint` step runs `prettier --check .` after ESLint. A few files are left out in `.prettierignore` because their exact bytes matter:
 
-- **Generated, and compared byte for byte with their generator:** the OpenAPI document and the SDK types, `packages/core/src/trust/generated.json`, `packages/ui/src/theme.css` and `docs/COVERAGE.md`.
+- **Generated, and compared byte for byte with their generator:** the OpenAPI document and the SDK types, `packages/core/src/trust/generated.json`, `packages/ui/src/theme.css` and `docs/COVERAGE.md`. Also `apps/web/next-env.d.ts`, which Next.js rewrites on every build.
 - **Written by a script:** `packages/rules/pack-manifest.json`.
 - **Parsed row by row by a test:** `docs/ASVS.md`.
 - **Served verbatim to customers with a content hash:** the legal templates in `docs/legal/`, where reformatting would mark every template as changed.

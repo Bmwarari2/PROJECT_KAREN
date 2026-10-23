@@ -13,8 +13,8 @@ const steps = [
   },
   {
     id: 'lint',
-    name: 'Lint (ESLint + i18n hard-coded string rule)',
-    cmd: 'pnpm exec eslint . --max-warnings=0',
+    name: 'Lint (ESLint + i18n hard-coded string rule + Prettier)',
+    cmd: 'pnpm exec eslint . --max-warnings=0 && pnpm exec prettier --check .',
   },
   { id: 'hygiene', name: 'No merge-conflict markers', cmd: 'node scripts/conflict-markers.mjs' },
   {
