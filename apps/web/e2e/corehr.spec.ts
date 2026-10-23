@@ -129,7 +129,7 @@ test.describe('org chart', () => {
     for (let i = 0; i < 3; i++) {
       // start from another People tab: the org chart is a tab of the People module
       await page.goto('/app/people');
-      await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
+      await expect(page.getByRole('navigation', { name: 'People sections' })).toBeVisible();
       runs.push(
         await page.evaluate(async () => {
           const waitFor = (pred: () => boolean) =>

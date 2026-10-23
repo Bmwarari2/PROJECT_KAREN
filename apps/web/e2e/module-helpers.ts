@@ -41,3 +41,9 @@ export async function expectPageTitle(page: Page, module: string, title: string)
   await expect(page.getByRole('heading', { level: 1, name: module, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: title, exact: true })).toBeVisible();
 }
+
+/** Signs out from the account menu in the top bar (the menu opens from the button with the viewer's name). */
+export async function signOutFromMenu(page: Page) {
+  await page.getByRole('banner').locator('button[aria-haspopup="menu"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
+}

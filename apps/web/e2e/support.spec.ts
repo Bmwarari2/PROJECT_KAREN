@@ -17,7 +17,7 @@ test.describe('help centre and support tickets', () => {
         .getByRole('link', { name: 'Requesting and approving time off' }),
     ).toBeVisible();
     await page.getByLabel('Search the help centre').fill('cancel plan');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('main').getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page.getByTestId('help-results').getByRole('link').first()).toHaveText(
       'Plans, billing and cancelling',
     );

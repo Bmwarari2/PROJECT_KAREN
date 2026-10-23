@@ -2,6 +2,7 @@ import { expect, request as playwrightRequest, test } from '@playwright/test';
 import { PASSWORD, signUpAndEnrol, totp } from './helpers';
 import { axeBoth } from './settings-helpers';
 import { sql } from './time-helpers';
+import { signOutFromMenu } from './module-helpers';
 
 // OWASP ASVS level 2 controls in the browser (docs/ASVS.md). UK English labels; fictional data only.
 test.use({ locale: 'en-GB' });
@@ -95,7 +96,7 @@ test.describe('sessions and passwords (V7.4, V7.5, V6.2)', () => {
     ).toBeVisible();
 
     // signing out clears the session and reloads; the new password works
-    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await signOutFromMenu(page);
     await page.waitForURL(/\/signin/);
     expect((await page.request.get('/v1/auth/session')).status()).toBe(401);
     const again = await page.request.post('/v1/auth/login', {
