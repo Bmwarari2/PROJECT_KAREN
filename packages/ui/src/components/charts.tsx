@@ -302,7 +302,8 @@ export function DonutChart({
           </span>
         ) : null}
       </div>
-      <ul className="flex min-w-0 flex-1 flex-col gap-2">
+      {/* the legend wraps under the ring when there is no room beside it (narrow phones) */}
+      <ul className="flex min-w-0 flex-1 basis-36 flex-col gap-2">
         {items.map((d, i) => (
           <li key={d.label} className="flex items-center gap-2 text-callout">
             <span
