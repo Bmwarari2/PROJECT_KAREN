@@ -63,6 +63,8 @@ The first sweep found the issues below; all are fixed and the sweep passes on ev
 | Profile tabs overflowed at 320px | 1.4.10 | `/app/people/[id]` and every tab list | tab lists wrap |
 | Disclosure summaries were 22px high | 2.5.8 | `/developers` | 30px |
 | The offline page had no page heading | 1.3.1, 2.4.6 | `/offline` | the empty state renders an `h1` |
+| In US English the same feature was called "Pay stubs" in the navigation but "Payslips" on the Me hub, in notification settings and in role permissions | 3.2.4 | `/app/me`, `/app/notifications`, role editor | the en-US catalogue says pay stubs everywhere |
+| A person's employment type, contract type and pay frequency showed coded values (`full_time`, `permanent`) | 3.3.2, 1.3.1 (understandable content) | `/app/people/[id]` | shown as words, numbers in the locale's format |
 | Pages had no heading in their no-record or no-access state (for example My details and Welcome for someone without an employee record) | 1.3.1, 2.4.6 | `/app/me/details`, `/app/welcome`, people, reports, settings, billing and compliance pages | My details keeps its heading in every state; full-page empty states render their title as the `h1` |
 
 ## 5. Manual checklist by key flow
