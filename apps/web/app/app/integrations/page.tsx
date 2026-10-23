@@ -8,6 +8,7 @@ import {
   CardTitle,
   Field,
   Input,
+  Skeleton,
   Table,
   TD,
   TH,
@@ -19,9 +20,19 @@ import { formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import {
+  ListCard,
+  ListFilter,
+  ListNoMatches,
+  ListSearch,
+  matches,
+  PageIntro,
+  type AppliedFilter,
+} from '@/components/module-page';
 import { useSession } from '../shell';
 
 type Provider = 'microsoft365' | 'google_workspace';
+const PROVIDER_KEYS: Provider[] = ['microsoft365', 'google_workspace'];
 interface Connection {
   provider: Provider;
   status: 'not_configured' | 'pending_consent' | 'connected' | 'disabled';
@@ -376,6 +387,45 @@ export default function IntegrationsPage() {
   });
   const [plan, setPlan] = React.useState<Plan | null>(null);
   const tz = session?.timeZone ?? 'Europe/London';
+  // The activity log (the latest calls the API keeps) is filtered on the page.
+  const [query, setQuery] = React.useState('');
+  const [provider, setProvider] = React.useState('');
+  const [status, setStatus] = React.useState('');
+  const rows = log.data ?? [];
+  const shown = rows.filter(
+    (o) =>
+      (!provider || o.provider === provider) &&
+      (!status || o.status === status) &&
+      matches(query, o.employeeName, t(`integrations.ops.${o.op}`)),
+  );
+  const filtered = !!provider || !!status || !!query.trim();
+  const clearFilters = () => {
+    setQuery('');
+    setProvider('');
+    setStatus('');
+  };
+  const applied: AppliedFilter[] = [
+    ...(provider
+      ? [
+          {
+            key: 'provider',
+            label: t('integrations.list.providerChip', {
+              provider: t(`integrations.providers.${provider}`),
+            }),
+            clear: () => setProvider(''),
+          },
+        ]
+      : []),
+    ...(status
+      ? [
+          {
+            key: 'status',
+            label: t('integrations.list.statusChip', { status: t(`integrations.opStatus.${status}`) }),
+            clear: () => setStatus(''),
+          },
+        ]
+      : []),
+  ];
 
   async function preview(e: React.FormEvent) {
     e.preventDefault();
@@ -395,12 +445,7 @@ export default function IntegrationsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-title-2">{t('integrations.title')}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
-          {t('integrations.intro')}
-        </p>
-      </div>
+      <PageIntro title={t('integrations.title')} titleIsTab lead={t('integrations.intro')} />
       <div className="grid gap-4 xl:grid-cols-2">
         {(connections.data ?? []).map((c) => (
           <ProviderCard
@@ -493,39 +538,81 @@ export default function IntegrationsPage() {
         ) : null}
       </Card>
 
-      <Card>
-        <CardTitle>{t('integrations.log')}</CardTitle>
-        {log.data?.length ? (
-          <Table dense className="mt-3">
-            <THead>
-              <tr>
-                <TH>{t('integrations.when')}</TH>
-                <TH>{t('integrations.employee')}</TH>
-                <TH>{t('integrations.step')}</TH>
-                <TH>{t('common.status')}</TH>
-              </tr>
-            </THead>
-            <tbody>
-              {log.data.map((o) => (
-                <TR key={o.id}>
-                  <TD>{formatDateTime(o.executedAt ?? o.createdAt, locale, tz)}</TD>
-                  <TD>{o.employeeName ?? ''}</TD>
-                  <TD>
-                    {t(`integrations.providers.${o.provider}`)} · {t(`integrations.ops.${o.op}`)}
-                  </TD>
-                  <TD>
-                    <Badge tone={opTone[o.status as keyof typeof opTone] ?? 'neutral'}>
-                      {t(`integrations.opStatus.${o.status}`)}
-                    </Badge>
-                  </TD>
-                </TR>
-              ))}
-            </tbody>
-          </Table>
-        ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('integrations.noLog')}</p>
-        )}
-      </Card>
+      <ListCard
+        title={t('integrations.log')}
+        count={
+          log.data
+            ? filtered
+              ? t('integrations.list.countFiltered', { shown: shown.length, count: rows.length })
+              : t('integrations.list.count', { count: rows.length })
+            : undefined
+        }
+        search={
+          rows.length ? (
+            <ListSearch value={query} onChange={setQuery} label={t('integrations.list.search')} />
+          ) : undefined
+        }
+        filters={
+          rows.length ? (
+            <>
+              <ListFilter
+                value={provider}
+                onChange={setProvider}
+                label={t('integrations.provider')}
+                anyLabel={t('integrations.list.anyProvider')}
+                options={PROVIDER_KEYS.map((x) => ({ value: x, label: t(`integrations.providers.${x}`) }))}
+              />
+              <ListFilter
+                value={status}
+                onChange={setStatus}
+                label={t('common.status')}
+                anyLabel={t('integrations.list.anyStatus')}
+                options={Object.keys(opTone).map((x) => ({
+                  value: x,
+                  label: t(`integrations.opStatus.${x}`),
+                }))}
+              />
+            </>
+          ) : undefined
+        }
+        applied={applied}
+        empty={
+          !log.data ? (
+            <Skeleton className="h-24 w-full" />
+          ) : !rows.length ? (
+            <p className="text-callout text-text-secondary">{t('integrations.noLog')}</p>
+          ) : !shown.length ? (
+            <ListNoMatches onClear={clearFilters} />
+          ) : undefined
+        }
+      >
+        <Table dense scrollLabel={t('integrations.log')}>
+          <THead>
+            <tr>
+              <TH>{t('integrations.when')}</TH>
+              <TH>{t('integrations.employee')}</TH>
+              <TH>{t('integrations.step')}</TH>
+              <TH>{t('common.status')}</TH>
+            </tr>
+          </THead>
+          <tbody>
+            {shown.map((o) => (
+              <TR key={o.id}>
+                <TD>{formatDateTime(o.executedAt ?? o.createdAt, locale, tz)}</TD>
+                <TD>{o.employeeName ?? ''}</TD>
+                <TD>
+                  {t(`integrations.providers.${o.provider}`)} · {t(`integrations.ops.${o.op}`)}
+                </TD>
+                <TD>
+                  <Badge tone={opTone[o.status as keyof typeof opTone] ?? 'neutral'}>
+                    {t(`integrations.opStatus.${o.status}`)}
+                  </Badge>
+                </TD>
+              </TR>
+            ))}
+          </tbody>
+        </Table>
+      </ListCard>
     </div>
   );
 }

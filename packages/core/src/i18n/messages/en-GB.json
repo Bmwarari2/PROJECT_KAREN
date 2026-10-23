@@ -796,6 +796,12 @@
       "date.reached": "A date is reached",
       "document.expiring": "A document is expiring",
       "threshold": "A threshold is crossed"
+    },
+    "lead": "Rules that create a task when a record is added or changed, a date is reached or a document is about to expire.",
+    "list": {
+      "title": "Rules",
+      "count_one": "{count} rule",
+      "count_other": "{count} rules"
     }
   },
   "platform": {
@@ -3842,7 +3848,19 @@
     "markReturned": "Mark as returned",
     "markLost": "Mark as lost",
     "returned": "Return recorded",
-    "markedLost": "Marked as lost"
+    "markedLost": "Marked as lost",
+    "list": {
+      "count_one": "{count} asset",
+      "count_other": "{count} assets",
+      "countFiltered_one": "{shown} of {count} asset",
+      "countFiltered_other": "{shown} of {count} assets",
+      "search": "Search assets",
+      "anyType": "All types",
+      "anyStatus": "All statuses",
+      "typeChip": "Type: {type}",
+      "statusChip": "Status: {status}",
+      "addTitle": "Add an asset"
+    }
   },
   "payroll": {
     "title": "Payroll",
@@ -4088,6 +4106,17 @@
       "succeeded": "Done",
       "failed": "Failed",
       "skipped": "Skipped"
+    },
+    "list": {
+      "count_one": "{count} call",
+      "count_other": "{count} calls",
+      "countFiltered_one": "{shown} of {count} call",
+      "countFiltered_other": "{shown} of {count} calls",
+      "search": "Search activity",
+      "anyProvider": "All providers",
+      "anyStatus": "All statuses",
+      "providerChip": "Provider: {provider}",
+      "statusChip": "Status: {status}"
     }
   },
   "reports": {

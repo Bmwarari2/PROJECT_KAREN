@@ -178,13 +178,25 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
 test('an employee acknowledges the handover of an asset', async ({ page }) => {
   await asAdmin(page);
   await page.goto('/app/assets');
-  await page.getByLabel('Asset tag').fill('LT-E2E-1');
-  await page.getByLabel('Name', { exact: true }).fill('Fictional Laptop 13');
-  await page.getByLabel('Type').selectOption('laptop');
-  await page.getByLabel('Serial number').fill('FL13-0001');
-  await page.getByLabel('Cost (GBP)').fill('999.00');
+  await expectModulePage(page, 'IT', 'Equipment');
+  // the register's toolbar opens the form in a dialog
   await page.getByRole('button', { name: 'Add asset' }).click();
-  await expect(page.getByRole('cell', { name: 'Fictional Laptop 13', exact: true })).toBeVisible();
+  const add = page.getByRole('dialog', { name: 'Add an asset' });
+  await add.getByLabel('Asset tag').fill('LT-E2E-1');
+  await add.getByLabel('Name', { exact: true }).fill('Fictional Laptop 13');
+  await add.getByLabel('Type').selectOption('laptop');
+  await add.getByLabel('Serial number').fill('FL13-0001');
+  await add.getByLabel('Cost (GBP)').fill('999.00');
+  await add.getByRole('button', { name: 'Add asset' }).click();
+  await expect(add).toBeHidden();
+  const register = page.getByRole('region', { name: 'Asset register' });
+  await expect(register.getByRole('cell', { name: 'Fictional Laptop 13', exact: true })).toBeVisible();
+  await expect(page.getByText('1 asset', { exact: true })).toBeVisible();
+  // the search in the toolbar narrows the register
+  await page.getByRole('searchbox', { name: 'Search assets' }).fill('no such laptop');
+  await expect(page.getByText('Nothing matches these filters')).toBeVisible();
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(register.getByRole('cell', { name: 'Fictional Laptop 13', exact: true })).toBeVisible();
   await expect(page.getByText('£999.00')).toBeVisible();
   await page.getByRole('button', { name: 'Issue: Fictional Laptop 13' }).click();
   await page.getByLabel('Employee').selectOption({ label: 'Emma Fictional' });

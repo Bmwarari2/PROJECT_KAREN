@@ -25,6 +25,15 @@ import { money, parseDecimal } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import {
+  ListCard,
+  ListFilter,
+  ListNoMatches,
+  ListSearch,
+  matches,
+  PageIntro,
+  type AppliedFilter,
+} from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface Assignment {
@@ -113,6 +122,10 @@ export default function AssetsPage() {
   const [ret, setRet] = React.useState<Asset | null>(null);
   const [ticks, setTicks] = React.useState<Record<string, boolean>>({});
   const [busy, setBusy] = React.useState<string | null>(null);
+  const [adding, setAdding] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const [typeFilter, setTypeFilter] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('');
   const tz = session?.timeZone ?? 'Europe/London';
   const fail = (err: unknown) =>
     toast({
@@ -128,6 +141,41 @@ export default function AssetsPage() {
     const r = params.get('return');
     if (r && assets.data) setRet(assets.data.find((x) => x.holder?.assignmentId === r) ?? null);
   }, [params, mine.data, assets.data]);
+
+  // The register is filtered on the page: the API returns every asset it holds for the workspace.
+  const rows = assets.data ?? [];
+  const shown = rows.filter(
+    (a) =>
+      (!typeFilter || a.type === typeFilter) &&
+      (!statusFilter || a.status === statusFilter) &&
+      matches(query, a.assetTag, a.name, a.serialNumber, a.holder?.employeeName),
+  );
+  const filtered = !!typeFilter || !!statusFilter || !!query.trim();
+  const clearFilters = () => {
+    setQuery('');
+    setTypeFilter('');
+    setStatusFilter('');
+  };
+  const applied: AppliedFilter[] = [
+    ...(typeFilter
+      ? [
+          {
+            key: 'type',
+            label: t('assets.list.typeChip', { type: t(`assets.types.${typeFilter}`) }),
+            clear: () => setTypeFilter(''),
+          },
+        ]
+      : []),
+    ...(statusFilter
+      ? [
+          {
+            key: 'status',
+            label: t('assets.list.statusChip', { status: t(`assets.status.${statusFilter}`) }),
+            clear: () => setStatusFilter(''),
+          },
+        ]
+      : []),
+  ];
 
   async function run(key: string, fn: () => Promise<void>) {
     setBusy(key);
@@ -158,6 +206,7 @@ export default function AssetsPage() {
         },
       });
       setForm({ ...form, assetTag: '', name: '', serialNumber: '', cost: '' });
+      setAdding(false);
       toast({ title: t('assets.created'), tone: 'success' });
       assets.reload();
     });
@@ -206,7 +255,7 @@ export default function AssetsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-2">{t('assets.title')}</h1>
+      <PageIntro title={t('assets.title')} titleIsTab />
 
       {session?.employeeId ? (
         <Card>
@@ -253,87 +302,142 @@ export default function AssetsPage() {
       ) : null}
 
       {canManage ? (
-        <Card>
-          <CardTitle>{t('assets.register')}</CardTitle>
-          {!assets.data ? (
-            <Skeleton className="mt-3 h-24" />
-          ) : assets.data.length ? (
-            <Table dense className="mt-3">
-              <THead>
-                <tr>
-                  <TH>{t('assets.tag')}</TH>
-                  <TH>{t('assets.name')}</TH>
-                  <TH>{t('assets.type')}</TH>
-                  <TH className="text-right">{t('assets.cost')}</TH>
-                  <TH>{t('common.status')}</TH>
-                  <TH>{t('assets.holder')}</TH>
-                  <TH>
-                    <span className="sr-only">{t('common.actions')}</span>
-                  </TH>
-                </tr>
-              </THead>
-              <tbody>
-                {assets.data.map((a) => (
-                  <TR key={a.id}>
-                    <TD className="font-mono text-footnote">{a.assetTag}</TD>
-                    <TD className="font-semibold">{a.name}</TD>
-                    <TD>{t(`assets.types.${a.type}`)}</TD>
-                    <TD className="text-right">
-                      {a.costMinor !== null && a.currency
-                        ? formatMoney(money(BigInt(a.costMinor), a.currency), locale)
-                        : ''}
-                    </TD>
-                    <TD>
-                      <Badge tone={statusTone[a.status as keyof typeof statusTone] ?? 'neutral'}>
-                        {t(`assets.status.${a.status}`)}
-                      </Badge>
-                    </TD>
-                    <TD>
-                      {a.holder ? (
-                        <span>
-                          {a.holder.employeeName}
-                          <span className="block text-footnote text-text-secondary">
-                            {a.holder.acknowledgedAt ? t('assets.signedFor') : t('assets.awaitingSignOff')}
-                          </span>
+        <ListCard
+          title={t('assets.register')}
+          count={
+            assets.data
+              ? filtered
+                ? t('assets.list.countFiltered', { shown: shown.length, count: rows.length })
+                : t('assets.list.count', { count: rows.length })
+              : undefined
+          }
+          search={
+            rows.length ? (
+              <ListSearch value={query} onChange={setQuery} label={t('assets.list.search')} />
+            ) : undefined
+          }
+          filters={
+            rows.length ? (
+              <>
+                <ListFilter
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  label={t('assets.type')}
+                  anyLabel={t('assets.list.anyType')}
+                  options={TYPES.filter((x) => rows.some((a) => a.type === x)).map((x) => ({
+                    value: x,
+                    label: t(`assets.types.${x}`),
+                  }))}
+                />
+                <ListFilter
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  label={t('common.status')}
+                  anyLabel={t('assets.list.anyStatus')}
+                  options={Object.keys(statusTone).map((x) => ({
+                    value: x,
+                    label: t(`assets.status.${x}`),
+                  }))}
+                />
+              </>
+            ) : undefined
+          }
+          actions={
+            <Button size="sm" onClick={() => setAdding(true)}>
+              <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('assets.add')}
+            </Button>
+          }
+          applied={applied}
+          empty={
+            !assets.data ? (
+              <Skeleton className="h-24 w-full" />
+            ) : !rows.length ? (
+              <EmptyState
+                level={3}
+                icon={<Laptop aria-hidden />}
+                title={t('assets.empty')}
+                body={t('assets.emptyBody')}
+              />
+            ) : !shown.length ? (
+              <ListNoMatches onClear={clearFilters} />
+            ) : undefined
+          }
+        >
+          <Table dense scrollLabel={t('assets.register')}>
+            <THead>
+              <tr>
+                <TH>{t('assets.tag')}</TH>
+                <TH>{t('assets.name')}</TH>
+                <TH>{t('assets.type')}</TH>
+                <TH className="text-right">{t('assets.cost')}</TH>
+                <TH>{t('common.status')}</TH>
+                <TH>{t('assets.holder')}</TH>
+                <TH>
+                  <span className="sr-only">{t('common.actions')}</span>
+                </TH>
+              </tr>
+            </THead>
+            <tbody>
+              {shown.map((a) => (
+                <TR key={a.id}>
+                  <TD className="font-mono text-footnote">{a.assetTag}</TD>
+                  <TD className="font-semibold">{a.name}</TD>
+                  <TD>{t(`assets.types.${a.type}`)}</TD>
+                  <TD className="text-right">
+                    {a.costMinor !== null && a.currency
+                      ? formatMoney(money(BigInt(a.costMinor), a.currency), locale)
+                      : ''}
+                  </TD>
+                  <TD>
+                    <Badge tone={statusTone[a.status as keyof typeof statusTone] ?? 'neutral'}>
+                      {t(`assets.status.${a.status}`)}
+                    </Badge>
+                  </TD>
+                  <TD>
+                    {a.holder ? (
+                      <span>
+                        {a.holder.employeeName}
+                        <span className="block text-footnote text-text-secondary">
+                          {a.holder.acknowledgedAt ? t('assets.signedFor') : t('assets.awaitingSignOff')}
                         </span>
-                      ) : (
-                        ''
-                      )}
-                    </TD>
-                    <TD className="text-right">
-                      {a.status === 'in_stock' ? (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setAssign(a)}
-                          aria-label={t('assets.assignNamed', { asset: a.name })}
-                        >
-                          <UserPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                          {t('assets.assign')}
-                        </Button>
-                      ) : a.holder ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setRet(a)}
-                          aria-label={t('assets.recordReturnNamed', { asset: a.name })}
-                        >
-                          {t('assets.recordReturn')}
-                        </Button>
-                      ) : null}
-                    </TD>
-                  </TR>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <EmptyState
-              icon={<Laptop aria-hidden />}
-              title={t('assets.empty')}
-              body={t('assets.emptyBody')}
-            />
-          )}
-          <form onSubmit={create} className="mt-4 grid gap-3 md:grid-cols-7 md:items-end">
+                      </span>
+                    ) : (
+                      ''
+                    )}
+                  </TD>
+                  <TD className="text-right">
+                    {a.status === 'in_stock' ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setAssign(a)}
+                        aria-label={t('assets.assignNamed', { asset: a.name })}
+                      >
+                        <UserPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                        {t('assets.assign')}
+                      </Button>
+                    ) : a.holder ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setRet(a)}
+                        aria-label={t('assets.recordReturnNamed', { asset: a.name })}
+                      >
+                        {t('assets.recordReturn')}
+                      </Button>
+                    ) : null}
+                  </TD>
+                </TR>
+              ))}
+            </tbody>
+          </Table>
+        </ListCard>
+      ) : null}
+
+      <Dialog open={adding} onOpenChange={setAdding}>
+        <DialogContent title={t('assets.list.addTitle')} closeLabel={t('common.close')}>
+          <form onSubmit={create} className="grid gap-3 sm:grid-cols-2">
             <Field id="asset-tag" label={t('assets.tag')}>
               {(p) => (
                 <Input
@@ -345,7 +449,7 @@ export default function AssetsPage() {
                 />
               )}
             </Field>
-            <Field id="asset-name" label={t('assets.name')} className="md:col-span-2">
+            <Field id="asset-name" label={t('assets.name')}>
               {(p) => (
                 <Input
                   {...p}
@@ -360,7 +464,7 @@ export default function AssetsPage() {
               {(p) => (
                 <select
                   {...p}
-                  className={select}
+                  className={`${select} w-full`}
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
                 >
@@ -393,13 +497,15 @@ export default function AssetsPage() {
                 />
               )}
             </Field>
-            <Button type="submit" loading={busy === 'create'}>
-              <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              {t('assets.add')}
-            </Button>
+            <div className="sm:col-span-2">
+              <Button type="submit" loading={busy === 'create'}>
+                <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('assets.add')}
+              </Button>
+            </div>
           </form>
-        </Card>
-      ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!ack} onOpenChange={(o) => !o && (setAck(null), clearLink())}>
         {ack ? (
