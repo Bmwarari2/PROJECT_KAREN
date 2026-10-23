@@ -4,6 +4,8 @@ import {
   REGIONS,
   HOME_REGIONS,
   allowedAwsRegions,
+  allowedGcpLocations,
+  homeRegionForGcpRegion,
   regionPairs,
   createAwsClientFactory,
   ResidencyViolationError,
@@ -42,6 +44,26 @@ describe('residency map', () => {
   });
   it('enumerates all six ordered region pairs', () => {
     expect(regionPairs()).toHaveLength(6);
+  });
+  it('pins each home region to its Google Cloud region, backups in the same jurisdiction (ADR-0156)', () => {
+    expect(REGIONS.uk.gcpRegion).toBe('europe-west2');
+    expect(REGIONS.eu.gcpRegion).toBe('europe-west3');
+    expect(REGIONS.us.gcpRegion).toBe('us-east5');
+    expect(REGIONS.uk.gcpBackupRegion).toBeNull();
+    expect(REGIONS.eu.gcpBackupRegion).toBe('europe-west1');
+    expect(REGIONS.us.gcpBackupRegion).toBe('us-west1');
+    expect(allowedGcpLocations('uk', 'runtime')).toEqual(['europe-west2']);
+    expect(allowedGcpLocations('uk', 'backup')).toEqual(['europe-west2']);
+    expect(allowedGcpLocations('eu', 'runtime')).toEqual(['europe-west3']);
+    expect(allowedGcpLocations('eu', 'backup')).toEqual(['europe-west3', 'europe-west1']);
+    expect(allowedGcpLocations('us', 'runtime')).toEqual(['us-east5']);
+    expect(allowedGcpLocations('us', 'backup')).toEqual(['us-east5', 'us-west1']);
+    for (const r of HOME_REGIONS) expect(homeRegionForGcpRegion(REGIONS[r].gcpRegion)).toBe(r);
+    expect(homeRegionForGcpRegion('europe-west1')).toBeUndefined();
+  });
+  it('no two cells share a Google Cloud location, for runtime or backup', () => {
+    const all = HOME_REGIONS.flatMap((r) => allowedGcpLocations(r, 'backup'));
+    expect(new Set(all).size).toBe(all.length);
   });
 });
 

@@ -1,6 +1,6 @@
 /**
- * Data-residency map. This is the ONLY place region codes and backup targets are defined.
- * Enforced by test/regions.test.ts and the residency test matrix.
+ * Data-residency map. This is the ONLY place region codes and backup targets are defined, for AWS and for
+ * Google Cloud (ADR-0001, ADR-0156). Enforced by test/core.test.ts and the residency test matrix.
  */
 export const HOME_REGIONS = ['uk', 'eu', 'us'] as const;
 export type HomeRegion = (typeof HOME_REGIONS)[number];
@@ -12,6 +12,10 @@ export interface RegionSpec {
   awsRegion: string;
   /** Only region a backup copy may be written to, or null when backups must stay in the home region. */
   backupRegion: string | null;
+  /** Google Cloud region holding the cell's data where the cell runs on Google Cloud (staging, ADR-0156). */
+  gcpRegion: string;
+  /** Only Google Cloud region a backup copy may be written to (same jurisdiction), or null. */
+  gcpBackupRegion: string | null;
   /** Legal regime used for data-subject-request deadlines, breach clocks etc. */
   jurisdiction: 'UK' | 'EU' | 'US';
   /** BCP-47 default locale and ISO 4217 default currency for new tenants in the region. */
@@ -25,6 +29,8 @@ export const REGIONS: Readonly<Record<HomeRegion, RegionSpec>> = Object.freeze({
     code: 'uk',
     awsRegion: 'eu-west-2',
     backupRegion: null,
+    gcpRegion: 'europe-west2',
+    gcpBackupRegion: null,
     jurisdiction: 'UK',
     defaultLocale: 'en-GB',
     defaultCurrency: 'GBP',
@@ -34,6 +40,8 @@ export const REGIONS: Readonly<Record<HomeRegion, RegionSpec>> = Object.freeze({
     code: 'eu',
     awsRegion: 'eu-central-1',
     backupRegion: 'eu-west-1',
+    gcpRegion: 'europe-west3',
+    gcpBackupRegion: 'europe-west1',
     jurisdiction: 'EU',
     defaultLocale: 'en-GB',
     defaultCurrency: 'EUR',
@@ -43,6 +51,8 @@ export const REGIONS: Readonly<Record<HomeRegion, RegionSpec>> = Object.freeze({
     code: 'us',
     awsRegion: 'us-east-2',
     backupRegion: 'us-west-1',
+    gcpRegion: 'us-east5',
+    gcpBackupRegion: 'us-west1',
     jurisdiction: 'US',
     defaultLocale: 'en-US',
     defaultCurrency: 'USD',
@@ -67,6 +77,20 @@ export function allowedAwsRegions(code: HomeRegion, purpose: 'runtime' | 'backup
   const spec = REGIONS[code];
   if (purpose === 'backup' && spec.backupRegion) return [spec.awsRegion, spec.backupRegion];
   return [spec.awsRegion];
+}
+
+export function homeRegionForGcpRegion(gcpRegion: string): HomeRegion | undefined {
+  return HOME_REGIONS.find((c) => REGIONS[c].gcpRegion === gcpRegion);
+}
+
+/**
+ * Google Cloud locations a given cell may touch for a purpose: only single regions, never a multi-region or
+ * dual-region. Backup tooling may additionally reach the backup region.
+ */
+export function allowedGcpLocations(code: HomeRegion, purpose: 'runtime' | 'backup'): string[] {
+  const spec = REGIONS[code];
+  if (purpose === 'backup' && spec.gcpBackupRegion) return [spec.gcpRegion, spec.gcpBackupRegion];
+  return [spec.gcpRegion];
 }
 
 /** Every ordered pair of distinct home regions, used by the residency test matrix. */
