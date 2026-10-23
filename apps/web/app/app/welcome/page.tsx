@@ -100,7 +100,13 @@ export default function WelcomePage() {
   }, [data]);
 
   if (session && !session.employeeId)
-    return <EmptyState level={1} icon={<UserRound aria-hidden />} title={t('onboarding.notLinked')} />;
+    return (
+      <EmptyState
+        level={inModule ? 2 : 1}
+        icon={<UserRound aria-hidden />}
+        title={t('onboarding.notLinked')}
+      />
+    );
   if (error)
     return (
       <EmptyState
