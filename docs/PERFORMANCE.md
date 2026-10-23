@@ -201,3 +201,12 @@ The spec fails if more than 80 rows are ever in the DOM, if first render takes m
 ## 3. Load tests against AWS (`pnpm loadtest`)
 
 Not run yet. The owner's machine runs it after the staging deploy (see `docs/HANDOVER.md`). Results go here, one table per run, with the environment, its size and the teardown confirmation.
+
+## 4. Resilience drills
+
+PROGRESS 12.8. Both drills run on staging (the AWS phase; see `docs/HANDOVER.md`). Add one row per drill run.
+
+| Drill | Procedure | Pass criteria | Date | Result |
+| --- | --- | --- | --- | --- |
+| Backup restore | `docs/runbooks/backup-restore.md` §5 | Restored cluster holds the data at the restore point and not after it; the audit chain verifies; RPO ≤ 15 min; RTO ≤ 4 h | — | Not run yet |
+| Availability-zone failure | `docs/runbooks/az-failure.md` §2 | Aurora failover, Valkey failover and losing one AZ's ECS tasks under load: k6 failed requests < 1 %, no data loss (audit chain verifies, clock events present exactly once), each component back in under 2 minutes | — | Not run yet |
