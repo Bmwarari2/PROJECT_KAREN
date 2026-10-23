@@ -702,6 +702,20 @@
       "document": "Document",
       "manual": "Task",
       "compliance": "Compliance"
+    },
+    "lead": "Open tasks assigned to you or your roles, earliest due date first.",
+    "list": {
+      "title": "Open tasks",
+      "count_one": "{count} task",
+      "count_other": "{count} tasks",
+      "countFiltered_one": "{shown} of {count} task",
+      "countFiltered_other": "{shown} of {count} tasks",
+      "search": "Search tasks",
+      "source": "Source",
+      "anySource": "All sources",
+      "sourceChip": "Source: {source}",
+      "overdueOnly": "Overdue only",
+      "overdue": "Overdue"
     }
   },
   "approvals": {
@@ -717,6 +731,18 @@
       "person": "Person",
       "details": "Details",
       "requested": "Requested"
+    },
+    "lead": "Requests waiting for your decision. Tick several to approve or reject them together.",
+    "list": {
+      "title": "Waiting for you",
+      "count_one": "{count} request",
+      "count_other": "{count} requests",
+      "countFiltered_one": "{shown} of {count} request",
+      "countFiltered_other": "{shown} of {count} requests",
+      "search": "Search requests",
+      "type": "Request type",
+      "anyType": "All request types",
+      "typeChip": "Type: {type}"
     }
   },
   "imports": {
@@ -5114,5 +5140,11 @@
       "keyTaken": "That identifier is already in use.",
       "duplicateAssignment": "This person already holds that role there."
     }
+  },
+  "listView": {
+    "applied": "Filtered by",
+    "removeFilter": "Remove filter: {label}",
+    "clearAll": "Clear filters",
+    "noMatches": "Nothing matches these filters"
   }
 }
