@@ -25,12 +25,18 @@ export function foldOther(items: ChartDatum[], otherLabel: string, max = SERIES_
   return [...kept, { label: otherLabel, value: rest }];
 }
 
-/** Round axis values from 0 to at least `max`, in about `count` steps. */
-export function niceTicks(max: number, count = 4): number[] {
+/**
+ * Round axis values from 0 to at least `max`, in about `count` steps. With `integer` (counts of
+ * people, requests) every tick is a whole number.
+ */
+export function niceTicks(max: number, count = 4, integer = false): number[] {
   if (max <= 0) return [0, 1];
   const raw = max / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw;
+  const steps = [1, 2, 2.5, 5, 10]
+    .map((m) => m * mag)
+    .filter((s) => !integer || (s >= 1 && Number.isInteger(s)));
+  const step = steps.find((s) => s >= raw) ?? (integer ? Math.max(1, Math.ceil(raw)) : raw);
   const top = Math.ceil(max / step) * step;
   return Array.from({ length: Math.round(top / step) + 1 }, (_, i) => +(i * step).toFixed(6));
 }
@@ -77,6 +83,7 @@ export function ColumnChart({
   height = 200,
   format = (n: number) => String(n),
   label,
+  integer = false,
 }: {
   categories: string[];
   series: BarSeries[];
@@ -85,6 +92,8 @@ export function ColumnChart({
   format?: (n: number) => string;
   /** Accessible name of the chart. */
   label: string;
+  /** Whole-number data (counts): the axis shows whole numbers only. */
+  integer?: boolean;
 }) {
   const [hover, setHover] = React.useState<{ c: number; s: number } | null>(null);
   const totals = categories.map((_, c) =>
@@ -92,7 +101,7 @@ export function ColumnChart({
       ? series.reduce((n, s) => n + (s.values[c] ?? 0), 0)
       : Math.max(0, ...series.map((s) => s.values[c] ?? 0)),
   );
-  const ticks = niceTicks(Math.max(0, ...totals));
+  const ticks = niceTicks(Math.max(0, ...totals), 4, integer);
   const top = ticks[ticks.length - 1] || 1;
   const pct = (v: number) => `${(v / top) * 100}%`;
   const summary = `${label}: ${categories
@@ -293,7 +302,8 @@ export function DonutChart({
           </span>
         ) : null}
       </div>
-      <ul className="flex min-w-0 flex-1 flex-col gap-2">
+      {/* the legend wraps under the ring when there is no room beside it (narrow phones) */}
+      <ul className="flex min-w-0 flex-1 basis-36 flex-col gap-2">
         {items.map((d, i) => (
           <li key={d.label} className="flex items-center gap-2 text-callout">
             <span

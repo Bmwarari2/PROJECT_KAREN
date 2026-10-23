@@ -55,7 +55,7 @@ test.describe('field-level permissions in the UI', () => {
 
     // the owner sees pay and personal details
     await page.goto(`/app/people/${report}`);
-    await expect(page.getByRole('heading', { level: 1, name: 'Reese Report' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Reese Report' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Pay', exact: true })).toBeVisible();
     await expect(page.getByText('£40,000.00')).toBeVisible();
     await expect(page.getByText('Date of birth')).toBeVisible();
@@ -79,7 +79,7 @@ test.describe('field-level permissions in the UI', () => {
     expect(viaApi.employee.payAmountMinor).toBeUndefined();
 
     await mp.goto(`/app/people/${report}`);
-    await expect(mp.getByRole('heading', { level: 1, name: 'Reese Report' })).toBeVisible();
+    await expect(mp.getByRole('heading', { level: 2, name: 'Reese Report' })).toBeVisible();
     await expect(mp.getByRole('heading', { name: 'Job', exact: true })).toBeVisible();
     await expect(mp.getByText('Analyst').first()).toBeVisible();
     await expect(mp.getByRole('heading', { name: 'Pay', exact: true })).toHaveCount(0);
@@ -244,7 +244,8 @@ test.describe('pre-start portal', () => {
     const jp = await context.newPage();
     await jp.goto(magicLink((await lastMailTo(joinerEmail)).text));
     await jp.waitForURL(/\/app$/);
-    await jp.getByRole('link', { name: 'Open your onboarding' }).click();
+    // Home lists the onboarding among what needs the joiner's attention
+    await jp.getByRole('link', { name: /Get ready for your first day/ }).click();
     await jp.waitForURL(/\/app\/welcome$/);
     await expect(
       jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
@@ -288,6 +289,18 @@ test.describe('pre-start portal', () => {
     await jp.goto('/app/welcome');
     await expect(jp.getByText('4 of 5 steps complete')).toBeVisible();
     await expect(jp.getByText(/^Signed on /)).toBeVisible();
+    await expectAccessible(jp);
+
+    // without permission to view people, the directory says so and points to the org chart
+    await jp.goto('/app/people');
+    await expect(jp.getByRole('heading', { name: 'The directory isn’t part of your access' })).toBeVisible();
+    await expect(
+      jp.getByText('Opening the directory needs the “View people” permission.', { exact: false }),
+    ).toBeVisible();
+    await expect(jp.getByRole('link', { name: 'Open the org chart' })).toHaveAttribute(
+      'href',
+      '/app/org-chart',
+    );
     await expectAccessible(jp);
 
     // HR sees the joiner's details from their start date

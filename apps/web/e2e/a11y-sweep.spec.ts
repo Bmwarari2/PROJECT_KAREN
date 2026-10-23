@@ -64,7 +64,7 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   },
   {
     name: 'time off, rota, clock and timesheets',
-    match: (r) => /^\/app\/(time-off|rota|clock|timesheets)(\/|$)/.test(r),
+    match: (r) => /^\/app\/(time|time-off|rota|clock|timesheets)(\/|$)/.test(r),
     as: 'owner',
   },
   {
