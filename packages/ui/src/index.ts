@@ -1,6 +1,13 @@
 export * from './components/primitives';
 export * from './components/chrome';
-export * from './components/overlays';
+export * from './components/dialog';
+export * from './components/select';
+export * from './components/tabs';
+export * from './components/toast';
 export { colors, contrast, fontStack, typeScale, radii, space, motion, layout } from './tokens';
 export * from './components/charts';
-export * from './components/workspace';
+export * from './components/menu';
+export * from './components/popover';
+export * from './components/module-nav';
+export * from './components/table-toolbar';
+export * from './components/command';
