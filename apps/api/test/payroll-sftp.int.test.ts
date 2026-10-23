@@ -3,12 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import ssh2 from 'ssh2';
 import { closeDb, startTestApp, type TestContext } from './helpers';
 import { phase6Company, type Phase6Company } from './phase6-fixtures';
-import {
-  hostKeyFingerprint,
-  isPrivateAddress,
-  resolveSftpHost,
-  SftpError,
-} from '../src/modules/payroll/sftp';
+import { isPrivateAddress, resolveSftpHost, SftpError } from '../src/modules/payroll/sftp';
+import { sftpHostKey } from './sftp-host-key';
 
 /**
  * PROGRESS 6.1/6.2 SFTP delivery: a real SSH/SFTP session against an in-process ssh2 server on loopback
@@ -27,11 +23,10 @@ const USER = 'payroll-drop';
 const PASS = 'fictional-sftp-password';
 
 function startServer(): Promise<void> {
-  const hostKey = ssh2.utils.generateKeyPairSync('ed25519');
-  const parsed = ssh2.utils.parseKey(hostKey.private) as { getPublicSSH(): Buffer };
-  fingerprint = hostKeyFingerprint(parsed.getPublicSSH());
+  const hostKey = sftpHostKey();
+  fingerprint = hostKey.fingerprint;
   const { STATUS_CODE } = ssh2.utils.sftp;
-  server = new ssh2.Server({ hostKeys: [hostKey.private] }, (client: any) => {
+  server = new ssh2.Server({ hostKeys: [hostKey.privateKey] }, (client: any) => {
     client.on('authentication', (a: any) =>
       a.method === 'password' && a.username === USER && a.password === PASS
         ? a.accept()
