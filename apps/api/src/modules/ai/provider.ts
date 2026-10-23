@@ -110,17 +110,26 @@ export class FakeAiProvider implements AiProvider {
   }
 }
 
-/** Picks the provider for this cell: Bedrock in AWS, the fake locally (opt-in), or none when unavailable. */
+const AI_PROVIDERS = ['bedrock', 'fake', 'none', 'off'] as const;
+
+/**
+ * Picks the provider for this cell: Bedrock in AWS, the fake locally (opt-in), or none when unavailable.
+ * `none` and its synonym `off` turn Ask HR off: it shows as unavailable and never answers (Google Cloud staging, where
+ * Bedrock is unreachable, ADR-0156). Any other value stops the service rather than silently falling back to Bedrock.
+ */
 export function aiProviderFromEnv(
   cell: HomeRegion,
   env: NodeJS.ProcessEnv = process.env,
 ): AiProvider | undefined {
   const choice =
-    env.AI_PROVIDER ?? (env.APP_ENV === 'prod' || env.APP_ENV === 'staging' ? 'bedrock' : 'fake');
+    env.AI_PROVIDER || (env.APP_ENV === 'prod' || env.APP_ENV === 'staging' ? 'bedrock' : 'fake');
+  if (!(AI_PROVIDERS as readonly string[]).includes(choice))
+    throw new Error(`AI_PROVIDER must be one of ${AI_PROVIDERS.slice(0, -1).join(', ')} or off`);
+  if (choice === 'none' || choice === 'off') return undefined;
   if (choice === 'fake') {
     if (env.APP_ENV === 'prod') throw new Error('The fake AI provider may never run in production');
     return new FakeAiProvider();
   }
-  if (choice === 'none' || !inRegionModel(cell)) return undefined;
+  if (!inRegionModel(cell)) return undefined;
   return new BedrockClaudeProvider(cell);
 }

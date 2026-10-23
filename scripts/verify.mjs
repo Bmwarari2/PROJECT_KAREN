@@ -59,6 +59,11 @@ const steps = [
     cmd: 'pnpm audit --audit-level high && node scripts/secret-scan.mjs && node scripts/sbom.mjs',
   },
   { id: 'synth', name: 'CDK synth (all environments × regions)', cmd: 'pnpm --filter @thapsus/infra synth' },
+  {
+    id: 'gcp',
+    name: 'Google Cloud staging (tofu fmt, validate, offline tests)',
+    cmd: 'node scripts/gcp-infra-check.mjs',
+  },
 ];
 
 const only = process.env.VERIFY_ONLY?.split(',');

@@ -41,6 +41,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @thapsus/web exec playwright install --with-deps chromium
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.13.1
+          tofu_wrapper: false
       - name: pnpm verify
         run: pnpm verify
         env:

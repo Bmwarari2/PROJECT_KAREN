@@ -411,6 +411,21 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ---
 
+## Phase 13 — Google Cloud staging, one region (owner decision 2026-10-23; ADR-0156, ADR-0157, ADR-0158)
+
+- [x] 13.1 One UK staging cell on Google Cloud (europe-west2) defined in OpenTofu, with every resource, backup, secret replica and log bucket in the cell's region.
+  - _Evidence:_ `infra/gcp/staging/tests/staging.tftest.hcl` (offline, mock providers; `pnpm verify` step `gcp`) and `infra/test/gcp-staging.residency.test.ts` (region map parity with `packages/core/src/regions.ts`; residency step).
+- [x] 13.2 Google Cloud adapters selected by configuration: Cloud Storage, Cloud KMS, Cloud SQL over its unix socket, mail to a bucket, the worker's drain endpoint, the client address behind Cloud Run, and Cloud Logging severity. Each checks the location of its resource against the cell, for every region pair.
+  - _Evidence:_ `packages/core/test/gcp.test.ts`, `packages/core/test/residency.residency.test.ts`, `apps/api/test/gcs-object-store.test.ts`, `apps/api/test/gcp-kms.test.ts`, `apps/api/test/bucket-mailer.test.ts`, `packages/db/test/cloudsql.test.ts`, `packages/db/test/cloudsql-socket.int.test.ts`, `apps/worker/test/drain.test.ts`, `apps/worker/test/drain.int.test.ts` and `apps/web/test/proxy.test.ts`.
+- [x] 13.3 Migrations apply as a managed-PostgreSQL migrator without SUPERUSER or BYPASSRLS, as on Cloud SQL.
+  - _Evidence:_ `packages/db/test/managed-migrator.int.test.ts`.
+- [x] 13.4 Fictional test organisation `kestrel`: about 300 employees in UK, Ireland and US entities, activity in every module, and five role sign-ins whose passwords come from Secret Manager.
+  - _Evidence:_ `apps/api/test/seed-staging.int.test.ts` (sign-in per role, manager scope, employee refusal, encryption at rest, idempotent re-run) and `apps/api/test/seed-staging.test.ts`.
+- [ ] 13.5 The web, API and worker images build, start and resolve every import.
+  - _Evidence so far:_ checked by hand on 2026-10-23. Two existing bugs were found and fixed: the API and worker images could not start (/etc/ssl permissions, nested dependencies), and the web image did not build. Proven on each deploy by the workflow's "The image starts" step; ticked after the first deploy.
+- [ ] 13.6 Deploys apply only an owner-approved plan, through Workload Identity Federation (`.github/workflows/deploy-gcp-staging.yml`). Ticked after the first deploy.
+- [ ] 13.7 Staging is deployed and smoke-tested. Needs the owner: `docs/HUMAN_TODO.md` §9.
+
 ## Documentation (brief §9)
 
 - [x] README

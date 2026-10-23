@@ -1,0 +1,31 @@
+# Image builds copy the repository (COPY . .): leave out installs, build output, test artefacts,
+# local secrets and VCS data. Each Dockerfile installs and builds what it needs itself.
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+.git
+.github
+.env
+.env.*
+!.env.example
+.verify
+.deploy
+.loadtest
+.lighthouse
+.tmp
+**/.tmp-*
+apps/web/e2e/__screenshots__
+apps/web/e2e/.results
+apps/web/e2e/.role-views
+apps/web/playwright-report
+apps/web/test-results
+playwright-report
+test-results
+infra/cdk.out
+infra/gcp/staging/.terraform
+**/*.tfstate
+**/*.tfplan

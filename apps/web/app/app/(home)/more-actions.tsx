@@ -6,7 +6,7 @@ import { IntentLink as Link } from '@/components/intent-link';
 import { useT } from '@/lib/i18n-client';
 import type { QuickAction } from '../workspace';
 
-/** The quick actions that do not fit as buttons, in a menu (loaded after the page; see page.tsx). */
+/** The quick actions that do not fit as buttons, in a menu (loaded on demand; see dashboard.tsx). */
 export function MoreActionsMenu({
   actions,
   defaultOpen = false,

@@ -9,6 +9,27 @@ Everything in brief §10 except the AWS work is done and merged to `main`. What 
 
 The product owner hands that back to the original agent on the owner's machine. Read `CLAUDE.md`, `docs/BUILD_BRIEF.md` §10 and `docs/PROGRESS.md` first.
 
+## Google Cloud staging (added 2026-10-23)
+
+The product owner chose to test on Google Cloud, in one region, and to improve the UI while staging is live. Phase 13 in PROGRESS.md and ADR-0156 to ADR-0158 have the detail.
+
+- **Ready:**
+  - one UK cell in europe-west2 (`infra/gcp`);
+  - the Google Cloud adapters;
+  - the fictional test organisation `kestrel` with five role sign-ins;
+  - the deploy workflow "Deploy staging (Google Cloud)".
+- **Waiting on the owner:** `docs/HUMAN_TODO.md` §9 — project and billing, `infra/gcp/bootstrap.sh` in Cloud Shell, GitHub variables, and the `staging-gcp` environment with required reviewers.
+- **Every deploy:** after CI passes on `main` (or a manual run), the workflow builds and checks the images, posts the OpenTofu change set, waits for the owner's approval, migrates, applies, seeds on the first run and smoke-tests.
+- **Sign-ins:** `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`.
+- **UI changes while live:** branch, PR, CI, merge to `main`, then the owner approves the deploy.
+- **Not proven until the first deploy:**
+  - IAM-signed download URLs;
+  - Cloud KMS and Cloud Storage against the real services;
+  - the Cloud SQL connector;
+  - the regional log routing.
+
+  Each has a fake-backed test; the deploy's smoke test and the first sign-in confirm them.
+
 ## What is done
 
 - **Phases 0–11** are merged to `main` with PROGRESS.md ticked from evidence. `[h]` means done except human-only steps, which are listed in `docs/HUMAN_TODO.md`.

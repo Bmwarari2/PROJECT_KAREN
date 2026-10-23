@@ -1,0 +1,227 @@
+name: Deploy staging (Google Cloud)
+
+# One-region staging cell on Google Cloud (ADR-0157, infra/gcp). Off until the owner has run
+# infra/gcp/bootstrap.sh and set the repository variables it prints (GCP_STAGING_ENABLED=true).
+#
+# Every run builds the images, then shows the OpenTofu plan. Nothing in Google Cloud changes until
+# the owner approves the `staging-gcp` environment (required reviewers; the plan job refuses to go on
+# without that rule), and the deploy job only applies the changes that were in the approved plan.
+#
+# Google Cloud access is Workload Identity Federation (main branch of this repository only): there are
+# no keys. This repository is public, so nothing secret is printed (OpenTofu redacts sensitive
+# values; generated passwords live only in Secret Manager).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Re-run the test organisation seed (it runs by itself on the first deploy)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-gcp-staging
+  cancel-in-progress: false
+
+env:
+  CELL: uk
+  REGION: europe-west2
+  TOFU_VERSION: 1.13.1
+  TF_IN_AUTOMATION: '1'
+  TF_INPUT: '0'
+  TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+  TF_VAR_cell: uk
+  TF_VAR_web_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/web:${{ github.event.workflow_run.head_sha || github.sha }}
+  TF_VAR_api_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/api:${{ github.event.workflow_run.head_sha || github.sha }}
+  TF_VAR_worker_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/worker:${{ github.event.workflow_run.head_sha || github.sha }}
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  build:
+    # A workflow_run also fires for CI runs of pull requests from forks (whose branch may be called
+    # "main"), so only a push to this repository's main branch, or a manual run on main, deploys.
+    if: >-
+      vars.GCP_STAGING_ENABLED == 'true' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        image: [web, api, worker]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+      - uses: docker/setup-buildx-action@v3
+      # Built locally first and checked, then pushed: an image that cannot start never reaches the
+      # registry.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.image }}/Dockerfile
+          load: true
+          provenance: false
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/${{ matrix.image }}:${{ env.SHA }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+      - name: The image starts
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/${{ matrix.image }}:${{ env.SHA }}
+        run: |
+          if [[ "${{ matrix.image }}" == "web" ]]; then
+            docker run -d --name smoke -p 3000:3000 "$IMAGE"
+            for _ in $(seq 1 30); do curl -sf http://127.0.0.1:3000/health >/dev/null && break; sleep 1; done
+            curl -sf -o /dev/null http://127.0.0.1:3000/health || { docker logs smoke | tail -20; exit 1; }
+          else
+            docker run --rm -i --entrypoint node "$IMAGE" --input-type=module - < scripts/check-image-imports.mjs
+          fi
+      - name: Push
+        run: docker push "$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/${{ matrix.image }}:$SHA"
+
+  plan:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      changes: ${{ steps.plan.outputs.changes }}
+    steps:
+      - name: Deploys need the owner's approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rules="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/environments/staging-gcp" \
+            | jq -r '[.protection_rules[]?.type] | join(",")' || true)"
+          if [[ ",$rules," != *",required_reviewers,"* ]]; then
+            echo "::error::Create the GitHub environment 'staging-gcp' with required reviewers (docs/HUMAN_TODO.md, Google Cloud staging) before deploying."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - name: Plan
+        id: plan
+        working-directory: infra/gcp/staging
+        run: |
+          tofu init -backend-config="bucket=${{ vars.GCP_STATE_BUCKET }}" -backend-config="prefix=staging/$CELL"
+          tofu plan -no-color -out=reviewed.tfplan
+          changes="$(tofu show -json reviewed.tfplan | jq -c -f ../plan-changes.jq)"
+          echo "changes=$changes" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Plan for $SHA"
+            echo ""
+            echo "Approve the **staging-gcp** deployment to apply exactly these changes."
+            echo ""
+            echo '| Resource | Change |'
+            echo '| --- | --- |'
+            jq -r '.[] | "| `\(.address)` | \(.actions | join(" then ")) |"' <<<"$changes"
+          } >> "$GITHUB_STEP_SUMMARY"
+          rm -f reviewed.tfplan
+
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: staging-gcp
+    env:
+      REVIEWED: ${{ needs.plan.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - name: The plan is still the approved one
+        working-directory: infra/gcp/staging
+        run: |
+          tofu init -backend-config="bucket=${{ vars.GCP_STATE_BUCKET }}" -backend-config="prefix=staging/$CELL"
+          tofu plan -no-color -out=check.tfplan >/dev/null
+          now="$(tofu show -json check.tfplan | jq -c -f ../plan-changes.jq)"
+          rm -f check.tfplan
+          if [[ "$now" != "$REVIEWED" ]]; then
+            echo "::error::The infrastructure changed since the plan was approved. Re-run the workflow and review the new plan."
+            exit 1
+          fi
+      # Expand-and-contract: the migrate job (and what it needs) is applied first, the migrations run,
+      # and only then does the new code take traffic. Both steps apply saved plans that must fall
+      # inside the approved change set.
+      - name: Apply the database, secrets and jobs
+        working-directory: infra/gcp/staging
+        run: |
+          tofu plan -no-color -out=jobs.tfplan \
+            -target=google_cloud_run_v2_job.migrate -target=google_cloud_run_v2_job.seed >/dev/null
+          part="$(tofu show -json jobs.tfplan | jq -c -f ../plan-changes.jq)"
+          jq -e -n --argjson all "$REVIEWED" --argjson part "$part" '($part - $all) | length == 0' >/dev/null \
+            || { echo "::error::Planned changes outside the approved plan"; exit 1; }
+          tofu apply -no-color jobs.tfplan
+      - name: Migrate
+        run: gcloud run jobs execute "thapsus-stg-$CELL-migrate" --region "$REGION" --wait
+      - name: Apply the app, worker and schedule
+        working-directory: infra/gcp/staging
+        run: |
+          tofu plan -no-color -out=rest.tfplan >/dev/null
+          part="$(tofu show -json rest.tfplan | jq -c -f ../plan-changes.jq)"
+          jq -e -n --argjson all "$REVIEWED" --argjson part "$part" '($part - $all) | length == 0' >/dev/null \
+            || { echo "::error::Planned changes outside the approved plan"; exit 1; }
+          tofu apply -no-color rest.tfplan
+      - name: Seed the test organisation
+        run: |
+          job="thapsus-stg-$CELL-seed"
+          seeded="$(gcloud run jobs executions list --job "$job" --region "$REGION" \
+            --filter='status.succeededCount>0' --limit 1 --format='value(name)')"
+          if [[ "${{ inputs.seed }}" == "true" || -z "$seeded" ]]; then
+            gcloud run jobs execute "$job" --region "$REGION" --wait
+          else
+            echo "The test organisation is already seeded (run the workflow by hand with 'seed' ticked to re-run it)."
+          fi
+      - name: Smoke test
+        working-directory: infra/gcp/staging
+        run: |
+          url="$(tofu output -raw app_url)"
+          for path in /health /signin; do
+            code=000
+            for _ in $(seq 1 30); do
+              code="$(curl -s -o /dev/null -w '%{http_code}' "$url$path" || true)"
+              [[ "$code" == "200" ]] && break
+              sleep 5
+            done
+            echo "$path -> $code"
+            [[ "$code" == "200" ]]
+          done
+          {
+            echo "### Staging is live"
+            echo ""
+            echo "- Sign in: $url/signin (workspace \`kestrel\`)"
+            echo "- Test sign-ins: \`gcloud secrets versions access latest --secret=$(tofu output -raw test_logins_secret) --project=${{ vars.GCP_PROJECT_ID }}\`"
+            echo "- Commit: \`$SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"

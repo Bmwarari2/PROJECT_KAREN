@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HOME_REGIONS, REGIONS, regionPairs, type HomeRegion } from '../src/regions';
 import { createAwsClientFactory, ResidencyViolationError } from '../src/aws';
 import { assertCellResidency, endpointViolations, regionOf, type ResourceKind } from '../src/residency';
+import { assertGcpLocationAllowed, gcpLocationOf, GcpResidencyViolationError } from '../src/gcp';
 
 /**
  * Residency matrix: for every ordered pair of home regions (UK↔EU, UK↔US, EU↔US) and every resource
@@ -130,5 +131,122 @@ describe.each(HOME_REGIONS)('home-region resources are accepted (%s)', (home) =>
         S3_ENDPOINT: 'http://localhost:9090',
       }),
     ).not.toThrow();
+  });
+});
+
+/**
+ * Google Cloud (ADR-0156): the same matrix for the Google Cloud forms a cell is configured with. Every
+ * ordered pair, every form, runtime and backup.
+ */
+type GcpForm = 'socketHost' | 'socketFile' | 'socketUrl' | 'connectionName' | 'kmsKey' | 'bucketLocation';
+const GCP_FORMS: GcpForm[] = [
+  'socketHost',
+  'socketFile',
+  'socketUrl',
+  'connectionName',
+  'kmsKey',
+  'bucketLocation',
+];
+const gcpSample = (form: GcpForm, location: string): { kind: ResourceKind; resource: string } => {
+  const conn = `thapsus-hr-staging:${location}:thapsus-pg`;
+  switch (form) {
+    case 'socketHost':
+      return { kind: 'database', resource: `/cloudsql/${conn}` };
+    case 'socketFile':
+      return { kind: 'database', resource: `/cloudsql/${conn}/.s.PGSQL.5432` };
+    case 'socketUrl':
+      return {
+        kind: 'database',
+        resource: `postgres://thapsus_app:x@localhost:5432/thapsus?host=${encodeURIComponent(`/cloudsql/${conn}`)}`,
+      };
+    case 'connectionName':
+      return { kind: 'database', resource: conn };
+    case 'kmsKey':
+      return {
+        kind: 'kms',
+        resource: `projects/thapsus-hr-staging/locations/${location}/keyRings/cell/cryptoKeys/fields`,
+      };
+    case 'bucketLocation':
+      return { kind: 'objectStorage', resource: location.toUpperCase() };
+  }
+};
+
+describe('Google Cloud location extraction', () => {
+  it.each(GCP_FORMS)('finds the location in a %s', (form) => {
+    for (const r of HOME_REGIONS)
+      expect(gcpLocationOf(gcpSample(form, REGIONS[r].gcpRegion).resource)).toBe(REGIONS[r].gcpRegion);
+  });
+});
+
+describe.each(regionPairs())('Google Cloud residency %s → %s', (home: HomeRegion, other: HomeRegion) => {
+  const there = REGIONS[other].gcpRegion;
+  it.each(GCP_FORMS)(`a ${home} cell refuses ${other} %s resources`, (form) => {
+    const v = endpointViolations(home, [gcpSample(form, there)]);
+    expect(v).toHaveLength(1);
+    expect(v[0]!.region).toBe(there);
+    expect(() => assertGcpLocationAllowed(home, gcpLocationOf(gcpSample(form, there).resource))).toThrow(
+      GcpResidencyViolationError,
+    );
+  });
+  it(`a ${home} cell refuses ${other}'s Google Cloud regions for backups too`, () => {
+    for (const loc of [there, REGIONS[other].gcpBackupRegion].filter((x): x is string => !!x)) {
+      expect(() => assertGcpLocationAllowed(home, loc, 'backup')).toThrow(GcpResidencyViolationError);
+      expect(() => assertGcpLocationAllowed(home, loc, 'runtime')).toThrow(GcpResidencyViolationError);
+      expect(
+        endpointViolations(home, [
+          { kind: 'backup', resource: `projects/p/locations/${loc}/backupVaults/thapsus` },
+        ]),
+      ).toHaveLength(1);
+    }
+  });
+  it(`a ${home} cell refuses to start when GCP_KMS_KEY or a Cloud SQL socket points at ${other}`, () => {
+    const conn = `thapsus-hr-staging:${there}:thapsus-pg`;
+    for (const env of [
+      { GCP_KMS_KEY: gcpSample('kmsKey', there).resource },
+      { DATABASE_HOST: `/cloudsql/${conn}` },
+      { REPORTING_DATABASE_HOST: `/cloudsql/${conn}` },
+      { DATABASE_URL: gcpSample('socketUrl', there).resource },
+      { DATABASES: JSON.stringify({ shared: gcpSample('socketUrl', there).resource }) },
+    ])
+      expect(() => assertCellResidency(home, env), JSON.stringify(env)).toThrow(/Residency violation/);
+  });
+});
+
+describe.each(HOME_REGIONS)('Google Cloud home locations are accepted (%s)', (home) => {
+  const here = REGIONS[home].gcpRegion;
+  it('accepts every form in the home region and lets the cell start', () => {
+    expect(
+      endpointViolations(
+        home,
+        GCP_FORMS.map((f) => gcpSample(f, here)),
+      ),
+    ).toEqual([]);
+    expect(() =>
+      assertCellResidency(home, {
+        GCP_KMS_KEY: gcpSample('kmsKey', here).resource,
+        DATABASE_HOST: `/cloudsql/thapsus-hr-staging:${here}:thapsus-pg`,
+        REPORTING_DATABASE_HOST: `/cloudsql/thapsus-hr-staging:${here}:thapsus-pg`,
+      }),
+    ).not.toThrow();
+  });
+  it('backups may use only the permitted Google Cloud backup region; nothing else may', () => {
+    const backup = REGIONS[home].gcpBackupRegion;
+    for (const r of HOME_REGIONS.flatMap((c) => [REGIONS[c].gcpRegion, REGIONS[c].gcpBackupRegion])) {
+      if (!r) continue;
+      const ok = r === here || r === backup;
+      expect(
+        endpointViolations(home, [{ kind: 'backup', resource: `projects/p/locations/${r}/backupVaults/v` }])
+          .length === 0,
+        r,
+      ).toBe(ok);
+      if (r !== here) expect(endpointViolations(home, [gcpSample('socketHost', r)]), r).toHaveLength(1);
+    }
+  });
+  it('multi-region and dual-region buckets and global keys are refused', () => {
+    for (const loc of ['EU', 'US', 'ASIA', 'EUR4', 'NAM4'])
+      expect(endpointViolations(home, [{ kind: 'objectStorage', resource: loc }]), loc).toHaveLength(1);
+    expect(
+      endpointViolations(home, [{ kind: 'kms', resource: gcpSample('kmsKey', 'global').resource }]),
+    ).toHaveLength(1);
   });
 });

@@ -1,9 +1,11 @@
-import { allowedAwsRegions, REGIONS, type HomeRegion } from './regions';
+import { allowedAwsRegions, allowedGcpLocations, REGIONS, type HomeRegion } from './regions';
+import { gcpLocationOf } from './gcp';
 
 /**
- * Startup residency check for a cell: every configured endpoint that names an AWS region must be in
- * the cell's home region (backup resources may also use the permitted backup region). Services refuse
- * to start on any violation, so a UK cell can never be pointed at EU or US resources by configuration.
+ * Startup residency check for a cell: every configured endpoint that names an AWS region or a Google Cloud
+ * location must be in the cell's home region (backup resources may also use the permitted backup region).
+ * Services refuse to start on any violation, so a UK cell can never be pointed at EU or US resources by
+ * configuration.
  */
 export type ResourceKind =
   'database' | 'objectStorage' | 'cache' | 'queue' | 'email' | 'logs' | 'kms' | 'backup' | 'search';
@@ -47,11 +49,15 @@ export function endpointViolations(
 ): EndpointViolation[] {
   const out: EndpointViolation[] = [];
   for (const e of endpoints) {
+    const purpose = e.kind === 'backup' ? 'backup' : 'runtime';
+    // Local emulators (localhost) carry neither; a resource could in principle carry both, so both are checked.
     const region = regionOf(e.resource);
-    if (!region) continue; // local emulators (localhost) carry no region
-    const allowed = allowedAwsRegions(cell, e.kind === 'backup' ? 'backup' : 'runtime');
-    if (!allowed.includes(region))
+    if (region && !allowedAwsRegions(cell, purpose).includes(region))
       out.push({ kind: e.kind, resource: redactCredentials(e.resource), region });
+    // Google Cloud (ADR-0156): Cloud SQL sockets and connection names, resource names, bucket locations.
+    const location = gcpLocationOf(e.resource);
+    if (location && !allowedGcpLocations(cell, purpose).includes(location))
+      out.push({ kind: e.kind, resource: redactCredentials(e.resource), region: location });
   }
   return out;
 }
@@ -87,6 +93,9 @@ export function cellEndpointsFromEnv(
   add('objectStorage', env.S3_ENDPOINT);
   add('kms', env.KMS_KEY_ARN);
   add('kms', env.FILES_KMS_KEY_ARN);
+  // Google Cloud (ADR-0156). DATABASE_HOST / REPORTING_DATABASE_HOST above may be /cloudsql/<connection name>
+  // sockets. Bucket names carry no location: the Cloud Storage adapters check the bucket's metadata on first use.
+  add('kms', env.GCP_KMS_KEY);
   for (const k of Object.keys(env).filter((k) => k.startsWith('QUEUE_URL_'))) add('queue', env[k]);
   add('queue', env.EVENT_BUS_ARN);
   add('email', env.SES_IDENTITY_ARN);
@@ -101,7 +110,7 @@ export function assertCellResidency(cell: HomeRegion, env: NodeJS.ProcessEnv = p
   const v = endpointViolations(cell, cellEndpointsFromEnv(env));
   if (v.length) {
     throw new Error(
-      `Residency violation for ${cell} cell (${REGIONS[cell].awsRegion}): ` +
+      `Residency violation for ${cell} cell (${REGIONS[cell].awsRegion} / ${REGIONS[cell].gcpRegion}): ` +
         v.map((x) => `${x.kind} in ${x.region}`).join(', '),
     );
   }

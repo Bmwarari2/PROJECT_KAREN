@@ -1471,3 +1471,199 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 - The builder no longer asks people to pick a chart type that might not fit the data.
 - What the preview shows cannot drift from what the app shows, because both read one map.
+
+## ADR-0156 — One-region staging on Google Cloud: region map and adapters (2026-10-23)
+
+**Context.** The product owner decided to run a one-region staging environment on Google Cloud: the UK cell only, in europe-west2 (London), with fictional data only. The AWS code and infrastructure stay as they are, and production hosting is not yet decided. The staging infrastructure is written separately in OpenTofu, which sets the environment variables listed below. This ADR fixes the contract between that infrastructure and the application.
+
+**Decision.**
+
+- **Region map.** `packages/core/src/regions.ts` gains `gcpRegion` and `gcpBackupRegion`, with the same jurisdiction rule as the AWS map (ADR-0001):
+
+  | Cell | Google Cloud region       | Backup copies          |
+  | ---- | ------------------------- | ---------------------- |
+  | UK   | europe-west2 (London)     | none (London only)     |
+  | EU   | europe-west3 (Frankfurt)  | europe-west1 (Belgium) |
+  | US   | us-east5 (Columbus, Ohio) | us-west1 (Oregon)      |
+
+  Only the UK cell runs on Google Cloud today. The EU and US entries exist so the residency guard and the test matrix cover every region pair. `allowedGcpLocations(cell, purpose)` mirrors `allowedAwsRegions`.
+
+- **Residency guard** (`packages/core/src/gcp.ts`). `gcpLocationOf()` reads the location from:
+  - resource names (`projects/*/locations/<location>/…`);
+  - Cloud SQL connection names (`project:region:instance`) and `/cloudsql/…` socket paths, also inside a database URL;
+  - Cloud Storage bucket locations (`EUROPE-WEST2`).
+
+  `assertGcpLocationAllowed()` throws `GcpResidencyViolationError`, a `ResidencyViolationError`. Multi-regions (`EU`, `US`, `ASIA`) and dual-regions are refused for every cell, because they place copies outside the home region. The startup residency check (`assertCellResidency`, and the router's own check) now also checks Google Cloud locations, so it covers `GCP_KMS_KEY` and every database host or URL that names a Cloud SQL socket. A bucket name carries no location, so each Cloud Storage adapter reads the bucket's metadata on first use and refuses anything but a single region equal to the cell's `gcpRegion`.
+
+- **Database over the Cloud SQL socket.** When the host starts with `/`, `secretToUrl()` builds `postgres://user:pw@localhost:<port>/<db>?host=<socket directory>` with no `sslmode`, and `tlsFor()` asks for no TLS. Cloud Run mounts the socket at `/cloudsql/<project>:<region>:<instance>/.s.PGSQL.5432`. The Cloud SQL connector behind it already encrypts the connection with mutual TLS. A trailing `/.s.PGSQL.<port>` is accepted and becomes the port. The app, back-office, reporting, migrator and directory connections all build their URLs this way.
+
+- **Tenant directory.** `DIRECTORY_DATABASE_SECRET`, with `DATABASE_HOST`, points the Postgres directory at the `thapsus_global` database on the same instance. `thapsus_global` is the default when the secret has no `dbname`.
+
+- **Migrations without a superuser.** On Cloud SQL the migrator belongs to `cloudsqlsuperuser`: it has CREATEROLE and CREATEDB, but no SUPERUSER and no BYPASSRLS. Running every migration as such a role on a fresh database (PostgreSQL 17) failed in one place: 0002 gives `app.tenants_for_email()` to the NOLOGIN `thapsus_lookup` role. A non-superuser may give an object only to a role that can create in the object's schema, and `thapsus_lookup` has only USAGE on `app`.
+  - The fix does not edit 0002, whose checksum is recorded wherever it has run. A new `0001b_lookup_role.sql` sorts between 0001 and 0002: it creates the role the way 0002 does and grants it CREATE on `app`. A new `0020_lookup_role_least_privilege.sql` revokes that grant again.
+  - Every database therefore ends with the same privileges, whichever role migrated it. On existing databases 0001b and 0020 simply run after 0019.
+  - Everything else, including the extensions (`pgcrypto`, `pg_trgm`, `btree_gist` and `citext` are trusted), the RLS policies and the role passwords, works without a superuser.
+  - `packages/db/test/managed-migrator.int.test.ts` keeps it that way. It runs every migration as a CREATEROLE + CREATEDB role on a fresh database and checks the end state and RLS.
+  - The db isolation, integration and residency suites also pass with `TEST_PG_OWNER_URL` set to such a role.
+  - Two audit tests had assumed that the owner connection bypasses RLS, which only a superuser does. They now set the tenant context first.
+
+- **Files** (`GcsObjectStore`, selected by `GCS_FILES_BUCKET`):
+  - Signed URLs are V4, valid for 5 minutes like the S3 ones. Download links carry `response-content-disposition` from `contentDisposition()`. Upload links bind the content type.
+  - The upload size is checked again on the server when the upload is confirmed, as with S3.
+  - `deletePrefix` deletes every object and every noncurrent generation (`versions: true`).
+  - Encryption at rest is the bucket's default key, set by the infrastructure.
+  - On Cloud Run the library signs through the IAM `signBlob` API with the service account from Application Default Credentials, so no key file exists. The Storage client is injectable for tests.
+  - The Google Cloud libraries are loaded on first use only, so AWS cells and tests never load them.
+  - Setting both `GCS_FILES_BUCKET` and `FILES_BUCKET` is refused.
+
+- **Keys** (`GcpKmsKeyProvider`). Cloud KMS has no data-key API, so each 256-bit data key is generated locally (`randomBytes(32)`) and wrapped with Cloud KMS `encrypt`. The wrap is bound to the context through `additionalAuthenticatedData`: SHA-256 of the sorted context entries, the same derivation as the local provider. `decrypt` sends the same AAD, so a wrapped key cannot be opened under another tenant, category or field. `GCP_KMS_KEY` must be a full crypto key name (not a key ring or a key version), and its location is checked by the guard. Staging and production still refuse to start without a real KMS key, and setting both `KMS_KEY_ARN` and `GCP_KMS_KEY` is refused.
+
+- **Email.** Staging has no email provider yet. `MAIL_TRANSPORT=bucket` writes each message as an RFC 822 `.eml` object to `MAIL_BUCKET`, checked by the guard. It is allowed only in dev, test and staging. Object names (`mail/<date>/<time>-<random id>.eml`) hold only the UTC date and time and a random id, never an address or a subject.
+
+- **Worker on Cloud Run.** `WORKER_MODE=http` serves `GET /health` and `POST /drain` on `PORT`:
+  - Cloud Scheduler calls `/drain` every minute with an OIDC token. Cloud Run IAM authenticates the call, so the app does not check the token.
+  - A drain runs the loop's own step (sweep if due, heartbeat if due, `engine.tick()`) until no work is left or `WORKER_DRAIN_BUDGET_MS` is spent (default 50 000).
+  - It answers 200 with counts only, never tenant data, or 500 when a step failed, so Cloud Scheduler records the failure.
+  - Drains in one process are serialised: a second call waits for the running drain and returns its result.
+  - On SIGTERM a running drain stops after its current step.
+
+  The default loop mode is unchanged.
+
+- **Client IP behind Cloud Run.** The API runs as a sidecar of the web container and the web proxy forwards API paths to `http://127.0.0.1:4000`. With `CLIENT_IP_SOURCE=cloud-run`, the proxy takes the **rightmost** `X-Forwarded-For` entry, which is the address Cloud Run's front end appended. It sends exactly that entry, and only when it is an IP address, as `X-Forwarded-For` to the API. Entries to its left are client-supplied and ignored. With `TRUSTED_PROXY_CIDRS=127.0.0.1/32` the API trusts that single hop, so `req.ip`, the per-IP throttles and the audit IPs see the real client. Without the setting, the proxy keeps dropping client forwarding headers. This holds only while Cloud Run's own front end is the only hop. A Google Cloud load balancer in front would append its own address, and this rule would then need to change.
+
+- **Logs.** `LOG_FORMAT=gcp` adds Cloud Logging's `severity` (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) to every JSON line, next to the numeric `level`. The personal-data scrubber is unchanged.
+
+- **Ask HR.** Amazon Bedrock is not reachable from Google Cloud. `AI_PROVIDER=off` is accepted as a synonym of the existing `none`: Ask HR shows as unavailable and never gives fake answers. An unrecognised `AI_PROVIDER` value now stops the service at start instead of silently falling back to Bedrock. Staging on Google Cloud sets `AI_PROVIDER=off`.
+
+- **Environment variables.** New, or with a new value:
+
+  | Variable                                   | Service     | Effect                                                                                                                                              |
+  | ------------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `DATABASE_HOST`, `REPORTING_DATABASE_HOST` | api, worker | May be a Cloud SQL socket directory, `/cloudsql/<project>:<region>:<instance>`. Location-checked at start.                                          |
+  | `DIRECTORY_DATABASE_SECRET`                | api, worker | JSON secret of the directory role, used with `DATABASE_HOST`. Database `thapsus_global` unless the secret names one. `DIRECTORY_DATABASE_URL` wins. |
+  | `GCS_FILES_BUCKET`                         | api, worker | Files in this Cloud Storage bucket. The bucket must be a single region equal to the cell's `gcpRegion`.                                             |
+  | `GCP_KMS_KEY`                              | api, worker | Cloud KMS crypto key name for sensitive fields. Location-checked at start.                                                                          |
+  | `MAIL_TRANSPORT=bucket` with `MAIL_BUCKET` | api, worker | Email captured as `.eml` objects in that bucket (dev, test and staging only).                                                                       |
+  | `WORKER_MODE`                              | worker      | `loop` (default) or `http`.                                                                                                                         |
+  | `PORT`                                     | worker      | Listen port in `http` mode (default 8080; Cloud Run sets it).                                                                                       |
+  | `WORKER_DRAIN_BUDGET_MS`                   | worker      | Time budget of one `/drain` (default 50000).                                                                                                        |
+  | `CLIENT_IP_SOURCE=cloud-run`               | web         | Forward the rightmost `X-Forwarded-For` entry to the API. Unset: forward none. Any other value is refused.                                          |
+  | `LOG_FORMAT`                               | all         | `json` (default) or `gcp`, which adds `severity`. Any other value is refused.                                                                       |
+  | `AI_PROVIDER=off`                          | api, worker | Ask HR unavailable (same as `none`). Unknown values are refused.                                                                                    |
+
+  Staging also sets these existing variables. The database secrets `DATABASE_SECRET`, `OWNER_DATABASE_SECRET`, `APP_DATABASE_SECRET`, `BACKOFFICE_DATABASE_SECRET` and `REPORTING_DATABASE_SECRET` are JSON (`username`, `password`, `dbname`, `port`) without a host. The API sets `TRUSTED_PROXY_CIDRS=127.0.0.1/32`. The web sets `API_PROXY_URL` and `API_INTERNAL_URL` to `http://127.0.0.1:4000`. The API sidecar keeps its default port 4000: Cloud Run sets `PORT` only on the ingress container.
+
+**Consequences.**
+
+- An AWS cell is unchanged while the new variables are unset.
+- The staging infrastructure has to provide what the code assumes:
+  - **Cloud SQL users.** Create only the migrator with `google_sql_user`. The migrations create the app, back-office, reporting and lookup roles; a `google_sql_user` would make them members of `cloudsqlsuperuser`. The directory role must be able to create its table in `thapsus_global`, because `PgDirectory.init()` runs `CREATE TABLE IF NOT EXISTS`.
+  - **Runtime service account.** It needs `storage.buckets.get` on the files and mail buckets for the location check, besides object access. It also needs `iam.serviceAccounts.signBlob` on itself for signed URLs.
+  - **Files bucket.** Versioning on. Soft delete off: otherwise deleted generations stay restorable for the soft-delete window, which defeats verified deletion. CORS must allow the app origin for direct uploads and downloads.
+  - **Mail bucket.** A lifecycle rule must delete old messages.
+  - **Locations.** Every bucket, the key ring, Secret Manager replication, Artifact Registry, Cloud Scheduler and the Cloud Logging bucket must be in europe-west2. The `_Default` log bucket is `global` unless the project's default log storage location is set first.
+  - **Worker.** The Cloud Scheduler attempt deadline and the worker's request timeout must exceed `WORKER_DRAIN_BUDGET_MS`.
+  - **Ask HR.** Set `AI_PROVIDER=off`.
+- Production hosting is not decided. A production move to Google Cloud needs:
+  - its own ADR;
+  - an entry in the core infrastructure table of SUBPROCESSORS.md, with the customer notice period;
+  - a review of the regional API endpoints of Cloud KMS and Cloud Storage. Staging uses the global endpoints with fictional data only.
+
+## ADR-0157 — Google Cloud staging infrastructure and approved deploys (2026-10-23)
+
+**Context.** The product owner chose to test on Google Cloud and asked for staging in one region only ("this is only testing"), with a test organisation and sign-ins, so the UI can be improved while the app is live. Security plan §6 already mapped the AWS design to Google Cloud. AWS staging (three cells, about $1,100 a month) was never deployed. CLAUDE.md requires: residency per region, no CDN for authenticated pages, least privilege, no long-lived CI keys, ask before production or deletions, and costs recorded.
+
+**Decision.**
+
+- **One UK cell** in **europe-west2 (London)**, defined in OpenTofu under `infra/gcp/staging`. OpenTofu is used because it is MPL-2.0, rather than Terraform under the BSL. The region comes from a `cell → region` map that mirrors `gcpRegion` in `packages/core/src/regions.ts` (uk → europe-west2, eu → europe-west3, us → us-east5). A residency test keeps the two in step. EU and US cells reuse the same module later.
+- **Cloud Run, two services.**
+  - The web and API run in one service, with the API as a sidecar reached on localhost. The API has no public address, and the web's existing proxy forwards API paths, as in local development.
+  - The worker is a private service that Cloud Scheduler calls every minute (`WORKER_MODE=http`, `POST /drain`). This is request-billed, unlike an always-on loop.
+  - Migrations and the seed are Cloud Run jobs.
+- **Cloud SQL for PostgreSQL 17**, zonal `db-g1-small`, reached only through the Cloud Run connector, with no authorised networks.
+  - Backups and PITR are pinned to London, because the default would be a multi-region.
+  - The migrator is a built-in user, so a non-superuser member of `cloudsqlsuperuser`. The app roles are created by the migrations without BYPASSRLS, as before.
+  - The global tenant directory is a second database, `thapsus_global`, on the same instance.
+- **Data and keys.**
+  - Cloud KMS `fields` key for the sensitive-data store (`GCP_KMS_KEY`).
+  - Cloud Storage files bucket: CMEK, versioned, public access prevented (`GCS_FILES_BUCKET`).
+  - Secret Manager secrets generated by OpenTofu, replicated to London only.
+- **No email provider yet.** Mail is written to a private 14-day bucket (`MAIL_TRANSPORT=bucket`). Ask HR stays off (`AI_PROVIDER=off`).
+- **Deploys need the owner's approval every time.**
+  - A GitHub Actions workflow builds the images, then posts the OpenTofu change set (addresses and actions, no values).
+  - It refuses to apply unless the `staging-gcp` environment has required reviewers. After approval it applies only saved plans inside the approved change set.
+  - Access is Workload Identity Federation, limited to this repository's id and `refs/heads/main`. A deploy service account gets project-scoped roles in a project dedicated to staging. There are no keys.
+- **Logs in London.** A regional log bucket receives every log; an exclusion keeps them out of the global `_Default` bucket. Only Google's `_Required` admin-activity logs stay global.
+- **No CDN.** Cloud Run serves every response from London with the app's own headers.
+
+**Consequences.**
+
+- Recurring cost is about £35–45 a month (COSTS.md).
+- The owner must run the bootstrap and set up the approval gate (HUMAN_TODO §9).
+- AWS CDK remains in the repository for production. Running both clouds in production would double the residency surface, so that decision is still open (security plan §6.5).
+- The staging simplifications are:
+  - a shared-core database without high availability;
+  - built-in database users for the migrator and the directory, where production would use IAM database authentication;
+  - an in-process rate limiter (no Valkey);
+  - mail to a bucket;
+  - generated passwords in the private, versioned state bucket as well as in Secret Manager.
+
+## ADR-0158 — A deterministic staging workspace seeded through the app's own services (2026-10-23)
+
+**Context.** The one-region staging environment (UK cell) needs a test organisation that looks lived-in, so the product owner can click through every module, and one sign-in per built-in role. The existing `pnpm db:seed` (25 people, one entity, no activity) and `pnpm synth:enterprise` (200,000 people bulk-copied as the owner role, no module data) do not serve that.
+
+**Decision.**
+
+- **`pnpm db:seed:staging`** (`apps/api/src/cli/seed-staging.ts`, bundled as `dist/seed-staging.mjs` in the API image) seeds workspace `kestrel`, "Kestrel Fictional Group Ltd", homed in the UK. It has 300 current staff: 262 in the UK entity (London, Manchester, Edinburgh), 22 in Ireland and 16 in New York. On top are 8 leavers and 5 future joiners. Every module with tables gets data.
+- **The company is a pure, deterministic plan** (`staging/plan.ts`): a fixed PRNG seed, the roster size, and an anchor date (today in Europe/London). Who is who (employee numbers, names, teams, logins) never depends on the anchor. Unit tests check the plan's invariants: the UK entity is above the gender pay gap threshold from the GB pack, the manager has 6 to 10 reports, every pay record is at or above the minimum wage in the packs, and contact details use only fictional ranges.
+- **Data is written the way the app writes it.**
+  - Existing staff go through the bulk-import service functions. That path emits no `employee.created` events, so the worker does not start onboarding for people hired years ago.
+  - History uses the effective-dated change functions, and pending requests and their decisions use the approval service.
+  - Onboarding uses the workflow service, sensitive values use the vault (through the configured key provider), and letters use the document generator.
+  - Pay periods use the payroll inputs and exports, and timesheets use the timesheet engine.
+  - Plain SQL inside `withTenant` is used only where the API itself writes inline SQL in a route.
+  - The seed connects as the application role (RLS applies), never as the owner or migrator.
+- **Rule values come from the packs.** A pack may have no version for a historic date: GB right-to-work rules start on 2026-10-01 and the GB minimum wage on 2025-04-01. For those dates the first version is used and recorded as the rule source (`ruleAtOrFirst`). The company's own settings are policy, not law: salaries, notice periods, 1 April pay reviews, a fit note after 7 days, 3 extra Irish days, 15 US days of paid time off and a 24 December closure.
+- **Idempotent.** All data is written in one tenant transaction that ends with the audit marker `staging.seed_completed`, so a failed run leaves nothing behind. A repeated run only brings the logins in line with `STAGING_LOGINS`: email, password and built-in roles. A changed password also clears any lockout and revokes the user's sessions. Roles a tester added are kept.
+- **Logins.** `STAGING_LOGINS={"workspace":"kestrel","logins":[{"role":"owner","email":"…","password":"…"}, …]}` must name each of `owner`, `hr_admin`, `payroll_admin`, `manager` and `employee` exactly once. Passwords must pass the app's password policy. The variable is required unless `APP_ENV` is `dev` or `test`. Without it, locally only, the default `.example.test` emails get fresh passwords, which are printed once. Outside local development the seed prints neither emails nor passwords. No MFA factor is created: admin roles enrol at first sign-in, as the app enforces.
+- **No message burst.** The seeded history raises in-app notifications through the normal paths, but their email and push delivery jobs are cancelled.
+- **Guards.** The seed refuses `APP_ENV=prod`, a cell other than the UK, and an in-memory object store outside local development.
+- **Out of scope stays out.** Payslips and P60s are sample PDFs that show gross pay only; tax and deductions belong to the payroll provider.
+- **Not seeded, and why:**
+  - bank details and national identifiers: the schema has no place for them;
+  - IT automation: it needs a consented Microsoft 365 or Google Workspace connection;
+  - API keys, webhooks, SSO and SCIM: each issues a secret that is shown once;
+  - data-export destinations: they are customer-owned buckets;
+  - support tickets: they would enter the real back-office queue;
+  - FMLA cases: the US entity is below the FMLA employer threshold in the US pack;
+  - kiosks: the token is shown once;
+  - the Ask HR index: the assistant is off by default;
+  - billing beyond the trial: the worker starts the trial from `tenant.created`, as it does at sign-up.
+- **Image.** The Dockerfile bundles the seed and copies `packages/rules/packs` to `/srv/packs`. The bundles resolve the packs from `../packs` relative to `dist/`.
+
+**Consequences.**
+
+- Staging runs the image's `node dist/seed-staging.mjs` as a one-off job, after migrations, with the same database, directory, key and file-store settings as the API, plus `STAGING_LOGINS`.
+- A full run takes about 25 s against a local database. It makes about 12,000 database round trips, about 650 key-provider calls and about 880 file uploads (8 in parallel).
+- Rotating the logins secret and re-running the job resets the passwords without touching any data.
+- The data ages from the day it was seeded. Rotas run two weeks ahead, and pending requests eventually lie in the past. To refresh it, reset the staging database and run the job again.
+- `apps/api/test/seed-staging.int.test.ts` runs the full-size seed into a fresh database and uses the real API as each login. It checks:
+  - the entity split and the threshold, and that every login can sign in;
+  - that the manager sees only their team and the employee only their own record;
+  - that every booked leave is within its balance (leave engine);
+  - that vault values are ciphertext only, and that a second run changes nothing but the passwords.
+
+## ADR-0159 — A lighter Temporal polyfill, and menus that load when someone reaches for them (2026-10-23)
+
+**Context.** After the workspace shell (ADR-0154), CI's mobile Lighthouse runs put People, Time off and Timesheets at 89, one point under the gate. With the content no longer streamed late, LCP was stable, so the gap was Total Blocking Time. Two causes stood out. First, every app page ships `@js-temporal/polyfill` (about 45 KB gzipped with its JSBI dependency) and evaluates it before hydrating. Second, the account menu and home's "More actions" menu loaded when the browser went idle, which often falls inside Lighthouse's TBT window on a slow phone.
+
+**Decision.**
+
+- **`packages/core/src/time.ts` imports `Temporal` from `temporal-polyfill`** (MIT, maintained, spec-complete for the stage-4 proposal), pinned exactly at 1.0.5. It is about 20 KB gzipped and uses native `BigInt`, not JSBI. It remains the only place that imports a Temporal implementation, so the rule "time through `@thapsus/core/time` only" is unchanged. The time utilities' unit, integration and golden tests run unchanged against it.
+- **The account menu and "More actions" load on intent.** A same-looking stand-in button loads the menu's code on pointer enter or touch start, and a click, Enter or Space loads it and opens it. Keyboard focus alone does not load it: swapping the button while it has the focus would drop the focus, or pull it back after the person had tabbed on (the keyboard sweep in `a11y-sweep.spec.ts` caught that in a first version). The shell's badge counts still wait for idle.
+
+**Consequences.**
+
+- About 25 KB gzipped less JavaScript, and less start-up work, on every app page.
+- The first open of either menu can wait for one small chunk on a very slow connection; pointing at the button usually covers that time. A keyboard user who opens it waits for the same chunk, and the menu takes the focus when it opens.
+- When the platform ships Temporal natively everywhere we support, the import in `time.ts` is the one line to remove.

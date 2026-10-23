@@ -229,8 +229,18 @@ function hostMap(name: string, json: string): Record<string, string> {
   return parsed as Record<string, string>;
 }
 
-/** Builds a connection URL from a Secrets Manager database secret ({username, password, host, port, dbname}). */
-export function secretToUrl(secretJson: string, hostOverride?: string): string {
+/**
+ * Builds a connection URL from a database secret ({username, password, host?, port?, dbname?}): a Secrets
+ * Manager secret in AWS, the same JSON shape from Secret Manager on Google Cloud. `hostOverride` (DATABASE_HOST
+ * and friends) wins over the secret's host. A host starting with `/` is a unix-socket directory: Cloud Run mounts
+ * Cloud SQL at /cloudsql/<project>:<region>:<instance>/.s.PGSQL.5432 (ADR-0156). node-postgres takes the directory
+ * from the `host` parameter; there is no sslmode because the Cloud SQL connector already encrypts the connection.
+ */
+export function secretToUrl(
+  secretJson: string,
+  hostOverride?: string,
+  defaults: { dbname?: string } = {},
+): string {
   const s = JSON.parse(secretJson) as {
     username: string;
     password: string;
@@ -240,7 +250,16 @@ export function secretToUrl(secretJson: string, hostOverride?: string): string {
   };
   const host = hostOverride ?? s.host;
   if (!host) throw new Error('database secret has no host');
+  const auth = `${encodeURIComponent(s.username)}:${encodeURIComponent(s.password)}`;
+  const dbname = s.dbname ?? defaults.dbname ?? 'thapsus';
+  if (host.startsWith('/')) {
+    // The socket file itself (…/.s.PGSQL.<port>) is accepted too: pg appends that name to the directory.
+    const file = /^(.*)\/\.s\.PGSQL\.(\d+)$/.exec(host);
+    const dir = file ? file[1]! : host;
+    const port = file ? Number(file[2]) : (s.port ?? 5432);
+    return `postgres://${auth}@localhost:${port}/${dbname}?host=${encodeURIComponent(dir)}`;
+  }
   // verify-full: TLS with certificate and host name checks (never the libpq "require" that skips them)
   const sslmode = /amazonaws\.com$/.test(host) ? '?sslmode=verify-full' : '';
-  return `postgres://${encodeURIComponent(s.username)}:${encodeURIComponent(s.password)}@${host}:${s.port ?? 5432}/${s.dbname ?? 'thapsus'}${sslmode}`;
+  return `postgres://${auth}@${host}:${s.port ?? 5432}/${dbname}${sslmode}`;
 }

@@ -3,8 +3,8 @@ import ssh2 from 'ssh2';
 import { readerUrl, testRouter, TEST_DBS } from '@thapsus/db/testing';
 import { closeDb, startTestApp, type TestContext } from './helpers';
 import { widgets, type Widgets } from './reports-fixtures';
+import { sftpHostKey } from './sftp-host-key';
 import { enqueueDueExports, transports } from '../src/modules/data-export/routes';
-import { hostKeyFingerprint } from '../src/modules/payroll/sftp';
 import type { AwsClients } from '../src/modules/data-export/destination';
 
 /**
@@ -50,12 +50,10 @@ const files = new Map<string, Buffer>();
 const USER = 'warehouse-drop';
 const PASS = 'fictional-sftp-password';
 function startServer(): Promise<void> {
-  const hostKey = ssh2.utils.generateKeyPairSync('ed25519');
-  fingerprint = hostKeyFingerprint(
-    (ssh2.utils.parseKey(hostKey.private) as { getPublicSSH(): Buffer }).getPublicSSH(),
-  );
+  const hostKey = sftpHostKey();
+  fingerprint = hostKey.fingerprint;
   const { STATUS_CODE } = ssh2.utils.sftp;
-  server = new ssh2.Server({ hostKeys: [hostKey.private] }, (client: any) => {
+  server = new ssh2.Server({ hostKeys: [hostKey.privateKey] }, (client: any) => {
     client.on('authentication', (a: any) =>
       a.method === 'password' && a.username === USER && a.password === PASS
         ? a.accept()

@@ -8,9 +8,11 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import type { Bucket, File, GetFilesOptions, Storage } from '@google-cloud/storage';
 import type { HomeRegion } from '@thapsus/core';
 import { createAwsClientFactory } from '@thapsus/core/aws';
 import { contentDisposition } from '../http/security';
+import { GuardedBucket } from './gcs';
 
 /**
  * Files live in the home-region bucket (private, versioned, SSE-KMS). Clients upload and download
@@ -178,7 +180,90 @@ export class S3ObjectStore implements ObjectStore {
   }
 }
 
+/** Signed URL lifetime, the same as the S3 presigned URLs (5 minutes). */
+const SIGNED_URL_TTL_MS = 300_000;
+
+/**
+ * Files in a Cloud Storage bucket (Google Cloud staging, ADR-0156): private, versioned, encrypted with the bucket's
+ * default key (set by the infrastructure). The bucket's location is checked on first use. Signed URLs are V4; on
+ * Cloud Run the library signs them through the IAM signBlob API with the service's own identity.
+ */
+export class GcsObjectStore implements ObjectStore {
+  private readonly guarded: GuardedBucket;
+  constructor(cell: HomeRegion, bucket: string, opts: { storage?: Storage } = {}) {
+    this.guarded = new GuardedBucket(cell, bucket, opts.storage);
+  }
+  private async file(key: string): Promise<File> {
+    return (await this.guarded.bucket()).file(key);
+  }
+  async presignPut(key: string, contentType: string, maxBytes: number) {
+    void maxBytes; // size is validated again server-side when the upload is confirmed (as with S3)
+    const [url] = await (
+      await this.file(key)
+    ).getSignedUrl({ version: 'v4', action: 'write', expires: Date.now() + SIGNED_URL_TTL_MS, contentType });
+    return url;
+  }
+  async presignGet(key: string, filename?: string) {
+    const [url] = await (
+      await this.file(key)
+    ).getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + SIGNED_URL_TTL_MS,
+      // RFC 6266: a sanitised ASCII name plus the exact UTF-8 name (ASVS V5.4.2)
+      responseDisposition: filename ? contentDisposition(filename) : 'attachment',
+    });
+    return url;
+  }
+  async put(key: string, body: Buffer, contentType: string) {
+    await (await this.file(key)).save(body, { contentType, resumable: false });
+  }
+  async get(key: string) {
+    const [body] = await (await this.file(key)).download();
+    return body;
+  }
+  async delete(key: string) {
+    // In a versioned bucket the object becomes a noncurrent generation, like an S3 delete marker.
+    await (await this.file(key)).delete({ ignoreNotFound: true });
+  }
+  async list(prefix: string) {
+    const out: string[] = [];
+    for await (const f of this.files(prefix, false)) out.push(f.name);
+    return out.sort();
+  }
+  /** The bucket is versioned, so verified deletion removes every generation, current and noncurrent. */
+  async deletePrefix(prefix: string) {
+    if (!prefix.includes('/')) throw new Error('refusing to delete a prefix without a tenant path segment');
+    const keys = new Set<string>();
+    let batch: File[] = [];
+    const flush = async () => {
+      // Listed with versions: true, each File is scoped to its generation, so delete() removes exactly that one.
+      await Promise.all(batch.map((f) => f.delete({ ignoreNotFound: true })));
+      batch = [];
+    };
+    for await (const f of this.files(prefix, true)) {
+      keys.add(f.name);
+      batch.push(f);
+      if (batch.length === 100) await flush();
+    }
+    await flush();
+    return keys.size;
+  }
+  private async *files(prefix: string, versions: boolean) {
+    const bucket: Bucket = await this.guarded.bucket();
+    let query: GetFilesOptions | null = { prefix, versions, autoPaginate: false, maxResults: 1000 };
+    while (query) {
+      const [files, next]: [File[], unknown, unknown] = await bucket.getFiles(query);
+      yield* files;
+      query = (next as GetFilesOptions | null) ?? null;
+    }
+  }
+}
+
 export function objectStoreFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): ObjectStore {
+  if (env.GCS_FILES_BUCKET && env.FILES_BUCKET)
+    throw new Error('Set only one of GCS_FILES_BUCKET (Cloud Storage) and FILES_BUCKET (S3)');
+  if (env.GCS_FILES_BUCKET) return new GcsObjectStore(cell, env.GCS_FILES_BUCKET);
   if (env.FILES_BUCKET)
     return new S3ObjectStore(cell, env.FILES_BUCKET, env.S3_ENDPOINT, env.FILES_KMS_KEY_ARN);
   const local = env.APP_ENV === 'dev' || env.APP_ENV === 'test' || env.APP_ENV === undefined;

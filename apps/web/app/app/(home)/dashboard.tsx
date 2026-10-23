@@ -173,17 +173,19 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   const showYou = !!session.employeeId && (!s || !!(s.leave || s.rota || s.clock || s.payslips));
   const showOrg = showInsights || showCalendar;
   const primary = actions.slice(0, VISIBLE_ACTIONS);
-  // the menu's code loads once the browser is idle (or at once if the stand-in button is clicked)
+  // the menu's code loads when someone points at, touches or activates the stand-in button
   const [MoreActions, setMoreActions] = React.useState<typeof MoreActionsMenuType | null>(null);
-  const [moreWanted, setMoreWanted] = React.useState(false);
+  const [moreLoad, setMoreLoad] = React.useState<'no' | 'load' | 'open'>('no');
+  const wantMore = moreLoad !== 'no';
   React.useEffect(() => {
-    if (!idle && !moreWanted) return;
+    if (!wantMore) return;
     let live = true;
-    void loadMoreActions().then((C) => live && React.startTransition(() => setMoreActions(() => C)));
+    void loadMoreActions().then((C) => live && setMoreActions(() => C));
     return () => {
       live = false;
     };
-  }, [idle, moreWanted]);
+  }, [wantMore]);
+  const moreIntent = () => setMoreLoad((v) => (v === 'no' ? 'load' : v));
   const more = actions.slice(VISIBLE_ACTIONS);
 
   return (
@@ -214,14 +216,16 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
               {more.length ? (
                 <li>
                   {MoreActions ? (
-                    <MoreActions actions={more} defaultOpen={moreWanted} />
+                    <MoreActions actions={more} defaultOpen={moreLoad === 'open'} />
                   ) : (
                     <button
                       type="button"
                       aria-haspopup="menu"
                       aria-expanded={false}
                       className={buttonVariants({ variant: 'secondary', size: 'md' })}
-                      onClick={() => setMoreWanted(true)}
+                      onPointerEnter={moreIntent}
+                      onTouchStart={moreIntent}
+                      onClick={() => setMoreLoad('open')}
                     >
                       {t('dashboard.moreActions')}
                       <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -234,64 +238,60 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
         ) : null}
       </div>
 
-      <React.Suspense fallback={null}>
-        <section aria-labelledby="home-attention" className="flex flex-col gap-4">
-          <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
-          {!attentionReady ? (
-            <Skeleton className="h-20 w-full" />
-          ) : attention.length ? (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="attention">
-              {attention.map((a) => (
-                <li key={a.key}>
-                  <Link
-                    href={a.href}
-                    className={cn(
-                      'flex h-full min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-raised p-4 text-text no-underline transition-colors duration-[var(--duration-fast)] hover:border-border-strong',
-                      focusRing,
-                    )}
-                  >
-                    <IconTile>{a.icon}</IconTile>
-                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="text-callout font-semibold">{a.label}</span>
-                      {a.hint ? (
-                        <span className="break-words text-footnote text-text-secondary">{a.hint}</span>
-                      ) : null}
-                    </span>
-                    {a.badge}
-                    <ChevronRight aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-text-secondary" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div
-              className="flex items-center gap-4 rounded-lg border border-border bg-surface-raised p-5"
-              data-testid="caught-up"
-            >
-              <IconTile>
-                <CircleCheck />
-              </IconTile>
-              <div className="min-w-0">
-                <p className="text-callout font-semibold text-text">{t('dashboard.attention.caughtUp')}</p>
-                <p className="text-footnote text-text-secondary">{t('dashboard.attention.caughtUpBody')}</p>
-              </div>
+      <section aria-labelledby="home-attention" className="flex flex-col gap-4">
+        <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
+        {!attentionReady ? (
+          <Skeleton className="h-20 w-full" />
+        ) : attention.length ? (
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="attention">
+            {attention.map((a) => (
+              <li key={a.key}>
+                <Link
+                  href={a.href}
+                  className={cn(
+                    'flex h-full min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-raised p-4 text-text no-underline transition-colors duration-[var(--duration-fast)] hover:border-border-strong',
+                    focusRing,
+                  )}
+                >
+                  <IconTile>{a.icon}</IconTile>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-callout font-semibold">{a.label}</span>
+                    {a.hint ? (
+                      <span className="break-words text-footnote text-text-secondary">{a.hint}</span>
+                    ) : null}
+                  </span>
+                  {a.badge}
+                  <ChevronRight aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-text-secondary" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div
+            className="flex items-center gap-4 rounded-lg border border-border bg-surface-raised p-5"
+            data-testid="caught-up"
+          >
+            <IconTile>
+              <CircleCheck />
+            </IconTile>
+            <div className="min-w-0">
+              <p className="text-callout font-semibold text-text">{t('dashboard.attention.caughtUp')}</p>
+              <p className="text-footnote text-text-secondary">{t('dashboard.attention.caughtUpBody')}</p>
             </div>
+          </div>
+        )}
+      </section>
+
+      {showYou ? (
+        <section aria-labelledby="home-you" className="flex flex-col gap-4">
+          <SectionHeading id="home-you" title={t('dashboard.you.title')} />
+          {s && today && zone ? (
+            <MeTiles summary={s} level={3} today={today} zone={zone} />
+          ) : summary.error ? null : (
+            <Skeleton className="h-40 w-full" />
           )}
         </section>
-      </React.Suspense>
-
-      <React.Suspense fallback={null}>
-        {showYou ? (
-          <section aria-labelledby="home-you" className="flex flex-col gap-4">
-            <SectionHeading id="home-you" title={t('dashboard.you.title')} />
-            {s && today && zone ? (
-              <MeTiles summary={s} level={3} today={today} zone={zone} />
-            ) : summary.error ? null : (
-              <Skeleton className="h-40 w-full" />
-            )}
-          </section>
-        ) : null}
-      </React.Suspense>
+      ) : null}
 
       {showOrg ? (
         <section ref={orgRef} aria-labelledby="home-org" className="flex flex-col gap-4">

@@ -24,13 +24,17 @@ export interface PoolOptions {
  * TLS for database connections (ASVS V12.3.1 to V12.3.4). AWS endpoints (RDS Proxy, Aurora) always
  * use TLS with the server certificate verified against the trust store: RDS Proxy presents an ACM
  * certificate (publicly trusted) and the Aurora endpoints the Amazon RDS CA bundle that the image
- * adds through NODE_EXTRA_CA_CERTS. Local Docker Postgres has no TLS. A `sslmode` in the URL takes
- * precedence in node-postgres; secretToUrl() writes `verify-full`.
+ * adds through NODE_EXTRA_CA_CERTS. Local Docker Postgres has no TLS, and neither has a Cloud SQL unix
+ * socket. A `sslmode` in the URL takes precedence in node-postgres; secretToUrl() writes `verify-full` for AWS.
  */
 export function tlsFor(url: string): { rejectUnauthorized: true } | undefined {
   let host: string;
   try {
-    host = new URL(url).hostname;
+    const u = new URL(url);
+    // A unix socket (Cloud SQL on Cloud Run, ADR-0156): the Cloud SQL connector behind it already encrypts the
+    // connection with mutual TLS, and the socket speaks plain PostgreSQL. secretToUrl() writes no sslmode for it.
+    if (u.searchParams.get('host')?.startsWith('/')) return undefined;
+    host = u.hostname;
   } catch {
     return undefined;
   }

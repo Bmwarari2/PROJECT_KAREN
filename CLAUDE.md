@@ -73,8 +73,9 @@ Out of scope — do not build: running payroll or filing payroll taxes, global p
 | --- | --- |
 | `pnpm install` | Install workspace dependencies |
 | `pnpm dev` | Run web, api and worker locally |
-| `pnpm verify` | Full gate: lint, typecheck, unit, integration, contract, tenant-isolation, residency, e2e, visual regression (light/dark × phone/desktop), Lighthouse, security scan (dependency audit + secret scan), build, `cdk synth`; ends with a pass/fail summary |
+| `pnpm verify` | Full gate: lint, typecheck, unit, integration, contract, tenant-isolation, residency, e2e, visual regression (light/dark × phone/desktop), Lighthouse, security scan (dependency audit + secret scan), build, `cdk synth`, OpenTofu checks of the Google Cloud staging cell; ends with a pass/fail summary |
 | `pnpm db:migrate` / `pnpm db:seed` | Apply migrations / seed the fictional demo company |
+| `pnpm db:seed:staging` | Seed the fictional staging workspace `kestrel` (about 300 employees, five role sign-ins; staging needs `STAGING_LOGINS`) |
 | `pnpm synth:enterprise` | Generate the 200,000-employee, 50-entity synthetic tenant |
 | `pnpm smoke:staging` | E2E smoke against staging in each region |
 | `pnpm loadtest` | k6 scenarios for the scale targets against a temporary, torn-down environment |

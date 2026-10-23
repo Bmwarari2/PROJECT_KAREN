@@ -17,6 +17,8 @@ const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ['@thapsus/ui', '@thapsus/core'],
+  // the production build type-checks the app only; tests and e2e are checked by `pnpm typecheck`
+  typescript: { tsconfigPath: 'tsconfig.build.json' },
   // import only the components a page uses from the UI package's barrel (it has no side effects)
   experimental: { optimizePackageImports: ['@thapsus/ui'] },
   images: { formats: ['image/avif', 'image/webp'] },

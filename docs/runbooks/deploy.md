@@ -2,6 +2,8 @@
 
 Applies to `dev`, `staging` and `prod` (and the temporary `loadtest` environment; see `load-test.md`). Every command runs from the repository root. AWS access is always a short-lived role session (GitHub OIDC in CI, or an SSO session on a workstation); there are no AWS keys.
 
+**Google Cloud staging:** the one-region test cell on Google Cloud (ADR-0157) has its own workflow, "Deploy staging (Google Cloud)". Every deploy shows its plan and waits for the owner's approval. See `infra/gcp/README.md`; this runbook covers the AWS environments.
+
 **Production rule:** nobody deploys production without the product owner's explicit approval. In GitHub the `production` environment enforces it with required reviewers. `scripts/deploy.mjs` refuses `--env prod` without `--approved`, or without the `production` GitHub environment.
 
 ## 1. One-time setup per environment (owner)
