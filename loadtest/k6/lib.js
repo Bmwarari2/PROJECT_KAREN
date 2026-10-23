@@ -17,6 +17,15 @@ export const params = (cookie, tags = {}) => ({
 });
 
 /** Signs in a synthetic user and returns the session cookie plus the session. */
+/** The session cookie: `__Host-thr_sid` behind HTTPS (every AWS environment), `thr_sid` on plain HTTP. */
+export function sessionCookie(res) {
+  for (const name of ['__Host-thr_sid', 'thr_sid']) {
+    const c = res.cookies[name] && res.cookies[name][0];
+    if (c) return `${name}=${c.value}`;
+  }
+  return undefined;
+}
+
 export function login(n) {
   const email = `user${n}@globex.example.test`;
   const res = http.post(
@@ -26,9 +35,8 @@ export function login(n) {
   );
   if (!check(res, { 'login 200': (r) => r.status === 200 }))
     fail(`login failed for user ${n}: ${res.status}`);
-  const sid = res.cookies.thr_sid && res.cookies.thr_sid[0];
-  if (!sid) fail('no session cookie');
-  const cookie = `thr_sid=${sid.value}`;
+  const cookie = sessionCookie(res);
+  if (!cookie) fail('no session cookie');
   const session = http
     .get(`${BASE}/v1/auth/session`, params(cookie, { type: 'read', name: 'GET /v1/auth/session' }))
     .json();
@@ -72,7 +80,8 @@ export function adminSession() {
     { headers: { 'content-type': 'application/json' }, tags: { type: 'login' } },
   );
   if (res.status !== 200) fail(`owner login failed: ${res.status}`);
-  const cookie = `thr_sid=${res.cookies.thr_sid[0].value}`;
+  const cookie = sessionCookie(res);
+  if (!cookie) fail('no session cookie');
   const body = res.json();
   if (body.mfaEnrollmentRequired) {
     const enrol = http.post(`${BASE}/v1/auth/mfa/totp/enroll`, '{}', params(cookie, { type: 'login' })); // JSON content type needs a body

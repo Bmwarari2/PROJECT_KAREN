@@ -40,12 +40,17 @@ async function createConnection(owner: Owner, protocol: 'oidc' | 'saml') {
 const go = (url: string, init: RequestInit = {}) => fetch(url, { redirect: 'manual', ...init });
 const sid = (res: Response) => res.headers.getSetCookie().map((c) => c.split(';')[0]!).find((c) => c.startsWith('thr_sid='));
 
-async function oidcLogin(slug: string, connection: string, email: string) {
+/** The browser-binding cookie set when the sign-in starts (ASVS V10.1.2). */
+const binding = (res: Response) => res.headers.getSetCookie().map((c) => c.split(';')[0]!).find((c) => c.startsWith('thr_sso='));
+
+async function oidcLogin(slug: string, connection: string, email: string, opts: { otherBrowser?: boolean } = {}) {
   const start = await go(`${ctx.base}/v1/auth/sso/start?tenant=${slug}&connection=${connection}&login_hint=${encodeURIComponent(email)}`);
   expect(start.status).toBe(302);
+  const cookie = binding(start);
+  expect(cookie).toBeTruthy();
   const idp = await go(start.headers.get('location')!);
   expect(idp.status).toBe(302);
-  return go(idp.headers.get('location')!);
+  return go(idp.headers.get('location')!, opts.otherBrowser ? {} : { headers: { cookie: cookie! } });
 }
 
 async function samlAssertion(slug: string, connection: string, email: string) {
@@ -82,6 +87,17 @@ describe('OIDC single sign-on (mock IdP)', () => {
     // the same callback URL (state + code) cannot be used twice
     expect((await go(ok.url)).status).toBe(401);
   });
+
+  it('only the browser that started the sign-in can finish it (no login CSRF), and failures are audited', async () => {
+    const owner = await ownerSession(ctx);
+    const conn = await createConnection(owner, 'oidc');
+    const elsewhere = await oidcLogin(owner.slug, conn, owner.email, { otherBrowser: true });
+    expect(elsewhere.status).toBe(401);
+    expect(sid(elsewhere)).toBeUndefined();
+    const { withTenant } = await import('@thapsus/db');
+    const rows = await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.query<{ diff: unknown }>(`SELECT diff FROM audit.events WHERE action = 'auth.login_failed'`));
+    expect(rows.map((r) => r.diff)).toContainEqual({ method: 'oidc', reason: 'invalidCredentials' });
+  });
 });
 
 describe('SAML 2.0 single sign-on (mock IdP)', () => {
@@ -109,6 +125,10 @@ describe('SAML 2.0 single sign-on (mock IdP)', () => {
     expect((await postAcs(good)).status).toBe(302);
     const fresh = await samlAssertion(owner.slug, conn, owner.email);
     expect((await postAcs({ SAMLResponse: good.SAMLResponse, RelayState: fresh.RelayState })).status).toBe(401);
+    // a response signed with SHA-1 is refused (ASVS V11.4.1)
+    const weak = await samlAssertion(owner.slug, conn, owner.email);
+    const sha1 = Buffer.from(Buffer.from(weak.SAMLResponse, 'base64').toString().replaceAll('http://www.w3.org/2001/04/xmldsig-more#rsa-sha256', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1')).toString('base64');
+    expect((await postAcs({ ...weak, SAMLResponse: sha1 })).status).toBe(401);
   });
 });
 

@@ -49,6 +49,14 @@ jobs:
       - name: Verify summary
         if: always()
         run: cat .verify/summary.txt >> "$GITHUB_STEP_SUMMARY" || true
+      # The CycloneDX SBOM of the shipped dependencies (written by the verify security step).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom-cyclonedx
+          path: .verify/sbom.cdx.json
+          if-no-files-found: warn
+          retention-days: 90
       - uses: actions/upload-artifact@v4
         if: always()
         with:

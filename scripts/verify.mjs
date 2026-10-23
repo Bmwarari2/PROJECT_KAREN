@@ -20,7 +20,8 @@ const steps = [
   { id: 'dev', name: 'Local dev (migrate, seed, pnpm dev, hot reload)', cmd: 'node scripts/dev-smoke.mjs' },
   { id: 'visual', name: 'Visual regression (light/dark × phone/desktop)', cmd: 'node scripts/visual.mjs' },
   { id: 'lighthouse', name: 'Lighthouse (mobile: perf ≥90, a11y ≥95)', cmd: 'node --import tsx scripts/lighthouse.mjs' },
-  { id: 'security', name: 'Security scan (pnpm audit high + secret scan)', cmd: 'pnpm audit --audit-level high --prod && node scripts/secret-scan.mjs' },
+  // also writes the CycloneDX SBOM to .verify/sbom.cdx.json (kept as a CI artifact; ASVS V15.1.2)
+  { id: 'security', name: 'Security scan (pnpm audit high + secret scan + SBOM)', cmd: 'pnpm audit --audit-level high --prod && node scripts/secret-scan.mjs && node scripts/sbom.mjs' },
   { id: 'synth', name: 'CDK synth (all environments × regions)', cmd: 'pnpm --filter @thapsus/infra synth' },
 ];
 

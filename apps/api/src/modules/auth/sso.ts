@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import formbody from '@fastify/formbody';
 import { Type } from 'typebox';
 import * as oidc from 'openid-client';
 import { SAML } from '@node-saml/node-saml';
@@ -10,6 +11,8 @@ import { consumeChallenge, resolveTenantSlug, startSession, throttle } from './c
 import { loadSecurity } from './sessions';
 import { assignRole } from '../authz/principal';
 import { open, seal, type Envelope } from '../../lib/kms';
+import { ssoBindingCookie } from '../../http/security';
+import { hashToken, newToken, safeEqual } from './tokens';
 
 interface OidcConfig {
   issuer: string;
@@ -24,14 +27,19 @@ interface SamlConfig {
 }
 
 const oidcCache = new Map<string, { config: oidc.Configuration; at: number }>();
+/** XML signature and digest algorithm URIs built on SHA-1 or MD5. */
+export const WEAK_XMLDSIG = /Algorithm\s*=\s*["']http:\/\/www\.w3\.org\/(2000\/09\/xmldsig#(rsa-sha1|dsa-sha1|hmac-sha1|sha1)|2001\/04\/xmldsig-more#(rsa-md5|md5|hmac-md5)|2009\/xmldsig11#dsa-sha1)["']/i;
 
 export async function ssoRoutes(app: FastifyInstance) {
   const deps = app.deps;
+  // The SAML HTTP-POST binding delivers the assertion as a urlencoded form (only routes in this scope parse it).
+  await app.register(formbody);
   const api = deps.config.apiBaseUrl;
   const oidcCallback = `${api}/v1/auth/sso/oidc/callback`;
   const samlAcs = `${api}/v1/auth/sso/saml/acs`;
   const spEntityId = (tenantId: string, connId: string) => `${api}/v1/auth/sso/saml/metadata/${tenantId}/${connId}`;
   const secretCtx = (tenantId: string, connId: string) => ({ tenant: tenantId, purpose: 'sso', connection: connId });
+  const binding_ = ssoBindingCookie(deps.config);
 
   async function oidcConfig(tenantId: string, connId: string, cfg: OidcConfig): Promise<oidc.Configuration> {
     const key = `${tenantId}:${connId}:${cfg.issuer}:${cfg.clientId}`;
@@ -114,10 +122,13 @@ export async function ssoRoutes(app: FastifyInstance) {
           const config = await oidcConfig(tenantId, conn.id, conn.config);
           const verifier = oidc.randomPKCECodeVerifier();
           const nonce = oidc.randomNonce();
+          // bound to this browser: only a redirect that comes back with the cookie can finish (ASVS V10.1.2)
+          const binding = newToken(16);
           const ch = await tx.one<{ id: string }>(
             `INSERT INTO app.auth_challenges (tenant_id, kind, challenge, data, expires_at) VALUES (app.current_tenant(), 'oidc', $1, $2, now() + interval '10 minutes') RETURNING id`,
-            [nonce, JSON.stringify({ verifier, connectionId: conn.id })],
+            [nonce, JSON.stringify({ verifier, connectionId: conn.id, binding: hashToken(binding).toString('base64url') })],
           );
+          reply.setCookie(binding_.name, binding, { httpOnly: true, secure: binding_.secure, sameSite: 'lax', path: binding_.path, maxAge: 600 });
           const params: Record<string, string> = {
             redirect_uri: oidcCallback,
             scope: conn.config.scopes ?? 'openid email profile',
@@ -141,6 +152,14 @@ export async function ssoRoutes(app: FastifyInstance) {
     },
   );
 
+  /** Failed SSO sign-ins are audited in the tenant they name (ASVS V16.3.1); unknown tenants are ignored. */
+  const auditFailure = (method: 'oidc' | 'saml', pick: (req: FastifyRequest) => string | undefined) => async (req: FastifyRequest, _reply: FastifyReply, err: Error) => {
+    const tenantId = pick(req)?.split('.')[0];
+    if (!tenantId || !/^[0-9a-f-]{36}$/i.test(tenantId)) return;
+    const reason = err instanceof ApiError ? err.code : 'error';
+    await withTenant(deps.router, tenantId, (tx) => writeAudit(tx, { actorType: 'user', action: 'auth.login_failed', diff: { method, reason }, ip: req.ctx.ip, userAgent: req.ctx.userAgent, requestId: req.id })).catch(() => undefined);
+  };
+
   async function finish(req: FastifyRequest, reply: FastifyReply, tenantId: string, tx: Tx, email: string, name: string | undefined, method: 'oidc' | 'saml', jit: boolean) {
     const userId = await userForAssertedEmail(tx, email.toLowerCase(), name, jit);
     const security = await loadSecurity(tx);
@@ -149,13 +168,23 @@ export async function ssoRoutes(app: FastifyInstance) {
 
   app.get(
     '/v1/auth/sso/oidc/callback',
-    { config: { auth: 'public', selfAudited: true }, schema: { tags: ['auth'], querystring: Type.Object({ state: Type.String(), code: Type.Optional(Type.String()), error: Type.Optional(Type.String()) }, { additionalProperties: true }), response: { 302: Type.Null(), 401: Problem } } },
+    {
+      config: { auth: 'public', selfAudited: true },
+      onError: auditFailure('oidc', (req) => (req.query as { state?: string }).state),
+      schema: { tags: ['auth'], querystring: Type.Object({ state: Type.String(), code: Type.Optional(Type.String()), error: Type.Optional(Type.String()) }, { additionalProperties: true }), response: { 302: Type.Null(), 401: Problem } },
+    },
     async (req, reply) => {
       const q = req.query as { state: string; code?: string };
       const [tenantId, challengeId] = q.state.split('.');
       if (!tenantId || !challengeId || !q.code) throw new ApiError('invalidCredentials');
-      const ch = await consumeChallenge<{ verifier: string; connectionId: string }>(deps, tenantId, challengeId, 'oidc');
+      const ch = await consumeChallenge<{ verifier: string; connectionId: string; binding?: string }>(deps, tenantId, challengeId, 'oidc');
+      reply.clearCookie(binding_.name, { path: binding_.path, secure: binding_.secure, httpOnly: true, sameSite: 'lax' });
       if (!ch) throw new ApiError('invalidCredentials');
+      const presented = req.cookies?.[binding_.name];
+      if (!ch.data.binding || !presented || !safeEqual(hashToken(presented), Buffer.from(ch.data.binding, 'base64url'))) {
+        req.log.warn('oidc callback without the browser binding');
+        throw new ApiError('invalidCredentials');
+      }
       await withTenant(deps.router, tenantId, async (tx) => {
         const conn = await connection(tx, ch.data.connectionId);
         const config = await oidcConfig(tenantId, conn.id, conn.config);
@@ -178,13 +207,24 @@ export async function ssoRoutes(app: FastifyInstance) {
 
   app.post(
     '/v1/auth/sso/saml/acs',
-    { config: { auth: 'public', selfAudited: true }, schema: { tags: ['auth'], consumes: ['application/x-www-form-urlencoded'], body: Type.Object({ SAMLResponse: Type.String(), RelayState: Type.String() }), response: { 302: Type.Null(), 401: Problem } } },
+    {
+      // The identity provider's page posts here cross-site by design; the signed assertion, the one-time
+      // RelayState and the assertion replay cache are what protect it (ADR-0130).
+      config: { auth: 'public', selfAudited: true, crossSite: true },
+      onError: auditFailure('saml', (req) => (req.body as { RelayState?: string } | undefined)?.RelayState),
+      schema: { tags: ['auth'], consumes: ['application/x-www-form-urlencoded'], body: Type.Object({ SAMLResponse: Type.String({ maxLength: 500_000 }), RelayState: Type.String({ maxLength: 200 }) }), response: { 302: Type.Null(), 401: Problem } },
+    },
     async (req, reply) => {
       const body = req.body as { SAMLResponse: string; RelayState: string };
       const [tenantId, challengeId] = body.RelayState.split('.');
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
       const ch = await consumeChallenge<{ connectionId: string }>(deps, tenantId, challengeId, 'saml');
       if (!ch) throw new ApiError('invalidCredentials');
+      // Only SHA-2 signatures and digests: SHA-1 (or MD5) signed responses are refused (ASVS V11.4.1).
+      if (WEAK_XMLDSIG.test(Buffer.from(body.SAMLResponse, 'base64').toString('utf8'))) {
+        req.log.warn('saml response signed with a weak algorithm');
+        throw new ApiError('invalidCredentials');
+      }
       await withTenant(deps.router, tenantId, async (tx) => {
         const conn = await connection(tx, ch.data.connectionId);
         const result = await samlClient(tenantId, conn.id, conn.config)
@@ -224,7 +264,7 @@ export async function ssoRoutes(app: FastifyInstance) {
         if (conn.protocol !== 'saml') throw new ApiError('notFound');
         return samlClient(p.tenantId, conn.id, conn.config).generateServiceProviderMetadata(null, null);
       });
-      return reply.type('application/samlmetadata+xml').send(xml);
+      return reply.type('application/samlmetadata+xml; charset=utf-8').send(xml);
     },
   );
 

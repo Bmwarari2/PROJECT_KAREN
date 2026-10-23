@@ -189,6 +189,11 @@
       "support": "Support",
       "helpForPage": "Help for this page",
       "payslips": "Pay stubs"
+    },
+    "security": {
+      "sessions": {
+        "body": "These are the devices and browsers signed in to your account. Sign out of any you do not recognize as yours."
+      }
     }
   },
   "rota": {

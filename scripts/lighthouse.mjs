@@ -104,7 +104,7 @@ async function sessionCookie() {
     body: JSON.stringify({ companyName: 'Fictional Lighthouse Ltd', slug, region: 'uk', ownerName: 'Lee Lighthouse', ownerEmail: `owner@${slug}.example.test`, password: 'Correct-Horse-Battery-9', acceptDpa: true }),
   });
   if (r.status !== 201) throw new Error(`signup failed ${r.status}`);
-  const cookie = r.headers.getSetCookie().map((c) => c.split(';')[0]).find((c) => c.startsWith('thr_sid='));
+  const cookie = r.headers.getSetCookie().map((c) => c.split(';')[0]).find((c) => /^(__Host-)?thr_sid=/.test(c)); // __Host-thr_sid behind HTTPS
   const enrol = await (await fetch(`${base}/v1/auth/mfa/totp/enroll`, { method: 'POST', headers: { cookie } })).json();
   const code = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(enrol.secret), digits: 6, period: 30 }).generate();
   const ok = await fetch(`${base}/v1/auth/mfa/totp/confirm`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ code }) });

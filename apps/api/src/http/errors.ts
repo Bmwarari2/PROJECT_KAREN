@@ -14,6 +14,7 @@ export type ErrorCode =
   | 'lockedOut'
   | 'mfaRequired'
   | 'mfaEnrollmentRequired'
+  | 'reauthenticationRequired'
   | 'ssoRequired'
   | 'wrongRegion'
   | 'invalidCredentials'
@@ -30,6 +31,7 @@ const STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
   mfaRequired: 403,
   mfaEnrollmentRequired: 403,
+  reauthenticationRequired: 403,
   ssoRequired: 403,
   notFound: 404,
   conflict: 409,
@@ -64,8 +66,48 @@ function title(locale: Locale, code: ErrorCode) {
   return msg === key ? t(locale, 'common.error') : msg;
 }
 
+/**
+ * Security events for refused requests (ASVS V16.3.2, V16.3.3; docs/SECURITY.md "Security logging"):
+ * failed authorisation, anti-automation limits and rejected input are logged as structured events
+ * with pseudonymous ids only (tenant, user, request), never values, names, emails, IPs or tokens.
+ */
+const SECURITY_EVENTS: Partial<Record<ErrorCode, { event: string; level: 'warn' | 'info' }>> = {
+  forbidden: { event: 'authz.denied', level: 'warn' },
+  mfaRequired: { event: 'authz.denied', level: 'info' },
+  mfaEnrollmentRequired: { event: 'authz.denied', level: 'info' },
+  reauthenticationRequired: { event: 'authz.denied', level: 'info' },
+  ssoRequired: { event: 'authz.denied', level: 'info' },
+  unauthorised: { event: 'authn.missing', level: 'info' },
+  invalidCredentials: { event: 'authn.failed', level: 'warn' },
+  rateLimited: { event: 'antiautomation.limited', level: 'warn' },
+  lockedOut: { event: 'antiautomation.locked', level: 'warn' },
+  validation: { event: 'input.rejected', level: 'info' },
+};
+
+export function securityEvent(req: FastifyRequest, code: ErrorCode, extra: Record<string, unknown>, detail?: string) {
+  const def = SECURITY_EVENTS[code];
+  if (!def) return;
+  const fields = Array.isArray(extra.errors) ? (extra.errors as Array<{ path?: unknown }>).map((e) => String(e.path ?? '')).slice(0, 20) : undefined;
+  req.log[def.level](
+    {
+      securityEvent: def.event,
+      code,
+      reason: typeof detail === 'string' && /^[A-Za-z]{1,40}$/.test(detail) ? detail : undefined,
+      method: req.method,
+      route: req.routeOptions?.url,
+      tenantId: req.auth?.tenantId,
+      actorId: req.auth?.userId,
+      actorType: req.auth ? (req.auth.apiClient ? 'api_client' : 'user') : undefined,
+      fields,
+      requestId: req.id,
+    },
+    'security event',
+  );
+}
+
 export function problem(req: FastifyRequest, reply: FastifyReply, code: ErrorCode, extra: Record<string, unknown> = {}, detail?: string) {
   const status = STATUS[code];
+  securityEvent(req, code, extra, detail);
   return reply
     .status(status)
     .type('application/problem+json')

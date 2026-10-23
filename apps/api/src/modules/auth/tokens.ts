@@ -36,12 +36,5 @@ export async function burnPasswordCheck(pw: string) {
   await verifyPassword(await dummyHash, pw);
 }
 
-/** Minimal password policy (ASVS 2.1): 12+ chars, not trivially common. Max 128. */
-const COMMON = new Set(['password1234', '123456789012', 'qwertyuiopas', 'passwordpassword', 'letmein12345']);
-export function passwordProblems(pw: string): string[] {
-  const problems: string[] = [];
-  if (pw.length < 12) problems.push('tooShort');
-  if (pw.length > 128) problems.push('tooLong');
-  if (COMMON.has(pw.toLowerCase())) problems.push('tooCommon');
-  return problems;
-}
+/** The password policy lives in password-policy.ts (length, common and context-specific words). */
+export { passwordProblems } from './password-policy';

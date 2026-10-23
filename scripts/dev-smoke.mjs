@@ -97,7 +97,7 @@ try {
     body: JSON.stringify({ tenant: 'demo', email: 'manager@demo.example.test', password: process.env.SEED_PASSWORD ?? 'Demo-Password-2026' }),
   });
   if (login.status !== 200) fail(`demo sign-in failed: ${login.status}`);
-  const cookie = login.headers.getSetCookie().map((c) => c.split(';')[0]).find((c) => c.startsWith('thr_sid='));
+  const cookie = login.headers.getSetCookie().map((c) => c.split(';')[0]).find((c) => /^(__Host-)?thr_sid=/.test(c)); // __Host-thr_sid behind HTTPS
   const session = await (await fetch('http://127.0.0.1:3000/v1/auth/session', { headers: { cookie } })).json();
   if (!session.employeeId) fail('demo manager is not linked to an employee');
   console.log('✓ demo company sign-in through the web proxy');

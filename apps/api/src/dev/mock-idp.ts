@@ -1,6 +1,7 @@
 import { createHash, generateKeyPairSync, randomUUID, webcrypto } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import type { FastifyInstance } from 'fastify';
+import formbody from '@fastify/formbody';
 import { SignJWT, exportJWK, importPKCS8 } from 'jose';
 import * as x509 from '@peculiar/x509';
 import { SignedXml } from 'xml-crypto';
@@ -52,6 +53,8 @@ export async function mockIdpPlugin(app: FastifyInstance, opts: { baseUrl: strin
   // when it calls the IdP; there the issuer is the in-task address (http://127.0.0.1:4000/__mock-idp)
   // and only the browser leg goes through the public URL (scripts/smoke-staging.mjs). Never in prod.
   const issuer = process.env.MOCK_IDP_ISSUER_URL ?? `${opts.baseUrl}/__mock-idp`;
+  // the token endpoint receives RFC 6749 urlencoded requests (parsed only in this plugin's scope)
+  await app.register(formbody);
   const key = await importPKCS8(opts.keys.privateKeyPem, 'RS256');
   const jwk = { ...(await exportJWK((await import('node:crypto')).createPublicKey(opts.keys.privateKeyPem))), kid: 'mock-1', alg: 'RS256', use: 'sig' };
   const codes = new Map<string, { email: string; nonce?: string; clientId: string; challenge?: string }>();

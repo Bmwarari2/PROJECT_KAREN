@@ -95,7 +95,8 @@ export const uniq = (p: string) => `${p}-${Math.random().toString(36).slice(2, 8
 export function cookieFrom(res: { headers: Record<string, unknown> }): string {
   const raw = res.headers['set-cookie'];
   const list = Array.isArray(raw) ? raw : raw ? [String(raw)] : [];
-  const sid = list.map((c) => c.split(';')[0]).find((c) => c.startsWith('thr_sid='));
+  // `__Host-thr_sid` over HTTPS, `thr_sid` on plain-HTTP test apps
+  const sid = list.map((c) => c.split(';')[0]).find((c) => /^(__Host-)?thr_sid=/.test(c ?? ''));
   if (!sid) throw new Error('no session cookie');
   return sid;
 }

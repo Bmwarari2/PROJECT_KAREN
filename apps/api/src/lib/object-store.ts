@@ -3,6 +3,7 @@ import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObject
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { HomeRegion } from '@thapsus/core';
 import { createAwsClientFactory } from '@thapsus/core/aws';
+import { contentDisposition } from '../http/security';
 
 /**
  * Files live in the home-region bucket (private, versioned, SSE-KMS). Clients upload and download
@@ -100,7 +101,8 @@ export class S3ObjectStore implements ObjectStore {
       new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
-        ResponseContentDisposition: filename ? `attachment; filename="${filename.replace(/"/g, '')}"` : undefined,
+        // RFC 6266: a sanitised ASCII name plus the exact UTF-8 name (ASVS V5.4.2)
+        ResponseContentDisposition: filename ? contentDisposition(filename) : 'attachment',
       }),
       { expiresIn: 300 },
     );

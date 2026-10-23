@@ -1,6 +1,6 @@
 # Security
 
-Target: OWASP ASVS level 2. This document records the security controls and where each is proven, the STRIDE threat model with owners, and the accepted risks.
+Target: OWASP ASVS level 2. This document records the security controls and where each is proven, the STRIDE threat model with owners, and the accepted risks. The requirement-by-requirement review against OWASP ASVS 5.0.0 levels 1 and 2, with evidence and gaps, is [`docs/ASVS.md`](ASVS.md).
 
 ## Controls
 
@@ -8,17 +8,19 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | --- | --- | --- |
 | Tenant isolation | Forced RLS on every tenant table; composite tenant foreign keys; non-owner app role without BYPASSRLS; transaction-local tenant context | `packages/db/test/rls.isolation.test.ts` (enumerates every table from the catalog) |
 | Data residency | Guarded AWS client factory; startup endpoint check; router refuses foreign tenants; CDK region assertions | `*.residency.test.ts`, `infra/test` |
-| Authentication | Argon2id (19 MiB, t=2); a 12-character minimum; constant-time unknown-user path; per-IP and per-account throttles; lockout after N failures (per tenant) | `apps/api/test/auth.int.test.ts` |
-| MFA | TOTP (replay-protected), passkeys (user verification required); admins refused until MFA is verified in the session | `auth.int.test.ts`, `platform.int.test.ts` |
+| Authentication | Argon2id (19 MiB, t=2); 12 to 128 characters of any kind; the 10,000 most common passwords and context-specific words refused offline (see "Passwords"); constant-time unknown-user path; per-IP and per-account throttles; lockout after N failures (per tenant); every pathway listed under "Authentication pathways" | `apps/api/test/auth.int.test.ts`, `apps/api/test/asvs.int.test.ts` ("V6.2 passwords") |
+| MFA | TOTP (each time step accepted once), passkeys (user verification required). Anyone with a factor must use it after every sign-in path (password, emailed link, SSO without trusted IdP MFA); admins are refused until they have one. Changing or adding a factor needs a recent sign-in or re-authentication and ends the other sessions. A lost factor is reset by a company-wide admin who holds everything the person holds, after confirming their identity (ADR-0131) | `auth.int.test.ts`, `platform.int.test.ts`, `asvs.int.test.ts` ("V6.3 and V6.4", "V6.4.4") |
 | SSO | OIDC (PKCE, state, nonce) and SAML 2.0 (signed assertions, audience, one-time RelayState, assertion replay cache); JIT provisioning only for verified domains; tenant-enforced SSO | `sso.int.test.ts` |
-| Sessions | Opaque 256-bit tokens; only SHA-256 stored; HttpOnly, SameSite=Lax, Secure over HTTPS; idle and absolute timeouts per tenant; revoked on logout, password change and deprovisioning | `auth.int.test.ts` |
+| Sessions | Opaque 256-bit tokens; only SHA-256 stored; cookie `__Host-thr_sid` (HttpOnly, Secure, SameSite=Lax, Path=/) behind HTTPS; idle and absolute timeouts per tenant; a new token at sign-in and re-authentication; revoked on logout (with `Clear-Site-Data`), deprovisioning, and for every other session on a password or factor change; people see and end their own sessions, admins end anyone's or everyone's (see "Sessions") | `auth.int.test.ts`, `asvs.int.test.ts` ("V3.3", "V7.2.4", "V7.4 and V7.5"), `apps/web/e2e/security-asvs.spec.ts` |
+| Browser request forgery | State-changing requests from untrusted origins (Origin / Sec-Fetch-Site) are refused before routing; only JSON (and multipart on upload routes) is parsed, urlencoded only in the SAML ACS, OAuth token and mock IdP scopes; the SAML ACS is the one cross-site route (ADR-0130) | `asvs.int.test.ts` ("V3.5"), `asvs-units.test.ts` |
+| Mass assignment | Every request body is validated and then cleaned of undeclared fields at every level; closed schemas refuse them (ADR-0134) | `apps/api/test/mass-assignment.contract.test.ts` |
 | Authorisation | Deny-by-default permission engine with scopes (entity, country, department, location, team, self), delegation and field-level access, shared by API and UI | `packages/core/test/permissions.test.ts` |
 | Role management | Customers create custom roles from a validated permission and field catalogue and assign them with a scope; built-in roles are read-only. Escalation guards: a caller can define, edit, assign or revoke only what they hold, at a scope no wider than their own (delegation never counts); an edit that adds access must be held at every holder's scope; the last owner cannot be removed; admin-grade permissions always make a role an admin role (MFA enforced from the holder's next request). Every change is audited with a before/after diff (ADR-0120 to ADR-0123) | `apps/api/test/roles.int.test.ts`, `packages/core/test/access.test.ts`, `apps/web/e2e/roles.spec.ts` |
 | Support access | Only through customer-granted, time-limited (≤30 days), revocable grants; read-only grants run read-only transactions; audited in the customer log and the staff trail | `platform.int.test.ts` |
 | Audit | Append-only (no UPDATE or DELETE privilege, plus a trigger for every role); hash chain with verification; every mutating call audited (with a fallback hook); sensitive views audited | `packages/db/test/audit.int.test.ts`, `platform.int.test.ts` |
 | Sensitive data | Envelope encryption (per-value data key, regional KMS key, AAD binding); category permissions; every decrypt audited; reporting role has no vault access | `platform.int.test.ts` |
 | Reports and exports | Reports run as the read-only `thapsus_reporting` role on the reader with forced RLS; builder masks hidden fields in SQL before filtering and grouping; vault fields only with the category permission, each value read audited; downloads are 5-minute presigned links for the requester; scheduled emails carry no personal data; exports only to home-region S3 through `thapsus-hr-export-*` roles with a per-destination ExternalId, or SFTP with a pinned host key (ADR-0071, ADR-0074 to ADR-0077) | `reports.int.test.ts`, `reports.isolation.test.ts`, `exports.int.test.ts`, `reports-exports.residency.test.ts`, `infra/test` |
-| Transport and headers | TLS 1.2+ at the ALB; HSTS (preload); CSP; `frame-ancestors 'none'`; `nosniff`; strict referrer policy; `Cache-Control: private, no-store` on all API responses and authenticated pages | `auth.int.test.ts`, e2e |
+| Transport and headers | TLS 1.2+ at the ALB; plain HTTP redirects pages only (API paths get 400); HSTS (2 years, subdomains, preload); per-request nonce CSP for pages (`script-src 'self' 'nonce-…' 'strict-dynamic'`, `base-uri 'none'`, `object-src 'none'`, `frame-ancestors 'none'`), `default-src 'none'` for API responses; `nosniff`; strict referrer policy; charset on every text response; `Cache-Control: private, no-store` on all API responses and authenticated pages; database connections verify TLS certificates (RDS CA bundle pinned in the images) | `auth.int.test.ts`, `apps/web/test/csp.test.ts`, `apps/web/e2e/security-asvs.spec.ts`, `packages/db/test/tls.test.ts`, `infra/test/infra.test.ts` (test 3) |
 | Logging | Shared logger and tracer scrub emails, phone numbers, NI numbers, SSNs, tokens and known personal fields; request bodies are never logged | `packages/core/test/core.test.ts` |
 | Secrets | AWS Secrets Manager in AWS; git-ignored `.env` locally; secret scan in `pnpm verify`; GitHub OIDC for deploys with one role per region, trusted only for this repository's GitHub environment and limited to that region's CDK bootstrap roles (no long-lived keys, no IAM users) | `scripts/secret-scan.mjs`, `infra/test/infra.test.ts` (CI stack), `.github/workflows/deploy.yml` |
 | Shared kiosks | Device token shown once, only its SHA-256 stored, revocable; employee number + Argon2id PIN; per-IP and per-kiosk throttles; lockout after N failures with identical answers and similar timing for unknown numbers; every attempt audited (ADR-0038) | `apps/api/test/time.int.test.ts`, `apps/web/e2e/kiosk.spec.ts` |
@@ -32,7 +34,9 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Support tickets and staff | Tickets under forced RLS in the home region; staff read a ticket only because the customer submitted it, and every view, reply and download is in the customer audit log and the staff trail; the cross-tenant queue is a metadata-only index; anything else needs a support grant (ADR-0101) | `apps/api/test/support.int.test.ts`, `apps/api/test/backoffice.int.test.ts` |
 | Back office | Separate staff sessions (password + mandatory TOTP, cookie scoped to `/v1/backoffice`, SameSite=Strict); roles per screen; personal data only through `withSupportAccess` (no grant / expired / revoked → 403; read grants cannot write; both audit rows); append-only, exportable staff trail (ADR-0106) | `backoffice.int.test.ts`, `apps/web/e2e/backoffice.spec.ts` |
 | Public status endpoint | The only edge-cacheable response (`public, max-age=30`): unauthenticated, rate-limited, no personal data; everything else stays `private, no-store` (ADR-0105) | `apps/api/test/status.int.test.ts` |
-| Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI | verify `security` step |
+| Dependencies | Lockfile pinned; `pnpm audit --audit-level high` in verify and CI; a CycloneDX SBOM of the production dependencies in every verify run and CI artifact, every component from registry.npmjs.org with an integrity hash (ADR-0135); remediation timeframes under "Dependency remediation" | verify `security` step, `scripts/test/sbom.test.ts` |
+| Uploads and archives | Per-feature size and type limits, content checked against magic bytes, file names must match the type, zips bounded by entry count before inflation and by actual inflated bytes (ADR-0133); see "File handling" | `asvs-units.test.ts` ("V5.2.3"), `payslips.int.test.ts`, `corehr-flows.int.test.ts` |
+| Security events | Refused requests (authorisation, origin checks, MFA and re-authentication gates, rate limits, lockouts, rejected input) are logged as structured events with pseudonymous ids only; failed sign-ins on every path are audited; see "Security logging" | `asvs.int.test.ts` ("V16.3"), `sso.int.test.ts` |
 | AI assistant (Ask HR) | Off unless entitled by staff, opted into by the owner and served In-Region; deterministic guard against decision requests, prompt injection and sensitive disclosures; policy-only retrieval; people identifiers removed before the model call; post-model decision and citation checks; no question or answer text stored; per-user rate limit | `apps/api/test/ai-guard.test.ts`, `ai.int.test.ts`, `ai.residency.test.ts`, `infra/test` |
 | Infrastructure | WAF (AWS managed rules plus a rate limit) on every ALB; KMS everywhere; S3 public access blocked; no `*` action on `*` resource in IAM | `infra/test` |
 | Privacy requests | Access exports cover every table that references the person; a catalog test fails on unmapped person columns. Credentials are never exported. Each vault decrypt is audited with its purpose, and withheld categories are audited too. Downloads use short-lived home-region links. | `apps/api/test/privacy-dsr.int.test.ts`, `apps/api/test/privacy-coverage.int.test.ts` |
@@ -42,6 +46,114 @@ Target: OWASP ASVS level 2. This document records the security controls and wher
 | Outbound calls | Webhooks and the `http` integration go only to public `https` hosts (no loopback, private, link-local or internal names; checked when the rule is saved and again before the call); redirects are not followed; 5 s timeout; identifiers only in the body; integration calls and automation webhooks are HMAC-signed with a per-tenant key derived from `INTEGRATION_SIGNING_KEY` (generated per cell in Secrets Manager) and are not sent without it | `apps/api/test/corehr-flows.int.test.ts` (automation) |
 | Database privileges | Owner-rights (`SECURITY DEFINER`) functions are limited to a reviewed allowlist; the app role has `USAGE` but not `CREATE` on `public` and no `MAINTAIN` on tables | `packages/db/test/rls.isolation.test.ts` |
 | Bulk data out | Exports need `exports.run`, contain only the rows and fields the caller's list shows (approval exports list field names, never values), are capped at 10,000 rows and are audited | `apps/api/test/corehr-flows.int.test.ts` (exports) |
+
+## Authentication pathways
+
+Every way to sign in or call the API, with its strength and protections (ASVS V6.1.1, V6.1.3, V6.3.4). There are no other pathways; a new one needs a row here and an ADR. Per-IP limits are multiplied only in the load-test environment (`IP_THROTTLE_MULTIPLIER`). The WAF adds a per-IP rate rule on every ALB.
+
+| Pathway | Factors | Throttles and lockout | Notes |
+| --- | --- | --- | --- |
+| Password (`POST /v1/auth/login`) | Password; then the second factor if the person has one | 50 per IP and 10 per account per 15 minutes; lockout after the tenant's threshold (default 5, range 3–20) for its lockout time (default 15 minutes) | Unknown accounts take the same time (dummy Argon2id). Lockout is temporary and does not block passkeys, SSO or emailed links, so an attacker cannot lock someone out of every route |
+| Passkey (`/v1/auth/passkeys/login/*`) | Device-bound key with user verification (counts as two factors) | 30 option requests per IP per 15 minutes; challenges single-use, 5 minutes | Origin and RP ID checked; sign counter tracked |
+| Emailed sign-in link (`/v1/auth/magic-link`) | Possession of the mailbox; then the second factor if the person has one | 20 per IP and 3 per account per 15 minutes; consumption 30 per IP per 15 minutes | 256-bit single-use token, 10 minutes (V6.5.5); also the forgotten-password route. Invitations use the same token type for 7 days |
+| OIDC SSO | Whatever the customer's IdP enforces; MFA counted only if the tenant trusts IdP MFA | 60 starts per IP per 15 minutes | PKCE, state, nonce, issuer and audience checked; bound to the starting browser by `__Host-thr_sso`; JIT only for verified domains |
+| SAML SSO | As OIDC | As OIDC | Signed assertions (SHA-2 only), audience, one-time RelayState, assertion replay cache; no IdP-initiated sign-in |
+| Re-authentication (`POST /v1/auth/reauth`) | Password or authenticator code | 5 per person per 5 minutes | Needed within 10 minutes for sensitive changes (see "Sessions") |
+| API keys (`thr_sk_…`) | 256-bit secret, hashed | Per-tenant rate limit by plan | Scoped, revocable, optional expiry; cannot reach identity, settings or back-office routes |
+| OAuth 2.0 client credentials (`/v1/oauth/token`) | Client id and 256-bit secret (Basic or form) | 120 per IP and 30 per client per minute | Short-lived reference tokens, scopes ⊆ the client's; refused for identity routes |
+| SCIM bearer tokens | 256-bit token, hashed | Tenant rate limits | One tenant each; revocable |
+| Kiosk | Device token (hashed) plus employee number and Argon2id PIN | 120 per IP per minute, per-kiosk attempts per minute, lockout | Clock-in only (ADR-0038) |
+| Back office (`/v1/backoffice/auth/*`) | Password plus mandatory TOTP | 20 per IP and 5 per account per 15 minutes; 5 TOTP tries per 5 minutes | Separate staff accounts and `__Host-thr_staff` cookie; each TOTP step once; 30-minute idle and 8-hour absolute sessions |
+
+## Passwords
+
+- 12 to 128 characters of any kind; no composition rules; used exactly as typed; no expiry (ASVS V6.2.1 to V6.2.10). Fields are `type=password` and allow paste and password managers.
+- Refused at sign-up and on change: the 10,000 most common passwords of that length from a public breach compilation (bundled, offline), and passwords containing a context-specific word (ASVS V6.1.2, V6.2.4, V6.2.11, V6.2.12; ADR-0132).
+- Context-specific words: the product name (`thapsus`, `thapsushr`), every word of four or more letters or digits in the workspace name and slug (and the whole slug), and in the person's own name and email address (local part and domain labels other than the top-level one). Generic company suffixes (`limited`, `company`, `group`, `holdings`) and mail-provider labels (`gmail`, `outlook`, `hotmail`, `yahoo`, `icloud`, `example`, `mail`) do not count.
+- Changing a password needs the current one; setting a first password (people invited by link or SSO) needs a recent sign-in or re-authentication. Every other session ends.
+- Customers who want stronger rules enforce SSO with their own IdP policy.
+
+## Sessions
+
+- **Lifetimes (ASVS V7.1.1, V7.3.1, V7.3.2).** Idle timeout 30 minutes and absolute lifetime 12 hours by default, which matches NIST SP 800-63B for AAL2 (re-authenticate after 30 minutes of inactivity and at least every 12 hours). Tenants may set 5–720 idle minutes and 1–720 absolute hours. Longer values are the customer's documented choice, for example for shared shop-floor devices, which use kiosks instead of personal sessions where possible. Staff sessions: 30 idle minutes, 8 hours absolute.
+- **Concurrency (V7.1.2).** A person may hold any number of sessions (phone, laptop, PWA). Each is listed on their Security page, where they can end any or all of the others; admins with company-wide `settings.manage` can end one person's sessions or everyone's.
+- **Re-authentication (V7.5.1).** Replacing or adding a second factor when one exists, setting a first password, ending your own other sessions, signing everyone out and resetting someone's factors need a sign-in or `POST /v1/auth/reauth` within 10 minutes. Email addresses cannot be changed by the person (they come from SCIM or the employer).
+- **Federation (V7.1.3, V7.6.1).** An SSO sign-in creates an ordinary Thapsus-HR session with the tenant's lifetimes; it does not extend or end the IdP session, and ending the IdP session does not end ours (no back-channel logout yet). Deprovisioning through SCIM ends every session at once. Sessions start only from a user action (no silent or IdP-initiated sign-in, V7.6.2).
+- **Termination (V7.4.1 to V7.4.4).** Logout revokes the session server-side, clears the cookie and sends `Clear-Site-Data: "cache"`; the web client first sends any queued clock punches and then reloads the sign-in page so nothing stays in memory.
+
+## File handling
+
+What each upload accepts and how files are made safe (ASVS V5.1.1). Files are stored only in the home-region bucket under the tenant prefix with generated keys, are never executed, and are downloaded through 5-minute presigned URLs (or the authenticated API) as attachments with an RFC 6266 name. A file that fails a check is refused (or, for direct uploads, deleted and the document marked rejected). Known-malware scanning is not in place yet (HUMAN_TODO 1.7).
+
+| Feature | Types (checked by magic bytes or content) | Extensions | Size limits | Archives |
+| --- | --- | --- | --- | --- |
+| Documents (`POST /v1/documents`, direct to S3) | PDF, PNG, JPEG, CSV, TXT, Markdown, DOCX, XLSX | Must match the type | 25 MB | DOCX and XLSX are stored, never unpacked |
+| Imports (`POST /v1/imports`) | CSV (text, no NUL bytes) or XLSX (zip) | `.csv`, `.xlsx` | 60 MB | XLSX: at most 5,000 entries, 300 MB per entry and 400 MB unpacked, checked before parsing |
+| Payslips and year-end documents (`POST /v1/payslips/batches`) | PDF, or zip archives of PDFs | Any (PDF content required) | 10 MB per PDF, 200 MB per request, 1,000 files | At most 2,000 entries, checked before inflation; 10 MB per entry and 200 MB inflated per upload, counted on actual bytes |
+| Logos (branding) | PNG, JPEG, WebP (no SVG) | — | Configured limit (`platform` config) | — |
+| Fit notes, right-to-work and I-9 evidence | PDF, images (vault, field-level encrypted) | — | 10 MB, one file | — |
+| Support attachments | Allow-listed types | — | Configured limit, one file | — |
+
+## Data classification and protection
+
+| Level | Examples | Protection requirements |
+| --- | --- | --- |
+| Public | Marketing pages, status page, OpenAPI document, jurisdiction rule data | Integrity only (signed deploys, rule versioning with sources) |
+| Internal | Tenant directory (ids, slugs, regions, plan), configuration, metrics | No personal data; access by role; encrypted at rest |
+| Personal | Core HR records, leave, time, documents, payslips, contact details | Home region only (residency guard), forced RLS per tenant, field-level access, TLS in transit, KMS at rest, audited changes, retention rules from the packs, never logged (scrubbed logger) |
+| Special category | Health, sickness and fit notes, disability, diversity/EEO, immigration and work-authorisation documents | All of the above plus the vault: per-value envelope encryption with the regional vault key and AAD, category permissions, every decrypt audited, excluded from reports, AI and logs |
+| Credentials | Passwords, TOTP seeds, session, API, SCIM, OAuth and kiosk secrets, integration and SSO secrets | Only hashes (Argon2id or SHA-256) or KMS-sealed values stored; shown once; never logged or exported; HttpOnly cookies |
+
+Base64 or JSON encodings are not protection: tokens are opaque and hold no data apart from the tenant id (ASVS V14.1.1, V14.1.2).
+
+## Browser storage
+
+The browser keeps only (ASVS V14.3.3): the HttpOnly session cookie; theme and locale preference cookies; on shared kiosks, the kiosk device token in `localStorage` (a device credential, revocable, ADR-0038); and, in the PWA, clock punches recorded while offline in `localStorage` (time, kind and, only where geofencing applies, coordinates to 4 dp) until they are sent. Signing out sends queued punches first; punches that cannot be sent (offline) stay for that person's next sign-in on the device (ADR-0036). The service worker caches only static assets and the offline page, never API responses or authenticated HTML.
+
+## Cryptographic inventory and key management
+
+Key management follows NIST SP 800-57 principles (ASVS V11.1.1): keys are generated by AWS KMS or a CSPRNG, never by people; each key has one purpose; AWS-managed key material never leaves KMS; customer-managed KMS keys rotate yearly (`enableKeyRotation`); application secrets live only in Secrets Manager (per cell, readable only by the tasks that need them); a compromised key is replaced by rotating it and re-sealing (envelopes carry a version and key id); keys are destroyed only with the stack (retained in production).
+
+| Key or secret | Algorithm | Used for | Never used for | Where |
+| --- | --- | --- | --- | --- |
+| Cell data key (KMS, per cell) | AES-256 (KMS) | Aurora, S3, Valkey, logs, SQS, SNS, Secrets Manager at rest | Field-level vault values | `infra/lib/cell-stack.ts` `DataKey` |
+| Cell vault key (KMS, per cell) | AES-256 (KMS) wrapping per-value AES-256-GCM data keys, AAD = tenant, category, field | Sensitive data vault, TOTP seeds, SSO, integration and webhook secrets | Anything without an encryption context (IAM condition) | `VaultKey`, `apps/api/src/lib/kms.ts` |
+| Global key (KMS) | AES-256 (KMS) | Tenant directory (DynamoDB) | Personal data (none in the global layer) | `infra/lib/global-stack.ts` |
+| Backup copy vault keys (KMS, EU and US) | AES-256 (KMS) | AWS Backup copies in the permitted backup region | Anything else | `infra/lib/backup-copy-vault-stack.ts` |
+| Passwords and kiosk PINs | Argon2id (19 MiB, t=2, p=1) | Verifying people | — | `apps/api/src/modules/auth/tokens.ts` |
+| Session, API, OAuth, SCIM, kiosk, invitation and sign-in-link tokens | 256-bit CSPRNG values, SHA-256 stored | Bearer authentication | — | `tokens.ts` |
+| TOTP seeds | 160-bit CSPRNG, HMAC-SHA1 per RFC 6238 | Second factor | — | `apps/api/src/modules/auth/totp.ts` |
+| Passkeys | ES256, EdDSA or RS256 public keys from authenticators | Second factor / passwordless | — | `apps/api/src/modules/auth/passkeys.ts` |
+| Webhook and audit-stream signing secrets | HMAC-SHA256 (256-bit, rotation with overlap) | Signing outbound deliveries | Authentication to us | `apps/api/src/lib/signing.ts` |
+| `INTEGRATION_SIGNING_KEY` (Secrets Manager) | HMAC-SHA256, per-tenant derived key | Signing automation and integration calls | — | `apps/api/src/modules/automation/integrations.ts` |
+| Internal token (Secrets Manager) | 256-bit random, constant-time compare | Global ↔ cell find-workspace calls only | Anything else | `apps/api/src/modules/tenancy/routes.ts` |
+| VAPID key pair (Secrets Manager) | ECDSA P-256 | Web push | — | `cell-stack.ts` `VapidKeys` |
+| Stripe test keys (Secrets Manager, per cell) | Provider keys | Billing API calls, webhook signatures | — | ADR-0103 |
+| Database role passwords, Valkey auth token (Secrets Manager) | Generated 32–64 characters | Service authentication (see accepted risks) | — | `cell-stack.ts` |
+| Audit hash chain, file and export checksums, migration checksums | SHA-256 | Integrity | Secrecy | `packages/db/migrations/0004_audit.sql` |
+| TLS certificates | ACM (RSA 2048 or ECDSA P-256), TLS 1.2+ (`ELBSecurityPolicy-TLS13-1-2`), RDS CA bundle for database clients | Transport | — | `infra/lib/shared.ts`, Dockerfiles |
+| SFTP host keys | Pinned SHA-256 fingerprints | Customer payroll and export destinations | — | `apps/api/src/modules/payroll/sftp.ts` |
+| Dev only: local KMS master key, mock IdP RSA 2048 key | AES-256-GCM, RS256 | Local development and tests | Any AWS environment (refused) | `kms.ts`, `apps/api/src/dev/mock-idp.ts` |
+
+The inventory is reviewed with every new key, algorithm or certificate and at each ASVS review (ASVS V11.1.2). Primitives come from Node.js crypto (OpenSSL), AWS KMS and maintained libraries (`@node-rs/argon2`, `@simplewebauthn/server`, `openid-client`, `@node-saml/node-saml`).
+
+## Security logging
+
+Inventory of what is logged, where, and who can read it (ASVS V16.1.1, V16.2.3).
+
+| Log | What | Format | Where and how long | Access |
+| --- | --- | --- | --- | --- |
+| Customer audit log (`audit.events`) | Every change, every sensitive view, sign-ins and failures on every path, MFA, re-authentication, session and factor changes, exports | Rows with time (UTC), actor, action, target, diff, IP, user agent, request id; SHA-256 hash chain | Home-region Aurora, append-only; retention per the privacy rules; exportable as CSV/JSON and streamable to the customer's SIEM | Customers with `audit.read`; staff only through support grants |
+| Staff trail (`backoffice.staff_audit`) | Every staff action, sign-in and failure | Rows as above | Home-region Aurora, append-only | Staff super admins |
+| Application logs (api, worker, web) | Errors, job outcomes, and security events: `authz.denied`, `authn.failed`, `authn.missing`, `antiautomation.limited`, `antiautomation.locked`, `input.rejected` (field paths only) | JSON lines (pino) with UTC time, service, region, request id; personal data scrubbed; request bodies never logged | CloudWatch Logs in the cell region, KMS-encrypted, 30 days (staging) / 400 days (production) | Platform engineers through IAM |
+| ALB access logs, VPC flow logs | Requests and network flows | AWS formats | S3 logs bucket / CloudWatch in the cell region, same retention | Platform engineers through IAM |
+| Traces | Spans without personal data | OTLP to AWS X-Ray | Cell region | Platform engineers |
+
+Logs go nowhere else. Log entries are JSON-encoded, so input cannot forge lines (V16.4.1); the audit log cannot be changed by any role and verifies its chain (V16.4.2); CloudWatch Logs and the customer's SIEM are separate from the application (V16.4.3).
+
+## Dependency remediation
+
+ASVS V15.1.1. Every pull request and `main` run `pnpm audit --audit-level high` and the SBOM check. Known vulnerabilities in a dependency are fixed (upgrade, patch or remove) within: **critical** 7 days, **high** 30 days, **moderate** 90 days, **low** at the next routine update. If no fix exists, record the exposure and mitigation in "Accepted risks" within the same time. Dependencies are otherwise reviewed and updated at least monthly, and a package with no release for two years is replaced when a maintained alternative exists.
 
 ## Threat model (STRIDE)
 
@@ -75,7 +187,7 @@ Owners are roles: **Platform** (platform engineering lead), **Security** (securi
 | ID | Boundary / component | STRIDE | Threat | Mitigations | Evidence | Owner | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | T1 | 1 · sign-in | S | Credential stuffing and password spraying | Argon2id; per-IP and per-account throttles; lockout after N failures; constant-time unknown-user path; MFA mandatory for admins; tenant-enforced SSO | `auth.int.test.ts` | Security | Mitigated |
-| T2 | 1 · sessions | S | Session theft or fixation | 256-bit opaque tokens, only SHA-256 stored; HttpOnly, Secure, SameSite=Lax; rotated at sign-in; idle and absolute expiry; revoked on logout, password change and deprovisioning | `auth.int.test.ts` | Security | Mitigated |
+| T2 | 1 · sessions | S | Session theft or fixation | 256-bit opaque tokens, only SHA-256 stored; `__Host-` cookie, HttpOnly, Secure, SameSite=Lax; new token at sign-in and re-authentication (the previous one ends); idle and absolute expiry; revoked on logout, deprovisioning and (others) on password or factor change; people and admins can end sessions | `auth.int.test.ts`, `asvs.int.test.ts` | Security | Mitigated |
 | T3 | 1 · SSO | S | Forged or replayed SAML assertion / OIDC token; IdP mix-up | Signed assertions, audience and recipient checks, one-time RelayState, assertion replay cache; OIDC PKCE, state, nonce, issuer check; JIT only for verified domains | `sso.int.test.ts` | Security | Mitigated |
 | T4 | 1 · client IP | S | Spoofed `X-Forwarded-For` to dodge throttles or forge audit IPs | Only the first private hop (the ALB) is trusted; the web proxy drops client-supplied forwarding headers | `proxy-trust.test.ts` | Platform | Mitigated |
 | T5 | 1 · kiosks | S | Clocking in as someone else at a shared kiosk; PIN brute force | Device token (hash stored, revocable) plus employee number and Argon2id PIN; per-IP and per-kiosk throttles; lockout with identical answers for unknown numbers; every attempt audited | `time.int.test.ts` (kiosk), `kiosk.spec.ts` | Security | Mitigated |
@@ -86,8 +198,8 @@ Owners are roles: **Platform** (platform engineering lead), **Security** (securi
 | T10 | 2 · audit | T / R | Someone alters or deletes audit entries to hide actions; a user denies an action | Append-only (no UPDATE / DELETE grants plus a trigger for every role); per-tenant SHA-256 hash chain with verification; every mutation and sensitive view audited; customers can export | `audit.int.test.ts` | Security | Mitigated |
 | T11 | 2 · residency | I | Personal data written to, cached in or backed up to another region | Residency-guarded AWS client factory; startup endpoint check; router refuses foreign tenants; CDK region and backup-copy assertions; tests for every region pair | `*.residency.test.ts`, `infra/test` | DPO | Mitigated |
 | T12 | 1 · caching | I | An authenticated page or API response cached at a shared edge and shown to another user | `Cache-Control: private, no-store` on every API response and authenticated page; no CDN in front of cells | `auth.int.test.ts`, e2e | Platform | Mitigated |
-| T13 | 1 · web | T / I | XSS or clickjacking in the app | React escaping; CSP with `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`; `nosniff`; strict referrer policy. CSP still allows inline scripts (see accepted risks) | e2e headers check | Security | Partial |
-| T14 | 1 · uploads | T / I | Malicious or oversized files (imports, documents, payslips) | Size limits; content checked against the file's magic bytes; files stored in the home-region bucket under the tenant prefix; downloads are short-lived presigned URLs with `Content-Disposition: attachment` | Phase 1 branch (documents and imports tests) | Platform | Mitigated at integration |
+| T13 | 1 · web | T / I | XSS, clickjacking or cross-site request forgery in the app | React escaping (no `dangerouslySetInnerHTML`); per-request nonce CSP without `'unsafe-inline'` scripts, `base-uri 'none'`, `object-src 'none'`, `frame-ancestors 'none'`; `nosniff`; strict referrer policy; origin checks on every state-changing request; JSON-only bodies | `apps/web/test/csp.test.ts`, `security-asvs.spec.ts`, `asvs.int.test.ts` ("V3.5") | Security | Mitigated |
+| T14 | 1 · uploads | T / I | Malicious or oversized files (imports, documents, payslips), zip bombs | Size limits; content checked against the file's magic bytes and the name against the type; zip entry counts checked before inflation and inflated bytes bounded; files stored in the home-region bucket under the tenant prefix; downloads are short-lived presigned URLs with an RFC 6266 `attachment` disposition. Not yet scanned for known malware (HUMAN_TODO 1.7) | `corehr-flows.int.test.ts`, `payslips.int.test.ts`, `asvs-units.test.ts` ("V5.2.3") | Platform | Partial (malware scanning pending) |
 | T15 | 1 · imports | T | Spreadsheet formula injection when exports are opened in Excel | Values a spreadsheet would run as a formula are prefixed with `'` in CSV and Excel exports | Phase 1 branch (export tests) | Platform | Mitigated at integration |
 | T16 | 4 · outbound calls | I / E | SSRF through webhook, SIEM or IdP URLs reaching the metadata service or internal hosts | HTTPS only; private, loopback, link-local and metadata addresses refused after DNS resolution; no redirects to them | Phase 9 branch | Security | Mitigated at integration |
 | T17 | 4 · webhooks | S / T | Forged or replayed webhook deliveries to customers | HMAC-SHA256 signature over timestamp and body, two active secrets during rotation, documented verification with a tolerance window | Phase 9 branch | Platform | Mitigated at integration |
@@ -112,8 +224,22 @@ Owners are roles: **Platform** (platform engineering lead), **Security** (securi
 
 ## Accepted risks and follow-ups
 
-- **CSP allows `'unsafe-inline'` scripts** because of Next.js inline bootstrap scripts. The fix is nonce-based CSP through Next middleware. That forces dynamic rendering, so it is scheduled for the Phase 12 hardening pass with a Lighthouse re-check.
-- **The public-host check does not resolve DNS**, so a public name that resolves to a private address (DNS rebinding) is not blocked yet. Follow-up: resolve, pin the address and re-check before connecting.
+- **Automation webhooks and the `http` integration check the host name without resolving DNS** (webhooks and SIEM streams already check every resolved address at connect time), so a public name that resolves to a private address is not blocked for automation yet (ASVS V1.3.6). Follow-up: send them through `postOutbound` in `apps/api/src/lib/outbound.ts`. Owner: Security.
+- **No known-malware scanning of uploads** (ASVS V5.4.3). Recurring cost, so it waits for approval: HUMAN_TODO 1.7. Owner: Platform.
+- **Traffic between the ALB (and Service Connect) and the containers is plain HTTP inside the VPC** (ASVS V12.3.3). It never leaves private subnets and security groups allow only the ALB and the web service. Follow-up: TLS on the target groups with certificates from a private CA, once the domain exists. Owner: Platform.
+- **Database and Valkey use static, generated passwords from Secrets Manager** rather than IAM authentication or short-lived tokens (ASVS V13.2.1). Follow-up: RDS Proxy IAM authentication and Secrets Manager rotation. Owner: Platform.
+- **SSO links people by email address within a tenant**, not by issuer and subject, so any of a tenant's enabled connections can sign in any of its users (ASVS V6.8.1, V10.5.2). Connections are created only by the customer's admins and JIT needs a verified domain. Follow-up: store `(connection, sub)` on first SSO sign-in and refuse a different pair. Owner: Security.
+- **"Trust IdP MFA" (on by default) counts every SSO sign-in as multi-factor** without checking `amr` or `acr` (ASVS V6.8.4). It is a per-tenant setting on the sign-in policy screen. Follow-up: honour `amr` when present and default the setting to off for new workspaces. Owner: Product.
+- **The SAML response is not bound to the browser that started the sign-in** (the OIDC flow is, by `__Host-thr_sso`). RelayState is single-use and the assertion signed and replay-checked. A binding cookie would need `SameSite=None`. Owner: Security.
+- **Emailed sign-in links are not bound to the browser that asked for them** (ASVS V6.6.2), so they work on another device by design. They are single-use, 256-bit and expire after 10 minutes, and anyone with a second factor must still use it. Owner: Product.
+- **Credentials in URLs** (ASVS V14.2.1): calendar feed tokens (read-only, revocable, ADR-0033) because calendar clients cannot send headers, and emailed sign-in links (removed from the address bar and history at once). Session tokens and API keys never appear in URLs. Owner: Security.
+- **Offline clock punches are kept in browser storage until sent** (ASVS V14.3.3; see "Browser storage"). Owner: Product.
+- **RSA-2048 keys from outside parties** (ASVS V11.2.3): passkeys may use RS256 (Windows Hello) and customer IdPs may sign with RSA-2048 (112-bit security). Our own keys and algorithms give at least 128 bits. Owner: Security.
+- **The back office is served from the app's host name** under `/backoffice` (ASVS V3.5.4). Staff use separate accounts, a separate SameSite=Strict cookie and separate API routes. Follow-up: a dedicated `backoffice.<cell>.<domain>` host once the domain exists (HUMAN_TODO 2.1, 2.2). Owner: Platform.
+- **The generated first password of a staff account stays valid** until the account is recreated (ASVS V6.4.1): there is no staff password change yet. It is 144-bit random and always combined with TOTP. Follow-up: force a change at first sign-in. Owner: Security.
+- **A sole owner who loses every second factor cannot be recovered in the product** (ASVS V6.4.4 covers everyone else through an admin reset). Customers are advised to keep two owners. Follow-up: a staff-assisted, identity-proofed recovery. Owner: Security.
+- **MFA is mandatory for admins, not for every employee** (ASVS V6.3.3). Anyone who has set up a factor must use it on every sign-in path, and customers can require SSO (with their IdP's MFA) for everyone. Many frontline employees have no work phone, so a password-only sign-in stays possible for non-admin roles, whose access is limited to their own records and team. Mitigations: breached-password and context checks, throttles and lockout, idle and absolute timeouts, least-privilege roles, audit. Follow-up: a tenant setting "require two-step verification for everyone". Owner: Product.
+- **Independent penetration test** before production: HUMAN_TODO 5.2. Owner: Security.
 - **CDK bootstrap execution policy.** By default `cdk bootstrap` grants the CloudFormation execution role AdministratorAccess. HUMAN_TODO 1.5 asks for a scoped policy at bootstrap time. The deploy roles themselves can only assume the bootstrap roles in their own region.
 - **Logger scrubbing is allow-list based for class instances.** Request and reply objects are reduced by serializers, and plain objects are scrubbed recursively. Code review rule: never log ORM or row objects directly.
 

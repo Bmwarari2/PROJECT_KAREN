@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { matchesMagic } from '../../lib/file-types';
 import { Type } from 'typebox';
 import { can } from '@thapsus/core/permissions';
 import { instantToDate } from '@thapsus/core/time';
@@ -164,6 +165,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
       const file = await req.file();
       if (!file || !EVIDENCE_TYPES.includes(file.mimetype)) throw new ApiError('validation', 'Upload a PDF or image');
       const buf = await file.toBuffer();
+      if (!matchesMagic(file.mimetype, buf)) throw new ApiError('validation', 'The file content does not match its type');
       const out = await app.tenantTx(req, async (tx) => {
         const c = await tx.maybe<{ employee_id: string }>('SELECT employee_id FROM app.rtw_checks WHERE id = $1', [id]);
         if (!c) throw new ApiError('notFound');
@@ -332,6 +334,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
       const file = await req.file();
       if (!file || !EVIDENCE_TYPES.includes(file.mimetype)) throw new ApiError('validation', 'Upload a PDF or image');
       const buf = await file.toBuffer();
+      if (!matchesMagic(file.mimetype, buf)) throw new ApiError('validation', 'The file content does not match its type');
       const out = await app.tenantTx(req, async (tx) => {
         const r = await tx.maybe<{ employee_id: string }>('SELECT employee_id FROM app.i9_records WHERE id = $1', [id]);
         if (!r) throw new ApiError('notFound');

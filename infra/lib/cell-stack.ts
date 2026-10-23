@@ -109,6 +109,7 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- Load balancer + WAF
     const { alb, https } = publicAlb(this, {
+      noRedirectPaths: API_PATHS,
       vpc,
       logs: logs_,
       certificateArn: certificateArn(this, cfg.cells[cell].certificateArn),

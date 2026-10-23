@@ -2,7 +2,9 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
-import { createSession, loadSecurity, SESSION_COOKIE, type AuthMethod } from './sessions';
+import { sessionCookie } from '../../http/security';
+import { createSession, loadSecurity, SESSION_PREFIX, type AuthMethod } from './sessions';
+import { hashToken, parseToken } from './tokens';
 
 /**
  * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
@@ -34,15 +36,25 @@ export async function resolveTenantSlug(deps: Deps, slug: string): Promise<strin
   throw new ApiError('notFound');
 }
 
+/**
+ * The session cookie: `__Host-thr_sid` over HTTPS (Secure, Path=/, no Domain), HttpOnly, SameSite=Lax
+ * so top-level navigations from an identity provider or an emailed link keep working (cross-site
+ * requests are refused by the origin check in http/context.ts). ASVS V3.3.1 to V3.3.4.
+ */
 export function setSessionCookie(deps: Deps, reply: FastifyReply, token: string) {
-  const secure = deps.config.apiBaseUrl.startsWith('https');
-  reply.setCookie(SESSION_COOKIE, token, {
+  const c = sessionCookie(deps.config);
+  reply.setCookie(c.name, token, {
     httpOnly: true,
-    secure,
+    secure: c.secure,
     sameSite: 'lax',
-    path: '/',
+    path: c.path,
     // Absolute session lifetime is enforced server-side; the cookie itself is a browser-session cookie.
   });
+}
+
+export function clearSessionCookie(deps: Deps, reply: FastifyReply) {
+  const c = sessionCookie(deps.config);
+  reply.clearCookie(c.name, { path: c.path, secure: c.secure, httpOnly: true, sameSite: 'lax' });
 }
 
 export async function startSession(
@@ -52,6 +64,13 @@ export async function startSession(
   tx: Tx,
   opts: { tenantId: string; userId: string; method: AuthMethod; mfaVerified: boolean },
 ) {
+  // A sign-in always gets a new token, and the session this browser held before ends (ASVS V7.2.4).
+  const previous = parseToken(SESSION_PREFIX, req.cookies?.[sessionCookie(deps.config).name]);
+  if (previous) {
+    const end = (t: Tx) => t.exec('UPDATE app.sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [hashToken(previous.secret)]);
+    if (previous.tenantId === opts.tenantId) await end(tx);
+    else await withTenant(deps.router, previous.tenantId, end).catch(() => undefined);
+  }
   const token = await createSession(tx, { ...opts, ip: req.ctx.ip, userAgent: req.ctx.userAgent, now: deps.now() });
   await writeAudit(tx, {
     actorType: 'user',

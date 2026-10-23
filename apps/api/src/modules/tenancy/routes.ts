@@ -46,7 +46,7 @@ export async function tenancyRoutes(app: FastifyInstance) {
         throw new ApiError('wrongRegion', undefined, { region: b.region, appUrl: deps.regionalAppUrls[b.region] });
       }
       if (RESERVED.has(b.slug)) throw new ApiError('conflict');
-      const problems = passwordProblems(b.password);
+      const problems = passwordProblems(b.password, { companyName: b.companyName, workspaceSlug: b.slug, email: b.ownerEmail, displayName: b.ownerName });
       if (problems.length) throw new ApiError('validation', undefined, { errors: problems.map((p) => ({ path: '/password', message: p })) });
       const spec = REGIONS[b.region];
       const tenantId = crypto.randomUUID();

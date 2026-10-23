@@ -84,6 +84,7 @@ export async function resolveApiCredential(deps: Deps, token: string): Promise<A
         method: kind,
         mfaVerified: true,
         hasMfaFactor: false,
+        authenticatedAt: now,
         principal,
         user: { email: '', displayName: cred.name, locale: null, timeZone: null, employeeId: null },
         apiClient: { id: cred.id, kind, name: cred.name, scopes: cred.scopes, rateLimitPerMinute: settings.rateLimitPerMinute },

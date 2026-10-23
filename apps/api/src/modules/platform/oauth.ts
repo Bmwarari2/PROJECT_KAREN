@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyReply } from 'fastify';
+import formbody from '@fastify/formbody';
 import { Type } from 'typebox';
 import { featureEnabled, withTenant, writeAudit } from '@thapsus/db';
 import { ApiError } from '../../http/errors';
@@ -46,6 +47,8 @@ const eq = (a: Buffer | null, b: Buffer) => !!a && a.length === b.length && timi
 export async function oauthRoutes(app: FastifyInstance) {
   const deps = app.deps;
   app.addSchema(OAuthError);
+  // RFC 6749 §4.4.2: token requests are application/x-www-form-urlencoded (parsed only in this scope).
+  await app.register(formbody);
 
   app.post(
     '/v1/oauth/token',

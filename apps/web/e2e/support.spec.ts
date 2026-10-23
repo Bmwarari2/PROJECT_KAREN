@@ -23,7 +23,7 @@ test.describe('help centre and support tickets', () => {
     await page.getByLabel('Category').selectOption('problem');
     await page.getByLabel('Priority', { exact: true }).selectOption('high');
     await page.getByLabel('What happened?').fill('Steps: Payroll → Export for October. Fictional details only.');
-    await page.getByLabel('Attachment (optional)').setInputFiles({ name: 'screenshot.png', mimeType: 'image/png', buffer: Buffer.from('fictional-image') });
+    await page.getByLabel('Attachment (optional)').setInputFiles({ name: 'screenshot.png', mimeType: 'image/png', buffer: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('fictional-image')]) }); // real PNG signature: content is checked against the type
     await expectAccessible(page);
     await page.getByRole('button', { name: 'Send ticket' }).click();
     await page.waitForURL(/\/app\/support\/[0-9a-f-]{36}$/);

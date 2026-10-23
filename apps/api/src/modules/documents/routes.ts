@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { matchesMagic } from '../../lib/file-types';
 import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
 import { formatDate, formatMoney, isLocale, t, type Locale } from '@thapsus/core/i18n';
@@ -26,6 +27,18 @@ export const ALLOWED_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
 };
 export const MAX_BYTES = 25 * 1024 * 1024;
+/** File-name extensions accepted for each type (ASVS V5.2.2: the name must match the declared and sniffed type). */
+export const EXTENSIONS: Record<string, string[]> = {
+  'application/pdf': ['.pdf'],
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'text/csv': ['.csv'],
+  'text/plain': ['.txt'],
+  'text/markdown': ['.md', '.markdown'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+};
+export const extensionMatches = (contentType: string, fileName: string) => (EXTENSIONS[contentType] ?? []).some((ext) => fileName.toLowerCase().endsWith(ext));
 
 const Doc = Type.Object({ id: Uuid, title: Type.String(), category: Type.String(), employeeId: Nullable(Type.String()), folderId: Nullable(Type.String()), fileName: Type.String(), contentType: Type.String(), sizeBytes: Nullable(Type.String()), sha256: Nullable(Type.String()), status: Type.String(), expiresOn: Nullable(Type.String()), createdAt: Type.String() });
 export type DocRow = { employee_name?: string | null; id: string; title: string; category: string; employee_id: string | null; folder_id: string | null; file_name: string; content_type: string; size_bytes: string | null; sha256: string | null; status: string; expires_on: string | null; created_at: string; file_key: string };
@@ -198,6 +211,7 @@ export async function documentRoutes(app: FastifyInstance) {
       const auth = requireAuth(req);
       const b = req.body as { title: string; fileName: string; contentType: string; sizeBytes: number; employeeId?: string; folderId?: string; category?: string; expiresOn?: string };
       if (!(b.contentType in ALLOWED_TYPES)) throw new ApiError('validation', 'File type not allowed');
+      if (!extensionMatches(b.contentType, b.fileName)) throw new ApiError('validation', 'The file name does not match the file type');
       if (b.sizeBytes > MAX_BYTES) throw new ApiError('validation', 'File too large');
       const row = await app.tenantTx(req, async (tx) => {
         if (b.employeeId) {
@@ -435,26 +449,7 @@ export async function documentRoutes(app: FastifyInstance) {
 }
 
 /** Magic-number checks so the declared content type matches the uploaded bytes. */
-export function matchesMagic(contentType: string, b: Buffer): boolean {
-  const starts = (sig: number[]) => sig.every((v, i) => b[i] === v);
-  switch (contentType) {
-    case 'application/pdf':
-      return starts([0x25, 0x50, 0x44, 0x46]);
-    case 'image/png':
-      return starts([0x89, 0x50, 0x4e, 0x47]);
-    case 'image/jpeg':
-      return starts([0xff, 0xd8, 0xff]);
-    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-      return starts([0x50, 0x4b, 0x03, 0x04]);
-    case 'text/csv':
-    case 'text/plain':
-    case 'text/markdown':
-      return !b.subarray(0, 4096).includes(0);
-    default:
-      return false;
-  }
-}
+export { matchesMagic };
 
 // ---- background jobs ------------------------------------------------------------------------------------
 registerJob('documents.bulk_send', async (ctx) => {

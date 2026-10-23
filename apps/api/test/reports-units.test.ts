@@ -76,8 +76,8 @@ describe('tenant routing with readers (configuration only)', () => {
   it('reads reader URLs per database key from the environment', () => {
     const secret = JSON.stringify({ username: 'thapsus_reporting', password: 'p@ss', host: 'ignored', port: 5432, dbname: 'thapsus' });
     expect(readersFromEnv({ REPORTING_DATABASE_SECRET: secret, REPORTING_DATABASE_HOST: 'thapsus.cluster-ro-x.eu-west-2.rds.amazonaws.com', DEDICATED_READER_HOSTS: JSON.stringify({ acme: 'acme.cluster-ro-y.eu-west-2.rds.amazonaws.com' }) })).toEqual({
-      shared: 'postgres://thapsus_reporting:p%40ss@thapsus.cluster-ro-x.eu-west-2.rds.amazonaws.com:5432/thapsus?sslmode=require',
-      acme: 'postgres://thapsus_reporting:p%40ss@acme.cluster-ro-y.eu-west-2.rds.amazonaws.com:5432/thapsus?sslmode=require',
+      shared: 'postgres://thapsus_reporting:p%40ss@thapsus.cluster-ro-x.eu-west-2.rds.amazonaws.com:5432/thapsus?sslmode=verify-full',
+      acme: 'postgres://thapsus_reporting:p%40ss@acme.cluster-ro-y.eu-west-2.rds.amazonaws.com:5432/thapsus?sslmode=verify-full',
     });
     expect(readersFromEnv({ READER_DATABASES: JSON.stringify({ shared: 'postgres://r@h/db' }), REPORTING_DATABASE_URL: 'postgres://ignored@h/db' })).toEqual({ shared: 'postgres://r@h/db' });
     expect(readersFromEnv({})).toEqual({});

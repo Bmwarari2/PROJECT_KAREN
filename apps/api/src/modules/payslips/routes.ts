@@ -10,7 +10,7 @@ import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { notify, userForEmployee } from '../../lib/notify';
 import { objectKey } from '../../lib/object-store';
 import { loadTarget, scopePredicate } from '../employees/service';
-import { candidates, compilePattern, decide, expandUploads, type MatchBy, type UploadedFile } from './matching';
+import { candidates, compilePattern, decide, expandUploads, MAX_UPLOAD_BYTES, type MatchBy, type UploadedFile } from './matching';
 
 /**
  * Payslip and year-end document upload (PROGRESS 6.3). Files go to the home-region object store as
@@ -64,9 +64,13 @@ export async function payslipRoutes(app: FastifyInstance) {
       if (!canSome(auth.principal, 'payslips.manage')) throw new ApiError('forbidden');
       const fields: Record<string, string> = {};
       const files: UploadedFile[] = [];
+      let received = 0;
       for await (const part of req.parts()) {
         if (part.type === 'file') {
           const body = await part.toBuffer();
+          received += body.length;
+          // one request may carry at most MAX_UPLOAD_BYTES in total (ASVS V5.2.1)
+          if (received > MAX_UPLOAD_BYTES) throw new ApiError('validation', 'The upload is too large; send it in smaller batches', { maxBytes: MAX_UPLOAD_BYTES });
           files.push({ name: (part.filename || 'file').slice(0, 255), body });
         } else fields[part.fieldname] = String(part.value ?? '');
       }

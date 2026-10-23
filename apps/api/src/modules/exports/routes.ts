@@ -6,6 +6,7 @@ import { today } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
 import { authorizeSome } from '../../http/context';
 import { ApiError } from '../../http/errors';
+import { contentDisposition } from '../../http/security';
 import { Problem, Uuid } from '../../http/schemas';
 import { listApprovals } from '../approvals/service';
 import { listDocuments } from '../documents/routes';
@@ -39,7 +40,7 @@ export async function sendTable(reply: FastifyReply, format: 'csv' | 'xlsx', nam
   const stamp = new Date().toISOString().slice(0, 10);
   if (format === 'csv') {
     const csv = [columns.join(','), ...rows.map((r) => columns.map((c) => `"${cellText(r[c]).replace(/"/g, '""')}"`).join(','))].join('\r\n');
-    return reply.type('text/csv; charset=utf-8').header('Content-Disposition', `attachment; filename="${name}_${stamp}.csv"`).send(csv);
+    return reply.type('text/csv; charset=utf-8').header('Content-Disposition', contentDisposition(`${name}_${stamp}.csv`)).send(csv);
   }
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(name);
@@ -47,7 +48,7 @@ export async function sendTable(reply: FastifyReply, format: 'csv' | 'xlsx', nam
   ws.getRow(1).font = { bold: true };
   for (const r of rows) ws.addRow(columns.map((c) => (typeof r[c] === 'number' ? r[c] : cellText(r[c]))));
   const buf = Buffer.from(await wb.xlsx.writeBuffer());
-  return reply.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').header('Content-Disposition', `attachment; filename="${name}_${stamp}.xlsx"`).send(buf);
+  return reply.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').header('Content-Disposition', contentDisposition(`${name}_${stamp}.xlsx`)).send(buf);
 }
 
 interface ListExport<Q> {

@@ -10,6 +10,8 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { hasPermission, useSession } from '../../../shell';
 import { problemMessage, roleName, scopeSummary, type Assignment, type Role, type UserSummary } from '../../roles/shared';
+import { ConfirmAction, SettingsCard } from '../../kit';
+import { useStepUp } from '../../../step-up';
 
 const SCOPES = ['all', 'entity', 'country', 'department', 'location', 'own_team', 'self'] as const;
 type ScopeType = (typeof SCOPES)[number];
@@ -36,6 +38,48 @@ function useScopeOptions(type: ScopeType) {
     return codes.map((c) => ({ value: c, label: c }));
   }
   return [];
+}
+
+/**
+ * Sign a person out everywhere, or reset a lost second factor after confirming who they are
+ * (company-wide settings.manage; ASVS V7.4.5, V6.4.4). The API also requires that the admin holds
+ * everything the person holds, and a recent re-authentication for a reset.
+ */
+function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () => void }) {
+  const t = useT();
+  const toast = useToast();
+  const stepUp = useStepUp();
+  const done = (title: string) => (toast({ title, tone: 'success' }), onChanged());
+  const fail = (err: unknown) => toast({ title: problemMessage(t, err), tone: 'danger' });
+  return (
+    <SettingsCard id="user-sign-in" title={t('access.users.signIn.title')} description={t('access.users.signIn.body')}>
+      <div className="flex flex-wrap gap-2">
+        <ConfirmAction
+          label={t('access.users.signIn.endSessions')}
+          title={t('access.users.signIn.endSessionsTitle', { name: user.displayName })}
+          body={t('access.users.signIn.endSessionsBody')}
+          confirmLabel={t('access.users.signIn.endSessions')}
+          onConfirm={() => api(`/v1/users/${user.id}/sessions/end`, { method: 'POST' }).then(() => done(t('access.users.signIn.sessionsEnded')))}
+        />
+        {user.hasMfa ? (
+          <ConfirmAction
+            label={t('access.users.signIn.resetMfa')}
+            title={t('access.users.signIn.resetMfaTitle', { name: user.displayName })}
+            body={t('access.users.signIn.resetMfaBody')}
+            confirmLabel={t('access.users.signIn.resetMfaConfirm')}
+            onConfirm={async () => {
+              // the confirmation closes first; a re-authentication prompt may follow
+              void stepUp
+                .run(() => api(`/v1/users/${user.id}/mfa/reset`, { method: 'POST', json: { identityConfirmed: true } }))
+                .then((ok) => ok && done(t('access.users.signIn.mfaReset')))
+                .catch(fail);
+            }}
+          />
+        ) : null}
+      </div>
+      {stepUp.dialog}
+    </SettingsCard>
+  );
 }
 
 export default function UserAccessPage() {
@@ -106,6 +150,8 @@ export default function UserAccessPage() {
       <Link href="/app/settings/users" className="text-callout">
         {t('access.users.back')}
       </Link>
+
+      {hasPermission(session, 'settings.manage') && user.id !== session?.userId ? <SignInControls user={user} onChanged={reload} /> : null}
 
       <Card className="flex flex-col gap-4">
         <CardTitle>{t('access.users.assignmentsTitle')}</CardTitle>

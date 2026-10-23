@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { Inbox } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Section, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
@@ -5,8 +6,12 @@ import { GalleryInteractive } from './interactive';
 
 export const metadata = { robots: { index: false } };
 
-/** Component gallery: every packages/ui component in one place, used for visual regression. */
+/**
+ * Component gallery: every packages/ui component in one place, used for visual regression. A
+ * development tool, so production does not serve it (ASVS V15.2.3).
+ */
 export default async function Gallery() {
+  if (process.env.APP_ENV === 'prod') notFound();
   const { t } = await serverContext();
   const g = (k: string) => t(`gallery.${k}`);
   return (

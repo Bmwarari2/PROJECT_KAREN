@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { matchesMagic } from '../../lib/file-types';
 import multipart from '@fastify/multipart';
 import { Type, type Static } from 'typebox';
 import { contactChannels, planById, PRIORITIES, type ContactChannel, type Priority } from '@thapsus/core/billing';
@@ -247,6 +248,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
         const file = await req.file();
         if (!file || !ATTACHMENT_TYPES.has(file.mimetype)) throw new ApiError('validation', 'Attach a PNG, JPEG, PDF, text or CSV file');
         const buf = await file.toBuffer();
+        if (!matchesMagic(file.mimetype, buf)) throw new ApiError('validation', 'The file content does not match its type');
         if (file.file.truncated || buf.length > MAX_ATTACHMENT_BYTES) throw new ApiError('validation', 'File too large');
         if (!buf.length) throw new ApiError('validation', 'Empty file');
         const name = file.filename.replace(/[^\p{L}\p{N}._ -]/gu, '_').slice(0, 200) || 'attachment';
