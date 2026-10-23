@@ -5212,5 +5212,23 @@
       "holidayUnnamed": "Public holiday",
       "open": "Time overview"
     }
+  },
+  "timeOverview": {
+    "teamCalendar": "Team calendar",
+    "waiting": {
+      "title": "Waiting for you",
+      "review": "Review",
+      "none": "No time-off requests or timesheets are waiting for you.",
+      "leave_one": "{n} time-off request to decide",
+      "leave_other": "{n} time-off requests to decide",
+      "timesheets_one": "{n} timesheet to approve",
+      "timesheets_other": "{n} timesheets to approve"
+    },
+    "sheet": {
+      "title": "Last week’s timesheet",
+      "worked": "Worked: {hours}",
+      "submit": "Review and submit it",
+      "open": "Open timesheets"
+    }
   }
 }

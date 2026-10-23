@@ -137,6 +137,7 @@ export const MODULES: WorkspaceModule[] = [
     icon: CalendarDays,
     group: 'workforce',
     tabs: [
+      { href: '/app/time', label: 'app.ws.tab.overview', show: always, exact: true },
       { href: '/app/time-off', label: 'app.nav.timeOff', show: always },
       { href: '/app/rota', label: 'app.nav.rota', show: any('rota.view', 'rota.view_own') },
       { href: '/app/clock', label: 'app.nav.clock', show: any('time.clock', 'time.manage') },
