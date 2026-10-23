@@ -36,7 +36,9 @@ try {
   );
   log(result.dataSeeded ? 'data seeded' : 'data already present: left as it is');
   for (const [entity, n] of Object.entries(result.employeesByEntity)) log(`  ${entity}: ${n} employees`);
-  log(`workspace "${cfg.workspace}": passwords set for ${result.passwordsSet.join(', ') || 'no login (unchanged)'}`);
+  log(
+    `workspace "${cfg.workspace}": passwords set for ${result.passwordsSet.join(', ') || 'no login (unchanged)'}`,
+  );
   // The generated local logins (fictional emails, fresh passwords) are printed once so a developer can sign in.
   if (cfg.generated)
     for (const l of cfg.logins) console.log(`  ${l.role.padEnd(13)} ${l.email}  ${l.password}`);
