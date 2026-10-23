@@ -17,6 +17,8 @@ const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ['@thapsus/ui', '@thapsus/core'],
+  // the production build type-checks the app only; tests and e2e are checked by `pnpm typecheck`
+  typescript: { tsconfigPath: 'tsconfig.build.json' },
   images: { formats: ['image/avif', 'image/webp'] },
   async headers() {
     return [
