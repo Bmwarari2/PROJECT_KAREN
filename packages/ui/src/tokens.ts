@@ -163,7 +163,7 @@ export function tokensCss(): string {
     )
     .join('\n');
   return `/* GENERATED from packages/ui/src/tokens.ts — do not edit by hand. Tailwind v4 theme. */
-@theme {
+@theme static {
   --color-*: initial;
   --radius-*: initial;
   --shadow-*: initial;
