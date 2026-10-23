@@ -22,7 +22,7 @@ Content customers write themselves (policy documents, help article overrides, up
 1. **Design tokens and components.** Colour pairs are contrast-tested in both modes (`packages/ui/test/contrast.test.ts`); components carry the focus ring, target sizes and ARIA wiring (`packages/ui/test/button.test.ts` covers `Button asChild` and the focus-ring classes).
 2. **Automated sweep of every route** — `apps/web/e2e/a11y-sweep.spec.ts` (functional Playwright project, runs in `pnpm verify`). It enumerates `apps/web/app/**/page.tsx`, fails if a route belongs to no area or a dynamic route has no fictional record to open, and on every route runs the checks in §3. Problems are collected per area and reported together.
 3. **Flow specs.** Every feature spec (time off, rota, clock, kiosk, timesheets, documents, payslips, reports, settings, privacy, support, back office…) runs axe (WCAG 2.2 AA tags) in light and dark mode at the important states of its flow: dialogs open, forms with errors, after submitting.
-4. **Lighthouse** (mobile, `scripts/lighthouse.mjs`): accessibility ≥ 95 and performance ≥ 90 on the key marketing pages and app screens (results in `docs/PERFORMANCE.md`).
+4. **Lighthouse** (mobile, `scripts/lighthouse.mjs`): accessibility ≥ 95 and performance ≥ 90 on the key marketing pages and app screens. All 18 audited pages score 100 for accessibility (results in `docs/PERFORMANCE.md` §2.2).
 5. **Manual checklist** per key flow (§5), run before each major release and whenever a flow changes. Each item says whether a test proves it, whether it was reviewed in the code during this audit, or whether it needs people and real assistive technology (tracked in `docs/HUMAN_TODO.md` §8).
 
 ## 3. Automated checks
@@ -34,6 +34,7 @@ Content customers write themselves (policy documents, help article overrides, up
 | 1.4.10 Reflow | no horizontal page scroll at 320 CSS px; the outermost overflowing elements are named. Wide tables scroll inside their own named region | sweep |
 | 1.4.12 Text spacing | with line height 1.5, letter spacing 0.12em, word spacing 0.16em and paragraph spacing 2em, no fixed-height box clips text | sweep |
 | 2.1.1 Keyboard | Tab walks the whole page; every visible, enabled control (links, buttons, inputs, selects, summaries, focusable regions) is reached. Composite widgets (tabs, radio groups) count when their active item is reached | sweep |
+| 2.4.1 Bypass blocks | the first Tab on every page reaches the skip link | sweep |
 | 2.4.3 Focus order, 2.4.7 Focus visible | each focused control has an outline or ring | sweep |
 | 2.4.11 Focus not obscured | the focused control is not entirely covered (sampled at its centre and corners) by the sticky top bar, the marketing nav or overlays; `html` keeps `scroll-padding-top` for the top bar | sweep |
 | 2.3.3 / reduced motion | with `prefers-reduced-motion: reduce` no animation runs and scroll reveals are already visible | sweep (every route) |

@@ -45,6 +45,33 @@ The output is deterministic: two runs with the same size produce byte-identical 
 | App home (signed in) | 100 | 100 | 96 | 964 ms | 0.000 | 84 ms |
 | App security (signed in) | 100 | 100 | 96 | 957 ms | 0.000 | 53 ms |
 
+#### Key marketing pages and app screens (Phase 12, PROGRESS 12.7, ADR-0143)
+
+`scripts/lighthouse.mjs` now audits the key marketing pages and app screens below (median of three mobile runs, default simulated throttling, production build, a fresh fictional workspace owner). Measured on 2026-10-23 on the shared 4-core build machine at a load average of about 1. Every page passes with margin; total blocking time is the metric most sensitive to machine load, so a page that fails only on it is re-run before being treated as a regression. `LIGHTHOUSE_DEBUG=1` prints the largest-paint element, first paint, page weight, main-thread time, the costliest scripts and any accessibility audit not passed.
+
+| Page | Performance | Accessibility | Best practices | LCP | CLS | TBT |
+| --- | --- | --- | --- | --- | --- | --- |
+| Marketing home `/` | 99 | 100 | 100 | 2,120 ms | 0.000 | 27 ms |
+| Pricing `/pricing` | 98 | 100 | 100 | 2,418 ms | 0.000 | 24 ms |
+| Trust centre `/trust` | 99 | 100 | 100 | 2,165 ms | 0.000 | 29 ms |
+| Status page `/status` | 99 | 100 | 100 | 1,977 ms | 0.000 | 29 ms |
+| Developers `/developers` | 98 | 100 | 100 | 2,274 ms | 0.000 | 65 ms |
+| Sign in `/signin` | 99 | 100 | 100 | 2,260 ms | 0.000 | 27 ms |
+| Sign up `/signup` | 99 | 100 | 100 | 2,116 ms | 0.000 | 28 ms |
+| App home `/app` | 100 | 100 | 100 | 1,860 ms | 0.000 | 35 ms |
+| Me hub `/app/me` | 100 | 100 | 100 | 1,216 ms | 0.000 | 48 ms |
+| People `/app/people` | 99 | 100 | 100 | 1,718 ms | 0.000 | 67 ms |
+| Time off `/app/time-off` | 98 | 100 | 100 | 1,958 ms | 0.000 | 120 ms |
+| Rota `/app/rota` | 96 | 100 | 100 | 2,415 ms | 0.006 | 152 ms |
+| Timesheets `/app/timesheets` | 97 | 100 | 100 | 1,866 ms | 0.000 | 178 ms |
+| Reports catalogue `/app/reports` | 97 | 100 | 100 | 2,614 ms | 0.008 | 51 ms |
+| Report builder `/app/reports/builder` | 98 | 100 | 100 | 2,307 ms | 0.000 | 91 ms |
+| Settings `/app/settings` | 98 | 100 | 100 | 2,282 ms | 0.000 | 55 ms |
+| Notifications `/app/notifications` | 100 | 100 | 100 | 1,815 ms | 0.006 | 39 ms |
+| Security `/app/security` | 98 | 100 | 100 | 2,409 ms | 0.000 | 40 ms |
+
+What moved the numbers: per-route message scoping (ADR-0150) removed about 55 KB of compressed HTML from every page; each page renders its heading and intro before its data in the same elements as the loaded page (the rota's draft-shift explanation moved next to its heading, as the late largest paint there); the Inter font is preloaded; the app top bar no longer uses a backdrop filter; and fixing skipped heading levels took app screens from 98 to 100 for accessibility. On the same machine under heavy load from other jobs (load average 6 to 11) the rota, timesheets and report builder screens dropped to 84 to 89 on total blocking time alone; they are the first candidates for code splitting if CI numbers fall.
+
 #### Message catalogue in the page payload (Phase 12, ADR-0150)
 
 Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.
