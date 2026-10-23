@@ -65,7 +65,7 @@ export function UserMenu({
             {roles[0] ?? ''}
           </span>
         </span>
-        <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
+        <ChevronDown aria-hidden className="hidden h-4 w-4 stroke-[1.5] sm:block" />
       </MenuTrigger>
       <MenuContent className="w-[280px]">
         <MenuLabel className="flex flex-col gap-0.5 text-text">
