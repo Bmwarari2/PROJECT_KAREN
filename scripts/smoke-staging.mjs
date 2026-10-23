@@ -181,7 +181,7 @@ async function smoke(region) {
           oidc: {
             issuer,
             clientId: 'thapsus-smoke-client',
-            clientSecret: 'fictional-smoke-secret',
+            clientSecret: 'smoke-only', // fictional; the mock IdP does not check it
           },
         }),
         201,
