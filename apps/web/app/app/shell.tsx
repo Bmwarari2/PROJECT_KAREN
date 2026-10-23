@@ -120,10 +120,10 @@ export function AppShell({
   }, [searchOpen]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [collapsed, setCollapsed] = useRailCollapsed();
-  // The account menu's code loads once the browser is idle; until then (or if clicked sooner) the
-  // same-looking button stands in and opens the menu when it arrives.
+  // The account menu's code loads when someone reaches for it (pointer, focus, touch): until then the
+  // same-looking button stands in, opens the menu when it arrives, and hands the focus over.
   const [UserMenu, setUserMenu] = React.useState<UserMenuType | null>(null);
-  const [userMenuWanted, setUserMenuWanted] = React.useState(false);
+  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'load' | 'focus' | 'open'>('no');
   const idle = useIdle();
   // The rail column only shows from the lg breakpoint; on phones (the menu sheet has its own copy)
   // it is not rendered at all, so a phone does not build and hydrate a menu it cannot see.
@@ -135,14 +135,15 @@ export function AppShell({
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
+  const wantMenu = userMenuLoad !== 'no';
   React.useEffect(() => {
-    if (!idle && !userMenuWanted) return;
+    if (!wantMenu) return;
     let live = true;
-    void loadUserMenu().then((C) => live && React.startTransition(() => setUserMenu(() => C)));
+    void loadUserMenu().then((C) => live && setUserMenu(() => C));
     return () => {
       live = false;
     };
-  }, [idle, userMenuWanted]);
+  }, [wantMenu]);
   // the shortcut hint names the key the viewer's keyboard has (set after hydration)
   const [mac, setMac] = React.useState(false);
   React.useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
@@ -377,10 +378,17 @@ export function AppShell({
                     session={session}
                     theme={theme}
                     onSignOut={signOut}
-                    defaultOpen={userMenuWanted}
+                    defaultOpen={userMenuLoad === 'open'}
+                    focusOnMount={userMenuLoad === 'focus' || userMenuLoad === 'open'}
                   />
                 ) : (
-                  <UserMenuButton session={session} onOpen={() => setUserMenuWanted(true)} />
+                  <UserMenuButton
+                    session={session}
+                    onIntent={(focused) =>
+                      setUserMenuLoad((v) => (v === 'open' ? v : focused ? 'focus' : v === 'no' ? 'load' : v))
+                    }
+                    onOpen={() => setUserMenuLoad('open')}
+                  />
                 )
               ) : null}
             </div>

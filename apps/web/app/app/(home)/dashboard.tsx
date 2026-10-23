@@ -173,17 +173,20 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   const showYou = !!session.employeeId && (!s || !!(s.leave || s.rota || s.clock || s.payslips));
   const showOrg = showInsights || showCalendar;
   const primary = actions.slice(0, VISIBLE_ACTIONS);
-  // the menu's code loads once the browser is idle (or at once if the stand-in button is clicked)
+  // the menu's code loads when someone reaches for the stand-in button (pointer, focus, touch)
   const [MoreActions, setMoreActions] = React.useState<typeof MoreActionsMenuType | null>(null);
-  const [moreWanted, setMoreWanted] = React.useState(false);
+  const [moreLoad, setMoreLoad] = React.useState<'no' | 'load' | 'focus' | 'open'>('no');
+  const wantMore = moreLoad !== 'no';
   React.useEffect(() => {
-    if (!idle && !moreWanted) return;
+    if (!wantMore) return;
     let live = true;
-    void loadMoreActions().then((C) => live && React.startTransition(() => setMoreActions(() => C)));
+    void loadMoreActions().then((C) => live && setMoreActions(() => C));
     return () => {
       live = false;
     };
-  }, [idle, moreWanted]);
+  }, [wantMore]);
+  const moreIntent = (focused: boolean) =>
+    setMoreLoad((v) => (v === 'open' ? v : focused ? 'focus' : v === 'no' ? 'load' : v));
   const more = actions.slice(VISIBLE_ACTIONS);
 
   return (
@@ -214,14 +217,21 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
               {more.length ? (
                 <li>
                   {MoreActions ? (
-                    <MoreActions actions={more} defaultOpen={moreWanted} />
+                    <MoreActions
+                      actions={more}
+                      defaultOpen={moreLoad === 'open'}
+                      focusOnMount={moreLoad === 'focus' || moreLoad === 'open'}
+                    />
                   ) : (
                     <button
                       type="button"
                       aria-haspopup="menu"
                       aria-expanded={false}
                       className={buttonVariants({ variant: 'secondary', size: 'md' })}
-                      onClick={() => setMoreWanted(true)}
+                      onPointerEnter={() => moreIntent(false)}
+                      onTouchStart={() => moreIntent(false)}
+                      onFocus={() => moreIntent(true)}
+                      onClick={() => setMoreLoad('open')}
                     >
                       {t('dashboard.moreActions')}
                       <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />

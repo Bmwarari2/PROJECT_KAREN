@@ -1652,3 +1652,18 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
   - that the manager sees only their team and the employee only their own record;
   - that every booked leave is within its balance (leave engine);
   - that vault values are ciphertext only, and that a second run changes nothing but the passwords.
+
+## ADR-0159 — A lighter Temporal polyfill, and menus that load when someone reaches for them (2026-10-23)
+
+**Context.** After the workspace shell (ADR-0154), CI's mobile Lighthouse runs put People, Time off and Timesheets at 89, one point under the gate. With the content no longer streamed late, LCP was stable, so the gap was Total Blocking Time. Two causes stood out. First, every app page ships `@js-temporal/polyfill` (about 45 KB gzipped with its JSBI dependency) and evaluates it before hydrating. Second, the account menu and home's "More actions" menu loaded when the browser went idle, which often falls inside Lighthouse's TBT window on a slow phone.
+
+**Decision.**
+
+- **`packages/core/src/time.ts` imports `Temporal` from `temporal-polyfill`** (MIT, maintained, spec-complete for the stage-4 proposal), pinned exactly at 1.0.5. It is about 20 KB gzipped and uses native `BigInt`, not JSBI. It remains the only place that imports a Temporal implementation, so the rule "time through `@thapsus/core/time` only" is unchanged. The time utilities' unit, integration and golden tests run unchanged against it.
+- **The account menu and "More actions" load on intent.** A same-looking stand-in button loads the menu's code on pointer enter, touch start or focus, and opens it on click. If the stand-in had the keyboard focus, the real trigger takes the focus over when it mounts, so keyboard users lose nothing. The shell's badge counts still wait for idle.
+
+**Consequences.**
+
+- About 25 KB gzipped less JavaScript, and less start-up work, on every app page.
+- The first open of either menu can wait for one small chunk on a very slow connection. Pointing at or focusing the button usually covers that time.
+- When the platform ships Temporal natively everywhere we support, the import in `time.ts` is the one line to remove.

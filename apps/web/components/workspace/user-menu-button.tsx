@@ -44,16 +44,28 @@ export function UserMenuFace({ session }: { session: SessionInfo }) {
 }
 
 /**
- * The account button as rendered before the menu's code has loaded: it looks the same, and a click
- * loads the menu and opens it.
+ * The account button as rendered before the menu's code has loaded: it looks the same. Pointing at
+ * it, focusing or touching it loads the menu (`onIntent`); a click also opens it (`onOpen`). When it
+ * has the keyboard focus as the real menu arrives, `focused` tells the menu to take the focus over.
  */
-export function UserMenuButton({ session, onOpen }: { session: SessionInfo; onOpen: () => void }) {
+export function UserMenuButton({
+  session,
+  onIntent,
+  onOpen,
+}: {
+  session: SessionInfo;
+  onIntent: (focused: boolean) => void;
+  onOpen: () => void;
+}) {
   return (
     <button
       type="button"
       aria-haspopup="menu"
       aria-expanded={false}
       className={USER_MENU_TRIGGER}
+      onPointerEnter={() => onIntent(false)}
+      onTouchStart={() => onIntent(false)}
+      onFocus={() => onIntent(true)}
       onClick={onOpen}
     >
       <UserMenuFace session={session} />
