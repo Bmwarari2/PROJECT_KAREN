@@ -320,22 +320,27 @@ export function AppShell({
             </div>
           </header>
           <div className="flex flex-1">
+            {/* the rail column runs the page's full height; the menu inside it is sticky and scrolls on its own */}
             <aside
-              id="app-rail"
-              className={`sticky top-[var(--topbar-height)] hidden h-[calc(100dvh-var(--topbar-height))] shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-surface-raised p-3 [scroll-padding-block:12px] lg:flex ${collapsed ? 'w-[var(--rail-collapsed-width)]' : 'w-[var(--sidebar-width)]'}`}
+              className={`hidden shrink-0 border-r border-border bg-surface-raised lg:block ${collapsed ? 'w-[var(--rail-collapsed-width)]' : 'w-[var(--sidebar-width)]'}`}
             >
-              {session ? (
-                <RailNav
-                  modules={modules}
-                  currentKey={current?.key ?? null}
-                  collapsed={collapsed}
-                  counts={railCounts}
-                />
-              ) : (
-                <Skeleton className="h-40" />
-              )}
-              <div className="mt-auto">
-                <RailToggle collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+              <div
+                id="app-rail"
+                className="sticky top-[var(--topbar-height)] flex h-[calc(100dvh-var(--topbar-height))] flex-col gap-4 overflow-y-auto p-3 [scroll-padding-block:12px]"
+              >
+                {session ? (
+                  <RailNav
+                    modules={modules}
+                    currentKey={current?.key ?? null}
+                    collapsed={collapsed}
+                    counts={railCounts}
+                  />
+                ) : (
+                  <Skeleton className="h-40" />
+                )}
+                <div className="mt-auto">
+                  <RailToggle collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+                </div>
               </div>
             </aside>
             <div className="flex min-w-0 flex-1 flex-col">
