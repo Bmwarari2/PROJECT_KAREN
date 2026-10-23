@@ -47,8 +47,8 @@ function shotName(route: string) {
  * Marks text that changes with the real date, random ids or the host (timestamps, relative times,
  * UUIDs, references, URLs) so it is masked; the masks keep the layout under test.
  */
-async function markVolatile(page: Page) {
-  await page.evaluate(() => {
+async function markVolatile(page: Page, app: boolean) {
+  await page.evaluate((app) => {
     const months = '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*';
     const patterns = [
       new RegExp(`\\b\\d{1,2} ${months}\\b`),
@@ -56,8 +56,8 @@ async function markVolatile(page: Page) {
       /\b\d{1,2}:\d{2}\b/,
       /\b(19|20)\d{2}\b/,
       /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/,
-      /\b\d+ (second|minute|hour|day|week|month|year)s?\b/i,
-      /\b(ago|yesterday|today|tomorrow)\b/i,
+      // durations and relative times only change in the app (marketing copy such as "30 days" is fixed)
+      ...(app ? [/\b\d+ (second|minute|hour|day|week|month|year)s?\b/i, /\b(ago|yesterday|today|tomorrow)\b/i] : []),
       /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
       /\bT-[0-9A-F]{8}\b/,
       /https?:\/\//,
@@ -68,7 +68,7 @@ async function markVolatile(page: Page) {
       const text = n.textContent ?? '';
       if (text.trim() && patterns.some((p) => p.test(text))) n.parentElement?.setAttribute('data-visual-mask', '');
     }
-  });
+  }, app);
 }
 
 /** Waits for the heading, data, fonts and any finite animation, then compares a full-page screenshot. */
@@ -81,7 +81,7 @@ async function capture(page: Page, route: string, path = route) {
     await document.fonts.ready;
     await Promise.all(document.getAnimations().filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime))).map((a) => a.finished.catch(() => undefined)));
   });
-  await markVolatile(page);
+  await markVolatile(page, route.startsWith('/app'));
   await expect.soft(page).toHaveScreenshot(shotName(route), {
     fullPage: true,
     timeout: 300_000,
