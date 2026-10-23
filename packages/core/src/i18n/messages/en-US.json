@@ -1020,5 +1020,16 @@
     "users": {
       "noScopeValues": "There is nothing to choose yet. Add them under Organization structure."
     }
+  },
+  "dashboard": {
+    "you": {
+      "openRota": "Open your schedule",
+      "payslip": "Latest pay stub",
+      "noPayslip": "No pay stubs yet",
+      "viewPayslips": "View pay stubs"
+    },
+    "org": {
+      "titleCompany": "Your organization"
+    }
   }
 }

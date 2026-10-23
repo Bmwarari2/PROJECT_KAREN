@@ -244,7 +244,8 @@ test.describe('pre-start portal', () => {
     const jp = await context.newPage();
     await jp.goto(magicLink((await lastMailTo(joinerEmail)).text));
     await jp.waitForURL(/\/app$/);
-    await jp.getByRole('link', { name: 'Open your onboarding' }).click();
+    // Home lists the onboarding among what needs the joiner's attention
+    await jp.getByRole('link', { name: /Get ready for your first day/ }).click();
     await jp.waitForURL(/\/app\/welcome$/);
     await expect(
       jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
