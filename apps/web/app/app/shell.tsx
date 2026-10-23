@@ -439,11 +439,7 @@ export function AppShell({
               >
                 <ModuleFrameContext.Provider value={framed}>
                   <ModuleTabVisibleContext.Provider value={tabNameVisible}>
-                    {/* its own Suspense boundary: React hydrates the page separately from the shell, in
-                        shorter tasks, so a phone stays responsive while it does */}
-                    <React.Suspense fallback={null}>
-                      {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
-                    </React.Suspense>
+                    {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
                   </ModuleTabVisibleContext.Provider>
                 </ModuleFrameContext.Provider>
               </main>
