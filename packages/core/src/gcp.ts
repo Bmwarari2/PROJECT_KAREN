@@ -12,13 +12,18 @@ import { allowedGcpLocations, type HomeRegion } from './regions';
  * Region codes themselves live only in regions.ts.
  */
 
-/** A single Google Cloud region, e.g. europe-west2 or us-east5. */
-const SINGLE_REGION = /^[a-z]+-[a-z]+\d+$/;
-/** Cloud Storage multi-regions (EU, US, ASIA) and predefined dual-regions (EUR4, NAM4, ASIA1, …). */
-const MULTI_OR_DUAL_REGION = /^(?:eu|us|asia|[a-z]{3,4}\d+)$/;
+/**
+ * A single Google Cloud region, e.g. europe-west2 or us-east5: a continent, a direction and a number. Kept this
+ * precise so that host names such as `db-host1` are never mistaken for a location.
+ */
+const REGION =
+  '(?:africa|asia|australia|europe|me|northamerica|southamerica|us)-(?:central|east|north|northeast|northwest|south|southeast|southwest|west)\\d+';
+const SINGLE_REGION = new RegExp(`^${REGION}$`);
+/** Cloud Storage multi-regions and predefined dual-regions; a configurable dual-region reports its multi-region. */
+const MULTI_OR_DUAL_REGION = /^(?:eu|us|asia|asia1|eur4|eur5|eur7|eur8|nam4)$/;
 const RESOURCE_NAME = /(?:^|\/)projects\/[^/]+\/locations\/([^/?#&\s]+)/;
 const SOCKET_DIR = /\/cloudsql\/([^/?#&\s]+)/;
-const CONNECTION_NAME = /^(?:[a-z0-9.-]+:)?[a-z][a-z0-9-]*:([a-z]+-[a-z]+\d+):[a-z][a-z0-9-]*$/;
+const CONNECTION_NAME = new RegExp(`^(?:[a-z0-9.-]+:)?[a-z][a-z0-9-]*:(${REGION}):[a-z][a-z0-9-]*$`);
 
 const decode = (s: string) => {
   try {

@@ -46,6 +46,13 @@ describe('gcpLocationOf', () => {
     'eu-west-2',
     'localhost',
     '',
+    // local and container host names that merely look like locations must not stop a cell from starting
+    'db-host1',
+    'pg-primary2',
+    'pgdb1',
+    'psql16',
+    'postgres://thapsus_app:x@app-db1:5432/thapsus',
+    'thapsus-hr-staging:db-host1:thapsus-pg',
   ])('finds no Google Cloud location in %s', (resource) => {
     expect(gcpLocationOf(resource)).toBeUndefined();
   });
