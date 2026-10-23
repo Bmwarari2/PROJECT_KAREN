@@ -310,6 +310,7 @@ export default function TimesheetsPage() {
       <PageIntro
         title={t('timesheets.title')}
         titleIsTab
+        lead={t('timesheets.lead')}
         actions={
           week ? (
             <div className="flex items-center gap-2" role="group" aria-label={t('rota.weekNav')}>

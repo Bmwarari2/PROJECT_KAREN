@@ -188,6 +188,12 @@ try {
           extraHeaders: p.auth ? { Cookie: cookie } : undefined,
           disableStorageReset: false,
         });
+        // LIGHTHOUSE_DUMP=<dir> keeps every full report (debugging page weight and main-thread work).
+        if (process.env.LIGHTHOUSE_DUMP) {
+          mkdirSync(process.env.LIGHTHOUSE_DUMP, { recursive: true });
+          const slug = p.path.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'root';
+          writeFileSync(`${process.env.LIGHTHOUSE_DUMP}/${slug}-run${run + 1}.json`, res.report);
+        }
         if (res.lhr.runtimeError)
           throw new Error(
             `Lighthouse could not audit ${p.path}: ${res.lhr.runtimeError.code} ${res.lhr.runtimeError.message}`,

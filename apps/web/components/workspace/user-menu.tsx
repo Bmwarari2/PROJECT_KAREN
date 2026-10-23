@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, ChevronDown, LogOut, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import {
   Menu,
   MenuContent,
@@ -17,19 +17,7 @@ import type { SessionInfo } from '@/lib/api';
 import { applyTheme, switchLocale } from '@/components/client';
 import { useLocale, useT } from '@/lib/i18n-client';
 import type { ThemeChoice } from '@/lib/i18n-shared';
-import { bySeniority } from '@/lib/role-order';
-
-export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return (
-    (parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '')
-  ).toUpperCase();
-}
-
-/** Readable names of the session's roles (built-in names from the catalogue, custom roles as stored). */
-export function roleNames(t: (k: string) => string, roles: string[]): string[] {
-  return bySeniority(roles).map((r) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`)));
-}
+import { roleNames, USER_MENU_TRIGGER, UserMenuFace } from './user-menu-button';
 
 /**
  * The account menu in the top bar: who you are and with which roles, your profile and security,
@@ -39,10 +27,13 @@ export function UserMenu({
   session,
   theme,
   onSignOut,
+  defaultOpen = false,
 }: {
   session: SessionInfo;
   theme: ThemeChoice;
   onSignOut: () => void;
+  /** Open straight away (the placeholder button was clicked before the menu had loaded). */
+  defaultOpen?: boolean;
 }) {
   const t = useT();
   const locale = useLocale();
@@ -50,23 +41,9 @@ export function UserMenu({
   const [choice, setChoice] = React.useState<ThemeChoice>(theme);
   const roles = roleNames(t, session.roles);
   return (
-    <Menu>
-      <MenuTrigger className="flex h-10 items-center gap-2 rounded-pill pl-1 pr-2 text-on-chrome hover:bg-chrome-raised focus-visible:outline-2 focus-visible:outline-chrome-focus">
-        <span
-          aria-hidden
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-chrome-raised text-footnote font-semibold"
-        >
-          {initials(session.displayName)}
-        </span>
-        {/* the name (and, from md, the role) is the button's accessible name, as seen */}
-        <span className="sr-only md:hidden">{session.displayName}</span>
-        <span className="hidden min-w-0 flex-col text-left leading-tight md:flex">
-          <span className="max-w-[18ch] truncate text-footnote font-semibold">{session.displayName}</span>
-          <span className="max-w-[22ch] truncate text-footnote text-on-chrome-secondary">
-            {roles[0] ?? ''}
-          </span>
-        </span>
-        <ChevronDown aria-hidden className="hidden h-4 w-4 stroke-[1.5] sm:block" />
+    <Menu defaultOpen={defaultOpen}>
+      <MenuTrigger className={USER_MENU_TRIGGER}>
+        <UserMenuFace session={session} />
       </MenuTrigger>
       <MenuContent className="w-[280px]">
         <MenuLabel className="flex flex-col gap-0.5 text-text">

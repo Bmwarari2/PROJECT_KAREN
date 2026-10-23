@@ -1,9 +1,9 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
+import { IntentLink as Link } from '@/components/intent-link';
 import { ArrowRight } from 'lucide-react';
 import { cn, focusRing } from '@thapsus/ui';
-import { initials } from '@/components/workspace/user-menu';
+import { initials } from '@/components/workspace/user-menu-button';
 
 /**
  * Dashboard building blocks (DESIGN.md §4 page body, §6 cards): panels on `surface-raised` over the

@@ -186,9 +186,14 @@ export default function PeoplePage() {
   // dates come from the browser's clock after hydration (the server's clock never shows through)
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  const zone = mounted ? viewerZone(session.timeZone) : null;
+  // time zone and date computations are slow in the Temporal polyfill: once per mount, not per render
+  const zone = React.useMemo(
+    () => (mounted ? viewerZone(session.timeZone) : null),
+    [mounted, session.timeZone],
+  );
+  const today = React.useMemo(() => (zone ? todayIn(zone) : null), [zone]);
   const canReport = hasPermission(session, 'reports.run') || hasPermission(session, 'reports.read_team');
-  const counts = useStatusCounts(zone ? todayIn(zone) : null, canReport && canRead);
+  const counts = useStatusCounts(today, canReport && canRead);
 
   // filter choices (reference data everyone signed in may read), loaded once a filter needs them
   const [filterOpen, setFilterOpen] = React.useState(false);

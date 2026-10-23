@@ -10,10 +10,29 @@ export class ApiProblem extends Error {
   }
 }
 
+// Identical GETs in flight at the same time (the shell's badge counts and the home dashboard ask for
+// the same lists) share one request; each caller gets its own copy of the result. Nothing is kept once
+// the request settles.
+const inflight = new Map<string, Promise<unknown>>();
+
 export async function api<T = unknown>(
   path: string,
   init: RequestInit & { json?: unknown } = {},
 ): Promise<T> {
+  const plainGet = Object.keys(init).length === 0;
+  if (plainGet && typeof window !== 'undefined') {
+    let pending = inflight.get(path);
+    if (!pending) {
+      pending = request<T>(path, init).finally(() => inflight.delete(path));
+      inflight.set(path, pending);
+    }
+    const result = (await pending) as T;
+    return result === undefined ? result : structuredClone(result);
+  }
+  return request<T>(path, init);
+}
+
+async function request<T>(path: string, init: RequestInit & { json?: unknown }): Promise<T> {
   const { json, headers, ...rest } = init;
   const res = await fetch(path, {
     credentials: 'same-origin',

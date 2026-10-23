@@ -2296,7 +2296,8 @@
     "teamEmpty": "No timesheets for this week yet.",
     "decided": "Decision saved.",
     "approveFor": "Approve the timesheet for {name}",
-    "rejectFor": "Reject the timesheet for {name}"
+    "rejectFor": "Reject the timesheet for {name}",
+    "lead": "Your recorded hours against the rota, week by week, with the working-time checks for where you work."
   },
   "compliance": {
     "title": "Compliance centre",
@@ -5455,7 +5456,8 @@
       "holiday": "{name} (public holiday)",
       "holidayUnnamed": "Public holiday",
       "open": "Time overview"
-    }
+    },
+    "intro": "What needs your attention, your own time and pay, and the week ahead, in one place."
   },
   "timeOverview": {
     "teamCalendar": "Team calendar",
