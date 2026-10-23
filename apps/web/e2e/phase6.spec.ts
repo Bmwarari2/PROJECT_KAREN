@@ -4,6 +4,7 @@ import pg from 'pg';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { E2E_DB } from './env';
 import { expectAccessible, PASSWORD, signUpAndEnrol } from './helpers';
+import { expectModulePage, moduleTabs, openModule } from './module-helpers';
 
 /**
  * Phase 6 flows in the browser (functional project, axe on every screen): a payroll admin exports a
@@ -110,7 +111,7 @@ test('a payroll admin exports a pay period and downloads the file', async ({ pag
   });
 
   await page.goto('/app/payroll');
-  await expect(page.getByRole('heading', { name: 'Payroll', level: 1 })).toBeVisible();
+  await expectModulePage(page, 'Pay', 'Payroll');
   await page.getByLabel('Connector name').fill('Bureau CSV');
   await page.getByLabel('Payroll system or format').selectOption('csv');
   await page.getByRole('button', { name: 'Add connector' }).click();
@@ -157,8 +158,10 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
 
   await employeeLogin();
   await signIn(page, person.email);
-  await page.getByRole('navigation', { name: 'App' }).first().getByRole('link', { name: 'Payslips' }).click();
+  // an employee's Pay module has one tab, so the rail opens their payslips (no payroll tab)
+  await openModule(page, 'Pay');
   await page.waitForURL(/\/app\/payslips$/);
+  await expect(moduleTabs(page, 'Pay')).toHaveCount(0);
   await expect(page.getByText('March 2026')).toBeVisible();
   await expect(page.getByText('New', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Upload payslips or year-end documents' })).toHaveCount(0);
