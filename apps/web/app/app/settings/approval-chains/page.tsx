@@ -242,7 +242,7 @@ function PolicyItem({ p, onEdit }: { p: Policy; onEdit: () => void }) {
   return (
     <li className="flex flex-col gap-3 rounded-md border border-border p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h4 className="mr-auto text-callout font-semibold">{p.name}</h4>
+        <h3 className="mr-auto text-callout font-semibold">{p.name}</h3>
         {p.enabled ? <Badge tone="success">{t('admin.on')}</Badge> : <Badge>{t('admin.off')}</Badge>}
         <Badge>{t('admin.approvals.priorityN', { n: p.priority })}</Badge>
         <Button size="sm" variant="ghost" aria-label={t('admin.editLabel', { name: p.name })} onClick={onEdit}>

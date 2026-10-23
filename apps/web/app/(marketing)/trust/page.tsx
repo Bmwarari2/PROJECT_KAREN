@@ -45,7 +45,7 @@ export default async function TrustPage() {
       </Section>
 
       <Section tone="inverse" labelledBy="residency-title">
-        <Globe2 aria-hidden className="h-10 w-10 stroke-[1.25]" />
+        <Globe2 aria-hidden className="h-10 w-10 stroke-[1.5]" />
         <h2 id="residency-title" className="mt-6 text-title-1 md:text-headline">
           {t('trust.residency.title')}
         </h2>

@@ -160,7 +160,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <Link href="/app/settings/roles" className="text-callout">
         {t('access.roles.back')}
       </Link>
-      {role?.builtIn ? <p className="max-w-[680px] text-callout text-text-secondary">{t('access.roles.readOnly')}</p> : null}
+      {role?.builtIn ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.roles.readOnly')}</p> : null}
 
       <Card className="flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2">
@@ -235,8 +235,8 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <Card className="flex flex-col gap-4">
         <CardTitle>{t('access.editor.fieldsTitle')}</CardTitle>
         <p className="text-callout text-text-secondary">{t('access.editor.fieldsBody')}</p>
-        <div className="overflow-x-auto">
-          <Table dense>
+        <div>
+          <Table dense scrollLabel={t('access.editor.fieldsTitle')}>
             <THead>
               <tr>
                 <TH>{t('access.editor.fieldCol')}</TH>
@@ -287,7 +287,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
         </div>
         {otherRules.length ? (
           <div>
-            <h4 className="text-callout font-semibold">{t('access.editor.otherRules')}</h4>
+            <h3 className="text-callout font-semibold">{t('access.editor.otherRules')}</h3>
             <ul className="mt-2 flex flex-col gap-1 text-callout text-text-secondary">
               {otherRules.map(([k, v]) => (
                 <li key={k}>

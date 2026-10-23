@@ -76,7 +76,7 @@ export default function ImportsPage() {
         <CardTitle>{t('imports.step1')}</CardTitle>
         <p className="text-callout text-text-secondary">{t('imports.step1Body')}</p>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="text-callout">
+          <label className="min-w-0 max-w-full text-callout">
             <span className="sr-only">{t('imports.file')}</span>
             <input type="file" accept=".csv,.xlsx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </label>

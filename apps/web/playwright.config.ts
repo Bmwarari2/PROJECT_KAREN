@@ -18,6 +18,9 @@ const visual = (name: string, device: object, colorScheme: 'light' | 'dark') => 
     ...device,
     colorScheme,
     reducedMotion: 'reduce' as const,
+    // Text inside composited layers (the translucent top bar) switched between subpixel and greyscale
+    // anti-aliasing from run to run; greyscale everywhere makes screenshots repeatable.
+    launchOptions: { args: ['--disable-lcd-text', '--force-color-profile=srgb'] },
     baseURL: `http://${hostForBrowser}:${webPort}`,
     ...(remote ? { connectOptions: { wsEndpoint: remote } } : {}),
   },
@@ -28,7 +31,9 @@ export default defineConfig({
   outputDir: './e2e/.results',
   snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}',
   timeout: 240_000,
-  expect: { timeout: 60_000, toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled', caret: 'hide' } },
+  // Screenshots come from one pinned Linux container, so they are pixel-stable: allow only a handful of
+  // differing pixels (a ratio of 1% hid whole new sidebar sections on a desktop page).
+  expect: { timeout: 60_000, toHaveScreenshot: { maxDiffPixels: 50, animations: 'disabled', caret: 'hide' } },
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

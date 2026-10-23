@@ -220,3 +220,18 @@ Ask HR is off by default and can only be enabled in the UK cell (ADR-0110). It c
   3. Update SUBPROCESSORS.md and give customers 30 days' notice.
 - [ ] 7.6 **Entitle a workspace** (after 7.1–7.4): the back office, `PUT /v1/backoffice/tenants/{tenantId}/features/aiAssistant` with `{ "enabled": true }` as a super admin. The customer's owner then turns Ask HR on in Settings → Ask HR and chooses the policy folders.
 
+
+## 8. Accessibility checks that need people and real assistive technology (Phase 12)
+
+The automated sweep (`apps/web/e2e/a11y-sweep.spec.ts`) and the flow specs cover what tools can prove (`docs/ACCESSIBILITY.md` §3). These items need a person, ideally including disabled users, before launch and after major UI changes. Use a staging workspace with fictional data only.
+
+- [ ] 8.1 **Screen-reader pass of each key flow in `docs/ACCESSIBILITY.md` §5** (sign up and MFA, sign in, add employee, request and approve leave, rota and shift swap, clock in and kiosk, timesheets, documents and signing, payslips, reports, settings, privacy requests):
+  1. NVDA (latest) with Chrome on Windows, and JAWS with Edge.
+  2. VoiceOver with Safari on macOS, and on an iPhone with the installed PWA.
+  3. TalkBack with Chrome on a low-cost Android phone (2 GB RAM class).
+  4. For each step, record whether names, roles, states, errors and toasts are announced, and whether focus lands where expected after dialogs close and pages change. File each problem as an issue labelled `a11y`.
+- [ ] 8.2 **Windows high contrast (forced colours)**: walk the same flows with a Windows contrast theme on; check that focus rings, selected tabs, badges, toggles and the rota grid stay visible.
+- [ ] 8.3 **Zoom and reflow on real devices**: browser zoom to 200% and 400% on a 1280px laptop, and the largest system text size on iOS and Android; nothing may be cut off or need sideways scrolling (tables excepted).
+- [ ] 8.4 **Speech input**: complete sign-in, a leave request and a rota change with Voice Control (macOS or iOS) and Dragon (Windows), using the visible labels only.
+- [ ] 8.5 **Kiosk in place**: on the tablet model customers will mount, check the keypad and Clock in buttons at arm's length, with gloves if the site uses them, and with the screen reader on.
+- [ ] 8.6 **Accessibility statement**: have legal review an accessibility statement (WCAG 2.2 AA, known limitations from 8.1–8.5, contact route) for the trust centre; publish it in both catalogues.

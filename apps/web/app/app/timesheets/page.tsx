@@ -80,7 +80,7 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
           </Button>
         ) : null}
       </div>
-      <Table dense>
+      <Table dense scrollLabel={t('timesheets.mine')}>
         <THead>
           <tr>
             <TH>{t('timesheets.day')}</TH>
@@ -178,7 +178,7 @@ function TeamWeek({ week }: { week: string }) {
       {!list.data ? (
         <Skeleton className="h-32" />
       ) : list.data.data.length ? (
-        <Table dense>
+        <Table dense scrollLabel={t('timesheets.team')}>
           <THead>
             <tr>
               <TH>{t('timesheets.person')}</TH>

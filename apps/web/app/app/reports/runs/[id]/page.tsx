@@ -57,7 +57,7 @@ export default function RunPage() {
     };
   }, [id, poll]);
 
-  if (missing) return <EmptyState icon={<FileClock aria-hidden />} title={t('errors.notFound')} />;
+  if (missing) return <EmptyState level={1} icon={<FileClock aria-hidden />} title={t('errors.notFound')} />;
   if (!run) return <Skeleton className="h-48 w-full" />;
   const when = (v: string | null) => (v ? formatDateTime(v, locale, zone) : '—');
   return (

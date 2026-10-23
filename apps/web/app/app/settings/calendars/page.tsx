@@ -132,7 +132,7 @@ export default function CalendarsPage() {
           <ul className="grid gap-3 md:grid-cols-2">
             {calendars.data.map((c) => (
               <li key={c.id} className="flex flex-col gap-2 rounded-md border border-border p-4">
-                <h4 className="text-callout font-semibold">{c.name}</h4>
+                <h3 className="text-callout font-semibold">{c.name}</h3>
                 <p className="text-footnote text-text-secondary">{scope(c)}</p>
                 <ul className="flex flex-col gap-1 text-callout">
                   {c.days.map((d) => (

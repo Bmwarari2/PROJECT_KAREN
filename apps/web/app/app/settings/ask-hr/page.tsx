@@ -70,7 +70,7 @@ export default function AskHrSettingsPage() {
       toast({ title: t('askHr.settings.saved'), tone: 'success' });
     });
 
-  if (settings.error) return <EmptyState icon={<Bot aria-hidden />} title={settings.error.title} />;
+  if (settings.error) return <EmptyState level={1} icon={<Bot aria-hidden />} title={settings.error.title} />;
   if (!s) return <Skeleton className="h-96 w-full" />;
   const toggle = (list: string[], id: string, on: boolean) => (on ? [...new Set([...list, id])] : list.filter((x) => x !== id));
   const canToggle = s.available && s.entitled && s.canManageFlag;

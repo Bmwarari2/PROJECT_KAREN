@@ -68,7 +68,7 @@ export default function ExportsPage() {
   const c = closure.data?.closure;
   const scheduled = c && c.status === 'scheduled';
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardTitle>{t('privacy.ui.exports.title')}</CardTitle>
         <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.exports.lead')}</p>
@@ -77,8 +77,8 @@ export default function ExportsPage() {
           {t('privacy.ui.exports.start')}
         </Button>
         {exports.data?.length ? (
-          <div className="mt-4 overflow-x-auto">
-            <Table dense>
+          <div className="mt-4">
+            <Table dense scrollLabel={t('privacy.ui.exports.title')}>
               <THead>
                 <tr>
                   <TH>{t('privacy.ui.exports.requested')}</TH>

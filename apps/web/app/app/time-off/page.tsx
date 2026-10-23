@@ -95,7 +95,7 @@ function SicknessCard() {
           {t('timeOff.sickness.submit')}
         </Button>
       </form>
-      <h4 className="mt-5 text-callout font-semibold">{t('timeOff.sickness.recent')}</h4>
+      <h3 className="mt-5 text-callout font-semibold">{t('timeOff.sickness.recent')}</h3>
       {recent.data?.length ? (
         <ul className="mt-2 flex flex-col gap-2">
           {recent.data.slice(0, 10).map((r) => (

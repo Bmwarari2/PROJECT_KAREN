@@ -39,7 +39,7 @@ function Section({ kind }: { kind: Kind }) {
         <Button type="submit">{t('common.add')}</Button>
       </form>
       {data?.length ? (
-        <Table dense>
+        <Table dense scrollLabel={t(`orgSettings.${kind}`)}>
           <THead>
             <tr>
               {FIELDS[kind].map((f) => (

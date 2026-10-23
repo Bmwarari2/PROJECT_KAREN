@@ -11,6 +11,7 @@ import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
+import { revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
 import { visibleSections } from './settings/sections';
 
@@ -120,6 +121,12 @@ export function AppShell({ children, theme, initialSession = null }: { children:
       .then((s) => setAskHr(s.canAsk))
       .catch(() => setAskHr(false));
   }, [aiFlag, experienceTick, path]);
+
+  // The sidebar scrolls on its own: keep the current entry in view (it may sit below the fold).
+  React.useEffect(() => {
+    const link = document.querySelector<HTMLElement>('aside nav a[aria-current="page"]');
+    revealIn(link?.closest('aside') ?? null, link);
+  }, [path, session]);
 
   // Signing out sends any offline clock punches first, ends the session (the API answers with
   // Clear-Site-Data) and reloads the page so nothing from the session stays in memory (ASVS V14.3.1).

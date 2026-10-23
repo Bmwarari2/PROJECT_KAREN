@@ -1258,6 +1258,52 @@ Sources:
 
 **Consequences.** `docs/ASVS.md` lists each gap next to its requirement, so the next review starts from the same list.
 
+## ADR-0140 — Accessibility sweep of every route, and the focus-ring fix (2026-10-19)
+
+**Context.** PROGRESS 12.5 asks for a WCAG 2.2 AA audit of the key flows with automated and manual checks. axe already ran in each feature spec, but only on the states those specs visit; nothing proved that every screen was covered, and axe cannot test keyboard reachability, focus visibility, reflow, text spacing or reduced motion. The first sweep showed that no `Button`, `Input`, `Select` or focusable table region had a visible focus ring: Tailwind v4's `outline-none` sets `--tw-outline-style: none`, and `focus-visible:outline-2` reuses that variable, so the two together draw nothing.
+
+**Decision.**
+- `apps/web/e2e/a11y-sweep.spec.ts` enumerates `apps/web/app/**/page.tsx` and opens every route (signed out, as the owner of a fictional workspace with representative data, as a paired kiosk and as a Thapsus super admin). On each it runs axe (WCAG 2.0/2.1/2.2 A and AA tags) in light and dark mode at 1280px and again at 320px, and its own checks: no horizontal scroll at 320px (1.4.10), Tab reaches every visible control with a visible and unobscured focus indicator (2.1.1, 2.4.7, 2.4.11), the WCAG text-spacing overrides clip nothing (1.4.12), nothing animates under reduced motion (2.3.3), the contextual help link is in the top bar on every app screen (3.2.6), and no uncaught script error. A route that belongs to no area, or a dynamic route with no fictional record to open, fails the sweep. Separate tests check accessible authentication (3.3.8) and complete sign-in, approving leave and clocking in at the kiosk with the keyboard alone.
+- Problems are collected per area and reported together, so one run lists everything to fix.
+- The shared `focusRing` sets `focus-visible:outline-solid` explicitly; `outline-none` is not combined with `focus-visible:outline-*` anywhere. A unit test guards the classes.
+- Checks that need people or real assistive technology (screen readers, forced colours, speech input, real devices) are listed per flow in `docs/ACCESSIBILITY.md` and as numbered steps in `docs/HUMAN_TODO.md` §8.
+
+**Consequences.** New screens are swept automatically. The sweep takes several minutes because it walks every tab stop; it runs in the functional e2e project like the other specs. Heuristic checks (text clipping, obscured focus sampled at five points) can miss partial problems, which is why the manual checklist stays.
+
+## ADR-0141 — Visual baselines for every screen, with a fixed clock and generic masks (2026-10-19)
+
+**Context.** PROGRESS 12.6 asks for every screen to be checked against DESIGN.md in light and dark mode on phone and desktop. The visual spec covered nine screens, and its tolerance (1% of pixels) let a desktop page gain sixteen sidebar entries without failing.
+
+**Decision.**
+- `visual.spec.ts` enumerates the same `page.tsx` routes and captures a full-page baseline of each in the four visual projects; the only exclusions are listed with a reason in the spec (staff-only back-office screens that list every tenant the run creates, and a support ticket whose SLA deadlines and reference come from the real clock and random bytes). All of them are still opened by the accessibility sweep.
+- Each project signs up its own workspace with a deterministic name (the project name), adds one fictional employee and one report run, and fixes the browser clock (`page.clock.setFixedTime`) so weeks and calendars do not change with the date. Text that depends on the real date, random ids or the host (timestamps, relative times, UUIDs, ticket references, URLs) is detected in the page and masked, so the layout around it stays under test.
+- Screenshots come from one pinned container, so the tolerance is now `maxDiffPixels: 50` instead of a ratio. Text in composited layers (the translucent top bar) switched between subpixel and greyscale anti-aliasing from run to run, so the visual projects launch Chromium with `--disable-lcd-text` and `--force-color-profile=srgb`. The container's run-server accepts those flags only with `--unsafe`, so its port is published on the loopback interface only.
+- `scripts/visual.mjs` takes `VISUAL_SERVER_PORT`, so parallel checkouts on one machine each run their own browser container.
+
+**Consequences.** About 80 baselines per project. A deliberate visual change regenerates only the affected files (`UPDATE_SNAPSHOTS=all` for those screens, or delete them and use `missing`). Server-rendered text that depends on the real date is masked rather than compared.
+
+## ADR-0142 — The app sidebar scrolls on its own (2026-10-19)
+
+**Context.** An owner's sidebar has about 21 entries, taller than a 900px desktop viewport, so the whole page scrolled to fit the navigation, the page height depended on a user's permissions, and full-page screenshots moved the top bar.
+
+**Decision.** On desktop the sidebar is `position: sticky`, full viewport height, with its own vertical scroll (`overscroll-contain`) and scroll padding so a focused entry is never flush with its edge. `html` keeps `scroll-padding-top` of the top bar height plus 8px, so focused or linked content is never hidden under the sticky top bar (WCAG 2.4.11). Below `lg` the navigation stays in the sheet.
+
+The current entry is scrolled into view on each navigation (in the sidebar and in the settings list, which follows the same pattern). The app top bar is opaque: the translucent blur stays on the marketing nav only, because in the app it meant a composited backdrop filter on every scroll on low-cost phones.
+
+**Consequences.** Page height depends only on the page's content. Long navigation lists scroll inside the sidebar; Tab into its hidden part scrolls it into view.
+
+## ADR-0143 — Lighthouse covers the key screens; pages paint their heading before their data (2026-10-19)
+
+**Context.** PROGRESS 12.7 asks for mobile performance ≥ 90 and accessibility ≥ 95 on key marketing pages and app screens, with margin for slower CI machines. Lighthouse covered six screens. Its simulated throttling estimates the largest paint from the observed trace, so a heading that React re-creates when data arrives, or text repainted after a late font swap, counts as a late largest paint even when the first paint was early.
+
+**Decision.**
+- `scripts/lighthouse.mjs` audits `/`, `/pricing`, `/trust`, `/status`, `/developers`, `/signin`, `/signup` and the app's home, Me, people, time off, rota, timesheets, reports, report builder, settings, notifications and security screens (median of three runs). `LIGHTHOUSE_DEBUG=1` prints, per run, the largest-paint element, first paint, server response, page weight, main-thread time and the most expensive scripts.
+- Every page renders its heading and intro on the server, before its data arrives, in the same elements as the loaded page (React keeps them), and every state of a page (loading, empty, no access) has a heading. The rota's explanation of draft shifts moved up next to its heading for that reason.
+- The self-hosted Inter font is preloaded from the document head, so where no system font in the stack exists (Android, Linux) text is drawn once in its final font.
+- Message catalogues are scoped per route (ADR-0150), which removed about 55 KB of compressed HTML from every page.
+
+**Consequences.** Results on a shared machine still vary with CPU load; total blocking time is the noisiest metric, so a page that fails only on it is re-run before it is treated as a regression. Pages with large client components (rota grid, report builder) have the least margin and are the first candidates for code splitting if CI numbers drop.
+
 ## ADR-0150 — Message catalogues are scoped per route segment (2026-10-19)
 
 **Context.** The root layout passed the whole flattened catalogue (about 5,000 messages, 200 KB) to the client `I18nProvider`, so every page's HTML and RSC payload carried it: about 219 KB of RSC and 266 KB of HTML for `/app`, growing with every phase. Server components translate with the full catalogue on the server and send only the strings, so only client components need messages in the browser.

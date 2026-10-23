@@ -14,7 +14,7 @@ export default function RolesPage() {
   const { data, error } = useApi<Role[]>('/v1/roles');
   const canManage = hasPermission(session, 'roles.manage');
 
-  if (error) return <EmptyState title={error.status === 403 ? t('errors.forbidden') : t('common.error')} />;
+  if (error) return <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('common.error')} />;
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -29,7 +29,7 @@ export default function RolesPage() {
           </Link>
         ) : null}
       </div>
-      <p className="max-w-[680px] text-callout text-text-secondary">{t('access.roles.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.roles.intro')}</p>
       {!data ? (
         <Skeleton className="h-64 w-full" />
       ) : data.length === 0 ? (

@@ -39,13 +39,27 @@ export function SidebarNav({ items, label, renderLink }: { items: NavItem[]; lab
   );
 }
 
+/**
+ * Sticky, full viewport height and scrolls on its own, so the page height never depends on how many
+ * entries a user's navigation has. scroll-padding keeps a focused entry (and its focus ring) clear of
+ * the edges when Tab moves into the part that is scrolled out of view.
+ */
 export function Sidebar({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <aside className={cn('hidden w-[var(--sidebar-width)] shrink-0 flex-col gap-6 border-r border-border bg-surface px-3 py-4 lg:flex', className)}>{children}</aside>;
+  return (
+    <aside className={cn('sticky top-0 hidden h-dvh w-[var(--sidebar-width)] shrink-0 scroll-py-4 flex-col gap-6 self-start overflow-y-auto overscroll-contain border-r border-border bg-surface px-3 py-4 lg:flex', className)}>
+      {children}
+    </aside>
+  );
 }
 
+/**
+ * App top bar: sticky and opaque. The translucent blur belongs to the marketing nav; in the app it
+ * cost a composited backdrop filter on every scroll on low-cost phones and made text in the bar
+ * rasterise differently from run to run.
+ */
 export function TopBar({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <header className={cn('sticky top-0 z-30 flex h-[var(--topbar-height)] items-center gap-3 border-b border-border bg-bg/80 px-4 backdrop-blur-xl md:px-6', className)}>
+    <header className={cn('sticky top-0 z-30 flex h-[var(--topbar-height)] items-center gap-3 border-b border-border bg-bg px-4 md:px-6', className)}>
       {children}
     </header>
   );
@@ -54,7 +68,7 @@ export function TopBar({ children, className }: { children: React.ReactNode; cla
 /** Marketing nav: slim, sticky, translucent and blurred. */
 export function MarketingNav({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <header className={cn('sticky top-0 z-40 h-[var(--nav-height)] border-b border-border/60 bg-bg/70 backdrop-blur-[20px] backdrop-saturate-[180%] supports-[not(backdrop-filter:blur(1px))]:bg-bg', className)}>
+    <header className={cn('sticky top-0 z-40 h-[var(--nav-height)] border-b border-border/60 bg-bg/72 backdrop-blur-[20px] backdrop-saturate-[180%] supports-[not(backdrop-filter:blur(1px))]:bg-bg', className)}>
       <div className="mx-auto flex h-full max-w-[var(--content-width)] items-center gap-6 px-4 md:px-6">{children}</div>
     </header>
   );

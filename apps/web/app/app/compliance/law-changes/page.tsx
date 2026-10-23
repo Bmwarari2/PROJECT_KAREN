@@ -74,12 +74,12 @@ export default function LawChangesPage() {
                 <CardTitle>{i.title}</CardTitle>
                 <p className="text-callout">{i.summary}</p>
                 <div>
-                  <h4 className="text-callout font-semibold">{t('compliance.law.whatToDo')}</h4>
+                  <h3 className="text-callout font-semibold">{t('compliance.law.whatToDo')}</h3>
                   <p className="text-callout">{i.whatToDo}</p>
                 </div>
                 {i.ruleVersions.length ? (
                   <div>
-                    <h4 className="text-footnote font-semibold text-text-secondary">{t('compliance.law.rules')}</h4>
+                    <h3 className="text-footnote font-semibold text-text-secondary">{t('compliance.law.rules')}</h3>
                     {i.ruleVersions.map((v) => (
                       <SourceLink key={`${v.jurisdiction}:${v.key}:${v.effectiveFrom}`} source={{ url: v.source.url, title: `${v.jurisdiction} · ${v.key} · ${formatDate(v.effectiveFrom, locale)}` }} verifiedOn={v.verifiedOn} />
                     ))}

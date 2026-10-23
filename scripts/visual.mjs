@@ -6,15 +6,18 @@ import { readFileSync, realpathSync } from 'node:fs';
 
 const version = JSON.parse(readFileSync('node_modules/.pnpm/node_modules/@playwright/test/package.json', 'utf8')).version;
 const image = `mcr.microsoft.com/playwright:v${version}-noble`;
-const name = 'thr-playwright-server';
-const port = 3333;
+// VISUAL_SERVER_PORT lets parallel checkouts on one machine each run their own browser container.
+const port = Number(process.env.VISUAL_SERVER_PORT ?? 3333);
+const name = port === 3333 ? 'thr-playwright-server' : `thr-playwright-server-${port}`;
 
 const sh = (cmd) => execSync(cmd, { stdio: 'inherit' });
 spawnSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
 // The server comes from the host's own (lockfile-pinned) playwright-core, mounted read-only, so the
 // container needs no network access (no `npx` download) and always matches the client version.
 const core = realpathSync('node_modules/.pnpm/node_modules/playwright-core');
-sh(`docker run -d --rm --name ${name} -p ${port}:${port} --add-host=host.docker.internal:host-gateway --ipc=host -v "${core}:/opt/playwright-core:ro" ${image} node /opt/playwright-core/cli.js run-server --port ${port} --host 0.0.0.0`);
+// --unsafe lets the visual projects pass Chromium flags (greyscale text anti-aliasing, sRGB) so
+// screenshots repeat exactly; the port is published on the loopback interface only.
+sh(`docker run -d --rm --name ${name} -p 127.0.0.1:${port}:${port} --add-host=host.docker.internal:host-gateway --ipc=host -v "${core}:/opt/playwright-core:ro" ${image} node /opt/playwright-core/cli.js run-server --port ${port} --host 0.0.0.0 --unsafe`);
 try {
   // wait for the server to accept connections
   for (let i = 0; i < 60; i++) {

@@ -26,15 +26,22 @@ const THRESHOLDS = { performance: 90, accessibility: 95 };
 const ALL_PAGES = [
   { path: '/', label: 'Marketing home' },
   { path: '/pricing', label: 'Pricing' },
+  { path: '/trust', label: 'Trust centre' },
   { path: '/status', label: 'Status page' },
+  { path: '/developers', label: 'Developers' },
   { path: '/signin', label: 'Sign in' },
   { path: '/signup', label: 'Sign up' },
   { path: '/app', label: 'App home (signed in)', auth: true },
-  { path: '/app/security', label: 'App security (signed in)', auth: true },
   { path: '/app/me', label: 'Me hub (signed in)', auth: true },
-  { path: '/app/notifications', label: 'Notifications and preferences (signed in)', auth: true },
+  { path: '/app/people', label: 'People (signed in)', auth: true },
+  { path: '/app/time-off', label: 'Time off (signed in)', auth: true },
+  { path: '/app/rota', label: 'Rota (signed in)', auth: true },
+  { path: '/app/timesheets', label: 'Timesheets (signed in)', auth: true },
   { path: '/app/reports', label: 'Reports catalogue (signed in)', auth: true },
   { path: '/app/reports/builder', label: 'Report builder (signed in)', auth: true },
+  { path: '/app/settings', label: 'Settings (signed in)', auth: true },
+  { path: '/app/notifications', label: 'Notifications and preferences (signed in)', auth: true },
+  { path: '/app/security', label: 'App security (signed in)', auth: true },
 ];
 // LIGHTHOUSE_ONLY=/app/me,/signin limits a run to some pages (debugging); verify always runs them all.
 const PAGES = process.env.LIGHTHOUSE_ONLY ? ALL_PAGES.filter((p) => process.env.LIGHTHOUSE_ONLY.split(',').includes(p.path)) : ALL_PAGES;
@@ -154,7 +161,19 @@ try {
           .map(([, a]) => a.details?.items?.flatMap?.((x) => x.items ?? [x]).map((x) => (x?.type === 'node' ? x : x?.node)).find(Boolean))
           .find(Boolean);
         const lcpElement = lcpNode ? `${lcpNode.selector} "${String(lcpNode.nodeLabel ?? '').slice(0, 60)}"` : 'unknown';
-        if (process.env.LIGHTHOUSE_DEBUG) console.log(`  ${p.path} run ${run + 1}: LCP element ${lcpElement}`);
+        if (process.env.LIGHTHOUSE_DEBUG) {
+          // where the time goes: first paint, server response, page weight and the scripts that cost most
+          const a = res.lhr.audits;
+          const ms = (id) => Math.round(a[id]?.numericValue ?? 0);
+          const scripts = (a['bootup-time']?.details?.items ?? [])
+            .slice(0, 3)
+            .map((x) => `${String(x.url).split('/').pop()} ${Math.round(x.total)}ms`)
+            .join(', ');
+          console.log(`  ${p.path} run ${run + 1}: LCP element ${lcpElement}`);
+          const a11yMisses = res.lhr.categories.accessibility.auditRefs.filter((r) => r.weight > 0 && a[r.id]?.score !== null && a[r.id]?.score < 1).map((r) => r.id);
+          if (a11yMisses.length) console.log(`    accessibility audits not passed: ${a11yMisses.join(', ')}`);
+          console.log(`    FCP ${ms('first-contentful-paint')}ms  LCP ${ms('largest-contentful-paint')}ms  TTFB ${ms('server-response-time')}ms  bytes ${Math.round((a['total-byte-weight']?.numericValue ?? 0) / 1024)}KiB  main thread ${ms('mainthread-work-breakdown')}ms  scripts: ${scripts}`);
+        }
         const c = res.lhr.categories;
         scores.push({ lcpElement, performance: Math.round(c.performance.score * 100), accessibility: Math.round(c.accessibility.score * 100), bestPractices: Math.round(c['best-practices'].score * 100), lcp: res.lhr.audits['largest-contentful-paint'].numericValue, cls: res.lhr.audits['cumulative-layout-shift'].numericValue, tbt: res.lhr.audits['total-blocking-time'].numericValue });
       }

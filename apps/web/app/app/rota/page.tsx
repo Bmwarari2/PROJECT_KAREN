@@ -311,7 +311,6 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
           onOpen={onOpen}
         />
       )}
-      <p className="text-footnote text-text-secondary">{t('rota.legend')}</p>
       <ShiftDialog draft={draft} onClose={() => setDraft(null)} onSaved={reset} locationId={locationId} zone={zone} />
       <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
         <DialogContent title={t('rota.applyTemplate')} description={t('rota.applyTemplateBody', { date: formatDate(days[0]!, locale) })} closeLabel={t('common.close')}>
@@ -537,6 +536,8 @@ export default function RotaPage() {
         <h1 className="mr-auto text-title-2">{t('rota.title')}</h1>
         {week ? <WeekNav week={week} setWeek={(w) => setWeek(weekStartOf(w, startsOn))} zone={zone} startsOn={startsOn} /> : null}
       </div>
+      {/* Rendered with the heading, before the week loads: it is the page's largest text on a phone. */}
+      {canView ? <p className="-mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('rota.legend')}</p> : null}
       {!week ? (
         <Skeleton className="h-64 w-full" />
       ) : canView ? (

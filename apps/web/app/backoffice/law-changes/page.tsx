@@ -46,7 +46,7 @@ export default function LawChangesAdmin() {
   return (
     <div className="flex flex-col gap-6">
       <PageTitle title={t('backoffice.lawChanges.title')} lead={t('backoffice.lawChanges.lead')} />
-      <Table>
+      <Table scrollLabel={t('backoffice.lawChanges.title')}>
         <caption className="sr-only">{t('backoffice.lawChanges.title')}</caption>
         <THead>
           <tr>

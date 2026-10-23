@@ -2,6 +2,8 @@
 @layer base {
   html {
     font-family: var(--font-sans);
+    /* WCAG 2.4.11: content scrolled to (in-page links, focus) stays clear of the sticky top bar or marketing nav. */
+    scroll-padding-top: calc(var(--topbar-height) + var(--space-2));
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -19,6 +21,16 @@
   a {
     color: var(--color-accent);
     text-underline-offset: 3px;
+  }
+  /* Native file pickers have a wide intrinsic size: keep them inside a 320px screen (WCAG 1.4.10).
+     A percentage width lets the picker shrink with its container (max-width alone does not). */
+  input[type='file'] {
+    max-width: 100%;
+  }
+  @media (max-width: 639px) {
+    input[type='file'] {
+      width: 100%;
+    }
   }
   ::selection {
     background: var(--color-accent-subtle);

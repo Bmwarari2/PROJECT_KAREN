@@ -80,7 +80,7 @@ export default function BuilderPage() {
     } else setSpec(initialSpec(catalogue.data.datasets[0]!, zone));
   }, [catalogue.data, saved.data, saved.error, savedId, spec, zone]);
 
-  if (catalogue.error) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
+  if (catalogue.error) return <EmptyState level={1} icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
   // Same back link and heading as the loaded page, so React keeps these nodes when the form arrives
   // (they are the largest paint on a phone and must not be re-created later).
   if (!catalogue.data || !spec)
@@ -97,7 +97,7 @@ export default function BuilderPage() {
         <Skeleton className="h-96 w-full" />
       </div>
     );
-  if (!catalogue.data.datasets.length) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.builder.noDatasets')} />;
+  if (!catalogue.data.datasets.length) return <EmptyState level={1} icon={<Lock aria-hidden />} title={t('reports.builder.noDatasets')} />;
   const ds = catalogue.data.datasets.find((d) => d.key === spec.dataset) ?? catalogue.data.datasets[0]!;
   const fieldOf = (k: string) => ds.fields.find((f) => f.key === k);
   const groupable = ds.fields.filter((f) => f.groupable);

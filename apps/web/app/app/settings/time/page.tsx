@@ -118,7 +118,7 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
           {s.geofence.countries.map((c) => (
             <li key={c} className="flex flex-col gap-2 rounded-md border border-border p-4" data-testid={`geofence-${c}`}>
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className="mr-auto text-callout font-semibold">{t('admin.time.countryN', { country: c })}</h4>
+                <h3 className="mr-auto text-callout font-semibold">{t('admin.time.countryN', { country: c })}</h3>
                 <Badge tone="success">{t('admin.on')}</Badge>
                 <Button size="sm" variant="ghost" aria-label={t('admin.time.editNotice', { country: c })} onClick={() => edit(c)}>
                   <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -139,9 +139,9 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
         </ul>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4" aria-labelledby="geofence-form-title">
-        <h4 id="geofence-form-title" ref={form} tabIndex={-1} className="text-callout font-semibold outline-none">
+        <h3 id="geofence-form-title" ref={form} tabIndex={-1} className="text-callout font-semibold outline-none">
           {editing ? t('admin.time.editNoticeTitle', { country }) : t('admin.time.addCountry')}
-        </h4>
+        </h3>
         <Field id="geo-country" label={t('admin.time.country')} hint={t('admin.time.countryHint')}>
           {(p) => <Input {...p} required readOnly={editing} maxLength={2} pattern="[A-Za-z]{2}" autoCapitalize="characters" spellCheck={false} className="uppercase sm:w-24" value={country} onChange={(e) => setCountry(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())} />}
         </Field>

@@ -98,7 +98,7 @@ export default function UserAccessPage() {
   const options = useScopeOptions(scopeType);
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  if (error) return <EmptyState title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
+  if (error) return <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
   if (!data) return <Skeleton className="h-96 w-full" />;
   const { user, assignments } = data;
   const chosen = roles.data?.find((r) => r.id === roleId);
@@ -260,7 +260,7 @@ export default function UserAccessPage() {
               </fieldset>
             ) : null}
             {chosen?.isAdmin && !user.hasMfa ? (
-              <p role="status" className="max-w-[680px] text-callout text-warning">
+              <p role="status" className="max-w-[var(--prose-width)] text-callout text-warning">
                 {t('access.users.adminNoMfa')}
               </p>
             ) : null}

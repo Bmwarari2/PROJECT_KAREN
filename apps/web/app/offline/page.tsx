@@ -7,7 +7,7 @@ export default async function Offline() {
   const { t } = await serverContext();
   return (
     <main id="main" className="mx-auto max-w-[var(--prose-width)] px-4 py-24">
-      <EmptyState icon={<WifiOff aria-hidden />} title={t('offline.title')} body={t('offline.body')} />
+      <EmptyState level={1} icon={<WifiOff aria-hidden />} title={t('offline.title')} body={t('offline.body')} />
     </main>
   );
 }

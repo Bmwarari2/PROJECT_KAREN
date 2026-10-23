@@ -70,13 +70,14 @@ export default async function SubprocessorsPage({ searchParams }: { searchParams
           {TRUST.subprocessors.sections.map((s) => {
             const keep = s.columns.map((c, i) => ({ c, i })).filter(({ c }) => !otherRegions.includes(c));
             const sectionId = `sub-${SECTION_KEYS[s.title] ?? s.title.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+            const title = SECTION_KEYS[s.title] ? t(`trust.sub.section.${SECTION_KEYS[s.title]}`) : s.title;
             return (
-              <section key={s.title} aria-labelledby={sectionId}>
+              <section key={s.title} aria-labelledby={sectionId} className="min-w-0">
                 <h3 id={sectionId} className="text-title-3">
-                  {SECTION_KEYS[s.title] ? t(`trust.sub.section.${SECTION_KEYS[s.title]}`) : s.title}
+                  {title}
                 </h3>
-                <div className="mt-3 overflow-x-auto rounded-lg bg-surface-raised">
-                  <Table dense>
+                <div className="mt-3 rounded-lg bg-surface-raised">
+                  <Table dense scrollLabel={t('admin.tableScroll', { name: title })}>
                     <THead>
                       <tr>
                         {keep.map(({ c }) => (
@@ -102,12 +103,12 @@ export default async function SubprocessorsPage({ searchParams }: { searchParams
               </section>
             );
           })}
-          <section aria-labelledby="sub-changes">
+          <section aria-labelledby="sub-changes" className="min-w-0">
             <h3 id="sub-changes" className="text-title-3">
               {t('trust.sub.changes')}
             </h3>
-            <div className="mt-3 overflow-x-auto rounded-lg bg-surface-raised">
-              <Table dense>
+            <div className="mt-3 rounded-lg bg-surface-raised">
+              <Table dense scrollLabel={t('admin.tableScroll', { name: t('trust.sub.changes') })}>
                 <THead>
                   <tr>
                     <TH scope="col">{t('trust.sub.announced')}</TH>

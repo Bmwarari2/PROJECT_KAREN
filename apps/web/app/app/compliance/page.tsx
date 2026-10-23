@@ -50,7 +50,7 @@ export default function ComplianceDashboard() {
   const flsa = useApi<Flsa[]>('/v1/compliance/flsa');
   const period = (p: string | null) => (p ? t(`compliance.period.${p}`) : '');
 
-  if (d.error) return <EmptyState icon={<ShieldCheck aria-hidden />} title={t('compliance.noAccess')} />;
+  if (d.error) return <EmptyState level={1} icon={<ShieldCheck aria-hidden />} title={t('compliance.noAccess')} />;
   if (!d.data) return <Skeleton className="h-96 w-full" />;
   const x = d.data;
   return (

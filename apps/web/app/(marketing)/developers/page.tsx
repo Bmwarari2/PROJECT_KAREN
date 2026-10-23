@@ -96,7 +96,7 @@ export default async function DevelopersPage() {
         <div className="mt-6 flex flex-col gap-3">
           {all.map(([tag, ops]) => (
             <details key={tag} className="rounded-lg bg-surface-raised p-4 shadow-sm">
-              <summary className="cursor-pointer text-callout font-semibold">
+              <summary className="cursor-pointer py-1 text-callout font-semibold">
                 {t('developers.tag', { tag, count: ops.length })}
               </summary>
               <ul className="mt-3 flex flex-col divide-y divide-border">

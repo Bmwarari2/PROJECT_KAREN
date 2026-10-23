@@ -67,14 +67,14 @@ export default function PrivacyRequestsPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardTitle>{t('privacy.ui.form.title')}</CardTitle>
         <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.form.lead')}</p>
-        <form onSubmit={create} className="mt-4 grid gap-4 md:grid-cols-3">
+        <form onSubmit={create} className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           <Field id="dsr-kind" label={t('privacy.ui.form.kind')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as (typeof KINDS)[number] })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as (typeof KINDS)[number] })}>
                 {KINDS.map((k) => (
                   <option key={k} value={k}>
                     {t(`privacy.ui.kind.${k}`)}
@@ -88,7 +88,7 @@ export default function PrivacyRequestsPage() {
           </Field>
           <Field id="dsr-subject" label={t('privacy.ui.form.subject')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.subjectEmployeeId} onChange={(e) => setForm({ ...form, subjectEmployeeId: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.subjectEmployeeId} onChange={(e) => setForm({ ...form, subjectEmployeeId: e.target.value })}>
                 <option value="">{t('privacy.ui.form.choose')}</option>
                 {(people.data?.data ?? []).map((e) => (
                   <option key={e.id} value={e.id}>
@@ -103,7 +103,7 @@ export default function PrivacyRequestsPage() {
           </Field>
           <Field id="dsr-channel" label={t('privacy.ui.form.channel')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })}>
                 {CHANNELS.map((k) => (
                   <option key={k} value={k}>
                     {t(`privacy.ui.channel.${k}`)}
@@ -114,7 +114,7 @@ export default function PrivacyRequestsPage() {
           </Field>
           <Field id="dsr-identity" label={t('privacy.ui.form.identity')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.identityMethod} onChange={(e) => setForm({ ...form, identityMethod: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={form.identityMethod} onChange={(e) => setForm({ ...form, identityMethod: e.target.value })}>
                 <option value="">{t('privacy.ui.form.notYet')}</option>
                 {IDENTITY.map((k) => (
                   <option key={k} value={k}>
@@ -156,8 +156,8 @@ export default function PrivacyRequestsPage() {
         {list.loading && !list.data ? (
           <Skeleton className="mt-4 h-32" />
         ) : list.data?.length ? (
-          <div className="mt-3 overflow-x-auto">
-            <Table dense>
+          <div className="mt-3">
+            <Table dense scrollLabel={t('privacy.ui.queue')}>
               <THead>
                 <tr>
                   <TH>{t('privacy.ui.col.subject')}</TH>
@@ -284,7 +284,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
 
       {open && !d.identityVerifiedAt ? (
         <form
-          className="mt-4 grid gap-3 md:grid-cols-4 md:items-end"
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4 md:items-end"
           onSubmit={(e) => {
             e.preventDefault();
             void act('identity', () => api(`/v1/privacy/requests/${id}/identity`, { method: 'POST', json: { method: identity.method, note: identity.note || undefined, informationReceivedOn: identity.informationReceivedOn || undefined } }), t('privacy.ui.detail.identitySaved'));
@@ -292,7 +292,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
         >
           <Field id="id-method" label={t('privacy.ui.form.identity')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={identity.method} onChange={(e) => setIdentity({ ...identity, method: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={identity.method} onChange={(e) => setIdentity({ ...identity, method: e.target.value })}>
                 {IDENTITY.map((k) => (
                   <option key={k} value={k}>
                     {t(`privacy.ui.identity.${k}`)}
@@ -315,7 +315,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
 
       {open && d.extensionAllowed ? (
         <form
-          className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end"
           onSubmit={(e) => {
             e.preventDefault();
             void act('extend', () => api(`/v1/privacy/requests/${id}/extend`, { method: 'POST', json: { reason } }), t('privacy.ui.detail.extended'));
@@ -363,7 +363,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
 
       {d.kind === 'correction' && open && d.subjectEmployeeId ? (
         <form
-          className="mt-5 grid gap-3 border-t border-border pt-4 md:grid-cols-4 md:items-end"
+          className="mt-5 grid grid-cols-1 gap-3 border-t border-border pt-4 md:grid-cols-4 md:items-end"
           onSubmit={(e) => {
             e.preventDefault();
             void act('correct', () => api(`/v1/privacy/requests/${id}/correction`, { method: 'POST', json: { effectiveDate: correction.effectiveDate, changes: { [correction.field]: correction.value } } }), t('privacy.ui.detail.corrected'));
@@ -371,7 +371,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
         >
           <Field id="corr-field" label={t('privacy.ui.detail.field')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={correction.field} onChange={(e) => setCorrection({ ...correction, field: e.target.value })}>
+              <select {...p} className={`${SELECT_CLASS} w-full`} value={correction.field} onChange={(e) => setCorrection({ ...correction, field: e.target.value })}>
                 {CORRECTABLE.map((f) => (
                   <option key={f} value={f}>
                     {t(`people.field.${f}`)}

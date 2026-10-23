@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { ToastProvider } from '@thapsus/ui';
+import { colors } from '@thapsus/ui/tokens';
 import { Messages } from '@/lib/i18n-scope';
 import { serverContext } from '@/lib/server';
 import { ServiceWorkerRegister } from '@/components/client';
@@ -21,8 +22,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0b' },
+    { media: '(prefers-color-scheme: light)', color: colors.bg.light },
+    { media: '(prefers-color-scheme: dark)', color: colors.bg.dark },
   ],
 };
 
@@ -30,6 +31,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { locale, theme, t } = await serverContext();
   return (
     <html lang={locale} data-theme={theme === 'system' ? undefined : theme} suppressHydrationWarning>
+      <head>
+        {/* Where no system font in the stack exists (Android, Linux), text is set in the self-hosted Inter.
+            Fetching it with the stylesheet, not after it, draws text once in its final font: a late swap
+            repaints the largest text and delays the largest paint. */}
+        <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
       <body className="min-h-dvh bg-bg text-text antialiased">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent">
           {t('common.skipToContent')}

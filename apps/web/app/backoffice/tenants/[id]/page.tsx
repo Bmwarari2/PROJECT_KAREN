@@ -141,7 +141,7 @@ export default function TenantDetail() {
       <Card>
         <CardTitle>{t('backoffice.tenant.billingAccounts')}</CardTitle>
         <p className="mt-1 text-callout text-text-secondary">{t('backoffice.tenant.billingLead')}</p>
-        <Table className="mt-3">
+        <Table className="mt-3" scrollLabel={t('backoffice.tenant.billingAccounts')}>
           <caption className="sr-only">{t('backoffice.tenant.billingAccounts')}</caption>
           <THead>
             <tr>

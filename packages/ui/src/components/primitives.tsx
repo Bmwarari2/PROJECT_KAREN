@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
+import { Slot, Slottable } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
@@ -18,11 +18,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const focusRing = 'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+// Tailwind v4's `outline-none` sets --tw-outline-style: none, which `focus-visible:outline-2` then inherits:
+// combining them removed every focus ring (WCAG 2.4.7). Set the style explicitly instead.
+export const focusRing = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 // ---- Button ---------------------------------------------------------------------------------
 export const buttonVariants = cva(
-  `inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 ${focusRing}`,
+  `inline-flex items-center justify-center gap-2 font-semibold select-none transition-[background-color,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 ${focusRing}`,
   {
     variants: {
       variant: {
@@ -33,9 +35,10 @@ export const buttonVariants = cva(
         link: 'text-accent underline-offset-4 hover:underline px-0',
       },
       size: {
-        sm: 'h-8 px-3 text-callout',
-        md: 'h-10 px-5 text-callout',
-        lg: 'h-12 px-7 text-body',
+        sm: 'h-8 whitespace-nowrap px-3 text-callout',
+        md: 'h-10 whitespace-nowrap px-5 text-callout',
+        // Marketing CTAs may wrap onto two lines at 320 CSS px (WCAG 1.4.10) instead of overflowing.
+        lg: 'min-h-12 px-7 py-2 text-center text-body',
         icon: 'h-10 w-10 rounded-md',
       },
     },
@@ -52,12 +55,24 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   { className, variant, size, asChild, loading, children, disabled, ...props },
   ref,
 ) {
-  const Comp = asChild ? Slot : 'button';
+  const spinner = loading ? <span aria-hidden className="h-4 w-4 animate-spin rounded-pill border-2 border-current border-r-transparent" /> : null;
+  const classes = cn(buttonVariants({ variant, size }), className);
+  if (asChild) {
+    // Slot needs exactly one element child, so the spinner goes inside that child through Slottable.
+    // Links have no `disabled` attribute: a disabled or loading link gets aria-disabled and leaves the tab order.
+    const inert = disabled || loading;
+    return (
+      <Slot ref={ref} className={classes} aria-busy={loading || undefined} aria-disabled={inert || undefined} tabIndex={inert ? -1 : undefined} {...props}>
+        {spinner}
+        <Slottable>{children}</Slottable>
+      </Slot>
+    );
+  }
   return (
-    <Comp ref={ref} className={cn(buttonVariants({ variant, size }), className)} aria-busy={loading || undefined} disabled={disabled || loading} {...props}>
-      {loading ? <span aria-hidden className="h-4 w-4 animate-spin rounded-pill border-2 border-current border-r-transparent" /> : null}
+    <button ref={ref} className={classes} aria-busy={loading || undefined} disabled={disabled || loading} {...props}>
+      {spinner}
       {children}
-    </Comp>
+    </button>
   );
 });
 
@@ -108,8 +123,12 @@ export function Field({ id, label, hint, error, children, className }: FieldProp
 export function Card({ className, size = 'app', ...props }: React.HTMLAttributes<HTMLDivElement> & { size?: 'app' | 'marketing' }) {
   return <div className={cn('bg-surface-raised text-text shadow-sm', size === 'marketing' ? 'rounded-xl p-8 md:p-10' : 'rounded-lg p-5', className)} {...props} />;
 }
-export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-title-3 text-text', className)} {...props} />;
+/**
+ * A card's title. Cards are usually the sections of a page, so the title is an h2 under the page's h1
+ * (WCAG 1.3.1: headings do not skip levels); pass `as="h3"` for cards inside a section with its own h2.
+ */
+export function CardTitle({ className, as: Heading = 'h2', ...props }: React.HTMLAttributes<HTMLHeadingElement> & { as?: 'h2' | 'h3' }) {
+  return <Heading className={cn('text-title-3 text-text', className)} {...props} />;
 }
 
 const badgeTone = { neutral: 'text-text-secondary', accent: 'text-accent', success: 'text-success', warning: 'text-warning', danger: 'text-danger' } as const;
@@ -122,11 +141,13 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 }
 
 // ---- Empty state -----------------------------------------------------------------------------
-export function EmptyState({ icon, title, body, action }: { icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode }) {
+/** `level` sets the heading element: 2 (a section of a page) by default, 1 when the empty state is the whole page. */
+export function EmptyState({ icon, title, body, action, level = 2 }: { icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode; level?: 1 | 2 | 3 }) {
+  const Heading = `h${level}` as const;
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg bg-surface px-6 py-12 text-center">
       {icon ? <div className="text-text-secondary [&_svg]:h-8 [&_svg]:w-8 [&_svg]:stroke-[1.5]">{icon}</div> : null}
-      <h3 className="text-title-3 text-text">{title}</h3>
+      <Heading className="text-title-3 text-text">{title}</Heading>
       {body ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{body}</p> : null}
       {action}
     </div>

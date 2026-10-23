@@ -3,11 +3,15 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Inbox, UserRoundCheck } from 'lucide-react';
 import { Button, buttonVariants, EmptyState, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
-import { formatDate } from '@thapsus/core/i18n';
+import { formatDate, numberFormat } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
+
+/** Fields shown first, in this order; others follow. */
+const DETAIL_ORDER = ['leaveType', 'startDate', 'endDate', 'amountDays', 'date', 'weekStart', 'effectiveDate'];
+const order = (k: string) => (DETAIL_ORDER.includes(k) ? DETAIL_ORDER.indexOf(k) : DETAIL_ORDER.length);
 
 interface Approval {
   id: string;
@@ -34,7 +38,29 @@ export default function ApprovalsPage() {
     reload();
   }
 
-  if (!data) return <Skeleton className="h-64 w-full" />;
+  // Request details in words: known fields with their labels, dates formatted, internal ids left out.
+  const known = (key: string) => (t(key) === key ? null : t(key));
+  const details = (payload: Record<string, unknown>) =>
+    Object.entries(payload)
+      .filter(([k]) => k !== 'reason' && !k.startsWith('__') && !/Id$/.test(k))
+      .map(([k, v]) => [k, known(`admin.approvals.field.${k}`) ?? known(`people.field.${k}`), v] as const)
+      .filter(([, label]) => label)
+      .sort(([a], [b]) => order(a) - order(b))
+      .map(([k, label, v]) => {
+        const value =
+          k === 'leaveType' && typeof v === 'string'
+            ? (known(`timeOff.kind.${v}`) ?? v)
+            : typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)
+              ? formatDate(v, locale)
+              : Array.isArray(v)
+                ? numberFormat(locale).format(v.length)
+                : typeof v === 'number'
+                  ? numberFormat(locale).format(v)
+                  : String(v);
+        return `${label}: ${value}`;
+      })
+      .join(', ');
+
   const toggle = (id: string) => setSelected((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set([...s, id])));
   return (
     <div className="flex flex-col gap-5">
@@ -52,7 +78,10 @@ export default function ApprovalsPage() {
           {t('approvals.rejectSelected')}
         </Button>
       </div>
-      {data.length === 0 ? (
+      {/* the heading renders before the list arrives, in the same element as the loaded page */}
+      {!data ? (
+        <Skeleton className="h-64 w-full" />
+      ) : data.length === 0 ? (
         <EmptyState icon={<Inbox aria-hidden />} title={t('approvals.empty')} />
       ) : (
         <Table>
@@ -76,10 +105,7 @@ export default function ApprovalsPage() {
                 <TD className="font-semibold">{a.policy}</TD>
                 <TD>{a.subjectName ?? '—'}</TD>
                 <TD className="text-footnote text-text-secondary">
-                  {Object.entries(a.payload)
-                    .filter(([k]) => !['reason'].includes(k))
-                    .map(([k, v]) => `${t(`people.field.${k}`)}: ${String(v)}`)
-                    .join(', ')}
+                  {details(a.payload)}
                 </TD>
                 <TD>{formatDate(a.requestedAt.slice(0, 10), locale)}</TD>
               </TR>

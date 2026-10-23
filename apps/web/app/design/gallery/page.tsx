@@ -80,7 +80,7 @@ export default async function Gallery() {
 
         <h2 className="mt-12 text-title-3">{g('table')}</h2>
         <div className="mt-4">
-          <Table>
+          <Table scrollLabel={g('table')}>
             <THead>
               <tr>
                 <TH>{g('colName')}</TH>

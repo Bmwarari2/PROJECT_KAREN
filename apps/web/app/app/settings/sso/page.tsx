@@ -54,7 +54,7 @@ function ConnectionItem({ c, canManage, onChanged }: { c: SsoConnection; canMana
   return (
     <li className="flex flex-col gap-3 rounded-md border border-border p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h4 className="mr-auto text-callout font-semibold">{c.name}</h4>
+        <h3 className="mr-auto text-callout font-semibold">{c.name}</h3>
         <Badge>{t(`admin.sso.protocol.${c.protocol}`)}</Badge>
         {c.enabled ? <Badge tone="success">{t('admin.on')}</Badge> : <Badge>{t('admin.off')}</Badge>}
       </div>
