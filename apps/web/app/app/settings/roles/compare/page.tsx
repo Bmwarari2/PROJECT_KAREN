@@ -150,14 +150,18 @@ const cell = 'border-b border-border px-3 py-2 align-middle';
 const stickyCol = 'sticky left-0 z-10 bg-surface-raised';
 const headCell = 'sticky top-0 z-20 border-b border-border bg-surface px-3 py-3 align-bottom font-normal';
 
-/** A comparison table that scrolls inside its own focusable region, header row and first column sticky. */
+/**
+ * A comparison table that scrolls inside its own focusable region, header row and first column sticky.
+ * The region is positioned so the cells' screen-reader text (absolutely positioned) scrolls with it
+ * instead of widening the page.
+ */
 function MatrixRegion({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div
       role="region"
       tabIndex={0}
       aria-label={label}
-      className="max-h-[70vh] overflow-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+      className="relative max-h-[70vh] overflow-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
     >
       {children}
     </div>
