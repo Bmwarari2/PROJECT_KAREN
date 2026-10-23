@@ -171,7 +171,10 @@ resource "google_cloud_run_v2_service" "app" {
     }
   }
 
+  # The values too, not only the secrets: Cloud Run refuses a secret reference with no version, and
+  # the deploy's targeted first step (jobs only) must therefore create them (tests/first-deploy).
   depends_on = [
+    google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.readers,
     google_project_iam_member.sql_client,
   ]
@@ -270,7 +273,10 @@ resource "google_cloud_run_v2_service" "worker" {
     }
   }
 
+  # The values too, not only the secrets: Cloud Run refuses a secret reference with no version, and
+  # the deploy's targeted first step (jobs only) must therefore create them (tests/first-deploy).
   depends_on = [
+    google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.readers,
     google_project_iam_member.sql_client,
   ]
@@ -360,7 +366,10 @@ resource "google_cloud_run_v2_job" "migrate" {
     }
   }
 
+  # The values too, not only the secrets: Cloud Run refuses a secret reference with no version, and
+  # the deploy's targeted first step (jobs only) must therefore create them (tests/first-deploy).
   depends_on = [
+    google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.readers,
     google_project_iam_member.sql_client,
     google_sql_user.owner,
@@ -429,7 +438,10 @@ resource "google_cloud_run_v2_job" "seed" {
     }
   }
 
+  # The values too, not only the secrets: Cloud Run refuses a secret reference with no version, and
+  # the deploy's targeted first step (jobs only) must therefore create them (tests/first-deploy).
   depends_on = [
+    google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.readers,
     google_project_iam_member.sql_client,
     google_sql_user.directory,
