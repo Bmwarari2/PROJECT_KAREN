@@ -3320,14 +3320,6 @@
     "ui": {
       "title": "Privacy",
       "lead": "Handle data subject requests within their legal deadlines, keep data only as long as needed, and manage your account data, incidents and legal terms.",
-      "sections": "Privacy sections",
-      "tab": {
-        "requests": "Requests",
-        "retention": "Retention",
-        "incidents": "Incidents",
-        "legal": "DPA and notices",
-        "exports": "Export and closure"
-      },
       "kind": {
         "access": "Access (copy of data)",
         "correction": "Correction",
