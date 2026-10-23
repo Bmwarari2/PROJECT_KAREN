@@ -230,7 +230,7 @@ sequenceDiagram
 - **Model interface:** `deps.ai` (`apps/api/src/modules/ai/provider.ts`): Bedrock in AWS, a deterministic fake in dev and e2e, a capturing mock in tests.
 - **Code:** `apps/api/src/modules/ai` (guard, redaction, extraction, retrieval, prompt, routes), `apps/web/app/app/ask` (employees) and `apps/web/app/app/settings/ask-hr` (admins).
 
-## 11. Google Cloud staging cell (ADR-0156)
+## 11. Google Cloud staging cell (ADR-0157)
 
 Testing runs on one UK cell on Google Cloud in europe-west2 (London), with fictional data only (`infra/gcp`). It has the same three tiers as an AWS cell, mapped as follows:
 

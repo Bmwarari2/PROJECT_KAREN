@@ -8,6 +8,7 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import pg from 'pg';
 import type { HomeRegion } from '@thapsus/core';
+import { secretToUrl } from '@thapsus/db';
 
 /**
  * Global tenant directory: maps tenant id, slug and verified domains to a home region.
@@ -277,11 +278,24 @@ export class DynamoDirectory implements TenantDirectory {
   }
 }
 
+/**
+ * Connection URL of a Postgres directory: DIRECTORY_DATABASE_URL (local development), or DIRECTORY_DATABASE_SECRET
+ * with DATABASE_HOST (Google Cloud staging, ADR-0156: the `thapsus_global` database on the cell's Cloud SQL
+ * instance, reached through its unix socket; the secret's dbname wins when it has one).
+ */
+export function directoryDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  if (env.DIRECTORY_DATABASE_URL) return env.DIRECTORY_DATABASE_URL;
+  if (env.DIRECTORY_DATABASE_SECRET)
+    return secretToUrl(env.DIRECTORY_DATABASE_SECRET, env.DATABASE_HOST, { dbname: 'thapsus_global' });
+  return undefined;
+}
+
 export async function directoryFromEnv(env: NodeJS.ProcessEnv = process.env): Promise<TenantDirectory> {
   if (env.DIRECTORY_TABLE)
     return new DynamoDirectory(env.DIRECTORY_TABLE, env.DIRECTORY_REGION ?? 'eu-west-2');
-  if (env.DIRECTORY_DATABASE_URL) {
-    const d = new PgDirectory(env.DIRECTORY_DATABASE_URL);
+  const url = directoryDatabaseUrl(env);
+  if (url) {
+    const d = new PgDirectory(url);
     await d.init();
     return d;
   }

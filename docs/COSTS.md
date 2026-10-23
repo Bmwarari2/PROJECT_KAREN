@@ -2,7 +2,7 @@
 
 These are on-demand list-price estimates (USD per month, about 730 hours, October 2026) for the CDK stacks in `infra/`. Every cell stack has an AWS Budgets alarm at 80% and 100% of its line here. Anything that would push recurring cost past these estimates needs the product owner's approval first (CLAUDE.md).
 
-## Google Cloud staging (one UK cell in europe-west2; ADR-0156)
+## Google Cloud staging (one UK cell in europe-west2; ADR-0157)
 
 Approved by the product owner on 2026-10-23 ("deploy to one region only as this is only testing"). Estimated list prices at light test use, in USD per month; GBP is roughly 0.8×. Set a budget alert on the project (HUMAN_TODO 9.2).
 

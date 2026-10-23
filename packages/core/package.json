@@ -13,6 +13,7 @@
     "./scrub": "./src/scrub.ts",
     "./logger": "./src/logger.ts",
     "./aws": "./src/aws.ts",
+    "./gcp": "./src/gcp.ts",
     "./tracing": "./src/tracing.ts",
     "./config": "./src/config.ts",
     "./permissions": "./src/permissions.ts",

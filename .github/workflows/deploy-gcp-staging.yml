@@ -1,6 +1,6 @@
 name: Deploy staging (Google Cloud)
 
-# One-region staging cell on Google Cloud (ADR-0156, infra/gcp). Off until the owner has run
+# One-region staging cell on Google Cloud (ADR-0157, infra/gcp). Off until the owner has run
 # infra/gcp/bootstrap.sh and set the repository variables it prints (GCP_STAGING_ENABLED=true).
 #
 # Every run builds the images, then shows the OpenTofu plan. Nothing in Google Cloud changes until

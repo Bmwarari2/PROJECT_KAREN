@@ -1472,7 +1472,104 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - The builder no longer asks people to pick a chart type that might not fit the data.
 - What the preview shows cannot drift from what the app shows, because both read one map.
 
-## ADR-0156 — A one-region staging cell on Google Cloud (2026-10-23)
+## ADR-0156 — One-region staging on Google Cloud: region map and adapters (2026-10-23)
+
+**Context.** The product owner decided to run a one-region staging environment on Google Cloud: the UK cell only, in europe-west2 (London), with fictional data only. The AWS code and infrastructure stay as they are, and production hosting is not yet decided. The staging infrastructure is written separately in OpenTofu, which sets the environment variables listed below. This ADR fixes the contract between that infrastructure and the application.
+
+**Decision.**
+
+- **Region map.** `packages/core/src/regions.ts` gains `gcpRegion` and `gcpBackupRegion`, with the same jurisdiction rule as the AWS map (ADR-0001):
+
+  | Cell | Google Cloud region       | Backup copies          |
+  | ---- | ------------------------- | ---------------------- |
+  | UK   | europe-west2 (London)     | none (London only)     |
+  | EU   | europe-west3 (Frankfurt)  | europe-west1 (Belgium) |
+  | US   | us-east5 (Columbus, Ohio) | us-west1 (Oregon)      |
+
+  Only the UK cell runs on Google Cloud today. The EU and US entries exist so the residency guard and the test matrix cover every region pair. `allowedGcpLocations(cell, purpose)` mirrors `allowedAwsRegions`.
+
+- **Residency guard** (`packages/core/src/gcp.ts`). `gcpLocationOf()` reads the location from:
+  - resource names (`projects/*/locations/<location>/…`);
+  - Cloud SQL connection names (`project:region:instance`) and `/cloudsql/…` socket paths, also inside a database URL;
+  - Cloud Storage bucket locations (`EUROPE-WEST2`).
+
+  `assertGcpLocationAllowed()` throws `GcpResidencyViolationError`, a `ResidencyViolationError`. Multi-regions (`EU`, `US`, `ASIA`) and dual-regions are refused for every cell, because they place copies outside the home region. The startup residency check (`assertCellResidency`, and the router's own check) now also checks Google Cloud locations, so it covers `GCP_KMS_KEY` and every database host or URL that names a Cloud SQL socket. A bucket name carries no location, so each Cloud Storage adapter reads the bucket's metadata on first use and refuses anything but a single region equal to the cell's `gcpRegion`.
+
+- **Database over the Cloud SQL socket.** When the host starts with `/`, `secretToUrl()` builds `postgres://user:pw@localhost:<port>/<db>?host=<socket directory>` with no `sslmode`, and `tlsFor()` asks for no TLS. Cloud Run mounts the socket at `/cloudsql/<project>:<region>:<instance>/.s.PGSQL.5432`. The Cloud SQL connector behind it already encrypts the connection with mutual TLS. A trailing `/.s.PGSQL.<port>` is accepted and becomes the port. The app, back-office, reporting, migrator and directory connections all build their URLs this way.
+
+- **Tenant directory.** `DIRECTORY_DATABASE_SECRET`, with `DATABASE_HOST`, points the Postgres directory at the `thapsus_global` database on the same instance. `thapsus_global` is the default when the secret has no `dbname`.
+
+- **Migrations without a superuser.** On Cloud SQL the migrator belongs to `cloudsqlsuperuser`: it has CREATEROLE and CREATEDB, but no SUPERUSER and no BYPASSRLS. Running every migration as such a role on a fresh database (PostgreSQL 17) failed in one place: 0002 gives `app.tenants_for_email()` to the NOLOGIN `thapsus_lookup` role. A non-superuser may give an object only to a role that can create in the object's schema, and `thapsus_lookup` has only USAGE on `app`.
+  - The fix does not edit 0002, whose checksum is recorded wherever it has run. A new `0001b_lookup_role.sql` sorts between 0001 and 0002: it creates the role the way 0002 does and grants it CREATE on `app`. A new `0020_lookup_role_least_privilege.sql` revokes that grant again.
+  - Every database therefore ends with the same privileges, whichever role migrated it. On existing databases 0001b and 0020 simply run after 0019.
+  - Everything else, including the extensions (`pgcrypto`, `pg_trgm`, `btree_gist` and `citext` are trusted), the RLS policies and the role passwords, works without a superuser.
+  - `packages/db/test/managed-migrator.int.test.ts` keeps it that way. It runs every migration as a CREATEROLE + CREATEDB role on a fresh database and checks the end state and RLS.
+  - The db isolation, integration and residency suites also pass with `TEST_PG_OWNER_URL` set to such a role.
+  - Two audit tests had assumed that the owner connection bypasses RLS, which only a superuser does. They now set the tenant context first.
+
+- **Files** (`GcsObjectStore`, selected by `GCS_FILES_BUCKET`):
+  - Signed URLs are V4, valid for 5 minutes like the S3 ones. Download links carry `response-content-disposition` from `contentDisposition()`. Upload links bind the content type.
+  - The upload size is checked again on the server when the upload is confirmed, as with S3.
+  - `deletePrefix` deletes every object and every noncurrent generation (`versions: true`).
+  - Encryption at rest is the bucket's default key, set by the infrastructure.
+  - On Cloud Run the library signs through the IAM `signBlob` API with the service account from Application Default Credentials, so no key file exists. The Storage client is injectable for tests.
+  - The Google Cloud libraries are loaded on first use only, so AWS cells and tests never load them.
+  - Setting both `GCS_FILES_BUCKET` and `FILES_BUCKET` is refused.
+
+- **Keys** (`GcpKmsKeyProvider`). Cloud KMS has no data-key API, so each 256-bit data key is generated locally (`randomBytes(32)`) and wrapped with Cloud KMS `encrypt`. The wrap is bound to the context through `additionalAuthenticatedData`: SHA-256 of the sorted context entries, the same derivation as the local provider. `decrypt` sends the same AAD, so a wrapped key cannot be opened under another tenant, category or field. `GCP_KMS_KEY` must be a full crypto key name (not a key ring or a key version), and its location is checked by the guard. Staging and production still refuse to start without a real KMS key, and setting both `KMS_KEY_ARN` and `GCP_KMS_KEY` is refused.
+
+- **Email.** Staging has no email provider yet. `MAIL_TRANSPORT=bucket` writes each message as an RFC 822 `.eml` object to `MAIL_BUCKET`, checked by the guard. It is allowed only in dev, test and staging. Object names (`mail/<date>/<time>-<random id>.eml`) hold only the UTC date and time and a random id, never an address or a subject.
+
+- **Worker on Cloud Run.** `WORKER_MODE=http` serves `GET /health` and `POST /drain` on `PORT`:
+  - Cloud Scheduler calls `/drain` every minute with an OIDC token. Cloud Run IAM authenticates the call, so the app does not check the token.
+  - A drain runs the loop's own step (sweep if due, heartbeat if due, `engine.tick()`) until no work is left or `WORKER_DRAIN_BUDGET_MS` is spent (default 50 000).
+  - It answers 200 with counts only, never tenant data, or 500 when a step failed, so Cloud Scheduler records the failure.
+  - Drains in one process are serialised: a second call waits for the running drain and returns its result.
+  - On SIGTERM a running drain stops after its current step.
+
+  The default loop mode is unchanged.
+
+- **Client IP behind Cloud Run.** The API runs as a sidecar of the web container and the web proxy forwards API paths to `http://127.0.0.1:4000`. With `CLIENT_IP_SOURCE=cloud-run`, the proxy takes the **rightmost** `X-Forwarded-For` entry, which is the address Cloud Run's front end appended. It sends exactly that entry, and only when it is an IP address, as `X-Forwarded-For` to the API. Entries to its left are client-supplied and ignored. With `TRUSTED_PROXY_CIDRS=127.0.0.1/32` the API trusts that single hop, so `req.ip`, the per-IP throttles and the audit IPs see the real client. Without the setting, the proxy keeps dropping client forwarding headers. This holds only while Cloud Run's own front end is the only hop. A Google Cloud load balancer in front would append its own address, and this rule would then need to change.
+
+- **Logs.** `LOG_FORMAT=gcp` adds Cloud Logging's `severity` (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) to every JSON line, next to the numeric `level`. The personal-data scrubber is unchanged.
+
+- **Ask HR.** Amazon Bedrock is not reachable from Google Cloud. `AI_PROVIDER=off` is accepted as a synonym of the existing `none`: Ask HR shows as unavailable and never gives fake answers. An unrecognised `AI_PROVIDER` value now stops the service at start instead of silently falling back to Bedrock. Staging on Google Cloud sets `AI_PROVIDER=off`.
+
+- **Environment variables.** New, or with a new value:
+
+  | Variable                                   | Service     | Effect                                                                                                                                              |
+  | ------------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `DATABASE_HOST`, `REPORTING_DATABASE_HOST` | api, worker | May be a Cloud SQL socket directory, `/cloudsql/<project>:<region>:<instance>`. Location-checked at start.                                          |
+  | `DIRECTORY_DATABASE_SECRET`                | api, worker | JSON secret of the directory role, used with `DATABASE_HOST`. Database `thapsus_global` unless the secret names one. `DIRECTORY_DATABASE_URL` wins. |
+  | `GCS_FILES_BUCKET`                         | api, worker | Files in this Cloud Storage bucket. The bucket must be a single region equal to the cell's `gcpRegion`.                                             |
+  | `GCP_KMS_KEY`                              | api, worker | Cloud KMS crypto key name for sensitive fields. Location-checked at start.                                                                          |
+  | `MAIL_TRANSPORT=bucket` with `MAIL_BUCKET` | api, worker | Email captured as `.eml` objects in that bucket (dev, test and staging only).                                                                       |
+  | `WORKER_MODE`                              | worker      | `loop` (default) or `http`.                                                                                                                         |
+  | `PORT`                                     | worker      | Listen port in `http` mode (default 8080; Cloud Run sets it).                                                                                       |
+  | `WORKER_DRAIN_BUDGET_MS`                   | worker      | Time budget of one `/drain` (default 50000).                                                                                                        |
+  | `CLIENT_IP_SOURCE=cloud-run`               | web         | Forward the rightmost `X-Forwarded-For` entry to the API. Unset: forward none. Any other value is refused.                                          |
+  | `LOG_FORMAT`                               | all         | `json` (default) or `gcp`, which adds `severity`. Any other value is refused.                                                                       |
+  | `AI_PROVIDER=off`                          | api, worker | Ask HR unavailable (same as `none`). Unknown values are refused.                                                                                    |
+
+  Staging also sets these existing variables. The database secrets `DATABASE_SECRET`, `OWNER_DATABASE_SECRET`, `APP_DATABASE_SECRET`, `BACKOFFICE_DATABASE_SECRET` and `REPORTING_DATABASE_SECRET` are JSON (`username`, `password`, `dbname`, `port`) without a host. The API sets `TRUSTED_PROXY_CIDRS=127.0.0.1/32`. The web sets `API_PROXY_URL` and `API_INTERNAL_URL` to `http://127.0.0.1:4000`. The API sidecar keeps its default port 4000: Cloud Run sets `PORT` only on the ingress container.
+
+**Consequences.**
+
+- An AWS cell is unchanged while the new variables are unset.
+- The staging infrastructure has to provide what the code assumes:
+  - **Cloud SQL users.** Create only the migrator with `google_sql_user`. The migrations create the app, back-office, reporting and lookup roles; a `google_sql_user` would make them members of `cloudsqlsuperuser`. The directory role must be able to create its table in `thapsus_global`, because `PgDirectory.init()` runs `CREATE TABLE IF NOT EXISTS`.
+  - **Runtime service account.** It needs `storage.buckets.get` on the files and mail buckets for the location check, besides object access. It also needs `iam.serviceAccounts.signBlob` on itself for signed URLs.
+  - **Files bucket.** Versioning on. Soft delete off: otherwise deleted generations stay restorable for the soft-delete window, which defeats verified deletion. CORS must allow the app origin for direct uploads and downloads.
+  - **Mail bucket.** A lifecycle rule must delete old messages.
+  - **Locations.** Every bucket, the key ring, Secret Manager replication, Artifact Registry, Cloud Scheduler and the Cloud Logging bucket must be in europe-west2. The `_Default` log bucket is `global` unless the project's default log storage location is set first.
+  - **Worker.** The Cloud Scheduler attempt deadline and the worker's request timeout must exceed `WORKER_DRAIN_BUDGET_MS`.
+  - **Ask HR.** Set `AI_PROVIDER=off`.
+- Production hosting is not decided. A production move to Google Cloud needs:
+  - its own ADR;
+  - an entry in the core infrastructure table of SUBPROCESSORS.md, with the customer notice period;
+  - a review of the regional API endpoints of Cloud KMS and Cloud Storage. Staging uses the global endpoints with fictional data only.
+
+## ADR-0157 — Google Cloud staging infrastructure and approved deploys (2026-10-23)
 
 **Context.** The product owner chose to test on Google Cloud and asked for staging in one region only ("this is only testing"), with a test organisation and sign-ins, so the UI can be improved while the app is live. Security plan §6 already mapped the AWS design to Google Cloud. AWS staging (three cells, about $1,100 a month) was never deployed. CLAUDE.md requires: residency per region, no CDN for authenticated pages, least privilege, no long-lived CI keys, ask before production or deletions, and costs recorded.
 

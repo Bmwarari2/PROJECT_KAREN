@@ -1,6 +1,6 @@
 # Google Cloud staging (one region)
 
-A single UK staging cell on Google Cloud in **europe-west2 (London)**, holding the fictional test organisation only (ADR-0156). Production hosting is a separate decision; the AWS CDK app in `infra/` is unchanged.
+A single UK staging cell on Google Cloud in **europe-west2 (London)**, holding the fictional test organisation only (ADR-0157). Production hosting is a separate decision; the AWS CDK app in `infra/` is unchanged.
 
 ## What runs where
 

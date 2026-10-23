@@ -1,4 +1,4 @@
-# One-region staging cell on Google Cloud (ADR-0156). Fictional test data only; production hosting is
+# One-region staging cell on Google Cloud (ADR-0157). Fictional test data only; production hosting is
 # a separate decision. Applied by .github/workflows/deploy-gcp-staging.yml through Workload Identity
 # Federation (no keys); state lives in the bucket created by ../bootstrap.sh.
 terraform {
