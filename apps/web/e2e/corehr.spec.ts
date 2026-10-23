@@ -127,8 +127,9 @@ test.describe('org chart', () => {
 
     const runs: Array<{ firstRenderMs: number; expandMs: number }> = [];
     for (let i = 0; i < 3; i++) {
-      await page.goto('/app');
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // start from another People tab: the org chart is a tab of the People module
+      await page.goto('/app/people');
+      await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
       runs.push(
         await page.evaluate(async () => {
           const waitFor = (pred: () => boolean) =>
@@ -142,9 +143,9 @@ test.describe('org chart', () => {
                     : requestAnimationFrame(tick);
               tick();
             });
-          // in-app navigation to the org chart until the first level is on screen
-          const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="/app/org-chart"]')].find(
-            (a) => a.offsetParent !== null,
+          // in-app navigation (the People tab bar) to the org chart until the first level is on screen
+          const link = document.querySelector<HTMLAnchorElement>(
+            'nav[aria-label="People sections"] a[href="/app/org-chart"]',
           )!;
           const t0 = performance.now();
           link.click();

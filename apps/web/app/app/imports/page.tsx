@@ -4,6 +4,7 @@ import { Upload } from 'lucide-react';
 import { Button, Card, CardTitle, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
+import { PageIntro } from '@/components/module-page';
 
 interface Uploaded {
   id: string;
@@ -85,7 +86,7 @@ export default function ImportsPage() {
 
   return (
     <div className="flex max-w-[960px] flex-col gap-6">
-      <h1 className="text-title-2">{t('imports.title')}</h1>
+      <PageIntro title={t('imports.title')} titleIsTab />
       <Card className="flex flex-col gap-3">
         <CardTitle>{t('imports.step1')}</CardTitle>
         <p className="text-callout text-text-secondary">{t('imports.step1Body')}</p>

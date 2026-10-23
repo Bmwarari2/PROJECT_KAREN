@@ -530,7 +530,21 @@
     "typedName": "Type your full name",
     "consent": "I have read this document and agree to sign it electronically.",
     "signNow": "Sign document",
-    "signed": "Document signed."
+    "signed": "Document signed.",
+    "list": {
+      "mine": "Your documents",
+      "all": "Company documents",
+      "count_one": "{count} document",
+      "count_other": "{count} documents",
+      "countFiltered_one": "{shown} of {count} document",
+      "countFiltered_other": "{shown} of {count} documents",
+      "search": "Search documents",
+      "category": "Category",
+      "anyCategory": "All categories",
+      "categoryChip": "Category: {category}",
+      "colTitle": "Document",
+      "colAdded": "Added"
+    }
   },
   "notify": {
     "signatureRequested": "You have a document to sign",
