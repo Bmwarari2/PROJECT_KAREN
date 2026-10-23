@@ -1176,7 +1176,21 @@ Sources:
 
 **Decision.** On desktop the sidebar is `position: sticky`, full viewport height, with its own vertical scroll (`overscroll-contain`) and scroll padding so a focused entry is never flush with its edge. `html` keeps `scroll-padding-top` of the top bar height plus 8px, so focused or linked content is never hidden under the sticky top bar (WCAG 2.4.11). Below `lg` the navigation stays in the sheet.
 
+The current entry is scrolled into view on each navigation (in the sidebar and in the settings list, which follows the same pattern). The app top bar is opaque: the translucent blur stays on the marketing nav only, because in the app it meant a composited backdrop filter on every scroll on low-cost phones.
+
 **Consequences.** Page height depends only on the page's content. Long navigation lists scroll inside the sidebar; Tab into its hidden part scrolls it into view.
+
+## ADR-0143 — Lighthouse covers the key screens; pages paint their heading before their data (2026-10-19)
+
+**Context.** PROGRESS 12.7 asks for mobile performance ≥ 90 and accessibility ≥ 95 on key marketing pages and app screens, with margin for slower CI machines. Lighthouse covered six screens. Its simulated throttling estimates the largest paint from the observed trace, so a heading that React re-creates when data arrives, or text repainted after a late font swap, counts as a late largest paint even when the first paint was early.
+
+**Decision.**
+- `scripts/lighthouse.mjs` audits `/`, `/pricing`, `/trust`, `/status`, `/developers`, `/signin`, `/signup` and the app's home, Me, people, time off, rota, timesheets, reports, report builder, settings, notifications and security screens (median of three runs). `LIGHTHOUSE_DEBUG=1` prints, per run, the largest-paint element, first paint, server response, page weight, main-thread time and the most expensive scripts.
+- Every page renders its heading and intro on the server, before its data arrives, in the same elements as the loaded page (React keeps them), and every state of a page (loading, empty, no access) has a heading. The rota's explanation of draft shifts moved up next to its heading for that reason.
+- The self-hosted Inter font is preloaded from the document head, so where no system font in the stack exists (Android, Linux) text is drawn once in its final font.
+- Message catalogues are scoped per route (ADR-0150), which removed about 55 KB of compressed HTML from every page.
+
+**Consequences.** Results on a shared machine still vary with CPU load; total blocking time is the noisiest metric, so a page that fails only on it is re-run before it is treated as a regression. Pages with large client components (rota grid, report builder) have the least margin and are the first candidates for code splitting if CI numbers drop.
 
 ## ADR-0150 — Message catalogues are scoped per route segment (2026-10-19)
 
