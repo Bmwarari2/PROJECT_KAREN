@@ -10,6 +10,11 @@ export const uniq = (p: string) => `${p}-${Math.random().toString(36).slice(2, 8
 
 /** WCAG 2.2 AA (and 2.0/2.1 A/AA) checks with axe; fails on any violation. */
 export async function expectAccessible(page: Page) {
+  // Let finite animations and transitions (dialogs opening, toasts, fades) finish: mid-fade text fails colour contrast.
+  await page.evaluate(async () => {
+    const finite = document.getAnimations().filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime)));
+    await Promise.all(finite.map((a) => a.finished.catch(() => undefined)));
+  });
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   const summary = results.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', ')})`);
   expect(summary, summary.join('\n')).toEqual([]);

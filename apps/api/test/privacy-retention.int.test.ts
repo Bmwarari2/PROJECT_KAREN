@@ -17,9 +17,9 @@ afterAll(async () => {
   await closeDb();
 });
 
-const clockIn = (emp: string, at: string, id: string) =>
-  c.tx((t) => t.exec(`INSERT INTO app.clock_events (tenant_id, employee_id, kind, occurred_at, zone, source, client_event_id) VALUES (app.current_tenant(), $1, 'in', $2, 'Europe/London', 'pwa', $3)`, [emp, at, id]));
-const clockCount = (emp: string) => c.tx((t) => t.one<{ n: number }>(`SELECT count(*)::int AS n FROM app.clock_events WHERE employee_id = $1`, [emp]));
+const clockIn = (emp: string, at: string, id: string, co = c) =>
+  co.tx((t) => t.exec(`INSERT INTO app.clock_events (tenant_id, employee_id, kind, occurred_at, zone, source, client_event_id) VALUES (app.current_tenant(), $1, 'in', $2, 'Europe/London', 'pwa', $3)`, [emp, at, id]));
+const clockCount = (emp: string, co = c) => co.tx((t) => t.one<{ n: number }>(`SELECT count(*)::int AS n FROM app.clock_events WHERE employee_id = $1`, [emp]));
 
 describe('retention rules', () => {
   it('lists pack rules per category and jurisdiction with sources, marked for legal review', async () => {
@@ -98,5 +98,39 @@ describe('retention runs', () => {
     const rows = await c.tx((t) => t.query<{ id: string; display_name: string }>(`SELECT id, display_name FROM app.employees WHERE id = ANY($1::uuid[])`, [[leaver, recent]]));
     expect(rows.find((r) => r.id === leaver)!.display_name).toBe('Erased person');
     expect(rows.find((r) => r.id === recent)!.display_name).toMatch(/Recentleaver/);
+  });
+});
+
+describe('automatic retention (worker schedule)', () => {
+  it('queues no scheduled run until a policy is enabled, then exactly one per UTC date, which applies the policy', async () => {
+    const s = await privacyCompany(ctx); // a fresh tenant that has never enabled a policy
+    const emp = await s.hire('london');
+    await clockIn(emp, '2024-01-15T09:00:00Z', 'sched-old', s);
+    await clockIn(emp, '2027-05-03T09:00:00Z', 'sched-new', s);
+
+    await s.runPeriodic(`${TODAY}T02:00:00Z`);
+    expect(await s.jobsOf('privacy.retention')).toEqual([]); // no policy at all
+    expect((await s.api('PUT', '/v1/privacy/retention/policies', { category: 'time_records', jurisdiction: 'GB', period: 'P2Y', enabled: false })).statusCode).toBe(200);
+    await s.runPeriodic(`${TODAY}T03:00:00Z`);
+    expect(await s.jobsOf('privacy.retention')).toEqual([]); // a saved policy that is not enabled
+    expect((await clockCount(emp, s)).n).toBe(2);
+
+    expect((await s.api('PUT', '/v1/privacy/retention/policies', { category: 'time_records', jurisdiction: 'GB', period: 'P2Y', enabled: true })).statusCode).toBe(200);
+    await s.runPeriodic(`${TODAY}T04:00:00Z`);
+    await s.runPeriodic(`${TODAY}T23:59:00Z`); // later sweeps on the same UTC date add nothing
+    const queued = await s.jobsOf('privacy.retention');
+    expect(queued).toEqual([expect.objectContaining({ idempotency_key: `schedule:${TODAY}`, input: { trigger: 'schedule', date: TODAY }, status: 'queued', created_by: null })]);
+
+    expect(await s.runQueued('privacy.retention')).toEqual([expect.objectContaining({ date: TODAY, rows: 1 })]);
+    expect((await clockCount(emp, s)).n).toBe(1); // the 2024 record is past the two-year period; the 2027 one stays
+    const runs = await s.tx((t) => t.query<{ trigger: string; job_id: string }>(`SELECT trigger, job_id FROM app.retention_runs WHERE NOT dry_run AND category = 'time_records' AND jurisdiction = 'GB'`));
+    expect(runs).toEqual([{ trigger: 'schedule', job_id: queued[0]!.id }]);
+
+    await s.runPeriodic(`${TODAY}T12:00:00Z`); // a finished run is not repeated on the same date
+    await s.runPeriodic('2027-06-02T00:05:00Z');
+    expect((await s.jobsOf('privacy.retention')).map((j) => [j.idempotency_key, j.status])).toEqual([
+      [`schedule:${TODAY}`, 'succeeded'],
+      ['schedule:2027-06-02', 'queued'],
+    ]);
   });
 });

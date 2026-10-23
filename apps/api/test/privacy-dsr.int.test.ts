@@ -79,6 +79,17 @@ describe('data subject request deadlines (from the jurisdiction packs)', () => {
     const keys = await c.tx((t) => t.query<{ dedupe_key: string; title_key: string }>(`SELECT dedupe_key, title_key FROM app.notifications WHERE dedupe_key LIKE $1 ORDER BY created_at`, [`dsr:${r.id}:%`]));
     expect(keys.map((k) => k.title_key)).toEqual(['notify.dsrDue', 'notify.dsrOverdue']);
   });
+
+  it('the worker schedule queues one reminder run per UTC date, which sends the due reminder', async () => {
+    const r = await createDsr({ kind: 'access', subjectEmployeeId: await c.hire('london'), receivedOn: '2026-05-04' });
+    expect(r.dueOn).toBe('2026-06-04');
+    await c.runPeriodic('2026-05-28T00:10:00Z');
+    await c.runPeriodic('2026-05-28T18:30:00Z');
+    expect((await c.jobsOf('privacy.reminders')).map((j) => [j.idempotency_key, j.input, j.created_by])).toEqual([['2026-05-28', { date: '2026-05-28' }, null]]);
+    await c.runQueued('privacy.reminders');
+    const sent = await c.tx((t) => t.query<{ title_key: string }>(`SELECT title_key FROM app.notifications WHERE dedupe_key LIKE $1 AND user_id = $2`, [`dsr:${r.id}:%`, c.owner.userId]));
+    expect(sent.map((n) => n.title_key)).toEqual(['notify.dsrDue']); // seven days before the deadline
+  });
 });
 
 describe('per-person access export', () => {

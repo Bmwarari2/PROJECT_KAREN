@@ -46,6 +46,7 @@ const collect = (sink: Hit[], respond: (h: Hit, res: import('node:http').ServerR
     });
   });
 
+const ROLE = 'arn:aws:iam::123456789012:role/thapsus-hr-audit-siem';
 const api = (method: string, url: string, payload?: unknown) => ctx.app.inject({ method: method as 'GET', url, payload: payload as object, headers: { cookie: owner.cookie }, remoteAddress: randomIp() });
 const tx = <T>(fn: Parameters<typeof withTenant<T>>[2]) => withTenant(ctx.deps.router, owner.tenantId, fn);
 const nextMinute = async () => {
@@ -67,7 +68,7 @@ beforeAll(async () => {
   aws = collect(awsHits, (h, res) => {
     if (h.method === 'POST' && h.body.includes('Action=AssumeRole')) {
       res.writeHead(200, { 'content-type': 'text/xml' });
-      res.end(`<AssumeRoleResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><AssumeRoleResult><Credentials><AccessKeyId>FICTIONAL-TEMP-KEY-1</AccessKeyId><SecretAccessKey>fictional-secret</SecretAccessKey><SessionToken>fictional-session</SessionToken><Expiration>2099-01-01T00:00:00Z</Expiration></Credentials><AssumedRoleUser><AssumedRoleId>AROAFICTIONAL:thapsus</AssumedRoleId><Arn>arn:aws:sts::123456789012:assumed-role/ThapsusAudit/thapsus</Arn></AssumedRoleUser></AssumeRoleResult><ResponseMetadata><RequestId>req-1</RequestId></ResponseMetadata></AssumeRoleResponse>`);
+      res.end(`<AssumeRoleResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><AssumeRoleResult><Credentials><AccessKeyId>FICTIONAL-TEMP-KEY-1</AccessKeyId><SecretAccessKey>fictional-secret</SecretAccessKey><SessionToken>fictional-session</SessionToken><Expiration>2099-01-01T00:00:00Z</Expiration></Credentials><AssumedRoleUser><AssumedRoleId>AROAFICTIONAL:thapsus</AssumedRoleId><Arn>arn:aws:sts::123456789012:assumed-role/thapsus-hr-audit-siem/thapsus</Arn></AssumedRoleUser></AssumeRoleResult><ResponseMetadata><RequestId>req-1</RequestId></ResponseMetadata></AssumeRoleResponse>`);
       return;
     }
     if (h.method === 'PUT') {
@@ -161,11 +162,11 @@ describe('HTTPS SIEM stream', () => {
 
 describe('S3 SIEM stream (cross-account role, home region only)', () => {
   it('writes NDJSON objects with deterministic keys through STS AssumeRole with the external id', async () => {
-    const bad = await api('POST', '/v1/settings/audit-streams', { name: 'Wrong region', kind: 's3', bucket: 'fictional-audit', region: 'eu-central-1', roleArn: 'arn:aws:iam::123456789012:role/ThapsusAudit' });
+    const bad = await api('POST', '/v1/settings/audit-streams', { name: 'Wrong region', kind: 's3', bucket: 'fictional-audit', region: 'eu-central-1', roleArn: ROLE });
     expect(bad.statusCode).toBe(422);
     expect(bad.json()).toMatchObject({ detail: 'regionNotAllowed', allowed: ['eu-west-2'] });
 
-    const res = await api('POST', '/v1/settings/audit-streams', { name: 'Customer bucket', kind: 's3', bucket: 'fictional-audit', prefix: 'thapsus/', roleArn: 'arn:aws:iam::123456789012:role/ThapsusAudit', filters: { actions: ['org.'] } });
+    const res = await api('POST', '/v1/settings/audit-streams', { name: 'Customer bucket', kind: 's3', bucket: 'fictional-audit', prefix: 'thapsus/', roleArn: ROLE, filters: { actions: ['org.'] } });
     expect(res.statusCode, res.body).toBe(201);
     const stream = res.json();
     expect(stream.s3).toMatchObject({ bucket: 'fictional-audit', region: 'eu-west-2', prefix: 'thapsus/' });
@@ -186,7 +187,7 @@ describe('S3 SIEM stream (cross-account role, home region only)', () => {
 
     const assume = awsHits.filter((h) => h.body.includes('Action=AssumeRole')).at(-1)!;
     const form = new URLSearchParams(assume.body);
-    expect(form.get('RoleArn')).toBe('arn:aws:iam::123456789012:role/ThapsusAudit');
+    expect(form.get('RoleArn')).toBe(ROLE);
     expect(form.get('ExternalId')).toBe(stream.s3.externalId);
     const puts = awsHits.filter((h) => h.method === 'PUT');
     expect(new Set(puts.map((p) => p.path.split('?')[0]))).toEqual(new Set([`/fictional-audit/${key}`])); // retries reuse the key
@@ -194,6 +195,19 @@ describe('S3 SIEM stream (cross-account role, home region only)', () => {
     expect(lines.length).toBeGreaterThanOrEqual(1);
     expect(lines.every((l: { action: string; hash: string }) => l.action.startsWith('org.') && /^[0-9a-f]{64}$/.test(l.hash))).toBe(true);
     expect(puts.at(-1)!.headers['x-amz-security-token']).toBe('fictional-session');
+  });
+
+  it('refuses a role whose name does not start with thapsus-hr-audit- (422 roleNotAllowed), the only roles the worker may assume', async () => {
+    const before = awsHits.length;
+    for (const roleArn of ['arn:aws:iam::123456789012:role/ThapsusAudit', 'arn:aws:iam::123456789012:role/thapsus-hr-export-warehouse', 'arn:aws:iam::123456789012:role/siem/thapsus-hr-audit-siem']) {
+      const res = await api('POST', '/v1/settings/audit-streams', { name: 'Other role', kind: 's3', bucket: 'fictional-audit', roleArn });
+      expect(res.statusCode, roleArn).toBe(422);
+      expect(res.json()).toMatchObject({ status: 422, detail: 'roleNotAllowed', rolePrefix: 'thapsus-hr-audit-' });
+    }
+    expect((await api('POST', '/v1/settings/audit-streams', { name: 'Not an ARN', kind: 's3', bucket: 'fictional-audit', roleArn: 'thapsus-hr-audit-siem' })).statusCode).toBe(400);
+    const streams = (await api('GET', '/v1/settings/audit-streams')).json().data as Array<{ name: string }>;
+    expect(streams.some((s) => s.name === 'Other role' || s.name === 'Not an ARN')).toBe(false);
+    expect(awsHits.length).toBe(before);
   });
 
   it('stops when the feature is off', async () => {

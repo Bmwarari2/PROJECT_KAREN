@@ -44,6 +44,21 @@ The main ways to reduce staging cost are dropping RDS Proxy in staging (about �
 
 The global stack in production costs about $150. Production is not deployed until the product owner approves.
 
+## Dedicated databases (optional, none deployed by default)
+
+A dedicated database is recurring cost **only when an operator adds an entry** to `dedicatedDatabases` in `infra/config/<env>.json` (ADR-0068, runbook `docs/runbooks/move-tenant-to-dedicated-db.md`). None of the committed env configs has an entry, so the estimates above include none. Each entry needs the product owner's approval first, like any cost beyond this document (CLAUDE.md). Raise that cell's `monthlyBudgetUsd` (its budget alarm) by the same amount in the same change.
+
+Each entry adds, in the tenant's home cell only: an Aurora Serverless v2 cluster (writer and reporting reader), an RDS Proxy, one owner secret, two log groups, a CPU alarm, and AWS Backup storage for its snapshots (plus copies in the permitted backup region for EU and US).
+
+| Per dedicated database | Staging (0.5 ACU minimum) | Production (baseline about 4 ACU each, writer and reader) |
+| --- | --- | --- |
+| Aurora Serverless v2: writer and reporting reader, plus storage and I/O | ~$95–110 | ~$700, scaling with load up to `maxAcu` |
+| RDS Proxy (Serverless v2 bills a minimum of 8 ACU) | ~$88 | ~$170 |
+| Secrets Manager, CloudWatch logs and alarm, backup storage and copies | ~$5 | ~$20–60, growing with data size and retention |
+| **Total per entry** | **~$190–200** | **~$890–930 baseline** |
+
+The tools task (migrations and the move runner) runs only during deploys and moves, so it costs cents. A very large tenant may need a higher `maxAcu` than the shared cluster; size it with the 200,000-employee profile and `pnpm loadtest` (`docs/PERFORMANCE.md`) before asking for approval.
+
 ## Development
 
 The dev environment matches staging but is only deployed on demand. The default is local Docker, which costs nothing.
