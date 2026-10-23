@@ -23,7 +23,10 @@ export default tseslint.config(
   {
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
+      ],
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': 'off',
       eqeqeq: ['error', 'smart'],

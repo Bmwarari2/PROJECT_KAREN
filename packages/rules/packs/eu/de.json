@@ -63,10 +63,7 @@
             "base": {
               "weeks": 4,
               "terminationDate": "15th_or_end_of_calendar_month",
-              "appliesTo": [
-                "employer",
-                "employee"
-              ]
+              "appliesTo": ["employer", "employee"]
             },
             "employerByService": [
               {
@@ -172,9 +169,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -195,9 +190,7 @@
         "day": 6
       },
       "observance": "none",
-      "regions": [
-        "DE-BY"
-      ],
+      "regions": ["DE-BY"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -218,9 +211,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -241,9 +232,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -264,9 +253,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -287,9 +274,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -310,9 +295,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -333,9 +316,7 @@
         "day": 3
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -356,9 +337,7 @@
         "day": 25
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -379,9 +358,7 @@
         "day": 26
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -402,14 +379,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "DE-BW",
-        "DE-BY",
-        "DE-HE",
-        "DE-NW",
-        "DE-RP",
-        "DE-SL"
-      ],
+      "regions": ["DE-BW", "DE-BY", "DE-HE", "DE-NW", "DE-RP", "DE-SL"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -430,17 +400,7 @@
         "day": 31
       },
       "observance": "none",
-      "regions": [
-        "DE-BB",
-        "DE-HB",
-        "DE-HH",
-        "DE-MV",
-        "DE-NI",
-        "DE-SN",
-        "DE-ST",
-        "DE-SH",
-        "DE-TH"
-      ],
+      "regions": ["DE-BB", "DE-HB", "DE-HH", "DE-MV", "DE-NI", "DE-SN", "DE-ST", "DE-SH", "DE-TH"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -461,13 +421,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "DE-BW",
-        "DE-BY",
-        "DE-NW",
-        "DE-RP",
-        "DE-SL"
-      ],
+      "regions": ["DE-BW", "DE-BY", "DE-NW", "DE-RP", "DE-SL"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -487,9 +441,7 @@
         "day": 8
       },
       "observance": "none",
-      "regions": [
-        "DE-BE"
-      ],
+      "regions": ["DE-BE"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {

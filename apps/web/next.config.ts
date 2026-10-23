@@ -21,14 +21,20 @@ const config: NextConfig = {
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
-      ...['/_next/static/:path*', '/fonts/:path*', '/icons/:path*'].map((source) => ({ source, headers: [{ key: 'Content-Security-Policy', value: STATIC_ASSET_CSP }] })),
+      ...['/_next/static/:path*', '/fonts/:path*', '/icons/:path*'].map((source) => ({
+        source,
+        headers: [{ key: 'Content-Security-Policy', value: STATIC_ASSET_CSP }],
+      })),
       {
         source: '/sw.js',
         headers: [
           { key: 'Cache-Control', value: 'no-cache' },
           { key: 'Service-Worker-Allowed', value: '/' },
           // a worker script's own policy governs what it may fetch and import
-          { key: 'Content-Security-Policy', value: "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'" },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'",
+          },
         ],
       },
     ];

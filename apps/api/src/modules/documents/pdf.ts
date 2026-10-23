@@ -12,12 +12,22 @@ export const winAnsiSafe = (s: string) =>
       if (ch === '\u201c' || ch === '\u201d') return '"';
       if (ch === '\u2013' || ch === '\u2014') return '-';
       const c = ch.codePointAt(0)!;
-      return c === 9 || c === 10 || c === 13 || (c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || WIN_ANSI_EXTRA.has(c) ? ch : '?';
+      return c === 9 ||
+        c === 10 ||
+        c === 13 ||
+        (c >= 0x20 && c <= 0x7e) ||
+        (c >= 0xa0 && c <= 0xff) ||
+        WIN_ANSI_EXTRA.has(c)
+        ? ch
+        : '?';
     })
     .join('');
 
 /** Replaces {{path.to.value}} merge fields. Unknown fields render empty (and are reported). */
-export function mergeFields(body: string, values: Record<string, string>): { text: string; missing: string[] } {
+export function mergeFields(
+  body: string,
+  values: Record<string, string>,
+): { text: string; missing: string[] } {
   const missing: string[] = [];
   const text = body.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, key: string) => {
     if (!(key in values)) missing.push(key);
@@ -53,7 +63,13 @@ function writeLines(doc: PDFDocument, lines: string[], font: PDFFont, bold: PDFF
       page = doc.addPage([595.28, 841.89]);
       y = 790;
     }
-    page.drawText(winAnsiSafe(line), { x: 56, y, size, font: heading ? bold : font, color: rgb(0.11, 0.11, 0.12) });
+    page.drawText(winAnsiSafe(line), {
+      x: 56,
+      y,
+      size,
+      font: heading ? bold : font,
+      color: rgb(0.11, 0.11, 0.12),
+    });
     y -= heading ? 26 : 16;
   }
   return page;
@@ -100,7 +116,7 @@ export async function appendCertificate(original: Uint8Array, ev: SignatureEvide
     ev.documentSha256,
     `${L.reference}: ${ev.requestId}`,
     '',
-    ...wrap(L.statement ?? "", font, 11, 595.28 - 112),
+    ...wrap(L.statement ?? '', font, 11, 595.28 - 112),
   ];
   writeLines(doc, lines, font, bold);
   return doc.save({ useObjectStreams: false });

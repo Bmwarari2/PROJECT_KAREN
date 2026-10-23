@@ -46,8 +46,18 @@ export default function UsersPage() {
       </div>
       <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.users.intro')}</p>
       <div className="relative max-w-md">
-        <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 stroke-[1.5] text-text-secondary" />
-        <Input type="search" aria-label={t('access.users.search')} placeholder={t('access.users.search')} value={q} onChange={(e) => setQ(e.target.value)} className="h-10 pl-9" />
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 stroke-[1.5] text-text-secondary"
+        />
+        <Input
+          type="search"
+          aria-label={t('access.users.search')}
+          placeholder={t('access.users.search')}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="h-10 pl-9"
+        />
       </div>
       {!rows ? (
         <Skeleton className="h-64 w-full" />
@@ -71,7 +81,11 @@ export default function UsersPage() {
                     <Link href={`/app/settings/users/${u.id}`} className="font-semibold">
                       {u.displayName}
                     </Link>
-                    {u.status !== 'active' ? <p className="text-footnote text-text-secondary">{t(`access.users.status.${u.status}`)}</p> : null}
+                    {u.status !== 'active' ? (
+                      <p className="text-footnote text-text-secondary">
+                        {t(`access.users.status.${u.status}`)}
+                      </p>
+                    ) : null}
                   </TD>
                   <TD className="hidden break-all text-text-secondary md:table-cell">{u.email}</TD>
                   <TD>
@@ -81,7 +95,13 @@ export default function UsersPage() {
                       ))}
                     </span>
                   </TD>
-                  <TD className="hidden sm:table-cell">{u.hasMfa ? <Badge tone="success">{t('access.users.mfaOn')}</Badge> : <span className="text-text-secondary">{t('access.users.mfaOff')}</span>}</TD>
+                  <TD className="hidden sm:table-cell">
+                    {u.hasMfa ? (
+                      <Badge tone="success">{t('access.users.mfaOn')}</Badge>
+                    ) : (
+                      <span className="text-text-secondary">{t('access.users.mfaOff')}</span>
+                    )}
+                  </TD>
                 </TR>
               ))}
             </tbody>

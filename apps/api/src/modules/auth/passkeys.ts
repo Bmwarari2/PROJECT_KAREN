@@ -30,7 +30,13 @@ export async function passkeyRoutes(app: FastifyInstance) {
 
   app.post(
     '/v1/auth/passkeys/register/options',
-    { config: { auth: 'mfa-setup', selfAudited: true }, schema: { tags: ['auth'], response: { 200: Type.Object({ challengeId: Type.String(), options: Type.Any() }) } } },
+    {
+      config: { auth: 'mfa-setup', selfAudited: true },
+      schema: {
+        tags: ['auth'],
+        response: { 200: Type.Object({ challengeId: Type.String(), options: Type.Any() }) },
+      },
+    },
     async (req) => {
       const auth = requireAuth(req);
       if (auth.hasMfaFactor && !auth.mfaVerified) throw new ApiError('mfaRequired');
@@ -48,7 +54,10 @@ export async function passkeyRoutes(app: FastifyInstance) {
           userDisplayName: auth.user.displayName,
           userID: uuidToBytes(auth.userId),
           attestationType: 'none',
-          excludeCredentials: existing.map((c) => ({ id: c.credential_id, transports: c.transports as never })),
+          excludeCredentials: existing.map((c) => ({
+            id: c.credential_id,
+            transports: c.transports as never,
+          })),
           authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
         });
         const ch = await tx.one<{ id: string }>(
@@ -64,12 +73,30 @@ export async function passkeyRoutes(app: FastifyInstance) {
     '/v1/auth/passkeys/register/verify',
     {
       config: { auth: 'mfa-setup', selfAudited: true },
-      schema: { tags: ['auth'], body: Type.Object({ challengeId: Type.String({ format: 'uuid' }), response: Type.Any(), name: Type.Optional(Type.String({ maxLength: 80 })) }), response: { 204: Type.Null(), 401: Problem } },
+      schema: {
+        tags: ['auth'],
+        body: Type.Object({
+          challengeId: Type.String({ format: 'uuid' }),
+          response: Type.Any(),
+          name: Type.Optional(Type.String({ maxLength: 80 })),
+        }),
+        response: { 204: Type.Null(), 401: Problem },
+      },
     },
     async (req, reply) => {
       const auth = requireAuth(req);
-      const body = req.body as { challengeId: string; response: Parameters<typeof verifyRegistrationResponse>[0]['response']; name?: string };
-      const ch = await consumeChallenge(deps, auth.tenantId, body.challengeId, 'passkey_register', auth.userId);
+      const body = req.body as {
+        challengeId: string;
+        response: Parameters<typeof verifyRegistrationResponse>[0]['response'];
+        name?: string;
+      };
+      const ch = await consumeChallenge(
+        deps,
+        auth.tenantId,
+        body.challengeId,
+        'passkey_register',
+        auth.userId,
+      );
       if (!ch) throw new ApiError('invalidCredentials');
       await app.tenantTx(req, async (tx) => {
         const result = await verifyRegistrationResponse({
@@ -83,12 +110,27 @@ export async function passkeyRoutes(app: FastifyInstance) {
         const cred = result.registrationInfo.credential;
         await tx.exec(
           `INSERT INTO app.passkeys (tenant_id, user_id, credential_id, public_key, counter, transports, name) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6)`,
-          [auth.userId, cred.id, Buffer.from(cred.publicKey), cred.counter, cred.transports ?? [], body.name ?? null],
+          [
+            auth.userId,
+            cred.id,
+            Buffer.from(cred.publicKey),
+            cred.counter,
+            cred.transports ?? [],
+            body.name ?? null,
+          ],
         );
-        await tx.exec('UPDATE app.sessions SET mfa_verified_at = coalesce(mfa_verified_at, now()) WHERE id = $1', [auth.sessionId]);
+        await tx.exec(
+          'UPDATE app.sessions SET mfa_verified_at = coalesce(mfa_verified_at, now()) WHERE id = $1',
+          [auth.sessionId],
+        );
         // A new authenticator ends every other session (ASVS V7.4.3).
         const otherSessionsEnded = await revokeUserSessions(tx, auth.userId, auth.sessionId);
-        await app.audit(tx, req, { action: 'auth.passkey_registered', targetType: 'user', targetId: auth.userId, diff: { otherSessionsEnded } });
+        await app.audit(tx, req, {
+          action: 'auth.passkey_registered',
+          targetType: 'user',
+          targetId: auth.userId,
+          diff: { otherSessionsEnded },
+        });
       });
       return reply.status(204).send(null);
     },
@@ -98,7 +140,15 @@ export async function passkeyRoutes(app: FastifyInstance) {
     '/v1/auth/passkeys/login/options',
     {
       config: { auth: 'public', selfAudited: true },
-      schema: { tags: ['auth'], body: Type.Object({ tenant: Type.String({ maxLength: 40 }) }, { additionalProperties: false }), response: { 200: Type.Object({ challengeId: Type.String(), options: Type.Any() }), 403: Problem, 429: Problem } },
+      schema: {
+        tags: ['auth'],
+        body: Type.Object({ tenant: Type.String({ maxLength: 40 }) }, { additionalProperties: false }),
+        response: {
+          200: Type.Object({ challengeId: Type.String(), options: Type.Any() }),
+          403: Problem,
+          429: Problem,
+        },
+      },
     },
     async (req) => {
       await throttle(deps, [[`passkey:ip:${req.ctx.ip}`, 30, 900]]);
@@ -119,15 +169,29 @@ export async function passkeyRoutes(app: FastifyInstance) {
     '/v1/auth/passkeys/login/verify',
     {
       config: { auth: 'public', selfAudited: true },
-      schema: { tags: ['auth'], body: Type.Object({ challengeId: Type.String({ maxLength: 80 }), response: Type.Any() }), response: { 200: Type.Object({ tenantId: Type.String(), userId: Type.String() }), 401: Problem } },
+      schema: {
+        tags: ['auth'],
+        body: Type.Object({ challengeId: Type.String({ maxLength: 80 }), response: Type.Any() }),
+        response: { 200: Type.Object({ tenantId: Type.String(), userId: Type.String() }), 401: Problem },
+      },
     },
     async (req, reply) => {
-      const body = req.body as { challengeId: string; response: Parameters<typeof verifyAuthenticationResponse>[0]['response'] };
+      const body = req.body as {
+        challengeId: string;
+        response: Parameters<typeof verifyAuthenticationResponse>[0]['response'];
+      };
       const [tenantId, challengeId] = body.challengeId.split('.');
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
       const ch = await consumeChallenge(deps, tenantId, challengeId, 'passkey_login');
       return withTenant(deps.router, tenantId, async (tx) => {
-        const cred = await tx.maybe<{ id: string; user_id: string; credential_id: string; public_key: Buffer; counter: string; transports: string[] }>(
+        const cred = await tx.maybe<{
+          id: string;
+          user_id: string;
+          credential_id: string;
+          public_key: Buffer;
+          counter: string;
+          transports: string[];
+        }>(
           'SELECT id, user_id, credential_id, public_key, counter, transports FROM app.passkeys WHERE credential_id = $1',
           [body.response?.id],
         );
@@ -142,11 +206,24 @@ export async function passkeyRoutes(app: FastifyInstance) {
           expectedOrigin: origin,
           expectedRPID: rpID,
           requireUserVerification: true,
-          credential: { id: cred.credential_id, publicKey: new Uint8Array(cred.public_key), counter: Number(cred.counter), transports: cred.transports as never },
+          credential: {
+            id: cred.credential_id,
+            publicKey: new Uint8Array(cred.public_key),
+            counter: Number(cred.counter),
+            transports: cred.transports as never,
+          },
         }).catch(() => undefined);
         if (!result?.verified) throw new ApiError('invalidCredentials');
-        await tx.exec('UPDATE app.passkeys SET counter = $2, last_used_at = now() WHERE id = $1', [cred.id, result.authenticationInfo.newCounter]);
-        await startSession(deps, req, reply, tx, { tenantId, userId: cred.user_id, method: 'passkey', mfaVerified: true });
+        await tx.exec('UPDATE app.passkeys SET counter = $2, last_used_at = now() WHERE id = $1', [
+          cred.id,
+          result.authenticationInfo.newCounter,
+        ]);
+        await startSession(deps, req, reply, tx, {
+          tenantId,
+          userId: cred.user_id,
+          method: 'passkey',
+          mfaVerified: true,
+        });
         return { tenantId, userId: cred.user_id };
       });
     },

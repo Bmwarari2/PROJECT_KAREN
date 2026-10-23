@@ -84,7 +84,12 @@ export function eachDay(start: CivilDate, end: CivilDate): CivilDate[] {
   return out;
 }
 /** Half-open range overlap test for [aFrom, aTo) and [bFrom, bTo); null `to` means open-ended. */
-export function rangesOverlap(aFrom: CivilDate, aTo: CivilDate | null, bFrom: CivilDate, bTo: CivilDate | null): boolean {
+export function rangesOverlap(
+  aFrom: CivilDate,
+  aTo: CivilDate | null,
+  bFrom: CivilDate,
+  bTo: CivilDate | null,
+): boolean {
   const aEndsAfterBStarts = aTo === null || compareDates(aTo, bFrom) > 0;
   const bEndsAfterAStarts = bTo === null || compareDates(bTo, aFrom) > 0;
   return aEndsAfterBStarts && bEndsAfterAStarts;

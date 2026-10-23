@@ -14,7 +14,9 @@ const SECTIONS = Object.keys(SECTION_TABLE) as SectionName[];
 function sqlType(def: FieldDef): string {
   if (def.column === 'amount_minor') return 'bigint';
   if (def.column === 'notice_period_days') return 'int';
-  return { text: 'text', date: 'date', uuid: 'uuid', number: 'numeric', json: 'jsonb', enum: 'text' }[def.type];
+  return { text: 'text', date: 'date', uuid: 'uuid', number: 'numeric', json: 'jsonb', enum: 'text' }[
+    def.type
+  ];
 }
 
 /** A new employee can be created in bulk when every section it touches has its required fields. */
@@ -31,7 +33,11 @@ export function bulkCreatable(v: Values): boolean {
  * Inserts new employees and their first effective-dated section records (from their start date).
  * Returns employee number → id. Throws on any constraint violation (the caller falls back per row).
  */
-export async function bulkCreateEmployees(tx: Tx, rows: Values[], actor: string | null): Promise<Map<string, string>> {
+export async function bulkCreateEmployees(
+  tx: Tx,
+  rows: Values[],
+  actor: string | null,
+): Promise<Map<string, string>> {
   const inserted = await tx.query<{ id: string; employee_number: string }>(
     `INSERT INTO app.employees (tenant_id, employee_number, start_date, end_date, work_email, display_name)
      SELECT app.current_tenant(), u.* FROM unnest($1::text[], $2::date[], $3::date[], $4::text[], $5::text[]) AS u
@@ -49,7 +55,9 @@ export async function bulkCreateEmployees(tx: Tx, rows: Values[], actor: string 
     // rows are grouped by the set of fields they carry, so absent columns keep their defaults
     const groups = new Map<string, Values[]>();
     for (const v of rows) {
-      const fields = Object.keys(v).filter((k) => FIELDS[k]?.section === s).sort();
+      const fields = Object.keys(v)
+        .filter((k) => FIELDS[k]?.section === s)
+        .sort();
       if (!fields.length) continue;
       const key = fields.join(',');
       (groups.get(key) ?? groups.set(key, []).get(key)!).push(v);
@@ -57,9 +65,19 @@ export async function bulkCreateEmployees(tx: Tx, rows: Values[], actor: string 
     for (const [key, group] of groups) {
       const fields = key.split(',');
       const defs = fields.map((f) => FIELDS[f]!);
-      const params: unknown[] = [group.map((v) => ids.get(String(v.employeeNumber))), group.map((v) => v.startDate)];
-      for (const [i, def] of defs.entries()) params.push(group.map((v) => (def.type === 'json' && v[fields[i]!] !== null ? JSON.stringify(v[fields[i]!]) : v[fields[i]!])));
-      const arrays = ['$1::uuid[]', '$2::date[]', ...defs.map((d, i) => `$${i + 3}::${sqlType(d)}[]`)].join(', ');
+      const params: unknown[] = [
+        group.map((v) => ids.get(String(v.employeeNumber))),
+        group.map((v) => v.startDate),
+      ];
+      for (const [i, def] of defs.entries())
+        params.push(
+          group.map((v) =>
+            def.type === 'json' && v[fields[i]!] !== null ? JSON.stringify(v[fields[i]!]) : v[fields[i]!],
+          ),
+        );
+      const arrays = ['$1::uuid[]', '$2::date[]', ...defs.map((d, i) => `$${i + 3}::${sqlType(d)}[]`)].join(
+        ', ',
+      );
       params.push(actor);
       await tx.exec(
         `INSERT INTO ${SECTION_TABLE[s]} (tenant_id, created_by, employee_id, valid_from, ${defs.map((d) => d.column).join(', ')})
@@ -72,7 +90,11 @@ export async function bulkCreateEmployees(tx: Tx, rows: Values[], actor: string 
 }
 
 /** Section field values in force on `date` for many employees at once (field name → value). */
-export async function currentSectionValues(tx: Tx, ids: string[], date: string): Promise<Map<string, Values>> {
+export async function currentSectionValues(
+  tx: Tx,
+  ids: string[],
+  date: string,
+): Promise<Map<string, Values>> {
   const out = new Map<string, Values>(ids.map((id) => [id, {}]));
   for (const s of SECTIONS) {
     const rows = await tx.query<Record<string, unknown>>(
@@ -90,9 +112,11 @@ export async function currentSectionValues(tx: Tx, ids: string[], date: string):
 /** Same value as stored? Numbers compare numerically (30 = 30.00), JSON structurally, the rest as text. */
 export function sameValue(field: string, stored: unknown, incoming: unknown): boolean {
   const def = FIELDS[field];
-  if (stored === null || stored === undefined) return incoming === null || incoming === undefined || incoming === '';
+  if (stored === null || stored === undefined)
+    return incoming === null || incoming === undefined || incoming === '';
   if (def?.type === 'number') return Number(stored) === Number(incoming);
-  if (def?.type === 'json') return JSON.stringify(stored) === (typeof incoming === 'string' ? incoming : JSON.stringify(incoming));
+  if (def?.type === 'json')
+    return JSON.stringify(stored) === (typeof incoming === 'string' ? incoming : JSON.stringify(incoming));
   return String(stored) === String(incoming);
 }
 
@@ -101,9 +125,18 @@ export function sameValue(field: string, stored: unknown, incoming: unknown): bo
  * Links that would form a cycle among themselves, or whose person already has a line, are returned
  * for the per-row path (which rejects cycles with an error and splits existing lines correctly).
  */
-export async function bulkLinkManagers(tx: Tx, links: Array<{ employeeId: string; managerId: string; date: string }>, actor: string | null) {
+export async function bulkLinkManagers(
+  tx: Tx,
+  links: Array<{ employeeId: string; managerId: string; date: string }>,
+  actor: string | null,
+) {
   const withLines = new Set(
-    (await tx.query<{ employee_id: string }>(`SELECT DISTINCT employee_id FROM app.reporting_lines WHERE employee_id = ANY($1::uuid[]) AND kind = 'solid'`, [links.map((l) => l.employeeId)])).map((r) => r.employee_id),
+    (
+      await tx.query<{ employee_id: string }>(
+        `SELECT DISTINCT employee_id FROM app.reporting_lines WHERE employee_id = ANY($1::uuid[]) AND kind = 'solid'`,
+        [links.map((l) => l.employeeId)],
+      )
+    ).map((r) => r.employee_id),
   );
   const candidates = links.filter((l) => !withLines.has(l.employeeId) && l.employeeId !== l.managerId);
   const next = new Map(candidates.map((l) => [l.employeeId, l.managerId]));
@@ -134,7 +167,10 @@ export async function bulkLinkManagers(tx: Tx, links: Array<{ employeeId: string
       [...args, actor],
     );
     // keep the current manager (what cycle checks walk) up to date as lines are written
-    await tx.exec(`UPDATE app.employees e SET manager_id = u.m FROM unnest($1::uuid[], $2::uuid[], $3::date[]) AS u(e, m, d) WHERE e.id = u.e AND u.d <= current_date`, args);
+    await tx.exec(
+      `UPDATE app.employees e SET manager_id = u.m FROM unnest($1::uuid[], $2::uuid[], $3::date[]) AS u(e, m, d) WHERE e.id = u.e AND u.d <= current_date`,
+      args,
+    );
     // a chain through people who already had managers can still close a loop: check, and if so undo
     const loops = await tx.query(
       `WITH RECURSIVE up AS (

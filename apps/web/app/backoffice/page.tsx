@@ -32,7 +32,10 @@ export default function BackofficeHome() {
   ];
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle title={t('backoffice.overview.title')} lead={t('backoffice.overview.lead', { region: t(`regions.${o.data.cell}`), aws: o.data.awsRegion })} />
+      <PageTitle
+        title={t('backoffice.overview.title')}
+        lead={t('backoffice.overview.lead', { region: t(`regions.${o.data.cell}`), aws: o.data.awsRegion })}
+      />
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map(([k, n, href]) => (
           <li key={k}>

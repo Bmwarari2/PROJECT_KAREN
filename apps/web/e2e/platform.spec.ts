@@ -35,10 +35,14 @@ test.describe('enterprise platform settings', () => {
 
     await page.getByRole('button', { name: 'Revoke Fictional payroll sync' }).click();
     await expect(page.getByRole('row', { name: /Fictional payroll sync/ })).toContainText('Revoked');
-    expect((await page.request.get('/v1/employees', { headers: { authorization: `Bearer ${key}` } })).status()).toBe(401);
+    expect(
+      (await page.request.get('/v1/employees', { headers: { authorization: `Bearer ${key}` } })).status(),
+    ).toBe(401);
   });
 
-  test('an admin adds a webhook endpoint, sees the signing secret once and finds it in the list', async ({ page }) => {
+  test('an admin adds a webhook endpoint, sees the signing secret once and finds it in the list', async ({
+    page,
+  }) => {
     await signUpAndEnrol(page);
     await page.goto('/app/settings/webhooks');
     await expect(page.getByRole('heading', { name: 'Webhooks', level: 1 })).toBeVisible();
@@ -62,7 +66,9 @@ test.describe('enterprise platform settings', () => {
     await page.getByRole('button', { name: 'Send test event' }).click();
     await expect(page.getByText('Test event queued.').first()).toBeVisible();
     await page.getByRole('button', { name: 'Delivery log' }).click();
-    await expect(page.getByRole('table', { name: /Deliveries to/ }).or(page.getByText('No deliveries yet.'))).toBeVisible();
+    await expect(
+      page.getByRole('table', { name: /Deliveries to/ }).or(page.getByText('No deliveries yet.')),
+    ).toBeVisible();
     await expectAccessible(page);
   });
 
@@ -78,22 +84,46 @@ test.describe('enterprise platform settings', () => {
     await expect(alert).toContainText(/Light mode: accent\/bg is 1\.\d\d:1 \(needs at least 4\.5:1\)/);
     await expectAccessible(page);
     // nothing was applied
-    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim())).toBe('#0b6b63');
+    expect(
+      await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
+      ),
+    ).toBe('#0b6b63');
 
     await page.getByLabel(/Accent colou?r \(light mode\)/).fill('#1F3A8A');
     await page.getByRole('button', { name: /Save colou?r/ }).click();
     await expect(page.getByText(/Accent colou?r saved\./).first()).toBeVisible();
     await expect(alert).toHaveCount(0);
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim())).toBe('#1f3a8a');
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
+        ),
+      )
+      .toBe('#1f3a8a');
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim())).not.toBe('#1f3a8a');
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
+        ),
+      )
+      .not.toBe('#1f3a8a');
     await expectAccessible(page);
     await page.emulateMedia({ colorScheme: 'light' });
     await page.reload();
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim())).toBe('#1f3a8a');
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
+        ),
+      )
+      .toBe('#1f3a8a');
   });
 
-  test('the developer documentation is generated from the OpenAPI document and accessible', async ({ page }) => {
+  test('the developer documentation is generated from the OpenAPI document and accessible', async ({
+    page,
+  }) => {
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
       const res = await page.goto('/developers');

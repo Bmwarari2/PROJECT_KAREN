@@ -29,22 +29,40 @@ interface RoleRow {
   field_access: Record<string, FieldAccess>;
 }
 
-export async function machinePrincipal(tx: Tx, c: { id: string; roleId: string; scopes: string[]; scopeType: ScopeType; scopeValues: string[] }): Promise<Principal> {
-  const role = await tx.maybe<RoleRow>('SELECT key, permissions, field_access FROM app.roles WHERE id = $1', [c.roleId]);
+export async function machinePrincipal(
+  tx: Tx,
+  c: { id: string; roleId: string; scopes: string[]; scopeType: ScopeType; scopeValues: string[] },
+): Promise<Principal> {
+  const role = await tx.maybe<RoleRow>('SELECT key, permissions, field_access FROM app.roles WHERE id = $1', [
+    c.roleId,
+  ]);
   return {
     userId: c.id,
     employeeId: null,
     kind: 'api_client',
     delegatedFromEmployeeIds: [],
     grants: role
-      ? [{ roleKey: `api:${role.key}`, isAdmin: false, permissions: scopedPermissions(role.permissions, c.scopes), fieldAccess: role.field_access, scope: { type: c.scopeType, values: c.scopeValues } }]
+      ? [
+          {
+            roleKey: `api:${role.key}`,
+            isAdmin: false,
+            permissions: scopedPermissions(role.permissions, c.scopes),
+            fieldAccess: role.field_access,
+            scope: { type: c.scopeType, values: c.scopeValues },
+          },
+        ]
       : [],
   };
 }
 
 async function tenantApiSettings(tx: Tx) {
-  const row = await tx.maybe<{ api: { rateLimitPerMinute?: number; plan?: string } | null; plan: string | null }>(`SELECT features->'api' AS api, features->>'plan' AS plan FROM app.tenants`);
-  return { rateLimitPerMinute: rateLimitFor({ ...(row?.api ?? {}), plan: row?.api?.plan ?? row?.plan ?? undefined }) };
+  const row = await tx.maybe<{
+    api: { rateLimitPerMinute?: number; plan?: string } | null;
+    plan: string | null;
+  }>(`SELECT features->'api' AS api, features->>'plan' AS plan FROM app.tenants`);
+  return {
+    rateLimitPerMinute: rateLimitFor({ ...(row?.api ?? {}), plan: row?.api?.plan ?? row?.plan ?? undefined }),
+  };
 }
 
 /** Resolves an API key or OAuth access token. Returns undefined when unknown, revoked or expired. */
@@ -58,24 +76,52 @@ export async function resolveApiCredential(deps: Deps, token: string): Promise<A
       const hash = hashToken(parsed.secret);
       const cred =
         kind === 'api_key'
-          ? await tx.maybe<{ id: string; credential_id: string; name: string; scopes: string[]; role_id: string; scope_type: ScopeType; scope_values: string[]; last_used_at: string | null }>(
+          ? await tx.maybe<{
+              id: string;
+              credential_id: string;
+              name: string;
+              scopes: string[];
+              role_id: string;
+              scope_type: ScopeType;
+              scope_values: string[];
+              last_used_at: string | null;
+            }>(
               `SELECT id, id AS credential_id, name, scopes, role_id, scope_type, scope_values, last_used_at FROM app.api_keys
                 WHERE key_hash = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > $2)`,
               [hash, now],
             )
-          : await tx.maybe<{ id: string; credential_id: string; name: string; scopes: string[]; role_id: string; scope_type: ScopeType; scope_values: string[]; last_used_at: string | null }>(
+          : await tx.maybe<{
+              id: string;
+              credential_id: string;
+              name: string;
+              scopes: string[];
+              role_id: string;
+              scope_type: ScopeType;
+              scope_values: string[];
+              last_used_at: string | null;
+            }>(
               `SELECT c.id, t.id AS credential_id, c.name, t.scopes, c.role_id, c.scope_type, c.scope_values, c.last_used_at
                  FROM app.oauth_access_tokens t JOIN app.oauth_clients c ON c.tenant_id = t.tenant_id AND c.id = t.client_id
                 WHERE t.token_hash = $1 AND t.expires_at > $2 AND c.revoked_at IS NULL`,
               [hash, now],
             );
       if (!cred) return undefined;
-      if (!(await featureEnabled(tx, 'publicApi'))) throw new ApiError('forbidden', 'featureDisabled', { feature: 'publicApi' });
+      if (!(await featureEnabled(tx, 'publicApi')))
+        throw new ApiError('forbidden', 'featureDisabled', { feature: 'publicApi' });
       // last-used is coarse (once a minute) to keep writes off the hot path
       if (!cred.last_used_at || now.getTime() - new Date(cred.last_used_at).getTime() > 60_000) {
-        await tx.exec(`UPDATE ${kind === 'api_key' ? 'app.api_keys' : 'app.oauth_clients'} SET last_used_at = $2 WHERE id = $1`, [cred.id, now]);
+        await tx.exec(
+          `UPDATE ${kind === 'api_key' ? 'app.api_keys' : 'app.oauth_clients'} SET last_used_at = $2 WHERE id = $1`,
+          [cred.id, now],
+        );
       }
-      const principal = await machinePrincipal(tx, { id: cred.id, roleId: cred.role_id, scopes: cred.scopes, scopeType: cred.scope_type, scopeValues: cred.scope_values });
+      const principal = await machinePrincipal(tx, {
+        id: cred.id,
+        roleId: cred.role_id,
+        scopes: cred.scopes,
+        scopeType: cred.scope_type,
+        scopeValues: cred.scope_values,
+      });
       const settings = await tenantApiSettings(tx);
       return {
         tenantId: parsed.tenantId,
@@ -87,7 +133,13 @@ export async function resolveApiCredential(deps: Deps, token: string): Promise<A
         authenticatedAt: now,
         principal,
         user: { email: '', displayName: cred.name, locale: null, timeZone: null, employeeId: null },
-        apiClient: { id: cred.id, kind, name: cred.name, scopes: cred.scopes, rateLimitPerMinute: settings.rateLimitPerMinute },
+        apiClient: {
+          id: cred.id,
+          kind,
+          name: cred.name,
+          scopes: cred.scopes,
+          rateLimitPerMinute: settings.rateLimitPerMinute,
+        },
       } satisfies AuthContext;
     });
   } catch (err) {

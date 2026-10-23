@@ -62,7 +62,13 @@ export const RUNTIME_PLATFORM: ecs.RuntimePlatform = {
 };
 
 /** CloudWatch log group encrypted with a customer KMS key and a finite retention. */
-export function encryptedLogGroup(scope: Construct, id: string, key: kms.IKey, cfg: EnvConfig, logGroupName?: string) {
+export function encryptedLogGroup(
+  scope: Construct,
+  id: string,
+  key: kms.IKey,
+  cfg: EnvConfig,
+  logGroupName?: string,
+) {
   return new logs.LogGroup(scope, id, {
     logGroupName,
     encryptionKey: key,
@@ -80,7 +86,11 @@ export function allowLogsService(key: kms.Key) {
       principals: [new iam.ServicePrincipal(`logs.${region}.amazonaws.com`)],
       actions: ['kms:Encrypt*', 'kms:Decrypt*', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:Describe*'],
       resources: ['*'],
-      conditions: { ArnLike: { 'kms:EncryptionContext:aws:logs:arn': `arn:${partition}:logs:${region}:${account}:log-group:*` } },
+      conditions: {
+        ArnLike: {
+          'kms:EncryptionContext:aws:logs:arn': `arn:${partition}:logs:${region}:${account}:log-group:*`,
+        },
+      },
     }),
   );
 }
@@ -90,7 +100,10 @@ export function allowAlertingServices(key: kms.Key) {
   key.addToResourcePolicy(
     new iam.PolicyStatement({
       sid: 'AllowAlarmAndBudgetPublishing',
-      principals: [new iam.ServicePrincipal('cloudwatch.amazonaws.com'), new iam.ServicePrincipal('budgets.amazonaws.com')],
+      principals: [
+        new iam.ServicePrincipal('cloudwatch.amazonaws.com'),
+        new iam.ServicePrincipal('budgets.amazonaws.com'),
+      ],
       actions: ['kms:Decrypt', 'kms:GenerateDataKey*'],
       resources: ['*'],
       conditions: { StringEquals: { 'aws:SourceAccount': Stack.of(key).account } },
@@ -119,7 +132,11 @@ export function logsBucket(scope: Construct, bucketName: string, cfg: EnvConfig)
     versioned: true,
     objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
     lifecycleRules: [
-      { id: 'expire-logs', expiration: Duration.days(cfg.logRetentionDays), noncurrentVersionExpiration: Duration.days(7) },
+      {
+        id: 'expire-logs',
+        expiration: Duration.days(cfg.logRetentionDays),
+        noncurrentVersionExpiration: Duration.days(7),
+      },
     ],
     removalPolicy: keepUnlessEphemeral(cfg),
   });
@@ -130,7 +147,8 @@ export function certificateArn(scope: Construct, fromConfig: string | null): str
   if (fromConfig) return fromConfig;
   return new CfnParameter(scope, 'CertificateArn', {
     type: 'String',
-    description: 'ACM certificate ARN (in this region) for the HTTPS listener. Staging: imported self-signed certificate.',
+    description:
+      'ACM certificate ARN (in this region) for the HTTPS listener. Staging: imported self-signed certificate.',
     allowedPattern: '^arn:aws[a-z-]*:acm:[a-z0-9-]+:\\d{12}:certificate/.+$',
   }).valueAsString;
 }
@@ -144,7 +162,11 @@ export function publicAlb(
   scope: Construct,
   opts: { vpc: ec2.IVpc; logs: s3.IBucket; certificateArn: string; name: string; noRedirectPaths?: string[] },
 ): { alb: elbv2.ApplicationLoadBalancer; https: elbv2.ApplicationListener; sg: ec2.SecurityGroup } {
-  const sg = new ec2.SecurityGroup(scope, 'AlbSg', { vpc: opts.vpc, description: 'Public ALB', allowAllOutbound: false });
+  const sg = new ec2.SecurityGroup(scope, 'AlbSg', {
+    vpc: opts.vpc,
+    description: 'Public ALB',
+    allowAllOutbound: false,
+  });
   sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'HTTPS');
   sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'HTTP (redirect only)');
   const alb = new elbv2.ApplicationLoadBalancer(scope, 'Alb', {
@@ -161,7 +183,11 @@ export function publicAlb(
     port: 80,
     protocol: elbv2.ApplicationProtocol.HTTP,
     open: false,
-    defaultAction: elbv2.ListenerAction.redirect({ protocol: elbv2.ApplicationProtocol.HTTPS, port: '443', permanent: true }),
+    defaultAction: elbv2.ListenerAction.redirect({
+      protocol: elbv2.ApplicationProtocol.HTTPS,
+      port: '443',
+      permanent: true,
+    }),
   });
   const noRedirect = opts.noRedirectPaths ?? [];
   // an ALB rule matches at most five path patterns
@@ -171,7 +197,12 @@ export function publicAlb(
       conditions: [elbv2.ListenerCondition.pathPatterns(noRedirect.slice(i, i + 5))],
       action: elbv2.ListenerAction.fixedResponse(400, {
         contentType: 'application/problem+json',
-        messageBody: JSON.stringify({ type: 'about:blank#httpsRequired', title: 'HTTPS is required', status: 400, code: 'httpsRequired' }),
+        messageBody: JSON.stringify({
+          type: 'about:blank#httpsRequired',
+          title: 'HTTPS is required',
+          status: 400,
+          code: 'httpsRequired',
+        }),
       }),
     });
   }
@@ -186,8 +217,17 @@ export function publicAlb(
 }
 
 /** Regional WAFv2 web ACL (AWS managed rule groups + per-IP rate limit) associated with the ALB. */
-export function regionalWaf(scope: Construct, alb: elbv2.IApplicationLoadBalancer, name: string, ratePer5Min: number) {
-  const vis = (metricName: string) => ({ cloudWatchMetricsEnabled: true, metricName, sampledRequestsEnabled: true });
+export function regionalWaf(
+  scope: Construct,
+  alb: elbv2.IApplicationLoadBalancer,
+  name: string,
+  ratePer5Min: number,
+) {
+  const vis = (metricName: string) => ({
+    cloudWatchMetricsEnabled: true,
+    metricName,
+    sampledRequestsEnabled: true,
+  });
   const managed = (priority: number, groupName: string) => ({
     name: groupName,
     priority,
@@ -205,7 +245,9 @@ export function regionalWaf(scope: Construct, alb: elbv2.IApplicationLoadBalance
         name: 'rate-limit-per-ip',
         priority: 0,
         action: { block: {} },
-        statement: { rateBasedStatement: { limit: ratePer5Min, aggregateKeyType: 'IP', evaluationWindowSec: 300 } },
+        statement: {
+          rateBasedStatement: { limit: ratePer5Min, aggregateKeyType: 'IP', evaluationWindowSec: 300 },
+        },
         visibilityConfig: vis('rate-limit-per-ip'),
       },
       managed(1, 'AWSManagedRulesAmazonIpReputationList'),
@@ -214,7 +256,10 @@ export function regionalWaf(scope: Construct, alb: elbv2.IApplicationLoadBalance
       managed(4, 'AWSManagedRulesSQLiRuleSet'),
     ],
   });
-  new wafv2.CfnWebACLAssociation(scope, 'WebAclAssociation', { resourceArn: alb.loadBalancerArn, webAclArn: acl.attrArn });
+  new wafv2.CfnWebACLAssociation(scope, 'WebAclAssociation', {
+    resourceArn: alb.loadBalancerArn,
+    webAclArn: acl.attrArn,
+  });
   return acl;
 }
 
@@ -238,7 +283,13 @@ export function alertTopic(scope: Construct, key: kms.IKey, cfg: EnvConfig) {
  * Monthly cost budget filtered by the `cell` cost-allocation tag (the tag must be activated in
  * Billing — see HUMAN_TODO), notifying at 80% and 100% of actual spend.
  */
-export function cellBudget(scope: Construct, cfg: EnvConfig, cellTag: string, amountUsd: number, topic: sns.ITopic) {
+export function cellBudget(
+  scope: Construct,
+  cfg: EnvConfig,
+  cellTag: string,
+  amountUsd: number,
+  topic: sns.ITopic,
+) {
   const subscribers = cfg.alarmEmail
     ? [{ subscriptionType: 'EMAIL', address: cfg.alarmEmail }]
     : [{ subscriptionType: 'SNS', address: topic.topicArn }];
@@ -251,14 +302,24 @@ export function cellBudget(scope: Construct, cfg: EnvConfig, cellTag: string, am
       costFilters: { TagKeyValue: [`user:cell$${cellTag}`] },
     },
     notificationsWithSubscribers: [80, 100].map((threshold) => ({
-      notification: { notificationType: 'ACTUAL', comparisonOperator: 'GREATER_THAN', threshold, thresholdType: 'PERCENTAGE' },
+      notification: {
+        notificationType: 'ACTUAL',
+        comparisonOperator: 'GREATER_THAN',
+        threshold,
+        thresholdType: 'PERCENTAGE',
+      },
       subscribers,
     })),
   });
 }
 
 /** X-Ray actions that AWS only supports on Resource "*" (documented exception in the IAM tests). */
-export const XRAY_ACTIONS = ['xray:PutTraceSegments', 'xray:PutTelemetryRecords', 'xray:GetSamplingRules', 'xray:GetSamplingTargets'];
+export const XRAY_ACTIONS = [
+  'xray:PutTraceSegments',
+  'xray:PutTelemetryRecords',
+  'xray:GetSamplingRules',
+  'xray:GetSamplingTargets',
+];
 
 /** ADOT collector sidecar: OTLP/HTTP on localhost:4318 → AWS X-Ray in the task's own region. */
 export function addOtelSidecar(task: ecs.TaskDefinition, logGroup: logs.ILogGroup) {

@@ -5,7 +5,13 @@ import { contentSecurityPolicy, newNonce, STATIC_ASSET_CSP } from '../lib/csp';
 
 /** ASVS V3.4.3 and V3.4.6: a nonce-based policy with object-src and base-uri 'none', never framed. */
 describe('content security policy', () => {
-  const directives = (csp: string) => new Map(csp.split(';').map((d) => d.trim().split(/\s+/)).map(([name, ...values]) => [name!, values]));
+  const directives = (csp: string) =>
+    new Map(
+      csp
+        .split(';')
+        .map((d) => d.trim().split(/\s+/))
+        .map(([name, ...values]) => [name!, values]),
+    );
 
   it('pages allow only nonce-carrying scripts (and what they load), no plugins, no base rewrite, no framing', () => {
     const d = directives(contentSecurityPolicy('bm9uY2U='));
@@ -20,7 +26,9 @@ describe('content security policy', () => {
   });
 
   it('only development adds unsafe-eval (React debugging), never production', () => {
-    expect(directives(contentSecurityPolicy('x', { dev: true })).get('script-src')).toContain("'unsafe-eval'");
+    expect(directives(contentSecurityPolicy('x', { dev: true })).get('script-src')).toContain(
+      "'unsafe-eval'",
+    );
   });
 
   it('nonces are fresh 128-bit values', () => {
@@ -41,8 +49,12 @@ describe('content security policy', () => {
 
   it('no page opts out of per-request rendering (a prerendered page would carry no nonce and its scripts would be blocked)', () => {
     const root = new URL('../app', import.meta.url).pathname;
-    const files = readdirSync(root, { recursive: true, encoding: 'utf8' }).filter((f) => /\.(tsx?|jsx?)$/.test(f));
-    const offenders = files.filter((f) => /force-static|export const revalidate|generateStaticParams/.test(readFileSync(join(root, f), 'utf8')));
+    const files = readdirSync(root, { recursive: true, encoding: 'utf8' }).filter((f) =>
+      /\.(tsx?|jsx?)$/.test(f),
+    );
+    const offenders = files.filter((f) =>
+      /force-static|export const revalidate|generateStaticParams/.test(readFileSync(join(root, f), 'utf8')),
+    );
     expect(offenders).toEqual([]);
   });
 });

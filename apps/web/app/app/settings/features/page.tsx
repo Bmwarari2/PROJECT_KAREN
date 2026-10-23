@@ -22,14 +22,24 @@ export default function FeaturesPage() {
   const session = useSession();
   const { reload } = useExperience();
   const flags = useApi<Flag[]>('/v1/settings/features');
-  const canManage = !!session?.permissions.some((p) => p === '*' || p === 'settings.manage' || p === 'settings.*');
+  const canManage = !!session?.permissions.some(
+    (p) => p === '*' || p === 'settings.manage' || p === 'settings.*',
+  );
 
   async function toggle(f: Flag, enabled: boolean) {
     try {
-      const next = await api<Flag[]>(`/v1/settings/features/${f.key}`, { method: 'PUT', json: { enabled: enabled === f.default ? null : enabled } });
+      const next = await api<Flag[]>(`/v1/settings/features/${f.key}`, {
+        method: 'PUT',
+        json: { enabled: enabled === f.default ? null : enabled },
+      });
       flags.setData(next);
       reload();
-      toast({ title: t(enabled ? 'platform.features.turnedOn' : 'platform.features.turnedOff', { name: t(FEATURE_FLAGS[f.key].labelKey) }), tone: 'success' });
+      toast({
+        title: t(enabled ? 'platform.features.turnedOn' : 'platform.features.turnedOff', {
+          name: t(FEATURE_FLAGS[f.key].labelKey),
+        }),
+        tone: 'success',
+      });
     } catch (err) {
       toast({ title: errorText(t, err), tone: 'danger' });
     }
@@ -53,7 +63,10 @@ export default function FeaturesPage() {
                     <label htmlFor={id} className="text-callout font-semibold">
                       {t(def.labelKey)}
                     </label>
-                    <p id={`${id}-desc`} className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">
+                    <p
+                      id={`${id}-desc`}
+                      className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary"
+                    >
                       {t(def.descriptionKey)}
                     </p>
                     {f.managedBy === 'staff' ? (

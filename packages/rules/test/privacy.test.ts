@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { RuleBook } from '../src/engine';
-import { addPeriod, breachDeadlines, dsrDeadline, periodAtLeast, privacyJurisdiction, retentionDecision, retentionRules, retainUntil } from '../src/privacy';
+import {
+  addPeriod,
+  breachDeadlines,
+  dsrDeadline,
+  periodAtLeast,
+  privacyJurisdiction,
+  retentionDecision,
+  retentionRules,
+  retainUntil,
+} from '../src/privacy';
 
 /**
  * Golden tests for the privacy deadline and retention maths. Rule VALUES are covered by
@@ -45,14 +54,25 @@ describe('data subject request deadlines', () => {
     expect(d.rule.source.url).toMatch(/^https:\/\/www\.legislation\.gov\.uk\//);
   });
   it('UK from 5 February 2026: the clock starts when identity information arrives and stops for access clarification', () => {
-    const access = dsrDeadline(book, 'GB', 'access', { receivedOn: '2026-03-10', informationReceivedOn: '2026-03-15', pausedDays: 5 })!;
+    const access = dsrDeadline(book, 'GB', 'access', {
+      receivedOn: '2026-03-10',
+      informationReceivedOn: '2026-03-15',
+      pausedDays: 5,
+    })!;
     expect(access.startsOn).toBe('2026-03-15');
     expect(access.dueOn).toBe('2026-04-20');
     expect(access.extendedDueOn).toBe('2026-06-20');
-    const deletion = dsrDeadline(book, 'GB', 'deletion', { receivedOn: '2026-03-10', informationReceivedOn: '2026-03-15', pausedDays: 5 })!;
+    const deletion = dsrDeadline(book, 'GB', 'deletion', {
+      receivedOn: '2026-03-10',
+      informationReceivedOn: '2026-03-15',
+      pausedDays: 5,
+    })!;
     expect(deletion.dueOn).toBe('2026-04-15'); // the clock stop applies to Article 15 requests only
     // before 12A the identity date did not move the clock
-    expect(dsrDeadline(book, 'GB', 'access', { receivedOn: '2026-01-10', informationReceivedOn: '2026-01-20' })!.dueOn).toBe('2026-02-10');
+    expect(
+      dsrDeadline(book, 'GB', 'access', { receivedOn: '2026-01-10', informationReceivedOn: '2026-01-20' })!
+        .dueOn,
+    ).toBe('2026-02-10');
   });
   it('EU member states use the GDPR baseline', () => {
     const d = dsrDeadline(book, 'DE', 'correction', { receivedOn: '2026-03-10' })!;
@@ -60,7 +80,10 @@ describe('data subject request deadlines', () => {
     expect([d.dueOn, d.extendedDueOn]).toEqual(['2026-04-10', '2026-06-10']);
   });
   it('California: 45 days, extendable once by 45 days (90 in total)', () => {
-    const d = dsrDeadline(book, 'US-CA', 'deletion', { receivedOn: '2026-03-10', informationReceivedOn: '2026-03-20' })!;
+    const d = dsrDeadline(book, 'US-CA', 'deletion', {
+      receivedOn: '2026-03-10',
+      informationReceivedOn: '2026-03-20',
+    })!;
     expect(d.startsOn).toBe('2026-03-10'); // verification does not extend the CCPA clock
     expect(d.dueOn).toBe('2026-04-24');
     expect(d.extendedDueOn).toBe('2026-06-08');
@@ -79,15 +102,23 @@ describe('breach notification deadlines', () => {
       ['GB', '2026-10-04T09:30:00Z', 'Information Commission'],
       ['DE', '2026-10-04T09:30:00Z', 'competent supervisory authority'],
     ]);
-    expect(d.find((x) => x.jurisdiction === 'GB' && x.audience === 'processorToController')).toMatchObject({ dueAt: null, standard: expect.stringMatching(/without undue delay/) });
+    expect(d.find((x) => x.jurisdiction === 'GB' && x.audience === 'processorToController')).toMatchObject({
+      dueAt: null,
+      standard: expect.stringMatching(/without undue delay/),
+    });
   });
   it('US state day limits and thresholds', () => {
     const d = breachDeadlines(book, '2026-10-01T00:00:00Z', { 'US-TX': 100, 'US-WA': 600, 'US-OR': 10 });
     const tx = d.filter((x) => x.jurisdiction === 'US-TX');
     expect(tx.find((x) => x.audience === 'individuals')?.dueAt).toBe('2026-11-30T00:00:00Z');
     expect(tx.find((x) => x.audience === 'regulator')).toMatchObject({ required: false, minAffected: 250 });
-    expect(d.find((x) => x.jurisdiction === 'US-WA' && x.audience === 'regulator')).toMatchObject({ required: true, dueAt: '2026-10-31T00:00:00Z' });
-    expect(d.find((x) => x.jurisdiction === 'US-OR' && x.audience === 'processorToController')?.dueAt).toBe('2026-10-11T00:00:00Z');
+    expect(d.find((x) => x.jurisdiction === 'US-WA' && x.audience === 'regulator')).toMatchObject({
+      required: true,
+      dueAt: '2026-10-31T00:00:00Z',
+    });
+    expect(d.find((x) => x.jurisdiction === 'US-OR' && x.audience === 'processorToController')?.dueAt).toBe(
+      '2026-10-11T00:00:00Z',
+    );
     expect(breachDeadlines(book, '2026-10-01T00:00:00Z', { 'US-GA': 50 })).toEqual([]); // not modelled: flagged as a coverage to-do
   });
 });
@@ -99,7 +130,10 @@ describe('retention', () => {
   });
   it('UK payroll records: the later of PAYE (3 years after the tax year) and NMW (6 years after the next pay period)', () => {
     const rules = retentionRules(book, 'GB', 'payroll_records', '2026-06-01');
-    expect(rules.map((r) => r.key).sort()).toEqual(['retention.minimum_wage_records', 'retention.payroll_records']);
+    expect(rules.map((r) => r.key).sort()).toEqual([
+      'retention.minimum_wage_records',
+      'retention.payroll_records',
+    ]);
     const paye = rules.find((r) => r.key === 'retention.payroll_records')!;
     expect(retainUntil(paye.value, { recordDate: '2025-05-01' })).toBe('2029-04-05');
     expect(retainUntil(paye.value, { recordDate: '2025-04-05' })).toBe('2028-04-05');
@@ -107,22 +141,42 @@ describe('retention', () => {
   });
   it('immigration records: UK two years after employment ends; US I-9 later of 3 years after hire or 1 year after leaving', () => {
     const gb = retentionRules(book, 'GB', 'immigration_records', '2026-10-18');
-    expect(retentionDecision(gb, { recordDate: '2020-01-06', employmentEnd: '2025-03-01' }).deletableFrom).toBe('2027-03-01');
+    expect(
+      retentionDecision(gb, { recordDate: '2020-01-06', employmentEnd: '2025-03-01' }).deletableFrom,
+    ).toBe('2027-03-01');
     expect(retentionDecision(gb, { recordDate: '2020-01-06', employmentEnd: null }).deletableFrom).toBeNull();
     const us = retentionRules(book, 'US-CA', 'immigration_records', '2026-06-01');
-    expect(retentionDecision(us, { recordDate: '2020-01-06', employmentEnd: '2021-03-01' }).deletableFrom).toBe('2023-01-06');
-    expect(retentionDecision(us, { recordDate: '2020-01-06', employmentEnd: '2024-03-01' }).deletableFrom).toBe('2025-03-01');
+    expect(
+      retentionDecision(us, { recordDate: '2020-01-06', employmentEnd: '2021-03-01' }).deletableFrom,
+    ).toBe('2023-01-06');
+    expect(
+      retentionDecision(us, { recordDate: '2020-01-06', employmentEnd: '2024-03-01' }).deletableFrom,
+    ).toBe('2025-03-01');
   });
   it('a tenant period can lengthen but never shorten a statutory minimum', () => {
     const rules = retentionRules(book, 'GB', 'time_records', '2026-06-01');
-    expect(retentionDecision(rules, { recordDate: '2024-03-01' }, { period: 'P1Y', from: 'record_date' }).deletableFrom).toBe('2026-03-01');
-    expect(retentionDecision(rules, { recordDate: '2024-03-01' }, { period: 'P3Y', from: 'record_date' }).deletableFrom).toBe('2027-03-01');
+    expect(
+      retentionDecision(rules, { recordDate: '2024-03-01' }, { period: 'P1Y', from: 'record_date' })
+        .deletableFrom,
+    ).toBe('2026-03-01');
+    expect(
+      retentionDecision(rules, { recordDate: '2024-03-01' }, { period: 'P3Y', from: 'record_date' })
+        .deletableFrom,
+    ).toBe('2027-03-01');
   });
   it('a suggested default (not statutory) yields to the tenant period', () => {
     const rules = retentionRules(book, 'GB', 'personnel_records', '2026-06-01');
     expect(rules[0]!.value.statutoryMinimum).toBe(false);
-    expect(retentionDecision(rules, { recordDate: '2019-01-01', employmentEnd: '2020-01-31' }).deletableFrom).toBe('2026-01-31');
-    expect(retentionDecision(rules, { recordDate: '2019-01-01', employmentEnd: '2020-01-31' }, { period: 'P2Y', from: 'employment_end' }).deletableFrom).toBe('2022-01-31');
+    expect(
+      retentionDecision(rules, { recordDate: '2019-01-01', employmentEnd: '2020-01-31' }).deletableFrom,
+    ).toBe('2026-01-31');
+    expect(
+      retentionDecision(
+        rules,
+        { recordDate: '2019-01-01', employmentEnd: '2020-01-31' },
+        { period: 'P2Y', from: 'employment_end' },
+      ).deletableFrom,
+    ).toBe('2022-01-31');
   });
   it('keeps records when no rule and no tenant policy exists', () => {
     expect(retentionDecision([], { recordDate: '2001-01-01' }).deletableFrom).toBeNull();

@@ -12,7 +12,13 @@ describe('Button', () => {
   });
 
   it('asChild renders the child element (a link) with the button styles and does not crash', () => {
-    const html = renderToStaticMarkup(h(Button, { asChild: true, variant: 'secondary', size: 'sm' }, h('a', { href: '/app/people/new' }, 'Add employee')));
+    const html = renderToStaticMarkup(
+      h(
+        Button,
+        { asChild: true, variant: 'secondary', size: 'sm' },
+        h('a', { href: '/app/people/new' }, 'Add employee'),
+      ),
+    );
     expect(html.startsWith('<a ')).toBe(true);
     expect(html).toContain('href="/app/people/new"');
     expect(html).toContain('rounded-pill');
@@ -23,7 +29,9 @@ describe('Button', () => {
   });
 
   it('asChild while loading keeps one element: the spinner moves inside the link, which is marked busy and disabled', () => {
-    const html = renderToStaticMarkup(h(Button, { asChild: true, loading: true }, h('a', { href: '/app/reports' }, 'Open')));
+    const html = renderToStaticMarkup(
+      h(Button, { asChild: true, loading: true }, h('a', { href: '/app/reports' }, 'Open')),
+    );
     expect(html).toMatch(/^<a [^>]*aria-busy="true"/);
     expect(html).toContain('aria-disabled="true"');
     expect(html).toContain('tabindex="-1"');
@@ -31,7 +39,13 @@ describe('Button', () => {
   });
 
   it('asChild merges the child class names and keeps its own props', () => {
-    const html = renderToStaticMarkup(h(Button, { asChild: true, className: 'mt-3' }, h('a', { href: '/x', className: 'no-underline', 'aria-label': 'Go' }, 'Go')));
+    const html = renderToStaticMarkup(
+      h(
+        Button,
+        { asChild: true, className: 'mt-3' },
+        h('a', { href: '/x', className: 'no-underline', 'aria-label': 'Go' }, 'Go'),
+      ),
+    );
     expect(html).toContain('mt-3');
     expect(html).toContain('no-underline');
     expect(html).toContain('aria-label="Go"');

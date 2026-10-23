@@ -19,7 +19,15 @@ export interface LeaveBalance {
 }
 
 /** One employee's balances per leave type, with the policy that produced each. */
-export function LeaveBalancesTable({ balances, typeName, caption }: { balances: LeaveBalance[]; typeName: (key: string) => string; caption: string }) {
+export function LeaveBalancesTable({
+  balances,
+  typeName,
+  caption,
+}: {
+  balances: LeaveBalance[];
+  typeName: (key: string) => string;
+  caption: string;
+}) {
   const t = useT();
   const locale = useLocale();
   const amount = (b: LeaveBalance, v: number) => formatUnit(v, b.unit === 'hours' ? 'hour' : 'day', locale);

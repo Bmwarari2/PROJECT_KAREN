@@ -2,7 +2,8 @@ import { formatDate, formatMoney, numberFormat, type Locale } from '@thapsus/cor
 import { money } from '@thapsus/core/money';
 
 /** Report result model as returned by /v1/reports/* (see apps/api/src/modules/reports/types.ts). */
-export type ColumnType = 'text' | 'enum' | 'integer' | 'decimal' | 'percent' | 'money' | 'date' | 'minutes' | 'boolean';
+export type ColumnType =
+  'text' | 'enum' | 'integer' | 'decimal' | 'percent' | 'money' | 'date' | 'minutes' | 'boolean';
 export interface ReportColumn {
   key: string;
   labelKey: string;
@@ -36,18 +37,29 @@ const isMoney = (v: Cell): v is MoneyCell => !!v && typeof v === 'object' && 'am
 export const NUMERIC: ColumnType[] = ['integer', 'decimal', 'percent', 'money', 'minutes'];
 
 /** Header text, e.g. "Asian – Female" for a compound EEO-1 column. */
-export function headerOf(t: (k: string) => string, c: Pick<ReportColumn, 'labelKey' | 'subLabelKey'>): string {
+export function headerOf(
+  t: (k: string) => string,
+  c: Pick<ReportColumn, 'labelKey' | 'subLabelKey'>,
+): string {
   return c.subLabelKey ? `${t(c.labelKey)} – ${t(c.subLabelKey)}` : t(c.labelKey);
 }
 
 /** Locale-aware display text; money stays integer minor units until formatting. */
-export function displayCell(t: (k: string) => string, locale: Locale, c: Pick<ReportColumn, 'type' | 'scale' | 'enumKey'>, v: Cell): string {
+export function displayCell(
+  t: (k: string) => string,
+  locale: Locale,
+  c: Pick<ReportColumn, 'type' | 'scale' | 'enumKey'>,
+  v: Cell,
+): string {
   if (v === null || v === undefined || v === '') return '—';
   switch (c.type) {
     case 'integer':
       return numberFormat(locale).format(Number(v));
     case 'decimal':
-      return numberFormat(locale, { minimumFractionDigits: c.scale ?? 2, maximumFractionDigits: c.scale ?? 2 }).format(String(v) as unknown as number);
+      return numberFormat(locale, {
+        minimumFractionDigits: c.scale ?? 2,
+        maximumFractionDigits: c.scale ?? 2,
+      }).format(String(v) as unknown as number);
     case 'percent':
       return `${numberFormat(locale, { minimumFractionDigits: c.scale ?? 2, maximumFractionDigits: c.scale ?? 2 }).format(String(v) as unknown as number)}%`;
     case 'money':

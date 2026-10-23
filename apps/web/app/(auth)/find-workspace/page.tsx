@@ -24,13 +24,24 @@ export default function FindWorkspacePage() {
           onSubmit={async (e) => {
             e.preventDefault();
             setBusy(true);
-            await api('/global/v1/find-workspace', { method: 'POST', json: { email, locale } }).catch(() => undefined);
+            await api('/global/v1/find-workspace', { method: 'POST', json: { email, locale } }).catch(
+              () => undefined,
+            );
             setBusy(false);
             setSent(true);
           }}
         >
           <Field id="email" label={t('auth.fields.workEmail')}>
-            {(p) => <Input {...p} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
+            {(p) => (
+              <Input
+                {...p}
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            )}
           </Field>
           <Button type="submit" loading={busy}>
             {t('auth.find.submit')}

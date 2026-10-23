@@ -6,13 +6,38 @@ import { CivilDate } from '../../../http/schemas';
 import { leaveContext, holidaysFor, policyFor, balanceFor } from '../../leave/service';
 import { leaveYearFor } from '../../leave/engine';
 import { FieldGate, paramAdder, rowScope } from '../access';
-import { computeAbsence, computeBradford, computeOvertime, type AbsenceFact, type BradfordInput, type TimesheetFact } from '../calc/absence';
-import { computeHeadcount, computeHeadcountHistory, computeTurnover, RESTRICTED, turnoverTotal } from '../calc/people';
+import {
+  computeAbsence,
+  computeBradford,
+  computeOvertime,
+  type AbsenceFact,
+  type BradfordInput,
+  type TimesheetFact,
+} from '../calc/absence';
+import {
+  computeHeadcount,
+  computeHeadcountHistory,
+  computeTurnover,
+  RESTRICTED,
+  turnoverTotal,
+} from '../calc/people';
 import { computeLiability } from '../calc/liability';
 import { formatScaled } from '../fixed';
 import { DIMENSION_PERM, employeeFacts, groupNames } from './load';
-import { complianceStatusReportDef, eeo1ReportDef, genderPayGapReportDef, payTransparencyReportDef } from './compliance';
-import { GROUP_BY, type Column, type GroupBy, type ReportContext, type ReportDefinition, type Row } from '../types';
+import {
+  complianceStatusReportDef,
+  eeo1ReportDef,
+  genderPayGapReportDef,
+  payTransparencyReportDef,
+} from './compliance';
+import {
+  GROUP_BY,
+  type Column,
+  type GroupBy,
+  type ReportContext,
+  type ReportDefinition,
+  type Row,
+} from '../types';
 
 /**
  * Ready-made report registry. Each report declares its parameters (TypeBox, published in OpenAPI), the
@@ -20,13 +45,17 @@ import { GROUP_BY, type Column, type GroupBy, type ReportContext, type ReportDef
  * reporting reader inside the caller's tenant context and returns typed columns + rows.
  * Calculations live in ../calc (pure, golden-tested); this file only loads facts and shapes output.
  */
-const GroupByParam = Type.Union(GROUP_BY.map((g) => Type.Literal(g)), { default: 'entity' });
+const GroupByParam = Type.Union(
+  GROUP_BY.map((g) => Type.Literal(g)),
+  { default: 'entity' },
+);
 const Period = { from: CivilDate, to: CivilDate };
 const MAX_PERIOD_MONTHS = 60;
 
 function assertPeriod(from: string, to: string) {
   if (compareDates(from, to) > 0) throw new ApiError('validation', 'from must not be after to');
-  if (monthsBetween(from, to) > MAX_PERIOD_MONTHS) throw new ApiError('validation', `The period may span at most ${MAX_PERIOD_MONTHS} months`);
+  if (monthsBetween(from, to) > MAX_PERIOD_MONTHS)
+    throw new ApiError('validation', `The period may span at most ${MAX_PERIOD_MONTHS} months`);
 }
 
 /** Localised label for a group key (names for entities/departments/locations, codes for countries). */
@@ -39,10 +68,17 @@ function labeller(ctx: ReportContext, names: Map<string, string>) {
   };
 }
 
-const groupColumn = (groupBy: string): Column => ({ key: 'group', labelKey: `reports.groupBy.${groupBy}`, type: 'text' });
+const groupColumn = (groupBy: string): Column => ({
+  key: 'group',
+  labelKey: `reports.groupBy.${groupBy}`,
+  type: 'text',
+});
 
 // ---- headcount -----------------------------------------------------------------------------------------
-const HeadcountParams = Type.Object({ asOf: CivilDate, groupBy: Type.Optional(GroupByParam) }, { additionalProperties: false });
+const HeadcountParams = Type.Object(
+  { asOf: CivilDate, groupBy: Type.Optional(GroupByParam) },
+  { additionalProperties: false },
+);
 const headcount: ReportDefinition<Static<typeof HeadcountParams>> = {
   id: 'headcount',
   category: 'people',
@@ -60,9 +96,15 @@ const headcount: ReportDefinition<Static<typeof HeadcountParams>> = {
     const rows = computeHeadcount(facts, p.asOf, groupBy);
     const total = computeHeadcount(facts, p.asOf, 'none')[0];
     return {
-      columns: [groupColumn(groupBy), { key: 'headcount', labelKey: 'reports.col.headcount', type: 'integer' }, { key: 'fte', labelKey: 'reports.col.fte', type: 'decimal', scale: 2 }],
+      columns: [
+        groupColumn(groupBy),
+        { key: 'headcount', labelKey: 'reports.col.headcount', type: 'integer' },
+        { key: 'fte', labelKey: 'reports.col.fte', type: 'decimal', scale: 2 },
+      ],
       rows: rows.map((r) => ({ group: label(r.key), headcount: r.headcount, fte: r.fte })),
-      totals: [{ group: ctx.t('reports.total'), headcount: total?.headcount ?? 0, fte: total?.fte ?? '0.00' }],
+      totals: [
+        { group: ctx.t('reports.total'), headcount: total?.headcount ?? 0, fte: total?.fte ?? '0.00' },
+      ],
       chart: { type: 'bar', x: 'group', y: ['headcount'] },
       notes: ['reports.note.headcountDefinition', ...(restricted ? ['reports.note.restricted'] : [])],
       restricted,
@@ -70,7 +112,18 @@ const headcount: ReportDefinition<Static<typeof HeadcountParams>> = {
   },
 };
 
-const HistoryParams = Type.Object({ ...Period, groupBy: Type.Optional(Type.Union(GROUP_BY.map((g) => Type.Literal(g)), { default: 'none' })) }, { additionalProperties: false });
+const HistoryParams = Type.Object(
+  {
+    ...Period,
+    groupBy: Type.Optional(
+      Type.Union(
+        GROUP_BY.map((g) => Type.Literal(g)),
+        { default: 'none' },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
 const headcountHistory: ReportDefinition<Static<typeof HistoryParams>> = {
   id: 'headcount-history',
   category: 'people',
@@ -88,17 +141,37 @@ const headcountHistory: ReportDefinition<Static<typeof HistoryParams>> = {
     const label = labeller(ctx, await groupNames(ctx.tx, groupBy));
     const points = computeHeadcountHistory(facts, p.from, p.to, groupBy);
     return {
-      columns: [{ key: 'date', labelKey: 'reports.col.date', type: 'date' }, groupColumn(groupBy), { key: 'headcount', labelKey: 'reports.col.headcount', type: 'integer' }, { key: 'fte', labelKey: 'reports.col.fte', type: 'decimal', scale: 2 }],
+      columns: [
+        { key: 'date', labelKey: 'reports.col.date', type: 'date' },
+        groupColumn(groupBy),
+        { key: 'headcount', labelKey: 'reports.col.headcount', type: 'integer' },
+        { key: 'fte', labelKey: 'reports.col.fte', type: 'decimal', scale: 2 },
+      ],
       rows: points.map((r) => ({ date: r.date, group: label(r.key), headcount: r.headcount, fte: r.fte })),
       chart: { type: 'line', x: 'date', y: ['headcount'] },
-      notes: ['reports.note.headcountDefinition', 'reports.note.monthEnds', ...(restricted ? ['reports.note.restricted'] : [])],
+      notes: [
+        'reports.note.headcountDefinition',
+        'reports.note.monthEnds',
+        ...(restricted ? ['reports.note.restricted'] : []),
+      ],
       restricted,
     };
   },
 };
 
 // ---- turnover ------------------------------------------------------------------------------------------
-const TurnoverParams = Type.Object({ ...Period, groupBy: Type.Optional(Type.Union(GROUP_BY.map((g) => Type.Literal(g)), { default: 'none' })) }, { additionalProperties: false });
+const TurnoverParams = Type.Object(
+  {
+    ...Period,
+    groupBy: Type.Optional(
+      Type.Union(
+        GROUP_BY.map((g) => Type.Literal(g)),
+        { default: 'none' },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
 const turnover: ReportDefinition<Static<typeof TurnoverParams>> = {
   id: 'turnover',
   category: 'people',
@@ -151,7 +224,18 @@ const turnover: ReportDefinition<Static<typeof TurnoverParams>> = {
 
 // ---- absence -------------------------------------------------------------------------------------------
 const ABSENCE_GROUPS = ['type', 'employee', 'entity', 'department', 'location', 'country'] as const;
-const AbsenceParams = Type.Object({ ...Period, groupBy: Type.Optional(Type.Union(ABSENCE_GROUPS.map((g) => Type.Literal(g)), { default: 'type' })) }, { additionalProperties: false });
+const AbsenceParams = Type.Object(
+  {
+    ...Period,
+    groupBy: Type.Optional(
+      Type.Union(
+        ABSENCE_GROUPS.map((g) => Type.Literal(g)),
+        { default: 'type' },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
 export const ABSENCE_CATEGORIES = ['sickness', 'unpaid', 'family', 'fmla', 'other'];
 
 export function bradfordEnabled(features: Record<string, unknown>): boolean {
@@ -174,7 +258,21 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
     const params: unknown[] = [];
     const add = paramAdder(params);
     const scope = rowScope(ctx.principal, 'absence.read', params);
-    const rows = await ctx.tx.query<{ employee_id: string; display_name: string; employee_number: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; type_key: string; category: string; start_date: string; end_date: string; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null }>(
+    const rows = await ctx.tx.query<{
+      employee_id: string;
+      display_name: string;
+      employee_number: string;
+      entity_id: string | null;
+      country: string | null;
+      department_id: string | null;
+      location_id: string | null;
+      type_key: string;
+      category: string;
+      start_date: string;
+      end_date: string;
+      start_half: 'am' | 'pm' | null;
+      end_half: 'am' | 'pm' | null;
+    }>(
       `SELECT r.employee_id, e.display_name, e.employee_number, e.entity_id, e.country, e.department_id, e.location_id, t.key AS type_key, t.category,
               r.start_date, r.end_date, r.start_half, r.end_half
          FROM app.leave_requests r
@@ -186,16 +284,23 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
       params,
     );
     const gate = await FieldGate.create(ctx.tx, ctx.principal);
-    const perEmployee = new Map<string, { pattern: Awaited<ReturnType<typeof leaveContext>>['pattern']; holidays: string[] }>();
+    const perEmployee = new Map<
+      string,
+      { pattern: Awaited<ReturnType<typeof leaveContext>>['pattern']; holidays: string[] }
+    >();
     const ids = [...new Set(rows.map((r) => r.employee_id))];
     let done = 0;
     for (const id of ids) {
       const lc = await leaveContext(ctx.tx, id, p.from);
-      perEmployee.set(id, { pattern: lc.pattern, holidays: await holidaysFor(ctx.tx, ctx.book, lc, p.from, p.to) });
+      perEmployee.set(id, {
+        pattern: lc.pattern,
+        holidays: await holidaysFor(ctx.tx, ctx.book, lc, p.from, p.to),
+      });
       if (++done % 200 === 0) await ctx.progress?.(done, ids.length);
     }
     let restricted = 0;
-    const dimPerm = groupBy === 'type' ? null : groupBy === 'employee' ? 'displayName' : DIMENSION_PERM[groupBy];
+    const dimPerm =
+      groupBy === 'type' ? null : groupBy === 'employee' ? 'displayName' : DIMENSION_PERM[groupBy];
     const facts: AbsenceFact[] = rows.map((r) => {
       let group: string | null = 'all';
       if (dimPerm) {
@@ -203,14 +308,38 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
         if (!gate.readable(dimPerm, target)) {
           restricted++;
           group = RESTRICTED;
-        } else group = groupBy === 'employee' ? r.employee_id : ({ entity: r.entity_id, department: r.department_id, location: r.location_id, country: r.country } as Record<string, string | null>)[groupBy]!;
+        } else
+          group =
+            groupBy === 'employee'
+              ? r.employee_id
+              : (
+                  {
+                    entity: r.entity_id,
+                    department: r.department_id,
+                    location: r.location_id,
+                    country: r.country,
+                  } as Record<string, string | null>
+                )[groupBy]!;
       }
       const e = perEmployee.get(r.employee_id)!;
-      return { employeeId: r.employee_id, group, leaveType: r.type_key, start: r.start_date, end: r.end_date, startHalf: r.start_half, endHalf: r.end_half, pattern: e.pattern, holidays: e.holidays };
+      return {
+        employeeId: r.employee_id,
+        group,
+        leaveType: r.type_key,
+        start: r.start_date,
+        end: r.end_date,
+        startHalf: r.start_half,
+        endHalf: r.end_half,
+        pattern: e.pattern,
+        holidays: e.holidays,
+      };
     });
     const byType = groupBy !== 'employee';
     const result = computeAbsence(facts, p.from, p.to, byType);
-    const names = groupBy === 'employee' ? new Map(rows.map((r) => [r.employee_id, `${r.display_name} (${r.employee_number})`])) : await groupNames(ctx.tx, groupBy as GroupBy);
+    const names =
+      groupBy === 'employee'
+        ? new Map(rows.map((r) => [r.employee_id, `${r.display_name} (${r.employee_number})`]))
+        : await groupNames(ctx.tx, groupBy as GroupBy);
     const label = labeller(ctx, names);
     const withBradford = groupBy === 'employee' && bradfordEnabled(ctx.tenant.features);
     let bradford = new Map<string, { spells: number; days: string; score: string }>();
@@ -219,20 +348,43 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
         `SELECT employee_id, start_date, end_date FROM app.sickness_records WHERE employee_id = ANY($1::uuid[]) AND start_date <= $2`,
         [ids, p.to],
       );
-      const inputs: BradfordInput[] = ids.map((id) => ({ employeeId: id, pattern: perEmployee.get(id)!.pattern, spells: sp.filter((s) => s.employee_id === id).map((s) => ({ start: s.start_date, end: s.end_date })) }));
+      const inputs: BradfordInput[] = ids.map((id) => ({
+        employeeId: id,
+        pattern: perEmployee.get(id)!.pattern,
+        spells: sp.filter((s) => s.employee_id === id).map((s) => ({ start: s.start_date, end: s.end_date })),
+      }));
       bradford = computeBradford(inputs, p.to);
     }
     const columns: Column[] = [
       groupColumn(groupBy === 'type' ? 'type' : groupBy),
-      ...(byType && groupBy !== 'type' ? [{ key: 'leaveType', labelKey: 'reports.col.leaveType', type: 'text' as const }] : []),
+      ...(byType && groupBy !== 'type'
+        ? [{ key: 'leaveType', labelKey: 'reports.col.leaveType', type: 'text' as const }]
+        : []),
       { key: 'spells', labelKey: 'reports.col.spells', type: 'integer' },
       { key: 'employees', labelKey: 'reports.col.employees', type: 'integer' },
       { key: 'daysLost', labelKey: 'reports.col.daysLost', type: 'decimal', scale: 2 },
       { key: 'hoursLost', labelKey: 'reports.col.hoursLost', type: 'decimal', scale: 2 },
-      ...(withBradford ? [{ key: 'bradfordFactor', labelKey: 'reports.col.bradfordFactor', type: 'decimal' as const, scale: 2, sensitive: true }] : []),
+      ...(withBradford
+        ? [
+            {
+              key: 'bradfordFactor',
+              labelKey: 'reports.col.bradfordFactor',
+              type: 'decimal' as const,
+              scale: 2,
+              sensitive: true,
+            },
+          ]
+        : []),
     ];
-    const typeNames = new Map((await ctx.tx.query<{ key: string; name: Record<string, string> }>('SELECT key, name FROM app.leave_types')).map((x) => [x.key, x.name]));
-    const typeLabel = (k: string | null) => (k ? (typeNames.get(k)?.[ctx.locale] ?? typeNames.get(k)?.['en-GB'] ?? k) : '');
+    const typeNames = new Map(
+      (
+        await ctx.tx.query<{ key: string; name: Record<string, string> }>(
+          'SELECT key, name FROM app.leave_types',
+        )
+      ).map((x) => [x.key, x.name]),
+    );
+    const typeLabel = (k: string | null) =>
+      k ? (typeNames.get(k)?.[ctx.locale] ?? typeNames.get(k)?.['en-GB'] ?? k) : '';
     return {
       columns,
       rows: result.map((r) => ({
@@ -242,10 +394,16 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
         employees: r.employees,
         daysLost: r.daysLost,
         hoursLost: r.hoursLost,
-        ...(withBradford ? { bradfordFactor: r.key && r.key !== RESTRICTED ? (bradford.get(r.key)?.score ?? '0.00') : null } : {}),
+        ...(withBradford
+          ? { bradfordFactor: r.key && r.key !== RESTRICTED ? (bradford.get(r.key)?.score ?? '0.00') : null }
+          : {}),
       })),
       chart: { type: 'bar', x: 'group', y: ['daysLost'] },
-      notes: ['reports.note.absenceMethod', ...(withBradford ? ['reports.note.bradford'] : []), ...(restricted ? ['reports.note.restricted'] : [])],
+      notes: [
+        'reports.note.absenceMethod',
+        ...(withBradford ? ['reports.note.bradford'] : []),
+        ...(restricted ? ['reports.note.restricted'] : []),
+      ],
       restricted,
       sensitive: true,
     };
@@ -253,7 +411,14 @@ const absence: ReportDefinition<Static<typeof AbsenceParams>> = {
 };
 
 // ---- holiday liability -----------------------------------------------------------------------------------
-const LiabilityParams = Type.Object({ asOf: CivilDate, groupBy: Type.Optional(GroupByParam), leaveType: Type.Optional(Type.String({ pattern: '^[a-z][a-z0-9_]{1,40}$', default: 'annual' })) }, { additionalProperties: false });
+const LiabilityParams = Type.Object(
+  {
+    asOf: CivilDate,
+    groupBy: Type.Optional(GroupByParam),
+    leaveType: Type.Optional(Type.String({ pattern: '^[a-z][a-z0-9_]{1,40}$', default: 'annual' })),
+  },
+  { additionalProperties: false },
+);
 const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
   id: 'holiday-liability',
   category: 'pay',
@@ -266,12 +431,27 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
   status: 'available',
   async run(ctx, p) {
     const groupBy = (p.groupBy ?? 'entity') as GroupBy;
-    const type = await ctx.tx.maybe<{ id: string }>('SELECT id FROM app.leave_types WHERE key = $1', [p.leaveType ?? 'annual']);
+    const type = await ctx.tx.maybe<{ id: string }>('SELECT id FROM app.leave_types WHERE key = $1', [
+      p.leaveType ?? 'annual',
+    ]);
     if (!type) throw new ApiError('validation', 'Unknown leave type');
     const params: unknown[] = [];
     const add = paramAdder(params);
     const scope = rowScope(ctx.principal, 'leave.read', params);
-    const emps = await ctx.tx.query<{ id: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; amount_minor: string | null; currency: string | null; frequency: 'annual' | 'monthly' | 'weekly' | 'daily' | 'hourly' | null; job_entity: string | null; job_department: string | null; job_location: string | null; job_country: string | null }>(
+    const emps = await ctx.tx.query<{
+      id: string;
+      entity_id: string | null;
+      country: string | null;
+      department_id: string | null;
+      location_id: string | null;
+      amount_minor: string | null;
+      currency: string | null;
+      frequency: 'annual' | 'monthly' | 'weekly' | 'daily' | 'hourly' | null;
+      job_entity: string | null;
+      job_department: string | null;
+      job_location: string | null;
+      job_country: string | null;
+    }>(
       `SELECT e.id, e.entity_id, e.country, e.department_id, e.location_id, pay.amount_minor, pay.currency, pay.frequency,
               j.entity_id AS job_entity, j.department_id AS job_department, j.location_id AS job_location, coalesce(l.country, le.country) AS job_country
          FROM app.employees e
@@ -284,7 +464,10 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
       params,
     );
     const gate = await FieldGate.create(ctx.tx, ctx.principal);
-    const acc = new Map<string, { group: string | null; currency: string | null; employees: number; untaken: bigint; liability: bigint }>();
+    const acc = new Map<
+      string,
+      { group: string | null; currency: string | null; employees: number; untaken: bigint; liability: bigint }
+    >();
     let restricted = 0;
     let done = 0;
     for (const e of emps) {
@@ -294,13 +477,26 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
       if (!policy) continue;
       const [ys, ye] = leaveYearFor(p.asOf, policy.config.yearStart);
       const holidays = await holidaysFor(ctx.tx, ctx.book, lc, ys, ye);
-      const requests = await ctx.tx.query<{ start_date: string; end_date: string; status: 'approved' | 'pending'; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null }>(
-          `SELECT start_date, end_date, status, start_half, end_half FROM app.leave_requests WHERE employee_id = $1 AND leave_type_id = $2 AND status IN ('pending', 'approved') AND start_date < $4 AND end_date >= $3`,
-          [e.id, type.id, ys, ye],
-        );
-      const adjustments = await ctx.tx.query<{ amount: string; effective_date: string }>(`SELECT amount, effective_date FROM app.leave_adjustments WHERE employee_id = $1 AND leave_type_id = $2 AND effective_date >= $3 AND effective_date < $4`, [e.id, type.id, ys, ye]);
+      const requests = await ctx.tx.query<{
+        start_date: string;
+        end_date: string;
+        status: 'approved' | 'pending';
+        start_half: 'am' | 'pm' | null;
+        end_half: 'am' | 'pm' | null;
+      }>(
+        `SELECT start_date, end_date, status, start_half, end_half FROM app.leave_requests WHERE employee_id = $1 AND leave_type_id = $2 AND status IN ('pending', 'approved') AND start_date < $4 AND end_date >= $3`,
+        [e.id, type.id, ys, ye],
+      );
+      const adjustments = await ctx.tx.query<{ amount: string; effective_date: string }>(
+        `SELECT amount, effective_date FROM app.leave_adjustments WHERE employee_id = $1 AND leave_type_id = $2 AND effective_date >= $3 AND effective_date < $4`,
+        [e.id, type.id, ys, ye],
+      );
       let carriedIn = 0;
-      if (policy.config.carryOver?.maxDays && lc.startDate < ys) carriedIn = Math.max(0, (await balanceFor(ctx.tx, ctx.book, e.id, type.id, addDays(ys, -1), 1))?.available ?? 0);
+      if (policy.config.carryOver?.maxDays && lc.startDate < ys)
+        carriedIn = Math.max(
+          0,
+          (await balanceFor(ctx.tx, ctx.book, e.id, type.id, addDays(ys, -1), 1))?.available ?? 0,
+        );
       const target = gate.target(e);
       const payReadable = gate.readable('pay.amount', target);
       const groupReadable = groupBy === 'none' || gate.readable(DIMENSION_PERM[groupBy], target);
@@ -312,12 +508,32 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
         yearStart: ys,
         pattern: lc.pattern,
         holidays,
-        requests: requests.map((x) => ({ start: x.start_date, end: x.end_date, status: x.status, startHalf: x.start_half ?? undefined, endHalf: x.end_half ?? undefined })),
+        requests: requests.map((x) => ({
+          start: x.start_date,
+          end: x.end_date,
+          status: x.status,
+          startHalf: x.start_half ?? undefined,
+          endHalf: x.end_half ?? undefined,
+        })),
         adjustments: adjustments.map((a) => ({ days: Number(a.amount), effectiveDate: a.effective_date })),
         carriedIn,
-        pay: payReadable && e.amount_minor && e.currency && e.frequency ? { amountMinor: e.amount_minor, currency: e.currency.trim(), frequency: e.frequency } : null,
+        pay:
+          payReadable && e.amount_minor && e.currency && e.frequency
+            ? { amountMinor: e.amount_minor, currency: e.currency.trim(), frequency: e.frequency }
+            : null,
       });
-      const group = !groupReadable ? RESTRICTED : groupBy === 'none' ? 'all' : ({ entity: e.job_entity, department: e.job_department, location: e.job_location, country: e.job_country?.trim() ?? null } as Record<string, string | null>)[groupBy]!;
+      const group = !groupReadable
+        ? RESTRICTED
+        : groupBy === 'none'
+          ? 'all'
+          : (
+              {
+                entity: e.job_entity,
+                department: e.job_department,
+                location: e.job_location,
+                country: e.job_country?.trim() ?? null,
+              } as Record<string, string | null>
+            )[groupBy]!;
       const currency = r.liabilityMinor === null ? null : r.currency;
       const k = JSON.stringify([group, currency]);
       const a = acc.get(k) ?? { group, currency, employees: 0, untaken: 0n, liability: 0n };
@@ -327,9 +543,13 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
       acc.set(k, a);
     }
     const label = labeller(ctx, await groupNames(ctx.tx, groupBy));
-    const rows = [...acc.values()].sort((x, y) => label(x.group).localeCompare(label(y.group)) || String(x.currency).localeCompare(String(y.currency)));
+    const rows = [...acc.values()].sort(
+      (x, y) =>
+        label(x.group).localeCompare(label(y.group)) || String(x.currency).localeCompare(String(y.currency)),
+    );
     const totals = new Map<string, bigint>();
-    for (const r of rows) if (r.currency) totals.set(r.currency, (totals.get(r.currency) ?? 0n) + r.liability);
+    for (const r of rows)
+      if (r.currency) totals.set(r.currency, (totals.get(r.currency) ?? 0n) + r.liability);
     return {
       columns: [
         groupColumn(groupBy),
@@ -337,10 +557,24 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
         { key: 'untakenDays', labelKey: 'reports.col.untaken', type: 'decimal', scale: 2 },
         { key: 'liability', labelKey: 'reports.col.liability', type: 'money', sensitive: true },
       ],
-      rows: rows.map((r) => ({ group: label(r.group), employees: r.employees, untakenDays: formatScaled(r.untaken, 4, 2), liability: r.currency ? { amountMinor: r.liability.toString(), currency: r.currency } : null })),
-      totals: [...totals.entries()].sort().map(([currency, v]) => ({ group: ctx.t('reports.totalIn', { currency }), employees: null, untakenDays: null, liability: { amountMinor: v.toString(), currency } })),
+      rows: rows.map((r) => ({
+        group: label(r.group),
+        employees: r.employees,
+        untakenDays: formatScaled(r.untaken, 4, 2),
+        liability: r.currency ? { amountMinor: r.liability.toString(), currency: r.currency } : null,
+      })),
+      totals: [...totals.entries()].sort().map(([currency, v]) => ({
+        group: ctx.t('reports.totalIn', { currency }),
+        employees: null,
+        untakenDays: null,
+        liability: { amountMinor: v.toString(), currency },
+      })),
       chart: { type: 'bar', x: 'group', y: ['untakenDays'] },
-      notes: ['reports.note.liabilityMethod', 'reports.note.liabilityRounding', ...(restricted ? ['reports.note.restricted'] : [])],
+      notes: [
+        'reports.note.liabilityMethod',
+        'reports.note.liabilityRounding',
+        ...(restricted ? ['reports.note.restricted'] : []),
+      ],
       restricted,
     };
   },
@@ -348,7 +582,18 @@ const holidayLiability: ReportDefinition<Static<typeof LiabilityParams>> = {
 
 // ---- overtime ------------------------------------------------------------------------------------------
 const OVERTIME_GROUPS = ['employee', 'week', 'entity', 'department', 'location', 'country'] as const;
-const OvertimeParams = Type.Object({ ...Period, groupBy: Type.Optional(Type.Union(OVERTIME_GROUPS.map((g) => Type.Literal(g)), { default: 'department' })) }, { additionalProperties: false });
+const OvertimeParams = Type.Object(
+  {
+    ...Period,
+    groupBy: Type.Optional(
+      Type.Union(
+        OVERTIME_GROUPS.map((g) => Type.Literal(g)),
+        { default: 'department' },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
 const overtime: ReportDefinition<Static<typeof OvertimeParams>> = {
   id: 'overtime',
   category: 'time',
@@ -365,7 +610,25 @@ const overtime: ReportDefinition<Static<typeof OvertimeParams>> = {
     const params: unknown[] = [];
     const add = paramAdder(params);
     const scope = rowScope(ctx.principal, 'time.read', params);
-    const rows = await ctx.tx.query<{ employee_id: string; display_name: string; employee_number: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; week_start: string; worked_minutes: number; regular_minutes: number; overtime_minutes: number; double_minutes: number; scheduled_minutes: number; job_entity: string | null; job_department: string | null; job_location: string | null; job_country: string | null }>(
+    const rows = await ctx.tx.query<{
+      employee_id: string;
+      display_name: string;
+      employee_number: string;
+      entity_id: string | null;
+      country: string | null;
+      department_id: string | null;
+      location_id: string | null;
+      week_start: string;
+      worked_minutes: number;
+      regular_minutes: number;
+      overtime_minutes: number;
+      double_minutes: number;
+      scheduled_minutes: number;
+      job_entity: string | null;
+      job_department: string | null;
+      job_location: string | null;
+      job_country: string | null;
+    }>(
       `SELECT t.employee_id, e.display_name, e.employee_number, e.entity_id, e.country, e.department_id, e.location_id, t.week_start,
               t.worked_minutes, t.regular_minutes, t.overtime_minutes, t.double_minutes, t.scheduled_minutes,
               j.entity_id AS job_entity, j.department_id AS job_department, j.location_id AS job_location, coalesce(l.country, le.country) AS job_country
@@ -380,25 +643,67 @@ const overtime: ReportDefinition<Static<typeof OvertimeParams>> = {
     );
     const gate = await FieldGate.create(ctx.tx, ctx.principal);
     let restricted = 0;
-    const dimPerm = groupBy === 'week' ? null : groupBy === 'employee' ? 'displayName' : DIMENSION_PERM[groupBy];
+    const dimPerm =
+      groupBy === 'week' ? null : groupBy === 'employee' ? 'displayName' : DIMENSION_PERM[groupBy];
     const facts: TimesheetFact[] = rows.map((r) => {
       let group: string | null = r.week_start;
       if (dimPerm) {
         if (!gate.readable(dimPerm, gate.target({ id: r.employee_id, ...r }))) {
           restricted++;
           group = RESTRICTED;
-        } else group = groupBy === 'employee' ? r.employee_id : ({ entity: r.job_entity, department: r.job_department, location: r.job_location, country: r.job_country?.trim() ?? null } as Record<string, string | null>)[groupBy]!;
+        } else
+          group =
+            groupBy === 'employee'
+              ? r.employee_id
+              : (
+                  {
+                    entity: r.job_entity,
+                    department: r.job_department,
+                    location: r.job_location,
+                    country: r.job_country?.trim() ?? null,
+                  } as Record<string, string | null>
+                )[groupBy]!;
       }
-      return { employeeId: r.employee_id, group, weekStart: r.week_start, workedMinutes: r.worked_minutes, regularMinutes: r.regular_minutes, overtimeMinutes: r.overtime_minutes, doubleMinutes: r.double_minutes, scheduledMinutes: r.scheduled_minutes };
+      return {
+        employeeId: r.employee_id,
+        group,
+        weekStart: r.week_start,
+        workedMinutes: r.worked_minutes,
+        regularMinutes: r.regular_minutes,
+        overtimeMinutes: r.overtime_minutes,
+        doubleMinutes: r.double_minutes,
+        scheduledMinutes: r.scheduled_minutes,
+      };
     });
-    const names = groupBy === 'employee' ? new Map(rows.map((r) => [r.employee_id, `${r.display_name} (${r.employee_number})`])) : groupBy === 'week' ? new Map<string, string>() : await groupNames(ctx.tx, groupBy as GroupBy);
+    const names =
+      groupBy === 'employee'
+        ? new Map(rows.map((r) => [r.employee_id, `${r.display_name} (${r.employee_number})`]))
+        : groupBy === 'week'
+          ? new Map<string, string>()
+          : await groupNames(ctx.tx, groupBy as GroupBy);
     const label = labeller(ctx, names);
     const result = computeOvertime(facts, p.from, p.to);
-    const total = computeOvertime(facts.map((f) => ({ ...f, group: 'all' })), p.from, p.to)[0];
-    const shape = (r: (typeof result)[number], group: string): Row => ({ group, timesheets: r.timesheets, employees: r.employees, workedMinutes: r.workedMinutes, regularMinutes: r.regularMinutes, overtimeMinutes: r.overtimeMinutes, doubleMinutes: r.doubleMinutes, scheduledMinutes: r.scheduledMinutes, overtimeShare: r.overtimeShare });
+    const total = computeOvertime(
+      facts.map((f) => ({ ...f, group: 'all' })),
+      p.from,
+      p.to,
+    )[0];
+    const shape = (r: (typeof result)[number], group: string): Row => ({
+      group,
+      timesheets: r.timesheets,
+      employees: r.employees,
+      workedMinutes: r.workedMinutes,
+      regularMinutes: r.regularMinutes,
+      overtimeMinutes: r.overtimeMinutes,
+      doubleMinutes: r.doubleMinutes,
+      scheduledMinutes: r.scheduledMinutes,
+      overtimeShare: r.overtimeShare,
+    });
     return {
       columns: [
-        groupBy === 'week' ? { key: 'group', labelKey: 'reports.groupBy.week', type: 'date' } : groupColumn(groupBy),
+        groupBy === 'week'
+          ? { key: 'group', labelKey: 'reports.groupBy.week', type: 'date' }
+          : groupColumn(groupBy),
         { key: 'timesheets', labelKey: 'reports.col.timesheets', type: 'integer' },
         { key: 'employees', labelKey: 'reports.col.employees', type: 'integer' },
         { key: 'workedMinutes', labelKey: 'reports.col.worked', type: 'minutes' },

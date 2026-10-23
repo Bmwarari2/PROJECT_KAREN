@@ -192,9 +192,7 @@
           "effectiveTo": null,
           "value": {
             "period": "P45D",
-            "clockStartsAt": [
-              "request_received"
-            ],
+            "clockStartsAt": ["request_received"],
             "extension": {
               "period": "P45D",
               "grounds": "when reasonably necessary, taking into account the complexity and number of the requests",
@@ -202,11 +200,7 @@
               "reasonsRequired": true
             },
             "clockStopForClarification": null,
-            "appliesTo": [
-              "access",
-              "correction",
-              "deletion"
-            ],
+            "appliesTo": ["access", "correction", "deletion"],
             "maxTotal": "P90D"
           },
           "source": {
@@ -238,11 +232,7 @@
               "standard": "notify any California resident whose unencrypted personal information was, or is reasonably believed to have been, acquired by an unauthorized person"
             },
             "processorToController": null,
-            "unverified": [
-              "individuals.deadlineDays",
-              "regulator.deadlineDays",
-              "processorToController"
-            ]
+            "unverified": ["individuals.deadlineDays", "regulator.deadlineDays", "processorToController"]
           },
           "source": {
             "url": "https://oag.ca.gov/privacy/databreach/reporting",

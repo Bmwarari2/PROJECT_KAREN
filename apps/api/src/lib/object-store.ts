@@ -1,5 +1,12 @@
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectVersionsCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  ListObjectVersionsCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { HomeRegion } from '@thapsus/core';
 import { createAwsClientFactory } from '@thapsus/core/aws';
@@ -21,7 +28,8 @@ export interface ObjectStore {
   deletePrefix(prefix: string): Promise<number>;
 }
 
-export const objectKey = (tenantId: string, area: string, ext = '') => `${tenantId}/${area}/${randomUUID()}${ext}`;
+export const objectKey = (tenantId: string, area: string, ext = '') =>
+  `${tenantId}/${area}/${randomUUID()}${ext}`;
 
 export class MemoryObjectStore implements ObjectStore {
   readonly objects = new Map<string, { body: Buffer; contentType: string }>();
@@ -80,7 +88,10 @@ export class S3ObjectStore implements ObjectStore {
     endpoint?: string,
     private readonly kmsKeyId?: string,
   ) {
-    this.client = createAwsClientFactory({ cell, endpoints: endpoint ? { s3: endpoint } : {} })(S3Client, 's3');
+    this.client = createAwsClientFactory({ cell, endpoints: endpoint ? { s3: endpoint } : {} })(
+      S3Client,
+      's3',
+    );
   }
   async presignPut(key: string, contentType: string, maxBytes: number) {
     void maxBytes; // size is validated again server-side when the upload is confirmed
@@ -137,7 +148,9 @@ export class S3ObjectStore implements ObjectStore {
     let batch: Array<{ Key: string; VersionId?: string }> = [];
     const flush = async () => {
       if (!batch.length) return;
-      await this.client.send(new DeleteObjectsCommand({ Bucket: this.bucket, Delete: { Objects: batch, Quiet: true } }));
+      await this.client.send(
+        new DeleteObjectsCommand({ Bucket: this.bucket, Delete: { Objects: batch, Quiet: true } }),
+      );
       batch = [];
     };
     for await (const v of this.versions(prefix)) {
@@ -152,9 +165,13 @@ export class S3ObjectStore implements ObjectStore {
     let KeyMarker: string | undefined;
     let VersionIdMarker: string | undefined;
     do {
-      const page = await this.client.send(new ListObjectVersionsCommand({ Bucket: this.bucket, Prefix: prefix, KeyMarker, VersionIdMarker }));
-      for (const v of page.Versions ?? []) yield { key: v.Key!, versionId: v.VersionId, latest: !!v.IsLatest, deleteMarker: false };
-      for (const d of page.DeleteMarkers ?? []) yield { key: d.Key!, versionId: d.VersionId, latest: !!d.IsLatest, deleteMarker: true };
+      const page = await this.client.send(
+        new ListObjectVersionsCommand({ Bucket: this.bucket, Prefix: prefix, KeyMarker, VersionIdMarker }),
+      );
+      for (const v of page.Versions ?? [])
+        yield { key: v.Key!, versionId: v.VersionId, latest: !!v.IsLatest, deleteMarker: false };
+      for (const d of page.DeleteMarkers ?? [])
+        yield { key: d.Key!, versionId: d.VersionId, latest: !!d.IsLatest, deleteMarker: true };
       KeyMarker = page.IsTruncated ? page.NextKeyMarker : undefined;
       VersionIdMarker = page.IsTruncated ? page.NextVersionIdMarker : undefined;
     } while (KeyMarker);
@@ -162,7 +179,10 @@ export class S3ObjectStore implements ObjectStore {
 }
 
 export function objectStoreFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): ObjectStore {
-  if (env.FILES_BUCKET) return new S3ObjectStore(cell, env.FILES_BUCKET, env.S3_ENDPOINT, env.FILES_KMS_KEY_ARN);
+  if (env.FILES_BUCKET)
+    return new S3ObjectStore(cell, env.FILES_BUCKET, env.S3_ENDPOINT, env.FILES_KMS_KEY_ARN);
   const local = env.APP_ENV === 'dev' || env.APP_ENV === 'test' || env.APP_ENV === undefined;
-  return new MemoryObjectStore(local ? { baseUrl: env.API_BASE_URL ?? 'http://localhost:4000', secret: randomBytes(32) } : undefined);
+  return new MemoryObjectStore(
+    local ? { baseUrl: env.API_BASE_URL ?? 'http://localhost:4000', secret: randomBytes(32) } : undefined,
+  );
 }

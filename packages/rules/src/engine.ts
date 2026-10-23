@@ -1,7 +1,14 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { addDays, dayOfWeek, easterSunday, makeDate, nthWeekdayOfMonth, orthodoxEasterSunday } from '@thapsus/core/time';
+import {
+  addDays,
+  dayOfWeek,
+  easterSunday,
+  makeDate,
+  nthWeekdayOfMonth,
+  orthodoxEasterSunday,
+} from '@thapsus/core/time';
 import type { HolidayDefinition, JurisdictionPack, Rule, RuleKey, RuleVersion } from './schema';
 
 /**
@@ -42,7 +49,8 @@ export function codeLineage(code: string): string[] {
   return parts.map((_, i) => parts.slice(0, parts.length - i).join('-'));
 }
 
-const inForce = (v: { effectiveFrom: string; effectiveTo: string | null }, date: string) => v.effectiveFrom <= date && (v.effectiveTo === null || v.effectiveTo > date);
+const inForce = (v: { effectiveFrom: string; effectiveTo: string | null }, date: string) =>
+  v.effectiveFrom <= date && (v.effectiveTo === null || v.effectiveTo > date);
 
 export interface HolidayOccurrence {
   id: string;
@@ -80,7 +88,9 @@ export class RuleBook {
     const pack = this.packs.get(jurisdiction)?.rules.find((r) => r.key === key)?.versions ?? [];
     return [
       ...pack.map((v) => ({ ...v, origin: 'pack' as const })),
-      ...this.overrides.filter((o) => o.jurisdiction === jurisdiction && o.key === key).map((o) => ({ ...o, origin: 'backoffice' as const })),
+      ...this.overrides
+        .filter((o) => o.jurisdiction === jurisdiction && o.key === key)
+        .map((o) => ({ ...o, origin: 'backoffice' as const })),
     ];
   }
 
@@ -143,13 +153,39 @@ export class RuleBook {
       if (!applies) continue; // not verified for this subdivision: fall through to the parent, or fail
       // back-office edits amend the pack for the same scope as the pack version they layer over
       const o = this.overrides.find((x) => x.jurisdiction === j && x.key === key && inForce(x, date));
-      if (o) return { jurisdiction: j, key, value: o.value as V, effectiveFrom: o.effectiveFrom, effectiveTo: o.effectiveTo, source: o.source, verifiedOn: o.verifiedOn, packVersion: pack.version, ...(v?.regions ? { regions: v.regions } : {}) };
-      if (v) return { jurisdiction: j, key, value: v.value, effectiveFrom: v.effectiveFrom, effectiveTo: v.effectiveTo, source: v.source, verifiedOn: v.verifiedOn, packVersion: pack.version, ...(v.regions ? { regions: v.regions } : {}) };
+      if (o)
+        return {
+          jurisdiction: j,
+          key,
+          value: o.value as V,
+          effectiveFrom: o.effectiveFrom,
+          effectiveTo: o.effectiveTo,
+          source: o.source,
+          verifiedOn: o.verifiedOn,
+          packVersion: pack.version,
+          ...(v?.regions ? { regions: v.regions } : {}),
+        };
+      if (v)
+        return {
+          jurisdiction: j,
+          key,
+          value: v.value,
+          effectiveFrom: v.effectiveFrom,
+          effectiveTo: v.effectiveTo,
+          source: v.source,
+          verifiedOn: v.verifiedOn,
+          packVersion: pack.version,
+          ...(v.regions ? { regions: v.regions } : {}),
+        };
     }
     throw new RuleNotFoundError(jurisdiction, key, date);
   }
 
-  tryResolve<V = unknown>(jurisdiction: string, key: RuleKey | string, date: string): ResolvedRule<V> | undefined {
+  tryResolve<V = unknown>(
+    jurisdiction: string,
+    key: RuleKey | string,
+    date: string,
+  ): ResolvedRule<V> | undefined {
     try {
       return this.resolve<V>(jurisdiction, key, date);
     } catch (e) {
@@ -166,7 +202,8 @@ export class RuleBook {
   holidays(country: string, year: number, region?: string): HolidayOccurrence[] {
     const pack = this.packs.get(country);
     if (!pack) return [];
-    const applies = (h: HolidayDefinition) => h.regions.includes('*') || (region ? h.regions.includes(region) : false);
+    const applies = (h: HolidayDefinition) =>
+      h.regions.includes('*') || (region ? h.regions.includes(region) : false);
     const nominal: Array<{ h: HolidayDefinition; date: string }> = [];
     for (const h of pack.holidays) {
       if (!applies(h)) continue;
@@ -177,7 +214,9 @@ export class RuleBook {
     }
     nominal.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     // de-duplicate the same holiday defined for overlapping regions
-    const unique = nominal.filter((n, i) => nominal.findIndex((m) => m.h.id === n.h.id && m.date === n.date) === i);
+    const unique = nominal.filter(
+      (n, i) => nominal.findIndex((m) => m.h.id === n.h.id && m.date === n.date) === i,
+    );
     const taken = new Set(unique.map((n) => n.date));
     const out: HolidayOccurrence[] = [];
     for (const n of unique) {

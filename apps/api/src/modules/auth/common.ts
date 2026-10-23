@@ -10,7 +10,10 @@ import { hashToken, parseToken } from './tokens';
  * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
  * (`…:ip:…`) scale with the cell's ipThrottleMultiplier (1 outside the load-test environment).
  */
-export async function throttle(deps: Deps, rules: Array<[key: string, limit: number, windowSeconds: number]>) {
+export async function throttle(
+  deps: Deps,
+  rules: Array<[key: string, limit: number, windowSeconds: number]>,
+) {
   const ipFactor = deps.config.ipThrottleMultiplier ?? 1;
   for (const [key, base, windowSeconds] of rules) {
     const limit = key.includes(':ip:') ? base * ipFactor : base;
@@ -31,7 +34,10 @@ export async function resolveTenantSlug(deps: Deps, slug: string): Promise<strin
   }
   const remote = await deps.directory.bySlug(slug.toLowerCase());
   if (remote && remote.homeRegion !== deps.config.cell) {
-    throw new ApiError('wrongRegion', undefined, { region: remote.homeRegion, appUrl: deps.regionalAppUrls[remote.homeRegion] });
+    throw new ApiError('wrongRegion', undefined, {
+      region: remote.homeRegion,
+      appUrl: deps.regionalAppUrls[remote.homeRegion],
+    });
   }
   throw new ApiError('notFound');
 }
@@ -67,11 +73,19 @@ export async function startSession(
   // A sign-in always gets a new token, and the session this browser held before ends (ASVS V7.2.4).
   const previous = parseToken(SESSION_PREFIX, req.cookies?.[sessionCookie(deps.config).name]);
   if (previous) {
-    const end = (t: Tx) => t.exec('UPDATE app.sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [hashToken(previous.secret)]);
+    const end = (t: Tx) =>
+      t.exec('UPDATE app.sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [
+        hashToken(previous.secret),
+      ]);
     if (previous.tenantId === opts.tenantId) await end(tx);
     else await withTenant(deps.router, previous.tenantId, end).catch(() => undefined);
   }
-  const token = await createSession(tx, { ...opts, ip: req.ctx.ip, userAgent: req.ctx.userAgent, now: deps.now() });
+  const token = await createSession(tx, {
+    ...opts,
+    ip: req.ctx.ip,
+    userAgent: req.ctx.userAgent,
+    now: deps.now(),
+  });
   await writeAudit(tx, {
     actorType: 'user',
     actorId: opts.userId,
@@ -94,7 +108,13 @@ export async function assertPasswordlessAllowed(tx: Tx) {
   return security;
 }
 
-export async function recordFailure(deps: Deps, req: FastifyRequest, tenantId: string, userId: string | undefined, reason: string) {
+export async function recordFailure(
+  deps: Deps,
+  req: FastifyRequest,
+  tenantId: string,
+  userId: string | undefined,
+  reason: string,
+) {
   await withTenant(deps.router, tenantId, async (tx) => {
     if (userId) {
       const security = await loadSecurity(tx);
@@ -102,7 +122,11 @@ export async function recordFailure(deps: Deps, req: FastifyRequest, tenantId: s
         `UPDATE app.users SET failed_attempts = failed_attempts + 1,
            locked_until = CASE WHEN failed_attempts + 1 >= $2 THEN $3::timestamptz ELSE locked_until END
          WHERE id = $1`,
-        [userId, security.lockoutThreshold, new Date(deps.now().getTime() + security.lockoutMinutes * 60_000)],
+        [
+          userId,
+          security.lockoutThreshold,
+          new Date(deps.now().getTime() + security.lockoutMinutes * 60_000),
+        ],
       );
     }
     await writeAudit(tx, {

@@ -94,9 +94,7 @@
   "holidays": [],
   "coverage": {
     "priority": "high",
-    "deeperRulesTodo": [
-      "State holidays (not modelled yet)"
-    ],
+    "deeperRulesTodo": ["State holidays (not modelled yet)"],
     "notes": "No statewide paid sick leave. City paid sick leave ordinances (Austin, Dallas, San Antonio) — legal status not verified; not modelled. No daily overtime."
   }
 }

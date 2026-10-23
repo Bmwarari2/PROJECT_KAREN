@@ -44,12 +44,24 @@ export default defineConfig({
       name: 'functional',
       testIgnore: /visual\.spec\.ts/,
       // PW_CHROMIUM_PATH: use a pre-installed Chromium where `playwright install` is unavailable (CI installs its own).
-      use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${webPort}`, launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {} },
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://127.0.0.1:${webPort}`,
+        launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
+      },
     },
     visual('desktop', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, 'light'),
     visual('desktop', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, 'dark'),
-    visual('phone', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true }, 'light'),
-    visual('phone', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true }, 'dark'),
+    visual(
+      'phone',
+      { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
+      'light',
+    ),
+    visual(
+      'phone',
+      { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
+      'dark',
+    ),
   ],
   webServer: [
     {

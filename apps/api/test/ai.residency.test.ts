@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
 import { HOME_REGIONS, REGIONS, regionPairs, ResidencyViolationError, type HomeRegion } from '@thapsus/core';
-import { AI_MODEL_AVAILABILITY, CROSS_REGION_PROFILE_PREFIXES, inRegionModel, isCrossRegionProfileId, type InRegionModel } from '@thapsus/core/ai-models';
+import {
+  AI_MODEL_AVAILABILITY,
+  CROSS_REGION_PROFILE_PREFIXES,
+  inRegionModel,
+  isCrossRegionProfileId,
+  type InRegionModel,
+} from '@thapsus/core/ai-models';
 import { createAwsClientFactory } from '@thapsus/core/aws';
-import { aiProviderFromEnv, AiUnavailableError, BedrockClaudeProvider, FakeAiProvider } from '../src/modules/ai/provider';
+import {
+  aiProviderFromEnv,
+  AiUnavailableError,
+  BedrockClaudeProvider,
+  FakeAiProvider,
+} from '../src/modules/ai/provider';
 
 /**
  * Residency for Ask HR: the Bedrock client is built only through the residency-guarded factory, in the
@@ -16,8 +27,12 @@ const fakeCredentials = { accessKeyId: 'AKIDFICTIONAL', secretAccessKey: 'fictio
 describe.each(regionPairs())('Bedrock residency %s → %s', (home: HomeRegion, other: HomeRegion) => {
   it(`a ${home} cell refuses a Bedrock runtime client in ${other} (runtime and backup purposes)`, () => {
     const create = createAwsClientFactory({ cell: home });
-    expect(() => create(BedrockRuntimeClient, 'bedrock-runtime', { region: REGIONS[other].awsRegion })).toThrow(ResidencyViolationError);
-    expect(() => create(BedrockRuntimeClient, 'bedrock-runtime', { region: REGIONS[other].awsRegion }, 'backup')).toThrow(ResidencyViolationError);
+    expect(() =>
+      create(BedrockRuntimeClient, 'bedrock-runtime', { region: REGIONS[other].awsRegion }),
+    ).toThrow(ResidencyViolationError);
+    expect(() =>
+      create(BedrockRuntimeClient, 'bedrock-runtime', { region: REGIONS[other].awsRegion }, 'backup'),
+    ).toThrow(ResidencyViolationError);
   });
   it(`a ${home} provider refuses a model hosted in ${other}`, () => {
     const foreign: InRegionModel = { ...UK, awsRegion: REGIONS[other].awsRegion };
@@ -26,25 +41,46 @@ describe.each(regionPairs())('Bedrock residency %s → %s', (home: HomeRegion, o
 });
 
 describe('in-region model map (ADR-0110)', () => {
-  it.each(HOME_REGIONS)('%s: an available model is in the home region with a bare foundation-model id', (cell) => {
-    const m = AI_MODEL_AVAILABILITY[cell];
-    expect(m.awsRegion).toBe(REGIONS[cell].awsRegion);
-    expect(m.sourceUrl).toMatch(/^https:\/\/docs\.aws\.amazon\.com\/bedrock\//);
-    expect(m.verifiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    if (m.available) expect(isCrossRegionProfileId(m.modelId)).toBe(false);
-    else expect(m.note).toMatch(/In-Region/);
-  });
+  it.each(HOME_REGIONS)(
+    '%s: an available model is in the home region with a bare foundation-model id',
+    (cell) => {
+      const m = AI_MODEL_AVAILABILITY[cell];
+      expect(m.awsRegion).toBe(REGIONS[cell].awsRegion);
+      expect(m.sourceUrl).toMatch(/^https:\/\/docs\.aws\.amazon\.com\/bedrock\//);
+      expect(m.verifiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      if (m.available) expect(isCrossRegionProfileId(m.modelId)).toBe(false);
+      else expect(m.note).toMatch(/In-Region/);
+    },
+  );
   it('records what was verified: UK has Claude Opus 5.5 in eu-west-2; EU and US have no in-region model', () => {
-    expect(inRegionModel('uk')).toMatchObject({ awsRegion: 'eu-west-2', modelId: 'anthropic.claude-opus-5-5', endpoint: 'bedrock-runtime' });
+    expect(inRegionModel('uk')).toMatchObject({
+      awsRegion: 'eu-west-2',
+      modelId: 'anthropic.claude-opus-5-5',
+      endpoint: 'bedrock-runtime',
+    });
     expect(inRegionModel('eu')).toBeNull();
     expect(inRegionModel('us')).toBeNull();
   });
-  it.each(CROSS_REGION_PROFILE_PREFIXES.map((p) => [p] as const))('refuses the %s cross-Region inference profile even in the home region', (prefix) => {
-    expect(() => new BedrockClaudeProvider('uk', { model: { ...UK, modelId: `${prefix}anthropic.claude-opus-5-5` } })).toThrow(/cross-Region/);
-  });
+  it.each(CROSS_REGION_PROFILE_PREFIXES.map((p) => [p] as const))(
+    'refuses the %s cross-Region inference profile even in the home region',
+    (prefix) => {
+      expect(
+        () =>
+          new BedrockClaudeProvider('uk', {
+            model: { ...UK, modelId: `${prefix}anthropic.claude-opus-5-5` },
+          }),
+      ).toThrow(/cross-Region/);
+    },
+  );
   it('refuses inference-profile ARNs', () => {
-    expect(isCrossRegionProfileId('arn:aws:bedrock:eu-west-2:123456789012:inference-profile/eu.anthropic.claude-opus-5-5')).toBe(true);
-    expect(isCrossRegionProfileId('arn:aws:bedrock:eu-west-2:123456789012:application-inference-profile/abc')).toBe(true);
+    expect(
+      isCrossRegionProfileId(
+        'arn:aws:bedrock:eu-west-2:123456789012:inference-profile/eu.anthropic.claude-opus-5-5',
+      ),
+    ).toBe(true);
+    expect(
+      isCrossRegionProfileId('arn:aws:bedrock:eu-west-2:123456789012:application-inference-profile/abc'),
+    ).toBe(true);
   });
 });
 
@@ -58,7 +94,9 @@ describe('provider selection', () => {
     expect(aiProviderFromEnv('uk', { APP_ENV: 'prod' })).toBeInstanceOf(BedrockClaudeProvider);
     expect(aiProviderFromEnv('uk', { APP_ENV: 'test', AI_PROVIDER: 'fake' })).toBeInstanceOf(FakeAiProvider);
     expect(aiProviderFromEnv('uk', { APP_ENV: 'dev', AI_PROVIDER: 'none' })).toBeUndefined();
-    expect(() => aiProviderFromEnv('uk', { APP_ENV: 'prod', AI_PROVIDER: 'fake' })).toThrow(/never run in production/);
+    expect(() => aiProviderFromEnv('uk', { APP_ENV: 'prod', AI_PROVIDER: 'fake' })).toThrow(
+      /never run in production/,
+    );
   });
 });
 
@@ -75,7 +113,9 @@ describe('the request a UK cell sends', () => {
       },
       { step: 'finalizeRequest', name: 'captureForTest', priority: 'low' },
     );
-    await expect(provider.complete({ system: 'SYSTEM', user: 'USER TURN', maxTokens: 100 })).rejects.toThrow('captured');
+    await expect(provider.complete({ system: 'SYSTEM', user: 'USER TURN', maxTokens: 100 })).rejects.toThrow(
+      'captured',
+    );
     expect(captured!.hostname).toBe('bedrock-runtime.eu-west-2.amazonaws.com');
     expect(decodeURIComponent(captured!.path)).toBe('/model/anthropic.claude-opus-5-5/invoke');
     const body = JSON.parse(captured!.body);

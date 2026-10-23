@@ -7,7 +7,16 @@ import { DIRECTORY_FIELDS, PgDirectory } from '../src/lib/directory';
  * The global tenant directory must never hold personal data. Adding a field to the directory
  * schema fails these tests until the allow-list below is changed deliberately (and reviewed).
  */
-const ALLOWED = ['tenantId', 'slug', 'homeRegion', 'status', 'planRef', 'verifiedDomains', 'createdAt', 'updatedAt'];
+const ALLOWED = [
+  'tenantId',
+  'slug',
+  'homeRegion',
+  'status',
+  'planRef',
+  'verifiedDomains',
+  'createdAt',
+  'updatedAt',
+];
 const PERSONAL = /email|name$|phone|address|birth|ssn|nino|national|salary|ip$|user/i;
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 
@@ -27,7 +36,10 @@ describe('tenant directory schema', () => {
   });
 
   it('every directory field is an allow-listed attribute of the global DynamoDB table', () => {
-    const src = readFileSync(join(import.meta.dirname, '..', '..', '..', 'infra', 'lib', 'global-stack.ts'), 'utf8');
+    const src = readFileSync(
+      join(import.meta.dirname, '..', '..', '..', 'infra', 'lib', 'global-stack.ts'),
+      'utf8',
+    );
     const block = /export const DIRECTORY_ATTRIBUTES = \[([^\]]*)\]/.exec(src)?.[1];
     expect(block).toBeDefined();
     const attrs = [...block!.matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1]);

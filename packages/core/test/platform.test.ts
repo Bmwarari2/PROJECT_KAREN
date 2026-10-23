@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { API_SCOPE_KEYS, API_SCOPES, apiClientMayCall, intersectPattern, scopedPermissions } from '../src/api-scopes';
+import {
+  API_SCOPE_KEYS,
+  API_SCOPES,
+  apiClientMayCall,
+  intersectPattern,
+  scopedPermissions,
+} from '../src/api-scopes';
 import { FEATURE_FLAGS, FEATURE_KEYS, isFeatureKey, resolveFeatureFlags } from '../src/features';
 import { BUILT_IN_ROLES } from '../src/roles';
 import { can, type Principal } from '../src/permissions';
@@ -17,7 +23,10 @@ describe('API scopes', () => {
   it('a machine client gets role ∩ scopes, never more than either', () => {
     const owner = BUILT_IN_ROLES.find((r) => r.key === 'owner')!;
     const manager = BUILT_IN_ROLES.find((r) => r.key === 'manager')!;
-    expect(scopedPermissions(owner.permissions, ['employees:read'])).toEqual(['employees.history', 'employees.read']);
+    expect(scopedPermissions(owner.permissions, ['employees:read'])).toEqual([
+      'employees.history',
+      'employees.read',
+    ]);
     // the manager role has employees.read but not employees.create, so the write scope cannot add it
     const m = scopedPermissions(manager.permissions, ['employees:write']);
     expect(m).toContain('employees.read');
@@ -29,11 +38,25 @@ describe('API scopes', () => {
   it('no scope ever grants identity, settings, vault or back-office permissions', () => {
     const owner = BUILT_IN_ROLES.find((r) => r.key === 'owner')!;
     const all = scopedPermissions(owner.permissions, API_SCOPE_KEYS);
-    const principal: Principal = { userId: 'c', grants: [{ roleKey: 'api', isAdmin: false, permissions: all, fieldAccess: {}, scope: { type: 'all' } }], kind: 'api_client' };
-    for (const action of ['settings.manage', 'settings.read', 'users.create', 'roles.manage', 'vault.read:health', 'support.grant', 'privacy.export', 'payroll.read']) {
+    const principal: Principal = {
+      userId: 'c',
+      grants: [{ roleKey: 'api', isAdmin: false, permissions: all, fieldAccess: {}, scope: { type: 'all' } }],
+      kind: 'api_client',
+    };
+    for (const action of [
+      'settings.manage',
+      'settings.read',
+      'users.create',
+      'roles.manage',
+      'vault.read:health',
+      'support.grant',
+      'privacy.export',
+      'payroll.read',
+    ]) {
       expect(can(principal, action), action).toBe(false);
     }
-    for (const perms of Object.values(API_SCOPES)) for (const p of perms) expect(p).not.toMatch(/\*|settings|users|vault|roles|support/);
+    for (const perms of Object.values(API_SCOPES))
+      for (const p of perms) expect(p).not.toMatch(/\*|settings|users|vault|roles|support/);
   });
 
   it('API clients may only call the public resource paths', () => {
@@ -41,7 +64,16 @@ describe('API scopes', () => {
     expect(apiClientMayCall('/v1/employees/:id')).toBe(true);
     expect(apiClientMayCall('/v1/org-chart/roots')).toBe(true);
     expect(apiClientMayCall('/v1/webhooks/:id/deliveries')).toBe(true);
-    for (const p of ['/v1/auth/session', '/v1/auth/mfa/totp/enroll', '/v1/me/preferences', '/v1/settings/api-keys', '/v1/settings/domains', '/v1/backoffice/auth/login', '/v1/employeesx', '/v1/sandboxes']) {
+    for (const p of [
+      '/v1/auth/session',
+      '/v1/auth/mfa/totp/enroll',
+      '/v1/me/preferences',
+      '/v1/settings/api-keys',
+      '/v1/settings/domains',
+      '/v1/backoffice/auth/login',
+      '/v1/employeesx',
+      '/v1/sandboxes',
+    ]) {
       expect(apiClientMayCall(p), p).toBe(false);
     }
   });
@@ -49,12 +81,19 @@ describe('API scopes', () => {
 
 describe('feature flag registry', () => {
   it('resolves defaults and ignores unknown or malformed overrides', () => {
-    const resolved = resolveFeatureFlags({ webhooks: false, aiAssistant: true, notAFlag: true, publicApi: 'yes' });
+    const resolved = resolveFeatureFlags({
+      webhooks: false,
+      aiAssistant: true,
+      notAFlag: true,
+      publicApi: 'yes',
+    });
     expect(resolved.webhooks).toBe(false);
     expect(resolved.aiAssistant).toBe(true);
     expect(resolved.publicApi).toBe(true);
     expect(Object.keys(resolved).sort()).toEqual([...FEATURE_KEYS].sort());
-    expect(resolveFeatureFlags(null)).toEqual(Object.fromEntries(FEATURE_KEYS.map((k) => [k, FEATURE_FLAGS[k].default])));
+    expect(resolveFeatureFlags(null)).toEqual(
+      Object.fromEntries(FEATURE_KEYS.map((k) => [k, FEATURE_FLAGS[k].default])),
+    );
     expect(isFeatureKey('webhooks')).toBe(true);
     expect(isFeatureKey('nope')).toBe(false);
   });

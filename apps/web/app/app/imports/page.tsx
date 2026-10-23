@@ -27,7 +27,13 @@ export default function ImportsPage() {
   const [up, setUp] = React.useState<Uploaded | null>(null);
   const [mapping, setMapping] = React.useState<Record<string, string>>({});
   const [preview, setPreview] = React.useState<Preview | null>(null);
-  const [job, setJob] = React.useState<{ id: string; status: string; done: number; total: number | null; errorUrl?: string | null } | null>(null);
+  const [job, setJob] = React.useState<{
+    id: string;
+    status: string;
+    done: number;
+    total: number | null;
+    errorUrl?: string | null;
+  } | null>(null);
   const [busy, setBusy] = React.useState(false);
 
   async function upload() {
@@ -61,9 +67,17 @@ export default function ImportsPage() {
     if (!up) return;
     const r = await api<{ jobId: string }>(`/v1/imports/${up.id}/run`, { method: 'POST', json: { dryRun } });
     const poll = async () => {
-      const j = await api<{ status: string; progressDone: string; progressTotal: string | null }>(`/v1/jobs/${r.jobId}`);
+      const j = await api<{ status: string; progressDone: string; progressTotal: string | null }>(
+        `/v1/jobs/${r.jobId}`,
+      );
       const imp = await api<{ errorReportUrl: string | null }>(`/v1/imports/${up.id}`);
-      setJob({ id: r.jobId, status: j.status, done: Number(j.progressDone), total: j.progressTotal ? Number(j.progressTotal) : null, errorUrl: imp.errorReportUrl });
+      setJob({
+        id: r.jobId,
+        status: j.status,
+        done: Number(j.progressDone),
+        total: j.progressTotal ? Number(j.progressTotal) : null,
+        errorUrl: imp.errorReportUrl,
+      });
       if (j.status === 'queued' || j.status === 'running') setTimeout(poll, 1500);
     };
     void poll();
@@ -95,7 +109,11 @@ export default function ImportsPage() {
                 <span className="w-40 truncate text-text-secondary" title={h}>
                   {h}
                 </span>
-                <select value={mapping[h] ?? ''} onChange={(e) => setMapping((m) => ({ ...m, [h]: e.target.value }))} className="h-9 flex-1 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
+                <select
+                  value={mapping[h] ?? ''}
+                  onChange={(e) => setMapping((m) => ({ ...m, [h]: e.target.value }))}
+                  className="h-9 flex-1 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+                >
                   <option value="">{t('imports.ignore')}</option>
                   {up.targets.map((x) => (
                     <option key={x} value={x}>
@@ -114,7 +132,13 @@ export default function ImportsPage() {
       {preview ? (
         <Card className="flex flex-col gap-3">
           <CardTitle>{t('imports.step3')}</CardTitle>
-          <p className="text-callout">{t('imports.summary', { creates: preview.creates, updates: preview.updates, problems: t('imports.problems', { count: preview.errors.length }) })}</p>
+          <p className="text-callout">
+            {t('imports.summary', {
+              creates: preview.creates,
+              updates: preview.updates,
+              problems: t('imports.problems', { count: preview.errors.length }),
+            })}
+          </p>
           {preview.errors.length ? (
             <Table dense>
               <THead>
@@ -145,8 +169,19 @@ export default function ImportsPage() {
           </div>
           {job ? (
             <div role="status" className="flex flex-col gap-2">
-              <progress className="h-2 w-full accent-[var(--color-accent)]" value={job.done} max={job.total ?? undefined} />
-              <p className="text-footnote text-text-secondary">{t('imports.progress', { done: job.done, total: job.total ?? '…', count: job.total ?? '…', status: t(`imports.status.${job.status}`) })}</p>
+              <progress
+                className="h-2 w-full accent-[var(--color-accent)]"
+                value={job.done}
+                max={job.total ?? undefined}
+              />
+              <p className="text-footnote text-text-secondary">
+                {t('imports.progress', {
+                  done: job.done,
+                  total: job.total ?? '…',
+                  count: job.total ?? '…',
+                  status: t(`imports.status.${job.status}`),
+                })}
+              </p>
               {job.errorUrl ? (
                 <a href={job.errorUrl} className="text-callout">
                   {t('imports.errorReport')}

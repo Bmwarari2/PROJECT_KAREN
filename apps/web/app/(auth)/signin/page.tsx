@@ -6,7 +6,11 @@ export async function generateMetadata() {
   return { title: t('auth.signIn.title') };
 }
 
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ workspace?: string; error?: string }> }) {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ workspace?: string; error?: string }>;
+}) {
   const sp = await searchParams;
   return <SignInForm initialWorkspace={sp.workspace ?? ''} />;
 }

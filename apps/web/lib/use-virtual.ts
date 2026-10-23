@@ -6,7 +6,13 @@ import * as React from 'react';
  * rendered, so a 10,000-row rota stays responsive on low-cost phones. Scroll handling is passive
  * and coalesced to one update per animation frame.
  */
-export function useVirtualRows(opts: { count: number; rowHeight: number; overscan?: number; scrollRef: React.RefObject<HTMLElement | null>; headerHeight?: number }) {
+export function useVirtualRows(opts: {
+  count: number;
+  rowHeight: number;
+  overscan?: number;
+  scrollRef: React.RefObject<HTMLElement | null>;
+  headerHeight?: number;
+}) {
   const { count, rowHeight, overscan = 8, scrollRef, headerHeight = 0 } = opts;
   const [range, setRange] = React.useState({ start: 0, end: Math.min(count, 40) });
   const compute = React.useCallback(() => {

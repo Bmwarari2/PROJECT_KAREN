@@ -19,7 +19,11 @@ interface QueueItem {
   planId: string;
   lastAuthor: string;
   lastActivityAt: string;
-  sla: { firstResponse: { dueAt: string; state: string }; resolution: { dueAt: string; state: string }; flag: string };
+  sla: {
+    firstResponse: { dueAt: string; state: string };
+    resolution: { dueAt: string; state: string };
+    flag: string;
+  };
 }
 
 /** The cell's support queue: routing metadata only; opening a ticket is audited (ADR-0101). */
@@ -67,7 +71,9 @@ export default function SupportQueue() {
                 </TD>
                 <TD className="text-footnote">{when(i.sla.firstResponse.dueAt)}</TD>
                 <TD className="text-footnote">{when(i.sla.resolution.dueAt)}</TD>
-                <TD>{i.lastAuthor === 'user' ? t('backoffice.support.us') : t('backoffice.support.customer')}</TD>
+                <TD>
+                  {i.lastAuthor === 'user' ? t('backoffice.support.us') : t('backoffice.support.customer')}
+                </TD>
               </TR>
             ))}
           </tbody>

@@ -19,11 +19,11 @@ Who can do this: people with the `exports.destinations` permission add destinati
 
 ### 1. The bucket must be in your home region
 
-| Workspace home region | Bucket region |
-| --- | --- |
-| UK | `eu-west-2` (London) |
-| EU | `eu-central-1` (Frankfurt) |
-| US | `us-east-2` (Ohio) |
+| Workspace home region | Bucket region              |
+| --------------------- | -------------------------- |
+| UK                    | `eu-west-2` (London)       |
+| EU                    | `eu-central-1` (Frankfurt) |
+| US                    | `us-east-2` (Ohio)         |
 
 Thapsus-HR refuses any other region when you add the destination, and checks the bucket's real region (S3 `HeadBucket`) before every delivery. A bucket in another region fails with `bucketRegionMismatch` and nothing is written.
 
@@ -58,7 +58,11 @@ The External ID is unique to your destination, so no other Thapsus-HR customer c
   "Version": "2012-10-17",
   "Statement": [
     { "Effect": "Allow", "Action": "s3:ListBucket", "Resource": "arn:aws:s3:::<bucket>" },
-    { "Effect": "Allow", "Action": ["s3:PutObject", "s3:DeleteObject"], "Resource": "arn:aws:s3:::<bucket>/<prefix>*" }
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::<bucket>/<prefix>*"
+    }
   ]
 }
 ```

@@ -25,5 +25,7 @@ export function subscriptionMatches(patterns: readonly string[], topic: string):
   if (!(WEBHOOK_EVENT_TYPES as readonly string[]).includes(topic)) return false;
   // ping events are only sent to the endpoint that asked for them (handled by the subscriber)
   if (topic === 'webhook.ping') return true;
-  return patterns.some((p) => p === '*' || p === topic || (p.endsWith('.*') && topic.startsWith(p.slice(0, -1))));
+  return patterns.some(
+    (p) => p === '*' || p === topic || (p.endsWith('.*') && topic.startsWith(p.slice(0, -1))),
+  );
 }

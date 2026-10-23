@@ -1,7 +1,22 @@
 'use client';
 import * as React from 'react';
 import { BadgeCheck } from 'lucide-react';
-import { Button, Card, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Button,
+  Card,
+  Dialog,
+  DialogContent,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -19,7 +34,12 @@ interface Row {
   retainUntil: string | null;
 }
 interface Rules {
-  rules: { methods: Array<{ id: string }>; listTypes: string[]; documentCatalogue: Record<string, string[]>; followUp: Record<string, null | { dueBy?: string; excusePeriod?: string }> };
+  rules: {
+    methods: Array<{ id: string }>;
+    listTypes: string[];
+    documentCatalogue: Record<string, string[]>;
+    followUp: Record<string, null | { dueBy?: string; excusePeriod?: string }>;
+  };
   source: { url: string; title: string };
   verifiedOn: string;
 }
@@ -31,7 +51,16 @@ export default function RightToWorkPage() {
   const rows = useApi<Row[]>('/v1/compliance/right-to-work');
   const rules = useApi<Rules>('/v1/compliance/right-to-work/rules');
   const [open, setOpen] = React.useState<Row | null>(null);
-  const [form, setForm] = React.useState({ checkMethod: 'manual_document_check', listType: 'list_a', checkedOn: '', permissionExpiresOn: '', pvnDate: '', documentType: '', documentReference: '', shareCode: '' });
+  const [form, setForm] = React.useState({
+    checkMethod: 'manual_document_check',
+    listType: 'list_a',
+    checkedOn: '',
+    permissionExpiresOn: '',
+    pvnDate: '',
+    documentType: '',
+    documentReference: '',
+    shareCode: '',
+  });
   const [busy, setBusy] = React.useState(false);
   const spec = rules.data?.rules.followUp[form.listType];
   const needsExpiry = !!spec && 'dueBy' in spec && spec.dueBy === 'permission_expiry_date';
@@ -45,13 +74,31 @@ export default function RightToWorkPage() {
     try {
       const r = await api<{ followUpDueOn: string | null }>('/v1/compliance/right-to-work/checks', {
         method: 'POST',
-        json: { employeeId: open.employeeId, checkMethod: form.checkMethod, listType: form.listType, checkedOn: form.checkedOn, permissionExpiresOn: needsExpiry ? form.permissionExpiresOn : undefined, pvnDate: needsPvn ? form.pvnDate : undefined, documentType: form.documentType || undefined, documentReference: form.documentReference || undefined, shareCode: form.shareCode || undefined },
+        json: {
+          employeeId: open.employeeId,
+          checkMethod: form.checkMethod,
+          listType: form.listType,
+          checkedOn: form.checkedOn,
+          permissionExpiresOn: needsExpiry ? form.permissionExpiresOn : undefined,
+          pvnDate: needsPvn ? form.pvnDate : undefined,
+          documentType: form.documentType || undefined,
+          documentReference: form.documentReference || undefined,
+          shareCode: form.shareCode || undefined,
+        },
       });
-      toast({ title: r.followUpDueOn ? t('compliance.rtw.saved', { date: formatDate(r.followUpDueOn, locale) }) : t('compliance.rtw.savedNoFollowUp'), tone: 'success' });
+      toast({
+        title: r.followUpDueOn
+          ? t('compliance.rtw.saved', { date: formatDate(r.followUpDueOn, locale) })
+          : t('compliance.rtw.savedNoFollowUp'),
+        tone: 'success',
+      });
       setOpen(null);
       rows.reload();
     } catch (err) {
-      toast({ title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'), tone: 'danger' });
+      toast({
+        title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'),
+        tone: 'danger',
+      });
     } finally {
       setBusy(false);
     }
@@ -60,10 +107,16 @@ export default function RightToWorkPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-title-2">{t('compliance.rtw.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('compliance.rtw.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
+        {t('compliance.rtw.intro')}
+      </p>
       {rules.data ? <SourceLink source={rules.data.source} verifiedOn={rules.data.verifiedOn} /> : null}
       {!rows.data ? (
-        rows.error ? <EmptyState title={t('compliance.noAccess')} /> : <Skeleton className="h-40 w-full" />
+        rows.error ? (
+          <EmptyState title={t('compliance.noAccess')} />
+        ) : (
+          <Skeleton className="h-40 w-full" />
+        )
       ) : rows.data.length === 0 ? (
         <EmptyState icon={<BadgeCheck aria-hidden />} title={t('compliance.rtw.empty')} />
       ) : (
@@ -88,12 +141,19 @@ export default function RightToWorkPage() {
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>{r.checkedOn ? `${d(r.checkedOn)} · ${t(`compliance.rtw.list.${r.listType}`)}` : '—'}</TD>
+                  <TD>
+                    {r.checkedOn ? `${d(r.checkedOn)} · ${t(`compliance.rtw.list.${r.listType}`)}` : '—'}
+                  </TD>
                   <TD>{d(r.followUpDueOn)}</TD>
                   <TD>{d(r.retainUntil)}</TD>
                   <TD className="text-right">
                     {r.status !== 'retention' ? (
-                      <Button size="sm" variant="secondary" onClick={() => setOpen(r)} aria-label={t('compliance.rtw.recordFor', { name: r.employeeName })}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setOpen(r)}
+                        aria-label={t('compliance.rtw.recordFor', { name: r.employeeName })}
+                      >
                         {t('compliance.rtw.record')}
                       </Button>
                     ) : null}
@@ -106,11 +166,20 @@ export default function RightToWorkPage() {
       )}
       <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
         {open && rules.data ? (
-          <DialogContent title={t('compliance.rtw.recordTitle', { name: open.employeeName })} description={t('compliance.rtw.recordBody')} closeLabel={t('common.close')}>
+          <DialogContent
+            title={t('compliance.rtw.recordTitle', { name: open.employeeName })}
+            description={t('compliance.rtw.recordBody')}
+            closeLabel={t('common.close')}
+          >
             <form onSubmit={save} className="flex flex-col gap-3">
               <Field id="rtw-method" label={t('compliance.rtw.method')}>
                 {(p) => (
-                  <select {...p} className={selectClass} value={form.checkMethod} onChange={(e) => setForm({ ...form, checkMethod: e.target.value })}>
+                  <select
+                    {...p}
+                    className={selectClass}
+                    value={form.checkMethod}
+                    onChange={(e) => setForm({ ...form, checkMethod: e.target.value })}
+                  >
                     {rules.data!.rules.methods.map((m) => (
                       <option key={m.id} value={m.id}>
                         {t(`compliance.rtw.methodName.${m.id}`)}
@@ -121,7 +190,12 @@ export default function RightToWorkPage() {
               </Field>
               <Field id="rtw-list" label={t('compliance.rtw.listType')}>
                 {(p) => (
-                  <select {...p} className={selectClass} value={form.listType} onChange={(e) => setForm({ ...form, listType: e.target.value, documentType: '' })}>
+                  <select
+                    {...p}
+                    className={selectClass}
+                    value={form.listType}
+                    onChange={(e) => setForm({ ...form, listType: e.target.value, documentType: '' })}
+                  >
                     {rules.data!.rules.listTypes.map((l) => (
                       <option key={l} value={l}>
                         {t(`compliance.rtw.list.${l}`)}
@@ -133,7 +207,12 @@ export default function RightToWorkPage() {
               {(rules.data.rules.documentCatalogue[form.listType] ?? []).length ? (
                 <Field id="rtw-doc" label={t('compliance.rtw.documentType')}>
                   {(p) => (
-                    <select {...p} className={selectClass} value={form.documentType} onChange={(e) => setForm({ ...form, documentType: e.target.value })}>
+                    <select
+                      {...p}
+                      className={selectClass}
+                      value={form.documentType}
+                      onChange={(e) => setForm({ ...form, documentType: e.target.value })}
+                    >
                       <option value="">{t('compliance.rtw.documentNone')}</option>
                       {rules.data!.rules.documentCatalogue[form.listType]!.map((doc) => (
                         <option key={doc} value={doc}>
@@ -144,13 +223,69 @@ export default function RightToWorkPage() {
                   )}
                 </Field>
               ) : null}
-              <Field id="rtw-date" label={t('compliance.rtw.checkedOn')}>{(p) => <Input {...p} type="date" required value={form.checkedOn} onChange={(e) => setForm({ ...form, checkedOn: e.target.value })} />}</Field>
-              {needsExpiry ? <Field id="rtw-exp" label={t('compliance.rtw.permissionExpiresOn')}>{(p) => <Input {...p} type="date" required value={form.permissionExpiresOn} onChange={(e) => setForm({ ...form, permissionExpiresOn: e.target.value })} />}</Field> : null}
-              {needsPvn ? <Field id="rtw-pvn" label={t('compliance.rtw.pvnDate')}>{(p) => <Input {...p} type="date" required value={form.pvnDate} onChange={(e) => setForm({ ...form, pvnDate: e.target.value })} />}</Field> : null}
-              <Field id="rtw-ref" label={t('compliance.rtw.documentReference')} hint={t('compliance.rtw.vaultHint')}>
-                {(p) => <Input {...p} value={form.documentReference} autoComplete="off" onChange={(e) => setForm({ ...form, documentReference: e.target.value })} />}
+              <Field id="rtw-date" label={t('compliance.rtw.checkedOn')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="date"
+                    required
+                    value={form.checkedOn}
+                    onChange={(e) => setForm({ ...form, checkedOn: e.target.value })}
+                  />
+                )}
               </Field>
-              {form.checkMethod === 'home_office_online_check' ? <Field id="rtw-share" label={t('compliance.rtw.shareCode')}>{(p) => <Input {...p} value={form.shareCode} autoComplete="off" onChange={(e) => setForm({ ...form, shareCode: e.target.value })} />}</Field> : null}
+              {needsExpiry ? (
+                <Field id="rtw-exp" label={t('compliance.rtw.permissionExpiresOn')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      type="date"
+                      required
+                      value={form.permissionExpiresOn}
+                      onChange={(e) => setForm({ ...form, permissionExpiresOn: e.target.value })}
+                    />
+                  )}
+                </Field>
+              ) : null}
+              {needsPvn ? (
+                <Field id="rtw-pvn" label={t('compliance.rtw.pvnDate')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      type="date"
+                      required
+                      value={form.pvnDate}
+                      onChange={(e) => setForm({ ...form, pvnDate: e.target.value })}
+                    />
+                  )}
+                </Field>
+              ) : null}
+              <Field
+                id="rtw-ref"
+                label={t('compliance.rtw.documentReference')}
+                hint={t('compliance.rtw.vaultHint')}
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={form.documentReference}
+                    autoComplete="off"
+                    onChange={(e) => setForm({ ...form, documentReference: e.target.value })}
+                  />
+                )}
+              </Field>
+              {form.checkMethod === 'home_office_online_check' ? (
+                <Field id="rtw-share" label={t('compliance.rtw.shareCode')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      value={form.shareCode}
+                      autoComplete="off"
+                      onChange={(e) => setForm({ ...form, shareCode: e.target.value })}
+                    />
+                  )}
+                </Field>
+              ) : null}
               <Button type="submit" loading={busy}>
                 {t('common.save')}
               </Button>

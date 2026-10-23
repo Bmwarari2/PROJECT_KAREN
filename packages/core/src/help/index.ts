@@ -34,9 +34,11 @@ export function validateHelpArticles(articles: readonly HelpArticle[] = HELP_ART
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(a.slug)) problems.push(`${a.slug}: invalid slug`);
     if (slugs.has(a.slug)) problems.push(`${a.slug}: duplicate slug`);
     slugs.add(a.slug);
-    if (!Number.isSafeInteger(a.version) || a.version < 1) problems.push(`${a.slug}: version must be a positive integer`);
+    if (!Number.isSafeInteger(a.version) || a.version < 1)
+      problems.push(`${a.slug}: version must be a positive integer`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(a.updatedOn)) problems.push(`${a.slug}: updatedOn must be a date`);
-    if (!a.contexts.length || !a.contexts.every((c) => c.startsWith('/app'))) problems.push(`${a.slug}: contexts must be app paths`);
+    if (!a.contexts.length || !a.contexts.every((c) => c.startsWith('/app')))
+      problems.push(`${a.slug}: contexts must be app paths`);
     for (const l of LOCALES) {
       const t = a.locales[l];
       if (!t?.title || !t.summary || !t.body?.length) problems.push(`${a.slug}: missing ${l} text`);
@@ -45,7 +47,13 @@ export function validateHelpArticles(articles: readonly HelpArticle[] = HELP_ART
   return problems;
 }
 
-const view = (a: HelpArticle, locale: Locale): HelpArticleView => ({ slug: a.slug, version: a.version, updatedOn: a.updatedOn, contexts: a.contexts, ...a.locales[locale] });
+const view = (a: HelpArticle, locale: Locale): HelpArticleView => ({
+  slug: a.slug,
+  version: a.version,
+  updatedOn: a.updatedOn,
+  contexts: a.contexts,
+  ...a.locales[locale],
+});
 
 export function helpArticle(slug: string, locale: Locale): HelpArticleView | undefined {
   const a = HELP_ARTICLES.find((x) => x.slug === slug);
@@ -69,7 +77,33 @@ export function articlesForContext(path: string, locale: Locale): HelpArticleVie
 }
 
 // ---- search: tokenise, light stemming, weighted inverted index per locale ---------------------------
-const STOP = new Set(['a', 'an', 'and', 'the', 'to', 'of', 'in', 'on', 'for', 'or', 'is', 'it', 'my', 'how', 'do', 'i', 'you', 'your', 'can', 'what', 'with', 'from', 'at', 'be', 'by']);
+const STOP = new Set([
+  'a',
+  'an',
+  'and',
+  'the',
+  'to',
+  'of',
+  'in',
+  'on',
+  'for',
+  'or',
+  'is',
+  'it',
+  'my',
+  'how',
+  'do',
+  'i',
+  'you',
+  'your',
+  'can',
+  'what',
+  'with',
+  'from',
+  'at',
+  'be',
+  'by',
+]);
 
 export function stem(word: string): string {
   let w = word;
@@ -80,7 +114,11 @@ export function stem(word: string): string {
     }
   }
   // fold common UK/US spelling pairs so either finds both
-  return w.replace(/isation$|ization$/, 'ize').replace(/ise$/, 'ize').replace(/our$/, 'or').replace(/ll$/, 'l');
+  return w
+    .replace(/isation$|ization$/, 'ize')
+    .replace(/ise$/, 'ize')
+    .replace(/our$/, 'or')
+    .replace(/ll$/, 'l');
 }
 
 export function tokenize(text: string): string[] {
@@ -132,12 +170,15 @@ export function searchHelp(query: string, locale: Locale, limit = 10): HelpArtic
     for (const [tok, postings] of idx) {
       const hit = tok === term || (i === terms.length - 1 && term.length >= 2 && tok.startsWith(term));
       if (!hit) continue;
-      for (const [slug, w] of postings) matched.set(slug, Math.max(matched.get(slug) ?? 0, tok === term ? w * 2 : w));
+      for (const [slug, w] of postings)
+        matched.set(slug, Math.max(matched.get(slug) ?? 0, tok === term ? w * 2 : w));
     }
     if (scores === null) scores = matched;
     else {
       const prev: Map<string, number> = scores;
-      scores = new Map([...prev].filter(([slug]) => matched.has(slug)).map(([slug, s]) => [slug, s + matched.get(slug)!]));
+      scores = new Map(
+        [...prev].filter(([slug]) => matched.has(slug)).map(([slug, s]) => [slug, s + matched.get(slug)!]),
+      );
     }
   });
   const order = HELP_ARTICLES.map((a) => a.slug);

@@ -29,15 +29,69 @@ const COMMON: Record<string, FieldDef> = {
 };
 
 export const FIELD_CATALOGUE: Record<SectionKey, Record<string, FieldDef>> = {
-  hours: { ...COMMON, weekStart: { type: 'date' }, weekEnd: { type: 'date' }, workedHours: { type: 'duration' }, regularHours: { type: 'duration' }, overtimeHours: { type: 'duration' }, doubleTimeHours: { type: 'duration' }, approvedAt: { type: 'datetime' } },
-  absences: { ...COMMON, leaveType: { type: 'text' }, leaveCategory: { type: 'text' }, paid: { type: 'boolean' }, startDate: { type: 'date' }, endDate: { type: 'date' }, days: { type: 'number' }, hours: { type: 'number' } },
-  sickPay: { ...COMMON, scheme: { type: 'text' }, sicknessDays: { type: 'number' }, qualifyingDaysPaid: { type: 'number' }, waitingDays: { type: 'number' }, amount: { type: 'money', currencyFrom: 'currency' }, weeklyRate: { type: 'money', currencyFrom: 'currency' }, currency: { type: 'text' } },
-  payChanges: { ...COMMON, effectiveDate: { type: 'date' }, amount: { type: 'money', currencyFrom: 'currency' }, currency: { type: 'text' }, frequency: { type: 'text' }, previousAmount: { type: 'money', currencyFrom: 'previousCurrency' }, previousFrequency: { type: 'text' } },
-  starters: { ...COMMON, startDate: { type: 'date' }, dateOfBirth: { type: 'date' }, workEmail: { type: 'text' }, jobTitle: { type: 'text' }, employmentType: { type: 'text' }, contractType: { type: 'text' }, weeklyHours: { type: 'number' }, payAmount: { type: 'money', currencyFrom: 'currency' }, currency: { type: 'text' }, payFrequency: { type: 'text' } },
+  hours: {
+    ...COMMON,
+    weekStart: { type: 'date' },
+    weekEnd: { type: 'date' },
+    workedHours: { type: 'duration' },
+    regularHours: { type: 'duration' },
+    overtimeHours: { type: 'duration' },
+    doubleTimeHours: { type: 'duration' },
+    approvedAt: { type: 'datetime' },
+  },
+  absences: {
+    ...COMMON,
+    leaveType: { type: 'text' },
+    leaveCategory: { type: 'text' },
+    paid: { type: 'boolean' },
+    startDate: { type: 'date' },
+    endDate: { type: 'date' },
+    days: { type: 'number' },
+    hours: { type: 'number' },
+  },
+  sickPay: {
+    ...COMMON,
+    scheme: { type: 'text' },
+    sicknessDays: { type: 'number' },
+    qualifyingDaysPaid: { type: 'number' },
+    waitingDays: { type: 'number' },
+    amount: { type: 'money', currencyFrom: 'currency' },
+    weeklyRate: { type: 'money', currencyFrom: 'currency' },
+    currency: { type: 'text' },
+  },
+  payChanges: {
+    ...COMMON,
+    effectiveDate: { type: 'date' },
+    amount: { type: 'money', currencyFrom: 'currency' },
+    currency: { type: 'text' },
+    frequency: { type: 'text' },
+    previousAmount: { type: 'money', currencyFrom: 'previousCurrency' },
+    previousFrequency: { type: 'text' },
+  },
+  starters: {
+    ...COMMON,
+    startDate: { type: 'date' },
+    dateOfBirth: { type: 'date' },
+    workEmail: { type: 'text' },
+    jobTitle: { type: 'text' },
+    employmentType: { type: 'text' },
+    contractType: { type: 'text' },
+    weeklyHours: { type: 'number' },
+    payAmount: { type: 'money', currencyFrom: 'currency' },
+    currency: { type: 'text' },
+    payFrequency: { type: 'text' },
+  },
   leavers: { ...COMMON, lastWorkingDay: { type: 'date' } },
 };
 
-export const DATE_FORMATS = ['yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd.MM.yyyy', 'yyyyMMdd', 'dd-MM-yyyy'] as const;
+export const DATE_FORMATS = [
+  'yyyy-MM-dd',
+  'dd/MM/yyyy',
+  'MM/dd/yyyy',
+  'dd.MM.yyyy',
+  'yyyyMMdd',
+  'dd-MM-yyyy',
+] as const;
 export type DateFormat = (typeof DATE_FORMATS)[number];
 
 export type Transform =
@@ -78,7 +132,20 @@ export function defaultMapping(): FieldMapping {
     decimalSeparator: '.',
     delimiter: ',',
     includeHeader: true,
-    sections: Object.fromEntries(SECTIONS.map((s) => [s, { enabled: true, columns: Object.keys(FIELD_CATALOGUE[s]).filter((f) => !['periodName', 'periodStart', 'periodEnd', 'payDate', 'firstName', 'lastName'].includes(f)).map((f) => ({ header: snake(f), field: f })) }])),
+    sections: Object.fromEntries(
+      SECTIONS.map((s) => [
+        s,
+        {
+          enabled: true,
+          columns: Object.keys(FIELD_CATALOGUE[s])
+            .filter(
+              (f) =>
+                !['periodName', 'periodStart', 'periodEnd', 'payDate', 'firstName', 'lastName'].includes(f),
+            )
+            .map((f) => ({ header: snake(f), field: f })),
+        },
+      ]),
+    ),
   };
 }
 
@@ -122,8 +189,13 @@ export function validateMapping(m: FieldMapping): string[] {
         (t.type === 'boolean' && def.type === 'boolean') ||
         ((t.type === 'codeMap' || t.type === 'case') && def.type === 'text');
       if (!ok) problems.push(`${at}: transform ${t.type} does not apply to ${def.type} field ${c.field}`);
-      if ((t.type === 'number' || t.type === 'hours') && !(Number.isInteger(t.decimals) && t.decimals >= 0 && t.decimals <= 4)) problems.push(`${at}: decimals must be 0-4`);
-      if (t.type === 'date' && !DATE_FORMATS.includes(t.format)) problems.push(`${at}: unsupported date format`);
+      if (
+        (t.type === 'number' || t.type === 'hours') &&
+        !(Number.isInteger(t.decimals) && t.decimals >= 0 && t.decimals <= 4)
+      )
+        problems.push(`${at}: decimals must be 0-4`);
+      if (t.type === 'date' && !DATE_FORMATS.includes(t.format))
+        problems.push(`${at}: unsupported date format`);
     });
   }
   if (!enabled) problems.push('enable at least one section');
@@ -177,7 +249,13 @@ function sep(s: string, m: FieldMapping) {
 }
 
 /** Raw value of a field for a row (before transforms). */
-function rawValue(section: SectionKey, field: string, row: Record<string, unknown>, emp: InputEmployee | undefined, inputs: PayrollInputs): unknown {
+function rawValue(
+  section: SectionKey,
+  field: string,
+  row: Record<string, unknown>,
+  emp: InputEmployee | undefined,
+  inputs: PayrollInputs,
+): unknown {
   switch (field) {
     case 'firstName':
       return emp?.firstName ?? '';
@@ -195,7 +273,12 @@ function rawValue(section: SectionKey, field: string, row: Record<string, unknow
       return inputs.period.payDate;
   }
   if (section === 'hours') {
-    const map: Record<string, string> = { workedHours: 'workedMinutes', regularHours: 'regularMinutes', overtimeHours: 'overtimeMinutes', doubleTimeHours: 'doubleMinutes' };
+    const map: Record<string, string> = {
+      workedHours: 'workedMinutes',
+      regularHours: 'regularMinutes',
+      overtimeHours: 'overtimeMinutes',
+      doubleTimeHours: 'doubleMinutes',
+    };
     if (map[field]) return row[map[field]!];
   }
   if (section === 'sickPay' && field === 'amount') return row.amountMinor;
@@ -207,7 +290,14 @@ function rawValue(section: SectionKey, field: string, row: Record<string, unknow
   return row[field];
 }
 
-export function cellFor(section: SectionKey, col: ColumnMapping, row: Record<string, unknown>, emp: InputEmployee | undefined, inputs: PayrollInputs, m: FieldMapping): CellValue {
+export function cellFor(
+  section: SectionKey,
+  col: ColumnMapping,
+  row: Record<string, unknown>,
+  emp: InputEmployee | undefined,
+  inputs: PayrollInputs,
+  m: FieldMapping,
+): CellValue {
   if (col.value !== undefined) return { kind: 'text', text: col.value };
   const def = FIELD_CATALOGUE[section][col.field!]!;
   const v = rawValue(section, col.field!, row, emp, inputs);
@@ -218,9 +308,15 @@ export function cellFor(section: SectionKey, col: ColumnMapping, row: Record<str
   }
   switch (def.type) {
     case 'date':
-      return { kind: 'text', text: formatDate(String(v).slice(0, 10), t?.type === 'date' ? t.format : m.dateFormat) };
+      return {
+        kind: 'text',
+        text: formatDate(String(v).slice(0, 10), t?.type === 'date' ? t.format : m.dateFormat),
+      };
     case 'datetime':
-      return { kind: 'text', text: t?.type === 'date' ? formatDate(String(v).slice(0, 10), t.format) : String(v) };
+      return {
+        kind: 'text',
+        text: t?.type === 'date' ? formatDate(String(v).slice(0, 10), t.format) : String(v),
+      };
     case 'duration': {
       const minutes = Number(v);
       if (t?.type === 'minutes') return { kind: 'number', text: String(minutes), number: minutes };
@@ -233,7 +329,8 @@ export function cellFor(section: SectionKey, col: ColumnMapping, row: Record<str
     }
     case 'money': {
       const minor = Number(v);
-      if (t?.type === 'money' && t.unit === 'minor') return { kind: 'number', text: String(minor), number: minor };
+      if (t?.type === 'money' && t.unit === 'minor')
+        return { kind: 'number', text: String(minor), number: minor };
       const currency = String(row[def.currencyFrom ?? 'currency'] ?? 'GBP');
       const s = toDecimalString(money(BigInt(minor), currency));
       return { kind: 'number', text: sep(s, m), number: Number(s) };
@@ -262,7 +359,9 @@ export function mapInputs(inputs: PayrollInputs, m: FieldMapping): SectionTable[
   for (const section of SECTIONS) {
     const sm = m.sections[section];
     if (!sm?.enabled) continue;
-    const rows = (inputs[section] as unknown as Array<Record<string, unknown>>).map((r) => sm.columns.map((c) => cellFor(section, c, r, emps.get(String(r.employeeId)), inputs, m)));
+    const rows = (inputs[section] as unknown as Array<Record<string, unknown>>).map((r) =>
+      sm.columns.map((c) => cellFor(section, c, r, emps.get(String(r.employeeId)), inputs, m)),
+    );
     out.push({ section, headers: sm.columns.map((c) => c.header), rows });
   }
   return out;

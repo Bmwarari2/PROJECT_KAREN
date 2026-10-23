@@ -91,10 +91,7 @@
             },
             "regulator": null,
             "processorToController": null,
-            "unverified": [
-              "regulator (815 ILCS 530/10(e) threshold and deadline)",
-              "processorToController"
-            ]
+            "unverified": ["regulator (815 ILCS 530/10(e) threshold and deadline)", "processorToController"]
           },
           "source": {
             "url": "https://www.illinoisattorneygeneral.gov/consumer-protection/for-businesses/data-breach",

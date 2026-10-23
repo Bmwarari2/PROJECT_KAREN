@@ -29,7 +29,13 @@ export function candidates(fileName: string, by: MatchBy, pattern?: string | nul
   for (let i = 0; i < parts.length; i += 2) if (parts[i]) tokens.push({ text: parts[i]!, index: i });
   const out = new Set<string>();
   for (let a = 0; a < tokens.length; a++) {
-    for (let b = a; b < Math.min(tokens.length, a + 4); b++) out.add(parts.slice(tokens[a]!.index, tokens[b]!.index + 1).join('').toLowerCase());
+    for (let b = a; b < Math.min(tokens.length, a + 4); b++)
+      out.add(
+        parts
+          .slice(tokens[a]!.index, tokens[b]!.index + 1)
+          .join('')
+          .toLowerCase(),
+      );
   }
   return [...out];
 }
@@ -45,7 +51,12 @@ export interface MatchResult {
   detail: { employeeNumber?: string; reason?: string; candidates?: number };
 }
 
-export function decide(fileName: string, by: MatchBy, pattern: string | null, numbers: Map<string, { id: string; employeeNumber: string }>): MatchResult {
+export function decide(
+  fileName: string,
+  by: MatchBy,
+  pattern: string | null,
+  numbers: Map<string, { id: string; employeeNumber: string }>,
+): MatchResult {
   const found = new Map<string, string>();
   for (const c of candidates(fileName, by, pattern)) {
     const e = numbers.get(c);
@@ -55,7 +66,12 @@ export function decide(fileName: string, by: MatchBy, pattern: string | null, nu
     const [[employeeId, employeeNumber]] = [...found.entries()] as [[string, string]];
     return { status: 'matched', employeeId, detail: { employeeNumber } };
   }
-  if (found.size > 1) return { status: 'ambiguous', employeeId: null, detail: { reason: 'severalEmployees', candidates: found.size } };
+  if (found.size > 1)
+    return {
+      status: 'ambiguous',
+      employeeId: null,
+      detail: { reason: 'severalEmployees', candidates: found.size },
+    };
   return { status: 'unmatched', employeeId: null, detail: { reason: 'noEmployeeNumber' } };
 }
 
@@ -69,7 +85,8 @@ export const MAX_ARCHIVE_ENTRIES = 2 * MAX_FILES;
 /** Most bytes one upload request may carry in total (every file part together). */
 export const MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
 
-export const isPdf = (b: Buffer) => b.length > 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46;
+export const isPdf = (b: Buffer) =>
+  b.length > 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46;
 export const isZip = isZipArchive;
 
 export interface UploadedFile {
@@ -86,7 +103,9 @@ export interface Rejected {
  * MAX_ARCHIVE_ENTRIES entries is refused before inflation; each entry is inflated with a bound of
  * MAX_FILE_BYTES and every archive in the upload shares one MAX_ARCHIVE_TOTAL budget.
  */
-export async function expandUploads(files: UploadedFile[]): Promise<{ accepted: UploadedFile[]; rejected: Rejected[] }> {
+export async function expandUploads(
+  files: UploadedFile[],
+): Promise<{ accepted: UploadedFile[]; rejected: Rejected[] }> {
   const accepted: UploadedFile[] = [];
   const rejected: Rejected[] = [];
   const budget = new InflateBudget(MAX_ARCHIVE_TOTAL);
@@ -101,12 +120,21 @@ export async function expandUploads(files: UploadedFile[]): Promise<{ accepted: 
       add(f);
       continue;
     }
-    const zip = await openZip(f.body, { maxEntries: MAX_ARCHIVE_ENTRIES, maxEntryBytes: MAX_FILE_BYTES, maxTotalBytes: MAX_ARCHIVE_TOTAL }, budget);
+    const zip = await openZip(
+      f.body,
+      { maxEntries: MAX_ARCHIVE_ENTRIES, maxEntryBytes: MAX_FILE_BYTES, maxTotalBytes: MAX_ARCHIVE_TOTAL },
+      budget,
+    );
     if (typeof zip === 'string') {
-      rejected.push({ name: f.name, reason: zip === 'tooManyEntries' ? 'tooMany' : zip === 'tooLarge' ? 'tooLarge' : 'badArchive' });
+      rejected.push({
+        name: f.name,
+        reason: zip === 'tooManyEntries' ? 'tooMany' : zip === 'tooLarge' ? 'tooLarge' : 'badArchive',
+      });
       continue;
     }
-    const entries = zip.entries.filter((e) => !e.name.startsWith('__MACOSX/') && !(e.name.split('/').pop() ?? '').startsWith('.'));
+    const entries = zip.entries.filter(
+      (e) => !e.name.startsWith('__MACOSX/') && !(e.name.split('/').pop() ?? '').startsWith('.'),
+    );
     for (const e of entries.sort((a, b) => (a.name < b.name ? -1 : 1))) {
       const name = e.name.split('/').pop()!;
       if (accepted.length >= MAX_FILES) {

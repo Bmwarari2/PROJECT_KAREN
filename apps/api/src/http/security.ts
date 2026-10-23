@@ -35,7 +35,9 @@ export function sessionCookie(config: Pick<CellConfig, 'apiBaseUrl'>): CookieSpe
  */
 export function staffCookie(config: Pick<CellConfig, 'apiBaseUrl'>): CookieSpec {
   const secure = isHttps(config);
-  return secure ? { name: STAFF_COOKIE_SECURE, secure, path: '/' } : { name: STAFF_COOKIE_DEV, secure, path: '/v1/backoffice' };
+  return secure
+    ? { name: STAFF_COOKIE_SECURE, secure, path: '/' }
+    : { name: STAFF_COOKIE_DEV, secure, path: '/v1/backoffice' };
 }
 
 /**
@@ -60,8 +62,14 @@ const originOf = (url: string) => {
 };
 
 /** Origins whose pages may send state-changing requests with the user's cookies. */
-export function trustedOrigins(config: Pick<CellConfig, 'appBaseUrl' | 'apiBaseUrl' | 'globalBaseUrl'>): Set<string> {
-  return new Set([config.appBaseUrl, config.apiBaseUrl, config.globalBaseUrl].map(originOf).filter((o): o is string => !!o));
+export function trustedOrigins(
+  config: Pick<CellConfig, 'appBaseUrl' | 'apiBaseUrl' | 'globalBaseUrl'>,
+): Set<string> {
+  return new Set(
+    [config.appBaseUrl, config.apiBaseUrl, config.globalBaseUrl]
+      .map(originOf)
+      .filter((o): o is string => !!o),
+  );
 }
 
 /**
@@ -90,7 +98,11 @@ export function crossSiteRefusal(
 export function withCharset(contentType: string): string {
   const [type, ...params] = contentType.split(';').map((p) => p.trim());
   const media = (type ?? '').toLowerCase();
-  const textual = media.startsWith('text/') || media === 'application/xml' || media.endsWith('+xml') || media === 'application/javascript';
+  const textual =
+    media.startsWith('text/') ||
+    media === 'application/xml' ||
+    media.endsWith('+xml') ||
+    media === 'application/javascript';
   if (!textual || params.some((p) => p.toLowerCase().startsWith('charset='))) return contentType;
   return [type, ...params, 'charset=utf-8'].join('; ');
 }
@@ -111,10 +123,24 @@ export async function charsetOnSend(_req: FastifyRequest, reply: FastifyReply, p
  * sanitised fallback (no quotes, backslashes, control characters, path separators or `;`); the
  * exact UTF-8 name goes in `filename*`. Never lets a stored name change the header's structure.
  */
-export function contentDisposition(fileName: string, disposition: 'attachment' | 'inline' = 'attachment'): string {
-  // eslint-disable-next-line no-control-regex
-  const cleaned = fileName.normalize('NFC').replace(/[\u0000-\u001f\u007f"\\/;]/g, '_').replace(/^\.+/, '').trim().slice(0, 200) || 'download';
+export function contentDisposition(
+  fileName: string,
+  disposition: 'attachment' | 'inline' = 'attachment',
+): string {
+  const cleaned =
+    fileName
+      .normalize('NFC')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u001f\u007f"\\/;]/g, '_')
+      .replace(/^\.+/, '')
+      .trim()
+      .slice(0, 200) || 'download';
   const ascii = cleaned.replace(/[^\x20-\x7e]/g, '_');
-  const encoded = encodeURIComponent(cleaned).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
-  return ascii === cleaned ? `${disposition}; filename="${ascii}"` : `${disposition}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+  const encoded = encodeURIComponent(cleaned).replace(
+    /['()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  return ascii === cleaned
+    ? `${disposition}; filename="${ascii}"`
+    : `${disposition}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }

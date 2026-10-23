@@ -21,9 +21,14 @@ export function PrivacyFrame({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-title-2">{t('privacy.ui.title')}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('privacy.ui.lead')}</p>
+        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('privacy.ui.lead')}
+        </p>
       </div>
-      <nav aria-label={t('privacy.ui.sections')} className="-mx-1 flex gap-1 overflow-x-auto border-b border-border">
+      <nav
+        aria-label={t('privacy.ui.sections')}
+        className="-mx-1 flex gap-1 overflow-x-auto border-b border-border"
+      >
         {TABS.map((tab) => {
           const active = tab.href === '/app/privacy' ? path === tab.href : path.startsWith(tab.href);
           return (
@@ -31,7 +36,10 @@ export function PrivacyFrame({ children }: { children: React.ReactNode }) {
               key={tab.href}
               href={tab.href}
               aria-current={active ? 'page' : undefined}
-              className={cn('whitespace-nowrap border-b-2 px-3 py-2 text-callout font-semibold no-underline transition-colors duration-[var(--duration-fast)]', active ? 'border-accent text-text' : 'border-transparent text-text-secondary hover:text-text')}
+              className={cn(
+                'whitespace-nowrap border-b-2 px-3 py-2 text-callout font-semibold no-underline transition-colors duration-[var(--duration-fast)]',
+                active ? 'border-accent text-text' : 'border-transparent text-text-secondary hover:text-text',
+              )}
             >
               {t(`privacy.ui.tab.${tab.key}`)}
             </Link>

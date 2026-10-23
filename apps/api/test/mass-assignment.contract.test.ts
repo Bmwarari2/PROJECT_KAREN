@@ -15,7 +15,16 @@ beforeAll(async () => {
     extend: (app) => {
       app.post(
         '/v1/test-only/echo',
-        { schema: { hide: true, body: Type.Object({ name: Type.String(), nested: Type.Optional(Type.Object({ keep: Type.String() })), map: Type.Optional(Type.Record(Type.String(), Type.String())) }) } },
+        {
+          schema: {
+            hide: true,
+            body: Type.Object({
+              name: Type.String(),
+              nested: Type.Optional(Type.Object({ keep: Type.String() })),
+              map: Type.Optional(Type.Record(Type.String(), Type.String())),
+            }),
+          },
+        },
         async (req) => {
           seen = req.body as Record<string, unknown>;
           return { ok: true };
@@ -46,9 +55,15 @@ describe('mass assignment (ASVS V15.3.3)', () => {
     for (const { method, url, schema } of bodies) {
       for (const v of variants(schema)) {
         const closed = (v as { additionalProperties?: unknown }).additionalProperties === false;
-        const out = cleanBody(v, { [probe]: 'injected', isAdmin: true, tenantId: '00000000-0000-4000-8000-000000000000' }) as Record<string, unknown>;
+        const out = cleanBody(v, {
+          [probe]: 'injected',
+          isAdmin: true,
+          tenantId: '00000000-0000-4000-8000-000000000000',
+        }) as Record<string, unknown>;
         const declared = Object.keys((v as { properties?: Record<string, unknown> }).properties ?? {});
-        const kept = [probe, ...['isAdmin', 'tenantId'].filter((k) => !declared.includes(k))].filter((k) => out && typeof out === 'object' && k in out);
+        const kept = [probe, ...['isAdmin', 'tenantId'].filter((k) => !declared.includes(k))].filter(
+          (k) => out && typeof out === 'object' && k in out,
+        );
         if (!closed && kept.length) leaks.push(`${method} ${url}: ${kept.join(', ')}`);
       }
     }
@@ -61,7 +76,13 @@ describe('mass assignment (ASVS V15.3.3)', () => {
       method: 'POST',
       url: '/v1/test-only/echo',
       headers: { cookie: owner.cookie },
-      payload: { name: 'Fictional', role: 'owner', tenantId: 'someone-else', nested: { keep: 'yes', isAdmin: true }, map: { a: '1', b: '2' } },
+      payload: {
+        name: 'Fictional',
+        role: 'owner',
+        tenantId: 'someone-else',
+        nested: { keep: 'yes', isAdmin: true },
+        map: { a: '1', b: '2' },
+      },
     });
     expect(res.statusCode, res.body).toBe(200);
     expect(seen).toEqual({ name: 'Fictional', nested: { keep: 'yes' }, map: { a: '1', b: '2' } });
@@ -69,7 +90,12 @@ describe('mass assignment (ASVS V15.3.3)', () => {
 
   it('closed schemas still refuse unknown fields outright', async () => {
     const owner = await ownerSession(ctx);
-    const res = await ctx.app.inject({ method: 'PATCH', url: '/v1/settings/security', headers: { cookie: owner.cookie }, payload: { sessionIdleMinutes: 30, bypassMfa: true } });
+    const res = await ctx.app.inject({
+      method: 'PATCH',
+      url: '/v1/settings/security',
+      headers: { cookie: owner.cookie },
+      payload: { sessionIdleMinutes: 30, bypassMfa: true },
+    });
     expect(res.statusCode).toBe(400);
   });
 });

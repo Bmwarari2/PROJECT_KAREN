@@ -61,7 +61,8 @@ describe('documentation (brief §9)', () => {
 
   it('COSTS covers each environment and each home region', () => {
     const costs = read('docs/COSTS.md');
-    for (const heading of ['## Staging', '## Production', '## Development', '## Load test']) expect(costs).toContain(heading);
+    for (const heading of ['## Staging', '## Production', '## Development', '## Load test'])
+      expect(costs).toContain(heading);
     for (const region of ['eu-west-2', 'eu-central-1', 'us-east-2']) expect(costs).toContain(region);
   });
 
@@ -82,7 +83,8 @@ describe('documentation (brief §9)', () => {
       for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) {
         if (!target || /^[a-z]+:/i.test(target) || target.startsWith('#')) continue;
         const path = target.split('#')[0]!;
-        if (path && !existsSync(join(root, normalize(join(dirname(file), path))))) broken.push(`${file} → ${target}`);
+        if (path && !existsSync(join(root, normalize(join(dirname(file), path)))))
+          broken.push(`${file} → ${target}`);
       }
     }
     expect(broken).toEqual([]);

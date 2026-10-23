@@ -30,13 +30,35 @@ export class OutboundBlockedError extends Error {
 
 const BLOCKED = new BlockList();
 for (const [net, prefix] of [
-  ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12],
-  ['192.0.0.0', 24], ['192.0.2.0', 24], ['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15], ['198.51.100.0', 24],
-  ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4],
-] as const) BLOCKED.addSubnet(net, prefix, 'ipv4');
+  ['0.0.0.0', 8],
+  ['10.0.0.0', 8],
+  ['100.64.0.0', 10],
+  ['127.0.0.0', 8],
+  ['169.254.0.0', 16],
+  ['172.16.0.0', 12],
+  ['192.0.0.0', 24],
+  ['192.0.2.0', 24],
+  ['192.88.99.0', 24],
+  ['192.168.0.0', 16],
+  ['198.18.0.0', 15],
+  ['198.51.100.0', 24],
+  ['203.0.113.0', 24],
+  ['224.0.0.0', 4],
+  ['240.0.0.0', 4],
+] as const)
+  BLOCKED.addSubnet(net, prefix, 'ipv4');
 for (const [net, prefix] of [
-  ['::', 128], ['::1', 128], ['100::', 64], ['2001::', 23], ['2001:db8::', 32], ['fc00::', 7], ['fe80::', 10], ['fec0::', 10], ['ff00::', 8],
-] as const) BLOCKED.addSubnet(net, prefix, 'ipv6');
+  ['::', 128],
+  ['::1', 128],
+  ['100::', 64],
+  ['2001::', 23],
+  ['2001:db8::', 32],
+  ['fc00::', 7],
+  ['fe80::', 10],
+  ['fec0::', 10],
+  ['ff00::', 8],
+] as const)
+  BLOCKED.addSubnet(net, prefix, 'ipv6');
 
 /** IPv4 embedded in IPv4-mapped (::ffff:a.b.c.d), IPv4-compatible or NAT64 (64:ff9b::/96) addresses. */
 function embeddedIpv4(ip: string): string | undefined {
@@ -71,28 +93,47 @@ export function assertSafeUrl(raw: string, policy: OutboundPolicy = STRICT_OUTBO
   } catch {
     throw new OutboundBlockedError('invalidUrl');
   }
-  if (url.protocol !== 'https:' && !(policy.allowHttp && url.protocol === 'http:')) throw new OutboundBlockedError('scheme');
+  if (url.protocol !== 'https:' && !(policy.allowHttp && url.protocol === 'http:'))
+    throw new OutboundBlockedError('scheme');
   if (url.username || url.password) throw new OutboundBlockedError('credentials');
   const host = url.hostname.replace(/^\[|\]$/g, '');
   if (!policy.allowPrivateNetworks) {
     if (isIP(host) && isBlockedAddress(host)) throw new OutboundBlockedError('blockedAddress');
-    if (/^(localhost|localhost\.localdomain|metadata\.google\.internal)$/i.test(host) || /\.(localhost|internal|local)$/i.test(host)) {
+    if (
+      /^(localhost|localhost\.localdomain|metadata\.google\.internal)$/i.test(host) ||
+      /\.(localhost|internal|local)$/i.test(host)
+    ) {
       throw new OutboundBlockedError('blockedAddress');
     }
   }
   return url;
 }
 
-type LookupFn = (hostname: string, options: { all: true }, cb: (err: NodeJS.ErrnoException | null, addresses: LookupAddress[]) => void) => void;
+type LookupFn = (
+  hostname: string,
+  options: { all: true },
+  cb: (err: NodeJS.ErrnoException | null, addresses: LookupAddress[]) => void,
+) => void;
 
 /** DNS lookup that fails when any resolved address is blocked (connect-time SSRF check). */
 export function guardedLookup(policy: OutboundPolicy, resolve: LookupFn = dnsLookup as unknown as LookupFn) {
-  return (hostname: string, options: unknown, cb: (err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void) => {
+  return (
+    hostname: string,
+    options: unknown,
+    cb: (err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void,
+  ) => {
     const wantAll = typeof options === 'object' && options !== null && (options as { all?: boolean }).all;
     resolve(hostname, { all: true }, (err, addresses) => {
       if (err) return cb(err, wantAll ? [] : '', 0);
-      if (!policy.allowPrivateNetworks && (addresses.length === 0 || addresses.some((a) => isBlockedAddress(a.address)))) {
-        return cb(Object.assign(new OutboundBlockedError('blockedAddress'), { code: 'EBLOCKED' }), wantAll ? [] : '', 0);
+      if (
+        !policy.allowPrivateNetworks &&
+        (addresses.length === 0 || addresses.some((a) => isBlockedAddress(a.address)))
+      ) {
+        return cb(
+          Object.assign(new OutboundBlockedError('blockedAddress'), { code: 'EBLOCKED' }),
+          wantAll ? [] : '',
+          0,
+        );
       }
       if (wantAll) return cb(null, addresses);
       return cb(null, addresses[0]!.address, addresses[0]!.family);
@@ -138,7 +179,8 @@ export async function postOutbound(
           seen += chunk.length;
           if (seen > maxBytes) res.destroy();
         });
-        const done = () => resolve({ status: res.statusCode ?? 0, durationMs: Math.round(performance.now() - started) });
+        const done = () =>
+          resolve({ status: res.statusCode ?? 0, durationMs: Math.round(performance.now() - started) });
         res.on('end', done);
         res.on('close', done);
         res.on('error', done);

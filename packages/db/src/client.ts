@@ -34,7 +34,9 @@ export function tlsFor(url: string): { rejectUnauthorized: true } | undefined {
   } catch {
     return undefined;
   }
-  return /\.amazonaws\.com$/.test(host) || /[?&]sslmode=(require|verify-ca|verify-full)\b/.test(url) ? { rejectUnauthorized: true } : undefined;
+  return /\.amazonaws\.com$/.test(host) || /[?&]sslmode=(require|verify-ca|verify-full)\b/.test(url)
+    ? { rejectUnauthorized: true }
+    : undefined;
 }
 
 export function getPool(url: string, opts: PoolOptions = {}): pg.Pool {
@@ -76,7 +78,10 @@ export class Tx {
     if (rows.length !== 1) throw new Error(`Expected exactly one row, got ${rows.length}`);
     return rows[0]!;
   }
-  async maybe<T extends QueryResultRow = QueryResultRow>(text: string, params: unknown[] = []): Promise<T | undefined> {
+  async maybe<T extends QueryResultRow = QueryResultRow>(
+    text: string,
+    params: unknown[] = [],
+  ): Promise<T | undefined> {
     const rows = await this.query<T>(text, params);
     return rows[0];
   }

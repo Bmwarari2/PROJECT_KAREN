@@ -16,20 +16,25 @@ export interface AuditEntry {
 }
 
 /** Fields whose values are always redacted in audit diffs (the change is recorded, the value is not). */
-const REDACT_IN_DIFF = /password|secret|token|totp|pin|ssn|ni_?number|national_?id|tax_?id|bank|iban|envelope|ciphertext|health|disability|diversity|ethnic|religion|immigration|visa|passport/i;
+const REDACT_IN_DIFF =
+  /password|secret|token|totp|pin|ssn|ni_?number|national_?id|tax_?id|bank|iban|envelope|ciphertext|health|disability|diversity|ethnic|religion|immigration|visa|passport/i;
 
 export function redactDiff(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(redactDiff);
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value)) out[k] = REDACT_IN_DIFF.test(k) ? '[REDACTED]' : redactDiff(v);
+    for (const [k, v] of Object.entries(value))
+      out[k] = REDACT_IN_DIFF.test(k) ? '[REDACTED]' : redactDiff(v);
     return out;
   }
   return value;
 }
 
 /** Before/after diff of changed keys only. */
-export function diffObjects(before: Record<string, unknown> | null | undefined, after: Record<string, unknown> | null | undefined) {
+export function diffObjects(
+  before: Record<string, unknown> | null | undefined,
+  after: Record<string, unknown> | null | undefined,
+) {
   const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]);
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   for (const k of keys) {
@@ -88,7 +93,14 @@ export async function enqueueJob(
     `INSERT INTO app.jobs (tenant_id, kind, idempotency_key, input, created_by, run_after, progress_total)
      VALUES (app.current_tenant(), $1, $2, $3, $4, coalesce($5::timestamptz, now()), $6)
      ON CONFLICT (tenant_id, kind, idempotency_key) DO NOTHING RETURNING id, status`,
-    [kind, idempotencyKey, JSON.stringify(input), opts.createdBy ?? null, opts.runAfter ?? null, opts.total ?? null],
+    [
+      kind,
+      idempotencyKey,
+      JSON.stringify(input),
+      opts.createdBy ?? null,
+      opts.runAfter ?? null,
+      opts.total ?? null,
+    ],
   );
   if (inserted) {
     await tx.exec(

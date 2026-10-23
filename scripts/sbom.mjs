@@ -7,7 +7,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { checkSbom } from './lib/sbom.mjs';
 
 const out = process.env.SBOM_OUT ?? '.verify/sbom.cdx.json';
-const json = execFileSync('pnpm', ['sbom', '--sbom-format', 'cyclonedx', '--lockfile-only', '--sbom-type', 'application', '--prod'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+const json = execFileSync(
+  'pnpm',
+  ['sbom', '--sbom-format', 'cyclonedx', '--lockfile-only', '--sbom-type', 'application', '--prod'],
+  { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 },
+);
 const bom = JSON.parse(json);
 mkdirSync(out.split('/').slice(0, -1).join('/') || '.', { recursive: true });
 writeFileSync(out, JSON.stringify(bom, null, 2) + '\n');
@@ -16,4 +20,6 @@ if (problems.length) {
   console.error(`SBOM check FAILED (${problems.length}):\n${problems.slice(0, 50).join('\n')}`);
   process.exit(1);
 }
-console.log(`SBOM written to ${out}: ${components} components, all from ${'registry.npmjs.org'} with integrity hashes.`);
+console.log(
+  `SBOM written to ${out}: ${components} components, all from ${'registry.npmjs.org'} with integrity hashes.`,
+);

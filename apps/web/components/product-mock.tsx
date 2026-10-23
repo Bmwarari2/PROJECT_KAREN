@@ -8,9 +8,24 @@ import { serverContext } from '@/lib/server';
 export async function ProductMock() {
   const { t } = await serverContext();
   const rows = [
-    { name: 'Avery Example', role: t('marketing.mock.roleEngineer'), status: 'success' as const, label: t('marketing.mock.statusActive') },
-    { name: 'Blake Sample', role: t('marketing.mock.roleDesigner'), status: 'warning' as const, label: t('marketing.mock.statusLeave') },
-    { name: 'Casey Fictional', role: t('marketing.mock.roleSupport'), status: 'accent' as const, label: t('marketing.mock.statusStarting') },
+    {
+      name: 'Avery Example',
+      role: t('marketing.mock.roleEngineer'),
+      status: 'success' as const,
+      label: t('marketing.mock.statusActive'),
+    },
+    {
+      name: 'Blake Sample',
+      role: t('marketing.mock.roleDesigner'),
+      status: 'warning' as const,
+      label: t('marketing.mock.statusLeave'),
+    },
+    {
+      name: 'Casey Fictional',
+      role: t('marketing.mock.roleSupport'),
+      status: 'accent' as const,
+      label: t('marketing.mock.statusStarting'),
+    },
   ];
   return (
     <figure className="mx-auto max-w-[var(--content-wide)]">
@@ -22,7 +37,9 @@ export async function ProductMock() {
         </div>
         <div className="grid md:grid-cols-[200px_1fr]">
           <div className="hidden flex-col gap-2 border-r border-border bg-surface p-4 text-callout text-text-secondary md:flex">
-            <span className="rounded-md bg-accent-subtle px-3 py-1.5 font-semibold text-text">{t('marketing.mock.people')}</span>
+            <span className="rounded-md bg-accent-subtle px-3 py-1.5 font-semibold text-text">
+              {t('marketing.mock.people')}
+            </span>
             <span className="px-3 py-1.5">{t('marketing.mock.timeOff')}</span>
             <span className="px-3 py-1.5">{t('marketing.mock.rota')}</span>
             <span className="px-3 py-1.5">{t('marketing.mock.reports')}</span>
@@ -32,8 +49,14 @@ export async function ProductMock() {
             <ul className="mt-4 divide-y divide-border">
               {rows.map((r) => (
                 <li key={r.name} className="flex items-center gap-3 py-3">
-                  <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-pill bg-accent-subtle text-footnote font-semibold text-accent">
-                    {r.name.split(' ').map((p) => p[0]).join('')}
+                  <span
+                    aria-hidden
+                    className="flex h-9 w-9 items-center justify-center rounded-pill bg-accent-subtle text-footnote font-semibold text-accent"
+                  >
+                    {r.name
+                      .split(' ')
+                      .map((p) => p[0])
+                      .join('')}
                   </span>
                   <span className="flex-1">
                     <span className="block text-callout font-semibold">{r.name}</span>

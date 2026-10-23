@@ -52,8 +52,9 @@ Things only a person with the right accounts or authority can do. The build runs
   - Colorado 2026 exempt salary ($57,784): the adopted 2026 PAY CALC Order says "effective February 1, 2026" while the pack applies it from 1 January 2026 (CDLE INFO #1) — decide which date applies;
   - the UK nation extents (ADR-0022): each GB rule's `regions`, and the new Northern Ireland pack `packages/rules/packs/gb/gb-nir.json`;
   - the New York City Protected Time Off rule (`packages/rules/packs/us/localities/us-ny-nyc.json`), which is modelled from 22 February 2026 only.
-  
+
   Replace the reviewer field via a back-office rule version when confirmed.
+
 - [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually. These were re-tried on 2026-10-18 and still need a person:
   1. **Lithuania holidays.** Open the Labour Code (Darbo kodeksas) consolidated text on https://www.e-tar.lt (the agent got HTTP 403) or https://e-seimas.lrs.lt (JavaScript only). Copy the list in art. 123(1) and the date of the current wording, then add them as holiday definitions in `packages/rules/packs/eu/lt.json` with that URL, plus a holiday vector in `packages/rules/goldens/eu-b.json`. Check in particular whether 2 November (All Souls' Day) is still listed; the EURES page has two lists that disagree.
   2. **Lithuania annual leave.** In the same text check art. 126(1): the pack uses the EURES summary (20 working days on a 5-day week, 24 on a 6-day week). If it matches, add a back-office rule version with the e-tar.lt URL and the date that wording took effect.
@@ -79,6 +80,7 @@ Things only a person with the right accounts or authority can do. The build runs
   8. **FMLA:** the payroll-method headcount interpretation (whole workweeks), treating all US employees of a tenant as one employer, and the combined 26-week caregiver period.
 
   Record each confirmation as a back-office rule version or an ADR update.
+
 - [ ] 3.5 **Italy: notice and sick pay (phase 5).** `packages/rules/packs/eu/it.json` takes notice from EURES (normattiva.it reset the connection) and sick pay from the INPS information page:
   1. Open Civil Code art. 2118 on https://www.normattiva.it (search "codice civile art. 2118") and confirm that notice is set by collective agreements with no statutory minimum. If so, add a back-office rule version with the normattiva URL and the in-force date; if not, correct the value.
   2. On https://www.inps.it check the INPS indemnity bands (50% days 4-20, 66.66% days 21-180, 180 days a year) and the fixed-term and sector exceptions; confirm `effectiveFrom` (set to the verification date 2026-10-18).
@@ -97,8 +99,9 @@ Things only a person with the right accounts or authority can do. The build runs
   - Germany `working_time.time_recording` (BAG 13 September 2022, 1 ABR 22/21). Re-read § 3 ArbSchG on gesetze-im-internet.de, which returned HTTP 503 during research, and check whether an ArbZG amendment on recording has since come into force.
   - Whether other member states should keep resolving to the EU baseline (CJEU C-55/18) until national rules are researched.
   - The GB opt-out notice cap (WTR reg. 5(3)).
-  
+
   Confirm by adding a back-office rule version with your name as reviewer.
+
 - [ ] 3.14 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
 - [ ] 3.15 **Holiday liability method (ADR-0073).** Ask finance and an employment lawyer to confirm the valuation used by the Holiday liability report (accrued-to-date leave less leave taken, at contractual basic pay ÷ (52 × working days per week), rounded once per person, negative when over-taken, no employer on-costs or variable pay) is acceptable for each market's accounting practice, and whether variable pay should be included for UK workers (holiday pay rules). Record the outcome in ADR-0073.
 - [ ] 3.16 **Privacy rule values in the jurisdiction packs** (`privacy.dsr_deadline`, `privacy.breach_notification`, `retention.*`; reviewer `research-agent (pending legal review)`):
@@ -219,7 +222,6 @@ Ask HR is off by default and can only be enabled in the UK cell (ADR-0110). It c
   2. Run the residency and infra tests.
   3. Update SUBPROCESSORS.md and give customers 30 days' notice.
 - [ ] 7.6 **Entitle a workspace** (after 7.1–7.4): the back office, `PUT /v1/backoffice/tenants/{tenantId}/features/aiAssistant` with `{ "enabled": true }` as a super admin. The customer's owner then turns Ask HR on in Settings → Ask HR and chooses the policy folders.
-
 
 ## 8. Accessibility checks that need people and real assistive technology (Phase 12)
 

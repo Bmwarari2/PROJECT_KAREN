@@ -4,12 +4,12 @@
 
 **What protects each store:**
 
-| Store | Protection | Where copies live |
-| --- | --- | --- |
-| Aurora PostgreSQL | Continuous backup (point-in-time restore, 5-minute granularity) plus daily snapshots via AWS Backup | The cell's own region. Copies: EU → eu-west-1, US → us-west-1, UK → none, London only across AZs (ADR-0001). |
-| S3 files bucket | Versioning (noncurrent versions kept 30–90 days) plus AWS Backup | Same as above |
-| DynamoDB tenant directory (global) | Point-in-time recovery | eu-west-2 |
-| Valkey | Cache, rate limits and sessions only. Not backed up: sessions are re-created at sign-in. | — |
+| Store                              | Protection                                                                                          | Where copies live                                                                                            |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Aurora PostgreSQL                  | Continuous backup (point-in-time restore, 5-minute granularity) plus daily snapshots via AWS Backup | The cell's own region. Copies: EU → eu-west-1, US → us-west-1, UK → none, London only across AZs (ADR-0001). |
+| S3 files bucket                    | Versioning (noncurrent versions kept 30–90 days) plus AWS Backup                                    | Same as above                                                                                                |
+| DynamoDB tenant directory (global) | Point-in-time recovery                                                                              | eu-west-2                                                                                                    |
+| Valkey                             | Cache, rate limits and sessions only. Not backed up: sessions are re-created at sign-in.            | —                                                                                                            |
 
 Backups never leave the tenant's jurisdiction. A restore is always performed in the home region, or for EU and US only, in the permitted backup region if the home region is down.
 
@@ -45,6 +45,7 @@ For Aurora point-in-time restore, any second within the retention window is vali
 ### One tenant only
 
 Do not roll back the whole cell for one tenant:
+
 1. Restore to a new cluster, as above.
 2. Use `packages/db` move-tenant tooling in read-only export mode against the restored cluster to extract that tenant's rows.
 3. Have the customer, as controller, confirm the scope.

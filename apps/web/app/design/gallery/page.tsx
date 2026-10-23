@@ -1,6 +1,21 @@
 import { notFound } from 'next/navigation';
 import { Inbox } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Section, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Section,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
 import { GalleryInteractive } from './interactive';
 
@@ -75,7 +90,12 @@ export default async function Gallery() {
             <Skeleton className="mt-3 h-4 w-full" />
             <Skeleton className="mt-2 h-4 w-4/5" />
           </Card>
-          <EmptyState icon={<Inbox aria-hidden />} title={g('emptyTitle')} body={g('emptyBody')} action={<Button size="sm">{g('primary')}</Button>} />
+          <EmptyState
+            icon={<Inbox aria-hidden />}
+            title={g('emptyTitle')}
+            body={g('emptyBody')}
+            action={<Button size="sm">{g('primary')}</Button>}
+          />
         </div>
 
         <h2 className="mt-12 text-title-3">{g('table')}</h2>

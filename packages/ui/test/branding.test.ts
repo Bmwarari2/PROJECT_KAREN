@@ -41,12 +41,25 @@ describe('custom brand accent (WCAG 2.2 AA in light and dark mode)', () => {
   it('checks the hover, on-accent and subtle variants too', () => {
     const p = derivePalette('#0b6b63', 'light');
     const pairs = paletteChecks(p, 'light').map((c) => c.pair);
-    expect(pairs).toEqual(expect.arrayContaining(['on-accent/accent', 'on-accent/accent-hover', 'text/accent-subtle', 'accent-hover/bg', 'focus/bg']));
+    expect(pairs).toEqual(
+      expect.arrayContaining([
+        'on-accent/accent',
+        'on-accent/accent-hover',
+        'text/accent-subtle',
+        'accent-hover/bg',
+        'focus/bg',
+      ]),
+    );
   });
 
   it('refuses anything that is not #RRGGBB (no CSS injection)', () => {
     expect(() => checkBrandAccent({ light: 'red;}body{display:none' })).toThrow();
-    expect(() => brandingCss({ light: { ...derivePalette('#0b6b63', 'light'), accent: 'url(x)' }, dark: derivePalette('#5fd3c6', 'dark') })).toThrow();
+    expect(() =>
+      brandingCss({
+        light: { ...derivePalette('#0b6b63', 'light'), accent: 'url(x)' },
+        dark: derivePalette('#5fd3c6', 'dark'),
+      }),
+    ).toThrow();
   });
 
   it('generates CSS variables for both modes', () => {

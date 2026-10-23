@@ -170,9 +170,7 @@
             },
             "processorToController": null,
             "lawEnforcementDelay": true,
-            "unverified": [
-              "processorToController"
-            ]
+            "unverified": ["processorToController"]
           },
           "source": {
             "url": "https://www.nysenate.gov/legislation/laws/GBS/899-AA",

@@ -25,7 +25,12 @@ export class EventBridgePublisher implements EventPublisher {
             EventBusName: this.busName,
             Source: 'thapsus-hr',
             DetailType: e.topic,
-            Detail: JSON.stringify({ tenantId: e.tenantId, eventId: e.id, aggregateType: e.aggregateType, aggregateId: e.aggregateId }),
+            Detail: JSON.stringify({
+              tenantId: e.tenantId,
+              eventId: e.id,
+              aggregateType: e.aggregateType,
+              aggregateId: e.aggregateId,
+            }),
           })),
         }),
       );

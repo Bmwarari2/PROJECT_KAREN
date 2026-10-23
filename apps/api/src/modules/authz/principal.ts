@@ -3,8 +3,15 @@ import type { FieldAccess, Principal, RoleGrant, ScopeType } from '@thapsus/core
 import { BUILT_IN_ROLES } from '@thapsus/core/roles';
 
 /** Loads the principal (roles, scopes, active delegations) for a user inside the tenant context. */
-export async function loadPrincipal(tx: Tx, userId: string, kind: Principal['kind'] = 'user'): Promise<Principal> {
-  const user = await tx.maybe<{ employee_id: string | null }>('SELECT employee_id FROM app.users WHERE id = $1', [userId]);
+export async function loadPrincipal(
+  tx: Tx,
+  userId: string,
+  kind: Principal['kind'] = 'user',
+): Promise<Principal> {
+  const user = await tx.maybe<{ employee_id: string | null }>(
+    'SELECT employee_id FROM app.users WHERE id = $1',
+    [userId],
+  );
   const rows = await tx.query<{
     key: string;
     is_admin: boolean;
@@ -61,7 +68,9 @@ export async function assignRole(
   tx: Tx,
   userId: string,
   roleKey: string,
-  scope: { type: ScopeType; values?: string[] } = { type: BUILT_IN_ROLES.find((r) => r.key === roleKey)?.defaultScope ?? 'self' },
+  scope: { type: ScopeType; values?: string[] } = {
+    type: BUILT_IN_ROLES.find((r) => r.key === roleKey)?.defaultScope ?? 'self',
+  },
 ) {
   await tx.exec(
     `INSERT INTO app.role_assignments (tenant_id, user_id, role_id, scope_type, scope_values)

@@ -7,7 +7,9 @@ export type { Logger };
  * Shared structured logger. Every object and message passes through the personal-data scrubber.
  * Request bodies are never logged: the serializers only keep method, route and status.
  */
-export function createLogger(opts: { name: string; level?: string; destination?: pino.DestinationStream } & LoggerOptions) {
+export function createLogger(
+  opts: { name: string; level?: string; destination?: pino.DestinationStream } & LoggerOptions,
+) {
   const { destination, ...rest } = opts;
   const options: LoggerOptions = {
     level: opts.level ?? process.env.LOG_LEVEL ?? 'info',
@@ -18,7 +20,9 @@ export function createLogger(opts: { name: string; level?: string; destination?:
     },
     hooks: {
       logMethod(args, method) {
-        const scrubbed = args.map((a) => (typeof a === 'string' ? scrubString(a) : a)) as Parameters<typeof method>;
+        const scrubbed = args.map((a) => (typeof a === 'string' ? scrubString(a) : a)) as Parameters<
+          typeof method
+        >;
         method.apply(this, scrubbed);
       },
     },
@@ -29,7 +33,11 @@ export function createLogger(opts: { name: string; level?: string; destination?:
         id: req.id,
       }),
       res: (res: { statusCode?: number }) => ({ statusCode: res.statusCode }),
-      err: (err: Error) => ({ type: err.name, message: scrubString(err.message), stack: scrubString(err.stack ?? '') }),
+      err: (err: Error) => ({
+        type: err.name,
+        message: scrubString(err.message),
+        stack: scrubString(err.stack ?? ''),
+      }),
     },
     ...rest,
   };

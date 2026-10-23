@@ -15,11 +15,21 @@ export async function axeViolations(page: Page): Promise<string[]> {
   // scroll would otherwise count against its target size (axe treats it as obscured).
   await page.evaluate(async () => {
     window.scrollTo(0, 0);
-    const finite = document.getAnimations().filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime)));
+    const finite = document
+      .getAnimations()
+      .filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime)));
     await Promise.all(finite.map((a) => a.finished.catch(() => undefined)));
   });
-  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-  return results.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', ')})${process.env.AXE_DEBUG ? ` ${v.nodes.map((n) => n.failureSummary).join(' | ')}` : ''}`);
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  return results.violations.map(
+    (v) =>
+      `${v.id}: ${v.help} (${v.nodes
+        .map((n) => n.target.join(' '))
+        .slice(0, 3)
+        .join(', ')})${process.env.AXE_DEBUG ? ` ${v.nodes.map((n) => n.failureSummary).join(' | ')}` : ''}`,
+  );
 }
 
 /** WCAG 2.2 AA (and 2.0/2.1 A/AA) checks with axe; fails on any violation. */
@@ -29,7 +39,12 @@ export async function expectAccessible(page: Page) {
 }
 
 export function totp(secret: string, offsetSteps = 0) {
-  return new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(secret), digits: 6, period: 30, algorithm: 'SHA1' }).generate({ timestamp: Date.now() + offsetSteps * 30_000 });
+  return new OTPAuth.TOTP({
+    secret: OTPAuth.Secret.fromBase32(secret),
+    digits: 6,
+    period: 30,
+    algorithm: 'SHA1',
+  }).generate({ timestamp: Date.now() + offsetSteps * 30_000 });
 }
 
 /** Signs up a fictional UK workspace in the browser and completes admin MFA. Returns the TOTP secret. */
@@ -53,7 +68,10 @@ export async function signUpAndEnrol(page: Page, slug = uniq('e2e')) {
 }
 
 /** Latest email the e2e API sent to an address (written by the file mail transport). */
-export async function lastMailTo(to: string, timeoutMs = 15_000): Promise<{ to: string; subject: string; text: string }> {
+export async function lastMailTo(
+  to: string,
+  timeoutMs = 15_000,
+): Promise<{ to: string; subject: string; text: string }> {
   const until = Date.now() + timeoutMs;
   for (;;) {
     const files = (() => {
@@ -63,7 +81,16 @@ export async function lastMailTo(to: string, timeoutMs = 15_000): Promise<{ to: 
         return [];
       }
     })();
-    const mails = files.map((f) => JSON.parse(readFileSync(join(e2eMailDir(), f), 'utf8')) as { to: string; subject: string; text: string }).filter((m) => m.to === to);
+    const mails = files
+      .map(
+        (f) =>
+          JSON.parse(readFileSync(join(e2eMailDir(), f), 'utf8')) as {
+            to: string;
+            subject: string;
+            text: string;
+          },
+      )
+      .filter((m) => m.to === to);
     if (mails.length) return mails.at(-1)!;
     if (Date.now() > until) throw new Error(`no email to ${to}`);
     await new Promise((r) => setTimeout(r, 200));
@@ -71,8 +98,17 @@ export async function lastMailTo(to: string, timeoutMs = 15_000): Promise<{ to: 
 }
 
 /** JSON API call in the signed-in browser context (cookies of the page); fails loudly on errors. */
-export async function apiCall<T = Record<string, unknown>>(request: APIRequestContext, method: 'GET' | 'POST' | 'PUT', url: string, data?: unknown): Promise<T> {
-  const res = await request.fetch(url, { method, data: data as object | undefined, headers: { accept: 'application/json' } });
+export async function apiCall<T = Record<string, unknown>>(
+  request: APIRequestContext,
+  method: 'GET' | 'POST' | 'PUT',
+  url: string,
+  data?: unknown,
+): Promise<T> {
+  const res = await request.fetch(url, {
+    method,
+    data: data as object | undefined,
+    headers: { accept: 'application/json' },
+  });
   expect(res.status(), `${method} ${url}: ${await res.text()}`).toBeLessThan(300);
   return (res.status() === 204 ? undefined : await res.json()) as T;
 }

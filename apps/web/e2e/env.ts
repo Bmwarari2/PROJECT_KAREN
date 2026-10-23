@@ -12,7 +12,9 @@ export function e2eEnv(): Record<string, string> {
   const host = new URL(OWNER).host;
   const webPort = process.env.E2E_WEB_PORT ?? '3100';
   const apiPort = process.env.E2E_API_PORT ?? '4100';
-  const browserHost = process.env.PW_REMOTE_WS ? (process.env.PW_HOST_FROM_BROWSER ?? 'host.docker.internal') : '127.0.0.1';
+  const browserHost = process.env.PW_REMOTE_WS
+    ? (process.env.PW_HOST_FROM_BROWSER ?? 'host.docker.internal')
+    : '127.0.0.1';
   const origin = `http://${browserHost}:${webPort}`;
   return {
     WEB_PORT: webPort,

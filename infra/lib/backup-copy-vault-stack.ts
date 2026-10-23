@@ -21,7 +21,8 @@ export class BackupCopyVaultStack extends Stack {
     const { config: cfg, cell } = props;
     const target = REGIONS[cell].backupRegion;
     if (!target) throw new Error(`Cell ${cell} has no permitted backup region; no copy vault may exist`);
-    if (this.region !== target) throw new Error(`Copy vault for ${cell} must be in ${target}, not ${this.region}`);
+    if (this.region !== target)
+      throw new Error(`Copy vault for ${cell} must be in ${target}, not ${this.region}`);
     const key = new kms.Key(this, 'CopyVaultKey', {
       alias: `alias/thapsus-hr-${cfg.env}-${cell}-backup-copy`,
       description: `Thapsus-HR ${cfg.env} ${cell} backup copies`,

@@ -12,8 +12,11 @@ import { expectAccessible, PASSWORD, signUpAndEnrol } from './helpers';
  */
 const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 /** Argon2id hash of the shared fictional e2e PASSWORD (precomputed so the spec needs no native module). */
-const PASSWORD_HASH = '$argon2id$v=19$m=19456,t=2,p=1$LY2ACSeLwNUvhHDFBQyj/g$b4doX/i3NvlC83OTdo8OolsXpPNcDkj3PmDAndThna0';
-const PDF = Buffer.from('%PDF-1.4\n% fictional payslip for an e2e test\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
+const PASSWORD_HASH =
+  '$argon2id$v=19$m=19456,t=2,p=1$LY2ACSeLwNUvhHDFBQyj/g$b4doX/i3NvlC83OTdo8OolsXpPNcDkj3PmDAndThna0';
+const PDF = Buffer.from(
+  '%PDF-1.4\n% fictional payslip for an e2e test\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n',
+);
 
 test.describe.configure({ mode: 'serial' });
 // UK English (en-US spellings and terms such as “pay stubs” are covered by the catalogue tests)
@@ -48,9 +51,18 @@ async function employeeLogin() {
   try {
     await db.query('BEGIN');
     await db.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
-    const u = await db.query<{ id: string }>(`INSERT INTO app.users (tenant_id, email, display_name, employee_id) VALUES ($1, $2, 'Emma Fictional', $3) RETURNING id`, [tenantId, person.email, person.id]);
-    await db.query('INSERT INTO app.password_credentials (tenant_id, user_id, password_hash) VALUES ($1, $2, $3)', [tenantId, u.rows[0]!.id, PASSWORD_HASH]);
-    await db.query(`INSERT INTO app.role_assignments (tenant_id, user_id, role_id, scope_type, scope_values) SELECT $1, $2, r.id, 'self', '{}' FROM app.roles r WHERE r.tenant_id = $1 AND r.key = 'employee'`, [tenantId, u.rows[0]!.id]);
+    const u = await db.query<{ id: string }>(
+      `INSERT INTO app.users (tenant_id, email, display_name, employee_id) VALUES ($1, $2, 'Emma Fictional', $3) RETURNING id`,
+      [tenantId, person.email, person.id],
+    );
+    await db.query(
+      'INSERT INTO app.password_credentials (tenant_id, user_id, password_hash) VALUES ($1, $2, $3)',
+      [tenantId, u.rows[0]!.id, PASSWORD_HASH],
+    );
+    await db.query(
+      `INSERT INTO app.role_assignments (tenant_id, user_id, role_id, scope_type, scope_values) SELECT $1, $2, r.id, 'self', '{}' FROM app.roles r WHERE r.tenant_id = $1 AND r.key = 'employee'`,
+      [tenantId, u.rows[0]!.id],
+    );
     await db.query('COMMIT');
   } finally {
     await db.end();
@@ -67,9 +79,35 @@ test('a payroll admin exports a pay period and downloads the file', async ({ pag
     return r.json();
   };
   tenantId = (await (await page.request.get('/v1/auth/session')).json()).tenantId;
-  const entity = (await post('/v1/org/legal-entities', { name: 'Fictional E2E Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' })).id;
-  person.id = (await post('/v1/employees', { startDate: '2026-03-02', employeeNumber: person.number, legalFirstName: 'Emma', legalLastName: 'Fictional', jobTitle: 'Analyst', entityId: entity, payAmountMinor: 3_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' })).id;
-  await post('/v1/payroll/periods', { name: 'March 2026', frequency: 'monthly', startDate: '2026-03-01', endDate: '2026-03-31' });
+  const entity = (
+    await post('/v1/org/legal-entities', {
+      name: 'Fictional E2E Ltd',
+      country: 'GB',
+      regionCode: 'GB-ENG',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    })
+  ).id;
+  person.id = (
+    await post('/v1/employees', {
+      startDate: '2026-03-02',
+      employeeNumber: person.number,
+      legalFirstName: 'Emma',
+      legalLastName: 'Fictional',
+      jobTitle: 'Analyst',
+      entityId: entity,
+      payAmountMinor: 3_000_000,
+      payCurrency: 'GBP',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+    })
+  ).id;
+  await post('/v1/payroll/periods', {
+    name: 'March 2026',
+    frequency: 'monthly',
+    startDate: '2026-03-01',
+    endDate: '2026-03-31',
+  });
 
   await page.goto('/app/payroll');
   await expect(page.getByRole('heading', { name: 'Payroll', level: 1 })).toBeVisible();
@@ -104,7 +142,11 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
   await page.getByLabel('Label', { exact: true }).fill('March 2026');
   await page.getByLabel('Files', { exact: true }).setInputFiles([
     { name: `${person.number}_2026-03.pdf`, mimeType: 'application/pdf', buffer: PDF },
-    { name: 'someone-else_2026-03.pdf', mimeType: 'application/pdf', buffer: Buffer.concat([PDF, Buffer.from('% other\n')]) },
+    {
+      name: 'someone-else_2026-03.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.concat([PDF, Buffer.from('% other\n')]),
+    },
   ]);
   await page.getByRole('button', { name: 'Upload and match' }).click();
   await expect(page.getByText('1 of 2 matched')).toBeVisible();
@@ -164,7 +206,9 @@ test('an employee acknowledges the handover of an asset', async ({ page }) => {
   expect(mine[0].acknowledgementStatement).toBe('assets.ackStatement.v1');
 });
 
-test('the integrations dry run shows the exact calls; every Phase 6 screen passes axe in light and dark', async ({ page }) => {
+test('the integrations dry run shows the exact calls; every Phase 6 screen passes axe in light and dark', async ({
+  page,
+}) => {
   await asAdmin(page);
   await page.goto('/app/integrations');
   const domain = page.locator('#microsoft365-domain'); // both provider cards have a "Domain for new accounts" field

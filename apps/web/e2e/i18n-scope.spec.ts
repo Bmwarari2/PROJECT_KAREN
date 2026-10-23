@@ -12,7 +12,9 @@ import { signUpAndEnrol } from './helpers';
  * statically; this catches keys that only arrive at run time.
  */
 const root = join(import.meta.dirname, '..');
-const catalogue = JSON.parse(readFileSync(join(root, '..', '..', 'packages', 'core', 'src', 'i18n', 'messages', 'en-GB.json'), 'utf8'));
+const catalogue = JSON.parse(
+  readFileSync(join(root, '..', '..', 'packages', 'core', 'src', 'i18n', 'messages', 'en-GB.json'), 'utf8'),
+);
 const keys = new Set<string>();
 const flatten = (o: Record<string, unknown>, prefix = '') => {
   for (const [k, v] of Object.entries(o)) {
@@ -29,7 +31,13 @@ function staticRoutes(dir: string, under: string): string[] {
   const out: string[] = [];
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory() && !e.name.startsWith('[')) out.push(...staticRoutes(join(dir, e.name), under));
-    else if (e.name === 'page.tsx') out.push(`/${relative(join(root, 'app'), dir).split(sep).filter((s) => !/^\(.*\)$/.test(s)).join('/')}`);
+    else if (e.name === 'page.tsx')
+      out.push(
+        `/${relative(join(root, 'app'), dir)
+          .split(sep)
+          .filter((s) => !/^\(.*\)$/.test(s))
+          .join('/')}`,
+      );
   }
   return out.filter((r) => r.startsWith(under)).sort();
 }
@@ -40,7 +48,9 @@ async function rawKeys(page: Page): Promise<string[]> {
     // all text, including screen-reader-only text; code samples are not messages
     const parts = [document.title];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (!n.parentElement?.closest('code,pre,kbd,samp,script,style,noscript')) parts.push(n.textContent ?? '');
+    for (let n = walker.nextNode(); n; n = walker.nextNode())
+      if (!n.parentElement?.closest('code,pre,kbd,samp,script,style,noscript'))
+        parts.push(n.textContent ?? '');
     for (const el of document.querySelectorAll('[aria-label],[title],[placeholder],[alt]'))
       for (const a of ['aria-label', 'title', 'placeholder', 'alt']) parts.push(el.getAttribute(a) ?? '');
     return parts.join('\n');
@@ -61,7 +71,11 @@ async function sweep(page: Page, routes: string[]) {
 test.use({ locale: 'en-GB' });
 
 test('public screens show no raw message keys', async ({ page }) => {
-  await sweep(page, [...staticRoutes(join(root, 'app'), '/').filter((r) => !r.startsWith('/app') && !(r.startsWith('/backoffice') && r !== '/backoffice/signin'))]);
+  await sweep(page, [
+    ...staticRoutes(join(root, 'app'), '/').filter(
+      (r) => !r.startsWith('/app') && !(r.startsWith('/backoffice') && r !== '/backoffice/signin'),
+    ),
+  ]);
 });
 
 test('every app screen shows no raw message keys', async ({ page }) => {
@@ -72,7 +86,27 @@ test('every app screen shows no raw message keys', async ({ page }) => {
     expect(r.ok(), await r.text()).toBe(true);
     return r.json();
   };
-  const entity = (await post('/v1/org/legal-entities', { name: `Fictional ${slug} Ltd`, country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' })).id;
-  const person = (await post('/v1/employees', { startDate: '2026-03-02', legalFirstName: 'Ada', legalLastName: 'Fictional', jobTitle: 'Analyst', entityId: entity, payAmountMinor: 3_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' })).id;
+  const entity = (
+    await post('/v1/org/legal-entities', {
+      name: `Fictional ${slug} Ltd`,
+      country: 'GB',
+      regionCode: 'GB-ENG',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    })
+  ).id;
+  const person = (
+    await post('/v1/employees', {
+      startDate: '2026-03-02',
+      legalFirstName: 'Ada',
+      legalLastName: 'Fictional',
+      jobTitle: 'Analyst',
+      entityId: entity,
+      payAmountMinor: 3_000_000,
+      payCurrency: 'GBP',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+    })
+  ).id;
   await sweep(page, [...staticRoutes(join(root, 'app'), '/app'), `/app/people/${person}`]);
 });

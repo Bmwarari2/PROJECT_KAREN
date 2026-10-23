@@ -7,7 +7,14 @@ export const DEFAULT_LOCALE: Locale = 'en-GB';
 // The catalogues live in their own module so client bundles that only format dates and money
 // never include them (the package is side-effect free).
 export { CATALOGUES, flatten, t, type Messages } from './catalogues';
-export { formatMessage, interpolate, lookupMessage, pluralBase, PLURAL_CATEGORIES, type MessageVars } from './format';
+export {
+  formatMessage,
+  interpolate,
+  lookupMessage,
+  pluralBase,
+  PLURAL_CATEGORIES,
+  type MessageVars,
+} from './format';
 
 export function isLocale(v: unknown): v is Locale {
   return typeof v === 'string' && (LOCALES as readonly string[]).includes(v);
@@ -40,20 +47,28 @@ export function numberFormat(locale: Locale, opts: Intl.NumberFormatOptions = {}
   return f;
 }
 
-export function formatDate(date: string, locale: Locale, style: 'short' | 'medium' | 'long' = 'medium'): string {
+export function formatDate(
+  date: string,
+  locale: Locale,
+  style: 'short' | 'medium' | 'long' = 'medium',
+): string {
   // Calendar dates are formatted in UTC so the civil date never shifts.
   const d = new Date(`${date}T00:00:00Z`);
   return dateTimeFormat(locale, { dateStyle: style, timeZone: 'UTC' }).format(d);
 }
 
 export function formatDateTime(instant: string, locale: Locale, timeZone: string): string {
-  return dateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(instant));
+  return dateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(
+    new Date(instant),
+  );
 }
 
 /** Formats a wall-clock time 'HH:MM' for the locale (24-hour in en-GB, 12-hour in en-US). */
 export function formatTimeOfDay(time: string, locale: Locale): string {
   const [h, m] = time.split(':').map(Number);
-  return dateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(new Date(Date.UTC(2000, 0, 1, h ?? 0, m ?? 0)));
+  return dateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(2000, 0, 1, h ?? 0, m ?? 0)),
+  );
 }
 
 /** Formats an instant's local time of day in a zone. */
@@ -73,7 +88,9 @@ export function formatNumber(value: number, locale: Locale, opts: Intl.NumberFor
 /** Formats integer minor units without converting to floating point. */
 /** A count with its unit, pluralised for the locale: "1 day", "2.5 days", "1 hour". */
 export function formatUnit(value: number, unit: 'day' | 'hour', locale: Locale): string {
-  return numberFormat(locale, { style: 'unit', unit, unitDisplay: 'long', maximumFractionDigits: 2 }).format(value);
+  return numberFormat(locale, { style: 'unit', unit, unitDisplay: 'long', maximumFractionDigits: 2 }).format(
+    value,
+  );
 }
 
 export function formatMoney(m: Money, locale: Locale): string {

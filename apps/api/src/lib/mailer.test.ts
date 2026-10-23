@@ -9,13 +9,24 @@ describe('mailerFromEnv', () => {
     const dir = mkdtempSync(join(tmpdir(), 'thr-mail-'));
     const mailer = mailerFromEnv('uk', { APP_ENV: 'test', MAIL_TRANSPORT: 'file', MAIL_DIR: dir });
     expect(mailer).toBeInstanceOf(FileMailer);
-    await mailer.send({ to: 'joiner@example.test', subject: 'Hello', text: 'Link: https://app.example.test/x' });
+    await mailer.send({
+      to: 'joiner@example.test',
+      subject: 'Hello',
+      text: 'Link: https://app.example.test/x',
+    });
     const files = readdirSync(dir);
     expect(files).toHaveLength(1);
-    expect(JSON.parse(readFileSync(join(dir, files[0]!), 'utf8'))).toEqual({ to: 'joiner@example.test', subject: 'Hello', text: 'Link: https://app.example.test/x' });
+    expect(JSON.parse(readFileSync(join(dir, files[0]!), 'utf8'))).toEqual({
+      to: 'joiner@example.test',
+      subject: 'Hello',
+      text: 'Link: https://app.example.test/x',
+    });
   });
 
   it('refuses the file transport outside dev and test', () => {
-    for (const APP_ENV of ['staging', 'prod', undefined]) expect(() => mailerFromEnv('uk', { APP_ENV, MAIL_TRANSPORT: 'file', MAIL_DIR: tmpdir() })).toThrow(/only allowed in dev and test/);
+    for (const APP_ENV of ['staging', 'prod', undefined])
+      expect(() => mailerFromEnv('uk', { APP_ENV, MAIL_TRANSPORT: 'file', MAIL_DIR: tmpdir() })).toThrow(
+        /only allowed in dev and test/,
+      );
   });
 });

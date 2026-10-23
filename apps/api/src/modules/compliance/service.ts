@@ -35,7 +35,9 @@ export const COMPLIANCE_DEFAULTS: ComplianceSettings = {
 };
 
 export async function complianceSettings(tx: Tx): Promise<ComplianceSettings> {
-  const row = await tx.one<{ c: Partial<ComplianceSettings> | null }>(`SELECT features->'compliance' AS c FROM app.tenants`);
+  const row = await tx.one<{ c: Partial<ComplianceSettings> | null }>(
+    `SELECT features->'compliance' AS c FROM app.tenants`,
+  );
   return { ...COMPLIANCE_DEFAULTS, ...(row.c ?? {}) };
 }
 
@@ -43,7 +45,8 @@ export async function tenantLocale(tx: Tx): Promise<Locale> {
   const row = await tx.one<{ default_locale: string }>('SELECT default_locale FROM app.tenants');
   return isLocale(row.default_locale) ? row.default_locale : 'en-GB';
 }
-export const text = (locale: Locale, key: string, params: Record<string, string | number> = {}) => t(locale, key, params);
+export const text = (locale: Locale, key: string, params: Record<string, string | number> = {}) =>
+  t(locale, key, params);
 
 /** Employee row with the most specific jurisdiction code known (location region, else entity region, else country). */
 export interface EmployeeRow {
@@ -79,17 +82,35 @@ export function jurisdictionOf(e: { country: string | null; region_code: string 
 }
 
 export function targetOf(e: EmployeeRow): Target & { employeeId: string } {
-  return { employeeId: e.id, entityId: e.entity_id, country: e.country, departmentId: e.department_id, locationId: e.location_id, managerChain: e.manager_id ? [e.manager_id] : [] };
+  return {
+    employeeId: e.id,
+    entityId: e.entity_id,
+    country: e.country,
+    departmentId: e.department_id,
+    locationId: e.location_id,
+    managerChain: e.manager_id ? [e.manager_id] : [],
+  };
 }
 
 export function vaultActor(req: FastifyRequest, principal?: Principal): VaultActor {
   const auth = requireAuth(req);
-  return { principal: principal ?? auth.principal, actorType: auth.method === 'support' ? 'support' : 'user', requestId: req.id, ip: req.ctx.ip };
+  return {
+    principal: principal ?? auth.principal,
+    actorType: auth.method === 'support' ? 'support' : 'user',
+    requestId: req.id,
+    ip: req.ctx.ip,
+  };
 }
 
 /** An employee may disclose their own sensitive data (e.g. EEO-1 self-identification) without holding the HR vault permission. */
 export function withSelfDisclosure(p: Principal, permissions: string[]): Principal {
-  const grant: RoleGrant = { roleKey: 'self-disclosure', isAdmin: false, permissions, fieldAccess: {}, scope: { type: 'self' } };
+  const grant: RoleGrant = {
+    roleKey: 'self-disclosure',
+    isAdmin: false,
+    permissions,
+    fieldAccess: {},
+    scope: { type: 'self' },
+  };
   return { ...p, grants: [...p.grants, grant] };
 }
 

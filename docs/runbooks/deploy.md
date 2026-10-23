@@ -7,6 +7,7 @@ Applies to `dev`, `staging` and `prod` (and the temporary `loadtest` environment
 ## 1. One-time setup per environment (owner)
 
 Follow HUMAN_TODO 1.5:
+
 1. `cdk bootstrap` in the five allowed regions only: eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1.
 2. Deploy `ThapsusHr-<env>-ci` from a workstation.
 3. Set the GitHub variables `AWS_ACCOUNT_<env>` and `DEPLOY_PARAMS_*`.
@@ -23,7 +24,7 @@ Never deploy anything to us-east-1 or us-west-2 (ADR-0001). The planner refuses 
    3. the UK cell (eu-west-2);
    4. the EU cell (eu-central-1);
    5. the US cell (us-east-2).
-   The matrix runs one target at a time. Each one uses the deploy role of its own region.
+      The matrix runs one target at a time. Each one uses the deploy role of its own region.
 3. **Production:** Actions → Deploy → Run workflow → `environment: prod`. Approve the run in the `production` environment. The same targets deploy in the same order.
 
 ## 3. From a workstation
@@ -38,6 +39,7 @@ AWS_REGION=eu-central-1 node --import tsx scripts/deploy.mjs --env staging --onl
 ```
 
 For each cell, `deploy.mjs` runs these steps:
+
 1. `cdk deploy`
 2. copy the internal token from global
 3. fill the VAPID keys and, in dev and staging only, the mock IdP keys, if they are empty
@@ -62,9 +64,9 @@ Stack outputs are written to `.deploy/<stack>.json` (git-ignored).
 
 ## 6. When a deploy fails
 
-| Symptom | Action |
-| --- | --- |
-| `cdk deploy` fails | CloudFormation rolls back by itself. Read the stack events, fix the cause and redeploy. Nothing else changed. |
-| Migrator exits non-zero | The new task definition is not serving traffic yet; the services still run the previous image. Fix the migration and redeploy. If a partial migration needs undoing, follow `backup-restore.md` §2 (PITR) in staging first. |
-| Services unstable after the restart | ECS deployment circuit breaker rolls back automatically; otherwise follow `rollback.md`. |
-| Health check fails | Look at the service logs (`/thapsus-hr/<env>/<cell>/api`) and roll back if users are affected. |
+| Symptom                             | Action                                                                                                                                                                                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cdk deploy` fails                  | CloudFormation rolls back by itself. Read the stack events, fix the cause and redeploy. Nothing else changed.                                                                                                               |
+| Migrator exits non-zero             | The new task definition is not serving traffic yet; the services still run the previous image. Fix the migration and redeploy. If a partial migration needs undoing, follow `backup-restore.md` §2 (PITR) in staging first. |
+| Services unstable after the restart | ECS deployment circuit breaker rolls back automatically; otherwise follow `rollback.md`.                                                                                                                                    |
+| Health check fails                  | Look at the service logs (`/thapsus-hr/<env>/<cell>/api`) and roll back if users are affected.                                                                                                                              |

@@ -28,7 +28,9 @@ export function verifyWebhookSignature(o: VerifyOptions): boolean {
   const now = o.now ?? Math.floor(Date.now() / 1000);
   if (!Number.isInteger(t) || Math.abs(now - t) > (o.toleranceSeconds ?? 300)) return false;
   const body = typeof o.payload === 'string' ? Buffer.from(o.payload, 'utf8') : Buffer.from(o.payload);
-  const given = parts.filter(([k, v]) => k === 'v1' && /^[0-9a-f]{64}$/.test(v)).map(([, v]) => Buffer.from(v, 'hex'));
+  const given = parts
+    .filter(([k, v]) => k === 'v1' && /^[0-9a-f]{64}$/.test(v))
+    .map(([, v]) => Buffer.from(v, 'hex'));
   return o.secrets.some((secret) => {
     const expected = createHmac('sha256', secret).update(`${t}.`).update(body).digest();
     return given.some((g) => timingSafeEqual(g, expected));

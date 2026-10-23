@@ -16,15 +16,29 @@ import { BUILT_IN_ROLES } from '../src/roles';
 
 const builtIn = (key: string, scope: RoleGrant['scope']): RoleGrant => {
   const r = BUILT_IN_ROLES.find((x) => x.key === key)!;
-  return { roleKey: r.key, isAdmin: r.isAdmin, permissions: r.permissions, fieldAccess: r.fieldAccess, scope };
+  return {
+    roleKey: r.key,
+    isAdmin: r.isAdmin,
+    permissions: r.permissions,
+    fieldAccess: r.fieldAccess,
+    scope,
+  };
 };
-const grant = (permissions: string[], fieldAccess: RoleGrant['fieldAccess'], scope: RoleGrant['scope']): RoleGrant => ({ roleKey: 'x', isAdmin: false, permissions, fieldAccess, scope });
+const grant = (
+  permissions: string[],
+  fieldAccess: RoleGrant['fieldAccess'],
+  scope: RoleGrant['scope'],
+): RoleGrant => ({ roleKey: 'x', isAdmin: false, permissions, fieldAccess, scope });
 
 describe('access catalogue', () => {
   it('every built-in permission and field key is in the catalogue (only the owner holds *)', () => {
     for (const r of BUILT_IN_ROLES) {
-      for (const perm of r.permissions) expect(permissionProblem(perm), `${r.key}: ${perm}`).toBe(r.key === 'owner' ? 'ownerOnly' : undefined);
-      for (const [k, v] of Object.entries(r.fieldAccess)) expect(fieldAccessProblem(k, v), `${r.key}: ${k}`).toBe(r.key === 'owner' ? 'ownerOnly' : undefined);
+      for (const perm of r.permissions)
+        expect(permissionProblem(perm), `${r.key}: ${perm}`).toBe(
+          r.key === 'owner' ? 'ownerOnly' : undefined,
+        );
+      for (const [k, v] of Object.entries(r.fieldAccess))
+        expect(fieldAccessProblem(k, v), `${r.key}: ${k}`).toBe(r.key === 'owner' ? 'ownerOnly' : undefined);
     }
   });
 
@@ -67,7 +81,9 @@ describe('subset rule', () => {
   it('a permission is covered only by an equal key or a wider wildcard', () => {
     const g = [grant(['employees.*', 'leave.read', 'vault.read:health'], {}, { type: 'all' })];
     expect(uncoveredPermissions(g, ['employees.update', 'employees.*', 'leave.read'])).toEqual([]);
-    expect(uncoveredPermissions(g, ['leave.*', 'vault.read:*', 'vault.read:health', 'roles.manage'])).toEqual(['leave.*', 'vault.read:*', 'roles.manage']);
+    expect(uncoveredPermissions(g, ['leave.*', 'vault.read:*', 'vault.read:health', 'roles.manage'])).toEqual(
+      ['leave.*', 'vault.read:*', 'roles.manage'],
+    );
     expect(uncoveredPermissions([builtIn('owner', { type: 'all' })], ['*', 'roles.assign'])).toEqual([]);
   });
 
@@ -77,17 +93,26 @@ describe('subset rule', () => {
     expect(excessFieldAccess(hr, { 'employee.jobTitle': 'write' }, probes)).toEqual([]);
     expect(excessFieldAccess(hr, { 'employee.pay.amount': 'read' }, probes)).toEqual(['employee.pay.amount']);
     // employee.* read would grant pay fields the caller cannot see
-    expect(excessFieldAccess(hr, { 'employee.*': 'read' }, probes)).toEqual(expect.arrayContaining(['employee.pay.*', 'employee.pay.amount', 'employee.pay.grade']));
+    expect(excessFieldAccess(hr, { 'employee.*': 'read' }, probes)).toEqual(
+      expect.arrayContaining(['employee.pay.*', 'employee.pay.amount', 'employee.pay.grade']),
+    );
     // …unless the role itself denies them
     expect(excessFieldAccess(hr, { 'employee.*': 'read', 'employee.pay.*': 'none' }, probes)).toEqual([]);
     const manager = [builtIn('manager', { type: 'own_team' })];
     expect(excessFieldAccess(manager, { 'employee.jobTitle': 'read' }, probes)).toEqual([]);
-    expect(excessFieldAccess(manager, { 'employee.jobTitle': 'write' }, probes)).toEqual(['employee.jobTitle']);
+    expect(excessFieldAccess(manager, { 'employee.jobTitle': 'write' }, probes)).toEqual([
+      'employee.jobTitle',
+    ]);
   });
 });
 
 describe('scope rule', () => {
-  const caller: Principal = { userId: 'u-c', employeeId: 'e-c', grants: [], delegatedFromEmployeeIds: ['e-boss'] };
+  const caller: Principal = {
+    userId: 'u-c',
+    employeeId: 'e-c',
+    grants: [],
+    delegatedFromEmployeeIds: ['e-boss'],
+  };
   it('all covers everything; nothing narrower covers all', () => {
     expect(scopeCovers(caller, { type: 'all' }, { type: 'department', values: ['d1'] })).toBe(true);
     expect(scopeCovers(caller, { type: 'entity', values: ['ent-uk'] }, { type: 'all' })).toBe(false);
@@ -101,8 +126,12 @@ describe('scope rule', () => {
   });
   it('self is covered when the held scope covers the assignee’s own record', () => {
     const held = { type: 'entity' as const, values: ['ent-uk'] };
-    expect(scopeCovers(caller, held, { type: 'self' }, { target: { employeeId: 'e-a', entityId: 'ent-uk' } })).toBe(true);
-    expect(scopeCovers(caller, held, { type: 'self' }, { target: { employeeId: 'e-b', entityId: 'ent-de' } })).toBe(false);
+    expect(
+      scopeCovers(caller, held, { type: 'self' }, { target: { employeeId: 'e-a', entityId: 'ent-uk' } }),
+    ).toBe(true);
+    expect(
+      scopeCovers(caller, held, { type: 'self' }, { target: { employeeId: 'e-b', entityId: 'ent-de' } }),
+    ).toBe(false);
     expect(scopeCovers(caller, held, { type: 'self' }, {})).toBe(false);
   });
   it('own team is covered only for the caller or someone inside the caller’s own (not delegated) team', () => {
@@ -111,20 +140,44 @@ describe('scope rule', () => {
     expect(scopeCovers(caller, held, { type: 'own_team' }, { isCaller: true })).toBe(true);
     expect(scopeCovers(caller, held, { type: 'own_team' }, {})).toBe(false);
     // delegated authority never lets a delegate hand out access over the delegator's team
-    expect(scopeCovers(caller, held, { type: 'self' }, { target: { employeeId: 'e-x', managerChain: ['e-boss'] } })).toBe(false);
+    expect(
+      scopeCovers(
+        caller,
+        held,
+        { type: 'self' },
+        { target: { employeeId: 'e-x', managerChain: ['e-boss'] } },
+      ),
+    ).toBe(false);
   });
   it('checkAssignment needs roles.assign and every permission at a covering scope', () => {
-    const entityAdmin: Principal = { userId: 'u', employeeId: 'e', grants: [grant(['roles.assign', 'employees.read'], { 'employee.jobTitle': 'read' }, { type: 'entity', values: ['ent-uk'] })] };
+    const entityAdmin: Principal = {
+      userId: 'u',
+      employeeId: 'e',
+      grants: [
+        grant(
+          ['roles.assign', 'employees.read'],
+          { 'employee.jobTitle': 'read' },
+          { type: 'entity', values: ['ent-uk'] },
+        ),
+      ],
+    };
     const def = { permissions: ['employees.read'], fieldAccess: { 'employee.jobTitle': 'read' as const } };
-    expect(checkAssignment(entityAdmin, def, { type: 'entity', values: ['ent-uk'] }, {}, fieldProbes())).toEqual({ mayAssign: true, permissions: [], fields: [] });
-    expect(checkAssignment(entityAdmin, def, { type: 'all' }, {}, fieldProbes())).toEqual({ mayAssign: false, permissions: ['employees.read'], fields: ['employee.jobTitle'] });
+    expect(
+      checkAssignment(entityAdmin, def, { type: 'entity', values: ['ent-uk'] }, {}, fieldProbes()),
+    ).toEqual({ mayAssign: true, permissions: [], fields: [] });
+    expect(checkAssignment(entityAdmin, def, { type: 'all' }, {}, fieldProbes())).toEqual({
+      mayAssign: false,
+      permissions: ['employees.read'],
+      fields: ['employee.jobTitle'],
+    });
   });
 });
 
 describe('access catalogue labels', () => {
   it('every permission, area, field and scope has an en-GB label', async () => {
     const { t } = await import('../src/i18n');
-    const { PERMISSION_CATALOGUE, EMPLOYEE_FIELDS, EMPLOYEE_FIELD_GROUPS, SCOPE_TYPES } = await import('../src/access');
+    const { PERMISSION_CATALOGUE, EMPLOYEE_FIELDS, EMPLOYEE_FIELD_GROUPS, SCOPE_TYPES } =
+      await import('../src/access');
     const keys = [
       ...PERMISSION_CATALOGUE.map((a) => `access.area.${a.area}`),
       ...PERMISSION_CATALOGUE.flatMap((a) => a.permissions.map((x) => `access.perm.${x.key}`)),

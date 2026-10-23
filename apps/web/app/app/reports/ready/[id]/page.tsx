@@ -3,7 +3,17 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Play, Save } from 'lucide-react';
-import { Button, Dialog, DialogContent, DialogTrigger, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  useToast,
+} from '@thapsus/ui';
 import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
@@ -13,8 +23,23 @@ import { useSession } from '../../../shell';
 import type { Catalogue } from '../../page';
 import { ExportBar, problemText, ReportView, RunProgress, selectClass, useBackgroundRun } from '../../ui';
 
-type Prop = { type?: string; format?: string; anyOf?: Array<{ const?: string }>; default?: unknown; minimum?: number; maximum?: number };
-const RELATIVE = ['today', 'yesterday', 'previousWeek', 'previousMonth', 'monthToDate', 'yearToDate', 'previousYear'];
+type Prop = {
+  type?: string;
+  format?: string;
+  anyOf?: Array<{ const?: string }>;
+  default?: unknown;
+  minimum?: number;
+  maximum?: number;
+};
+const RELATIVE = [
+  'today',
+  'yesterday',
+  'previousWeek',
+  'previousMonth',
+  'monthToDate',
+  'yearToDate',
+  'previousYear',
+];
 
 /** Sensible starting values for a parameter form (the viewer's zone; never sent unless the user runs the report). */
 function defaults(props: Record<string, Prop>, zone: string): Record<string, string> {
@@ -39,7 +64,9 @@ export default function ReadyReportPage() {
   const { id } = useParams<{ id: string }>();
   const savedId = useSearchParams().get('saved');
   const catalogue = useApi<Catalogue>('/v1/reports/catalogue');
-  const saved = useApi<{ name: string; spec: { params?: Record<string, unknown> } }>(savedId ? `/v1/reports/saved/${savedId}` : null);
+  const saved = useApi<{ name: string; spec: { params?: Record<string, unknown> } }>(
+    savedId ? `/v1/reports/saved/${savedId}` : null,
+  );
   const entities = useApi<Array<{ id: string; name: string }>>('/v1/org/legal-entities');
   const def = catalogue.data?.ready.find((r) => r.id === id);
   const props = (def?.params.properties ?? {}) as Record<string, Prop>;
@@ -77,7 +104,12 @@ export default function ReadyReportPage() {
     setBusy(true);
     setResult(null);
     try {
-      setResult(await api<ReportResult>(`/v1/reports/ready/${def!.id}/run`, { method: 'POST', json: { params: params() } }));
+      setResult(
+        await api<ReportResult>(`/v1/reports/ready/${def!.id}/run`, {
+          method: 'POST',
+          json: { params: params() },
+        }),
+      );
     } catch (err) {
       if (err instanceof ApiProblem && err.body.code === 'useBackgroundRun') {
         // too large for the screen: run it in the background with progress, then show the stored result
@@ -93,7 +125,17 @@ export default function ReadyReportPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await api('/v1/reports/saved', { method: 'POST', json: { name: saveForm.name, kind: 'ready', reportId: def!.id, params: params(), shared: saveForm.shared, ...(saveForm.relative ? { relative: saveForm.relative } : {}) } });
+      await api('/v1/reports/saved', {
+        method: 'POST',
+        json: {
+          name: saveForm.name,
+          kind: 'ready',
+          reportId: def!.id,
+          params: params(),
+          shared: saveForm.shared,
+          ...(saveForm.relative ? { relative: saveForm.relative } : {}),
+        },
+      });
       toast({ title: t('reports.saved.done'), tone: 'success' });
       setSaveOpen(false);
     } catch (err) {
@@ -124,8 +166,28 @@ export default function ReadyReportPage() {
           ))}
         </select>
       );
-    if (p.format === 'date') return <Input {...a} type="date" value={values[k] ?? ''} required={def.params.required?.includes(k)} onChange={(e) => set(e.target.value)} />;
-    if (p.type === 'integer') return <Input {...a} type="number" inputMode="numeric" min={p.minimum} max={p.maximum} value={values[k] ?? ''} onChange={(e) => set(e.target.value)} />;
+    if (p.format === 'date')
+      return (
+        <Input
+          {...a}
+          type="date"
+          value={values[k] ?? ''}
+          required={def.params.required?.includes(k)}
+          onChange={(e) => set(e.target.value)}
+        />
+      );
+    if (p.type === 'integer')
+      return (
+        <Input
+          {...a}
+          type="number"
+          inputMode="numeric"
+          min={p.minimum}
+          max={p.maximum}
+          value={values[k] ?? ''}
+          onChange={(e) => set(e.target.value)}
+        />
+      );
     return <Input {...a} value={values[k] ?? ''} onChange={(e) => set(e.target.value)} />;
   };
 
@@ -137,9 +199,15 @@ export default function ReadyReportPage() {
       </Link>
       <div>
         <h1 className="text-title-2">{saved.data?.name ?? t(def.titleKey)}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t(def.descriptionKey)}</p>
+        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t(def.descriptionKey)}
+        </p>
       </div>
-      <form onSubmit={run} className="grid gap-4 rounded-lg bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4" aria-label={t('reports.parameters')}>
+      <form
+        onSubmit={run}
+        className="grid gap-4 rounded-lg bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4"
+        aria-label={t('reports.parameters')}
+      >
         {Object.entries(props).map(([k, p]) => (
           <Field key={k} id={`p-${k}`} label={t(`reports.param.${k}`)}>
             {(a) => control(k, p, a)}
@@ -157,14 +225,35 @@ export default function ReadyReportPage() {
                 {t('reports.saved.save')}
               </Button>
             </DialogTrigger>
-            <DialogContent title={t('reports.saved.save')} description={t('reports.saved.saveBody')} closeLabel={t('common.close')}>
+            <DialogContent
+              title={t('reports.saved.save')}
+              description={t('reports.saved.saveBody')}
+              closeLabel={t('common.close')}
+            >
               <form onSubmit={save} className="flex flex-col gap-4">
                 <Field id="save-name" label={t('reports.saved.name')}>
-                  {(a) => <Input {...a} required maxLength={120} value={saveForm.name} onChange={(e) => setSaveForm({ ...saveForm, name: e.target.value })} />}
-                </Field>
-                <Field id="save-relative" label={t('reports.saved.relative')} hint={t('reports.saved.relativeHint')}>
                   {(a) => (
-                    <select {...a} className={selectClass} value={saveForm.relative} onChange={(e) => setSaveForm({ ...saveForm, relative: e.target.value })}>
+                    <Input
+                      {...a}
+                      required
+                      maxLength={120}
+                      value={saveForm.name}
+                      onChange={(e) => setSaveForm({ ...saveForm, name: e.target.value })}
+                    />
+                  )}
+                </Field>
+                <Field
+                  id="save-relative"
+                  label={t('reports.saved.relative')}
+                  hint={t('reports.saved.relativeHint')}
+                >
+                  {(a) => (
+                    <select
+                      {...a}
+                      className={selectClass}
+                      value={saveForm.relative}
+                      onChange={(e) => setSaveForm({ ...saveForm, relative: e.target.value })}
+                    >
                       <option value="">{t('reports.relative.fixed')}</option>
                       {RELATIVE.map((r) => (
                         <option key={r} value={r}>
@@ -175,7 +264,12 @@ export default function ReadyReportPage() {
                   )}
                 </Field>
                 <label className="flex items-center gap-2 text-callout">
-                  <input type="checkbox" className="h-5 w-5 accent-[var(--color-accent)]" checked={saveForm.shared} onChange={(e) => setSaveForm({ ...saveForm, shared: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 accent-[var(--color-accent)]"
+                    checked={saveForm.shared}
+                    onChange={(e) => setSaveForm({ ...saveForm, shared: e.target.checked })}
+                  />
                   {t('reports.saved.shareWithTeam')}
                 </label>
                 <Button type="submit">{t('common.save')}</Button>

@@ -12,7 +12,14 @@ test.describe('back office', () => {
     const customer = await browser.newContext();
     const cpage = await customer.newPage();
     const owner = await signUpAndEnrol(cpage);
-    const r = await cpage.request.post('/v1/support/tickets', { data: { subject: 'Cannot invite a new manager', body: 'Fictional details only.', category: 'account', priority: 'urgent' } });
+    const r = await cpage.request.post('/v1/support/tickets', {
+      data: {
+        subject: 'Cannot invite a new manager',
+        body: 'Fictional details only.',
+        category: 'account',
+        priority: 'urgent',
+      },
+    });
     expect(r.status(), await r.text()).toBe(201);
     const reference = (await r.json()).reference as string;
 

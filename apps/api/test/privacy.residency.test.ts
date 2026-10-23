@@ -18,16 +18,46 @@ describe.each(regionPairs())('privacy data stays home (%s → %s)', (home, other
     const otherCell = await startTestApp({ cell: other, listen: false, directory: homeCell.directory });
     try {
       const o = await ownerSession(homeCell);
-      const r = await homeCell.app.inject({ method: 'POST', url: '/v1/privacy/requests', headers: { cookie: o.cookie }, payload: { kind: 'access', subjectUserId: o.userId, receivedOn: '2026-03-10' } });
+      const r = await homeCell.app.inject({
+        method: 'POST',
+        url: '/v1/privacy/requests',
+        headers: { cookie: o.cookie },
+        payload: { kind: 'access', subjectUserId: o.userId, receivedOn: '2026-03-10' },
+      });
       expect(r.statusCode, r.body).toBe(201);
-      const job: JobRow = { id: crypto.randomUUID(), tenant_id: o.tenantId, kind: 'privacy.dsr_export', idempotency_key: 'residency', input: { requestId: r.json().id }, attempts: 1, created_by: o.userId };
-      const run = (cell: typeof homeCell) => jobHandlers['privacy.dsr_export']!({ tenantId: o.tenantId, job, deps: cell.deps, tx: (fn) => withTenant(cell.deps.router, o.tenantId, fn), progress: async () => undefined });
+      const job: JobRow = {
+        id: crypto.randomUUID(),
+        tenant_id: o.tenantId,
+        kind: 'privacy.dsr_export',
+        idempotency_key: 'residency',
+        input: { requestId: r.json().id },
+        attempts: 1,
+        created_by: o.userId,
+      };
+      const run = (cell: typeof homeCell) =>
+        jobHandlers['privacy.dsr_export']!({
+          tenantId: o.tenantId,
+          job,
+          deps: cell.deps,
+          tx: (fn) => withTenant(cell.deps.router, o.tenantId, fn),
+          progress: async () => undefined,
+        });
       await run(homeCell);
-      const inHome = [...(homeCell.deps.objects as MemoryObjectStore).objects.keys()].filter((k) => k.startsWith(`${o.tenantId}/`));
+      const inHome = [...(homeCell.deps.objects as MemoryObjectStore).objects.keys()].filter((k) =>
+        k.startsWith(`${o.tenantId}/`),
+      );
       expect(inHome.length).toBe(2);
-      expect([...(otherCell.deps.objects as MemoryObjectStore).objects.keys()].some((k) => k.startsWith(`${o.tenantId}/`))).toBe(false);
+      expect(
+        [...(otherCell.deps.objects as MemoryObjectStore).objects.keys()].some((k) =>
+          k.startsWith(`${o.tenantId}/`),
+        ),
+      ).toBe(false);
       // The other cell treats the tenant as unknown: no API access, no job execution.
-      const foreign = await otherCell.app.inject({ method: 'GET', url: '/v1/privacy/requests', headers: { cookie: o.cookie } });
+      const foreign = await otherCell.app.inject({
+        method: 'GET',
+        url: '/v1/privacy/requests',
+        headers: { cookie: o.cookie },
+      });
       expect(foreign.statusCode).not.toBe(200);
       await expect(run(otherCell)).rejects.toBeInstanceOf(TenantNotFoundError);
     } finally {

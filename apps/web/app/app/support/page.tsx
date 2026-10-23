@@ -3,7 +3,22 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LifeBuoy, Mail, MessageSquare, Phone, Ticket } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Table, TD, TH, THead, TR, Textarea, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  Textarea,
+  useToast,
+} from '@thapsus/ui';
 import { formatDateTime, type Locale } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
@@ -19,7 +34,13 @@ interface Contact {
   channels: Array<{ kind: string; value?: string | null; hours?: string }>;
   sla: Record<string, { firstResponseMinutes: number; resolutionMinutes: number }>;
 }
-const CHANNEL_ICON: Record<string, React.ReactNode> = { email: <Mail aria-hidden className="h-4 w-4 stroke-[1.5]" />, phone: <Phone aria-hidden className="h-4 w-4 stroke-[1.5]" />, chat: <MessageSquare aria-hidden className="h-4 w-4 stroke-[1.5]" />, ticket: <Ticket aria-hidden className="h-4 w-4 stroke-[1.5]" />, help_centre: <LifeBuoy aria-hidden className="h-4 w-4 stroke-[1.5]" /> };
+const CHANNEL_ICON: Record<string, React.ReactNode> = {
+  email: <Mail aria-hidden className="h-4 w-4 stroke-[1.5]" />,
+  phone: <Phone aria-hidden className="h-4 w-4 stroke-[1.5]" />,
+  chat: <MessageSquare aria-hidden className="h-4 w-4 stroke-[1.5]" />,
+  ticket: <Ticket aria-hidden className="h-4 w-4 stroke-[1.5]" />,
+  help_centre: <LifeBuoy aria-hidden className="h-4 w-4 stroke-[1.5]" />,
+};
 
 export default function SupportPage() {
   const t = useT();
@@ -41,7 +62,10 @@ export default function SupportPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      const created = await api<TicketSummary>('/v1/support/tickets', { method: 'POST', json: { ...form, contextPath: params.get('context') ?? null } });
+      const created = await api<TicketSummary>('/v1/support/tickets', {
+        method: 'POST',
+        json: { ...form, contextPath: params.get('context') ?? null },
+      });
       if (file) {
         const fd = new FormData();
         fd.append('file', file);
@@ -69,12 +93,26 @@ export default function SupportPage() {
           <CardTitle>{t('support.newTitle')}</CardTitle>
           <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
             <Field id="t-subject" label={t('support.subject')}>
-              {(p) => <Input {...p} required minLength={3} maxLength={200} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  minLength={3}
+                  maxLength={200}
+                  value={form.subject}
+                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                />
+              )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="t-category" label={t('support.category')}>
                 {(p) => (
-                  <select {...p} className={selectClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                  <select
+                    {...p}
+                    className={selectClass}
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  >
                     {['question', 'problem', 'billing', 'account', 'data', 'feature_request'].map((c) => (
                       <option key={c} value={c}>
                         {t(`support.categories.${c}`)}
@@ -85,7 +123,12 @@ export default function SupportPage() {
               </Field>
               <Field id="t-priority" label={t('support.priority')} hint={t('support.priorityHint')}>
                 {(p) => (
-                  <select {...p} className={selectClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                  <select
+                    {...p}
+                    className={selectClass}
+                    value={form.priority}
+                    onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                  >
                     {(isAdmin ? ['urgent', 'high', 'normal', 'low'] : ['high', 'normal', 'low']).map((c) => (
                       <option key={c} value={c}>
                         {t(`support.priorities.${c}`)}
@@ -96,10 +139,27 @@ export default function SupportPage() {
               </Field>
             </div>
             <Field id="t-body" label={t('support.description')} hint={t('support.descriptionHint')}>
-              {(p) => <Textarea {...p} required maxLength={20000} rows={6} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />}
+              {(p) => (
+                <Textarea
+                  {...p}
+                  required
+                  maxLength={20000}
+                  rows={6}
+                  value={form.body}
+                  onChange={(e) => setForm({ ...form, body: e.target.value })}
+                />
+              )}
             </Field>
             <Field id="t-file" label={t('support.attachment')} hint={t('support.attachmentHint')}>
-              {(p) => <input {...p} type="file" accept="image/png,image/jpeg,application/pdf,text/plain,text/csv" className="text-callout" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />}
+              {(p) => (
+                <input
+                  {...p}
+                  type="file"
+                  accept="image/png,image/jpeg,application/pdf,text/plain,text/csv"
+                  className="text-callout"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+              )}
             </Field>
             <p className="text-footnote text-text-secondary">{t('support.privacyNote')}</p>
             <div>
@@ -113,18 +173,42 @@ export default function SupportPage() {
           <CardTitle>{t('support.contactTitle')}</CardTitle>
           {contact.data ? (
             <>
-              <p className="mt-2 text-callout text-text-secondary">{t('support.planLine', { plan: t(`pricing.plans.${contact.data.planId}.name`) })}</p>
+              <p className="mt-2 text-callout text-text-secondary">
+                {t('support.planLine', { plan: t(`pricing.plans.${contact.data.planId}.name`) })}
+              </p>
               <ul className="mt-4 flex flex-col gap-2 text-callout">
                 {contact.data.channels.map((c, i) => (
                   <li key={i} className="flex flex-wrap items-center gap-2">
                     {CHANNEL_ICON[c.kind]}
                     <span>{t(`support.channels.${c.kind}`)}</span>
-                    {c.value ? c.kind === 'email' ? <a href={`mailto:${c.value}`} className="break-all">{c.value}</a> : c.kind === 'phone' ? <a href={`tel:${c.value.replace(/\s/g, '')}`}>{c.value}</a> : <span>{c.value}</span> : null}
-                    {c.hours ? <span className="text-footnote text-text-secondary">({t(`support.coverage.${c.hours}`)})</span> : null}
+                    {c.value ? (
+                      c.kind === 'email' ? (
+                        <a href={`mailto:${c.value}`} className="break-all">
+                          {c.value}
+                        </a>
+                      ) : c.kind === 'phone' ? (
+                        <a href={`tel:${c.value.replace(/\s/g, '')}`}>{c.value}</a>
+                      ) : (
+                        <span>{c.value}</span>
+                      )
+                    ) : null}
+                    {c.hours ? (
+                      <span className="text-footnote text-text-secondary">
+                        ({t(`support.coverage.${c.hours}`)})
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-footnote text-text-secondary">{contact.data.hours ? t('support.hoursLine', { start: contact.data.hours.start, end: contact.data.hours.end, zone: contact.data.hours.timeZone }) : t('support.alwaysLine')}</p>
+              <p className="mt-4 text-footnote text-text-secondary">
+                {contact.data.hours
+                  ? t('support.hoursLine', {
+                      start: contact.data.hours.start,
+                      end: contact.data.hours.end,
+                      zone: contact.data.hours.timeZone,
+                    })
+                  : t('support.alwaysLine')}
+              </p>
               <h3 className="mt-4 text-callout font-semibold">{t('support.slaTitle')}</h3>
               <Table dense className="mt-2" scrollLabel={t('support.slaTitle')}>
                 <caption className="sr-only">{t('support.slaTitle')}</caption>
@@ -157,10 +241,20 @@ export default function SupportPage() {
           </h2>
           {isAdmin ? (
             <div role="group" aria-label={t('support.scopeLabel')} className="flex gap-2">
-              <Button size="sm" variant={scope === 'mine' ? 'primary' : 'secondary'} aria-pressed={scope === 'mine'} onClick={() => setScope('mine')}>
+              <Button
+                size="sm"
+                variant={scope === 'mine' ? 'primary' : 'secondary'}
+                aria-pressed={scope === 'mine'}
+                onClick={() => setScope('mine')}
+              >
                 {t('support.myTickets')}
               </Button>
-              <Button size="sm" variant={scope === 'all' ? 'primary' : 'secondary'} aria-pressed={scope === 'all'} onClick={() => setScope('all')}>
+              <Button
+                size="sm"
+                variant={scope === 'all' ? 'primary' : 'secondary'}
+                aria-pressed={scope === 'all'}
+                onClick={() => setScope('all')}
+              >
                 {t('support.allTickets')}
               </Button>
             </div>
@@ -193,7 +287,9 @@ export default function SupportPage() {
                   <TD>
                     <Badge tone={slaTone(tk.sla.flag)}>{t(`support.slaStates.${tk.sla.flag}`)}</Badge>
                   </TD>
-                  <TD className="text-footnote text-text-secondary">{formatDateTime(tk.lastActivityAt, locale, tz)}</TD>
+                  <TD className="text-footnote text-text-secondary">
+                    {formatDateTime(tk.lastActivityAt, locale, tz)}
+                  </TD>
                 </TR>
               ))}
             </tbody>

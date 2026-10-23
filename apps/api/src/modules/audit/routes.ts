@@ -71,16 +71,35 @@ export async function auditRoutes(app: FastifyInstance) {
         querystring: Type.Object({
           from: Type.String({ format: 'date-time' }),
           to: Type.String({ format: 'date-time' }),
-          format: Type.Optional(Type.Union([Type.Literal('page'), Type.Literal('csv'), Type.Literal('json')])),
+          format: Type.Optional(
+            Type.Union([Type.Literal('page'), Type.Literal('csv'), Type.Literal('json')]),
+          ),
           action: Type.Optional(Type.String({ maxLength: 100 })),
           cursor: Type.Optional(Type.String()),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
         }),
-        response: { 200: Type.Union([Type.Object({ data: Type.Array(AuditEvent), nextCursor: Type.Union([Type.String(), Type.Null()]) }), Type.String(), Type.Array(AuditEvent)]), 403: Problem },
+        response: {
+          200: Type.Union([
+            Type.Object({
+              data: Type.Array(AuditEvent),
+              nextCursor: Type.Union([Type.String(), Type.Null()]),
+            }),
+            Type.String(),
+            Type.Array(AuditEvent),
+          ]),
+          403: Problem,
+        },
       },
     },
     async (req, reply) => {
-      const q = req.query as { from: string; to: string; format?: string; action?: string; cursor?: string; limit?: number };
+      const q = req.query as {
+        from: string;
+        to: string;
+        format?: string;
+        action?: string;
+        cursor?: string;
+        limit?: number;
+      };
       authorize(req, q.format && q.format !== 'page' ? 'audit.export' : 'audit.read');
       const params: unknown[] = [q.from, q.to];
       let where = 'at >= $1 AND at < $2';
@@ -95,28 +114,84 @@ export async function auditRoutes(app: FastifyInstance) {
           where += ` AND id > $${params.length}`;
         }
         const limit = q.limit ?? 100;
-        const rows = await app.tenantTx(req, (tx) => tx.query<Row>(`SELECT *, encode(hash, 'hex') AS hash FROM audit.events WHERE ${where} ORDER BY id LIMIT ${limit + 1}`, params), { readOnly: true });
+        const rows = await app.tenantTx(
+          req,
+          (tx) =>
+            tx.query<Row>(
+              `SELECT *, encode(hash, 'hex') AS hash FROM audit.events WHERE ${where} ORDER BY id LIMIT ${limit + 1}`,
+              params,
+            ),
+          { readOnly: true },
+        );
         const page = rows.slice(0, limit);
-        return { data: page.map(map), nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.id]) : null };
+        return {
+          data: page.map(map),
+          nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.id]) : null,
+        };
       }
       const rows = await app.tenantTx(req, async (tx) => {
-        const r = await tx.query<Row>(`SELECT *, encode(hash, 'hex') AS hash FROM audit.events WHERE ${where} ORDER BY id LIMIT 200000`, params);
-        await app.audit(tx, req, { action: 'audit.exported', diff: { from: q.from, to: q.to, format: q.format, rows: r.length } });
+        const r = await tx.query<Row>(
+          `SELECT *, encode(hash, 'hex') AS hash FROM audit.events WHERE ${where} ORDER BY id LIMIT 200000`,
+          params,
+        );
+        await app.audit(tx, req, {
+          action: 'audit.exported',
+          diff: { from: q.from, to: q.to, format: q.format, rows: r.length },
+        });
         return r;
       });
       const stamp = q.from.slice(0, 10) + '_' + q.to.slice(0, 10);
       if (q.format === 'json') {
-        return reply.header('Content-Disposition', `attachment; filename="audit_${stamp}.json"`).send(rows.map(map));
+        return reply
+          .header('Content-Disposition', `attachment; filename="audit_${stamp}.json"`)
+          .send(rows.map(map));
       }
-      const cols = ['id', 'seq', 'at', 'actorType', 'actorId', 'action', 'targetType', 'targetId', 'diff', 'ip', 'userAgent', 'requestId', 'sensitive', 'hash'] as const;
-      const lines = [cols.join(','), ...rows.map((r) => { const m = map(r); return cols.map((c) => csvCell(m[c])).join(','); })];
-      return reply.type('text/csv; charset=utf-8').header('Content-Disposition', `attachment; filename="audit_${stamp}.csv"`).send(lines.join('\r\n'));
+      const cols = [
+        'id',
+        'seq',
+        'at',
+        'actorType',
+        'actorId',
+        'action',
+        'targetType',
+        'targetId',
+        'diff',
+        'ip',
+        'userAgent',
+        'requestId',
+        'sensitive',
+        'hash',
+      ] as const;
+      const lines = [
+        cols.join(','),
+        ...rows.map((r) => {
+          const m = map(r);
+          return cols.map((c) => csvCell(m[c])).join(',');
+        }),
+      ];
+      return reply
+        .type('text/csv; charset=utf-8')
+        .header('Content-Disposition', `attachment; filename="audit_${stamp}.csv"`)
+        .send(lines.join('\r\n'));
     },
   );
 
   app.post(
     '/v1/audit/verify',
-    { config: { selfAudited: true }, schema: { tags: ['audit'], response: { 200: Type.Object({ intact: Type.Boolean(), firstBrokenSeq: Type.Union([Type.String(), Type.Null()]), sealed: Type.Integer() }), 403: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['audit'],
+        response: {
+          200: Type.Object({
+            intact: Type.Boolean(),
+            firstBrokenSeq: Type.Union([Type.String(), Type.Null()]),
+            sealed: Type.Integer(),
+          }),
+          403: Problem,
+        },
+      },
+    },
     async (req) => {
       authorize(req, 'audit.read');
       return app.tenantTx(req, async (tx) => {

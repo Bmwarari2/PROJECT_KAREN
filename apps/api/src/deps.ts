@@ -1,5 +1,11 @@
 import { promises as dnsPromises } from 'node:dns';
-import { assertCellResidency, HOME_REGIONS, loadCellConfig, type CellConfig, type HomeRegion } from '@thapsus/core';
+import {
+  assertCellResidency,
+  HOME_REGIONS,
+  loadCellConfig,
+  type CellConfig,
+  type HomeRegion,
+} from '@thapsus/core';
 import { secretToUrl, TenantRouter } from '@thapsus/db';
 import { directoryFromEnv, type TenantDirectory } from './lib/directory';
 import { randomBytes } from 'node:crypto';
@@ -22,8 +28,10 @@ export interface IntegrationApps {
 
 export function integrationAppsFromEnv(env: NodeJS.ProcessEnv): IntegrationApps {
   const out: IntegrationApps = {};
-  if (env.XERO_CLIENT_ID && env.XERO_CLIENT_SECRET) out.xero = { clientId: env.XERO_CLIENT_ID, clientSecret: env.XERO_CLIENT_SECRET };
-  if (env.MS_GRAPH_CLIENT_ID && env.MS_GRAPH_CLIENT_SECRET) out.microsoft = { clientId: env.MS_GRAPH_CLIENT_ID, clientSecret: env.MS_GRAPH_CLIENT_SECRET };
+  if (env.XERO_CLIENT_ID && env.XERO_CLIENT_SECRET)
+    out.xero = { clientId: env.XERO_CLIENT_ID, clientSecret: env.XERO_CLIENT_SECRET };
+  if (env.MS_GRAPH_CLIENT_ID && env.MS_GRAPH_CLIENT_SECRET)
+    out.microsoft = { clientId: env.MS_GRAPH_CLIENT_ID, clientSecret: env.MS_GRAPH_CLIENT_SECRET };
   return out;
 }
 
@@ -70,12 +78,19 @@ export interface Deps {
 
 /** Dev/test-only relaxations (a local webhook receiver); refused in production. */
 export function outboundPolicyFromEnv(appEnv: string, env: NodeJS.ProcessEnv = process.env): OutboundPolicy {
-  const policy = { allowHttp: env.OUTBOUND_ALLOW_HTTP === 'true', allowPrivateNetworks: env.OUTBOUND_ALLOW_PRIVATE_NETWORKS === 'true' };
-  if (appEnv === 'prod' && (policy.allowHttp || policy.allowPrivateNetworks)) throw new Error('Outbound SSRF relaxations may never be enabled in production');
+  const policy = {
+    allowHttp: env.OUTBOUND_ALLOW_HTTP === 'true',
+    allowPrivateNetworks: env.OUTBOUND_ALLOW_PRIVATE_NETWORKS === 'true',
+  };
+  if (appEnv === 'prod' && (policy.allowHttp || policy.allowPrivateNetworks))
+    throw new Error('Outbound SSRF relaxations may never be enabled in production');
   return policy.allowHttp || policy.allowPrivateNetworks ? policy : STRICT_OUTBOUND;
 }
 
-export function regionalUrlsFromEnv(prefix: string, fallback: (r: HomeRegion) => string): Record<HomeRegion, string> {
+export function regionalUrlsFromEnv(
+  prefix: string,
+  fallback: (r: HomeRegion) => string,
+): Record<HomeRegion, string> {
   const out = {} as Record<HomeRegion, string>;
   for (const r of HOME_REGIONS) out[r] = process.env[`${prefix}_${r.toUpperCase()}`] ?? fallback(r);
   return out;
@@ -85,9 +100,13 @@ export async function depsFromEnv(): Promise<Deps> {
   const config = loadCellConfig();
   const env = process.env;
   if (env.SERVICE_ROLE !== 'global') assertCellResidency(config.cell, env);
-  if (config.env === 'prod' && env.MOCK_IDP_ENABLED === 'true') throw new Error('The mock IdP may never run in production');
+  if (config.env === 'prod' && env.MOCK_IDP_ENABLED === 'true')
+    throw new Error('The mock IdP may never run in production');
   // The global service never touches tenant databases; its router is never used to connect.
-  const router = env.SERVICE_ROLE === 'global' && !env.DATABASE_URL && !env.DATABASE_SECRET ? new TenantRouter({ databases: { shared: 'postgres://unused@127.0.0.1:1/none' } }) : TenantRouter.fromEnv();
+  const router =
+    env.SERVICE_ROLE === 'global' && !env.DATABASE_URL && !env.DATABASE_SECRET
+      ? new TenantRouter({ databases: { shared: 'postgres://unused@127.0.0.1:1/none' } })
+      : TenantRouter.fromEnv();
   const mailer = mailerFromEnv(config.cell);
   return {
     config,
@@ -95,14 +114,21 @@ export async function depsFromEnv(): Promise<Deps> {
     directory: await directoryFromEnv(),
     // Cells record email delivery outcomes (timestamps and counts only) for the public status page.
     mailer: env.SERVICE_ROLE === 'global' ? mailer : withDeliveryHealth(mailer, () => router.registryPool()),
-    keys: env.SERVICE_ROLE === 'global' ? new LocalKeyProvider(randomBytes(32).toString('hex'), 'global-unused') : keyProviderFromEnv(config.cell),
+    keys:
+      env.SERVICE_ROLE === 'global'
+        ? new LocalKeyProvider(randomBytes(32).toString('hex'), 'global-unused')
+        : keyProviderFromEnv(config.cell),
     limiter: rateLimiterFromEnv(),
     dns: dnsPromises,
     objects: objectStoreFromEnv(config.cell),
     now: () => new Date(),
     regionalAppUrls: regionalUrlsFromEnv('APP_URL', () => config.appBaseUrl),
     regionalApiUrls: regionalUrlsFromEnv('API_URL', () => config.apiBaseUrl),
-    backofficeDbUrl: env.BACKOFFICE_DATABASE_URL ?? (env.BACKOFFICE_DATABASE_SECRET ? secretToUrl(env.BACKOFFICE_DATABASE_SECRET, env.DATABASE_HOST) : undefined),
+    backofficeDbUrl:
+      env.BACKOFFICE_DATABASE_URL ??
+      (env.BACKOFFICE_DATABASE_SECRET
+        ? secretToUrl(env.BACKOFFICE_DATABASE_SECRET, env.DATABASE_HOST)
+        : undefined),
     fetch: globalThis.fetch,
     serviceRole: env.SERVICE_ROLE === 'global' ? 'global' : 'cell',
     mockIdp: env.MOCK_IDP_ENABLED === 'true',
@@ -110,9 +136,14 @@ export async function depsFromEnv(): Promise<Deps> {
     // Stripe keys come only from Secrets Manager (ECS secrets) or a git-ignored local .env; test mode only.
     billing: env.STRIPE_SECRET_KEY ? StripeBillingProvider.fromKey(env.STRIPE_SECRET_KEY) : undefined,
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || undefined,
-    webPush: env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
-      ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
-      : undefined,
+    webPush:
+      env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
+        ? {
+            publicKey: env.VAPID_PUBLIC_KEY,
+            privateKey: env.VAPID_PRIVATE_KEY,
+            subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}`,
+          }
+        : undefined,
     integrations: integrationAppsFromEnv(env),
     ai: env.SERVICE_ROLE === 'global' ? undefined : aiProviderFromEnv(config.cell),
     outbound: outboundPolicyFromEnv(config.env, env),

@@ -15,10 +15,7 @@
           "value": {
             "weeks": 4,
             "increasedWeeks": 5,
-            "increasedIf": [
-              "reaches_age_33_by_end_of_calendar_year",
-              "permanently_cares_for_child"
-            ],
+            "increasedIf": ["reaches_age_33_by_end_of_calendar_year", "permanently_cares_for_child"],
             "teachersAndSpecifiedStaffWeeks": 8
           },
           "source": {
@@ -64,9 +61,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -86,9 +81,7 @@
         "day": 6
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -107,9 +100,7 @@
         "offset": -2
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -128,9 +119,7 @@
         "offset": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -150,9 +139,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -172,9 +159,7 @@
         "day": 8
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": "2026-01-01",
       "source": {
@@ -194,9 +179,7 @@
         "day": 8
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2027-01-01",
       "effectiveTo": null,
       "source": {
@@ -217,9 +200,7 @@
         "day": 5
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -239,9 +220,7 @@
         "day": 29
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -261,9 +240,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": "2024-01-01",
       "source": {
@@ -284,9 +261,7 @@
         "day": 15
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": "2026-01-01",
       "source": {
@@ -306,9 +281,7 @@
         "day": 15
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2027-01-01",
       "effectiveTo": null,
       "source": {
@@ -329,9 +302,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -351,9 +322,7 @@
         "day": 17
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": "2025-11-01",
       "source": {
@@ -374,9 +343,7 @@
         "day": 24
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -396,9 +363,7 @@
         "day": 25
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -418,9 +383,7 @@
         "day": 26
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {

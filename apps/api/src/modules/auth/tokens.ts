@@ -15,7 +15,10 @@ export function composeToken(prefix: string, tenantId: string, secret: string): 
   return `${prefix}${tenantId}.${secret}`;
 }
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-export function parseToken(prefix: string, value: string | undefined): { tenantId: string; secret: string } | undefined {
+export function parseToken(
+  prefix: string,
+  value: string | undefined,
+): { tenantId: string; secret: string } | undefined {
   if (!value) return undefined;
   const m = new RegExp(`^${prefix}(${UUID})\\.([A-Za-z0-9_-]{20,})$`, 'i').exec(value.trim());
   return m ? { tenantId: m[1]!.toLowerCase(), secret: m[2]! } : undefined;

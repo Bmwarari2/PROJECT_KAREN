@@ -13,7 +13,10 @@ export default function RolePage() {
   const session = useSession();
   const { id } = useParams<{ id: string }>();
   const { data, error } = useApi<Role>(`/v1/roles/${id}`);
-  if (error) return <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
+  if (error)
+    return (
+      <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />
+    );
   if (!data) return <Skeleton className="h-96 w-full" />;
   // keyed by version so a reload after saving re-seeds the form
   return <RoleEditor key={data.updatedAt} role={data} canManage={hasPermission(session, 'roles.manage')} />;

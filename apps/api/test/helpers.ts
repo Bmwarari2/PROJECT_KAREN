@@ -35,7 +35,15 @@ export interface TestContext {
 }
 
 export async function startTestApp(
-  opts: { cell?: HomeRegion; directory?: InMemoryDirectory; listen?: boolean; overrides?: Partial<Deps>; /** Registers extra (test-only) routes before the app is ready. */ extend?: (app: FastifyInstance) => void } = {},
+  opts: {
+    cell?: HomeRegion;
+    directory?: InMemoryDirectory;
+    listen?: boolean;
+    overrides?: Partial<Deps>;
+    /** Registers extra (test-only) routes before the app is ready. */ extend?: (
+      app: FastifyInstance,
+    ) => void;
+  } = {},
 ): Promise<TestContext> {
   const cell = opts.cell ?? 'uk';
   const port = await freePort();
@@ -50,16 +58,31 @@ export async function startTestApp(
     },
   };
   const deps: Deps = {
-    config: { env: 'test', cell, domain: 'thapsus-hr.test', appBaseUrl: 'http://localhost:3000', apiBaseUrl: base, globalBaseUrl: 'http://localhost:3000', internalToken: 'fictional-test-internal-token' },
+    config: {
+      env: 'test',
+      cell,
+      domain: 'thapsus-hr.test',
+      appBaseUrl: 'http://localhost:3000',
+      apiBaseUrl: base,
+      globalBaseUrl: 'http://localhost:3000',
+      internalToken: 'fictional-test-internal-token',
+    },
     router: testRouter(cell),
     directory,
     mailer,
     keys: new LocalKeyProvider('11'.repeat(32)),
     limiter: new MemoryRateLimiter(),
-    dns: { resolveTxt: async (name: string) => dnsRecords.get(name) ?? Promise.reject(Object.assign(new Error('ENOTFOUND'), { code: 'ENOTFOUND' })) },
+    dns: {
+      resolveTxt: async (name: string) =>
+        dnsRecords.get(name) ?? Promise.reject(Object.assign(new Error('ENOTFOUND'), { code: 'ENOTFOUND' })),
+    },
     objects: new MemoryObjectStore(),
     now: () => clock.now,
-    regionalAppUrls: { uk: 'https://app.uk.thapsus-hr.test', eu: 'https://app.eu.thapsus-hr.test', us: 'https://app.us.thapsus-hr.test' },
+    regionalAppUrls: {
+      uk: 'https://app.uk.thapsus-hr.test',
+      eu: 'https://app.eu.thapsus-hr.test',
+      us: 'https://app.us.thapsus-hr.test',
+    },
     regionalApiUrls: { uk: base, eu: base, us: base },
     backofficeDbUrl: appUrl(TEST_DBS.shared, 'thapsus_backoffice'),
     fetch: globalThis.fetch,
@@ -89,7 +112,8 @@ export async function closeDb() {
   await closeAllPools();
 }
 
-export const randomIp = () => `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250) + 1}`;
+export const randomIp = () =>
+  `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250) + 1}`;
 export const uniq = (p: string) => `${p}-${Math.random().toString(36).slice(2, 8)}`;
 
 export function cookieFrom(res: { headers: Record<string, unknown> }): string {
@@ -104,13 +128,25 @@ export function cookieFrom(res: { headers: Record<string, unknown> }): string {
 export const PASSWORD = 'Correct-Horse-Battery-9';
 
 /** Signs up a fictional company and returns the owner's session cookie. */
-export async function signup(ctx: TestContext, slug = uniq('acme'), region: HomeRegion = ctx.deps.config.cell) {
+export async function signup(
+  ctx: TestContext,
+  slug = uniq('acme'),
+  region: HomeRegion = ctx.deps.config.cell,
+) {
   const email = `owner@${slug}.example.test`;
   const res = await ctx.app.inject({
     method: 'POST',
     url: '/v1/signup',
     remoteAddress: randomIp(),
-    payload: { companyName: `Fictional ${slug} Ltd`, slug, region, ownerName: 'Olive Owner', ownerEmail: email, password: PASSWORD, acceptDpa: true },
+    payload: {
+      companyName: `Fictional ${slug} Ltd`,
+      slug,
+      region,
+      ownerName: 'Olive Owner',
+      ownerEmail: email,
+      password: PASSWORD,
+      acceptDpa: true,
+    },
   });
   if (res.statusCode !== 201) throw new Error(`signup failed ${res.statusCode} ${res.body}`);
   const body = res.json() as { tenantId: string; userId: string };
@@ -118,15 +154,29 @@ export async function signup(ctx: TestContext, slug = uniq('acme'), region: Home
 }
 
 export function totpCode(secret: string, at: Date, offsetSteps = 0) {
-  return new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(secret), digits: 6, period: 30, algorithm: 'SHA1' }).generate({ timestamp: at.getTime() + offsetSteps * 30_000 });
+  return new OTPAuth.TOTP({
+    secret: OTPAuth.Secret.fromBase32(secret),
+    digits: 6,
+    period: 30,
+    algorithm: 'SHA1',
+  }).generate({ timestamp: at.getTime() + offsetSteps * 30_000 });
 }
 
 /** Enrols and confirms TOTP for the session; returns the secret. */
 export async function enrolTotp(ctx: TestContext, cookie: string) {
-  const enrol = await ctx.app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/enroll', headers: { cookie } });
+  const enrol = await ctx.app.inject({
+    method: 'POST',
+    url: '/v1/auth/mfa/totp/enroll',
+    headers: { cookie },
+  });
   if (enrol.statusCode !== 200) throw new Error(`enrol ${enrol.statusCode} ${enrol.body}`);
   const { secret } = enrol.json() as { secret: string };
-  const confirm = await ctx.app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/confirm', headers: { cookie }, payload: { code: totpCode(secret, ctx.clock.now) } });
+  const confirm = await ctx.app.inject({
+    method: 'POST',
+    url: '/v1/auth/mfa/totp/confirm',
+    headers: { cookie },
+    payload: { code: totpCode(secret, ctx.clock.now) },
+  });
   if (confirm.statusCode !== 204) throw new Error(`confirm ${confirm.statusCode} ${confirm.body}`);
   return secret;
 }

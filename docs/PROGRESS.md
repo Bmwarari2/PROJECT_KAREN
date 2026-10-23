@@ -8,21 +8,21 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Summary
 
-| Phase | Scope | Branch | Status |
-| --- | --- | --- | --- |
-| 0 | Foundations | `phase-0-foundations` | [h] |
-| 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
-| 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h] |
-| 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
-| 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
-| 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
-| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
-| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [x] |
-| 8 | Privacy and trust (6.9) | `phase-8-privacy` | [h] |
-| 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [x] |
-| 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-support-billing` | [h] |
-| 11 | AI assistant behind a feature flag (6.13) | `phase-11-ai-assistant` | [h] |
-| 12 | Scale and launch readiness | `phase-12-launch` | [~] (AWS runs left: 12.1, 12.8, 12.9) |
+| Phase | Scope                                                          | Branch                       | Status                                |
+| ----- | -------------------------------------------------------------- | ---------------------------- | ------------------------------------- |
+| 0     | Foundations                                                    | `phase-0-foundations`        | [h]                                   |
+| 1     | Core HR and organisation model (6.1)                           | `phase-1-core-hr`            | [x]                                   |
+| 2     | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h]                                   |
+| 3     | Time off and absence (6.2)                                     | `phase-3-time-off`           | [x]                                   |
+| 4     | Rotas and time tracking (6.3)                                  | `phase-4-rotas-time`         | [x]                                   |
+| 5     | Compliance centre content (rest of 6.4)                        | `phase-5-compliance`         | [x]                                   |
+| 6     | Payroll handoff and IT automation (6.5, 6.6)                   | `phase-6-payroll-it`         | [x]                                   |
+| 7     | Reports, analytics and self-service (6.7, 6.8)                 | `phase-7-reports-ess`        | [x]                                   |
+| 8     | Privacy and trust (6.9)                                        | `phase-8-privacy`            | [h]                                   |
+| 9     | Enterprise platform (6.10)                                     | `phase-9-enterprise`         | [x]                                   |
+| 10    | Support, back office, pricing and billing (6.11, 6.12)         | `phase-10-support-billing`   | [h]                                   |
+| 11    | AI assistant behind a feature flag (6.13)                      | `phase-11-ai-assistant`      | [h]                                   |
+| 12    | Scale and launch readiness                                     | `phase-12-launch`            | [~] (AWS runs left: 12.1, 12.8, 12.9) |
 
 ---
 
@@ -165,6 +165,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
   - Actions: create task, send notification, start workflow, call webhook, call integration.
   - Rules evaluated from outbox events by idempotent worker jobs; dry-run preview; execution log.
   - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("automation rules" and "automation triggers, actions and integrations": record created/changed, date reached, document expiring and threshold triggers; task, notification, workflow, signed webhook and integration actions; idempotent outbox-driven jobs, dry run and the execution log).
+
 ---
 
 ## Phase 2 — Jurisdiction pack framework (6.4 framework)
@@ -185,6 +186,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [h] **2.4 EU pack (base data)**
   - EU baseline (minimum four weeks' paid annual leave, Working Time Directive limits) plus public holidays and statutory annual leave for all 27 member states, with official sources; deeper rules prioritised in COVERAGE.md.
   - _Evidence:_ the EU baseline (four weeks' leave, Working Time Directive limits, from eur-lex.europa.eu) statutory annual leave for all 27 member states, and public holidays for 24 of them, in `packages/rules/packs/eu/*.json` with vectors in `goldens/eu-a.json` and `eu-b.json`; deeper rules prioritised in `docs/COVERAGE.md`. _Human:_ Lithuanian, Romanian and Cypriot public holidays need a person, because their official portals block automated access (HUMAN_TODO 3.2, steps 1–6).
+
 ---
 
 ## Phase 3 — Time off and absence (6.2)
@@ -207,6 +209,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [x] **3.5 Absence analytics**
   - Bradford factor, configurable trigger alerts, team calendar, cover rules (minimum staffing) and per-user ICS feeds with revocable tokens and no sensitive detail.
   - _Evidence:_ `leave-engine.test.ts` ("absence analytics": Bradford factor); `leave.int.test.ts` (trigger alerts deduplicated, minimum-cover block, team calendar hiding sensitive types, token-scoped revocable ICS); `absence.int.test.ts` (masking per viewer, ICS tokens tenant-bound and own-only revocation, trigger windows and manager notification); `leave-policies.int.test.ts` (cover rule that warns).
+
 ---
 
 ## Phase 4 — Rotas and time tracking (6.3)
@@ -227,6 +230,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [x] **4.4 Timesheets**
   - Timesheets compared with the rota (variances highlighted), overtime calculation, approvals and payroll export feed.
   - _Evidence:_ `apps/api/test/timesheets.int.test.ts` (rota vs recorded time with variances and overtime; the employee submits and the manager approves; the payroll export feed is reproducible, audited and permission-checked); `apps/web/e2e/timesheets.spec.ts`.
+
 ---
 
 ## Phase 5 — Compliance centre content (rest of 6.4)
@@ -256,6 +260,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [x] **5.5 Law-changes feed**
   - Back-office-maintained feed entries (jurisdiction, effective date, summary, what to do, linked rule versions); customers see entries relevant to their jurisdictions with read/acknowledged state.
   - _Evidence:_ `compliance.int.test.ts` ("5.5 law-changes feed": back-office entries with staff MFA, relevance by the tenant's entities, locations and employees, read and acknowledged state per admin with audit, other tenants and managers see nothing, withdrawal, one notification per new relevant entry); `apps/web/e2e/compliance.spec.ts` (an admin acknowledges a relevant law change).
+
 ---
 
 ## Phase 6 — Payroll handoff and IT automation (6.5, 6.6)

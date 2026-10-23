@@ -46,11 +46,21 @@ const worst = (a: ComponentState, b: ComponentState) => (SEVERITY.indexOf(a) >= 
 function isActive(i: IncidentInput, now: string): boolean {
   if (i.resolvedAt) return false;
   if (i.kind === 'incident') return true;
-  return !!i.scheduledStart && !!i.scheduledEnd && compareInstants(i.scheduledStart, now) <= 0 && compareInstants(now, i.scheduledEnd) < 0;
+  return (
+    !!i.scheduledStart &&
+    !!i.scheduledEnd &&
+    compareInstants(i.scheduledStart, now) <= 0 &&
+    compareInstants(now, i.scheduledEnd) < 0
+  );
 }
 
 function isUpcoming(i: IncidentInput, now: string): boolean {
-  return i.kind === 'maintenance' && !i.resolvedAt && !!i.scheduledStart && compareInstants(i.scheduledStart, now) > 0;
+  return (
+    i.kind === 'maintenance' &&
+    !i.resolvedAt &&
+    !!i.scheduledStart &&
+    compareInstants(i.scheduledStart, now) > 0
+  );
 }
 
 /** Pure status computation (tested): measured health, then overridden upwards by posted incidents. */
@@ -66,7 +76,9 @@ export function computeStatus(s: StatusInput) {
           ? 'degraded'
           : 'operational',
     email:
-      !s.email || !s.email.lastFailureAt || (s.email.lastSuccessAt && compareInstants(s.email.lastSuccessAt, s.email.lastFailureAt) > 0)
+      !s.email ||
+      !s.email.lastFailureAt ||
+      (s.email.lastSuccessAt && compareInstants(s.email.lastSuccessAt, s.email.lastFailureAt) > 0)
         ? 'operational'
         : s.email.recentFailures >= EMAIL_OUTAGE_AFTER_FAILURES
           ? 'outage'
@@ -75,11 +87,24 @@ export function computeStatus(s: StatusInput) {
   const active = s.incidents.filter((i) => isActive(i, s.now));
   const states = { ...measured };
   for (const i of active) {
-    const st: ComponentState = i.kind === 'maintenance' ? 'maintenance' : i.impact === 'minor' ? 'degraded' : 'outage';
+    const st: ComponentState =
+      i.kind === 'maintenance' ? 'maintenance' : i.impact === 'minor' ? 'degraded' : 'outage';
     for (const c of i.components) states[c] = worst(states[c], st);
   }
   const overall = COMPONENTS.reduce<ComponentState>((acc, c) => worst(acc, states[c]), 'operational');
-  const view = (i: IncidentInput) => ({ id: i.id, kind: i.kind, impact: i.impact, title: i.title, components: i.components, status: i.status, scheduledStart: i.scheduledStart, scheduledEnd: i.scheduledEnd, startedAt: i.startedAt, resolvedAt: i.resolvedAt, updates: i.updates });
+  const view = (i: IncidentInput) => ({
+    id: i.id,
+    kind: i.kind,
+    impact: i.impact,
+    title: i.title,
+    components: i.components,
+    status: i.status,
+    scheduledStart: i.scheduledStart,
+    scheduledEnd: i.scheduledEnd,
+    startedAt: i.startedAt,
+    resolvedAt: i.resolvedAt,
+    updates: i.updates,
+  });
   return {
     region: s.region,
     generatedAt: s.now,
@@ -93,10 +118,12 @@ export function computeStatus(s: StatusInput) {
 
 /** Worker loop heartbeat (written at most every 30 s by apps/worker). */
 export async function recordHeartbeat(router: TenantRouter, service: 'worker', at = new Date()) {
-  await router.registryPool().query(
-    `INSERT INTO backoffice.service_heartbeats (service, beat_at) VALUES ($1, $2) ON CONFLICT (service) DO UPDATE SET beat_at = EXCLUDED.beat_at`,
-    [service, at.toISOString()],
-  );
+  await router
+    .registryPool()
+    .query(
+      `INSERT INTO backoffice.service_heartbeats (service, beat_at) VALUES ($1, $2) ON CONFLICT (service) DO UPDATE SET beat_at = EXCLUDED.beat_at`,
+      [service, at.toISOString()],
+    );
 }
 
 /**
@@ -105,7 +132,10 @@ export async function recordHeartbeat(router: TenantRouter, service: 'worker', a
  */
 export function withDeliveryHealth(inner: Mailer, pool: () => pg.Pool): Mailer {
   let lastSuccessWrite = 0;
-  const write = (sql: string, params: unknown[]) => pool().query(sql, params).catch(() => undefined);
+  const write = (sql: string, params: unknown[]) =>
+    pool()
+      .query(sql, params)
+      .catch(() => undefined);
   return {
     region: inner.region,
     async send(mail: Mail) {

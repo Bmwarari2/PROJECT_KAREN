@@ -35,10 +35,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Where no system font in the stack exists (Android, Linux), text is set in the self-hosted Inter.
             Fetching it with the stylesheet, not after it, draws text once in its final font: a late swap
             repaints the largest text and delays the largest paint. */}
-        <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          href="/fonts/inter-latin-wght-normal.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className="min-h-dvh bg-bg text-text antialiased">
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent"
+        >
           {t('common.skipToContent')}
         </a>
         {/* only the shared namespaces; each route segment's layout adds what its pages use (ADR-0150) */}

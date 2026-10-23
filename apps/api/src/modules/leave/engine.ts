@@ -1,4 +1,16 @@
-import { addDays, addMonths, addYears, compareDates, dateParts, dayOfWeek, daysBetween, eachDay, maxDate, minDate, monthsBetween } from '@thapsus/core/time';
+import {
+  addDays,
+  addMonths,
+  addYears,
+  compareDates,
+  dateParts,
+  dayOfWeek,
+  daysBetween,
+  eachDay,
+  maxDate,
+  minDate,
+  monthsBetween,
+} from '@thapsus/core/time';
 
 /**
  * Pure leave and absence calculations (no I/O). All dates are civil dates; amounts in days are
@@ -12,7 +24,8 @@ export interface LeavePolicy {
    * Annual/monthly amounts are full-time days (a full-time week being five days), pro-rated by FTE and
    * converted to hours for hours-unit policies; per-hour-worked accrual earns hours.
    */
-  accrual: { method: 'annual_upfront' | 'monthly'; days: number } | { method: 'per_hour_worked'; percent: number };
+  accrual:
+    { method: 'annual_upfront' | 'monthly'; days: number } | { method: 'per_hour_worked'; percent: number };
   /** Unit balances are kept in. Adjustments, carry-over, caps and the negative allowance are in this unit. */
   unit: 'days' | 'hours';
   /** Leave-year start as MM-DD. */
@@ -56,7 +69,8 @@ const patternHours = (p: WorkPattern, d: string) => p[dayOfWeek(d) as 1] ?? 0;
 export const weeklyHoursOf = (p: WorkPattern) => Object.values(p).reduce((s, h) => s + h, 0);
 export const workingDaysPerWeek = (p: WorkPattern) => Object.values(p).filter((h) => h > 0).length;
 /** Average hours on one of the employee's working days. */
-export const averageDayHours = (p: WorkPattern) => (workingDaysPerWeek(p) ? weeklyHoursOf(p) / workingDaysPerWeek(p) : 0);
+export const averageDayHours = (p: WorkPattern) =>
+  workingDaysPerWeek(p) ? weeklyHoursOf(p) / workingDaysPerWeek(p) : 0;
 
 function applyRounding(v: number, mode: LeavePolicy['rounding']) {
   switch (mode) {
@@ -76,7 +90,14 @@ function applyRounding(v: number, mode: LeavePolicy['rounding']) {
  * share of the year covered by the period and the policy's validity; for pro-rata policies also
  * limited to employment and scaled by FTE.
  */
-function rawEntitlement(policy: LeavePolicy, emp: EmployeeFacts, ys: string, ye: string, from = ys, to = ye): number {
+function rawEntitlement(
+  policy: LeavePolicy,
+  emp: EmployeeFacts,
+  ys: string,
+  ye: string,
+  from = ys,
+  to = ye,
+): number {
   if (policy.accrual.method === 'per_hour_worked') return 0;
   let a = maxDate(ys, from);
   let b = minDate(ye, to);
@@ -110,9 +131,17 @@ export interface PolicyPeriod {
  * Entitlement in days summed over the policy periods of a leave year: unrounded per period, then
  * rounded once with `rounding` (the policy in force at the balance date).
  */
-export function entitlementForPeriods(periods: PolicyPeriod[], emp: EmployeeFacts, ys: string, rounding: LeavePolicy['rounding']): number {
+export function entitlementForPeriods(
+  periods: PolicyPeriod[],
+  emp: EmployeeFacts,
+  ys: string,
+  rounding: LeavePolicy['rounding'],
+): number {
   const ye = addYears(ys, 1);
-  const total = periods.reduce((s, p) => s + rawEntitlement(p.policy, { ...emp, fte: p.fte ?? emp.fte }, ys, ye, p.from, p.to), 0);
+  const total = periods.reduce(
+    (s, p) => s + rawEntitlement(p.policy, { ...emp, fte: p.fte ?? emp.fte }, ys, ye, p.from, p.to),
+    0,
+  );
   return applyRounding(total, rounding);
 }
 
@@ -130,7 +159,15 @@ export interface Req {
  * Working days/hours in a request: the pattern's working days minus public holidays, with half days.
  * A single-day request may give explicit `hours` (capped at that day's pattern hours).
  */
-export function requestAmount(r: { start: string; end: string; pattern: WorkPattern; holidays: string[]; startHalf?: 'am' | 'pm'; endHalf?: 'am' | 'pm'; hours?: number }) {
+export function requestAmount(r: {
+  start: string;
+  end: string;
+  pattern: WorkPattern;
+  holidays: string[];
+  startHalf?: 'am' | 'pm';
+  endHalf?: 'am' | 'pm';
+  hours?: number;
+}) {
   if (r.hours !== undefined && r.start === r.end) {
     const day = patternHours(r.pattern, r.start);
     if (!day || r.holidays.includes(r.start)) return { days: 0, hours: 0 };
@@ -176,7 +213,9 @@ export interface BalanceInput {
 export function computeBalance(i: BalanceInput) {
   const p = i.policy;
   const [ys, ye] = [`${i.year}-${p.yearStart}`, addYears(`${i.year}-${p.yearStart}`, 1)];
-  const periods: PolicyPeriod[] = i.periods?.length ? i.periods : [{ from: ys, to: ye, policy: p, hoursWorked: i.hoursWorked }];
+  const periods: PolicyPeriod[] = i.periods?.length
+    ? i.periods
+    : [{ from: ys, to: ye, policy: p, hoursWorked: i.hoursWorked }];
   const fullDay = i.fullTimeDayHours ?? weeklyHoursOf(i.pattern) / (i.employee.fte || 1) / 5;
   const dayHours = averageDayHours(i.pattern);
   const daysToUnit = (days: number) => (p.unit === 'hours' ? r2(days * fullDay) : days);
@@ -206,9 +245,17 @@ export function computeBalance(i: BalanceInput) {
   const yearHolidays = i.holidays.filter((d) => compareDates(d, ys) >= 0 && compareDates(d, ye) < 0);
   // Only holidays on the employee's own working days while employed are deducted (part-timers, joiners, leavers).
   const deductible = p.includesPublicHolidays
-    ? yearHolidays.filter((d) => patternHours(i.pattern, d) > 0 && compareDates(d, i.employee.startDate) >= 0 && (!i.employee.endDate || compareDates(d, i.employee.endDate) <= 0))
+    ? yearHolidays.filter(
+        (d) =>
+          patternHours(i.pattern, d) > 0 &&
+          compareDates(d, i.employee.startDate) >= 0 &&
+          (!i.employee.endDate || compareDates(d, i.employee.endDate) <= 0),
+      )
     : [];
-  const publicHolidays = p.unit === 'hours' ? r2(deductible.reduce((s, d) => s + patternHours(i.pattern, d), 0)) : deductible.length;
+  const publicHolidays =
+    p.unit === 'hours'
+      ? r2(deductible.reduce((s, d) => s + patternHours(i.pattern, d), 0))
+      : deductible.length;
   let taken = 0;
   let booked = 0;
   let pending = 0;
@@ -225,9 +272,15 @@ export function computeBalance(i: BalanceInput) {
   }
   const carriedCapped = Math.min(i.carriedIn, p.carryOver?.maxDays ?? 0);
   let carryOverExpired = 0;
-  if (expiry && compareDates(i.asOf, expiry) >= 0) carryOverExpired = Math.max(0, carriedCapped - takenBeforeExpiry);
-  const carriedOver = carriedCapped - carryOverExpired - (expiry && compareDates(i.asOf, expiry) >= 0 ? Math.min(carriedCapped, takenBeforeExpiry) : 0);
-  const adjustments = r4(i.adjustments.filter((a) => compareDates(a.effectiveDate, i.asOf) <= 0).reduce((s, a) => s + a.days, 0));
+  if (expiry && compareDates(i.asOf, expiry) >= 0)
+    carryOverExpired = Math.max(0, carriedCapped - takenBeforeExpiry);
+  const carriedOver =
+    carriedCapped -
+    carryOverExpired -
+    (expiry && compareDates(i.asOf, expiry) >= 0 ? Math.min(carriedCapped, takenBeforeExpiry) : 0);
+  const adjustments = r4(
+    i.adjustments.filter((a) => compareDates(a.effectiveDate, i.asOf) <= 0).reduce((s, a) => s + a.days, 0),
+  );
   let pot = accrued + carriedCapped - carryOverExpired + adjustments;
   if (p.capDays !== undefined) pot = Math.min(pot, p.capDays);
   const available = r4(pot - publicHolidays - taken - booked - pending);
@@ -270,7 +323,10 @@ export interface UkSspRule {
   lowerEarningsLimitWeekly?: Money | null;
   maxWeeks: number;
   linkingPeriodWeeks: number;
-  transitional?: { protectedBandNormalWeeklyEarnings: { min: Money; max: Money }; protectedWeeklyRate: Money };
+  transitional?: {
+    protectedBandNormalWeeklyEarnings: { min: Money; max: Money };
+    protectedWeeklyRate: Money;
+  };
 }
 
 export interface RuleAt<V> {
@@ -290,14 +346,22 @@ export interface RuleAt<V> {
  *   change, continues after it and already had SSP paid before it, for NWE inside the protected band.
  * Qualifying days are the employee's working days.
  */
-export function ukSsp(i: { rule: UkSspRule | ((date: string) => RuleAt<UkSspRule>); normalWeeklyEarningsMinor: number; spells: Array<{ start: string; end: string }>; pattern: WorkPattern }) {
+export function ukSsp(i: {
+  rule: UkSspRule | ((date: string) => RuleAt<UkSspRule>);
+  normalWeeklyEarningsMinor: number;
+  spells: Array<{ start: string; end: string }>;
+  pattern: WorkPattern;
+}) {
   const fixed = typeof i.rule === 'function' ? null : i.rule;
-  const ruleOn: (d: string) => RuleAt<UkSspRule> = typeof i.rule === 'function' ? i.rule : () => ({ value: fixed!, effectiveFrom: '0001-01-01' });
+  const ruleOn: (d: string) => RuleAt<UkSspRule> =
+    typeof i.rule === 'function' ? i.rule : () => ({ value: fixed!, effectiveFrom: '0001-01-01' });
   const nwe = i.normalWeeklyEarningsMinor;
   const qdPerWeek = workingDaysPerWeek(i.pattern) || 5;
   const spells = [...i.spells].sort((a, b) => compareDates(a.start, b.start));
   const baseRate = (r: UkSspRule) =>
-    r.calculation === 'flat_rate' || r.percentOfNormalWeeklyEarnings === undefined ? r.weeklyRate.amountMinor : Math.min(r.weeklyRate.amountMinor, Math.round((nwe * r.percentOfNormalWeeklyEarnings) / 100));
+    r.calculation === 'flat_rate' || r.percentOfNormalWeeklyEarnings === undefined
+      ? r.weeklyRate.amountMinor
+      : Math.min(r.weeklyRate.amountMinor, Math.round((nwe * r.percentOfNormalWeeklyEarnings) / 100));
   const paidByRate = new Map<number, number>();
   let waitingApplied = 0;
   let belowLelDays = 0;
@@ -314,7 +378,8 @@ export function ukSsp(i: { rule: UkSspRule | ((date: string) => RuleAt<UkSspRule
       notPiw++;
       continue;
     }
-    const linked = prevEnd !== null && daysBetween(prevEnd, s.start) - 1 <= rules[0]!.value.linkingPeriodWeeks * 7;
+    const linked =
+      prevEnd !== null && daysBetween(prevEnd, s.start) - 1 <= rules[0]!.value.linkingPeriodWeeks * 7;
     if (!linked) chain = { paidDays: 0, waitingServed: 0, firstPaid: null };
     days.forEach((d, k) => {
       if (!(patternHours(i.pattern, d) > 0)) return;
@@ -335,7 +400,15 @@ export function ukSsp(i: { rule: UkSspRule | ((date: string) => RuleAt<UkSspRule
       let rate = baseRate(r);
       const t = r.transitional;
       const band = t?.protectedBandNormalWeeklyEarnings;
-      if (t && band && compareDates(s.start, effectiveFrom) < 0 && chain.firstPaid !== null && compareDates(chain.firstPaid, effectiveFrom) < 0 && nwe >= band.min.amountMinor && nwe <= band.max.amountMinor) {
+      if (
+        t &&
+        band &&
+        compareDates(s.start, effectiveFrom) < 0 &&
+        chain.firstPaid !== null &&
+        compareDates(chain.firstPaid, effectiveFrom) < 0 &&
+        nwe >= band.min.amountMinor &&
+        nwe <= band.max.amountMinor
+      ) {
         rate = t.protectedWeeklyRate.amountMinor;
       }
       chain.paidDays++;
@@ -347,7 +420,12 @@ export function ukSsp(i: { rule: UkSspRule | ((date: string) => RuleAt<UkSspRule
   }
   let payableMinor = 0;
   let daysPaid = 0;
-  const breakdown: Array<{ weeklyRateMinor: number; dailyRateMinor: number; days: number; payableMinor: number }> = [];
+  const breakdown: Array<{
+    weeklyRateMinor: number;
+    dailyRateMinor: number;
+    days: number;
+    payableMinor: number;
+  }> = [];
   for (const [rate, n] of paidByRate) {
     // Whole weeks at the weekly rate; odd days at weekly ÷ qualifying days, rounded up to the penny.
     const daily = Math.ceil(rate / qdPerWeek);
@@ -402,7 +480,8 @@ export interface EuSickBand {
 }
 
 export interface EuSickResult {
-  scheme: 'continued_pay' | 'paid_days_per_year' | 'employer_days_window' | 'employer_complement' | 'not_modelled';
+  scheme:
+    'continued_pay' | 'paid_days_per_year' | 'employer_days_window' | 'employer_complement' | 'not_modelled';
   eligible: boolean;
   /** Basis of `paidDays`. */
   dayBasis: 'calendar' | 'working';
@@ -416,9 +495,14 @@ export interface EuSickResult {
   notes: string[];
 }
 
-const workingDaysIn = (from: string, to: string, pattern: WorkPattern, holidays: string[] = []) => (compareDates(from, to) > 0 ? 0 : requestAmount({ start: from, end: to, pattern, holidays }).days);
-const calendarDaysIn = (from: string, to: string) => (compareDates(from, to) > 0 ? 0 : daysBetween(from, to) + 1);
-const clampRange = (from: string, to: string, lo: string, hi: string): [string, string] => [maxDate(from, lo), minDate(to, hi)];
+const workingDaysIn = (from: string, to: string, pattern: WorkPattern, holidays: string[] = []) =>
+  compareDates(from, to) > 0 ? 0 : requestAmount({ start: from, end: to, pattern, holidays }).days;
+const calendarDaysIn = (from: string, to: string) =>
+  compareDates(from, to) > 0 ? 0 : daysBetween(from, to) + 1;
+const clampRange = (from: string, to: string, lo: string, hi: string): [string, string] => [
+  maxDate(from, lo),
+  minDate(to, hi),
+];
 
 /**
  * Employer sick-pay obligations for the EU member-state shapes held in the packs:
@@ -444,16 +528,33 @@ export function employerContinuedPay(rule: Record<string, unknown>, i: EuSickInp
       priorDaysInRolling12MonthsDeducted?: boolean;
       bandsByServiceYears: Array<{ minServiceYears: number; days90: number; days6666: number }>;
     };
-    const ss = rule.socialSecurityDailyAllowance as { waitingDays?: number; percentOfDailyBasicWage?: number } | undefined;
+    const ss = rule.socialSecurityDailyAllowance as
+      { waitingDays?: number; percentOfDailyBasicWage?: number } | undefined;
     const serviceYears = Math.floor(monthsBetween(i.startDate, i.sickStart) / 12);
-    const band = [...c.bandsByServiceYears].sort((a, b) => b.minServiceYears - a.minServiceYears).find((b) => serviceYears >= b.minServiceYears);
-    if (serviceYears < c.minServiceYears || !band) return { ...none, scheme: 'employer_complement', eligible: false, dayBasis: 'calendar', paidDays: 0, paidCalendarDays: 0, percent: null, dailyAmountMinor: 0, totalMinor: 0 };
+    const band = [...c.bandsByServiceYears]
+      .sort((a, b) => b.minServiceYears - a.minServiceYears)
+      .find((b) => serviceYears >= b.minServiceYears);
+    if (serviceYears < c.minServiceYears || !band)
+      return {
+        ...none,
+        scheme: 'employer_complement',
+        eligible: false,
+        dayBasis: 'calendar',
+        paidDays: 0,
+        paidCalendarDays: 0,
+        percent: null,
+        dailyAmountMinor: 0,
+        totalMinor: 0,
+      };
     const waiting = i.cause && (c.noWaitingDaysFor ?? []).includes(i.cause) ? 0 : c.waitingDays;
     // Days the employer already paid in the 12 months before this stoppage reduce the durations.
     let used = 0;
     if (c.priorDaysInRolling12MonthsDeducted) {
       const lookback = addMonths(i.sickStart, -12);
-      for (const s of prior) used += calendarDaysIn(...clampRange(addDays(s.start, waiting), s.end, lookback, addDays(i.sickStart, -1)));
+      for (const s of prior)
+        used += calendarDaysIn(
+          ...clampRange(addDays(s.start, waiting), s.end, lookback, addDays(i.sickStart, -1)),
+        );
     }
     const first = Math.max(0, band.days90 - used);
     const second = Math.max(0, band.days6666 - Math.max(0, used - band.days90));
@@ -470,53 +571,145 @@ export function employerContinuedPay(rule: Record<string, unknown>, i: EuSickInp
       const n = calendarDaysIn(cursor, to);
       // The employer tops up to `percent` of gross pay, less the IJSS (paid after its own waiting days).
       const daily = Math.round((perCalendarDay * percent) / 100);
-      const ijss = Math.round(calendarDaysIn(maxDate(cursor, ijssFrom), to) * ((perCalendarDay * ijssPercent) / 100));
-      bands.push({ percent, from: cursor, to, days: n, dailyAmountMinor: daily, totalMinor: Math.max(0, n * daily - ijss) });
+      const ijss = Math.round(
+        calendarDaysIn(maxDate(cursor, ijssFrom), to) * ((perCalendarDay * ijssPercent) / 100),
+      );
+      bands.push({
+        percent,
+        from: cursor,
+        to,
+        days: n,
+        dailyAmountMinor: daily,
+        totalMinor: Math.max(0, n * daily - ijss),
+      });
       cursor = addDays(to, 1);
     }
-    notes.push('guaranteedPercentIncludesIjss', 'ijssDailyCapNotModelled', 'collectiveAgreementMayBeMoreFavourable');
+    notes.push(
+      'guaranteedPercentIncludesIjss',
+      'ijssDailyCapNotModelled',
+      'collectiveAgreementMayBeMoreFavourable',
+    );
     const paid = bands.reduce((s, b) => s + b.days, 0);
-    return { scheme: 'employer_complement', eligible: true, dayBasis: 'calendar', paidDays: paid, paidCalendarDays: paid, percent: bands[0]?.percent ?? null, dailyAmountMinor: bands[0]?.dailyAmountMinor ?? null, totalMinor: bands.reduce((s, b) => s + b.totalMinor, 0), bands, notes };
+    return {
+      scheme: 'employer_complement',
+      eligible: true,
+      dayBasis: 'calendar',
+      paidDays: paid,
+      paidCalendarDays: paid,
+      percent: bands[0]?.percent ?? null,
+      dailyAmountMinor: bands[0]?.dailyAmountMinor ?? null,
+      totalMinor: bands.reduce((s, b) => s + b.totalMinor, 0),
+      bands,
+      notes,
+    };
   }
 
   // ES — the employer pays the benefit for days `from`–`to` of the incapacity; social security thereafter.
   if (rule.employerPaysDays && typeof rule.employerPaysDays === 'object') {
     const w = rule.employerPaysDays as { from: number; to: number };
-    if (i.cause === 'work_accident' || i.cause === 'occupational_disease') notes.push('occupationalContingencyNotModelled');
-    const n = calendarDaysIn(...clampRange(addDays(i.sickStart, w.from - 1), addDays(i.sickStart, w.to - 1), i.sickStart, i.sickEnd));
-    if (typeof rule.maxDurationDays === 'number' && calendarDaysIn(i.sickStart, i.sickEnd) > rule.maxDurationDays) notes.push('maxDurationExceeded');
+    if (i.cause === 'work_accident' || i.cause === 'occupational_disease')
+      notes.push('occupationalContingencyNotModelled');
+    const n = calendarDaysIn(
+      ...clampRange(addDays(i.sickStart, w.from - 1), addDays(i.sickStart, w.to - 1), i.sickStart, i.sickEnd),
+    );
+    if (
+      typeof rule.maxDurationDays === 'number' &&
+      calendarDaysIn(i.sickStart, i.sickEnd) > rule.maxDurationDays
+    )
+      notes.push('maxDurationExceeded');
     notes.push('benefitPercentNotModelled', `socialSecurityFromDay:${w.to + 1}`);
-    return { ...none, scheme: 'employer_days_window', eligible: n > 0, dayBasis: 'calendar', paidDays: n, paidCalendarDays: n, percent: null, dailyAmountMinor: null, totalMinor: null, notes };
+    return {
+      ...none,
+      scheme: 'employer_days_window',
+      eligible: n > 0,
+      dayBasis: 'calendar',
+      paidDays: n,
+      paidCalendarDays: n,
+      percent: null,
+      dailyAmountMinor: null,
+      totalMinor: null,
+      notes,
+    };
   }
 
   // PL — the employer pays sickness remuneration for up to N calendar days per calendar year.
   if (typeof rule.maxDaysPerCalendarYear === 'number') {
     if (i.age50Plus === undefined) notes.push('assumedUnder50');
-    const limit = i.age50Plus && typeof rule.maxDaysPerCalendarYearAge50Plus === 'number' ? rule.maxDaysPerCalendarYearAge50Plus : rule.maxDaysPerCalendarYear;
+    const limit =
+      i.age50Plus && typeof rule.maxDaysPerCalendarYearAge50Plus === 'number'
+        ? rule.maxDaysPerCalendarYearAge50Plus
+        : rule.maxDaysPerCalendarYear;
     const { year } = dateParts(i.sickStart);
     const [ys, ye] = [`${year}-01-01`, `${year}-12-31`];
     const used = prior.reduce((s, sp) => s + calendarDaysIn(...clampRange(sp.start, sp.end, ys, ye)), 0);
-    const n = Math.min(Math.max(0, limit - used), calendarDaysIn(...clampRange(i.sickStart, i.sickEnd, ys, ye)));
-    const percent = i.cause && Array.isArray(rule.hundredPercentCases) && rule.hundredPercentCases.includes(i.cause) ? 100 : (rule.continuedPayPercent as number);
+    const n = Math.min(
+      Math.max(0, limit - used),
+      calendarDaysIn(...clampRange(i.sickStart, i.sickEnd, ys, ye)),
+    );
+    const percent =
+      i.cause && Array.isArray(rule.hundredPercentCases) && rule.hundredPercentCases.includes(i.cause)
+        ? 100
+        : (rule.continuedPayPercent as number);
     const daily = Math.round((perCalendarDay * percent) / 100);
     notes.push('payBasisApproximatedFromCurrentPay');
-    return { ...none, scheme: 'paid_days_per_year', eligible: n > 0, dayBasis: 'calendar', paidDays: n, paidCalendarDays: n, percent, dailyAmountMinor: daily, totalMinor: n * daily, notes };
+    return {
+      ...none,
+      scheme: 'paid_days_per_year',
+      eligible: n > 0,
+      dayBasis: 'calendar',
+      paidDays: n,
+      paidCalendarDays: n,
+      percent,
+      dailyAmountMinor: daily,
+      totalMinor: n * daily,
+      notes,
+    };
   }
 
-  const eligibleFrom = addDays(i.startDate, (typeof rule.qualifyingServiceWeeks === 'number' ? rule.qualifyingServiceWeeks : 0) * 7);
+  const eligibleFrom = addDays(
+    i.startDate,
+    (typeof rule.qualifyingServiceWeeks === 'number' ? rule.qualifyingServiceWeeks : 0) * 7,
+  );
 
   // IE — statutory sick days per year at a percentage of daily pay, with a daily cap.
   if (typeof rule.daysPerYear === 'number') {
     const percent = typeof rule.ratePercent === 'number' ? rule.ratePercent : 0;
-    if (compareDates(i.sickStart, eligibleFrom) < 0) return { ...none, scheme: 'paid_days_per_year', eligible: false, dayBasis: 'working', paidDays: 0, paidCalendarDays: 0, percent, dailyAmountMinor: 0, totalMinor: 0 };
+    if (compareDates(i.sickStart, eligibleFrom) < 0)
+      return {
+        ...none,
+        scheme: 'paid_days_per_year',
+        eligible: false,
+        dayBasis: 'working',
+        paidDays: 0,
+        paidCalendarDays: 0,
+        percent,
+        dailyAmountMinor: 0,
+        totalMinor: 0,
+      };
     const { year } = dateParts(i.sickStart);
     const [ys, ye] = [`${year}-01-01`, `${year}-12-31`];
-    const used = prior.reduce((s, sp) => s + workingDaysIn(...clampRange(sp.start, sp.end, ys, ye), i.pattern, i.holidays), 0);
-    const paidDays = Math.min(Math.max(0, rule.daysPerYear - used), workingDaysIn(...clampRange(i.sickStart, i.sickEnd, ys, ye), i.pattern, i.holidays));
+    const used = prior.reduce(
+      (s, sp) => s + workingDaysIn(...clampRange(sp.start, sp.end, ys, ye), i.pattern, i.holidays),
+      0,
+    );
+    const paidDays = Math.min(
+      Math.max(0, rule.daysPerYear - used),
+      workingDaysIn(...clampRange(i.sickStart, i.sickEnd, ys, ye), i.pattern, i.holidays),
+    );
     const raw = Math.round((perWorkingDay * percent) / 100);
     const cap = rule.dailyCap as { amountMinor: number } | undefined;
     const daily = cap ? Math.min(raw, cap.amountMinor) : raw;
-    return { ...none, scheme: 'paid_days_per_year', eligible: true, dayBasis: 'working', paidDays, paidCalendarDays: paidDays, percent, dailyAmountMinor: daily, totalMinor: paidDays * daily };
+    return {
+      ...none,
+      scheme: 'paid_days_per_year',
+      eligible: true,
+      dayBasis: 'working',
+      paidDays,
+      paidCalendarDays: paidDays,
+      percent,
+      dailyAmountMinor: daily,
+      totalMinor: paidDays * daily,
+    };
   }
 
   // DE / NL — continued pay at a percentage for a number of weeks of the incapacity.
@@ -529,10 +722,31 @@ export function employerContinuedPay(rule: Record<string, unknown>, i: EuSickInp
     const daily = Math.round((perWorkingDay * rule.continuedPayPercent) / 100);
     if (rule.minimumWageFloorFirstWeeks) notes.push('minimumWageFloorNotApplied');
     if (rule.wageCap) notes.push('wageCapNotApplied');
-    return { ...none, scheme: 'continued_pay', eligible: paidCalendarDays > 0, dayBasis: 'working', paidDays: paidWorking, paidCalendarDays, percent: rule.continuedPayPercent, dailyAmountMinor: daily, totalMinor: paidWorking * daily, notes };
+    return {
+      ...none,
+      scheme: 'continued_pay',
+      eligible: paidCalendarDays > 0,
+      dayBasis: 'working',
+      paidDays: paidWorking,
+      paidCalendarDays,
+      percent: rule.continuedPayPercent,
+      dailyAmountMinor: daily,
+      totalMinor: paidWorking * daily,
+      notes,
+    };
   }
 
-  return { ...none, scheme: 'not_modelled', eligible: false, dayBasis: 'calendar', paidDays: 0, paidCalendarDays: 0, percent: null, dailyAmountMinor: null, totalMinor: null };
+  return {
+    ...none,
+    scheme: 'not_modelled',
+    eligible: false,
+    dayBasis: 'calendar',
+    paidDays: 0,
+    paidCalendarDays: 0,
+    percent: null,
+    dailyAmountMinor: null,
+    totalMinor: null,
+  };
 }
 
 // ---- US state paid sick leave ---------------------------------------------------------------------------
@@ -551,7 +765,14 @@ export interface UsSickRule {
   /** Accrual cap per 12-month period (IL). */
   capHoursPer12Months?: number;
   /** Employer-size tiers: hours per year, paid or unpaid (NY). */
-  tiers?: Array<{ minEmployees: number; maxEmployees: number | null; hours: number; paid: boolean; netIncomeMaxMinor?: number; netIncomeAboveMinor?: number }>;
+  tiers?: Array<{
+    minEmployees: number;
+    maxEmployees: number | null;
+    hours: number;
+    paid: boolean;
+    netIncomeMaxMinor?: number;
+    netIncomeAboveMinor?: number;
+  }>;
   /** Leave must be paid when the employer has at least this many employees, else it may be unpaid (MA). */
   paidIfEmployeesAtLeast?: number;
   /** Use may begin this many days after the start date (IL, MA). */
@@ -585,11 +806,32 @@ const capOf = (c: { hours?: number; days?: number; rule?: string }, hoursPerDay:
  */
 export function usSickAccrual(
   rule: UsSickRule,
-  i: { hoursWorked: number; hoursPerDay?: number; employerSize?: number; stateEmployees?: number; employerNetIncomeMinor?: number; startDate?: string; asOf?: string; daysWorkedInStateWithinYear?: number },
+  i: {
+    hoursWorked: number;
+    hoursPerDay?: number;
+    employerSize?: number;
+    stateEmployees?: number;
+    employerNetIncomeMinor?: number;
+    startDate?: string;
+    asOf?: string;
+    daysWorkedInStateWithinYear?: number;
+  },
 ) {
   const hoursPerDay = i.hoursPerDay ?? 8;
   const notEvaluated = Object.keys(rule).filter((k) => LOCALITY_DEPENDENT.test(k));
-  if (!rule.accrual) return { required: false, earnedHours: 0, accruedHours: 0, capHours: null, useCapHours: null, paid: false, eligible: false, usableFrom: null, canUse: false, notEvaluated };
+  if (!rule.accrual)
+    return {
+      required: false,
+      earnedHours: 0,
+      accruedHours: 0,
+      capHours: null,
+      useCapHours: null,
+      paid: false,
+      eligible: false,
+      usableFrom: null,
+      canUse: false,
+      notEvaluated,
+    };
   const earned = Math.floor(i.hoursWorked / rule.accrual.perHoursWorked) * rule.accrual.hoursEarned;
   let cap = Infinity;
   let useCap: number | null = null;
@@ -611,7 +853,8 @@ export function usSickAccrual(
               size >= t.minEmployees &&
               (t.maxEmployees === null || size <= t.maxEmployees) &&
               (t.netIncomeMaxMinor === undefined || (i.employerNetIncomeMinor ?? 0) <= t.netIncomeMaxMinor) &&
-              (t.netIncomeAboveMinor === undefined || (i.employerNetIncomeMinor ?? Infinity) > t.netIncomeAboveMinor),
+              (t.netIncomeAboveMinor === undefined ||
+                (i.employerNetIncomeMinor ?? Infinity) > t.netIncomeAboveMinor),
           );
     if (!tier) notEvaluated.push('tiers');
     else {
@@ -631,13 +874,19 @@ export function usSickAccrual(
   }
   let usableFrom: string | null = i.startDate ?? null;
   if (i.startDate) {
-    const after = rule.useBeginsAfterDays ?? rule.useBeginsCalendarDay ?? rule.eligibility?.employmentPeriodDaysBeforeUse;
+    const after =
+      rule.useBeginsAfterDays ?? rule.useBeginsCalendarDay ?? rule.eligibility?.employmentPeriodDaysBeforeUse;
     if (after !== undefined) usableFrom = addDays(i.startDate, after);
-    else if (rule.useMayBeDeferredUntilCalendarDay !== undefined) usableFrom = addDays(i.startDate, rule.useMayBeDeferredUntilCalendarDay - 1);
+    else if (rule.useMayBeDeferredUntilCalendarDay !== undefined)
+      usableFrom = addDays(i.startDate, rule.useMayBeDeferredUntilCalendarDay - 1);
   }
   const minDays = rule.eligibility?.minDaysWorkedInStateWithinYear;
-  if (minDays !== undefined && i.daysWorkedInStateWithinYear === undefined) notEvaluated.push('minDaysWorkedInStateWithinYear');
-  const eligible = minDays === undefined || i.daysWorkedInStateWithinYear === undefined || i.daysWorkedInStateWithinYear >= minDays;
+  if (minDays !== undefined && i.daysWorkedInStateWithinYear === undefined)
+    notEvaluated.push('minDaysWorkedInStateWithinYear');
+  const eligible =
+    minDays === undefined ||
+    i.daysWorkedInStateWithinYear === undefined ||
+    i.daysWorkedInStateWithinYear >= minDays;
   return {
     required: true,
     earnedHours: earned,
@@ -655,14 +904,24 @@ export function usSickAccrual(
 // ---- analytics ---------------------------------------------------------------------------------------
 
 /** Bradford factor S² × D for sickness spells overlapping the `windowDays` up to and including `asOf`. */
-export function bradfordFactor(spells: Array<{ start: string; end: string }>, asOf: string, pattern: WorkPattern, windowDays = 365) {
+export function bradfordFactor(
+  spells: Array<{ start: string; end: string }>,
+  asOf: string,
+  pattern: WorkPattern,
+  windowDays = 365,
+) {
   const windowStart = addDays(asOf, -(windowDays - 1));
   let s = 0;
   let d = 0;
   for (const sp of spells) {
     if (compareDates(sp.end, windowStart) < 0 || compareDates(sp.start, asOf) > 0) continue;
     s++;
-    d += requestAmount({ start: maxDate(sp.start, windowStart), end: minDate(sp.end, asOf), pattern, holidays: [] }).days;
+    d += requestAmount({
+      start: maxDate(sp.start, windowStart),
+      end: minDate(sp.end, asOf),
+      pattern,
+      holidays: [],
+    }).days;
   }
   return { spells: s, days: d, score: s * s * d };
 }
@@ -671,8 +930,17 @@ export function bradfordFactor(spells: Array<{ start: string; end: string }>, as
 
 /** Shape of US `family_leave.fmla`. */
 export interface FmlaRule {
-  coveredEmployer: { privateSectorMinEmployees: number; inWorkweeks?: number; publicAgenciesCoveredRegardlessOfSize?: boolean };
-  eligibility: { minMonthsOfService: number; minHoursInPrior12Months: number; minEmployeesWithinRadius: number; radiusMiles?: number };
+  coveredEmployer: {
+    privateSectorMinEmployees: number;
+    inWorkweeks?: number;
+    publicAgenciesCoveredRegardlessOfSize?: boolean;
+  };
+  eligibility: {
+    minMonthsOfService: number;
+    minHoursInPrior12Months: number;
+    minEmployeesWithinRadius: number;
+    radiusMiles?: number;
+  };
   entitlementWorkweeks?: number;
   militaryCaregiverWorkweeks?: number;
   leaveYearMethods?: string[];
@@ -685,7 +953,14 @@ export interface FmlaRule {
  * current or preceding calendar year. A workweek belongs to the calendar year of its first day.
  * Public agencies are covered regardless of size when the pack says so.
  */
-export function fmlaEmployerCoverage(rule: FmlaRule, i: { asOf: string; weeklyHeadcounts: Array<{ weekStart: string; employees: number }>; publicAgency?: boolean }) {
+export function fmlaEmployerCoverage(
+  rule: FmlaRule,
+  i: {
+    asOf: string;
+    weeklyHeadcounts: Array<{ weekStart: string; employees: number }>;
+    publicAgency?: boolean;
+  },
+) {
   const min = rule.coveredEmployer.privateSectorMinEmployees;
   const needed = rule.coveredEmployer.inWorkweeks ?? 1;
   const { year } = dateParts(i.asOf);
@@ -698,12 +973,21 @@ export function fmlaEmployerCoverage(rule: FmlaRule, i: { asOf: string; weeklyHe
     else if (y === year - 1) preceding++;
   }
   const weeks = { qualifyingWeeksCurrentYear: current, qualifyingWeeksPrecedingYear: preceding };
-  if (i.publicAgency && rule.coveredEmployer.publicAgenciesCoveredRegardlessOfSize) return { covered: true, basis: 'public_agency' as const, ...weeks };
+  if (i.publicAgency && rule.coveredEmployer.publicAgenciesCoveredRegardlessOfSize)
+    return { covered: true, basis: 'public_agency' as const, ...weeks };
   return { covered: current >= needed || preceding >= needed, basis: 'headcount' as const, ...weeks };
 }
 
 /** FMLA employee eligibility from the US pack rule. */
-export function fmlaEligibility(rule: FmlaRule, i: { serviceMonths: number; hoursPrior12Months: number; employeesWithinRadius: number; employerCovered: boolean }) {
+export function fmlaEligibility(
+  rule: FmlaRule,
+  i: {
+    serviceMonths: number;
+    hoursPrior12Months: number;
+    employeesWithinRadius: number;
+    employerCovered: boolean;
+  },
+) {
   const failed: string[] = [];
   if (!i.employerCovered) failed.push('employer');
   if (i.serviceMonths < rule.eligibility.minMonthsOfService) failed.push('service');
@@ -721,10 +1005,22 @@ export function fmlaEligibility(rule: FmlaRule, i: { serviceMonths: number; hour
  * - rolling_backward_from_leave_date: the 12 months ending on (and including) `asOf`.
  * Military caregiver leave uses a single 12-month period from its first day when the pack says so.
  */
-export function fmlaLeaveYear(i: { method: string; asOf: string; usageDates: string[]; fixedYearStart?: string; reason?: string; militaryCaregiverPeriod?: string; allowedMethods?: string[] }): [string, string] {
-  if (i.allowedMethods && !i.allowedMethods.includes(i.method)) throw new Error(`Unknown FMLA leave-year method ${i.method}`);
+export function fmlaLeaveYear(i: {
+  method: string;
+  asOf: string;
+  usageDates: string[];
+  fixedYearStart?: string;
+  reason?: string;
+  militaryCaregiverPeriod?: string;
+  allowedMethods?: string[];
+}): [string, string] {
+  if (i.allowedMethods && !i.allowedMethods.includes(i.method))
+    throw new Error(`Unknown FMLA leave-year method ${i.method}`);
   const usage = [...i.usageDates].sort(compareDates);
-  if (i.reason === 'military_caregiver' && i.militaryCaregiverPeriod === 'single_12_month_period_from_first_day_of_caregiver_leave') {
+  if (
+    i.reason === 'military_caregiver' &&
+    i.militaryCaregiverPeriod === 'single_12_month_period_from_first_day_of_caregiver_leave'
+  ) {
     const first = usage[0] ?? i.asOf;
     return [first, addMonths(first, 12)];
   }
@@ -739,7 +1035,9 @@ export function fmlaLeaveYear(i: { method: string; asOf: string; usageDates: str
       if (!start) return [i.asOf, addMonths(i.asOf, 12)];
       while (compareDates(addMonths(start, 12), i.asOf) <= 0) {
         const ended: string = addMonths(start, 12);
-        const next: string | undefined = usage.find((d) => compareDates(d, ended) >= 0 && compareDates(d, i.asOf) <= 0);
+        const next: string | undefined = usage.find(
+          (d) => compareDates(d, ended) >= 0 && compareDates(d, i.asOf) <= 0,
+        );
         if (!next) return [i.asOf, addMonths(i.asOf, 12)];
         start = next;
       }
@@ -756,7 +1054,9 @@ export function fmlaLeaveYear(i: { method: string; asOf: string; usageDates: str
 export function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 3958.8;
   const rad = (x: number) => (x * Math.PI) / 180;
-  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
+  const h =
+    Math.sin(rad(b.lat - a.lat) / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
@@ -767,7 +1067,12 @@ export interface FamilyLeaveRule {
   leaveWeeks?: number;
   leaveWeeksMax?: number;
   leaveQualifyingService?: { weeks: number } | null;
-  pay?: { weeks?: number; qualifyingServiceWeeks?: number; flatRate?: Money; remaining33Weeks?: { flatRate?: Money } };
+  pay?: {
+    weeks?: number;
+    qualifyingServiceWeeks?: number;
+    flatRate?: Money;
+    remaining33Weeks?: { flatRate?: Money };
+  };
 }
 
 /**

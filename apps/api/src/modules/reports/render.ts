@@ -1,6 +1,13 @@
 import ExcelJS from 'exceljs';
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import { formatDate, formatDateTime, formatMoney, numberFormat, t as translate, type Locale } from '@thapsus/core/i18n';
+import {
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  numberFormat,
+  t as translate,
+  type Locale,
+} from '@thapsus/core/i18n';
 import { currencyExponent, money, toDecimalString } from '@thapsus/core/money';
 import { winAnsiSafe } from '../documents/pdf';
 import { formatScaled, roundDiv } from './fixed';
@@ -40,7 +47,10 @@ export function displayCell(locale: Locale, c: Column, v: Cell): string {
     case 'integer':
       return numberFormat(locale).format(Number(v));
     case 'decimal':
-      return numberFormat(locale, { minimumFractionDigits: c.scale ?? 2, maximumFractionDigits: c.scale ?? 2 }).format(String(v) as unknown as number);
+      return numberFormat(locale, {
+        minimumFractionDigits: c.scale ?? 2,
+        maximumFractionDigits: c.scale ?? 2,
+      }).format(String(v) as unknown as number);
     case 'percent':
       return `${numberFormat(locale, { minimumFractionDigits: c.scale ?? 2, maximumFractionDigits: c.scale ?? 2 }).format(String(v) as unknown as number)}%`;
     case 'money':
@@ -92,26 +102,52 @@ const csvCell = (v: unknown) => {
 };
 
 /** CSV for people ('labels': localised headers) or for systems ('keys': stable column keys, `<key>_currency`, `<key>_hours`). */
-export function renderCsv(result: ReportResult, locale: Locale, headers: 'labels' | 'keys' = 'labels'): Buffer {
-  const head = headers === 'keys' ? result.columns.flatMap((c) => (c.type === 'money' ? [c.key, `${c.key}_currency`] : c.type === 'minutes' ? [`${c.key}_hours`] : [c.key])) : machineHeaders(locale, result.columns);
+export function renderCsv(
+  result: ReportResult,
+  locale: Locale,
+  headers: 'labels' | 'keys' = 'labels',
+): Buffer {
+  const head =
+    headers === 'keys'
+      ? result.columns.flatMap((c) =>
+          c.type === 'money'
+            ? [c.key, `${c.key}_currency`]
+            : c.type === 'minutes'
+              ? [`${c.key}_hours`]
+              : [c.key],
+        )
+      : machineHeaders(locale, result.columns);
   const lines = [head.map(csvCell).join(',')];
-  for (const r of [...result.rows, ...(result.totals ?? [])]) lines.push(machineValues(result.columns, r).map(csvCell).join(','));
+  for (const r of [...result.rows, ...(result.totals ?? [])])
+    lines.push(machineValues(result.columns, r).map(csvCell).join(','));
   return Buffer.from(`\ufeff${lines.join('\r\n')}\r\n`, 'utf8');
 }
 
 /** One JSON object per row with stable keys (column keys), money as {amountMinor, currency}. */
 export function renderJsonl(result: Pick<ReportResult, 'rows'>): Buffer {
-  return Buffer.from(result.rows.map((r) => JSON.stringify(r)).join('\n') + (result.rows.length ? '\n' : ''), 'utf8');
+  return Buffer.from(
+    result.rows.map((r) => JSON.stringify(r)).join('\n') + (result.rows.length ? '\n' : ''),
+    'utf8',
+  );
 }
 
 export async function renderXlsx(result: ReportResult, meta: RenderMeta): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Thapsus-HR';
   wb.created = new Date(meta.generatedAt);
-  const ws = wb.addWorksheet(winAnsiSafe(meta.title).slice(0, 31).replace(/[\\/?*[\]:]/g, ' ') || 'Report');
+  const ws = wb.addWorksheet(
+    winAnsiSafe(meta.title)
+      .slice(0, 31)
+      .replace(/[\\/?*[\]:]/g, ' ') || 'Report',
+  );
   ws.addRow([meta.title]).font = { bold: true, size: 14 };
   for (const p of meta.parameters) ws.addRow([p]);
-  ws.addRow([translate(meta.locale, 'reports.generatedAt', { when: formatDateTime(meta.generatedAt, meta.locale, meta.timeZone), zone: meta.timeZone })]);
+  ws.addRow([
+    translate(meta.locale, 'reports.generatedAt', {
+      when: formatDateTime(meta.generatedAt, meta.locale, meta.timeZone),
+      zone: meta.timeZone,
+    }),
+  ]);
   ws.addRow([]);
   const header = ws.addRow(machineHeaders(meta.locale, result.columns));
   header.font = { bold: true };
@@ -123,7 +159,8 @@ export async function renderXlsx(result: ReportResult, meta: RenderMeta): Promis
         values.push(isMoney(v) ? Number(moneyDecimal(v)) : null, isMoney(v) ? v.currency : null);
       } else if (c.type === 'minutes') values.push(v === null ? null : Number(hoursOf(Number(v))));
       else if (c.type === 'decimal' || c.type === 'percent') values.push(v === null ? null : Number(v));
-      else if (c.type === 'date' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) values.push(new Date(`${v}T00:00:00Z`));
+      else if (c.type === 'date' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v))
+        values.push(new Date(`${v}T00:00:00Z`));
       else if (c.type === 'enum' && typeof v === 'string') values.push(enumLabel(meta.locale, c, v));
       else if (typeof v === 'string' && FORMULA.test(v)) values.push(`'${v}`);
       else values.push(v);
@@ -133,12 +170,15 @@ export async function renderXlsx(result: ReportResult, meta: RenderMeta): Promis
     for (const c of result.columns) {
       if (c.type === 'money') {
         const ccy = (r[c.key] as MoneyCell | null)?.currency;
-        if (ccy) row.getCell(i).numFmt = `#,##0${currencyExponent(ccy) ? '.' + '0'.repeat(currencyExponent(ccy)) : ''}`;
+        if (ccy)
+          row.getCell(i).numFmt =
+            `#,##0${currencyExponent(ccy) ? '.' + '0'.repeat(currencyExponent(ccy)) : ''}`;
         i += 2;
         continue;
       }
       if (c.type === 'date') row.getCell(i).numFmt = 'yyyy-mm-dd';
-      if (c.type === 'decimal' || c.type === 'percent' || c.type === 'minutes') row.getCell(i).numFmt = '#,##0.00';
+      if (c.type === 'decimal' || c.type === 'percent' || c.type === 'minutes')
+        row.getCell(i).numFmt = '#,##0.00';
       i++;
     }
   }
@@ -182,7 +222,16 @@ export async function renderPdf(result: ReportResult, meta: RenderMeta): Promise
   const text = rows.map((r) => cols.map((c) => displayCell(meta.locale, c, r[c.key] ?? null)));
   const headers = cols.map((c) => headerOf(meta.locale, c));
   // column widths proportional to content (header and up to 200 rows sampled), within the page width
-  const natural = cols.map((_, i) => Math.min(220, Math.max(40, bold.widthOfTextAtSize(winAnsiSafe(headers[i]!), size), ...text.slice(0, 200).map((r) => font.widthOfTextAtSize(winAnsiSafe(r[i]!), size))) + 8));
+  const natural = cols.map((_, i) =>
+    Math.min(
+      220,
+      Math.max(
+        40,
+        bold.widthOfTextAtSize(winAnsiSafe(headers[i]!), size),
+        ...text.slice(0, 200).map((r) => font.widthOfTextAtSize(winAnsiSafe(r[i]!), size)),
+      ) + 8,
+    ),
+  );
   const scale = Math.min(1, width / natural.reduce((a, b) => a + b, 0));
   const widths = natural.map((w) => w * scale);
   const numeric = cols.map((c) => ['integer', 'decimal', 'percent', 'money', 'minutes'].includes(c.type));
@@ -191,12 +240,24 @@ export async function renderPdf(result: ReportResult, meta: RenderMeta): Promise
   let y = A4_LANDSCAPE[1] - MARGIN;
   page.drawText(winAnsiSafe(meta.title), { x: MARGIN, y: y - 16, size: 16, font: bold, color: ink });
   y -= 30;
-  for (const line of [...meta.parameters, translate(meta.locale, 'reports.generatedAt', { when: formatDateTime(meta.generatedAt, meta.locale, meta.timeZone), zone: meta.timeZone })]) {
+  for (const line of [
+    ...meta.parameters,
+    translate(meta.locale, 'reports.generatedAt', {
+      when: formatDateTime(meta.generatedAt, meta.locale, meta.timeZone),
+      zone: meta.timeZone,
+    }),
+  ]) {
     page.drawText(fit(line, font, 9.5, width), { x: MARGIN, y, size: 9.5, font, color: muted });
     y -= 13;
   }
   for (const note of result.notes) {
-    page.drawText(fit(translate(meta.locale, note), font, 8, width), { x: MARGIN, y, size: 8, font, color: muted });
+    page.drawText(fit(translate(meta.locale, note), font, 8, width), {
+      x: MARGIN,
+      y,
+      size: 8,
+      font,
+      color: muted,
+    });
     y -= 11;
   }
   y -= 6;
@@ -208,11 +269,23 @@ export async function renderPdf(result: ReportResult, meta: RenderMeta): Promise
       page.drawText(s, { x: tx, y: y - 10, size, font: bold, color: ink });
       x += widths[i]!;
     });
-    page.drawLine({ start: { x: MARGIN, y: y - rowH + 1 }, end: { x: MARGIN + width, y: y - rowH + 1 }, thickness: 0.6, color: rule });
+    page.drawLine({
+      start: { x: MARGIN, y: y - rowH + 1 },
+      end: { x: MARGIN + width, y: y - rowH + 1 },
+      thickness: 0.6,
+      color: rule,
+    });
     y -= rowH;
   };
   drawHeader();
-  if (!rows.length) page.drawText(winAnsiSafe(translate(meta.locale, 'reports.noRows')), { x: MARGIN + 3, y: y - 10, size, font, color: muted });
+  if (!rows.length)
+    page.drawText(winAnsiSafe(translate(meta.locale, 'reports.noRows')), {
+      x: MARGIN + 3,
+      y: y - 10,
+      size,
+      font,
+      color: muted,
+    });
   text.forEach((r, ri) => {
     if (y - rowH < MARGIN + 14) {
       page = doc.addPage(A4_LANDSCAPE);
@@ -233,7 +306,13 @@ export async function renderPdf(result: ReportResult, meta: RenderMeta): Promise
   const pages = doc.getPages();
   pages.forEach((p, i) => {
     const label = winAnsiSafe(translate(meta.locale, 'reports.pageOf', { page: i + 1, pages: pages.length }));
-    p.drawText(label, { x: A4_LANDSCAPE[0] - MARGIN - font.widthOfTextAtSize(label, 8), y: MARGIN - 18, size: 8, font, color: muted });
+    p.drawText(label, {
+      x: A4_LANDSCAPE[0] - MARGIN - font.widthOfTextAtSize(label, 8),
+      y: MARGIN - 18,
+      size: 8,
+      font,
+      color: muted,
+    });
   });
   return Buffer.from(await doc.save({ useObjectStreams: false }));
 }
@@ -245,7 +324,11 @@ export const CONTENT_TYPES: Record<Exclude<Format, 'json'>, string> = {
   jsonl: 'application/x-ndjson',
 };
 
-export async function renderReport(result: ReportResult, format: Exclude<Format, 'json'>, meta: RenderMeta): Promise<Buffer> {
+export async function renderReport(
+  result: ReportResult,
+  format: Exclude<Format, 'json'>,
+  meta: RenderMeta,
+): Promise<Buffer> {
   switch (format) {
     case 'csv':
       return renderCsv(result, meta.locale);
@@ -260,6 +343,11 @@ export async function renderReport(result: ReportResult, format: Exclude<Format,
 
 /** Safe download file name: report title slug + date (no personal data). */
 export function fileNameFor(title: string, date: string, format: string): string {
-  const slug = winAnsiSafe(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'report';
+  const slug =
+    winAnsiSafe(title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 60) || 'report';
   return `${slug}-${date}.${format}`;
 }

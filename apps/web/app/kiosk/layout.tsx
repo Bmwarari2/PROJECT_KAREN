@@ -10,5 +10,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function KioskLayout({ children }: { children: React.ReactNode }) {
-  return <Messages ns={['kiosk', 'clock.kind', 'clock.in', 'clock.out', 'clock.breakStart', 'clock.breakEnd']}>{children}</Messages>;
+  return (
+    <Messages ns={['kiosk', 'clock.kind', 'clock.in', 'clock.out', 'clock.breakStart', 'clock.breakEnd']}>
+      {children}
+    </Messages>
+  );
 }

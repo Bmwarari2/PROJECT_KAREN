@@ -39,9 +39,12 @@ export function loadCellConfig(): CellConfig {
   const e = env('APP_ENV', 'dev');
   if (!['dev', 'test', 'staging', 'prod', 'loadtest'].includes(e)) throw new Error(`Invalid APP_ENV ${e}`);
   const ipThrottleMultiplier = Number(env('IP_THROTTLE_MULTIPLIER', '1'));
-  if (!Number.isFinite(ipThrottleMultiplier) || ipThrottleMultiplier < 1) throw new Error('IP_THROTTLE_MULTIPLIER must be a number >= 1');
-  if (e === 'prod' && ipThrottleMultiplier !== 1) throw new Error('IP_THROTTLE_MULTIPLIER must be 1 in production');
-  const internalToken = process.env.INTERNAL_TOKEN || (e === 'dev' || e === 'test' ? 'dev-internal-token' : undefined);
+  if (!Number.isFinite(ipThrottleMultiplier) || ipThrottleMultiplier < 1)
+    throw new Error('IP_THROTTLE_MULTIPLIER must be a number >= 1');
+  if (e === 'prod' && ipThrottleMultiplier !== 1)
+    throw new Error('IP_THROTTLE_MULTIPLIER must be 1 in production');
+  const internalToken =
+    process.env.INTERNAL_TOKEN || (e === 'dev' || e === 'test' ? 'dev-internal-token' : undefined);
   if (!internalToken) throw new Error('INTERNAL_TOKEN is required outside dev and test');
   return {
     env: e as CellConfig['env'],

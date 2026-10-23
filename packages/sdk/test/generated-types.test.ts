@@ -13,12 +13,23 @@ const lines = (s: string) => s.replace(/\n+$/, '').split('\n');
 
 describe('SDK generation', () => {
   it('the generated SDK types match openapi.json (run: pnpm --filter @thapsus/sdk generate)', async () => {
-    const generated = lines(`${COMMENT_HEADER}${astToString(await openapiTS(new URL('../openapi.json', import.meta.url), { silent: true }))}`);
+    const generated = lines(
+      `${COMMENT_HEADER}${astToString(await openapiTS(new URL('../openapi.json', import.meta.url), { silent: true }))}`,
+    );
     const committed = lines(readFileSync(new URL('../src/generated/schema.ts', import.meta.url), 'utf8'));
     const at = generated.findIndex((l, i) => l !== committed[i]);
-    const first = at === -1 && generated.length !== committed.length ? Math.min(generated.length, committed.length) : at;
+    const first =
+      at === -1 && generated.length !== committed.length ? Math.min(generated.length, committed.length) : at;
     // Report the first differing line instead of a diff of the whole file.
-    expect(first === -1 ? null : { line: first + 1, generated: generated[first] ?? '<end of file>', committed: committed[first] ?? '<end of file>' }).toBeNull();
+    expect(
+      first === -1
+        ? null
+        : {
+            line: first + 1,
+            generated: generated[first] ?? '<end of file>',
+            committed: committed[first] ?? '<end of file>',
+          },
+    ).toBeNull();
     expect(generated.length).toBeGreaterThan(1000);
   }, 60_000);
 });

@@ -14,11 +14,18 @@ import { useSession } from './shell';
 export function useStepUp() {
   const t = useT();
   const session = useSession();
-  const [pending, setPending] = React.useState<{ action: () => Promise<unknown>; resolve: (ok: boolean) => void } | null>(null);
+  const [pending, setPending] = React.useState<{
+    action: () => Promise<unknown>;
+    resolve: (ok: boolean) => void;
+  } | null>(null);
   const [secret, setSecret] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
-  const factor: 'password' | 'code' | null = session?.hasPassword ? 'password' : session?.hasMfaFactor ? 'code' : null;
+  const factor: 'password' | 'code' | null = session?.hasPassword
+    ? 'password'
+    : session?.hasMfaFactor
+      ? 'code'
+      : null;
 
   const run = React.useCallback(async (action: () => Promise<unknown>): Promise<boolean> => {
     try {
@@ -43,7 +50,10 @@ export function useStepUp() {
     setBusy(true);
     setError(null);
     try {
-      await api('/v1/auth/reauth', { method: 'POST', json: factor === 'password' ? { password: secret } : { code: secret } });
+      await api('/v1/auth/reauth', {
+        method: 'POST',
+        json: factor === 'password' ? { password: secret } : { code: secret },
+      });
       await pending.action();
       close(true);
     } catch (err) {
@@ -55,16 +65,39 @@ export function useStepUp() {
 
   const dialog = (
     <Dialog open={!!pending} onOpenChange={(o) => (o ? undefined : close(false))}>
-      <DialogContent title={t('app.security.stepUp.title')} description={factor ? t(`app.security.stepUp.${factor}Lead`) : t('app.security.stepUp.signInAgain')} closeLabel={t('common.close')}>
+      <DialogContent
+        title={t('app.security.stepUp.title')}
+        description={factor ? t(`app.security.stepUp.${factor}Lead`) : t('app.security.stepUp.signInAgain')}
+        closeLabel={t('common.close')}
+      >
         {factor ? (
           <form onSubmit={confirm} className="flex flex-col gap-4">
             {factor === 'password' ? (
               <Field id="step-up-password" label={t('auth.fields.password')}>
-                {(p) => <Input {...p} type="password" autoComplete="current-password" required value={secret} onChange={(e) => setSecret(e.target.value)} />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={secret}
+                    onChange={(e) => setSecret(e.target.value)}
+                  />
+                )}
               </Field>
             ) : (
               <Field id="step-up-code" label={t('auth.mfa.codeLabel')} hint={t('auth.mfa.codeHint')}>
-                {(p) => <Input {...p} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={secret} onChange={(e) => setSecret(e.target.value.replace(/\D/g, ''))} />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    required
+                    value={secret}
+                    onChange={(e) => setSecret(e.target.value.replace(/\D/g, ''))}
+                  />
+                )}
               </Field>
             )}
             {error ? (

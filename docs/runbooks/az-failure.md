@@ -1,6 +1,7 @@
 # Runbook: availability-zone failure (and the AZ drill)
 
 Every cell spans three availability zones:
+
 - the VPC has subnets in 3 AZs;
 - Aurora has a writer plus a reader in a different AZ, and fails over automatically;
 - Valkey is Multi-AZ with automatic failover;

@@ -204,10 +204,7 @@
               {
                 "id": "gender_pay_gap_by_category_of_workers",
                 "article": "9(1)(g)",
-                "breakdown": [
-                  "ordinary_basic_wage_or_salary",
-                  "complementary_or_variable_components"
-                ]
+                "breakdown": ["ordinary_basic_wage_or_salary", "complementary_or_variable_components"]
               }
             ],
             "jointPayAssessment": {
@@ -236,9 +233,7 @@
           "effectiveTo": null,
           "value": {
             "period": "P1M",
-            "clockStartsAt": [
-              "request_received"
-            ],
+            "clockStartsAt": ["request_received"],
             "extension": {
               "period": "P2M",
               "grounds": "where necessary, taking into account the complexity and number of the requests",
@@ -246,11 +241,7 @@
               "reasonsRequired": true
             },
             "clockStopForClarification": null,
-            "appliesTo": [
-              "access",
-              "correction",
-              "deletion"
-            ],
+            "appliesTo": ["access", "correction", "deletion"],
             "maxTotal": "P3M"
           },
           "source": {

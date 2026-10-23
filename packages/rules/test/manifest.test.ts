@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { JurisdictionPack } from '../src/schema';
-import { contentHash, loadManifest, manifestProblems, readPacks, updateManifest, type Manifest } from '../scripts/manifest';
+import {
+  contentHash,
+  loadManifest,
+  manifestProblems,
+  readPacks,
+  updateManifest,
+  type Manifest,
+} from '../scripts/manifest';
 
 /** ADR-0024: a pack's `version` must go up whenever its data changes; the manifest proves it. */
 describe('pack version manifest', () => {
@@ -20,11 +27,32 @@ describe('pack version manifest', () => {
   });
 
   describe('detects changes', () => {
-    const pack: JurisdictionPack = { jurisdiction: 'ZZ', parent: null, name: 'Fictional test land', version: 1, updatedOn: '2026-10-18', rules: [], holidays: [] };
-    const recorded: Manifest = { note: 'test', packs: { ZZ: [{ version: 1, updatedOn: '2026-10-18', contentHash: contentHash(pack) }] } };
+    const pack: JurisdictionPack = {
+      jurisdiction: 'ZZ',
+      parent: null,
+      name: 'Fictional test land',
+      version: 1,
+      updatedOn: '2026-10-18',
+      rules: [],
+      holidays: [],
+    };
+    const recorded: Manifest = {
+      note: 'test',
+      packs: { ZZ: [{ version: 1, updatedOn: '2026-10-18', contentHash: contentHash(pack) }] },
+    };
 
     it('ignores formatting, key order and the bookkeeping fields', () => {
-      const reordered = JSON.parse(JSON.stringify({ holidays: [], rules: [], updatedOn: '2027-01-01', version: 1, name: pack.name, parent: null, jurisdiction: 'ZZ' })) as JurisdictionPack;
+      const reordered = JSON.parse(
+        JSON.stringify({
+          holidays: [],
+          rules: [],
+          updatedOn: '2027-01-01',
+          version: 1,
+          name: pack.name,
+          parent: null,
+          jurisdiction: 'ZZ',
+        }),
+      ) as JurisdictionPack;
       expect(contentHash(reordered)).toBe(contentHash(pack));
     });
     it('fails when data changes without a version bump', () => {

@@ -3,12 +3,41 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Copy, Trash2 } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, Dialog, DialogClose, DialogContent, DialogTrigger, Field, Input, Skeleton, Table, TD, TH, THead, TR, Textarea, buttonVariants, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  Textarea,
+  buttonVariants,
+  useToast,
+} from '@thapsus/ui';
 import { actionMatches } from '@thapsus/core/permissions';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { adminGrade, fieldLabel, permissionLabel, problemMessage, roleName, type Catalogue, type FieldLevel, type Role } from './shared';
+import {
+  adminGrade,
+  fieldLabel,
+  permissionLabel,
+  problemMessage,
+  roleName,
+  type Catalogue,
+  type FieldLevel,
+  type Role,
+} from './shared';
 
 const LEVELS: FieldLevel[] = ['none', 'read', 'write'];
 const checkbox = 'h-5 w-5 shrink-0 accent-[var(--color-accent)]';
@@ -41,13 +70,19 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
   const source = role ?? copyFrom;
   const readOnly = !canManage || !!role?.builtIn;
   const creating = !role;
-  const [name, setName] = React.useState(role ? role.name : copyFrom ? t('access.editor.copyOf', { name: roleName(t, copyFrom) }) : '');
+  const [name, setName] = React.useState(
+    role ? role.name : copyFrom ? t('access.editor.copyOf', { name: roleName(t, copyFrom) }) : '',
+  );
   const [key, setKey] = React.useState(role?.key ?? '');
   const [keyEdited, setKeyEdited] = React.useState(false);
   const [description, setDescription] = React.useState(source?.description ?? '');
   const [isAdmin, setIsAdmin] = React.useState(source?.isAdmin ?? false);
-  const [perms, setPerms] = React.useState<Set<string>>(new Set((source?.permissions ?? []).filter((p) => p !== '*')));
-  const [fields, setFields] = React.useState<Record<string, FieldLevel>>(Object.fromEntries(Object.entries(source?.fieldAccess ?? {}).filter(([k]) => k !== '*')));
+  const [perms, setPerms] = React.useState<Set<string>>(
+    new Set((source?.permissions ?? []).filter((p) => p !== '*')),
+  );
+  const [fields, setFields] = React.useState<Record<string, FieldLevel>>(
+    Object.fromEntries(Object.entries(source?.fieldAccess ?? {}).filter(([k]) => k !== '*')),
+  );
   const [saving, setSaving] = React.useState(false);
   const autoKey = creating && !keyEdited ? keyFrom(name) : key;
   const forcedAdmin = adminGrade(catalogue.data, perms);
@@ -79,7 +114,13 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
     try {
       // a wildcard already grants its keys: keep the definition minimal
       const list = [...perms].filter((p) => !coveredByWildcard(p)).sort();
-      const body = { name: name.trim(), description: description.trim() || null, permissions: list, fieldAccess: fields, isAdmin: isAdmin || forcedAdmin };
+      const body = {
+        name: name.trim(),
+        description: description.trim() || null,
+        permissions: list,
+        fieldAccess: fields,
+        isAdmin: isAdmin || forcedAdmin,
+      };
       if (creating) {
         const created = await api<Role>('/v1/roles', { method: 'POST', json: { ...body, key: autoKey } });
         toast({ title: t('access.editor.created'), tone: 'success' });
@@ -107,16 +148,27 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
 
   // Field matrix: the All fields row, then one row group per section (with its group wildcard where one exists).
   type Row = { key: string; label: string; group?: boolean };
-  const groups: Array<{ section: string | null; rows: Row[] }> = [{ section: null, rows: [{ key: 'employee.*', label: t('access.editor.allFields'), group: true }] }];
+  const groups: Array<{ section: string | null; rows: Row[] }> = [
+    { section: null, rows: [{ key: 'employee.*', label: t('access.editor.allFields'), group: true }] },
+  ];
   for (const s of [...new Set(cat.fields.map((f) => f.section))]) {
-    const rows: Row[] = cat.fieldGroups.includes(s) ? [{ key: `employee.${s}.*`, label: fieldLabel(t, `employee.${s}.*`), group: true }] : [];
-    for (const f of cat.fields.filter((x) => x.section === s)) rows.push({ key: `employee.${f.key}`, label: fieldLabel(t, `employee.${f.key}`) });
+    const rows: Row[] = cat.fieldGroups.includes(s)
+      ? [{ key: `employee.${s}.*`, label: fieldLabel(t, `employee.${s}.*`), group: true }]
+      : [];
+    for (const f of cat.fields.filter((x) => x.section === s))
+      rows.push({ key: `employee.${f.key}`, label: fieldLabel(t, `employee.${f.key}`) });
     groups.push({ section: s, rows });
   }
   if (cat.customFields.length) {
     groups.push({
       section: 'custom',
-      rows: [{ key: 'employee.custom.*', label: fieldLabel(t, 'employee.custom.*'), group: true }, ...cat.customFields.map((c) => ({ key: `employee.custom.${c.key}`, label: fieldLabel(t, `employee.custom.${c.key}`, cat.customFields, locale) }))],
+      rows: [
+        { key: 'employee.custom.*', label: fieldLabel(t, 'employee.custom.*'), group: true },
+        ...cat.customFields.map((c) => ({
+          key: `employee.custom.${c.key}`,
+          label: fieldLabel(t, `employee.custom.${c.key}`, cat.customFields, locale),
+        })),
+      ],
     });
   }
   const shown = new Set(groups.flatMap((g) => g.rows.map((r) => r.key)));
@@ -129,7 +181,10 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
         <h1 className="mr-auto text-title-2">{title}</h1>
         {role?.builtIn ? <Badge>{t('access.roles.builtIn')}</Badge> : null}
         {role && canManage && !role.permissions.includes('*') ? (
-          <Link href={`/app/settings/roles/new?copy=${role.id}`} className={buttonVariants({ size: 'sm', variant: 'secondary' }) + ' no-underline'}>
+          <Link
+            href={`/app/settings/roles/new?copy=${role.id}`}
+            className={buttonVariants({ size: 'sm', variant: 'secondary' }) + ' no-underline'}
+          >
             <Copy aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('access.roles.copy')}
           </Link>
@@ -142,7 +197,11 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
                 {t('access.editor.delete')}
               </Button>
             </DialogTrigger>
-            <DialogContent title={t('access.editor.deleteTitle')} description={t('access.editor.deleteBody')} closeLabel={t('common.close')}>
+            <DialogContent
+              title={t('access.editor.deleteTitle')}
+              description={t('access.editor.deleteBody')}
+              closeLabel={t('common.close')}
+            >
               <div className="flex justify-end gap-3">
                 <DialogClose asChild>
                   <Button type="button" variant="secondary">
@@ -160,14 +219,31 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <Link href="/app/settings/roles" className="text-callout">
         {t('access.roles.back')}
       </Link>
-      {role?.builtIn ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('access.roles.readOnly')}</p> : null}
+      {role?.builtIn ? (
+        <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('access.roles.readOnly')}
+        </p>
+      ) : null}
 
       <Card className="flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="role-name" label={t('access.editor.name')}>
-            {(p) => <Input {...p} required maxLength={120} disabled={readOnly} value={role?.builtIn ? roleName(t, role) : name} onChange={(e) => setName(e.target.value)} />}
+            {(p) => (
+              <Input
+                {...p}
+                required
+                maxLength={120}
+                disabled={readOnly}
+                value={role?.builtIn ? roleName(t, role) : name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            )}
           </Field>
-          <Field id="role-key" label={t('access.editor.key')} hint={creating ? t('access.editor.keyHint') : undefined}>
+          <Field
+            id="role-key"
+            label={t('access.editor.key')}
+            hint={creating ? t('access.editor.keyHint') : undefined}
+          >
             {(p) => (
               <Input
                 {...p}
@@ -184,10 +260,27 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
           </Field>
         </div>
         <Field id="role-description" label={t('access.editor.description')}>
-          {(p) => <Textarea {...p} rows={2} maxLength={500} disabled={readOnly} value={description} onChange={(e) => setDescription(e.target.value)} />}
+          {(p) => (
+            <Textarea
+              {...p}
+              rows={2}
+              maxLength={500}
+              disabled={readOnly}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          )}
         </Field>
         <div className="flex items-start gap-3">
-          <input id="role-admin" type="checkbox" className={`${checkbox} mt-0.5`} disabled={readOnly || forcedAdmin} checked={isAdmin || forcedAdmin} onChange={(e) => setIsAdmin(e.target.checked)} aria-describedby="role-admin-hint" />
+          <input
+            id="role-admin"
+            type="checkbox"
+            className={`${checkbox} mt-0.5`}
+            disabled={readOnly || forcedAdmin}
+            checked={isAdmin || forcedAdmin}
+            onChange={(e) => setIsAdmin(e.target.checked)}
+            aria-describedby="role-admin-hint"
+          />
           <div>
             <label htmlFor="role-admin" className="text-callout font-semibold">
               {t('access.editor.isAdmin')}
@@ -202,7 +295,9 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <Card className="flex flex-col gap-4">
         <CardTitle>{t('access.editor.permissionsTitle')}</CardTitle>
         <p className="text-callout text-text-secondary">{t('access.editor.permissionsBody')}</p>
-        {source?.permissions.includes('*') ? <p className="text-callout font-semibold">{t('access.roles.allPermissions')}</p> : null}
+        {source?.permissions.includes('*') ? (
+          <p className="text-callout font-semibold">{t('access.roles.allPermissions')}</p>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {cat.areas.map((a) => {
             const wildcard = `${a.area}.*`;
@@ -211,17 +306,31 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
               <fieldset key={a.area} className="flex flex-col gap-2 rounded-md border border-border p-4">
                 <legend className="px-1 text-callout font-semibold">{t(`access.area.${a.area}`)}</legend>
                 <label className="flex items-start gap-3 text-footnote text-text-secondary">
-                  <input type="checkbox" className={checkbox} disabled={readOnly} checked={!!all} onChange={(e) => toggle(wildcard, e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className={checkbox}
+                    disabled={readOnly}
+                    checked={!!all}
+                    onChange={(e) => toggle(wildcard, e.target.checked)}
+                  />
                   <span>{t('access.editor.allInArea', { area: t(`access.area.${a.area}`) })}</span>
                 </label>
                 {a.permissions.map((perm) => {
                   const covered = !!source?.permissions.includes('*') || coveredByWildcard(perm.key);
                   return (
                     <label key={perm.key} className="flex items-start gap-3 text-callout">
-                      <input type="checkbox" className={checkbox} disabled={readOnly || covered} checked={covered || perms.has(perm.key)} onChange={(e) => toggle(perm.key, e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        className={checkbox}
+                        disabled={readOnly || covered}
+                        checked={covered || perms.has(perm.key)}
+                        onChange={(e) => toggle(perm.key, e.target.checked)}
+                      />
                       <span className="flex flex-wrap items-center gap-2">
                         {permissionLabel(t, perm.key)}
-                        {perm.admin ? <Badge tone="warning">{t('access.editor.adminPermission')}</Badge> : null}
+                        {perm.admin ? (
+                          <Badge tone="warning">{t('access.editor.adminPermission')}</Badge>
+                        ) : null}
                       </span>
                     </label>
                   );
@@ -252,7 +361,11 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
               <tbody key={g.section ?? 'all'}>
                 {g.section ? (
                   <tr>
-                    <th scope="rowgroup" colSpan={5} className="px-4 pb-1 pt-4 text-left text-footnote font-semibold text-text-secondary">
+                    <th
+                      scope="rowgroup"
+                      colSpan={5}
+                      className="px-4 pb-1 pt-4 text-left text-footnote font-semibold text-text-secondary"
+                    >
                       {t(`access.section.${g.section}`)}
                     </th>
                   </tr>
@@ -274,7 +387,10 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
                             disabled={readOnly}
                             checked={current === l}
                             onChange={() => setLevel(r.key, l)}
-                            aria-label={t('access.editor.fieldLevelLabel', { field: r.label, level: t(`access.editor.level.${l}`) })}
+                            aria-label={t('access.editor.fieldLevelLabel', {
+                              field: r.label,
+                              level: t(`access.editor.level.${l}`),
+                            })}
                           />
                         </TD>
                       ))}
@@ -291,7 +407,8 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
             <ul className="mt-2 flex flex-col gap-1 text-callout text-text-secondary">
               {otherRules.map(([k, v]) => (
                 <li key={k}>
-                  {k === '*' ? t('access.editor.allFields') : fieldLabel(t, k, cat.customFields, locale)}: {t(`access.editor.level.${v}`)}
+                  {k === '*' ? t('access.editor.allFields') : fieldLabel(t, k, cat.customFields, locale)}:{' '}
+                  {t(`access.editor.level.${v}`)}
                 </li>
               ))}
             </ul>

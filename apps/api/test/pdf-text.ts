@@ -9,14 +9,19 @@ export async function pdfPageTexts(bytes: Uint8Array): Promise<string[]> {
   const doc = await PDFDocument.load(bytes);
   return doc.getPages().map((page) => {
     const contents = page.node.Contents();
-    const streams: Array<PDFObject | undefined> = contents instanceof PDFArray ? contents.asArray().map((r) => doc.context.lookup(r)) : [contents];
+    const streams: Array<PDFObject | undefined> =
+      contents instanceof PDFArray ? contents.asArray().map((r) => doc.context.lookup(r)) : [contents];
     const lines: string[] = [];
     for (const s of streams) {
       if (!(s instanceof PDFRawStream)) continue;
       const raw = Buffer.from(s.contents);
-      const ops = (s.dict.get(PDFName.of('Filter'))?.toString() === '/FlateDecode' ? inflateSync(raw) : raw).toString('latin1');
+      const ops = (
+        s.dict.get(PDFName.of('Filter'))?.toString() === '/FlateDecode' ? inflateSync(raw) : raw
+      ).toString('latin1');
       for (const m of ops.matchAll(/<([0-9A-Fa-f]*)>\s*Tj|\(((?:\\.|[^\\)])*)\)\s*Tj/g)) {
-        lines.push(m[1] !== undefined ? Buffer.from(m[1], 'hex').toString('latin1') : m[2]!.replace(/\\(.)/g, '$1'));
+        lines.push(
+          m[1] !== undefined ? Buffer.from(m[1], 'hex').toString('latin1') : m[2]!.replace(/\\(.)/g, '$1'),
+        );
       }
     }
     return lines.join('\n');

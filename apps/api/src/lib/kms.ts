@@ -34,7 +34,9 @@ export class LocalKeyProvider implements KeyProvider {
     if (this.master.length !== 32) throw new Error('LOCAL_KMS_KEY must be 32 bytes hex');
   }
   private aad(context: Record<string, string>) {
-    return createHash('sha256').update(JSON.stringify(Object.entries(context).sort())).digest();
+    return createHash('sha256')
+      .update(JSON.stringify(Object.entries(context).sort()))
+      .digest();
   }
   async generateDataKey(context: Record<string, string>) {
     const plaintext = randomBytes(32);
@@ -69,12 +71,18 @@ export class AwsKmsKeyProvider implements KeyProvider {
     return { plaintext: Buffer.from(out.Plaintext!), wrapped: Buffer.from(out.CiphertextBlob!) };
   }
   async decryptDataKey(wrapped: Buffer, context: Record<string, string>) {
-    const out = await this.client.send(new DecryptCommand({ CiphertextBlob: wrapped, EncryptionContext: context, KeyId: this.keyId }));
+    const out = await this.client.send(
+      new DecryptCommand({ CiphertextBlob: wrapped, EncryptionContext: context, KeyId: this.keyId }),
+    );
     return Buffer.from(out.Plaintext!);
   }
 }
 
-export async function seal(kp: KeyProvider, plaintext: string, context: Record<string, string>): Promise<Envelope> {
+export async function seal(
+  kp: KeyProvider,
+  plaintext: string,
+  context: Record<string, string>,
+): Promise<Envelope> {
   const { plaintext: dek, wrapped } = await kp.generateDataKey(context);
   const iv = randomBytes(12);
   const c = createCipheriv('aes-256-gcm', dek, iv);
@@ -105,6 +113,7 @@ export async function open(kp: KeyProvider, env: Envelope, context: Record<strin
 
 export function keyProviderFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): KeyProvider {
   if (env.KMS_KEY_ARN) return new AwsKmsKeyProvider(env.KMS_KEY_ARN, cell);
-  if (env.APP_ENV === 'prod' || env.APP_ENV === 'staging') throw new Error('KMS_KEY_ARN is required outside dev/test');
+  if (env.APP_ENV === 'prod' || env.APP_ENV === 'staging')
+    throw new Error('KMS_KEY_ARN is required outside dev/test');
   return new LocalKeyProvider(env.LOCAL_KMS_KEY ?? '0'.repeat(64));
 }

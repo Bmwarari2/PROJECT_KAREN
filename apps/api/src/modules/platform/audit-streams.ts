@@ -25,9 +25,16 @@ import { urlOrigin } from './webhooks';
 const ACTOR_TYPES = ['user', 'support', 'system', 'api_client', 'scim'] as const;
 const Filters = Type.Object(
   {
-    actions: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 100, pattern: '^[a-z0-9_.]+$' }), { maxItems: 50, description: 'Action prefixes, e.g. "auth." or "employee.changed"' })),
+    actions: Type.Optional(
+      Type.Array(Type.String({ minLength: 1, maxLength: 100, pattern: '^[a-z0-9_.]+$' }), {
+        maxItems: 50,
+        description: 'Action prefixes, e.g. "auth." or "employee.changed"',
+      }),
+    ),
     sensitiveOnly: Type.Optional(Type.Boolean()),
-    actorTypes: Type.Optional(Type.Array(Type.Union(ACTOR_TYPES.map((a) => Type.Literal(a))), { maxItems: 5, uniqueItems: true })),
+    actorTypes: Type.Optional(
+      Type.Array(Type.Union(ACTOR_TYPES.map((a) => Type.Literal(a))), { maxItems: 5, uniqueItems: true }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -38,7 +45,15 @@ export const AuditStream = Type.Object({
   name: Type.String(),
   kind: Type.Union([Type.Literal('https'), Type.Literal('s3')]),
   url: Nullable(Type.String()),
-  s3: Nullable(Type.Object({ bucket: Type.String(), prefix: Type.String(), region: Type.String(), roleArn: Type.String(), externalId: Type.String() })),
+  s3: Nullable(
+    Type.Object({
+      bucket: Type.String(),
+      prefix: Type.String(),
+      region: Type.String(),
+      roleArn: Type.String(),
+      externalId: Type.String(),
+    }),
+  ),
   filters: Filters,
   cursorSeq: Type.String({ description: 'Last sealed audit sequence delivered' }),
   status: Type.Union([Type.Literal('active'), Type.Literal('paused')]),
@@ -65,7 +80,14 @@ interface StreamRow {
   id: string;
   name: string;
   kind: 'https' | 's3';
-  config: { url?: string; bucket?: string; prefix?: string; region?: string; roleArn?: string; externalId?: string };
+  config: {
+    url?: string;
+    bucket?: string;
+    prefix?: string;
+    region?: string;
+    roleArn?: string;
+    externalId?: string;
+  };
   secret: Envelope | null;
   filters: FiltersT;
   cursor_seq: string;
@@ -79,7 +101,16 @@ const streamOut = (r: StreamRow) => ({
   name: r.name,
   kind: r.kind,
   url: r.kind === 'https' ? r.config.url! : null,
-  s3: r.kind === 's3' ? { bucket: r.config.bucket!, prefix: r.config.prefix ?? '', region: r.config.region!, roleArn: r.config.roleArn!, externalId: r.config.externalId! } : null,
+  s3:
+    r.kind === 's3'
+      ? {
+          bucket: r.config.bucket!,
+          prefix: r.config.prefix ?? '',
+          region: r.config.region!,
+          roleArn: r.config.roleArn!,
+          externalId: r.config.externalId!,
+        }
+      : null,
   filters: r.filters,
   cursorSeq: String(r.cursor_seq),
   status: r.status,
@@ -116,7 +147,11 @@ const batchOut = (b: BatchRow) => ({
   deliveredAt: b.delivered_at,
 });
 
-const secretContext = (tenantId: string, streamId: string) => ({ tenant: tenantId, purpose: 'audit-stream-secret', stream: streamId });
+const secretContext = (tenantId: string, streamId: string) => ({
+  tenant: tenantId,
+  purpose: 'audit-stream-secret',
+  stream: streamId,
+});
 const ROLE_ARN = /^arn:aws[a-z-]*:iam::\d{12}:role\/[\w+=,.@/-]{1,512}$/;
 const BUCKET = /^(?!xn--)(?!.*\.\.)[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/;
 
@@ -154,7 +189,10 @@ export function streamEvent(r: AuditRow) {
     hash: r.hash,
   };
 }
-export function matchesFilters(r: Pick<AuditRow, 'action' | 'sensitive' | 'actor_type'>, f: FiltersT): boolean {
+export function matchesFilters(
+  r: Pick<AuditRow, 'action' | 'sensitive' | 'actor_type'>,
+  f: FiltersT,
+): boolean {
   if (f.sensitiveOnly && !r.sensitive) return false;
   if (f.actorTypes?.length && !f.actorTypes.includes(r.actor_type)) return false;
   if (f.actions?.length && !f.actions.some((a) => r.action === a || r.action.startsWith(a))) return false;
@@ -168,14 +206,20 @@ function s3Key(prefix: string, fromSeq: string, toSeq: string, firstAt: string) 
 }
 
 /** Delivers at most one batch. Returns whether it made progress (so the job can continue). */
-async function syncOnce(ctx: JobContext<Deps>, streamId: string): Promise<'delivered' | 'skipped' | 'idle' | 'failed'> {
+async function syncOnce(
+  ctx: JobContext<Deps>,
+  streamId: string,
+): Promise<'delivered' | 'skipped' | 'idle' | 'failed'> {
   const cfg = platformConfig.auditStreams;
   const prepared = await ctx.tx(async (tx) => {
     await tx.query('SELECT audit.seal_pending(5000)');
     const s = await tx.maybe<StreamRow>('SELECT * FROM app.audit_streams WHERE id = $1', [streamId]);
     if (!s || s.status !== 'active') return undefined;
     const from = BigInt(s.cursor_seq) + 1n;
-    const existing = await tx.maybe<BatchRow>(`SELECT * FROM app.audit_stream_batches WHERE stream_id = $1 AND from_seq = $2 AND status <> 'delivered'`, [streamId, String(from)]);
+    const existing = await tx.maybe<BatchRow>(
+      `SELECT * FROM app.audit_stream_batches WHERE stream_id = $1 AND from_seq = $2 AND status <> 'delivered'`,
+      [streamId, String(from)],
+    );
     const rows = await tx.query<AuditRow>(
       `SELECT id, seq, at, actor_type, actor_id, action, target_type, target_id, diff, host(ip) AS ip, user_agent, request_id, sensitive, encode(hash, 'hex') AS hash
          FROM audit.events WHERE seq >= $1 ${existing ? 'AND seq <= $2' : ''} AND seq IS NOT NULL ORDER BY seq LIMIT ${cfg.batchSize}`,
@@ -185,7 +229,10 @@ async function syncOnce(ctx: JobContext<Deps>, streamId: string): Promise<'deliv
     const toSeq = existing?.to_seq ?? rows.at(-1)!.seq;
     const events = rows.filter((r) => matchesFilters(r, s.filters)).map(streamEvent);
     if (!events.length) {
-      await tx.exec('UPDATE app.audit_streams SET cursor_seq = greatest(cursor_seq, $2) WHERE id = $1', [streamId, toSeq]);
+      await tx.exec('UPDATE app.audit_streams SET cursor_seq = greatest(cursor_seq, $2) WHERE id = $1', [
+        streamId,
+        toSeq,
+      ]);
       return { stream: s, skipped: true as const };
     }
     const batch =
@@ -194,7 +241,13 @@ async function syncOnce(ctx: JobContext<Deps>, streamId: string): Promise<'deliv
         `INSERT INTO app.audit_stream_batches (tenant_id, stream_id, from_seq, to_seq, event_count, object_key)
          VALUES (app.current_tenant(), $1, $2, $3, $4, $5)
          ON CONFLICT (tenant_id, stream_id, from_seq) DO UPDATE SET event_count = EXCLUDED.event_count RETURNING *`,
-        [streamId, String(from), toSeq, events.length, s.kind === 's3' ? s3Key(s.config.prefix ?? '', String(from), String(toSeq), events[0]!.at) : null],
+        [
+          streamId,
+          String(from),
+          toSeq,
+          events.length,
+          s.kind === 's3' ? s3Key(s.config.prefix ?? '', String(from), String(toSeq), events[0]!.at) : null,
+        ],
       ));
     return { stream: s, batch, events };
   });
@@ -207,7 +260,14 @@ async function syncOnce(ctx: JobContext<Deps>, streamId: string): Promise<'deliv
   let error: string | null = null;
   try {
     if (stream.kind === 'https') {
-      const body = JSON.stringify({ streamId: stream.id, batchId: batch.id, fromSeq: String(batch.from_seq), toSeq: String(batch.to_seq), count: events.length, events });
+      const body = JSON.stringify({
+        streamId: stream.id,
+        batchId: batch.id,
+        fromSeq: String(batch.from_seq),
+        toSeq: String(batch.to_seq),
+        count: events.length,
+        events,
+      });
       const secret = await open(ctx.deps.keys, stream.secret!, secretContext(ctx.tenantId, stream.id));
       const res = await postOutbound(
         stream.config.url!,
@@ -238,7 +298,11 @@ async function syncOnce(ctx: JobContext<Deps>, streamId: string): Promise<'deliv
       responseStatus = 200;
     }
   } catch (err) {
-    error = ((err as Error).name === 'ResidencyViolationError' ? 'region_not_allowed' : (err as Error).message || 'delivery_failed').slice(0, 100);
+    error = (
+      (err as Error).name === 'ResidencyViolationError'
+        ? 'region_not_allowed'
+        : (err as Error).message || 'delivery_failed'
+    ).slice(0, 100);
   }
   const durationMs = Math.round(performance.now() - started);
   await ctx.tx(async (tx) => {
@@ -247,8 +311,13 @@ async function syncOnce(ctx: JobContext<Deps>, streamId: string): Promise<'deliv
          delivered_at = CASE WHEN $2 = 'delivered' THEN now() ELSE delivered_at END WHERE id = $1`,
       [batch.id, error ? 'failed' : 'delivered', responseStatus, durationMs, error],
     );
-    if (error) await tx.exec('UPDATE app.audit_streams SET last_error = $2 WHERE id = $1', [stream.id, error]);
-    else await tx.exec('UPDATE app.audit_streams SET cursor_seq = greatest(cursor_seq, $2), last_delivered_at = now(), last_error = NULL WHERE id = $1', [stream.id, batch.to_seq]);
+    if (error)
+      await tx.exec('UPDATE app.audit_streams SET last_error = $2 WHERE id = $1', [stream.id, error]);
+    else
+      await tx.exec(
+        'UPDATE app.audit_streams SET cursor_seq = greatest(cursor_seq, $2), last_delivered_at = now(), last_error = NULL WHERE id = $1',
+        [stream.id, batch.to_seq],
+      );
   });
   return error ? 'failed' : 'delivered';
 }
@@ -284,17 +353,33 @@ export async function auditStreamRoutes(app: FastifyInstance) {
 
   app.get(
     '/v1/settings/audit-streams',
-    { schema: { tags: ['audit-streams'], summary: 'List SIEM audit streams', querystring: Type.Object({ cursor: Type.Optional(Type.String({ maxLength: 500 })), limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 50 })) }), response: { 200: Page(AuditStream), 403: Problem } } },
+    {
+      schema: {
+        tags: ['audit-streams'],
+        summary: 'List SIEM audit streams',
+        querystring: Type.Object({
+          cursor: Type.Optional(Type.String({ maxLength: 500 })),
+          limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 50 })),
+        }),
+        response: { 200: Page(AuditStream), 403: Problem },
+      },
+    },
     async (req) => {
       const q = req.query as { cursor?: string; limit?: number };
       const limit = q.limit ?? 50;
       const after = decodeCursor<[string, string]>(q.cursor);
       const rows = await app.tenantTx(req, async (tx) => {
         await guard(tx, req, 'audit.read');
-        return tx.query<StreamRow>(`SELECT * FROM app.audit_streams ${after ? 'WHERE (created_at, id) < ($1::timestamptz, $2::uuid)' : ''} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`, after ?? []);
+        return tx.query<StreamRow>(
+          `SELECT * FROM app.audit_streams ${after ? 'WHERE (created_at, id) < ($1::timestamptz, $2::uuid)' : ''} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
+          after ?? [],
+        );
       });
       const page = rows.slice(0, limit);
-      return { data: page.map(streamOut), nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null };
+      return {
+        data: page.map(streamOut),
+        nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null,
+      };
     },
   );
 
@@ -304,44 +389,84 @@ export async function auditStreamRoutes(app: FastifyInstance) {
       config: { selfAudited: true },
       schema: {
         tags: ['audit-streams'],
-        summary: 'Stream the audit log to a SIEM: a signed HTTPS endpoint, or an S3 bucket in your home region via a cross-account role',
+        summary:
+          'Stream the audit log to a SIEM: a signed HTTPS endpoint, or an S3 bucket in your home region via a cross-account role',
         body: Type.Object(
           {
             name: Type.String({ minLength: 1, maxLength: 120 }),
             kind: Type.Union([Type.Literal('https'), Type.Literal('s3')]),
             url: Type.Optional(Type.String({ maxLength: 2048 })),
             bucket: Type.Optional(Type.String({ maxLength: 63 })),
-            prefix: Type.Optional(Type.String({ maxLength: 200, pattern: '^[A-Za-z0-9!_.*\'()/-]*$' })),
+            prefix: Type.Optional(Type.String({ maxLength: 200, pattern: "^[A-Za-z0-9!_.*'()/-]*$" })),
             region: Type.Optional(Type.String({ maxLength: 30 })),
-            roleArn: Type.Optional(Type.String({ maxLength: 600, description: `S3 streams: the IAM role in your account; its name must start with ${AUDIT_STREAM_ROLE_PREFIX}` })),
+            roleArn: Type.Optional(
+              Type.String({
+                maxLength: 600,
+                description: `S3 streams: the IAM role in your account; its name must start with ${AUDIT_STREAM_ROLE_PREFIX}`,
+              }),
+            ),
             filters: Type.Optional(Filters),
-            startFrom: Type.Optional(Type.Union([Type.Literal('now'), Type.Literal('beginning')], { description: 'Stream only new events (default) or back-fill the whole sealed log' })),
+            startFrom: Type.Optional(
+              Type.Union([Type.Literal('now'), Type.Literal('beginning')], {
+                description: 'Stream only new events (default) or back-fill the whole sealed log',
+              }),
+            ),
           },
           { additionalProperties: false },
         ),
-        response: { 201: Type.Object({ ...AuditStream.properties, secret: Nullable(Type.String({ description: 'HTTPS streams: whsec_… signing secret, shown once' })) }), 400: Problem, 403: Problem, 422: Problem },
+        response: {
+          201: Type.Object({
+            ...AuditStream.properties,
+            secret: Nullable(
+              Type.String({ description: 'HTTPS streams: whsec_… signing secret, shown once' }),
+            ),
+          }),
+          400: Problem,
+          403: Problem,
+          422: Problem,
+        },
       },
     },
     async (req, reply) => {
-      const b = req.body as { name: string; kind: 'https' | 's3'; url?: string; bucket?: string; prefix?: string; region?: string; roleArn?: string; filters?: FiltersT; startFrom?: 'now' | 'beginning' };
+      const b = req.body as {
+        name: string;
+        kind: 'https' | 's3';
+        url?: string;
+        bucket?: string;
+        prefix?: string;
+        region?: string;
+        roleArn?: string;
+        filters?: FiltersT;
+        startFrom?: 'now' | 'beginning';
+      };
       let config: StreamRow['config'];
       if (b.kind === 'https') {
         if (!b.url) throw new ApiError('validation', 'url is required');
         try {
           assertSafeUrl(b.url, deps.outbound ?? STRICT_OUTBOUND);
         } catch (err) {
-          if (err instanceof OutboundBlockedError) throw new ApiError('unprocessable', 'unsafeUrl', { reason: err.reason });
+          if (err instanceof OutboundBlockedError)
+            throw new ApiError('unprocessable', 'unsafeUrl', { reason: err.reason });
           throw err;
         }
         config = { url: b.url };
       } else {
         if (!b.bucket || !BUCKET.test(b.bucket)) throw new ApiError('validation', 'bucket is required');
-        if (!b.roleArn || !ROLE_ARN.test(b.roleArn)) throw new ApiError('validation', 'roleArn must be an IAM role ARN');
+        if (!b.roleArn || !ROLE_ARN.test(b.roleArn))
+          throw new ApiError('validation', 'roleArn must be an IAM role ARN');
         // The cell worker may assume only customer roles named thapsus-hr-audit-* (IAM policy in the cell stack, ADR-0069).
-        if (!isAuditStreamRoleArn(b.roleArn)) throw new ApiError('unprocessable', 'roleNotAllowed', { rolePrefix: AUDIT_STREAM_ROLE_PREFIX });
+        if (!isAuditStreamRoleArn(b.roleArn))
+          throw new ApiError('unprocessable', 'roleNotAllowed', { rolePrefix: AUDIT_STREAM_ROLE_PREFIX });
         // Residency: the bucket must be in the tenant's home region (the guarded AWS factory refuses any other).
-        if ((b.region ?? homeAws) !== homeAws) throw new ApiError('unprocessable', 'regionNotAllowed', { region: b.region, allowed: [homeAws] });
-        config = { bucket: b.bucket, prefix: b.prefix ?? '', region: homeAws, roleArn: b.roleArn, externalId: `thapsus-${newToken(18)}` };
+        if ((b.region ?? homeAws) !== homeAws)
+          throw new ApiError('unprocessable', 'regionNotAllowed', { region: b.region, allowed: [homeAws] });
+        config = {
+          bucket: b.bucket,
+          prefix: b.prefix ?? '',
+          region: homeAws,
+          roleArn: b.roleArn,
+          externalId: `thapsus-${newToken(18)}`,
+        };
       }
       const out = await app.tenantTx(req, async (tx) => {
         const auth = await guard(tx, req);
@@ -349,13 +474,35 @@ export async function auditStreamRoutes(app: FastifyInstance) {
         const secret = b.kind === 'https' ? newSigningSecret() : null;
         const envelope = secret ? await seal(deps.keys, secret, secretContext(auth.tenantId, id)) : null;
         await tx.query('SELECT audit.seal_pending(5000)');
-        const cursor = b.startFrom === 'beginning' ? '0' : ((await tx.maybe<{ seq: string }>('SELECT seq FROM audit.chain_heads'))?.seq ?? '0');
+        const cursor =
+          b.startFrom === 'beginning'
+            ? '0'
+            : ((await tx.maybe<{ seq: string }>('SELECT seq FROM audit.chain_heads'))?.seq ?? '0');
         const row = await tx.one<StreamRow>(
           `INSERT INTO app.audit_streams (tenant_id, id, name, kind, config, secret, filters, cursor_seq, created_by)
            VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-          [id, b.name, b.kind, JSON.stringify(config), envelope ? JSON.stringify(envelope) : null, JSON.stringify(b.filters ?? {}), cursor, auth.userId],
+          [
+            id,
+            b.name,
+            b.kind,
+            JSON.stringify(config),
+            envelope ? JSON.stringify(envelope) : null,
+            JSON.stringify(b.filters ?? {}),
+            cursor,
+            auth.userId,
+          ],
         );
-        await app.audit(tx, req, { action: 'audit_stream.created', targetType: 'audit_stream', targetId: id, diff: { kind: b.kind, destination: b.kind === 'https' ? urlOrigin(b.url!) : `s3://${b.bucket}`, filters: b.filters ?? {}, startFrom: b.startFrom ?? 'now' } });
+        await app.audit(tx, req, {
+          action: 'audit_stream.created',
+          targetType: 'audit_stream',
+          targetId: id,
+          diff: {
+            kind: b.kind,
+            destination: b.kind === 'https' ? urlOrigin(b.url!) : `s3://${b.bucket}`,
+            filters: b.filters ?? {},
+            startFrom: b.startFrom ?? 'now',
+          },
+        });
         return { row, secret };
       });
       return reply.status(201).send({ ...streamOut(out.row), secret: out.secret });
@@ -366,7 +513,20 @@ export async function auditStreamRoutes(app: FastifyInstance) {
     '/v1/settings/audit-streams/:id',
     {
       config: { selfAudited: true },
-      schema: { tags: ['audit-streams'], summary: 'Rename, re-filter, pause or resume a stream', params: Type.Object({ id: Uuid }), body: Type.Object({ name: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })), filters: Type.Optional(Filters), status: Type.Optional(Type.Union([Type.Literal('active'), Type.Literal('paused')])) }, { additionalProperties: false }), response: { 200: AuditStream, 403: Problem, 404: Problem } },
+      schema: {
+        tags: ['audit-streams'],
+        summary: 'Rename, re-filter, pause or resume a stream',
+        params: Type.Object({ id: Uuid }),
+        body: Type.Object(
+          {
+            name: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
+            filters: Type.Optional(Filters),
+            status: Type.Optional(Type.Union([Type.Literal('active'), Type.Literal('paused')])),
+          },
+          { additionalProperties: false },
+        ),
+        response: { 200: AuditStream, 403: Problem, 404: Problem },
+      },
     },
     async (req) => {
       const { id } = req.params as { id: string };
@@ -378,7 +538,12 @@ export async function auditStreamRoutes(app: FastifyInstance) {
           [id, b.name ?? null, b.filters ? JSON.stringify(b.filters) : null, b.status ?? null],
         );
         if (!row) throw new ApiError('notFound');
-        await app.audit(tx, req, { action: 'audit_stream.updated', targetType: 'audit_stream', targetId: id, diff: b });
+        await app.audit(tx, req, {
+          action: 'audit_stream.updated',
+          targetType: 'audit_stream',
+          targetId: id,
+          diff: b,
+        });
         return streamOut(row);
       });
     },
@@ -386,13 +551,26 @@ export async function auditStreamRoutes(app: FastifyInstance) {
 
   app.delete(
     '/v1/settings/audit-streams/:id',
-    { config: { selfAudited: true }, schema: { tags: ['audit-streams'], summary: 'Delete a stream and its delivery log', params: Type.Object({ id: Uuid }), response: { 204: Type.Null(), 403: Problem, 404: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['audit-streams'],
+        summary: 'Delete a stream and its delivery log',
+        params: Type.Object({ id: Uuid }),
+        response: { 204: Type.Null(), 403: Problem, 404: Problem },
+      },
+    },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        if (!(await tx.exec('DELETE FROM app.audit_streams WHERE id = $1', [id]))) throw new ApiError('notFound');
-        await app.audit(tx, req, { action: 'audit_stream.deleted', targetType: 'audit_stream', targetId: id });
+        if (!(await tx.exec('DELETE FROM app.audit_streams WHERE id = $1', [id])))
+          throw new ApiError('notFound');
+        await app.audit(tx, req, {
+          action: 'audit_stream.deleted',
+          targetType: 'audit_stream',
+          targetId: id,
+        });
       });
       return reply.status(204).send(null);
     },
@@ -400,14 +578,33 @@ export async function auditStreamRoutes(app: FastifyInstance) {
 
   app.post(
     '/v1/settings/audit-streams/:id/sync',
-    { config: { selfAudited: true }, schema: { tags: ['audit-streams'], summary: 'Deliver pending audit events now instead of waiting for the next sweep', params: Type.Object({ id: Uuid }), response: { 202: Type.Object({ jobId: Uuid }), 403: Problem, 404: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['audit-streams'],
+        summary: 'Deliver pending audit events now instead of waiting for the next sweep',
+        params: Type.Object({ id: Uuid }),
+        response: { 202: Type.Object({ jobId: Uuid }), 403: Problem, 404: Problem },
+      },
+    },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const job = await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        if (!(await tx.maybe('SELECT 1 FROM app.audit_streams WHERE id = $1', [id]))) throw new ApiError('notFound');
-        const j = await enqueueJob(tx, 'audit_streams.sync', `${id}:manual:${req.id}`, { streamId: id }, { createdBy: req.auth!.userId });
-        await app.audit(tx, req, { action: 'audit_stream.sync_requested', targetType: 'audit_stream', targetId: id });
+        if (!(await tx.maybe('SELECT 1 FROM app.audit_streams WHERE id = $1', [id])))
+          throw new ApiError('notFound');
+        const j = await enqueueJob(
+          tx,
+          'audit_streams.sync',
+          `${id}:manual:${req.id}`,
+          { streamId: id },
+          { createdBy: req.auth!.userId },
+        );
+        await app.audit(tx, req, {
+          action: 'audit_stream.sync_requested',
+          targetType: 'audit_stream',
+          targetId: id,
+        });
         return j;
       });
       return reply.status(202).send({ jobId: job.id });
@@ -416,7 +613,18 @@ export async function auditStreamRoutes(app: FastifyInstance) {
 
   app.get(
     '/v1/settings/audit-streams/:id/batches',
-    { schema: { tags: ['audit-streams'], summary: 'Delivery log for a stream (newest first)', params: Type.Object({ id: Uuid }), querystring: Type.Object({ cursor: Type.Optional(Type.String({ maxLength: 500 })), limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })) }), response: { 200: Page(Batch), 403: Problem } } },
+    {
+      schema: {
+        tags: ['audit-streams'],
+        summary: 'Delivery log for a stream (newest first)',
+        params: Type.Object({ id: Uuid }),
+        querystring: Type.Object({
+          cursor: Type.Optional(Type.String({ maxLength: 500 })),
+          limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+        }),
+        response: { 200: Page(Batch), 403: Problem },
+      },
+    },
     async (req) => {
       const { id } = req.params as { id: string };
       const q = req.query as { cursor?: string; limit?: number };
@@ -430,7 +638,10 @@ export async function auditStreamRoutes(app: FastifyInstance) {
         );
       });
       const page = rows.slice(0, limit);
-      return { data: page.map(batchOut), nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null };
+      return {
+        data: page.map(batchOut),
+        nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null,
+      };
     },
   );
 }

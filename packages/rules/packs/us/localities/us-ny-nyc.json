@@ -54,10 +54,7 @@
             "employerSizeCountsAllEmployeesNationwide": true,
             "immediatelyAvailableUnpaidHours": {
               "hours": 32,
-              "grantedOn": [
-                "first_day_of_employment",
-                "first_day_of_each_calendar_year"
-              ],
+              "grantedOn": ["first_day_of_employment", "first_day_of_each_calendar_year"],
               "proratedForMidYearHires": false,
               "carriesOver": false
             },

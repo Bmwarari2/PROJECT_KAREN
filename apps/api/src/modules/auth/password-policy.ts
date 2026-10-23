@@ -19,7 +19,19 @@ export const COMMON_PASSWORD_COUNT = COMMON.size;
 /** Product words that are never allowed inside a password, whatever the workspace. */
 export const PRODUCT_WORDS = ['thapsus', 'thapsushr'];
 /** Words too generic to count as context (company suffixes and common email domain labels). */
-const GENERIC = new Set(['limited', 'company', 'group', 'holdings', 'gmail', 'outlook', 'hotmail', 'yahoo', 'icloud', 'example', 'mail']);
+const GENERIC = new Set([
+  'limited',
+  'company',
+  'group',
+  'holdings',
+  'gmail',
+  'outlook',
+  'hotmail',
+  'yahoo',
+  'icloud',
+  'example',
+  'mail',
+]);
 const MIN_WORD = 4;
 
 export interface PasswordContext {
@@ -37,7 +49,8 @@ export function contextWords(ctx: PasswordContext): string[] {
   const words = new Set<string>(PRODUCT_WORDS);
   const add = (text: string | null | undefined) => {
     if (!text) return;
-    for (const w of fold(text).split(/[^\p{L}\p{N}]+/u)) if (w.length >= MIN_WORD && !GENERIC.has(w)) words.add(w);
+    for (const w of fold(text).split(/[^\p{L}\p{N}]+/u))
+      if (w.length >= MIN_WORD && !GENERIC.has(w)) words.add(w);
   };
   add(ctx.companyName);
   add(ctx.workspaceSlug);
@@ -51,7 +64,8 @@ export function contextWords(ctx: PasswordContext): string[] {
     add(local);
     // every domain label except the top-level one (acme.co.uk → acme)
     const labels = (domain ?? '').split('.');
-    for (const label of labels.slice(0, -1)) if (label.length >= MIN_WORD && !['co', 'com', 'org', 'net'].includes(label)) add(label);
+    for (const label of labels.slice(0, -1))
+      if (label.length >= MIN_WORD && !['co', 'com', 'org', 'net'].includes(label)) add(label);
   }
   return [...words];
 }

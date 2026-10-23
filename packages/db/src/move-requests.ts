@@ -37,9 +37,13 @@ export interface MoveRequestOutcome {
 export function ownerUrlsFromEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
   if (env.OWNER_DATABASES) return JSON.parse(env.OWNER_DATABASES) as Record<string, string>;
   const urls: Record<string, string> = {};
-  if (env.SHARED_OWNER_DATABASE_SECRET) urls.shared = secretToUrl(env.SHARED_OWNER_DATABASE_SECRET, env.SHARED_DATABASE_HOST);
+  if (env.SHARED_OWNER_DATABASE_SECRET)
+    urls.shared = secretToUrl(env.SHARED_OWNER_DATABASE_SECRET, env.SHARED_DATABASE_HOST);
   if (env.OWNER_DATABASE_SECRET) {
-    if (!env.DEDICATED_DB_KEY) throw new Error("OWNER_DATABASE_SECRET without DEDICATED_DB_KEY: run the dedicated database's tools task, or set OWNER_DATABASES");
+    if (!env.DEDICATED_DB_KEY)
+      throw new Error(
+        "OWNER_DATABASE_SECRET without DEDICATED_DB_KEY: run the dedicated database's tools task, or set OWNER_DATABASES",
+      );
     urls[env.DEDICATED_DB_KEY] = secretToUrl(env.OWNER_DATABASE_SECRET, env.DATABASE_HOST);
   }
   return urls;
@@ -58,7 +62,12 @@ export async function processMoveRequests(opts: ProcessMovesOptions): Promise<Mo
       // Only requests this runner can carry out: both the tenant's current database and the target have an
       // owner URL here (a dedicated database's tools task holds `shared` and its own key). Others stay queued.
       const req = (
-        await client.query<{ id: string; subject_tenant_id: string; target_db_key: string; purge_source: boolean }>(
+        await client.query<{
+          id: string;
+          subject_tenant_id: string;
+          target_db_key: string;
+          purge_source: boolean;
+        }>(
           `UPDATE backoffice.tenant_moves SET status = 'running', started_at = now()
             WHERE id = (SELECT m.id FROM backoffice.tenant_moves m JOIN registry.tenants t ON t.tenant_id = m.subject_tenant_id
                          WHERE m.status = 'requested' AND m.target_db_key = ANY($1::text[]) AND t.db_key = ANY($1::text[])
@@ -73,7 +82,15 @@ export async function processMoveRequests(opts: ProcessMovesOptions): Promise<Mo
       const progress = (msg: string) => {
         opts.log?.(msg);
         chain = chain.then(() =>
-          client.query(`UPDATE backoffice.tenant_moves SET progress = array_append(progress, $2) WHERE id = $1`, [req.id, msg.slice(0, 300)]).then(() => undefined, () => undefined),
+          client
+            .query(`UPDATE backoffice.tenant_moves SET progress = array_append(progress, $2) WHERE id = $1`, [
+              req.id,
+              msg.slice(0, 300),
+            ])
+            .then(
+              () => undefined,
+              () => undefined,
+            ),
         );
       };
       try {
@@ -87,13 +104,31 @@ export async function processMoveRequests(opts: ProcessMovesOptions): Promise<Mo
           log: progress,
         });
         await chain;
-        await client.query(`UPDATE backoffice.tenant_moves SET status = 'succeeded', finished_at = now(), report = $2 WHERE id = $1`, [req.id, JSON.stringify(report)]);
-        outcomes.push({ id: req.id, tenantId: req.subject_tenant_id, targetKey: req.target_db_key, status: 'succeeded', report });
+        await client.query(
+          `UPDATE backoffice.tenant_moves SET status = 'succeeded', finished_at = now(), report = $2 WHERE id = $1`,
+          [req.id, JSON.stringify(report)],
+        );
+        outcomes.push({
+          id: req.id,
+          tenantId: req.subject_tenant_id,
+          targetKey: req.target_db_key,
+          status: 'succeeded',
+          report,
+        });
       } catch (err) {
         await chain;
         const message = (err as Error).message.slice(0, 1000);
-        await client.query(`UPDATE backoffice.tenant_moves SET status = 'failed', finished_at = now(), error = $2 WHERE id = $1`, [req.id, message]);
-        outcomes.push({ id: req.id, tenantId: req.subject_tenant_id, targetKey: req.target_db_key, status: 'failed', error: message });
+        await client.query(
+          `UPDATE backoffice.tenant_moves SET status = 'failed', finished_at = now(), error = $2 WHERE id = $1`,
+          [req.id, message],
+        );
+        outcomes.push({
+          id: req.id,
+          tenantId: req.subject_tenant_id,
+          targetKey: req.target_db_key,
+          status: 'failed',
+          error: message,
+        });
       }
     }
   } finally {

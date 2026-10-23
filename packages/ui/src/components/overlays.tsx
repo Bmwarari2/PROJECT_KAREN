@@ -12,9 +12,22 @@ export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
-const overlay = 'fixed inset-0 z-40 bg-surface-inverse/40 data-[state=open]:animate-[fade-in_var(--duration-slow)_var(--ease-standard)]';
+const overlay =
+  'fixed inset-0 z-40 bg-surface-inverse/40 data-[state=open]:animate-[fade-in_var(--duration-slow)_var(--ease-standard)]';
 
-export function DialogContent({ title, description, closeLabel, children, className }: { title: string; description?: string; closeLabel: string; children: React.ReactNode; className?: string }) {
+export function DialogContent({
+  title,
+  description,
+  closeLabel,
+  children,
+  className,
+}: {
+  title: string;
+  description?: string;
+  closeLabel: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className={overlay} />
@@ -27,9 +40,16 @@ export function DialogContent({ title, description, closeLabel, children, classN
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <DialogPrimitive.Title className="text-title-3">{title}</DialogPrimitive.Title>
-            {description ? <DialogPrimitive.Description className="mt-1 text-callout text-text-secondary">{description}</DialogPrimitive.Description> : null}
+            {description ? (
+              <DialogPrimitive.Description className="mt-1 text-callout text-text-secondary">
+                {description}
+              </DialogPrimitive.Description>
+            ) : null}
           </div>
-          <DialogPrimitive.Close aria-label={closeLabel} className="rounded-md p-1 text-text-secondary hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent">
+          <DialogPrimitive.Close
+            aria-label={closeLabel}
+            className="rounded-md p-1 text-text-secondary hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+          >
             <X aria-hidden className="h-5 w-5 stroke-[1.5]" />
           </DialogPrimitive.Close>
         </div>
@@ -42,15 +62,40 @@ export function DialogContent({ title, description, closeLabel, children, classN
 export const Sheet = DialogPrimitive.Root;
 export const SheetTrigger = DialogPrimitive.Trigger;
 
-export function SheetContent({ title, closeLabel, side = 'right', children, className }: { title: string; closeLabel: string; side?: 'right' | 'left' | 'bottom'; children: React.ReactNode; className?: string }) {
-  const pos = { right: 'right-0 top-0 h-full w-[min(92vw,420px)]', left: 'left-0 top-0 h-full w-[min(86vw,320px)]', bottom: 'bottom-0 left-0 w-full max-h-[85vh] rounded-t-lg' }[side];
+export function SheetContent({
+  title,
+  closeLabel,
+  side = 'right',
+  children,
+  className,
+}: {
+  title: string;
+  closeLabel: string;
+  side?: 'right' | 'left' | 'bottom';
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const pos = {
+    right: 'right-0 top-0 h-full w-[min(92vw,420px)]',
+    left: 'left-0 top-0 h-full w-[min(86vw,320px)]',
+    bottom: 'bottom-0 left-0 w-full max-h-[85vh] rounded-t-lg',
+  }[side];
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className={overlay} />
-      <DialogPrimitive.Content className={cn('fixed z-50 overflow-y-auto bg-surface-raised p-6 text-text shadow-lg outline-none data-[state=open]:animate-[sheet-in_var(--duration-slow)_var(--ease-standard)]', pos, className)}>
+      <DialogPrimitive.Content
+        className={cn(
+          'fixed z-50 overflow-y-auto bg-surface-raised p-6 text-text shadow-lg outline-none data-[state=open]:animate-[sheet-in_var(--duration-slow)_var(--ease-standard)]',
+          pos,
+          className,
+        )}
+      >
         <div className="mb-4 flex items-center justify-between">
           <DialogPrimitive.Title className="text-title-3">{title}</DialogPrimitive.Title>
-          <DialogPrimitive.Close aria-label={closeLabel} className="rounded-md p-1 text-text-secondary hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent">
+          <DialogPrimitive.Close
+            aria-label={closeLabel}
+            className="rounded-md p-1 text-text-secondary hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+          >
             <X aria-hidden className="h-5 w-5 stroke-[1.5]" />
           </DialogPrimitive.Close>
         </div>
@@ -61,7 +106,23 @@ export function SheetContent({ title, closeLabel, side = 'right', children, clas
 }
 
 // ---- Select ----------------------------------------------------------------------------------
-export function Select({ id, value, onValueChange, options, placeholder, label, ...rest }: { id?: string; value?: string; onValueChange?: (v: string) => void; options: Array<{ value: string; label: string }>; placeholder?: string; label?: string; 'aria-describedby'?: string }) {
+export function Select({
+  id,
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  label,
+  ...rest
+}: {
+  id?: string;
+  value?: string;
+  onValueChange?: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  label?: string;
+  'aria-describedby'?: string;
+}) {
   return (
     <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
       <SelectPrimitive.Trigger
@@ -76,10 +137,18 @@ export function Select({ id, value, onValueChange, options, placeholder, label, 
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Content position="popper" sideOffset={4} className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md bg-surface-raised p-1 text-text shadow-md">
+        <SelectPrimitive.Content
+          position="popper"
+          sideOffset={4}
+          className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md bg-surface-raised p-1 text-text shadow-md"
+        >
           <SelectPrimitive.Viewport>
             {options.map((o) => (
-              <SelectPrimitive.Item key={o.value} value={o.value} className="relative flex h-9 cursor-default select-none items-center rounded-sm pl-8 pr-3 text-callout outline-none data-[highlighted]:bg-accent-subtle">
+              <SelectPrimitive.Item
+                key={o.value}
+                value={o.value}
+                className="relative flex h-9 cursor-default select-none items-center rounded-sm pl-8 pr-3 text-callout outline-none data-[highlighted]:bg-accent-subtle"
+              >
                 <SelectPrimitive.ItemIndicator className="absolute left-2">
                   <Check aria-hidden className="h-4 w-4 stroke-[1.5] text-accent" />
                 </SelectPrimitive.ItemIndicator>
@@ -96,7 +165,12 @@ export function Select({ id, value, onValueChange, options, placeholder, label, 
 // ---- Tabs ------------------------------------------------------------------------------------
 export const Tabs = TabsPrimitive.Root;
 export function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
-  return <TabsPrimitive.List className={cn('flex flex-wrap gap-x-6 border-b border-border', className)} {...props} />;
+  return (
+    <TabsPrimitive.List
+      className={cn('flex flex-wrap gap-x-6 border-b border-border', className)}
+      {...props}
+    />
+  );
 }
 export function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   return (
@@ -123,7 +197,10 @@ export const useToast = () => React.useContext(ToastCtx);
 
 export function ToastProvider({ children, closeLabel }: { children: React.ReactNode; closeLabel: string }) {
   const [items, setItems] = React.useState<ToastItem[]>([]);
-  const push = React.useCallback((t: Omit<ToastItem, 'id'>) => setItems((xs) => [...xs, { ...t, id: Date.now() + Math.random() }]), []);
+  const push = React.useCallback(
+    (t: Omit<ToastItem, 'id'>) => setItems((xs) => [...xs, { ...t, id: Date.now() + Math.random() }]),
+    [],
+  );
   return (
     <ToastCtx.Provider value={push}>
       <ToastPrimitive.Provider duration={5000} swipeDirection="right">
@@ -135,10 +212,25 @@ export function ToastProvider({ children, closeLabel }: { children: React.ReactN
             className="flex items-start gap-3 rounded-md bg-surface-raised p-4 text-text shadow-lg data-[state=open]:animate-[toast-in_var(--duration-base)_var(--ease-standard)]"
           >
             <div className="flex-1">
-              <ToastPrimitive.Title className={cn('text-callout font-semibold', t.tone === 'danger' && 'text-danger', t.tone === 'success' && 'text-success')}>{t.title}</ToastPrimitive.Title>
-              {t.body ? <ToastPrimitive.Description className="text-footnote text-text-secondary">{t.body}</ToastPrimitive.Description> : null}
+              <ToastPrimitive.Title
+                className={cn(
+                  'text-callout font-semibold',
+                  t.tone === 'danger' && 'text-danger',
+                  t.tone === 'success' && 'text-success',
+                )}
+              >
+                {t.title}
+              </ToastPrimitive.Title>
+              {t.body ? (
+                <ToastPrimitive.Description className="text-footnote text-text-secondary">
+                  {t.body}
+                </ToastPrimitive.Description>
+              ) : null}
             </div>
-            <ToastPrimitive.Close aria-label={closeLabel} className="rounded-md p-1 text-text-secondary hover:bg-surface">
+            <ToastPrimitive.Close
+              aria-label={closeLabel}
+              className="rounded-md p-1 text-text-secondary hover:bg-surface"
+            >
               <X aria-hidden className="h-4 w-4 stroke-[1.5]" />
             </ToastPrimitive.Close>
           </ToastPrimitive.Root>

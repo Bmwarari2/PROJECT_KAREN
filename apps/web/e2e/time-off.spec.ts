@@ -24,7 +24,9 @@ async function post(request: APIRequestContext, url: string, data: unknown) {
 
 /** A Wednesday about five weeks ahead, away from the Christmas and New Year bank holidays. */
 function futureWorkingDay() {
-  const d = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 35));
+  const d = new Date(
+    Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 35),
+  );
   while (d.getUTCDay() !== 3) d.setUTCDate(d.getUTCDate() + 1);
   const md = (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
   if (md >= 1220 || md <= 105) d.setUTCDate(d.getUTCDate() + 21);
@@ -32,13 +34,41 @@ function futureWorkingDay() {
 }
 
 test.describe('time off', () => {
-  test('an employee requests leave, sees it waiting for approval, and the page passes axe (light and dark)', async ({ page }) => {
+  test('an employee requests leave, sees it waiting for approval, and the page passes axe (light and dark)', async ({
+    page,
+  }) => {
     const { email } = await signUpAndEnrol(page);
-    await page.context().addCookies([{ name: 'thr_locale', value: 'en-GB', url: new URL(page.url()).origin }]);
-    const entity = await post(page.request, '/v1/org/legal-entities', { name: 'Fictional Leave Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' });
-    const person = { startDate: '2025-01-06', jobTitle: 'Analyst', entityId: entity.id, weeklyHours: 37.5, payAmountMinor: 3_120_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' };
-    const manager = await post(page.request, '/v1/employees', { ...person, legalFirstName: 'Mina', legalLastName: 'Manager' });
-    const me = await post(page.request, '/v1/employees', { ...person, legalFirstName: 'Olive', legalLastName: 'Owner', managerId: manager.id });
+    await page
+      .context()
+      .addCookies([{ name: 'thr_locale', value: 'en-GB', url: new URL(page.url()).origin }]);
+    const entity = await post(page.request, '/v1/org/legal-entities', {
+      name: 'Fictional Leave Ltd',
+      country: 'GB',
+      regionCode: 'GB-ENG',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    });
+    const person = {
+      startDate: '2025-01-06',
+      jobTitle: 'Analyst',
+      entityId: entity.id,
+      weeklyHours: 37.5,
+      payAmountMinor: 3_120_000,
+      payCurrency: 'GBP',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+    };
+    const manager = await post(page.request, '/v1/employees', {
+      ...person,
+      legalFirstName: 'Mina',
+      legalLastName: 'Manager',
+    });
+    const me = await post(page.request, '/v1/employees', {
+      ...person,
+      legalFirstName: 'Olive',
+      legalLastName: 'Owner',
+      managerId: manager.id,
+    });
     await linkUserToEmployee(email, me.id);
 
     await page.goto('/app/time-off');

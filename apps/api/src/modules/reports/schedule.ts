@@ -1,4 +1,14 @@
-import { addDays, addMonths, compareDates, compareInstants, dateParts, dayOfWeek, instantToDate, makeDate, zonedToInstant } from '@thapsus/core/time';
+import {
+  addDays,
+  addMonths,
+  compareDates,
+  compareInstants,
+  dateParts,
+  dayOfWeek,
+  instantToDate,
+  makeDate,
+  zonedToInstant,
+} from '@thapsus/core/time';
 
 /**
  * Schedule arithmetic for report delivery and data exports (pure). A schedule fires at a local wall-clock
@@ -36,7 +46,8 @@ export function latestOccurrence(now: string, s: ScheduleSpec): { periodKey: str
   return null;
 }
 
-export type Relative = 'today' | 'yesterday' | 'previousWeek' | 'previousMonth' | 'monthToDate' | 'yearToDate' | 'previousYear';
+export type Relative =
+  'today' | 'yesterday' | 'previousWeek' | 'previousMonth' | 'monthToDate' | 'yearToDate' | 'previousYear';
 
 /** Resolves a relative period against a reference local date: asOf is the period's last day. */
 export function resolveRelative(r: Relative, date: string): { from: string; to: string; asOf: string } {
@@ -62,6 +73,10 @@ export function resolveRelative(r: Relative, date: string): { from: string; to: 
     case 'yearToDate':
       return { from: makeDate(year, 1, 1), to: date, asOf: date };
     case 'previousYear':
-      return { from: makeDate(year - 1, 1, 1), to: makeDate(year - 1, 12, 31), asOf: makeDate(year - 1, 12, 31) };
+      return {
+        from: makeDate(year - 1, 1, 1),
+        to: makeDate(year - 1, 12, 31),
+        asOf: makeDate(year - 1, 12, 31),
+      };
   }
 }

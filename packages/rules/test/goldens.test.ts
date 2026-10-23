@@ -43,7 +43,10 @@ function at(obj: unknown, path: string): unknown {
   return path
     .replace(/\[(\d+)\]/g, '.$1')
     .split('.')
-    .reduce<unknown>((o, k) => (o === null || o === undefined ? undefined : (o as Record<string, unknown>)[k]), obj);
+    .reduce<unknown>(
+      (o, k) => (o === null || o === undefined ? undefined : (o as Record<string, unknown>)[k]),
+      obj,
+    );
 }
 
 for (const file of files) {
@@ -58,7 +61,9 @@ for (const file of files) {
         if (h.substituteNonWorkingDays) {
           const occ = book.holidays(country, h.year, region);
           expect(occ.map((o) => o.date).sort()).toEqual(expected);
-          expect(occ.flatMap((o) => (o.observed ? [o.observed] : [])).sort()).toEqual([...h.substituteNonWorkingDays].sort());
+          expect(occ.flatMap((o) => (o.observed ? [o.observed] : [])).sort()).toEqual(
+            [...h.substituteNonWorkingDays].sort(),
+          );
         } else {
           expect(book.daysOff(country, h.year, region)).toEqual(expected);
         }
@@ -76,18 +81,24 @@ for (const file of files) {
         expect(resolved.source.url).toMatch(/^https:\/\//);
         if (r.expectJurisdiction) expect(resolved.jurisdiction).toBe(r.expectJurisdiction);
         if (r.expect !== undefined) {
-          if (r.expect && typeof r.expect === 'object' && !Array.isArray(r.expect)) expect(resolved.value).toMatchObject(r.expect as object);
+          if (r.expect && typeof r.expect === 'object' && !Array.isArray(r.expect))
+            expect(resolved.value).toMatchObject(r.expect as object);
           else expect(resolved.value).toEqual(r.expect);
         }
-        for (const [path, value] of Object.entries(r.expectPath ?? {})) expect(at(resolved.value, path), path).toEqual(value);
+        for (const [path, value] of Object.entries(r.expectPath ?? {}))
+          expect(at(resolved.value, path), path).toEqual(value);
       });
     }
   });
 }
 
 const goldenFiles = files.map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')) as GoldenFile);
-const ruleVectors = goldenFiles.flatMap((g) => (g.rules ?? []).map((r) => ({ ...r, jurisdiction: r.jurisdiction ?? g.jurisdiction! })));
-const holidayVectors = goldenFiles.flatMap((g) => (g.holidays ?? []).map((h) => ({ ...h, jurisdiction: h.jurisdiction ?? g.jurisdiction! })));
+const ruleVectors = goldenFiles.flatMap((g) =>
+  (g.rules ?? []).map((r) => ({ ...r, jurisdiction: r.jurisdiction ?? g.jurisdiction! })),
+);
+const holidayVectors = goldenFiles.flatMap((g) =>
+  (g.holidays ?? []).map((h) => ({ ...h, jurisdiction: h.jurisdiction ?? g.jurisdiction! })),
+);
 
 describe('golden coverage', () => {
   it('every pack rule version has a golden vector dated inside its effective period that resolves to it', () => {
@@ -98,14 +109,28 @@ describe('golden coverage', () => {
       const res = book.tryResolve(r.jurisdiction, r.key, r.date);
       if (res) answered.add(`${res.jurisdiction} ${r.key} ${res.effectiveFrom}`);
     }
-    const missing = book.jurisdictions().flatMap((p) => p.rules.flatMap((rule) => rule.versions.map((v) => `${p.jurisdiction} ${rule.key} ${v.effectiveFrom}`).filter((id) => !answered.has(id))));
-    expect(missing, 'add a vector to packages/rules/goldens for each (jurisdiction key effectiveFrom)').toEqual([]);
+    const missing = book
+      .jurisdictions()
+      .flatMap((p) =>
+        p.rules.flatMap((rule) =>
+          rule.versions
+            .map((v) => `${p.jurisdiction} ${rule.key} ${v.effectiveFrom}`)
+            .filter((id) => !answered.has(id)),
+        ),
+      );
+    expect(
+      missing,
+      'add a vector to packages/rules/goldens for each (jurisdiction key effectiveFrom)',
+    ).toEqual([]);
   });
   it('every pack with holidays has a holiday vector, and so does every declared subdivision', () => {
     const missing: string[] = [];
     for (const p of book.jurisdictions()) {
-      if (p.holidays.length && !holidayVectors.some((h) => h.jurisdiction === p.jurisdiction)) missing.push(p.jurisdiction);
-      for (const sub of p.subdivisions ?? []) if (!holidayVectors.some((h) => h.jurisdiction === p.jurisdiction && h.region === sub)) missing.push(sub);
+      if (p.holidays.length && !holidayVectors.some((h) => h.jurisdiction === p.jurisdiction))
+        missing.push(p.jurisdiction);
+      for (const sub of p.subdivisions ?? [])
+        if (!holidayVectors.some((h) => h.jurisdiction === p.jurisdiction && h.region === sub))
+          missing.push(sub);
     }
     expect(missing).toEqual([]);
   });
@@ -121,7 +146,9 @@ describe('layered resolution', () => {
   it('US localities walk locality -> state -> federal; unknown localities stop at their state', () => {
     expect(book.chain('US-NY-NYC')).toEqual(['US-NY-NYC', 'US-NY', 'US']);
     expect(book.chain('US-CA-SF')).toEqual(['US-CA', 'US']);
-    expect(book.resolve('US-NY-NYC', 'sick_pay.paid_sick_leave_accrual', '2026-06-01').jurisdiction).toBe('US-NY-NYC');
+    expect(book.resolve('US-NY-NYC', 'sick_pay.paid_sick_leave_accrual', '2026-06-01').jurisdiction).toBe(
+      'US-NY-NYC',
+    );
     expect(book.resolve('US-NY-NYC', 'minimum_wage.rates', '2026-06-01').jurisdiction).toBe('US-NY');
     expect(book.resolve('US-CA-SF', 'overtime.daily', '2026-06-01').jurisdiction).toBe('US-CA');
     expect(book.tryResolve('US-TX-AUS', 'overtime.daily', '2026-06-01')).toBeUndefined();
@@ -129,18 +156,26 @@ describe('layered resolution', () => {
   it('UK nations: Scotland, Wales and England get GB law; Northern Ireland never inherits a GB rule not verified for it', () => {
     for (const nation of ['GB-SCT', 'GB-WLS', 'GB-ENG']) {
       expect(book.resolve(nation, 'leave.statutory_annual_minimum', '2026-06-01').jurisdiction).toBe('GB');
-      expect(book.resolve(nation, 'employment.unfair_dismissal_qualifying_period', '2027-01-01').value).toMatchObject({ qualifyingPeriod: 'P6M' });
+      expect(
+        book.resolve(nation, 'employment.unfair_dismissal_qualifying_period', '2027-01-01').value,
+      ).toMatchObject({ qualifyingPeriod: 'P6M' });
     }
     expect(book.chain('GB-NIR')).toEqual(['GB-NIR', 'GB']);
-    expect(book.resolve('GB-NIR', 'employment.unfair_dismissal_qualifying_period', '2027-01-01')).toMatchObject({ jurisdiction: 'GB-NIR', value: { qualifyingPeriod: 'P1Y' } });
-    expect(book.resolve('GB-NIR', 'minimum_wage.rates', '2026-06-01')).toMatchObject({ jurisdiction: 'GB', regions: expect.arrayContaining(['GB-NIR']) });
+    expect(
+      book.resolve('GB-NIR', 'employment.unfair_dismissal_qualifying_period', '2027-01-01'),
+    ).toMatchObject({ jurisdiction: 'GB-NIR', value: { qualifyingPeriod: 'P1Y' } });
+    expect(book.resolve('GB-NIR', 'minimum_wage.rates', '2026-06-01')).toMatchObject({
+      jurisdiction: 'GB',
+      regions: expect.arrayContaining(['GB-NIR']),
+    });
     expect(() => book.resolve('GB-NIR', 'reporting.gender_pay_gap', '2026-06-01')).toThrow(RuleNotFoundError);
     // every GB rule answered for GB-NIR comes from the NI pack or from a GB version that lists GB-NIR
     const gb = book.pack('GB')!;
     for (const rule of gb.rules) {
       for (const v of rule.versions) {
         const r = book.tryResolve('GB-NIR', rule.key, v.effectiveFrom);
-        if (r?.jurisdiction === 'GB') expect(r.regions, `${rule.key} @ ${v.effectiveFrom}`).toContain('GB-NIR');
+        if (r?.jurisdiction === 'GB')
+          expect(r.regions, `${rule.key} @ ${v.effectiveFrom}`).toContain('GB-NIR');
       }
     }
   });

@@ -21,13 +21,19 @@ import { compareInstants, type Instant } from '@thapsus/core/time';
 import { enqueueJob, withTenant, writeAudit, type TenantRouter, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
-import { FakeBillingProvider, type BillingProvider, type ProviderAddress, type ProviderSubscription } from './provider';
+import {
+  FakeBillingProvider,
+  type BillingProvider,
+  type ProviderAddress,
+  type ProviderSubscription,
+} from './provider';
 
 /**
  * Billing domain (ADR-0103, ADR-0104, ADR-0107). Billing state lives in the tenant's home cell;
  * provider calls carry company-level data only and never run inside a database transaction.
  */
-export const billingConfig = (): BillingConfig => loadBillingConfig(process.env.BILLING_CONFIG_LOCATION ?? 'builtin:billing-config-v1');
+export const billingConfig = (): BillingConfig =>
+  loadBillingConfig(process.env.BILLING_CONFIG_LOCATION ?? 'builtin:billing-config-v1');
 
 let fallbackProvider: FakeBillingProvider | undefined;
 export function billingProvider(deps: Deps): BillingProvider {
@@ -111,7 +117,10 @@ const LIVE = `status <> 'canceled'`;
  * modules/platform reads app.tenants.features->>'plan'). Plan ids only; no billing details.
  */
 export async function setTenantPlan(tx: Tx, planId: string) {
-  await tx.exec(`UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{plan}', to_jsonb($1::text)) WHERE features->>'plan' IS DISTINCT FROM $1`, [planId]);
+  await tx.exec(
+    `UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{plan}', to_jsonb($1::text)) WHERE features->>'plan' IS DISTINCT FROM $1`,
+    [planId],
+  );
 }
 
 export async function defaultAccount(tx: Tx): Promise<AccountRow> {
@@ -122,25 +131,53 @@ export async function defaultAccount(tx: Tx): Promise<AccountRow> {
  * The default billing account and the sign-up trial exist for every tenant. Created idempotently on
  * sign-up (tenant.created subscriber), on first billing access and by the daily job.
  */
-export async function ensureBillingDefaults(tx: Tx, cfg: BillingConfig, now: Date): Promise<{ account: AccountRow; created: boolean }> {
-  const t = await tx.one<{ name: string; default_currency: string; home_region: HomeRegion; created_at: string }>('SELECT name, default_currency, home_region, created_at FROM app.tenants');
-  const currency = isBillingCurrency(t.default_currency) ? t.default_currency : REGIONS[t.home_region].defaultCurrency;
+export async function ensureBillingDefaults(
+  tx: Tx,
+  cfg: BillingConfig,
+  now: Date,
+): Promise<{ account: AccountRow; created: boolean }> {
+  const t = await tx.one<{
+    name: string;
+    default_currency: string;
+    home_region: HomeRegion;
+    created_at: string;
+  }>('SELECT name, default_currency, home_region, created_at FROM app.tenants');
+  const currency = isBillingCurrency(t.default_currency)
+    ? t.default_currency
+    : REGIONS[t.home_region].defaultCurrency;
   await tx.exec(
     `INSERT INTO app.billing_accounts (tenant_id, name, is_default, currency) VALUES (app.current_tenant(), $1, true, $2)
      ON CONFLICT (tenant_id) WHERE is_default DO NOTHING`,
     [t.name.slice(0, 200), currency],
   );
   const account = await defaultAccount(tx);
-  const any = await tx.maybe('SELECT 1 FROM app.billing_subscriptions WHERE billing_account_id = $1 LIMIT 1', [account.id]);
+  const any = await tx.maybe(
+    'SELECT 1 FROM app.billing_subscriptions WHERE billing_account_id = $1 LIMIT 1',
+    [account.id],
+  );
   if (any) return { account, created: false };
   const ends = trialEndsAt(cfg, t.created_at);
   const expired = compareInstants(ends, now.toISOString()) <= 0;
   await tx.exec(
     `INSERT INTO app.billing_subscriptions (tenant_id, billing_account_id, plan_id, term, currency, status, trial_ends_at, current_period_start, current_period_end, config_version)
      VALUES (app.current_tenant(), $1, $2, 'monthly', $3, $4, $5, $6, $5, $7)`,
-    [account.id, cfg.trial.planId, currency, expired ? 'trial_expired' : 'trialing', ends, t.created_at, cfg.version],
+    [
+      account.id,
+      cfg.trial.planId,
+      currency,
+      expired ? 'trial_expired' : 'trialing',
+      ends,
+      t.created_at,
+      cfg.version,
+    ],
   );
-  await writeAudit(tx, { actorType: 'system', action: 'billing.trial_started', targetType: 'billing_account', targetId: account.id, diff: { planId: cfg.trial.planId, trialEndsAt: ends } });
+  await writeAudit(tx, {
+    actorType: 'system',
+    action: 'billing.trial_started',
+    targetType: 'billing_account',
+    targetId: account.id,
+    diff: { planId: cfg.trial.planId, trialEndsAt: ends },
+  });
   await setTenantPlan(tx, 'trial');
   return { account, created: true };
 }
@@ -156,7 +193,10 @@ export async function headcounts(tx: Tx): Promise<Map<string, number>> {
 }
 
 export async function liveSubscription(tx: Tx, accountId: string): Promise<SubRow | undefined> {
-  return tx.maybe<SubRow>(`SELECT * FROM app.billing_subscriptions WHERE billing_account_id = $1 AND ${LIVE}`, [accountId]);
+  return tx.maybe<SubRow>(
+    `SELECT * FROM app.billing_subscriptions WHERE billing_account_id = $1 AND ${LIVE}`,
+    [accountId],
+  );
 }
 
 /** The tenant's active enterprise contract, from the cell's back-office store (shared database). */
@@ -193,7 +233,10 @@ export function quoteJson(q: Quote) {
   };
 }
 
-export function accountComplete(a: AccountRow, primary: { name: string; email: string } | undefined): boolean {
+export function accountComplete(
+  a: AccountRow,
+  primary: { name: string; email: string } | undefined,
+): boolean {
   return !!(primary && a.address?.line1 && a.address.city && a.address.postalCode && a.address.country);
 }
 
@@ -218,8 +261,12 @@ export function providerStatus(s: string): SubRow['status'] {
 export async function syncCustomer(deps: Deps, tenantId: string, accountId: string): Promise<string | null> {
   const data = await withTenant(deps.router, tenantId, async (tx) => {
     const a = await tx.one<AccountRow>('SELECT * FROM app.billing_accounts WHERE id = $1', [accountId]);
-    const primary = await tx.maybe<{ name: string; email: string }>('SELECT name, email FROM app.billing_contacts WHERE billing_account_id = $1 AND is_primary', [accountId]);
-    const locale = (await tx.one<{ default_locale: string }>('SELECT default_locale FROM app.tenants')).default_locale;
+    const primary = await tx.maybe<{ name: string; email: string }>(
+      'SELECT name, email FROM app.billing_contacts WHERE billing_account_id = $1 AND is_primary',
+      [accountId],
+    );
+    const locale = (await tx.one<{ default_locale: string }>('SELECT default_locale FROM app.tenants'))
+      .default_locale;
     return { a, primary, locale };
   });
   if (!accountComplete(data.a, data.primary)) return data.a.provider_customer_id;
@@ -231,16 +278,34 @@ export async function syncCustomer(deps: Deps, tenantId: string, accountId: stri
     legalName: data.a.name,
     contactName: data.primary!.name,
     contactEmail: data.primary!.email,
-    companyAddress: { line1: addr.line1, line2: addr.line2 ?? null, city: addr.city, region: addr.region ?? null, postalCode: addr.postalCode, country: addr.country },
-    companyTaxId: data.a.company_tax_id && data.a.company_tax_id_type ? { type: data.a.company_tax_id_type, value: data.a.company_tax_id } : null,
+    companyAddress: {
+      line1: addr.line1,
+      line2: addr.line2 ?? null,
+      city: addr.city,
+      region: addr.region ?? null,
+      postalCode: addr.postalCode,
+      country: addr.country,
+    },
+    companyTaxId:
+      data.a.company_tax_id && data.a.company_tax_id_type
+        ? { type: data.a.company_tax_id_type, value: data.a.company_tax_id }
+        : null,
     poNumber: data.a.po_number,
     locale: data.locale === 'en-US' ? 'en-US' : 'en-GB',
   });
   if (!data.a.provider_customer_id) {
-    await withTenant(deps.router, tenantId, (tx) => tx.exec('UPDATE app.billing_accounts SET provider_customer_id = $2 WHERE id = $1', [accountId, customerId]));
+    await withTenant(deps.router, tenantId, (tx) =>
+      tx.exec('UPDATE app.billing_accounts SET provider_customer_id = $2 WHERE id = $1', [
+        accountId,
+        customerId,
+      ]),
+    );
     await deps.router
       .registryPool()
-      .query('INSERT INTO backoffice.billing_customers (provider_customer_id, subject_tenant_id, billing_account_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING', [customerId, tenantId, accountId]);
+      .query(
+        'INSERT INTO backoffice.billing_customers (provider_customer_id, subject_tenant_id, billing_account_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        [customerId, tenantId, accountId],
+      );
   }
   return customerId;
 }
@@ -253,12 +318,18 @@ export interface QuoteContext {
   contract: ContractRow | null;
 }
 
-export async function loadContext(app: FastifyInstance, tenantId: string, accountId?: string): Promise<QuoteContext> {
+export async function loadContext(
+  app: FastifyInstance,
+  tenantId: string,
+  accountId?: string,
+): Promise<QuoteContext> {
   const cfg = billingConfig();
   const contract = await activeContract(app.deps.router, tenantId);
   return withTenant(app.deps.router, tenantId, async (tx) => {
     const { account: def } = await ensureBillingDefaults(tx, cfg, app.deps.now());
-    const account = accountId ? await tx.maybe<AccountRow>('SELECT * FROM app.billing_accounts WHERE id = $1', [accountId]) : def;
+    const account = accountId
+      ? await tx.maybe<AccountRow>('SELECT * FROM app.billing_accounts WHERE id = $1', [accountId])
+      : def;
     if (!account) throw new ApiError('notFound');
     const sub = await liveSubscription(tx, account.id);
     const headcount = (await headcounts(tx)).get(account.id) ?? 0;
@@ -274,37 +345,71 @@ export interface ChangePreview {
 }
 
 /** What a self-serve change would do, before the owner confirms it. */
-export function previewChange(ctx: QuoteContext, to: { planId: string; term: Term; currency: BillingCurrency; discountCode?: string | null }, now: Instant): ChangePreview {
+export function previewChange(
+  ctx: QuoteContext,
+  to: { planId: string; term: Term; currency: BillingCurrency; discountCode?: string | null },
+  now: Instant,
+): ChangePreview {
   const q = quote(ctx.cfg, { ...to, headcount: ctx.headcount, on: now.slice(0, 10) });
   const sub = ctx.sub;
   if (!sub?.provider_subscription_id) return { kind: 'upgrade', effectiveAt: now, quote: q, proration: null };
-  const kind = classifyChange(ctx.cfg, { planId: sub.plan_id, term: sub.term }, { planId: q.planId, term: q.term });
+  const kind = classifyChange(
+    ctx.cfg,
+    { planId: sub.plan_id, term: sub.term },
+    { planId: q.planId, term: q.term },
+  );
   const immediate = kind === 'upgrade' || kind === 'term_upgrade' || sub.status === 'trialing';
   const effectiveAt = immediate ? now : (sub.current_period_end ?? now);
   const proration =
-    immediate && sub.status !== 'trialing' && sub.current_period_start && sub.current_period_end && sub.term === q.term
-      ? prorationPreview({ oldIntervalAmount: money(BigInt(sub.interval_amount_minor), sub.currency), newIntervalAmount: q.totalAmount, periodStart: sub.current_period_start, periodEnd: sub.current_period_end, changeAt: now })
+    immediate &&
+    sub.status !== 'trialing' &&
+    sub.current_period_start &&
+    sub.current_period_end &&
+    sub.term === q.term
+      ? prorationPreview({
+          oldIntervalAmount: money(BigInt(sub.interval_amount_minor), sub.currency),
+          newIntervalAmount: q.totalAmount,
+          periodStart: sub.current_period_start,
+          periodEnd: sub.current_period_end,
+          changeAt: now,
+        })
       : null;
   return { kind, effectiveAt, quote: q, proration };
 }
 
-const subFromProvider = (p: ProviderSubscription) => [providerStatus(p.status), p.currentPeriodStart, p.currentPeriodEnd, p.trialEnd] as const;
+const subFromProvider = (p: ProviderSubscription) =>
+  [providerStatus(p.status), p.currentPeriodStart, p.currentPeriodEnd, p.trialEnd] as const;
 
 /** Starts a paid self-serve subscription for the default account (keeping any trial days left). */
-export async function startSubscription(app: FastifyInstance, tenantId: string, actorId: string, to: { planId: string; term: Term; currency: BillingCurrency; discountCode?: string | null }) {
+export async function startSubscription(
+  app: FastifyInstance,
+  tenantId: string,
+  actorId: string,
+  to: { planId: string; term: Term; currency: BillingCurrency; discountCode?: string | null },
+) {
   const deps = app.deps;
   const now = deps.now().toISOString();
   const ctx = await loadContext(app, tenantId);
   if (ctx.contract) throw new ApiError('conflict', 'Billing is managed by your contract');
-  if (ctx.sub?.provider_subscription_id) throw new ApiError('conflict', 'A subscription already exists; change it instead');
+  if (ctx.sub?.provider_subscription_id)
+    throw new ApiError('conflict', 'A subscription already exists; change it instead');
   const plan = planById(ctx.cfg, to.planId);
   if (!plan?.selfServe) throw new ApiError('validation', 'This plan is not available self-serve');
   const q = quote(ctx.cfg, { ...to, headcount: ctx.headcount, on: now.slice(0, 10) });
   // The account currency follows the first paid subscription (Stripe customers bill in one currency).
-  await withTenant(deps.router, tenantId, (tx) => tx.exec('UPDATE app.billing_accounts SET currency = $2 WHERE id = $1 AND provider_customer_id IS NULL', [ctx.account.id, q.currency]));
+  await withTenant(deps.router, tenantId, (tx) =>
+    tx.exec('UPDATE app.billing_accounts SET currency = $2 WHERE id = $1 AND provider_customer_id IS NULL', [
+      ctx.account.id,
+      q.currency,
+    ]),
+  );
   const customerId = await syncCustomer(deps, tenantId, ctx.account.id);
-  if (!customerId) throw new ApiError('unprocessable', 'Add your billing details first', { code: 'billingDetailsRequired' });
-  const trialEnd = ctx.sub?.status === 'trialing' && ctx.sub.trial_ends_at && compareInstants(ctx.sub.trial_ends_at, now) > 0 ? ctx.sub.trial_ends_at : null;
+  if (!customerId)
+    throw new ApiError('unprocessable', 'Add your billing details first', { code: 'billingDetailsRequired' });
+  const trialEnd =
+    ctx.sub?.status === 'trialing' && ctx.sub.trial_ends_at && compareInstants(ctx.sub.trial_ends_at, now) > 0
+      ? ctx.sub.trial_ends_at
+      : null;
   const p = await billingProvider(deps).createSubscription({
     tenantId,
     billingAccountId: ctx.account.id,
@@ -322,7 +427,22 @@ export async function startSubscription(app: FastifyInstance, tenantId: string, 
   });
   const [status, ps, pe, te] = subFromProvider(p);
   return withTenant(deps.router, tenantId, async (tx) => {
-    const values = [q.planId, q.term, q.currency, status, te ?? trialEnd, ps, pe, q.quantity, q.bandId, moneyJson(q.unitAmount).amountMinor, moneyJson(q.totalAmount).amountMinor, q.discountCode, p.id, ctx.cfg.version];
+    const values = [
+      q.planId,
+      q.term,
+      q.currency,
+      status,
+      te ?? trialEnd,
+      ps,
+      pe,
+      q.quantity,
+      q.bandId,
+      moneyJson(q.unitAmount).amountMinor,
+      moneyJson(q.totalAmount).amountMinor,
+      q.discountCode,
+      p.id,
+      ctx.cfg.version,
+    ];
     let id: string;
     if (ctx.sub) {
       await tx.exec(
@@ -340,7 +460,20 @@ export async function startSubscription(app: FastifyInstance, tenantId: string, 
         )
       ).id;
     }
-    await writeAudit(tx, { actorType: 'user', actorId, action: 'billing.subscription_started', targetType: 'billing_subscription', targetId: id, diff: { planId: q.planId, term: q.term, currency: q.currency, quantity: q.quantity, intervalAmountMinor: moneyJson(q.totalAmount).amountMinor } });
+    await writeAudit(tx, {
+      actorType: 'user',
+      actorId,
+      action: 'billing.subscription_started',
+      targetType: 'billing_subscription',
+      targetId: id,
+      diff: {
+        planId: q.planId,
+        term: q.term,
+        currency: q.currency,
+        quantity: q.quantity,
+        intervalAmountMinor: moneyJson(q.totalAmount).amountMinor,
+      },
+    });
     await setTenantPlan(tx, q.planId);
     await deps.directory.update(tenantId, { planRef: q.planId }).catch(() => undefined);
     return { id, status, quote: q };
@@ -348,49 +481,118 @@ export async function startSubscription(app: FastifyInstance, tenantId: string, 
 }
 
 /** Applies a self-serve plan or term change following the proration rules (ADR-0104). */
-export async function changeSubscription(app: FastifyInstance, tenantId: string, actorId: string, to: { planId: string; term: Term }) {
+export async function changeSubscription(
+  app: FastifyInstance,
+  tenantId: string,
+  actorId: string,
+  to: { planId: string; term: Term },
+) {
   const deps = app.deps;
   const now = deps.now().toISOString();
   const ctx = await loadContext(app, tenantId);
-  if (ctx.contract || ctx.sub?.source === 'contract') throw new ApiError('conflict', 'Billing is managed by your contract');
+  if (ctx.contract || ctx.sub?.source === 'contract')
+    throw new ApiError('conflict', 'Billing is managed by your contract');
   const sub = ctx.sub;
   if (!sub?.provider_subscription_id) throw new ApiError('conflict', 'Choose a plan first');
-  if (sub.cancel_effective_at) throw new ApiError('conflict', 'Reactivate the subscription before changing it');
+  if (sub.cancel_effective_at)
+    throw new ApiError('conflict', 'Reactivate the subscription before changing it');
   const plan = planById(ctx.cfg, to.planId);
   if (!plan?.selfServe) throw new ApiError('validation', 'This plan is not available self-serve');
   const preview = previewChange(ctx, { ...to, currency: sub.currency, discountCode: sub.discount_code }, now);
   if (preview.kind === 'none') throw new ApiError('validation', 'Nothing to change');
   const q = preview.quote;
   const provider = billingProvider(deps);
-  const amounts = { quantity: q.quantity, bandId: q.bandId, unitAmountMinor: moneyJson(q.unitAmount).amountMinor, intervalAmountMinor: moneyJson(q.totalAmount).amountMinor };
-  const update = { planId: q.planId, productName: plan.providerProductName, taxCode: ctx.cfg.providerTaxCode, currency: q.currency, interval: q.interval, unitAmountMinor: amounts.unitAmountMinor, quantity: q.quantity };
+  const amounts = {
+    quantity: q.quantity,
+    bandId: q.bandId,
+    unitAmountMinor: moneyJson(q.unitAmount).amountMinor,
+    intervalAmountMinor: moneyJson(q.totalAmount).amountMinor,
+  };
+  const update = {
+    planId: q.planId,
+    productName: plan.providerProductName,
+    taxCode: ctx.cfg.providerTaxCode,
+    currency: q.currency,
+    interval: q.interval,
+    unitAmountMinor: amounts.unitAmountMinor,
+    quantity: q.quantity,
+  };
   const key = `subscription:${sub.id}:change:${q.planId}:${q.term}:${now}`;
-  const immediate = preview.kind === 'upgrade' || preview.kind === 'term_upgrade' || sub.status === 'trialing';
+  const immediate =
+    preview.kind === 'upgrade' || preview.kind === 'term_upgrade' || sub.status === 'trialing';
   let pending: PendingChange | null = null;
   let p: ProviderSubscription;
   if (immediate) {
-    p = await provider.updateSubscription(sub.provider_subscription_id, { ...update, proration: sub.status === 'trialing' ? 'none' : 'create_prorations', idempotencyKey: key });
+    p = await provider.updateSubscription(sub.provider_subscription_id, {
+      ...update,
+      proration: sub.status === 'trialing' ? 'none' : 'create_prorations',
+      idempotencyKey: key,
+    });
   } else if (preview.kind === 'downgrade' && sub.term === q.term) {
     // The new price applies from the next renewal; the current plan stays until the period ends.
-    p = await provider.updateSubscription(sub.provider_subscription_id, { ...update, proration: 'none', idempotencyKey: key });
-    pending = { kind: 'downgrade', planId: q.planId, term: q.term, effectiveAt: sub.current_period_end ?? now, ...amounts };
+    p = await provider.updateSubscription(sub.provider_subscription_id, {
+      ...update,
+      proration: 'none',
+      idempotencyKey: key,
+    });
+    pending = {
+      kind: 'downgrade',
+      planId: q.planId,
+      term: q.term,
+      effectiveAt: sub.current_period_end ?? now,
+      ...amounts,
+    };
   } else {
     // Shorter or different term: the current subscription ends with its paid period and is replaced.
     p = await provider.setCancelAt(sub.provider_subscription_id, sub.current_period_end ?? now, key);
-    pending = { kind: 'replace', planId: q.planId, term: q.term, effectiveAt: sub.current_period_end ?? now, ...amounts };
+    pending = {
+      kind: 'replace',
+      planId: q.planId,
+      term: q.term,
+      effectiveAt: sub.current_period_end ?? now,
+      ...amounts,
+    };
   }
   const [status, ps, pe, te] = subFromProvider(p);
   await withTenant(deps.router, tenantId, async (tx) => {
     if (pending) {
-      await tx.exec('UPDATE app.billing_subscriptions SET pending_change = $2, status = $3, current_period_start = coalesce($4, current_period_start), current_period_end = coalesce($5, current_period_end) WHERE id = $1', [sub.id, JSON.stringify(pending), status, ps, pe]);
+      await tx.exec(
+        'UPDATE app.billing_subscriptions SET pending_change = $2, status = $3, current_period_start = coalesce($4, current_period_start), current_period_end = coalesce($5, current_period_end) WHERE id = $1',
+        [sub.id, JSON.stringify(pending), status, ps, pe],
+      );
     } else {
       await tx.exec(
         `UPDATE app.billing_subscriptions SET plan_id = $2, term = $3, quantity = $4, band_id = $5, unit_amount_minor = $6, interval_amount_minor = $7, status = $8, current_period_start = $9, current_period_end = $10, trial_ends_at = $11, pending_change = NULL, config_version = $12 WHERE id = $1`,
-        [sub.id, q.planId, q.term, amounts.quantity, amounts.bandId, amounts.unitAmountMinor, amounts.intervalAmountMinor, status, ps, pe, te, ctx.cfg.version],
+        [
+          sub.id,
+          q.planId,
+          q.term,
+          amounts.quantity,
+          amounts.bandId,
+          amounts.unitAmountMinor,
+          amounts.intervalAmountMinor,
+          status,
+          ps,
+          pe,
+          te,
+          ctx.cfg.version,
+        ],
       );
       await setTenantPlan(tx, q.planId);
     }
-    await writeAudit(tx, { actorType: 'user', actorId, action: 'billing.subscription_changed', targetType: 'billing_subscription', targetId: sub.id, diff: { from: { planId: sub.plan_id, term: sub.term }, to: { planId: q.planId, term: q.term }, kind: preview.kind, effectiveAt: preview.effectiveAt } });
+    await writeAudit(tx, {
+      actorType: 'user',
+      actorId,
+      action: 'billing.subscription_changed',
+      targetType: 'billing_subscription',
+      targetId: sub.id,
+      diff: {
+        from: { planId: sub.plan_id, term: sub.term },
+        to: { planId: q.planId, term: q.term },
+        kind: preview.kind,
+        effectiveAt: preview.effectiveAt,
+      },
+    });
   });
   if (!pending) await deps.directory.update(tenantId, { planRef: q.planId }).catch(() => undefined);
   return preview;
@@ -400,15 +602,37 @@ export async function cancelSubscription(app: FastifyInstance, tenantId: string,
   const deps = app.deps;
   const now = deps.now().toISOString();
   const ctx = await loadContext(app, tenantId);
-  if (ctx.contract || ctx.sub?.source === 'contract') throw new ApiError('conflict', 'Billing is managed by your contract');
+  if (ctx.contract || ctx.sub?.source === 'contract')
+    throw new ApiError('conflict', 'Billing is managed by your contract');
   const sub = ctx.sub;
   if (!sub || sub.status === 'trial_expired') throw new ApiError('conflict', 'Nothing to cancel');
   if (sub.cancel_effective_at) return { effectiveAt: sub.cancel_effective_at };
-  const effectiveAt = cancellationEffectiveAt(ctx.cfg, { term: sub.term, requestedAt: now, currentPeriodEnd: sub.current_period_end ?? now, trialEndsAt: sub.trial_ends_at, status: sub.status });
-  if (sub.provider_subscription_id) await billingProvider(deps).setCancelAt(sub.provider_subscription_id, effectiveAt, `subscription:${sub.id}:cancel:${now}`);
+  const effectiveAt = cancellationEffectiveAt(ctx.cfg, {
+    term: sub.term,
+    requestedAt: now,
+    currentPeriodEnd: sub.current_period_end ?? now,
+    trialEndsAt: sub.trial_ends_at,
+    status: sub.status,
+  });
+  if (sub.provider_subscription_id)
+    await billingProvider(deps).setCancelAt(
+      sub.provider_subscription_id,
+      effectiveAt,
+      `subscription:${sub.id}:cancel:${now}`,
+    );
   await withTenant(deps.router, tenantId, async (tx) => {
-    await tx.exec('UPDATE app.billing_subscriptions SET cancel_requested_at = $2, cancel_effective_at = $3, pending_change = NULL WHERE id = $1', [sub.id, now, effectiveAt]);
-    await writeAudit(tx, { actorType: 'user', actorId, action: 'billing.subscription_cancelled', targetType: 'billing_subscription', targetId: sub.id, diff: { effectiveAt, noticeDays: ctx.cfg.terms[sub.term].cancellationNoticeDays } });
+    await tx.exec(
+      'UPDATE app.billing_subscriptions SET cancel_requested_at = $2, cancel_effective_at = $3, pending_change = NULL WHERE id = $1',
+      [sub.id, now, effectiveAt],
+    );
+    await writeAudit(tx, {
+      actorType: 'user',
+      actorId,
+      action: 'billing.subscription_cancelled',
+      targetType: 'billing_subscription',
+      targetId: sub.id,
+      diff: { effectiveAt, noticeDays: ctx.cfg.terms[sub.term].cancellationNoticeDays },
+    });
   });
   return { effectiveAt };
 }
@@ -418,22 +642,41 @@ export async function reactivateSubscription(app: FastifyInstance, tenantId: str
   const now = deps.now().toISOString();
   const ctx = await loadContext(app, tenantId);
   const sub = ctx.sub;
-  if (!sub?.cancel_effective_at || compareInstants(sub.cancel_effective_at, now) <= 0) throw new ApiError('conflict', 'The subscription has already ended; choose a plan to start again');
-  if (sub.provider_subscription_id) await billingProvider(deps).setCancelAt(sub.provider_subscription_id, null, `subscription:${sub.id}:reactivate:${now}`);
+  if (!sub?.cancel_effective_at || compareInstants(sub.cancel_effective_at, now) <= 0)
+    throw new ApiError('conflict', 'The subscription has already ended; choose a plan to start again');
+  if (sub.provider_subscription_id)
+    await billingProvider(deps).setCancelAt(
+      sub.provider_subscription_id,
+      null,
+      `subscription:${sub.id}:reactivate:${now}`,
+    );
   await withTenant(deps.router, tenantId, async (tx) => {
-    await tx.exec('UPDATE app.billing_subscriptions SET cancel_requested_at = NULL, cancel_effective_at = NULL WHERE id = $1', [sub.id]);
-    await writeAudit(tx, { actorType: 'user', actorId, action: 'billing.subscription_reactivated', targetType: 'billing_subscription', targetId: sub.id });
+    await tx.exec(
+      'UPDATE app.billing_subscriptions SET cancel_requested_at = NULL, cancel_effective_at = NULL WHERE id = $1',
+      [sub.id],
+    );
+    await writeAudit(tx, {
+      actorType: 'user',
+      actorId,
+      action: 'billing.subscription_reactivated',
+      targetType: 'billing_subscription',
+      targetId: sub.id,
+    });
   });
 }
 
 /** Creates the replacement subscription once a scheduled term switch ends the old one (idempotent). */
 export async function applyReplacement(deps: Deps, tenantId: string, subId: string) {
   const cfg = billingConfig();
-  const sub = await withTenant(deps.router, tenantId, (tx) => tx.maybe<SubRow>('SELECT * FROM app.billing_subscriptions WHERE id = $1', [subId]));
+  const sub = await withTenant(deps.router, tenantId, (tx) =>
+    tx.maybe<SubRow>('SELECT * FROM app.billing_subscriptions WHERE id = $1', [subId]),
+  );
   if (!sub?.pending_change || sub.pending_change.kind !== 'replace') return { skipped: true };
   const pc = sub.pending_change;
   const plan = planById(cfg, pc.planId)!;
-  const account = await withTenant(deps.router, tenantId, (tx) => tx.one<AccountRow>('SELECT * FROM app.billing_accounts WHERE id = $1', [sub.billing_account_id]));
+  const account = await withTenant(deps.router, tenantId, (tx) =>
+    tx.one<AccountRow>('SELECT * FROM app.billing_accounts WHERE id = $1', [sub.billing_account_id]),
+  );
   if (!account.provider_customer_id) return { skipped: true };
   const p = await billingProvider(deps).createSubscription({
     tenantId,
@@ -452,13 +695,36 @@ export async function applyReplacement(deps: Deps, tenantId: string, subId: stri
   });
   const [status, ps, pe] = subFromProvider(p);
   await withTenant(deps.router, tenantId, async (tx) => {
-    await tx.exec(`UPDATE app.billing_subscriptions SET status = 'canceled', canceled_at = coalesce(canceled_at, $2), pending_change = NULL WHERE id = $1`, [sub.id, deps.now().toISOString()]);
+    await tx.exec(
+      `UPDATE app.billing_subscriptions SET status = 'canceled', canceled_at = coalesce(canceled_at, $2), pending_change = NULL WHERE id = $1`,
+      [sub.id, deps.now().toISOString()],
+    );
     const n = await tx.one<{ id: string }>(
       `INSERT INTO app.billing_subscriptions (tenant_id, billing_account_id, plan_id, term, currency, status, current_period_start, current_period_end, quantity, band_id, unit_amount_minor, interval_amount_minor, provider_subscription_id, config_version, source)
        VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'self_serve') RETURNING id`,
-      [account.id, pc.planId, pc.term, sub.currency, status, ps, pe, pc.quantity, pc.bandId, pc.unitAmountMinor, pc.intervalAmountMinor, p.id, cfg.version],
+      [
+        account.id,
+        pc.planId,
+        pc.term,
+        sub.currency,
+        status,
+        ps,
+        pe,
+        pc.quantity,
+        pc.bandId,
+        pc.unitAmountMinor,
+        pc.intervalAmountMinor,
+        p.id,
+        cfg.version,
+      ],
     );
-    await writeAudit(tx, { actorType: 'system', action: 'billing.subscription_replaced', targetType: 'billing_subscription', targetId: n.id, diff: { replaces: sub.id, planId: pc.planId, term: pc.term } });
+    await writeAudit(tx, {
+      actorType: 'system',
+      action: 'billing.subscription_replaced',
+      targetType: 'billing_subscription',
+      targetId: n.id,
+      diff: { replaces: sub.id, planId: pc.planId, term: pc.term },
+    });
     await setTenantPlan(tx, pc.planId);
   });
   await deps.directory.update(tenantId, { planRef: pc.planId }).catch(() => undefined);
@@ -466,22 +732,43 @@ export async function applyReplacement(deps: Deps, tenantId: string, subId: stri
 }
 
 /** Finalises downgrades whose period has ended, and expires unused trials. */
-export async function settleSchedules(tx: Tx, now: string): Promise<{ downgrades: number; trialsExpired: number; replacementsDue: string[] }> {
-  const trialsExpired = await tx.exec(`UPDATE app.billing_subscriptions SET status = 'trial_expired' WHERE status = 'trialing' AND provider_subscription_id IS NULL AND trial_ends_at <= $1`, [now]);
-  const due = await tx.query<SubRow>(`SELECT * FROM app.billing_subscriptions WHERE pending_change IS NOT NULL AND (pending_change->>'effectiveAt')::timestamptz <= $1 AND ${LIVE}`, [now]);
+export async function settleSchedules(
+  tx: Tx,
+  now: string,
+): Promise<{ downgrades: number; trialsExpired: number; replacementsDue: string[] }> {
+  const trialsExpired = await tx.exec(
+    `UPDATE app.billing_subscriptions SET status = 'trial_expired' WHERE status = 'trialing' AND provider_subscription_id IS NULL AND trial_ends_at <= $1`,
+    [now],
+  );
+  const due = await tx.query<SubRow>(
+    `SELECT * FROM app.billing_subscriptions WHERE pending_change IS NOT NULL AND (pending_change->>'effectiveAt')::timestamptz <= $1 AND ${LIVE}`,
+    [now],
+  );
   let downgrades = 0;
   const replacementsDue: string[] = [];
   for (const s of due) {
     const pc = s.pending_change!;
     if (pc.kind === 'downgrade') {
-      await tx.exec(`UPDATE app.billing_subscriptions SET plan_id = $2, term = $3, quantity = $4, band_id = $5, unit_amount_minor = $6, interval_amount_minor = $7, pending_change = NULL WHERE id = $1`, [s.id, pc.planId, pc.term, pc.quantity, pc.bandId, pc.unitAmountMinor, pc.intervalAmountMinor]);
-      await writeAudit(tx, { actorType: 'system', action: 'billing.downgrade_applied', targetType: 'billing_subscription', targetId: s.id, diff: { planId: pc.planId } });
+      await tx.exec(
+        `UPDATE app.billing_subscriptions SET plan_id = $2, term = $3, quantity = $4, band_id = $5, unit_amount_minor = $6, interval_amount_minor = $7, pending_change = NULL WHERE id = $1`,
+        [s.id, pc.planId, pc.term, pc.quantity, pc.bandId, pc.unitAmountMinor, pc.intervalAmountMinor],
+      );
+      await writeAudit(tx, {
+        actorType: 'system',
+        action: 'billing.downgrade_applied',
+        targetType: 'billing_subscription',
+        targetId: s.id,
+        diff: { planId: pc.planId },
+      });
       await setTenantPlan(tx, pc.planId);
       downgrades++;
     } else replacementsDue.push(s.id);
   }
   // Cancellations that have taken effect (the provider webhook normally does this first).
-  await tx.exec(`UPDATE app.billing_subscriptions SET status = 'canceled', canceled_at = coalesce(canceled_at, $1) WHERE cancel_effective_at <= $1 AND ${LIVE} AND pending_change IS NULL`, [now]);
+  await tx.exec(
+    `UPDATE app.billing_subscriptions SET status = 'canceled', canceled_at = coalesce(canceled_at, $1) WHERE cancel_effective_at <= $1 AND ${LIVE} AND pending_change IS NULL`,
+    [now],
+  );
   return { downgrades, trialsExpired, replacementsDue };
 }
 
@@ -496,7 +783,9 @@ export async function usageAggregates(tx: Tx) {
 
 export async function recordUsage(deps: Deps, tenantId: string, tx: Tx, now: string) {
   const u = await usageAggregates(tx);
-  const sub = await tx.maybe<{ plan_id: string; status: string }>(`SELECT s.plan_id, s.status FROM app.billing_subscriptions s JOIN app.billing_accounts a ON a.tenant_id = s.tenant_id AND a.id = s.billing_account_id WHERE a.is_default AND s.${LIVE}`);
+  const sub = await tx.maybe<{ plan_id: string; status: string }>(
+    `SELECT s.plan_id, s.status FROM app.billing_subscriptions s JOIN app.billing_accounts a ON a.tenant_id = s.tenant_id AND a.id = s.billing_account_id WHERE a.is_default AND s.${LIVE}`,
+  );
   await deps.router.registryPool().query(
     `INSERT INTO backoffice.tenant_usage (subject_tenant_id, headcount, active_users, storage_bytes, plan_id, billing_status, computed_at) VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (subject_tenant_id) DO UPDATE SET headcount = EXCLUDED.headcount, active_users = EXCLUDED.active_users, storage_bytes = EXCLUDED.storage_bytes, plan_id = EXCLUDED.plan_id, billing_status = EXCLUDED.billing_status, computed_at = EXCLUDED.computed_at`,
@@ -511,7 +800,9 @@ export async function syncHeadcount(deps: Deps, tenantId: string): Promise<numbe
   const contract = await activeContract(deps.router, tenantId);
   const rows = await withTenant(deps.router, tenantId, async (tx) => {
     const counts = await headcounts(tx);
-    const subs = await tx.query<SubRow>(`SELECT * FROM app.billing_subscriptions WHERE ${LIVE} AND provider_subscription_id IS NOT NULL AND status IN ('active', 'past_due', 'trialing')`);
+    const subs = await tx.query<SubRow>(
+      `SELECT * FROM app.billing_subscriptions WHERE ${LIVE} AND provider_subscription_id IS NOT NULL AND status IN ('active', 'past_due', 'trialing')`,
+    );
     return subs.map((s) => ({ s, headcount: counts.get(s.billing_account_id) ?? 0 }));
   });
   let changed = 0;
@@ -519,17 +810,43 @@ export async function syncHeadcount(deps: Deps, tenantId: string): Promise<numbe
     const usesContract = s.source === 'contract' && contract && contract.id === s.contract_id;
     let q: Quote;
     try {
-      q = quote(cfg, { planId: s.plan_id, term: s.term, currency: s.currency, headcount, discountCode: s.discount_code, contract: usesContract ? contractPricing(contract) : null });
+      q = quote(cfg, {
+        planId: s.plan_id,
+        term: s.term,
+        currency: s.currency,
+        headcount,
+        discountCode: s.discount_code,
+        contract: usesContract ? contractPricing(contract) : null,
+      });
     } catch {
       continue; // e.g. headcount grew past the self-serve bands: support follows up (contract required)
     }
     const unit = moneyJson(q.unitAmount).amountMinor;
     if (q.quantity === s.quantity && String(unit) === String(s.unit_amount_minor)) continue;
     const plan = planById(cfg, q.planId)!;
-    await billingProvider(deps).updateSubscription(s.provider_subscription_id!, { planId: q.planId, productName: plan.providerProductName, taxCode: cfg.providerTaxCode, currency: q.currency, interval: q.interval, unitAmountMinor: unit, quantity: q.quantity, proration: 'none', idempotencyKey: `subscription:${s.id}:headcount:${q.quantity}:${unit}` });
+    await billingProvider(deps).updateSubscription(s.provider_subscription_id!, {
+      planId: q.planId,
+      productName: plan.providerProductName,
+      taxCode: cfg.providerTaxCode,
+      currency: q.currency,
+      interval: q.interval,
+      unitAmountMinor: unit,
+      quantity: q.quantity,
+      proration: 'none',
+      idempotencyKey: `subscription:${s.id}:headcount:${q.quantity}:${unit}`,
+    });
     await withTenant(deps.router, tenantId, async (tx) => {
-      await tx.exec('UPDATE app.billing_subscriptions SET quantity = $2, band_id = $3, unit_amount_minor = $4, interval_amount_minor = $5 WHERE id = $1', [s.id, q.quantity, q.bandId, unit, moneyJson(q.totalAmount).amountMinor]);
-      await writeAudit(tx, { actorType: 'system', action: 'billing.headcount_synced', targetType: 'billing_subscription', targetId: s.id, diff: { quantity: q.quantity, bandId: q.bandId } });
+      await tx.exec(
+        'UPDATE app.billing_subscriptions SET quantity = $2, band_id = $3, unit_amount_minor = $4, interval_amount_minor = $5 WHERE id = $1',
+        [s.id, q.quantity, q.bandId, unit, moneyJson(q.totalAmount).amountMinor],
+      );
+      await writeAudit(tx, {
+        actorType: 'system',
+        action: 'billing.headcount_synced',
+        targetType: 'billing_subscription',
+        targetId: s.id,
+        diff: { quantity: q.quantity, bandId: q.bandId },
+      });
     });
     changed++;
   }

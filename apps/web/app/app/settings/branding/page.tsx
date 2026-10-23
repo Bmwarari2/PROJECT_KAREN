@@ -48,8 +48,12 @@ function Preview({ mode, p }: { mode: 'light' | 'dark'; p: Palette }) {
       <p className="mt-2 text-callout">
         <span className="text-accent underline">{t('platform.branding.sampleLink')}</span>
       </p>
-      <span className="mt-3 inline-flex h-8 items-center rounded-pill bg-accent px-3 text-callout font-semibold text-on-accent">{t('platform.branding.sampleButton')}</span>
-      <p className="mt-3 rounded-sm bg-accent-subtle px-2 py-1 text-footnote">{t('platform.branding.sampleSelected')}</p>
+      <span className="mt-3 inline-flex h-8 items-center rounded-pill bg-accent px-3 text-callout font-semibold text-on-accent">
+        {t('platform.branding.sampleButton')}
+      </span>
+      <p className="mt-3 rounded-sm bg-accent-subtle px-2 py-1 text-footnote">
+        {t('platform.branding.sampleSelected')}
+      </p>
     </div>
   );
 }
@@ -76,19 +80,31 @@ export default function BrandingPage() {
     setSeparateDark(!!branding.data.accentDark);
   }, [branding.data]);
 
-  if (!enabled) return <div className="flex flex-col gap-6"><PageHeader title={t('platform.branding.title')} /><FeatureOff /></div>;
+  if (!enabled)
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader title={t('platform.branding.title')} />
+        <FeatureOff />
+      </div>
+    );
 
   async function save(e: React.FormEvent | null, reset = false) {
     e?.preventDefault();
     setBusy(true);
     setFailures(null);
     try {
-      const next = await api<Branding>('/v1/settings/branding', { method: 'PUT', json: reset ? { accentLight: null } : { accentLight: light, accentDark: separateDark && dark ? dark : null } });
+      const next = await api<Branding>('/v1/settings/branding', {
+        method: 'PUT',
+        json: reset
+          ? { accentLight: null }
+          : { accentLight: light, accentDark: separateDark && dark ? dark : null },
+      });
       branding.setData(next);
       reload();
       toast({ title: t(reset ? 'platform.branding.resetDone' : 'platform.branding.saved'), tone: 'success' });
     } catch (err) {
-      if (err instanceof ApiProblem && err.status === 422 && Array.isArray(err.body.failures)) setFailures(err.body.failures as Failure[]);
+      if (err instanceof ApiProblem && err.status === 422 && Array.isArray(err.body.failures))
+        setFailures(err.body.failures as Failure[]);
       else toast({ title: errorText(t, err), tone: 'danger' });
     } finally {
       setBusy(false);
@@ -101,13 +117,20 @@ export default function BrandingPage() {
     if (!file) return;
     const body = new FormData();
     body.append('file', file);
-    const res = await fetch('/v1/settings/branding/logo', { method: 'POST', body, credentials: 'same-origin' });
+    const res = await fetch('/v1/settings/branding/logo', {
+      method: 'POST',
+      body,
+      credentials: 'same-origin',
+    });
     if (res.ok) {
       branding.setData(await res.json());
       reload();
       toast({ title: t('platform.branding.logoSaved'), tone: 'success' });
     } else {
-      toast({ title: t(res.status === 400 ? 'platform.branding.logoInvalid' : 'common.error'), tone: 'danger' });
+      toast({
+        title: t(res.status === 400 ? 'platform.branding.logoInvalid' : 'common.error'),
+        tone: 'danger',
+      });
     }
   }
   async function removeLogo() {
@@ -121,21 +144,54 @@ export default function BrandingPage() {
       <PageHeader title={t('platform.branding.title')} lead={t('platform.branding.lead')} />
       <Card>
         <CardTitle>{t('platform.branding.accentTitle')}</CardTitle>
-        <p className="mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('platform.branding.accentBody')}</p>
+        <p className="mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('platform.branding.accentBody')}
+        </p>
         {!branding.data ? <Skeleton className="mt-4 h-24" /> : null}
         <form onSubmit={save} className={branding.data ? 'mt-4 flex flex-col gap-4' : 'hidden'} noValidate>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field id="accent-light" label={t('platform.branding.accentLight')} hint={t('platform.branding.hexHint')}>
-              {(p) => <Input {...p} value={light} onChange={(e) => setLight(e.target.value.trim())} maxLength={7} autoComplete="off" spellCheck={false} />}
+            <Field
+              id="accent-light"
+              label={t('platform.branding.accentLight')}
+              hint={t('platform.branding.hexHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  value={light}
+                  onChange={(e) => setLight(e.target.value.trim())}
+                  maxLength={7}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              )}
             </Field>
             {separateDark ? (
-              <Field id="accent-dark" label={t('platform.branding.accentDark')} hint={t('platform.branding.hexHint')}>
-                {(p) => <Input {...p} value={dark} onChange={(e) => setDark(e.target.value.trim())} maxLength={7} autoComplete="off" spellCheck={false} />}
+              <Field
+                id="accent-dark"
+                label={t('platform.branding.accentDark')}
+                hint={t('platform.branding.hexHint')}
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={dark}
+                    onChange={(e) => setDark(e.target.value.trim())}
+                    maxLength={7}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                )}
               </Field>
             ) : null}
           </div>
           <label className="flex items-center gap-2 text-callout">
-            <input type="checkbox" className="h-5 w-5 accent-[var(--color-accent)]" checked={separateDark} onChange={(e) => setSeparateDark(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[var(--color-accent)]"
+              checked={separateDark}
+              onChange={(e) => setSeparateDark(e.target.checked)}
+            />
             {t('platform.branding.separateDark')}
           </label>
           {failures ? (
@@ -143,7 +199,14 @@ export default function BrandingPage() {
               <p className="text-callout font-semibold text-danger">{t('platform.branding.rejected')}</p>
               <ul className="mt-2 list-disc pl-5 text-footnote">
                 {failures.map((f) => (
-                  <li key={`${f.mode}-${f.pair}`}>{t('platform.branding.failure', { mode: t(`platform.branding.mode_${f.mode}`), pair: f.pair, ratio: f.ratio.toFixed(2), required: f.required })}</li>
+                  <li key={`${f.mode}-${f.pair}`}>
+                    {t('platform.branding.failure', {
+                      mode: t(`platform.branding.mode_${f.mode}`),
+                      pair: f.pair,
+                      ratio: f.ratio.toFixed(2),
+                      required: f.required,
+                    })}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -172,15 +235,31 @@ export default function BrandingPage() {
         <p className="mt-2 text-callout text-text-secondary">{t('platform.branding.logoBody')}</p>
         {branding.data?.logo ? (
           <div className="mt-4 flex items-center gap-4">
-            <img src={branding.data.logo.url} alt={t('platform.branding.logoAlt')} className="h-12 max-w-[200px] object-contain" />
+            <img
+              src={branding.data.logo.url}
+              alt={t('platform.branding.logoAlt')}
+              className="h-12 max-w-[200px] object-contain"
+            />
             <Button size="sm" variant="secondary" onClick={removeLogo}>
               {t('platform.branding.removeLogo')}
             </Button>
           </div>
         ) : null}
         <form onSubmit={upload} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Field id="logo-file" label={t('platform.branding.logoFile')} hint={t('platform.branding.logoHint')}>
-            {(p) => <input {...p} ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="text-callout" />}
+          <Field
+            id="logo-file"
+            label={t('platform.branding.logoFile')}
+            hint={t('platform.branding.logoHint')}
+          >
+            {(p) => (
+              <input
+                {...p}
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="text-callout"
+              />
+            )}
           </Field>
           <Button type="submit" variant="secondary">
             {t('platform.branding.upload')}

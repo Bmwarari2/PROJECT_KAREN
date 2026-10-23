@@ -32,11 +32,11 @@ flowchart LR
   UKAPP -- register slug/region --> DIR
 ```
 
-| Home region | AWS region | Backup copy |
-| --- | --- | --- |
-| UK | eu-west-2 (London) | none — London only, across availability zones |
-| EU | eu-central-1 (Frankfurt) | eu-west-1 (Ireland) |
-| US | us-east-2 (Ohio) | us-west-1 (N. California) |
+| Home region | AWS region               | Backup copy                                   |
+| ----------- | ------------------------ | --------------------------------------------- |
+| UK          | eu-west-2 (London)       | none — London only, across availability zones |
+| EU          | eu-central-1 (Frankfurt) | eu-west-1 (Ireland)                           |
+| US          | us-east-2 (Ohio)         | us-west-1 (N. California)                     |
 
 The map lives in one module (`packages/core/src/regions.ts`). It is enforced by:
 
@@ -72,7 +72,7 @@ flowchart TB
 - **Tenancy:** every tenant-scoped table has `tenant_id`, composite primary keys `(tenant_id, id)`, composite foreign keys (rows cannot point across tenants), and RLS that is enabled **and forced**. One policy, `tenant_id = app.current_tenant()`, applies to every command.
 - **Tenant context:** `withTenant()` sets `app.tenant_id` with `set_config(..., true)`, so the setting is transaction-local and safe with RDS Proxy pooling. The app connects as `thapsus_app`, which has no `BYPASSRLS` and owns no tables.
 - **Routing:** `registry.tenants.db_key` plus the configured database map send a tenant to the shared database or a dedicated one. Moving a tenant uses `packages/db/src/move-tenant.ts` and needs no code change (runbook: `docs/runbooks/move-tenant-to-dedicated-db.md`).
-- **Effective dating:** core HR records use `[valid_from, valid_to)` with exclusion constraints. `app.employees` holds denormalised *current* values for fast lists and search at 200,000 rows; a daily idempotent job refreshes them for future-dated changes.
+- **Effective dating:** core HR records use `[valid_from, valid_to)` with exclusion constraints. `app.employees` holds denormalised _current_ values for fast lists and search at 200,000 rows; a daily idempotent job refreshes them for future-dated changes.
 - **Audit:** `audit.events` is append-only. Privileges and a trigger block changes, and asynchronous sealing builds a per-tenant SHA-256 chain (ADR-0004).
 - **Sensitive data vault:** `vault.records` holds envelope-encrypted values with per-value data keys wrapped by the regional KMS vault key. The AAD binds each value to its tenant, subject, category and field. Every decrypt is audited.
 - **Reporting reader:** reports and data exports run in read-only transactions on the Aurora reader endpoint as `thapsus_reporting` (SELECT only, no BYPASSRLS, no vault or credential tables), with the same tenant context and forced RLS. Reader URLs are per database key in the routing config; a key without a reader falls back to its own writer (ADR-0071).
@@ -80,17 +80,17 @@ flowchart TB
 
 ## 4. Services and packages
 
-| Path | Role |
-| --- | --- |
-| `apps/web` | Next.js App Router: marketing site, app (installable PWA), sign-in and sign-up |
-| `apps/api` | Fastify, OpenAPI 3.1 (`packages/sdk/openapi.json`), auth (password, TOTP, passkeys, magic links, OIDC/SAML SSO), SCIM 2.0, domain modules, global mode (`SERVICE_ROLE=global`) |
-| `apps/worker` | Outbox dispatch, idempotent jobs with progress and retries, audit sealing, scheduled sweeps |
-| `packages/core` | Regions, residency guard, time (Temporal), money (integer minor units), i18n catalogues and formatters, permission engine, PII scrubber, logger, tracer |
-| `packages/db` | SQL migrations, tenant context, router, audit and outbox helpers, tenant move tool |
-| `packages/rules` | Jurisdiction packs (versioned, effective-dated, sourced rule data, golden tests) |
-| `packages/ui` | Design tokens (generated Tailwind theme) and components |
-| `packages/sdk` | Published OpenAPI document and TypeScript SDK |
-| `infra` | AWS CDK: cell, global and backup copy vault stacks |
+| Path             | Role                                                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web`       | Next.js App Router: marketing site, app (installable PWA), sign-in and sign-up                                                                                                 |
+| `apps/api`       | Fastify, OpenAPI 3.1 (`packages/sdk/openapi.json`), auth (password, TOTP, passkeys, magic links, OIDC/SAML SSO), SCIM 2.0, domain modules, global mode (`SERVICE_ROLE=global`) |
+| `apps/worker`    | Outbox dispatch, idempotent jobs with progress and retries, audit sealing, scheduled sweeps                                                                                    |
+| `packages/core`  | Regions, residency guard, time (Temporal), money (integer minor units), i18n catalogues and formatters, permission engine, PII scrubber, logger, tracer                        |
+| `packages/db`    | SQL migrations, tenant context, router, audit and outbox helpers, tenant move tool                                                                                             |
+| `packages/rules` | Jurisdiction packs (versioned, effective-dated, sourced rule data, golden tests)                                                                                               |
+| `packages/ui`    | Design tokens (generated Tailwind theme) and components                                                                                                                        |
+| `packages/sdk`   | Published OpenAPI document and TypeScript SDK                                                                                                                                  |
+| `infra`          | AWS CDK: cell, global and backup copy vault stacks                                                                                                                             |
 
 Customer-directed integrations (payroll connectors, SFTP, Xero, Microsoft 365, Google Workspace), payslip publishing and the asset register are described in [integrations.md](integrations.md): data flows, scopes, credentials and logs.
 
@@ -130,6 +130,7 @@ flowchart LR
 ```
 
 `ThapsusHr-<env>-ci` holds the GitHub OIDC provider and one deploy role per region. Each role:
+
 - is trusted only by this repository's matching GitHub environment;
 - can only assume that region's CDK bootstrap roles;
 - in cell regions, can also run the post-deploy steps.

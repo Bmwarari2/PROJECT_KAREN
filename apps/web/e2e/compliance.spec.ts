@@ -20,11 +20,31 @@ async function publishLawChange(jurisdiction: string, title: string) {
   const db = new pg.Client({ connectionString: `${OWNER}/${E2E_DB}` });
   await db.connect();
   try {
-    const staff = await db.query<{ id: string }>(`INSERT INTO backoffice.staff_users (email, display_name, role) VALUES ($1, 'Fictional Editor', 'rules_editor') RETURNING id`, [`${uniq('editor')}@thapsus.example.test`]);
+    const staff = await db.query<{ id: string }>(
+      `INSERT INTO backoffice.staff_users (email, display_name, role) VALUES ($1, 'Fictional Editor', 'rules_editor') RETURNING id`,
+      [`${uniq('editor')}@thapsus.example.test`],
+    );
     await db.query(
       `INSERT INTO backoffice.law_changes (jurisdiction, effective_date, title, summary, what_to_do, pack_rule_refs, status, published_at, created_by)
        VALUES ($1, '2027-01-01', $2, $3, $4, $5, 'published', now(), $6)`,
-      [jurisdiction, JSON.stringify({ 'en-GB': title }), JSON.stringify({ 'en-GB': 'The qualifying period for unfair dismissal falls from two years to six months.' }), JSON.stringify({ 'en-GB': 'Review probation and dismissal procedures for staff with six months of service.' }), JSON.stringify([{ jurisdiction: 'GB', key: 'employment.unfair_dismissal_qualifying_period', effectiveFrom: '2027-01-01' }]), staff.rows[0]!.id],
+      [
+        jurisdiction,
+        JSON.stringify({ 'en-GB': title }),
+        JSON.stringify({
+          'en-GB': 'The qualifying period for unfair dismissal falls from two years to six months.',
+        }),
+        JSON.stringify({
+          'en-GB': 'Review probation and dismissal procedures for staff with six months of service.',
+        }),
+        JSON.stringify([
+          {
+            jurisdiction: 'GB',
+            key: 'employment.unfair_dismissal_qualifying_period',
+            effectiveFrom: '2027-01-01',
+          },
+        ]),
+        staff.rows[0]!.id,
+      ],
     );
   } finally {
     await db.end();
@@ -34,11 +54,52 @@ async function publishLawChange(jurisdiction: string, title: string) {
 test.describe('compliance centre', () => {
   test('dashboard renders the compliance overview and passes axe (light and dark)', async ({ page }) => {
     await signUpAndEnrol(page);
-    const entity = await post(page, '/v1/org/legal-entities', { name: 'Fictional Compliance Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' });
-    const employee = await post(page, '/v1/employees', { startDate: '2026-09-07', legalFirstName: 'Fiona', legalLastName: 'Fictional', jobTitle: 'Forklift Operator', entityId: entity.id, weeklyHours: 40, payAmountMinor: 3_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent', probationEndDate: '2027-03-07' });
-    await post(page, '/v1/compliance/requirements', { kind: 'licence', name: 'Fictional forklift licence', appliesTo: { jobTitles: ['Forklift Operator'] }, validityMonths: 12 });
-    const us = await post(page, '/v1/org/legal-entities', { name: 'Fictional Compliance Inc', country: 'US', regionCode: 'US-CA', currency: 'USD', timeZone: 'America/Los_Angeles' });
-    await post(page, '/v1/employees', { startDate: '2026-02-02', legalFirstName: 'Sam', legalLastName: 'Fictional', jobTitle: 'Engineer', entityId: us.id, weeklyHours: 40, payAmountMinor: 6_000_000, payCurrency: 'USD', payFrequency: 'annual', contractType: 'permanent', flsaStatus: 'exempt' });
+    const entity = await post(page, '/v1/org/legal-entities', {
+      name: 'Fictional Compliance Ltd',
+      country: 'GB',
+      regionCode: 'GB-ENG',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    });
+    const employee = await post(page, '/v1/employees', {
+      startDate: '2026-09-07',
+      legalFirstName: 'Fiona',
+      legalLastName: 'Fictional',
+      jobTitle: 'Forklift Operator',
+      entityId: entity.id,
+      weeklyHours: 40,
+      payAmountMinor: 3_000_000,
+      payCurrency: 'GBP',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+      probationEndDate: '2027-03-07',
+    });
+    await post(page, '/v1/compliance/requirements', {
+      kind: 'licence',
+      name: 'Fictional forklift licence',
+      appliesTo: { jobTitles: ['Forklift Operator'] },
+      validityMonths: 12,
+    });
+    const us = await post(page, '/v1/org/legal-entities', {
+      name: 'Fictional Compliance Inc',
+      country: 'US',
+      regionCode: 'US-CA',
+      currency: 'USD',
+      timeZone: 'America/Los_Angeles',
+    });
+    await post(page, '/v1/employees', {
+      startDate: '2026-02-02',
+      legalFirstName: 'Sam',
+      legalLastName: 'Fictional',
+      jobTitle: 'Engineer',
+      entityId: us.id,
+      weeklyHours: 40,
+      payAmountMinor: 6_000_000,
+      payCurrency: 'USD',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+      flsaStatus: 'exempt',
+    });
     expect(employee.id).toBeTruthy();
     await page.getByRole('link', { name: 'Compliance', exact: true }).first().click();
     await page.waitForURL(/\/app\/compliance$/);
@@ -66,7 +127,13 @@ test.describe('compliance centre', () => {
 
   test('a tenant admin sees a relevant law change and acknowledges it', async ({ page }) => {
     await signUpAndEnrol(page);
-    await post(page, '/v1/org/legal-entities', { name: 'Fictional Feed Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' });
+    await post(page, '/v1/org/legal-entities', {
+      name: 'Fictional Feed Ltd',
+      country: 'GB',
+      regionCode: 'GB-ENG',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    });
     const title = `Unfair dismissal qualifying period becomes six months (${uniq('e2e')})`;
     await publishLawChange('GB', title);
     await publishLawChange('FR', `Not relevant here (${uniq('fr')})`);

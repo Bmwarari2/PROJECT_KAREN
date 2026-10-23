@@ -1,4 +1,11 @@
-import { DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb';
 import pg from 'pg';
 import type { HomeRegion } from '@thapsus/core';
 
@@ -7,7 +14,16 @@ import type { HomeRegion } from '@thapsus/core';
  * It deliberately has NO place for personal data — DIRECTORY_FIELDS is the complete schema and
  * test/directory.test.ts fails if anything else is added.
  */
-export const DIRECTORY_FIELDS = ['tenantId', 'slug', 'homeRegion', 'status', 'planRef', 'verifiedDomains', 'createdAt', 'updatedAt'] as const;
+export const DIRECTORY_FIELDS = [
+  'tenantId',
+  'slug',
+  'homeRegion',
+  'status',
+  'planRef',
+  'verifiedDomains',
+  'createdAt',
+  'updatedAt',
+] as const;
 
 export interface DirectoryEntry {
   tenantId: string;
@@ -37,7 +53,8 @@ export class SlugTakenError extends Error {
 export class InMemoryDirectory implements TenantDirectory {
   readonly entries = new Map<string, DirectoryEntry>();
   async register(e: DirectoryEntry) {
-    for (const x of this.entries.values()) if (x.slug === e.slug && x.tenantId !== e.tenantId) throw new SlugTakenError();
+    for (const x of this.entries.values())
+      if (x.slug === e.slug && x.tenantId !== e.tenantId) throw new SlugTakenError();
     this.entries.set(e.tenantId, { ...e });
   }
   async bySlug(slug: string) {
@@ -95,18 +112,28 @@ export class PgDirectory implements TenantDirectory {
     }
   }
   async bySlug(slug: string) {
-    return this.map((await this.pool.query('SELECT * FROM directory_tenants WHERE slug = $1', [slug])).rows[0]);
+    return this.map(
+      (await this.pool.query('SELECT * FROM directory_tenants WHERE slug = $1', [slug])).rows[0],
+    );
   }
   async byDomain(domain: string) {
     return this.map(
-      (await this.pool.query('SELECT * FROM directory_tenants WHERE $1 = ANY(verified_domains)', [domain.toLowerCase()])).rows[0],
+      (
+        await this.pool.query('SELECT * FROM directory_tenants WHERE $1 = ANY(verified_domains)', [
+          domain.toLowerCase(),
+        ])
+      ).rows[0],
     );
   }
   async byId(id: string) {
-    return this.map((await this.pool.query('SELECT * FROM directory_tenants WHERE tenant_id = $1', [id])).rows[0]);
+    return this.map(
+      (await this.pool.query('SELECT * FROM directory_tenants WHERE tenant_id = $1', [id])).rows[0],
+    );
   }
   async list(limit = 5000) {
-    return (await this.pool.query('SELECT * FROM directory_tenants ORDER BY slug LIMIT $1', [limit])).rows.map((r) => this.map(r)!);
+    return (
+      await this.pool.query('SELECT * FROM directory_tenants ORDER BY slug LIMIT $1', [limit])
+    ).rows.map((r) => this.map(r)!);
   }
   async update(id: string, p: Partial<DirectoryEntry>) {
     await this.pool.query(
@@ -126,7 +153,9 @@ export class DynamoDirectory implements TenantDirectory {
   ) {
     this.client = new DynamoDBClient({ region });
   }
-  private map(item: Record<string, { S?: string; SS?: string[]; NULL?: boolean }> | undefined): DirectoryEntry | undefined {
+  private map(
+    item: Record<string, { S?: string; SS?: string[]; NULL?: boolean }> | undefined,
+  ): DirectoryEntry | undefined {
     if (!item) return undefined;
     return {
       tenantId: item.tenantId!.S!,
@@ -170,11 +199,15 @@ export class DynamoDirectory implements TenantDirectory {
     if (e.verifiedDomains.length) await this.update(e.tenantId, { verifiedDomains: e.verifiedDomains });
   }
   async byId(id: string) {
-    const out = await this.client.send(new GetItemCommand({ TableName: this.table, Key: { pk: { S: `TENANT#${id}` } } }));
+    const out = await this.client.send(
+      new GetItemCommand({ TableName: this.table, Key: { pk: { S: `TENANT#${id}` } } }),
+    );
     return this.map(out.Item as never);
   }
   async bySlug(slug: string) {
-    const out = await this.client.send(new GetItemCommand({ TableName: this.table, Key: { pk: { S: `SLUG#${slug}` } } }));
+    const out = await this.client.send(
+      new GetItemCommand({ TableName: this.table, Key: { pk: { S: `SLUG#${slug}` } } }),
+    );
     const id = out.Item?.tenantId?.S;
     return id ? this.byId(id) : undefined;
   }
@@ -235,14 +268,18 @@ export class DynamoDirectory implements TenantDirectory {
     );
     for (const d of p.verifiedDomains ?? []) {
       await this.client.send(
-        new PutItemCommand({ TableName: this.table, Item: { pk: { S: `DOMAIN#${d}` }, domainKey: { S: d }, tenantId: { S: id } } }),
+        new PutItemCommand({
+          TableName: this.table,
+          Item: { pk: { S: `DOMAIN#${d}` }, domainKey: { S: d }, tenantId: { S: id } },
+        }),
       );
     }
   }
 }
 
 export async function directoryFromEnv(env: NodeJS.ProcessEnv = process.env): Promise<TenantDirectory> {
-  if (env.DIRECTORY_TABLE) return new DynamoDirectory(env.DIRECTORY_TABLE, env.DIRECTORY_REGION ?? 'eu-west-2');
+  if (env.DIRECTORY_TABLE)
+    return new DynamoDirectory(env.DIRECTORY_TABLE, env.DIRECTORY_REGION ?? 'eu-west-2');
   if (env.DIRECTORY_DATABASE_URL) {
     const d = new PgDirectory(env.DIRECTORY_DATABASE_URL);
     await d.init();

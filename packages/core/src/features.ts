@@ -18,17 +18,60 @@ export interface FeatureFlagDefinition {
   descriptionKey: string;
 }
 
-export const FEATURE_KEYS = ['publicApi', 'webhooks', 'auditStreaming', 'sandboxes', 'customBranding', 'aiAssistant'] as const;
+export const FEATURE_KEYS = [
+  'publicApi',
+  'webhooks',
+  'auditStreaming',
+  'sandboxes',
+  'customBranding',
+  'aiAssistant',
+] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
 export const FEATURE_FLAGS: Record<FeatureKey, FeatureFlagDefinition> = {
-  publicApi: { key: 'publicApi', default: true, managedBy: 'tenant', labelKey: 'platform.flags.publicApi.label', descriptionKey: 'platform.flags.publicApi.description' },
-  webhooks: { key: 'webhooks', default: true, managedBy: 'tenant', labelKey: 'platform.flags.webhooks.label', descriptionKey: 'platform.flags.webhooks.description' },
-  auditStreaming: { key: 'auditStreaming', default: true, managedBy: 'tenant', labelKey: 'platform.flags.auditStreaming.label', descriptionKey: 'platform.flags.auditStreaming.description' },
-  sandboxes: { key: 'sandboxes', default: true, managedBy: 'staff', labelKey: 'platform.flags.sandboxes.label', descriptionKey: 'platform.flags.sandboxes.description' },
-  customBranding: { key: 'customBranding', default: true, managedBy: 'tenant', labelKey: 'platform.flags.customBranding.label', descriptionKey: 'platform.flags.customBranding.description' },
+  publicApi: {
+    key: 'publicApi',
+    default: true,
+    managedBy: 'tenant',
+    labelKey: 'platform.flags.publicApi.label',
+    descriptionKey: 'platform.flags.publicApi.description',
+  },
+  webhooks: {
+    key: 'webhooks',
+    default: true,
+    managedBy: 'tenant',
+    labelKey: 'platform.flags.webhooks.label',
+    descriptionKey: 'platform.flags.webhooks.description',
+  },
+  auditStreaming: {
+    key: 'auditStreaming',
+    default: true,
+    managedBy: 'tenant',
+    labelKey: 'platform.flags.auditStreaming.label',
+    descriptionKey: 'platform.flags.auditStreaming.description',
+  },
+  sandboxes: {
+    key: 'sandboxes',
+    default: true,
+    managedBy: 'staff',
+    labelKey: 'platform.flags.sandboxes.label',
+    descriptionKey: 'platform.flags.sandboxes.description',
+  },
+  customBranding: {
+    key: 'customBranding',
+    default: true,
+    managedBy: 'tenant',
+    labelKey: 'platform.flags.customBranding.label',
+    descriptionKey: 'platform.flags.customBranding.description',
+  },
   // Brief §6.13: the optional AI assistant is off by default and enabled per tenant by staff.
-  aiAssistant: { key: 'aiAssistant', default: false, managedBy: 'staff', labelKey: 'platform.flags.aiAssistant.label', descriptionKey: 'platform.flags.aiAssistant.description' },
+  aiAssistant: {
+    key: 'aiAssistant',
+    default: false,
+    managedBy: 'staff',
+    labelKey: 'platform.flags.aiAssistant.label',
+    descriptionKey: 'platform.flags.aiAssistant.description',
+  },
 };
 
 export function isFeatureKey(v: unknown): v is FeatureKey {
@@ -37,7 +80,8 @@ export function isFeatureKey(v: unknown): v is FeatureKey {
 
 /** Resolves stored overrides against the registry defaults (unknown keys and non-booleans are ignored). */
 export function resolveFeatureFlags(stored: unknown): Record<FeatureKey, boolean> {
-  const overrides = stored && typeof stored === 'object' && !Array.isArray(stored) ? (stored as Record<string, unknown>) : {};
+  const overrides =
+    stored && typeof stored === 'object' && !Array.isArray(stored) ? (stored as Record<string, unknown>) : {};
   const out = {} as Record<FeatureKey, boolean>;
   for (const key of FEATURE_KEYS) {
     const v = overrides[key];

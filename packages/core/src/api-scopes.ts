@@ -8,11 +8,24 @@ import { actionMatches } from './permissions';
  */
 export const API_SCOPES = {
   'employees:read': ['employees.read', 'employees.history'],
-  'employees:write': ['employees.read', 'employees.history', 'employees.create', 'employees.update', 'employees.terminate'],
+  'employees:write': [
+    'employees.read',
+    'employees.history',
+    'employees.create',
+    'employees.update',
+    'employees.terminate',
+  ],
   'org:read': ['org.read', 'employees.read'],
   'org:write': ['org.read', 'org.manage', 'org.reporting'],
   'leave:read': ['leave.read', 'absence.read'],
-  'leave:write': ['leave.read', 'absence.read', 'leave.record', 'leave.manage', 'leave.adjust', 'absence.record'],
+  'leave:write': [
+    'leave.read',
+    'absence.read',
+    'leave.record',
+    'leave.manage',
+    'leave.adjust',
+    'absence.record',
+  ],
   'time:read': ['time.read', 'rota.view', 'time.export'],
   'time:write': ['time.read', 'rota.view', 'rota.manage', 'time.manage', 'time.correct', 'time.approve'],
   'documents:read': ['documents.read'],
@@ -54,7 +67,9 @@ export function isApiScope(v: unknown): v is ApiScope {
 }
 
 export function apiClientMayCall(path: string): boolean {
-  return API_CLIENT_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`) || path.startsWith(`${p}?`));
+  return API_CLIENT_PATH_PREFIXES.some(
+    (p) => path === p || path.startsWith(`${p}/`) || path.startsWith(`${p}?`),
+  );
 }
 
 /**

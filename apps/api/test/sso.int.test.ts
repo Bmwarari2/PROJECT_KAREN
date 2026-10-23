@@ -14,37 +14,84 @@ type Owner = Awaited<ReturnType<typeof ownerSession>>;
 
 async function verifyDomain(owner: Owner) {
   const domain = `${owner.slug}.example.test`;
-  const add = await ctx.app.inject({ method: 'POST', url: '/v1/settings/domains', headers: { cookie: owner.cookie }, payload: { domain } });
+  const add = await ctx.app.inject({
+    method: 'POST',
+    url: '/v1/settings/domains',
+    headers: { cookie: owner.cookie },
+    payload: { domain },
+  });
   expect(add.statusCode).toBe(201);
   const d = add.json() as { id: string; txtName: string; txtValue: string };
-  const notYet = await ctx.app.inject({ method: 'POST', url: `/v1/settings/domains/${d.id}/verify`, headers: { cookie: owner.cookie } });
+  const notYet = await ctx.app.inject({
+    method: 'POST',
+    url: `/v1/settings/domains/${d.id}/verify`,
+    headers: { cookie: owner.cookie },
+  });
   expect(notYet.statusCode).toBe(422);
   ctx.dnsRecords.set(d.txtName, [[d.txtValue.slice(0, 10), d.txtValue.slice(10)]]); // TXT records may be chunked
-  const ok = await ctx.app.inject({ method: 'POST', url: `/v1/settings/domains/${d.id}/verify`, headers: { cookie: owner.cookie } });
+  const ok = await ctx.app.inject({
+    method: 'POST',
+    url: `/v1/settings/domains/${d.id}/verify`,
+    headers: { cookie: owner.cookie },
+  });
   expect(ok.statusCode).toBe(200);
   expect(ok.json().verifiedAt).toBeTruthy();
   return domain;
 }
 
 async function createConnection(owner: Owner, protocol: 'oidc' | 'saml') {
-  const info = (ctx.app as unknown as { mockIdpInfo: () => { issuer: string; samlEntryPoint: string; certPem: string } }).mockIdpInfo();
+  const info = (
+    ctx.app as unknown as { mockIdpInfo: () => { issuer: string; samlEntryPoint: string; certPem: string } }
+  ).mockIdpInfo();
   const payload =
     protocol === 'oidc'
-      ? { protocol, name: 'Mock OIDC', oidc: { issuer: info.issuer, clientId: 'thapsus-test-client', clientSecret: 'fictional-client-secret' } }
-      : { protocol, name: 'Mock SAML', saml: { entryPoint: info.samlEntryPoint, idpIssuer: info.issuer, idpCert: info.certPem } };
-  const res = await ctx.app.inject({ method: 'POST', url: '/v1/settings/sso-connections', headers: { cookie: owner.cookie }, payload });
+      ? {
+          protocol,
+          name: 'Mock OIDC',
+          oidc: {
+            issuer: info.issuer,
+            clientId: 'thapsus-test-client',
+            clientSecret: 'fictional-client-secret',
+          },
+        }
+      : {
+          protocol,
+          name: 'Mock SAML',
+          saml: { entryPoint: info.samlEntryPoint, idpIssuer: info.issuer, idpCert: info.certPem },
+        };
+  const res = await ctx.app.inject({
+    method: 'POST',
+    url: '/v1/settings/sso-connections',
+    headers: { cookie: owner.cookie },
+    payload,
+  });
   expect(res.statusCode).toBe(201);
   return res.json().id as string;
 }
 
 const go = (url: string, init: RequestInit = {}) => fetch(url, { redirect: 'manual', ...init });
-const sid = (res: Response) => res.headers.getSetCookie().map((c) => c.split(';')[0]!).find((c) => c.startsWith('thr_sid='));
+const sid = (res: Response) =>
+  res.headers
+    .getSetCookie()
+    .map((c) => c.split(';')[0]!)
+    .find((c) => c.startsWith('thr_sid='));
 
 /** The browser-binding cookie set when the sign-in starts (ASVS V10.1.2). */
-const binding = (res: Response) => res.headers.getSetCookie().map((c) => c.split(';')[0]!).find((c) => c.startsWith('thr_sso='));
+const binding = (res: Response) =>
+  res.headers
+    .getSetCookie()
+    .map((c) => c.split(';')[0]!)
+    .find((c) => c.startsWith('thr_sso='));
 
-async function oidcLogin(slug: string, connection: string, email: string, opts: { otherBrowser?: boolean } = {}) {
-  const start = await go(`${ctx.base}/v1/auth/sso/start?tenant=${slug}&connection=${connection}&login_hint=${encodeURIComponent(email)}`);
+async function oidcLogin(
+  slug: string,
+  connection: string,
+  email: string,
+  opts: { otherBrowser?: boolean } = {},
+) {
+  const start = await go(
+    `${ctx.base}/v1/auth/sso/start?tenant=${slug}&connection=${connection}&login_hint=${encodeURIComponent(email)}`,
+  );
   expect(start.status).toBe(302);
   const cookie = binding(start);
   expect(cookie).toBeTruthy();
@@ -54,7 +101,9 @@ async function oidcLogin(slug: string, connection: string, email: string, opts: 
 }
 
 async function samlAssertion(slug: string, connection: string, email: string) {
-  const start = await go(`${ctx.base}/v1/auth/sso/start?tenant=${slug}&connection=${connection}&login_hint=${encodeURIComponent(email)}`);
+  const start = await go(
+    `${ctx.base}/v1/auth/sso/start?tenant=${slug}&connection=${connection}&login_hint=${encodeURIComponent(email)}`,
+  );
   expect(start.status).toBe(302);
   const html = await (await go(start.headers.get('location')!)).text();
   const field = (n: string) => new RegExp(`name="${n}" value="([^"]*)"`).exec(html)![1]!;
@@ -62,7 +111,11 @@ async function samlAssertion(slug: string, connection: string, email: string) {
 }
 
 const postAcs = (form: Record<string, string>) =>
-  go(`${ctx.base}/v1/auth/sso/saml/acs`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(form).toString() });
+  go(`${ctx.base}/v1/auth/sso/saml/acs`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(form).toString(),
+  });
 
 describe('OIDC single sign-on (mock IdP)', () => {
   it('signs in end to end and just-in-time provisions users from a verified domain', async () => {
@@ -95,7 +148,9 @@ describe('OIDC single sign-on (mock IdP)', () => {
     expect(elsewhere.status).toBe(401);
     expect(sid(elsewhere)).toBeUndefined();
     const { withTenant } = await import('@thapsus/db');
-    const rows = await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.query<{ diff: unknown }>(`SELECT diff FROM audit.events WHERE action = 'auth.login_failed'`));
+    const rows = await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.query<{ diff: unknown }>(`SELECT diff FROM audit.events WHERE action = 'auth.login_failed'`),
+    );
     expect(rows.map((r) => r.diff)).toContainEqual({ method: 'oidc', reason: 'invalidCredentials' });
   });
 });
@@ -107,9 +162,16 @@ describe('SAML 2.0 single sign-on (mock IdP)', () => {
     const form = await samlAssertion(owner.slug, conn, owner.email);
     const res = await postAcs(form);
     expect(res.status).toBe(302);
-    const me = await ctx.app.inject({ method: 'GET', url: '/v1/auth/session', headers: { cookie: sid(res)! } });
+    const me = await ctx.app.inject({
+      method: 'GET',
+      url: '/v1/auth/session',
+      headers: { cookie: sid(res)! },
+    });
     expect(me.json()).toMatchObject({ email: owner.email, method: 'saml' });
-    const meta = await ctx.app.inject({ method: 'GET', url: `/v1/auth/sso/saml/metadata/${owner.tenantId}/${conn}` });
+    const meta = await ctx.app.inject({
+      method: 'GET',
+      url: `/v1/auth/sso/saml/metadata/${owner.tenantId}/${conn}`,
+    });
     expect(meta.body).toContain('AssertionConsumerService');
   });
 
@@ -124,10 +186,19 @@ describe('SAML 2.0 single sign-on (mock IdP)', () => {
     const good = await samlAssertion(owner.slug, conn, owner.email);
     expect((await postAcs(good)).status).toBe(302);
     const fresh = await samlAssertion(owner.slug, conn, owner.email);
-    expect((await postAcs({ SAMLResponse: good.SAMLResponse, RelayState: fresh.RelayState })).status).toBe(401);
+    expect((await postAcs({ SAMLResponse: good.SAMLResponse, RelayState: fresh.RelayState })).status).toBe(
+      401,
+    );
     // a response signed with SHA-1 is refused (ASVS V11.4.1)
     const weak = await samlAssertion(owner.slug, conn, owner.email);
-    const sha1 = Buffer.from(Buffer.from(weak.SAMLResponse, 'base64').toString().replaceAll('http://www.w3.org/2001/04/xmldsig-more#rsa-sha256', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1')).toString('base64');
+    const sha1 = Buffer.from(
+      Buffer.from(weak.SAMLResponse, 'base64')
+        .toString()
+        .replaceAll(
+          'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+          'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
+        ),
+    ).toString('base64');
     expect((await postAcs({ ...weak, SAMLResponse: sha1 })).status).toBe(401);
   });
 });
@@ -135,18 +206,41 @@ describe('SAML 2.0 single sign-on (mock IdP)', () => {
 describe('SSO enforcement', () => {
   it('after a tenant enforces SSO, password and magic-link sign-in are refused but SSO works', async () => {
     const owner = await ownerSession(ctx);
-    const noConn = await ctx.app.inject({ method: 'PATCH', url: '/v1/settings/security', headers: { cookie: owner.cookie }, payload: { ssoEnforced: true } });
+    const noConn = await ctx.app.inject({
+      method: 'PATCH',
+      url: '/v1/settings/security',
+      headers: { cookie: owner.cookie },
+      payload: { ssoEnforced: true },
+    });
     expect(noConn.statusCode).toBe(422);
     const conn = await createConnection(owner, 'oidc');
-    const enforce = await ctx.app.inject({ method: 'PATCH', url: '/v1/settings/security', headers: { cookie: owner.cookie }, payload: { ssoEnforced: true } });
+    const enforce = await ctx.app.inject({
+      method: 'PATCH',
+      url: '/v1/settings/security',
+      headers: { cookie: owner.cookie },
+      payload: { ssoEnforced: true },
+    });
     expect(enforce.statusCode).toBe(200);
 
-    const pw = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', payload: { tenant: owner.slug, email: owner.email, password: PASSWORD }, remoteAddress: '10.9.9.9' });
+    const pw = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { tenant: owner.slug, email: owner.email, password: PASSWORD },
+      remoteAddress: '10.9.9.9',
+    });
     expect(pw.statusCode).toBe(403);
     expect(pw.json().code).toBe('ssoRequired');
-    const magic = await ctx.app.inject({ method: 'POST', url: '/v1/auth/magic-link', payload: { tenant: owner.slug, email: owner.email } });
+    const magic = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/magic-link',
+      payload: { tenant: owner.slug, email: owner.email },
+    });
     expect(magic.statusCode).toBe(403);
-    const passkey = await ctx.app.inject({ method: 'POST', url: '/v1/auth/passkeys/login/options', payload: { tenant: owner.slug } });
+    const passkey = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/passkeys/login/options',
+      payload: { tenant: owner.slug },
+    });
     expect(passkey.statusCode).toBe(403);
     expect((await oidcLogin(owner.slug, conn, owner.email)).status).toBe(302);
   });

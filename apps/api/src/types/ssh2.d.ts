@@ -50,9 +50,16 @@ declare module 'ssh2' {
   }
 
   export const utils: {
-    generateKeyPairSync(type: 'ed25519' | 'ecdsa' | 'rsa', opts?: { bits?: number }): { private: string; public: string };
+    generateKeyPairSync(
+      type: 'ed25519' | 'ecdsa' | 'rsa',
+      opts?: { bits?: number },
+    ): { private: string; public: string };
     parseKey(data: string | Buffer, passphrase?: string): ParsedKey | ParsedKey[] | Error;
-    sftp: { OPEN_MODE: Record<string, number>; STATUS_CODE: Record<string, number>; flagsToString(flags: number): string | null };
+    sftp: {
+      OPEN_MODE: Record<string, number>;
+      STATUS_CODE: Record<string, number>;
+      flagsToString(flags: number): string | null;
+    };
   };
 
   const ssh2: { Client: typeof Client; Server: typeof Server; utils: typeof utils };

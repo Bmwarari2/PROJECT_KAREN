@@ -1,6 +1,7 @@
 # Runbook: load test (`pnpm loadtest`)
 
 Proves the brief §3 targets:
+
 - one tenant with 200,000 employees and 50 legal entities;
 - 5,000 concurrent users;
 - 20,000 clock-ins in 10 minutes;
@@ -13,12 +14,14 @@ Results are appended to `docs/PERFORMANCE.md` §3.
 `pnpm loadtest --provision` deploys the temporary `loadtest` environment: `ThapsusHr-loadtest-global` plus `ThapsusHr-loadtest-cell-uk` (eu-west-2 only). It uses `infra/config/loadtest.json`.
 
 **Sizing:**
+
 - 6–40 api tasks;
 - Aurora Serverless v2 at 2–64 ACU;
 - a `cache.r7g.large` Valkey cluster;
 - one NAT gateway.
 
 **Load-test-only settings:**
+
 - the WAF rate rule is raised;
 - the per-IP sign-in throttles are multiplied by 1,000, so one load generator can sign in thousands of synthetic users;
 - production refuses both settings.
@@ -32,6 +35,7 @@ Results are appended to `docs/PERFORMANCE.md` §3.
 ## 2. Run
 
 **Prerequisites:**
+
 - an SSO session for the staging account;
 - Docker (for the pinned `grafana/k6:1.3.0`) or a local `k6`;
 - a load generator machine with ≥ 8 vCPU / 16 GB RAM for 5,000 VUs. An EC2 instance in eu-west-2 is best; a laptop is not enough.
@@ -45,23 +49,24 @@ pnpm loadtest --provision --insecure-tls --param CertificateArn=<imported cert i
 ```
 
 **Flags:**
+
 - `--keep` leaves the environment up so you can re-run with `--target`;
 - `--teardown-only` deletes it later;
 - `--yes` skips the deletion prompt (CI-style runs).
 
 **Scenarios** (`loadtest/k6/thapsus.js`):
 
-| Scenario | Load | Threshold |
-| --- | --- | --- |
-| `common_reads` | Ramps to 5,000 VUs over 5 min, holds 10 min. Each VU is a signed-in synthetic user reading its session, employee record, leave balances, shifts, clock status and org-chart focus. | p95 < 300 ms |
-| `paginated_lists` | 250 HR-admin VUs (the owner session with MFA) page through the 200,000-person list and search it. | p95 < 1 s |
-| `clock_in_burst` | During the 5,000-user plateau: a constant arrival rate of 34 clock-ins per second for 10 min, each a distinct synthetic employee (20,400 in total). | ≥ 20,000 created; p95 < 1 s |
+| Scenario          | Load                                                                                                                                                                               | Threshold                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `common_reads`    | Ramps to 5,000 VUs over 5 min, holds 10 min. Each VU is a signed-in synthetic user reading its session, employee record, leave balances, shifts, clock status and org-chart focus. | p95 < 300 ms                |
+| `paginated_lists` | 250 HR-admin VUs (the owner session with MFA) page through the 200,000-person list and search it.                                                                                  | p95 < 1 s                   |
+| `clock_in_burst`  | During the 5,000-user plateau: a constant arrival rate of 34 clock-ins per second for 10 min, each a distinct synthetic employee (20,400 in total).                                | ≥ 20,000 created; p95 < 1 s |
 
 **Failure gates:** failed requests must stay under 1 %, and checks must pass over 99 %. k6 exits 99 when a threshold fails; the runner records FAIL.
 
 ## 3. Teardown
 
-The runner empties the files and logs buckets (all versions), deletes the backup recovery points, then runs `cdk destroy` on the cell and global stacks. In `loadtest`, every stateful resource has deletion policy Delete. KMS keys move to *pending deletion* (7 days) and then disappear.
+The runner empties the files and logs buckets (all versions), deletes the backup recovery points, then runs `cdk destroy` on the cell and global stacks. In `loadtest`, every stateful resource has deletion policy Delete. KMS keys move to _pending deletion_ (7 days) and then disappear.
 
 ### Manual teardown (if the runner was interrupted)
 
@@ -82,6 +87,7 @@ The runner empties the files and logs buckets (all versions), deletes the backup
 ## 4. Reading the results
 
 Each run adds one row to `docs/PERFORMANCE.md` §3. Look at, in order:
+
 1. the reads and lists p95 against their targets;
 2. the clock-ins created;
 3. the failed requests.

@@ -42,6 +42,11 @@ export function recordRouteBodies(app: FastifyInstance) {
   app.decorate('routeBodies', bodies);
   app.addHook('onRoute', (r) => {
     const body = (r.schema as { body?: TSchema } | undefined)?.body;
-    if (body) bodies.push({ method: ([] as string[]).concat(r.method as string | string[]).join(','), url: r.url, schema: body });
+    if (body)
+      bodies.push({
+        method: ([] as string[]).concat(r.method as string | string[]).join(','),
+        url: r.url,
+        schema: body,
+      });
   });
 }

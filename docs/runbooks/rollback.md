@@ -20,9 +20,11 @@ Fastest path: redeploy the previous good commit. The image tags are content hash
 3. Verify with `deploy.md` §5.
 
 Emergency path, a few minutes, no CDK: point each ECS service at its previous task definition revision.
+
 ```sh
 aws ecs update-service --region <region> --cluster thapsus-hr-<env>-<cell> --service thapsus-hr-<env>-<cell>-api --task-definition <family>:<previous-revision>
 ```
+
 Repeat for `-worker` and `-web`, then follow up with the CDK path above, so the stack and the services agree again.
 
 ## 3. Turn a feature off instead

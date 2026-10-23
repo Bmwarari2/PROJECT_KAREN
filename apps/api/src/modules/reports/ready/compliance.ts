@@ -2,7 +2,12 @@ import { Type, type Static } from 'typebox';
 import { ApiError } from '../../../http/errors';
 import { CivilDate, Uuid } from '../../../http/schemas';
 import { eeo1Report, genderPayGapReport, payTransparencyReport } from '../../compliance/reporting';
-import { complianceSettings, EMPLOYEE_COLUMNS, EMPLOYEE_FROM, type EmployeeRow } from '../../compliance/service';
+import {
+  complianceSettings,
+  EMPLOYEE_COLUMNS,
+  EMPLOYEE_FROM,
+  type EmployeeRow,
+} from '../../compliance/service';
 import { i9Statuses, matrixCells, rtwStatuses, type ReqRow } from '../../compliance/status';
 import { compareDates } from '@thapsus/core/time';
 import { rowScope } from '../access';
@@ -22,7 +27,14 @@ function needCompliance(ctx: ReportContext) {
 }
 
 // ---- UK gender pay gap -----------------------------------------------------------------------------------
-const GpgParams = Type.Object({ year: Type.Integer({ minimum: 2017, maximum: 2100 }), sector: Type.Optional(Type.Union([Type.Literal('privateAndVoluntary'), Type.Literal('publicAuthority')])), entityId: Type.Optional(Uuid) }, { additionalProperties: false });
+const GpgParams = Type.Object(
+  {
+    year: Type.Integer({ minimum: 2017, maximum: 2100 }),
+    sector: Type.Optional(Type.Union([Type.Literal('privateAndVoluntary'), Type.Literal('publicAuthority')])),
+    entityId: Type.Optional(Uuid),
+  },
+  { additionalProperties: false },
+);
 export const genderPayGapReportDef: ReportDefinition<Static<typeof GpgParams>> = {
   id: 'gender-pay-gap',
   category: 'compliance',
@@ -38,11 +50,26 @@ export const genderPayGapReportDef: ReportDefinition<Static<typeof GpgParams>> =
     const f = r.figures;
     const rows: Row[] = [
       { measure: ctx.t('compliance.gpg.meanHourly'), gap: pct(f.meanHourlyPayGap), men: null, women: null },
-      { measure: ctx.t('compliance.gpg.medianHourly'), gap: pct(f.medianHourlyPayGap), men: null, women: null },
+      {
+        measure: ctx.t('compliance.gpg.medianHourly'),
+        gap: pct(f.medianHourlyPayGap),
+        men: null,
+        women: null,
+      },
       { measure: ctx.t('compliance.gpg.meanBonus'), gap: pct(f.meanBonusGap), men: null, women: null },
       { measure: ctx.t('compliance.gpg.medianBonus'), gap: pct(f.medianBonusGap), men: null, women: null },
-      { measure: ctx.t('reports.gpg.bonusProportion'), gap: null, men: pct(f.bonusProportions.male), women: pct(f.bonusProportions.female) },
-      ...f.quartiles.map((q) => ({ measure: ctx.t(`compliance.band.${q.band}`), gap: null, men: pct(q.malePercent), women: pct(q.femalePercent) })),
+      {
+        measure: ctx.t('reports.gpg.bonusProportion'),
+        gap: null,
+        men: pct(f.bonusProportions.male),
+        women: pct(f.bonusProportions.female),
+      },
+      ...f.quartiles.map((q) => ({
+        measure: ctx.t(`compliance.band.${q.band}`),
+        gap: null,
+        men: pct(q.malePercent),
+        women: pct(q.femalePercent),
+      })),
     ];
     return {
       columns: [
@@ -58,10 +85,31 @@ export const genderPayGapReportDef: ReportDefinition<Static<typeof GpgParams>> =
         { key: 'headcount', labelKey: 'reports.fact.headcount', type: 'integer', value: r.headcount },
         { key: 'threshold', labelKey: 'reports.fact.threshold', type: 'integer', value: r.employeeThreshold },
         { key: 'required', labelKey: 'reports.fact.required', type: 'boolean', value: r.required },
-        { key: 'relevantEmployees', labelKey: 'reports.fact.relevantEmployees', type: 'integer', value: r.population.relevantEmployees },
-        { key: 'excludedNoSexRecorded', labelKey: 'reports.fact.excludedNoSex', type: 'integer', value: r.population.excludedNoSexRecorded },
-        { key: 'dataSource', labelKey: 'reports.fact.dataSource', type: 'enum', enumKey: 'compliance.gpg.dataSource', value: r.dataSource },
-        { key: 'source', labelKey: 'reports.fact.source', type: 'text', value: `${r.source.title} — ${r.source.url}` },
+        {
+          key: 'relevantEmployees',
+          labelKey: 'reports.fact.relevantEmployees',
+          type: 'integer',
+          value: r.population.relevantEmployees,
+        },
+        {
+          key: 'excludedNoSexRecorded',
+          labelKey: 'reports.fact.excludedNoSex',
+          type: 'integer',
+          value: r.population.excludedNoSexRecorded,
+        },
+        {
+          key: 'dataSource',
+          labelKey: 'reports.fact.dataSource',
+          type: 'enum',
+          enumKey: 'compliance.gpg.dataSource',
+          value: r.dataSource,
+        },
+        {
+          key: 'source',
+          labelKey: 'reports.fact.source',
+          type: 'text',
+          value: `${r.source.title} — ${r.source.url}`,
+        },
       ],
       notes: ['reports.note.complianceAggregates'],
       sensitive: true,
@@ -70,7 +118,10 @@ export const genderPayGapReportDef: ReportDefinition<Static<typeof GpgParams>> =
 };
 
 // ---- EEO-1 Component 1 -----------------------------------------------------------------------------------
-const Eeo1Params = Type.Object({ year: Type.Integer({ minimum: 2020, maximum: 2100 }), snapshotDate: Type.Optional(CivilDate) }, { additionalProperties: false });
+const Eeo1Params = Type.Object(
+  { year: Type.Integer({ minimum: 2020, maximum: 2100 }), snapshotDate: Type.Optional(CivilDate) },
+  { additionalProperties: false },
+);
 export const eeo1ReportDef: ReportDefinition<Static<typeof Eeo1Params>> = {
   id: 'eeo-1',
   category: 'compliance',
@@ -83,14 +134,27 @@ export const eeo1ReportDef: ReportDefinition<Static<typeof Eeo1Params>> = {
   status: 'available',
   async run(ctx, p) {
     // never the exact (unsuppressed) table from a report: exports and schedules leave the compliance centre
-    const r = await needCompliance(ctx)((c) => eeo1Report(c, { year: p.year, snapshotDate: p.snapshotDate, exact: false }));
+    const r = await needCompliance(ctx)((c) =>
+      eeo1Report(c, { year: p.year, snapshotDate: p.snapshotDate, exact: false }),
+    );
     const cellKey = (race: string, sex: string) => `${race}__${sex}`;
     const columns: Column[] = [
       { key: 'jobCategory', labelKey: 'reports.col.jobCategory', type: 'enum', enumKey: 'compliance.job' },
-      ...r.rule.raceEthnicityCategories.flatMap((race) => r.rule.sexCategories.map((sex): Column => ({ key: cellKey(race, sex), labelKey: `compliance.race.${race}`, subLabelKey: `compliance.sex.${sex}`, type: 'integer' }))),
+      ...r.rule.raceEthnicityCategories.flatMap((race) =>
+        r.rule.sexCategories.map((sex): Column => ({
+          key: cellKey(race, sex),
+          labelKey: `compliance.race.${race}`,
+          subLabelKey: `compliance.sex.${sex}`,
+          type: 'integer',
+        })),
+      ),
       { key: 'total', labelKey: 'reports.col.total', type: 'integer' },
     ];
-    const rows: Row[] = r.table.map((t) => ({ jobCategory: t.jobCategory, ...Object.fromEntries(t.cells.map((c) => [cellKey(c.raceEthnicity, c.sex), c.count])), total: t.total }));
+    const rows: Row[] = r.table.map((t) => ({
+      jobCategory: t.jobCategory,
+      ...Object.fromEntries(t.cells.map((c) => [cellKey(c.raceEthnicity, c.sex), c.count])),
+      total: t.total,
+    }));
     return {
       columns,
       rows,
@@ -102,9 +166,24 @@ export const eeo1ReportDef: ReportDefinition<Static<typeof Eeo1Params>> = {
         { key: 'threshold', labelKey: 'reports.fact.threshold', type: 'integer', value: r.threshold },
         { key: 'required', labelKey: 'reports.fact.required', type: 'boolean', value: r.required },
         { key: 'notReported', labelKey: 'reports.fact.notReported', type: 'integer', value: r.notReported },
-        { key: 'unmappedJobs', labelKey: 'reports.fact.unmappedJobs', type: 'integer', value: r.unmappedJobs },
-        { key: 'suppressionThreshold', labelKey: 'reports.fact.suppressionThreshold', type: 'integer', value: r.suppressionThreshold },
-        { key: 'source', labelKey: 'reports.fact.source', type: 'text', value: `${r.source.title} — ${r.source.url}` },
+        {
+          key: 'unmappedJobs',
+          labelKey: 'reports.fact.unmappedJobs',
+          type: 'integer',
+          value: r.unmappedJobs,
+        },
+        {
+          key: 'suppressionThreshold',
+          labelKey: 'reports.fact.suppressionThreshold',
+          type: 'integer',
+          value: r.suppressionThreshold,
+        },
+        {
+          key: 'source',
+          labelKey: 'reports.fact.source',
+          type: 'text',
+          value: `${r.source.title} — ${r.source.url}`,
+        },
       ],
       notes: ['reports.note.complianceAggregates', 'reports.note.suppressed'],
       sensitive: true,
@@ -113,7 +192,10 @@ export const eeo1ReportDef: ReportDefinition<Static<typeof Eeo1Params>> = {
 };
 
 // ---- EU pay transparency -----------------------------------------------------------------------------
-const PtParams = Type.Object({ year: Type.Integer({ minimum: 2026, maximum: 2100 }), entityId: Type.Optional(Uuid) }, { additionalProperties: false });
+const PtParams = Type.Object(
+  { year: Type.Integer({ minimum: 2026, maximum: 2100 }), entityId: Type.Optional(Uuid) },
+  { additionalProperties: false },
+);
 export const payTransparencyReportDef: ReportDefinition<Static<typeof PtParams>> = {
   id: 'pay-transparency',
   category: 'compliance',
@@ -147,7 +229,12 @@ export const payTransparencyReportDef: ReportDefinition<Static<typeof PtParams>>
       columns: [
         { key: 'entity', labelKey: 'reports.groupBy.entity', type: 'text' },
         { key: 'country', labelKey: 'reports.groupBy.country', type: 'text' },
-        { key: 'transposition', labelKey: 'reports.col.transposition', type: 'enum', enumKey: 'compliance.ptStatus' },
+        {
+          key: 'transposition',
+          labelKey: 'reports.col.transposition',
+          type: 'enum',
+          enumKey: 'compliance.ptStatus',
+        },
         { key: 'workers', labelKey: 'reports.col.workers', type: 'integer' },
         { key: 'reportingRequired', labelKey: 'reports.fact.required', type: 'boolean' },
         { key: 'firstReportBy', labelKey: 'reports.col.firstReportBy', type: 'date' },
@@ -168,7 +255,15 @@ export const payTransparencyReportDef: ReportDefinition<Static<typeof PtParams>>
 // ---- compliance status ---------------------------------------------------------------------------------
 const StatusParams = Type.Object({ asOf: CivilDate }, { additionalProperties: false });
 const RTW = ['missing', 'valid', 'follow_up_due', 'expired', 'retention'] as const;
-const I9 = ['missing', 'section1_due', 'section2_due', 'section2_overdue', 'reverification_due', 'reverification_overdue', 'complete'] as const;
+const I9 = [
+  'missing',
+  'section1_due',
+  'section2_due',
+  'section2_overdue',
+  'reverification_due',
+  'reverification_overdue',
+  'complete',
+] as const;
 const MATRIX = ['compliant', 'expiring', 'expired', 'missing'] as const;
 export const complianceStatusReportDef: ReportDefinition<Static<typeof StatusParams>> = {
   id: 'compliance-status',
@@ -184,17 +279,35 @@ export const complianceStatusReportDef: ReportDefinition<Static<typeof StatusPar
     // status calculations are shared with the compliance dashboard and the reminder job (no vault access)
     const params: unknown[] = [];
     const scope = rowScope(ctx.principal, 'compliance.read', params);
-    const emps = await ctx.tx.query<EmployeeRow>(`SELECT ${EMPLOYEE_COLUMNS} FROM ${EMPLOYEE_FROM} WHERE ${scope}`, params);
+    const emps = await ctx.tx.query<EmployeeRow>(
+      `SELECT ${EMPLOYEE_COLUMNS} FROM ${EMPLOYEE_FROM} WHERE ${scope}`,
+      params,
+    );
     const settings = await complianceSettings(ctx.tx);
-    const current = emps.filter((e) => e.status !== 'leaver' && (!e.end_date || compareDates(e.end_date, p.asOf) >= 0));
-    const rtw = await rtwStatuses(ctx.tx, ctx.book, emps.filter((e) => e.country === 'GB'), p.asOf, settings);
-    const i9 = await i9Statuses(ctx.tx, ctx.book, emps.filter((e) => e.country === 'US'), p.asOf, settings);
+    const current = emps.filter(
+      (e) => e.status !== 'leaver' && (!e.end_date || compareDates(e.end_date, p.asOf) >= 0),
+    );
+    const rtw = await rtwStatuses(
+      ctx.tx,
+      ctx.book,
+      emps.filter((e) => e.country === 'GB'),
+      p.asOf,
+      settings,
+    );
+    const i9 = await i9Statuses(
+      ctx.tx,
+      ctx.book,
+      emps.filter((e) => e.country === 'US'),
+      p.asOf,
+      settings,
+    );
     const reqs = await ctx.tx.query<ReqRow>('SELECT * FROM app.compliance_requirements WHERE active');
     const cells = await matrixCells(ctx.tx, current, reqs, p.asOf, settings);
     const rows: Row[] = [];
     const push = (area: string, statuses: readonly string[], items: Array<{ status: string }>) => {
       if (!items.length) return;
-      for (const s of statuses) rows.push({ area: ctx.t(area), status: s, count: items.filter((x) => x.status === s).length });
+      for (const s of statuses)
+        rows.push({ area: ctx.t(area), status: s, count: items.filter((x) => x.status === s).length });
     };
     push('compliance.dashboard.rtwTitle', RTW, rtw);
     push('compliance.dashboard.i9Title', I9, i9);

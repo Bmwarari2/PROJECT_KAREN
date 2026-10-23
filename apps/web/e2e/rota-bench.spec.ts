@@ -33,14 +33,36 @@ function syntheticPage(url: URL) {
       name: `Worker ${String(i).padStart(5, '0')} Fictional`,
       employeeNumber: `E${String(i).padStart(6, '0')}`,
       jobTitle: 'Store associate',
-      shifts: days.slice(0, 5).map((date, k) => ({ id: `10000000-0000-4000-8000-${String(i * 7 + k).padStart(12, '0')}`, employeeId: id, employeeName: null, date, start: i % 2 ? '07:00' : '13:00', end: i % 2 ? '15:00' : '21:00', startLocal: `${date}T07:00`, endLocal: `${date}T15:00`, zone: 'Europe/London', startsAt: `${date}T06:00:00Z`, endsAt: `${date}T14:00:00Z`, breakMinutes: 30, status: 'published', locationId: null, departmentId: null, role: null, notes: null, publishedAt: null })),
+      shifts: days.slice(0, 5).map((date, k) => ({
+        id: `10000000-0000-4000-8000-${String(i * 7 + k).padStart(12, '0')}`,
+        employeeId: id,
+        employeeName: null,
+        date,
+        start: i % 2 ? '07:00' : '13:00',
+        end: i % 2 ? '15:00' : '21:00',
+        startLocal: `${date}T07:00`,
+        endLocal: `${date}T15:00`,
+        zone: 'Europe/London',
+        startsAt: `${date}T06:00:00Z`,
+        endsAt: `${date}T14:00:00Z`,
+        breakMinutes: 30,
+        status: 'published',
+        locationId: null,
+        departmentId: null,
+        role: null,
+        notes: null,
+        publishedAt: null,
+      })),
     });
   }
-  const next = from + limit < WORKERS ? Buffer.from(JSON.stringify([from + limit])).toString('base64url') : null;
+  const next =
+    from + limit < WORKERS ? Buffer.from(JSON.stringify([from + limit])).toString('base64url') : null;
   return { weekStart, days, total: cursor ? null : WORKERS, rows, openShifts: [], nextCursor: next };
 }
 
-test('virtualised rota grid stays responsive with 10,000 workers (only a window of rows in the DOM)', async ({ page }) => {
+test('virtualised rota grid stays responsive with 10,000 workers (only a window of rows in the DOM)', async ({
+  page,
+}) => {
   test.setTimeout(300_000);
   await signUpAndEnrol(page);
   let pages = 0;
@@ -61,7 +83,9 @@ test('virtualised rota grid stays responsive with 10,000 workers (only a window 
   // jump to the middle: keyset pages load in order until the window is covered
   const jumpStart = Date.now();
   await grid.evaluate((el, y) => (el.scrollTop = y), 5_000 * ROW);
-  await expect(grid.locator('[data-row="5000"]')).toContainText('Worker 05000 Fictional', { timeout: 60_000 });
+  await expect(grid.locator('[data-row="5000"]')).toContainText('Worker 05000 Fictional', {
+    timeout: 60_000,
+  });
   const jumpMs = Date.now() - jumpStart;
   const domRowsMiddle = await grid.locator('[data-row]').count();
 
@@ -82,7 +106,18 @@ test('virtualised rota grid stays responsive with 10,000 workers (only a window 
   const medianFrame = frames[Math.floor(frames.length / 2)]!;
   const domRowsAfterScroll = await grid.locator('[data-row]').count();
 
-  const result = { workers: WORKERS, shifts: WORKERS * 5, firstRenderMs, jumpToMiddleMs: jumpMs, keysetPagesFetched: pages, domRowsAtTop, domRowsMiddle, domRowsAfterScroll, medianFrameMs: Math.round(medianFrame * 10) / 10, p95FrameMs: Math.round(p95Frame * 10) / 10 };
+  const result = {
+    workers: WORKERS,
+    shifts: WORKERS * 5,
+    firstRenderMs,
+    jumpToMiddleMs: jumpMs,
+    keysetPagesFetched: pages,
+    domRowsAtTop,
+    domRowsMiddle,
+    domRowsAfterScroll,
+    medianFrameMs: Math.round(medianFrame * 10) / 10,
+    p95FrameMs: Math.round(p95Frame * 10) / 10,
+  };
   console.log(`ROTA_GRID_BENCH ${JSON.stringify(result)}`);
   const dir = join(process.cwd(), 'e2e', '.results');
   mkdirSync(dir, { recursive: true });

@@ -81,7 +81,9 @@ async function columns(client: pg.Client, table: string): Promise<string> {
 }
 
 async function count(client: pg.Client, table: string, tenantId: string) {
-  const r = await client.query<{ n: string }>(`SELECT count(*) AS n FROM ${table} WHERE tenant_id = $1`, [tenantId]);
+  const r = await client.query<{ n: string }>(`SELECT count(*) AS n FROM ${table} WHERE tenant_id = $1`, [
+    tenantId,
+  ]);
   return Number(r.rows[0]!.n);
 }
 
@@ -91,7 +93,12 @@ export async function moveTenant(opts: MoveOptions): Promise<MoveReport> {
   const registry = new pg.Client({ connectionString: opts.ownerUrls[registryKey] });
   await registry.connect();
   try {
-    const entry = (await registry.query<{ db_key: string; status: string }>('SELECT db_key, status FROM registry.tenants WHERE tenant_id = $1', [opts.tenantId])).rows[0];
+    const entry = (
+      await registry.query<{ db_key: string; status: string }>(
+        'SELECT db_key, status FROM registry.tenants WHERE tenant_id = $1',
+        [opts.tenantId],
+      )
+    ).rows[0];
     if (!entry) throw new Error('tenant not found in registry');
     if (entry.db_key === opts.targetKey) throw new Error('tenant already on target database');
     if (entry.status !== 'active') throw new Error(`tenant status is ${entry.status}`);
@@ -99,7 +106,9 @@ export async function moveTenant(opts: MoveOptions): Promise<MoveReport> {
     const targetUrl = opts.ownerUrls[opts.targetKey];
     if (!sourceUrl || !targetUrl) throw new Error('owner URL missing for source or target');
 
-    await registry.query(`UPDATE registry.tenants SET status = 'moving' WHERE tenant_id = $1`, [opts.tenantId]);
+    await registry.query(`UPDATE registry.tenants SET status = 'moving' WHERE tenant_id = $1`, [
+      opts.tenantId,
+    ]);
     log(`tenant ${opts.tenantId}: marked moving; waiting ${opts.settleMs ?? 0} ms for router caches`);
     if (opts.settleMs) await new Promise((r) => setTimeout(r, opts.settleMs));
 
@@ -110,9 +119,14 @@ export async function moveTenant(opts: MoveOptions): Promise<MoveReport> {
       const tables = await tenantTablesInOrder(source);
       await target.query('BEGIN');
       for (const table of tables) {
-        if ((await count(target, table, opts.tenantId)) > 0) throw new Error(`${table} already has rows for this tenant on the target`);
+        if ((await count(target, table, opts.tenantId)) > 0)
+          throw new Error(`${table} already has rows for this tenant on the target`);
         const cols = await columns(source, table);
-        const out = source.query(copyTo(`COPY (SELECT ${cols} FROM ${table} WHERE tenant_id = '${opts.tenantId}') TO STDOUT WITH (FORMAT binary)`));
+        const out = source.query(
+          copyTo(
+            `COPY (SELECT ${cols} FROM ${table} WHERE tenant_id = '${opts.tenantId}') TO STDOUT WITH (FORMAT binary)`,
+          ),
+        );
         const inp = target.query(copyFrom(`COPY ${table} (${cols}) FROM STDIN WITH (FORMAT binary)`));
         await pipeline(out, inp);
         const [a, b] = [await count(source, table, opts.tenantId), await count(target, table, opts.tenantId)];
@@ -130,14 +144,18 @@ export async function moveTenant(opts: MoveOptions): Promise<MoveReport> {
           END LOOP; END $$`);
       await target.query('COMMIT');
 
-      await registry.query(`UPDATE registry.tenants SET db_key = $2, status = 'active' WHERE tenant_id = $1`, [opts.tenantId, opts.targetKey]);
+      await registry.query(
+        `UPDATE registry.tenants SET db_key = $2, status = 'active' WHERE tenant_id = $1`,
+        [opts.tenantId, opts.targetKey],
+      );
       log(`routing switched to ${opts.targetKey}`);
 
       if (opts.purgeSource) {
         await source.query('BEGIN');
         // FK and append-only triggers are bypassed only for this purge of an already-copied tenant.
         await source.query('SET LOCAL session_replication_role = replica');
-        for (const table of [...tables].reverse()) await source.query(`DELETE FROM ${table} WHERE tenant_id = $1`, [opts.tenantId]);
+        for (const table of [...tables].reverse())
+          await source.query(`DELETE FROM ${table} WHERE tenant_id = $1`, [opts.tenantId]);
         await source.query('COMMIT');
         report.purged = true;
         log('source purged');
@@ -145,7 +163,10 @@ export async function moveTenant(opts: MoveOptions): Promise<MoveReport> {
       return report;
     } catch (err) {
       await target.query('ROLLBACK').catch(() => undefined);
-      await registry.query(`UPDATE registry.tenants SET status = 'active' WHERE tenant_id = $1 AND status = 'moving'`, [opts.tenantId]);
+      await registry.query(
+        `UPDATE registry.tenants SET status = 'active' WHERE tenant_id = $1 AND status = 'moving'`,
+        [opts.tenantId],
+      );
       throw err;
     } finally {
       await source.end();

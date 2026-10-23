@@ -13,14 +13,25 @@ interface Person {
   id: string;
   displayName?: string;
 }
-const usePeople = (enabled: boolean) => useApi<{ data: Person[] }>(enabled ? '/v1/employees?status=active&limit=200' : null);
+const usePeople = (enabled: boolean) =>
+  useApi<{ data: Person[] }>(enabled ? '/v1/employees?status=active&limit=200' : null);
 
 /** Starts a leaver: last working day, reason, and who their reports move to (offboarding starts automatically). */
-export function LeaverDialog({ employeeId, name, onDone }: { employeeId: string; name: string; onDone: () => void }) {
+export function LeaverDialog({
+  employeeId,
+  name,
+  onDone,
+}: {
+  employeeId: string;
+  name: string;
+  onDone: () => void;
+}) {
   const t = useT();
   const fmt = useFormat();
   const [open, setOpen] = React.useState(false);
-  const reports = useApi<{ data: Person[] }>(open ? `/v1/employees?managerId=${employeeId}&status=active&limit=1` : null);
+  const reports = useApi<{ data: Person[] }>(
+    open ? `/v1/employees?managerId=${employeeId}&status=active&limit=1` : null,
+  );
   const people = usePeople(open && !!reports.data?.data.length);
   const [endDate, setEndDate] = React.useState('');
   const [reason, setReason] = React.useState('');
@@ -30,8 +41,17 @@ export function LeaverDialog({ employeeId, name, onDone }: { employeeId: string;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const body = { endDate, reason: reason.trim(), ...(hasReports && reassign ? { reassignReportsTo: reassign } : {}) };
-    if (await action.run(() => api(`/v1/employees/${employeeId}/terminate`, { method: 'POST', json: body }), t('admin.leaver.done', { name, date: fmt.date(endDate) }))) {
+    const body = {
+      endDate,
+      reason: reason.trim(),
+      ...(hasReports && reassign ? { reassignReportsTo: reassign } : {}),
+    };
+    if (
+      await action.run(
+        () => api(`/v1/employees/${employeeId}/terminate`, { method: 'POST', json: body }),
+        t('admin.leaver.done', { name, date: fmt.date(endDate) }),
+      )
+    ) {
       setOpen(false);
       onDone();
     }
@@ -45,20 +65,51 @@ export function LeaverDialog({ employeeId, name, onDone }: { employeeId: string;
           {t('admin.leaver.start')}
         </Button>
       </DialogTrigger>
-      <DialogContent title={t('admin.leaver.title', { name })} description={t('admin.leaver.body')} closeLabel={t('common.close')}>
+      <DialogContent
+        title={t('admin.leaver.title', { name })}
+        description={t('admin.leaver.body')}
+        closeLabel={t('common.close')}
+      >
         <form onSubmit={submit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1">
           <Field id="leaver-date" label={t('admin.leaver.lastDay')}>
-            {(p) => <Input {...p} type="date" required value={endDate} onChange={(e) => setEndDate(e.target.value)} />}
+            {(p) => (
+              <Input
+                {...p}
+                type="date"
+                required
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            )}
           </Field>
           <Field id="leaver-reason" label={t('admin.leaver.reason')} hint={t('admin.leaver.reasonHint')}>
-            {(p) => <Textarea {...p} required minLength={2} maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} />}
+            {(p) => (
+              <Textarea
+                {...p}
+                required
+                minLength={2}
+                maxLength={200}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            )}
           </Field>
           {!reports.data ? (
             <Skeleton className="h-10" />
           ) : hasReports ? (
-            <Field id="leaver-reassign" label={t('admin.leaver.reassign')} hint={t('admin.leaver.reassignHint')}>
+            <Field
+              id="leaver-reassign"
+              label={t('admin.leaver.reassign')}
+              hint={t('admin.leaver.reassignHint')}
+            >
               {(p) => (
-                <select {...p} required className={selectClass} value={reassign} onChange={(e) => setReassign(e.target.value)}>
+                <select
+                  {...p}
+                  required
+                  className={selectClass}
+                  value={reassign}
+                  onChange={(e) => setReassign(e.target.value)}
+                >
                   <option value="">{t('admin.userPicker.none')}</option>
                   {(people.data?.data ?? [])
                     .filter((x) => x.id !== employeeId)
@@ -82,7 +133,15 @@ export function LeaverDialog({ employeeId, name, onDone }: { employeeId: string;
 }
 
 /** Internal transfer: new entity, location, department, job title or manager from a date. */
-export function TransferDialog({ employeeId, name, onDone }: { employeeId: string; name: string; onDone: () => void }) {
+export function TransferDialog({
+  employeeId,
+  name,
+  onDone,
+}: {
+  employeeId: string;
+  name: string;
+  onDone: () => void;
+}) {
   const t = useT();
   const fmt = useFormat();
   const [open, setOpen] = React.useState(false);
@@ -90,25 +149,53 @@ export function TransferDialog({ employeeId, name, onDone }: { employeeId: strin
   const locations = useOrg('locations');
   const departments = useOrg('departments');
   const people = usePeople(open);
-  const [v, setV] = React.useState({ effectiveDate: today(fmt.zone), entityId: '', locationId: '', departmentId: '', jobTitle: '', managerId: '', reason: '' });
+  const [v, setV] = React.useState({
+    effectiveDate: today(fmt.zone),
+    entityId: '',
+    locationId: '',
+    departmentId: '',
+    jobTitle: '',
+    managerId: '',
+    reason: '',
+  });
   const action = useAction();
-  const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setV((x) => ({ ...x, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof v) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setV((x) => ({ ...x, [k]: e.target.value }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const changes = Object.fromEntries((['entityId', 'locationId', 'departmentId', 'jobTitle', 'managerId'] as const).map((k) => [k, v[k].trim()]).filter(([, x]) => x));
+    const changes = Object.fromEntries(
+      (['entityId', 'locationId', 'departmentId', 'jobTitle', 'managerId'] as const)
+        .map((k) => [k, v[k].trim()])
+        .filter(([, x]) => x),
+    );
     if (!Object.keys(changes).length) {
       action.setError(t('admin.transfer.nothing'));
       return;
     }
-    const body = { effectiveDate: v.effectiveDate, ...changes, ...(v.reason.trim() ? { reason: v.reason.trim() } : {}) };
-    if (await action.run(() => api(`/v1/employees/${employeeId}/transfer`, { method: 'POST', json: body }), t('admin.transfer.done', { name, date: fmt.date(v.effectiveDate) }))) {
+    const body = {
+      effectiveDate: v.effectiveDate,
+      ...changes,
+      ...(v.reason.trim() ? { reason: v.reason.trim() } : {}),
+    };
+    if (
+      await action.run(
+        () => api(`/v1/employees/${employeeId}/transfer`, { method: 'POST', json: body }),
+        t('admin.transfer.done', { name, date: fmt.date(v.effectiveDate) }),
+      )
+    ) {
       setOpen(false);
       onDone();
     }
   }
 
-  const orgSelect = (k: 'entityId' | 'locationId' | 'departmentId', label: string, list: Array<{ id: string; name: string }> | undefined) => (
+  const orgSelect = (
+    k: 'entityId' | 'locationId' | 'departmentId',
+    label: string,
+    list: Array<{ id: string; name: string }> | undefined,
+  ) => (
     <Field id={`transfer-${k}`} label={label}>
       {(p) => (
         <select {...p} className={selectClass} value={v[k]} onChange={set(k)}>
@@ -131,10 +218,16 @@ export function TransferDialog({ employeeId, name, onDone }: { employeeId: strin
           {t('admin.transfer.start')}
         </Button>
       </DialogTrigger>
-      <DialogContent title={t('admin.transfer.title', { name })} description={t('admin.transfer.body')} closeLabel={t('common.close')}>
+      <DialogContent
+        title={t('admin.transfer.title', { name })}
+        description={t('admin.transfer.body')}
+        closeLabel={t('common.close')}
+      >
         <form onSubmit={submit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1">
           <Field id="transfer-date" label={t('people.effectiveDate')}>
-            {(p) => <Input {...p} type="date" required value={v.effectiveDate} onChange={set('effectiveDate')} />}
+            {(p) => (
+              <Input {...p} type="date" required value={v.effectiveDate} onChange={set('effectiveDate')} />
+            )}
           </Field>
           {orgSelect('entityId', t('admin.transfer.entity'), entities.data)}
           {orgSelect('locationId', t('rota.location'), locations.data)}
@@ -177,7 +270,19 @@ interface LeaveType {
 }
 
 /** The person's leave balances, and (with leave.adjust) a balance adjustment such as TOIL earned. */
-export function BalancesPanel({ employeeId, name, canAdjust, balances, onChanged }: { employeeId: string; name: string; canAdjust: boolean; balances: LeaveBalance[]; onChanged: () => void }) {
+export function BalancesPanel({
+  employeeId,
+  name,
+  canAdjust,
+  balances,
+  onChanged,
+}: {
+  employeeId: string;
+  name: string;
+  canAdjust: boolean;
+  balances: LeaveBalance[];
+  onChanged: () => void;
+}) {
   const t = useT();
   const locale = useLocale();
   const fmt = useFormat();
@@ -186,14 +291,32 @@ export function BalancesPanel({ employeeId, name, canAdjust, balances, onChanged
     const x = types.data?.find((y) => y.key === key);
     return x ? (x.name[locale] ?? x.name['en-GB'] ?? key) : key;
   };
-  const [v, setV] = React.useState({ leaveTypeId: '', amount: '', kind: 'manual', effectiveDate: today(fmt.zone), reason: '' });
+  const [v, setV] = React.useState({
+    leaveTypeId: '',
+    amount: '',
+    kind: 'manual',
+    effectiveDate: today(fmt.zone),
+    reason: '',
+  });
   const action = useAction();
   const deducting = (types.data ?? []).filter((x) => x.deductsBalance);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const body = { employeeId, leaveTypeId: v.leaveTypeId || deducting[0]?.id, amount: Number(v.amount), kind: v.kind, effectiveDate: v.effectiveDate, reason: v.reason.trim() };
-    if (await action.run(() => api('/v1/leave/adjustments', { method: 'POST', json: body }), t('admin.balances.adjusted'))) {
+    const body = {
+      employeeId,
+      leaveTypeId: v.leaveTypeId || deducting[0]?.id,
+      amount: Number(v.amount),
+      kind: v.kind,
+      effectiveDate: v.effectiveDate,
+      reason: v.reason.trim(),
+    };
+    if (
+      await action.run(
+        () => api('/v1/leave/adjustments', { method: 'POST', json: body }),
+        t('admin.balances.adjusted'),
+      )
+    ) {
       setV({ ...v, amount: '', reason: '' });
       onChanged();
     }
@@ -201,9 +324,17 @@ export function BalancesPanel({ employeeId, name, canAdjust, balances, onChanged
 
   return (
     <div className="flex flex-col gap-5">
-      <LeaveBalancesTable balances={balances} typeName={typeName} caption={t('admin.balances.caption', { name })} />
+      <LeaveBalancesTable
+        balances={balances}
+        typeName={typeName}
+        caption={t('admin.balances.caption', { name })}
+      />
       {canAdjust ? (
-        <form onSubmit={submit} className="flex flex-col gap-4 rounded-lg bg-surface-raised p-5 shadow-sm" aria-labelledby="adjust-title">
+        <form
+          onSubmit={submit}
+          className="flex flex-col gap-4 rounded-lg bg-surface-raised p-5 shadow-sm"
+          aria-labelledby="adjust-title"
+        >
           <h3 id="adjust-title" className="text-title-3">
             {t('admin.balances.adjustTitle')}
           </h3>
@@ -211,7 +342,12 @@ export function BalancesPanel({ employeeId, name, canAdjust, balances, onChanged
           <div className="grid gap-4 md:grid-cols-2">
             <Field id="adj-type" label={t('timeOff.type')}>
               {(p) => (
-                <select {...p} className={selectClass} value={v.leaveTypeId || deducting[0]?.id || ''} onChange={(e) => setV({ ...v, leaveTypeId: e.target.value })}>
+                <select
+                  {...p}
+                  className={selectClass}
+                  value={v.leaveTypeId || deducting[0]?.id || ''}
+                  onChange={(e) => setV({ ...v, leaveTypeId: e.target.value })}
+                >
                   {deducting.map((x) => (
                     <option key={x.id} value={x.id}>
                       {x.name[locale] ?? x.name['en-GB'] ?? x.key}
@@ -222,7 +358,12 @@ export function BalancesPanel({ employeeId, name, canAdjust, balances, onChanged
             </Field>
             <Field id="adj-kind" label={t('admin.balances.kind')}>
               {(p) => (
-                <select {...p} className={selectClass} value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value })}>
+                <select
+                  {...p}
+                  className={selectClass}
+                  value={v.kind}
+                  onChange={(e) => setV({ ...v, kind: e.target.value })}
+                >
                   {['manual', 'toil', 'carry_over', 'correction'].map((k) => (
                     <option key={k} value={k}>
                       {t(`admin.balances.kinds.${k}`)}
@@ -232,14 +373,43 @@ export function BalancesPanel({ employeeId, name, canAdjust, balances, onChanged
               )}
             </Field>
             <Field id="adj-amount" label={t('admin.balances.amount')} hint={t('admin.balances.amountHint')}>
-              {(p) => <Input {...p} type="number" inputMode="decimal" required min={-3000} max={3000} step="0.25" value={v.amount} onChange={(e) => setV({ ...v, amount: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="decimal"
+                  required
+                  min={-3000}
+                  max={3000}
+                  step="0.25"
+                  value={v.amount}
+                  onChange={(e) => setV({ ...v, amount: e.target.value })}
+                />
+              )}
             </Field>
             <Field id="adj-date" label={t('people.effectiveDate')}>
-              {(p) => <Input {...p} type="date" required value={v.effectiveDate} onChange={(e) => setV({ ...v, effectiveDate: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="date"
+                  required
+                  value={v.effectiveDate}
+                  onChange={(e) => setV({ ...v, effectiveDate: e.target.value })}
+                />
+              )}
             </Field>
           </div>
           <Field id="adj-reason" label={t('admin.leaver.reason')}>
-            {(p) => <Input {...p} required minLength={3} maxLength={300} value={v.reason} onChange={(e) => setV({ ...v, reason: e.target.value })} />}
+            {(p) => (
+              <Input
+                {...p}
+                required
+                minLength={3}
+                maxLength={300}
+                value={v.reason}
+                onChange={(e) => setV({ ...v, reason: e.target.value })}
+              />
+            )}
           </Field>
           <FormError message={action.error} />
           <Button type="submit" variant="secondary" className="self-start" loading={action.busy}>

@@ -9,7 +9,12 @@ const OFFLINE_URL = '/offline';
 const PRECACHE = [OFFLINE_URL, '/icons/icon-192.png', '/fonts/inter-latin-wght-normal.woff2'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(VERSION).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches
+      .open(VERSION)
+      .then((c) => c.addAll(PRECACHE))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -33,7 +38,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   // Immutable build assets: cache-first.
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/fonts/') || url.pathname.startsWith('/icons/')) {
+  if (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/fonts/') ||
+    url.pathname.startsWith('/icons/')
+  ) {
     event.respondWith(
       caches.match(req).then(
         (hit) =>

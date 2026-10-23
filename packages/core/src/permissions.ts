@@ -68,7 +68,9 @@ export function scopeMatches(principal: Principal, scope: Scope, target?: Target
     case 'self':
       return !!principal.employeeId && target.employeeId === principal.employeeId;
     case 'own_team': {
-      const managers = new Set([principal.employeeId, ...(principal.delegatedFromEmployeeIds ?? [])].filter(Boolean));
+      const managers = new Set(
+        [principal.employeeId, ...(principal.delegatedFromEmployeeIds ?? [])].filter(Boolean),
+      );
       return (target.managerChain ?? []).some((m) => managers.has(m));
     }
     default:
@@ -93,7 +95,10 @@ export function isAdmin(principal: Principal): boolean {
 }
 
 /** One grant's access to a field key: the exact key, then the most specific wildcard, then `*`. */
-export function grantFieldAccess(grant: Pick<RoleGrant, 'fieldAccess'>, key: string): FieldAccess | undefined {
+export function grantFieldAccess(
+  grant: Pick<RoleGrant, 'fieldAccess'>,
+  key: string,
+): FieldAccess | undefined {
   if (key in grant.fieldAccess) return grant.fieldAccess[key];
   // most specific wildcard: employee.pay.salary → employee.pay.* → employee.*  → *
   const parts = key.split('.');
@@ -104,7 +109,12 @@ export function grantFieldAccess(grant: Pick<RoleGrant, 'fieldAccess'>, key: str
   return grant.fieldAccess['*'];
 }
 
-export function fieldAccess(principal: Principal, resource: string, field: string, target?: Target): FieldAccess {
+export function fieldAccess(
+  principal: Principal,
+  resource: string,
+  field: string,
+  target?: Target,
+): FieldAccess {
   let best: FieldAccess = 'none';
   for (const g of principal.grants) {
     if (!scopeMatches(principal, g.scope, target)) continue;
@@ -132,6 +142,11 @@ export function filterReadable<T extends Record<string, unknown>>(
 }
 
 /** Field names in `changes` the principal may not write. */
-export function unwritableFields(principal: Principal, resource: string, fields: string[], target?: Target): string[] {
+export function unwritableFields(
+  principal: Principal,
+  resource: string,
+  fields: string[],
+  target?: Target,
+): string[] {
   return fields.filter((f) => fieldAccess(principal, resource, f, target) !== 'write');
 }

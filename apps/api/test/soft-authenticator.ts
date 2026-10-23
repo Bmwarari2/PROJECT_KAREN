@@ -44,7 +44,14 @@ export class SoftAuthenticator {
 
   register(options: { challenge: string; user: { id: string } }) {
     this.userHandle = options.user.id;
-    const clientDataJSON = Buffer.from(JSON.stringify({ type: 'webauthn.create', challenge: options.challenge, origin: this.origin, crossOrigin: false }));
+    const clientDataJSON = Buffer.from(
+      JSON.stringify({
+        type: 'webauthn.create',
+        challenge: options.challenge,
+        origin: this.origin,
+        crossOrigin: false,
+      }),
+    );
     const cose = cbor(
       new Map<number, unknown>([
         [1, 2],
@@ -56,13 +63,31 @@ export class SoftAuthenticator {
     );
     const idLen = Buffer.alloc(2);
     idLen.writeUInt16BE(this.credentialId.length);
-    const authData = Buffer.concat([sha256(this.rpId), Buffer.from([0x45]), Buffer.alloc(4), Buffer.alloc(16), idLen, this.credentialId, cose]);
-    const attestationObject = cbor(new Map<string, unknown>([['fmt', 'none'], ['attStmt', new Map()], ['authData', authData]]));
+    const authData = Buffer.concat([
+      sha256(this.rpId),
+      Buffer.from([0x45]),
+      Buffer.alloc(4),
+      Buffer.alloc(16),
+      idLen,
+      this.credentialId,
+      cose,
+    ]);
+    const attestationObject = cbor(
+      new Map<string, unknown>([
+        ['fmt', 'none'],
+        ['attStmt', new Map()],
+        ['authData', authData],
+      ]),
+    );
     return {
       id: b64u(this.credentialId),
       rawId: b64u(this.credentialId),
       type: 'public-key',
-      response: { clientDataJSON: b64u(clientDataJSON), attestationObject: b64u(attestationObject), transports: ['internal'] },
+      response: {
+        clientDataJSON: b64u(clientDataJSON),
+        attestationObject: b64u(attestationObject),
+        transports: ['internal'],
+      },
       clientExtensionResults: {},
       authenticatorAttachment: 'platform',
     };
@@ -70,12 +95,23 @@ export class SoftAuthenticator {
 
   assert(options: { challenge: string }, overrides: { userVerified?: boolean } = {}) {
     this.counter++;
-    const clientDataJSON = Buffer.from(JSON.stringify({ type: 'webauthn.get', challenge: options.challenge, origin: this.origin, crossOrigin: false }));
+    const clientDataJSON = Buffer.from(
+      JSON.stringify({
+        type: 'webauthn.get',
+        challenge: options.challenge,
+        origin: this.origin,
+        crossOrigin: false,
+      }),
+    );
     const count = Buffer.alloc(4);
     count.writeUInt32BE(this.counter);
     const flags = overrides.userVerified === false ? 0x01 : 0x05;
     const authenticatorData = Buffer.concat([sha256(this.rpId), Buffer.from([flags]), count]);
-    const signature = sign('sha256', Buffer.concat([authenticatorData, sha256(clientDataJSON)]), this.privateKey);
+    const signature = sign(
+      'sha256',
+      Buffer.concat([authenticatorData, sha256(clientDataJSON)]),
+      this.privateKey,
+    );
     return {
       id: b64u(this.credentialId),
       rawId: b64u(this.credentialId),

@@ -6,20 +6,57 @@ import { apiCall, expectAccessible, lastMailTo, signUpAndEnrol } from './helpers
 const magicLink = (text: string) => /(https?:\/\/\S+\/auth\/magic\?token=\S+)/.exec(text)![1]!;
 
 async function hire(page: Page, entityId: string, values: Record<string, unknown>) {
-  const base = { startDate: '2026-01-05', entityId, jobTitle: 'Analyst', payAmountMinor: 4_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' };
+  const base = {
+    startDate: '2026-01-05',
+    entityId,
+    jobTitle: 'Analyst',
+    payAmountMinor: 4_000_000,
+    payCurrency: 'GBP',
+    payFrequency: 'annual',
+    contractType: 'permanent',
+  };
   return (await apiCall<{ id: string }>(page.request, 'POST', '/v1/employees', { ...base, ...values })).id;
 }
 
 test.describe('roles and access', () => {
-  test('an owner creates a custom role, gives it to an employee for one department, and that person sees only what it allows', async ({ page, browser }) => {
+  test('an owner creates a custom role, gives it to an employee for one department, and that person sees only what it allows', async ({
+    page,
+    browser,
+  }) => {
     const { slug } = await signUpAndEnrol(page);
-    const entity = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', { name: 'Fictional UK Ltd', country: 'GB', currency: 'GBP', timeZone: 'Europe/London' })).id;
-    const engineering = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/departments', { name: 'Engineering' })).id;
-    const sales = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/departments', { name: 'Sales' })).id;
+    const entity = (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', {
+        name: 'Fictional UK Ltd',
+        country: 'GB',
+        currency: 'GBP',
+        timeZone: 'Europe/London',
+      })
+    ).id;
+    const engineering = (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/departments', { name: 'Engineering' })
+    ).id;
+    const sales = (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/departments', { name: 'Sales' })
+    ).id;
     const danaEmail = `dana.developer@${slug}.example.test`;
-    const dana = await hire(page, entity, { legalFirstName: 'Dana', legalLastName: 'Developer', departmentId: engineering, workEmail: danaEmail });
-    const eli = await hire(page, entity, { legalFirstName: 'Eli', legalLastName: 'Engineer', departmentId: engineering, jobTitle: 'Platform engineer' });
-    const sara = await hire(page, entity, { legalFirstName: 'Sara', legalLastName: 'Seller', departmentId: sales, jobTitle: 'Account executive' });
+    const dana = await hire(page, entity, {
+      legalFirstName: 'Dana',
+      legalLastName: 'Developer',
+      departmentId: engineering,
+      workEmail: danaEmail,
+    });
+    const eli = await hire(page, entity, {
+      legalFirstName: 'Eli',
+      legalLastName: 'Engineer',
+      departmentId: engineering,
+      jobTitle: 'Platform engineer',
+    });
+    const sara = await hire(page, entity, {
+      legalFirstName: 'Sara',
+      legalLastName: 'Seller',
+      departmentId: sales,
+      jobTitle: 'Account executive',
+    });
     await apiCall(page.request, 'POST', `/v1/employees/${dana}/invite`, {});
 
     // the owner creates the role in settings
@@ -33,7 +70,8 @@ test.describe('roles and access', () => {
     await page.getByLabel('Name', { exact: true }).fill('Engineering viewer');
     await expect(page.getByLabel('Identifier')).toHaveValue('engineering_viewer');
     await page.getByLabel('View people', { exact: true }).check();
-    for (const field of ['Name', 'Job title', 'Department']) await page.getByRole('radio', { name: `${field}: View`, exact: true }).check();
+    for (const field of ['Name', 'Job title', 'Department'])
+      await page.getByRole('radio', { name: `${field}: View`, exact: true }).check();
     await expect(page.getByLabel('Admin role')).not.toBeChecked();
     await expectAccessible(page);
     await page.getByRole('button', { name: 'Create role' }).click();
@@ -55,7 +93,9 @@ test.describe('roles and access', () => {
     await expectAccessible(page);
     await page.getByRole('button', { name: 'Assign role' }).click();
     await expect(page.getByRole('cell', { name: 'Departments: Engineering', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Revoke Engineering viewer (Departments: Engineering)' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Revoke Engineering viewer (Departments: Engineering)' }),
+    ).toBeVisible();
 
     // Dana signs in from her invitation and sees Engineering colleagues' names and titles only
     const context = await browser.newContext();

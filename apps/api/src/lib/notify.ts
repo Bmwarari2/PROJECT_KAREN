@@ -42,9 +42,17 @@ export async function usersWithRole(tx: Tx, roleKey: string): Promise<string[]> 
   return rows.map((r) => r.user_id);
 }
 
-export async function userForEmployee(tx: Tx, employeeId: string | null | undefined): Promise<string | undefined> {
+export async function userForEmployee(
+  tx: Tx,
+  employeeId: string | null | undefined,
+): Promise<string | undefined> {
   if (!employeeId) return undefined;
-  return (await tx.maybe<{ id: string }>(`SELECT id FROM app.users WHERE employee_id = $1 AND status = 'active' LIMIT 1`, [employeeId]))?.id;
+  return (
+    await tx.maybe<{ id: string }>(
+      `SELECT id FROM app.users WHERE employee_id = $1 AND status = 'active' LIMIT 1`,
+      [employeeId],
+    )
+  )?.id;
 }
 
 export async function createTask(
@@ -70,7 +78,20 @@ export async function createTask(
     `INSERT INTO app.tasks (tenant_id, source, source_id, title, description, subject_employee_id, assignee_user_id, assignee_role, due_on, link, dedupe_key, assignee_employee_id, reminder_days_before)
      VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      ON CONFLICT (tenant_id, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING RETURNING id`,
-    [t.source, t.sourceId ?? null, t.title, t.description ?? null, t.subjectEmployeeId ?? null, t.assigneeUserId ?? null, t.assigneeRole ?? null, t.dueOn ?? null, t.link ?? null, t.dedupeKey ?? null, t.assigneeEmployeeId ?? null, t.reminderDaysBefore ?? null],
+    [
+      t.source,
+      t.sourceId ?? null,
+      t.title,
+      t.description ?? null,
+      t.subjectEmployeeId ?? null,
+      t.assigneeUserId ?? null,
+      t.assigneeRole ?? null,
+      t.dueOn ?? null,
+      t.link ?? null,
+      t.dedupeKey ?? null,
+      t.assigneeEmployeeId ?? null,
+      t.reminderDaysBefore ?? null,
+    ],
   );
   return row?.id;
 }

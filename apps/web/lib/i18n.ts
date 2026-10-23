@@ -1,4 +1,12 @@
-import { CATALOGUES, DEFAULT_LOCALE, flatten, isLocale, pluralBase, resolveLocale, type Locale } from '@thapsus/core/i18n';
+import {
+  CATALOGUES,
+  DEFAULT_LOCALE,
+  flatten,
+  isLocale,
+  pluralBase,
+  resolveLocale,
+  type Locale,
+} from '@thapsus/core/i18n';
 
 export { LOCALE_COOKIE, THEME_COOKIE, pickTheme, translate, type ThemeChoice } from './i18n-shared';
 
@@ -19,7 +27,11 @@ export function messagesFor(locale: Locale): Record<string, string> {
  */
 export function inNamespaces(key: string, namespaces: readonly string[]): boolean {
   const k = pluralBase(key); // `org.reports_one` belongs wherever `org.reports` does
-  return namespaces.some((ns) => (ns.endsWith('.*') ? k.startsWith(ns.slice(0, -1)) && !k.slice(ns.length - 1).includes('.') : k === ns || k.startsWith(`${ns}.`)));
+  return namespaces.some((ns) =>
+    ns.endsWith('.*')
+      ? k.startsWith(ns.slice(0, -1)) && !k.slice(ns.length - 1).includes('.')
+      : k === ns || k.startsWith(`${ns}.`),
+  );
 }
 
 const scoped = new Map<string, Record<string, string>>();

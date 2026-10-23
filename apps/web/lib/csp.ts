@@ -24,7 +24,8 @@ export function contentSecurityPolicy(nonce: string, opts: { dev?: boolean } = {
 }
 
 /** Policy for static build assets, icons and fonts (nothing on them may run or frame). */
-export const STATIC_ASSET_CSP = "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
+export const STATIC_ASSET_CSP =
+  "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
 
 /** 128 random bits, base64. */
 export function newNonce(): string {

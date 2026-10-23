@@ -1,7 +1,16 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { Building2, CalendarDays, ChevronRight, Clock, GitBranch, KeyRound, Settings, ShieldCheck } from 'lucide-react';
+import {
+  Building2,
+  CalendarDays,
+  ChevronRight,
+  Clock,
+  GitBranch,
+  KeyRound,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react';
 import { Card, CardTitle, EmptyState } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { SETTINGS_GROUPS, visibleSections, type SettingsGroup } from './sections';
@@ -43,12 +52,22 @@ export default function SettingsPage() {
                   <ul className="flex flex-col divide-y divide-border">
                     {items.map((s) => (
                       <li key={s.key}>
-                        <Link href={s.href} className="flex items-center gap-3 rounded-sm py-3 no-underline hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent">
+                        <Link
+                          href={s.href}
+                          className="flex items-center gap-3 rounded-sm py-3 no-underline hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+                        >
                           <span className="flex min-w-0 flex-1 flex-col">
-                            <span className="text-callout font-semibold text-text">{t(`admin.section.${s.key}.title`)}</span>
-                            <span className="text-footnote text-text-secondary">{t(`admin.section.${s.key}.body`)}</span>
+                            <span className="text-callout font-semibold text-text">
+                              {t(`admin.section.${s.key}.title`)}
+                            </span>
+                            <span className="text-footnote text-text-secondary">
+                              {t(`admin.section.${s.key}.body`)}
+                            </span>
                           </span>
-                          <ChevronRight aria-hidden className="h-4 w-4 shrink-0 stroke-[1.5] text-text-secondary" />
+                          <ChevronRight
+                            aria-hidden
+                            className="h-4 w-4 shrink-0 stroke-[1.5] text-text-secondary"
+                          />
                         </Link>
                       </li>
                     ))}

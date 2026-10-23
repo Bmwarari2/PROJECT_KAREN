@@ -30,19 +30,20 @@ Thapsus-HR never runs payroll. It hands each pay period's inputs to the customer
 
 Each connector has a per-tenant mapping: for each section (hours, absences, sick pay, pay changes, starters, leavers) an ordered list of columns, each either a Thapsus field or a fixed value, with an optional transform:
 
-| Transform | Applies to | Example |
-| --- | --- | --- |
-| `date` | dates | `dd/MM/yyyy`, `MM/dd/yyyy`, `yyyyMMdd`, `dd.MM.yyyy`, `dd-MM-yyyy`, `yyyy-MM-dd` |
-| `hours` / `minutes` | durations | hours with 0–4 decimals, or whole minutes |
-| `number` | numbers | 0–4 decimals |
-| `money` | amounts | major units (`1234.56`) or minor units (`123456`) |
-| `codeMap` | text | leave type `annual` → `HOL`, with a default |
-| `boolean` | yes/no | `Y` / `N` |
-| `case` | text | upper or lower case |
+| Transform           | Applies to | Example                                                                          |
+| ------------------- | ---------- | -------------------------------------------------------------------------------- |
+| `date`              | dates      | `dd/MM/yyyy`, `MM/dd/yyyy`, `yyyyMMdd`, `dd.MM.yyyy`, `dd-MM-yyyy`, `yyyy-MM-dd` |
+| `hours` / `minutes` | durations  | hours with 0–4 decimals, or whole minutes                                        |
+| `number`            | numbers    | 0–4 decimals                                                                     |
+| `money`             | amounts    | major units (`1234.56`) or minor units (`123456`)                                |
+| `codeMap`           | text       | leave type `annual` → `HOL`, with a default                                      |
+| `boolean`           | yes/no     | `Y` / `N`                                                                        |
+| `case`              | text       | upper or lower case                                                              |
 
 File options: date format, decimal separator, delimiter and header row. `GET /v1/payroll/catalogue` lists every field per section; nothing outside the catalogue can be exported. Text cells that start with `= + - @` are prefixed with `'` (CSV/Excel formula injection guard).
 
 <a id="generic-csv-and-excel"></a>
+
 ### Generic CSV and Excel
 
 - **CSV**: one file per enabled section; one section gives a plain `.csv`, several give a `.zip` of CSVs (`hours.csv`, `absences.csv`, `sick_pay.csv`, `pay_changes.csv`, `starters.csv`, `leavers.csv`).
@@ -54,6 +55,7 @@ File options: date format, decimal separator, delimiter and header row. `GET /v1
   - The file is written as `.<name>.part` and renamed into place; a re-delivery replaces it.
 
 <a id="xero-payroll-uk"></a>
+
 ### Xero Payroll (UK)
 
 UK workspaces only (Xero Payroll UK serves UK employers). Endpoints follow Xero's official OpenAPI description of the Payroll UK API (`https://api.xero.com/payroll.xro/2.0`, header `Xero-Tenant-Id`, `Idempotency-Key` per record):
@@ -63,6 +65,7 @@ UK workspaces only (Xero Payroll UK serves UK employers). Endpoints follow Xero'
 - `GET /Employees`: used to match employees by employee number when the mapping does not name the Xero employee id.
 
 Connecting:
+
 - **OAuth 2.0 authorisation code** with the Thapsus Xero app. Scopes are `offline_access payroll.timesheets payroll.employees`, with a single-use state. Refresh tokens rotate on every use and are re-sealed.
 - Or a **Xero custom connection** (client credentials) entered by the customer.
 
@@ -73,18 +76,23 @@ Unmapped earnings rates, leave types or employees are listed in the export (`unm
 These connectors implement the interface (they can be listed and configured, disabled) but refuse to render or push with HTTP 501 and a pointer here, until the partner programme in HUMAN_TODO.md section 4 is complete and the integration is added to SUBPROCESSORS.md. Meanwhile customers use the generic CSV or Excel connector with a mapping in the provider's import layout.
 
 <a id="adp"></a>
+
 - **ADP** (Workforce Now / iHCM): needs the ADP Marketplace partner programme (API credentials and certificate per customer). Planned: worker hours and time-off via ADP's Payroll Input APIs.
 
 <a id="workday"></a>
+
 - **Workday Payroll**: needs the Workday Partner Network, or a customer-sponsored Integration System User. Planned: Workday Web Services / REST Payroll Input.
 
 <a id="ukg"></a>
+
 - **UKG** (Pro / Ready): needs the UKG partner programme. Planned: time and pay import APIs.
 
 <a id="gusto"></a>
+
 - **Gusto** (US only): needs the Gusto Embedded partner programme. Planned: payroll hours and time off through Gusto's partner API.
 
 <a id="datev"></a>
+
 - **DATEV** (Germany, EU workspaces only): needs DATEV Marktplatz partnership. Planned: DATEV Lohn und Gehalt import (ASCII/LODAS formats) or DATEVconnect.
 
 ## Payslips and year-end documents (PROGRESS 6.3)
@@ -104,6 +112,7 @@ These connectors implement the interface (they can be listed and configured, dis
 ## Joiner and leaver IT automation (PROGRESS 6.4)
 
 <a id="microsoft-365"></a>
+
 ### Microsoft 365 (Microsoft Graph)
 
 - **Consent**:
@@ -112,16 +121,17 @@ These connectors implement the interface (they can be listed and configured, dis
   - "Verify" proves the consent by obtaining a client-credentials token for that tenant.
 - **Least-privilege application permissions**, per call:
 
-  | Permission | Used for |
-  | --- | --- |
-  | `User.Create` | Create the account |
-  | `User.Read.All` | Look up an existing account by name |
-  | `User.EnableDisableAccount.All` | Block sign-in |
-  | `User.RevokeSessions.All` | Revoke sessions |
-  | `LicenseAssignment.ReadWrite.All` | Assign and remove licences |
-  | `GroupMember.ReadWrite.All` | Add to groups |
+  | Permission                        | Used for                            |
+  | --------------------------------- | ----------------------------------- |
+  | `User.Create`                     | Create the account                  |
+  | `User.Read.All`                   | Look up an existing account by name |
+  | `User.EnableDisableAccount.All`   | Block sign-in                       |
+  | `User.RevokeSessions.All`         | Revoke sessions                     |
+  | `LicenseAssignment.ReadWrite.All` | Assign and remove licences          |
+  | `GroupMember.ReadWrite.All`       | Add to groups                       |
 
   Blocking sign-in for privileged users also needs an Entra admin role assigned to the app; this is documented for customers and is never granted by default.
+
 - **Joiner calls**:
   - `POST /users` (display name, given name, surname, user principal name, mail nickname, employee number, job title, department, usage location, a one-time password with forced change);
   - `POST /users/{upn}/assignLicense`;
@@ -132,6 +142,7 @@ These connectors implement the interface (they can be listed and configured, dis
   - `POST /users/{upn}/assignLicense` to remove the licences.
 
 <a id="google-workspace"></a>
+
 ### Google Workspace (Admin SDK)
 
 - **Consent**: the customer's super admin authorises the Thapsus service account's client id for domain-wide delegation with exactly these scopes, and names an admin to act as:
@@ -141,6 +152,7 @@ These connectors implement the interface (they can be listed and configured, dis
   - `https://www.googleapis.com/auth/apps.licensing`
 
   The service-account key is sealed. "Verify" signs an RS256 JWT bearer assertion and exchanges it.
+
 - **Joiner calls**:
   - Directory `users.insert` (primary email, name, one-time password with forced change, organisational unit, employee number as an external id, title and department);
   - License Manager `licenseAssignments.insert`;
@@ -175,12 +187,12 @@ These connectors implement the interface (they can be listed and configured, dis
 
 ## Permissions
 
-| Action | Built-in roles |
-| --- | --- |
-| `payroll.read` | HR admin, payroll admin |
-| `payroll.manage`, `payroll.export` | Payroll admin (owner) |
-| `payslips.manage`, `payslips.read` | Payroll admin |
-| `payslips.read_own` | Everyone (self-service) |
-| `integrations.read`, `integrations.manage` | HR admin (owner) |
-| `assets.read`, `assets.manage` | HR admin, entity HR admin |
-| `assets.read_own`, `assets.acknowledge` | Everyone (self-service) |
+| Action                                     | Built-in roles            |
+| ------------------------------------------ | ------------------------- |
+| `payroll.read`                             | HR admin, payroll admin   |
+| `payroll.manage`, `payroll.export`         | Payroll admin (owner)     |
+| `payslips.manage`, `payslips.read`         | Payroll admin             |
+| `payslips.read_own`                        | Everyone (self-service)   |
+| `integrations.read`, `integrations.manage` | HR admin (owner)          |
+| `assets.read`, `assets.manage`             | HR admin, entity HR admin |
+| `assets.read_own`, `assets.acknowledge`    | Everyone (self-service)   |

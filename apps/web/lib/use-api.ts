@@ -14,7 +14,10 @@ export function useApi<T>(path: string | null) {
     setLoading(true);
     api<T>(path)
       .then((d) => !cancelled && (setData(d), setError(null)))
-      .catch((e) => !cancelled && setError(e instanceof ApiProblem ? e : new ApiProblem(0, 'error', String(e), {})))
+      .catch(
+        (e) =>
+          !cancelled && setError(e instanceof ApiProblem ? e : new ApiProblem(0, 'error', String(e), {})),
+      )
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;

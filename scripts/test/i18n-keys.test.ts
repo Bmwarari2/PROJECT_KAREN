@@ -14,7 +14,8 @@ const root = join(__dirname, '..', '..');
 
 /** Plural forms (`org.reports_one`, `org.reports_other`) are looked up by their base key (ADR-0151). */
 function flatten(o: unknown, prefix = '', out = new Set<string>()): Set<string> {
-  if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) flatten(v, prefix ? `${prefix}.${k}` : k, out);
+  if (o && typeof o === 'object')
+    for (const [k, v] of Object.entries(o)) flatten(v, prefix ? `${prefix}.${k}` : k, out);
   else out.add(pluralBase(prefix));
   return out;
 }
@@ -23,12 +24,26 @@ describe('message keys used in code', () => {
   it('exist in the en-GB catalogue', () => {
     const keys = flatten(enGB);
     const known = (k: string) => keys.has(k) || [...keys].some((x) => x.startsWith(`${k}.`));
-    const files = execFileSync('git', ['ls-files', 'apps/web/app', 'apps/web/components', 'apps/web/lib', 'apps/api/src', 'apps/worker/src', 'packages/ui/src'], { cwd: root, encoding: 'utf8' })
+    const files = execFileSync(
+      'git',
+      [
+        'ls-files',
+        'apps/web/app',
+        'apps/web/components',
+        'apps/web/lib',
+        'apps/api/src',
+        'apps/worker/src',
+        'packages/ui/src',
+      ],
+      { cwd: root, encoding: 'utf8' },
+    )
       .split('\n')
       .filter((f) => /\.tsx?$/.test(f));
     const missing: string[] = [];
     for (const f of files) {
-      for (const m of readFileSync(join(root, f), 'utf8').matchAll(/\bt\(\s*['"]([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)['"]/g)) {
+      for (const m of readFileSync(join(root, f), 'utf8').matchAll(
+        /\bt\(\s*['"]([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+)['"]/g,
+      )) {
         if (!known(m[1]!)) missing.push(`${m[1]} (${f})`);
       }
     }

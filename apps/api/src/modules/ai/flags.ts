@@ -22,7 +22,9 @@ export interface AiConfig {
 export type AiSources = Omit<AiConfig, 'enabled'>;
 
 export async function aiConfig(tx: Tx): Promise<AiConfig> {
-  const row = await tx.maybe<{ ai: Partial<AiConfig> | null }>(`SELECT features->'ai' AS ai FROM app.tenants`);
+  const row = await tx.maybe<{ ai: Partial<AiConfig> | null }>(
+    `SELECT features->'ai' AS ai FROM app.tenants`,
+  );
   const ai = row?.ai ?? {};
   return {
     enabled: ai.enabled === true,
@@ -41,7 +43,10 @@ export async function updateAiConfig(tx: Tx, patch: Partial<AiConfig>): Promise<
   const clean: Partial<AiConfig> = { ...patch };
   if (clean.policyFolderIds) clean.policyFolderIds = [...new Set(clean.policyFolderIds)];
   if (clean.policyDocumentIds) clean.policyDocumentIds = [...new Set(clean.policyDocumentIds)];
-  await tx.exec(`UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{ai}', coalesce(features->'ai', '{}'::jsonb) || $1::jsonb)`, [JSON.stringify(clean)]);
+  await tx.exec(
+    `UPDATE app.tenants SET features = jsonb_set(coalesce(features, '{}'::jsonb), '{ai}', coalesce(features->'ai', '{}'::jsonb) || $1::jsonb)`,
+    [JSON.stringify(clean)],
+  );
 }
 
 /** Entitled by Thapsus and switched on by the customer (region availability is checked by the caller). */

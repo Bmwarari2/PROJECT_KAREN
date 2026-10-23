@@ -49,14 +49,22 @@ describe('plural forms', () => {
     expect(t('en-GB', 'org.reports', { count: 4 })).toBe('4 reports');
     expect(t('en-US', 'integrations.ruleLicences', { count: 1 })).toBe('1 license');
     expect(t('en-GB', 'integrations.ruleLicences', { count: 2 })).toBe('2 licences');
-    expect(t('en-GB', 'notify.closureReminder', { count: 1, days: 1 })).toBe('Your account will be closed and deleted in 1 day');
-    expect(t('en-GB', 'notify.closureReminder', { days: 7 })).toBe('Your account will be closed and deleted in 7 days');
+    expect(t('en-GB', 'notify.closureReminder', { count: 1, days: 1 })).toBe(
+      'Your account will be closed and deleted in 1 day',
+    );
+    expect(t('en-GB', 'notify.closureReminder', { days: 7 })).toBe(
+      'Your account will be closed and deleted in 7 days',
+    );
   });
 
   it('every plural family has an _other form, in both catalogues', () => {
     for (const locale of ['en-GB', 'en-US'] as const) {
       const flat = flatten(CATALOGUES[locale]);
-      const bases = new Set(Object.keys(flat).filter((k) => k !== pluralBase(k)).map(pluralBase));
+      const bases = new Set(
+        Object.keys(flat)
+          .filter((k) => k !== pluralBase(k))
+          .map(pluralBase),
+      );
       const incomplete = [...bases].filter((b) => flat[`${b}_other`] === undefined || flat[b] !== undefined);
       expect(incomplete, locale).toEqual([]);
     }
@@ -72,9 +80,66 @@ describe('plural forms', () => {
  */
 const IRREGULAR = new Set(['people', 'children', 'men', 'women', 'data']);
 /** Words ending in -s after a placeholder that are verbs or not nouns: "{title} expires", "{name} gains". */
-const NOT_PLURAL_NOUNS = new Set(['expires', 'gains', 'ends', 'transfers', 'applies', 'starts', 'needs', 'takes', 'uses', 'means', 'does', 'goes', 'runs', 'always', 'perhaps', 'unless', 'across', 'towards', 'afterwards', 'serves', 'covers', 'ms', 'mins', 'hrs', 'yes']);
+const NOT_PLURAL_NOUNS = new Set([
+  'expires',
+  'gains',
+  'ends',
+  'transfers',
+  'applies',
+  'starts',
+  'needs',
+  'takes',
+  'uses',
+  'means',
+  'does',
+  'goes',
+  'runs',
+  'always',
+  'perhaps',
+  'unless',
+  'across',
+  'towards',
+  'afterwards',
+  'serves',
+  'covers',
+  'ms',
+  'mins',
+  'hrs',
+  'yes',
+]);
 /** After a placeholder these words end the noun phrase ("{open} of {total}", "{n} or more"). */
-const STOP = new Set(['of', 'to', 'or', 'and', 'is', 'are', 'was', 'were', 'has', 'have', 'had', 'for', 'on', 'in', 'by', 'at', 'with', 'within', 'from', 'could', 'would', 'will', 'can', 'the', 'a', 'an', 'per', 'as', 'than', ...NOT_PLURAL_NOUNS]);
+const STOP = new Set([
+  'of',
+  'to',
+  'or',
+  'and',
+  'is',
+  'are',
+  'was',
+  'were',
+  'has',
+  'have',
+  'had',
+  'for',
+  'on',
+  'in',
+  'by',
+  'at',
+  'with',
+  'within',
+  'from',
+  'could',
+  'would',
+  'will',
+  'can',
+  'the',
+  'a',
+  'an',
+  'per',
+  'as',
+  'than',
+  ...NOT_PLURAL_NOUNS,
+]);
 const isPluralNoun = (w: string) => {
   const word = w.toLowerCase();
   if (/\(s\)$/.test(word)) return true;
@@ -91,7 +156,8 @@ const ALLOWLIST: Record<string, string> = {
   'access.editor.allInGroup': '{group} is a field group name ("All Pay fields")',
   'developers.params': '{params} is a list of parameter names',
   'developers.responses': '{codes} is a list of status codes',
-  'privacy.ui.incidents.audience.individuals': '{jurisdiction} is a place name ("California affected people")',
+  'privacy.ui.incidents.audience.individuals':
+    '{jurisdiction} is a place name ("California affected people")',
 };
 
 export function pluralProblems(messages: Record<string, string>): string[] {
@@ -99,12 +165,18 @@ export function pluralProblems(messages: Record<string, string>): string[] {
   for (const [key, text] of Object.entries(messages)) {
     if (key !== pluralBase(key) || ALLOWLIST[key]) continue;
     for (const m of text.matchAll(/\{(\w+)\}/g)) {
-      const after = text.slice(m.index + m[0].length).match(/^\s*\(?([A-Za-z']+(?:\(s\))?)(?:\s+([A-Za-z']+(?:\(s\))?))?/);
+      const after = text
+        .slice(m.index + m[0].length)
+        .match(/^\s*\(?([A-Za-z']+(?:\(s\))?)(?:\s+([A-Za-z']+(?:\(s\))?))?/);
       const before = text.slice(0, m.index).match(/([A-Za-z']+(?:\(s\))?)\s+$/);
       const w1 = after?.[1]?.replace(/'$/, '');
       const w2 = after?.[2]?.replace(/'$/, '');
-      const near = (w1 && isPluralNoun(w1) && w1) || (w1 && w2 && !STOP.has(w1.toLowerCase()) && isPluralNoun(w2) && w2) || (before && isPluralNoun(before[1]!) && before[1]);
-      if (near) out.push(`${key}: "${text.replace(/\s+/g, ' ').slice(0, 100)}" ({${m[1]}} next to "${near}")`);
+      const near =
+        (w1 && isPluralNoun(w1) && w1) ||
+        (w1 && w2 && !STOP.has(w1.toLowerCase()) && isPluralNoun(w2) && w2) ||
+        (before && isPluralNoun(before[1]!) && before[1]);
+      if (near)
+        out.push(`${key}: "${text.replace(/\s+/g, ' ').slice(0, 100)}" ({${m[1]}} next to "${near}")`);
     }
   }
   return out;
@@ -112,8 +184,26 @@ export function pluralProblems(messages: Record<string, string>): string[] {
 
 describe('plural sweep', () => {
   it('flags a count next to a plural noun', () => {
-    expect(pluralProblems({ a: '{n} days left', b: 'Sent to {count} device(s).', c: '{count} US employees', d: 'Shifts {n}', e: '{people} fictional people' })).toHaveLength(5);
-    expect(pluralProblems({ a: '{days}-day trial', b: 'Swap requests: {n}', c: '{title} expires on {date}', d: '{n} or more spells', e_one: '{n} day', f: 'Past 30 days ({count})', g: '{open} of {total}' })).toEqual([]);
+    expect(
+      pluralProblems({
+        a: '{n} days left',
+        b: 'Sent to {count} device(s).',
+        c: '{count} US employees',
+        d: 'Shifts {n}',
+        e: '{people} fictional people',
+      }),
+    ).toHaveLength(5);
+    expect(
+      pluralProblems({
+        a: '{days}-day trial',
+        b: 'Swap requests: {n}',
+        c: '{title} expires on {date}',
+        d: '{n} or more spells',
+        e_one: '{n} day',
+        f: 'Past 30 days ({count})',
+        g: '{open} of {total}',
+      }),
+    ).toEqual([]);
   });
 
   it.each([
@@ -121,7 +211,10 @@ describe('plural sweep', () => {
     ['en-US', enUS],
   ])('no %s message puts a count next to a plural noun without plural forms', (_locale, catalogue) => {
     const problems = pluralProblems(flatten(catalogue));
-    expect(problems, `Use plural forms (key_one / key_other selected by count) or formatUnit:\n${problems.join('\n')}`).toEqual([]);
+    expect(
+      problems,
+      `Use plural forms (key_one / key_other selected by count) or formatUnit:\n${problems.join('\n')}`,
+    ).toEqual([]);
   });
 
   it('every allowlisted message still exists', () => {

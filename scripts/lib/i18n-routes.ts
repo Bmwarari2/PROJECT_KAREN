@@ -40,7 +40,8 @@ const toPosix = (p: string) => p.split(sep).join('/');
 
 /** Every message key, with plural forms (`org.reports_one`, `org.reports_other`) counted as their base key (`org.reports`). */
 export function flattenKeys(o: unknown, prefix = '', out = new Set<string>()): Set<string> {
-  if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) flattenKeys(v, prefix ? `${prefix}.${k}` : k, out);
+  if (o && typeof o === 'object')
+    for (const [k, v] of Object.entries(o)) flattenKeys(v, prefix ? `${prefix}.${k}` : k, out);
   else out.add(pluralBase(prefix));
   return out;
 }
@@ -55,7 +56,8 @@ function keyPrefixes(keys: Set<string>): Set<string> {
   return out;
 }
 
-export const isClientModule = (src: string) => /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*['"]use client['"]/.test(src);
+export const isClientModule = (src: string) =>
+  /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*['"]use client['"]/.test(src);
 
 /**
  * Whether a key (or key prefix) is among the provided namespaces. `ns` provides every key under it;
@@ -63,13 +65,20 @@ export const isClientModule = (src: string) => /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?
  * but not `admin.sso.title`). `leaves` is the set of full keys in the catalogue.
  */
 export const covers = (provided: readonly string[], key: string, leaves: ReadonlySet<string>) =>
-  provided.some((p) => (p.endsWith('.*') ? key.startsWith(p.slice(0, -1)) && !key.slice(p.length - 1).includes('.') && leaves.has(key) : key === p || key.startsWith(`${p}.`)));
+  provided.some((p) =>
+    p.endsWith('.*')
+      ? key.startsWith(p.slice(0, -1)) && !key.slice(p.length - 1).includes('.') && leaves.has(key)
+      : key === p || key.startsWith(`${p}.`),
+  );
 
 /** The namespaces a layout adds with `<Messages ns={['a', 'b.c']}>`; null when it renders no `<Messages>`. */
 export function providedBy(src: string, file: string): string[] | null {
   if (!/<Messages\b/.test(src)) return null;
   const m = /<Messages\b[^>]*?\bns=\{\[([^\]]*)\]\}/.exec(src);
-  if (!m) throw new Error(`${file}: <Messages> must list its namespaces inline as ns={['…']} so the scope check can read them`);
+  if (!m)
+    throw new Error(
+      `${file}: <Messages> must list its namespaces inline as ns={['…']} so the scope check can read them`,
+    );
   return m[1]!
     .split(',')
     .map((s) => s.trim())
@@ -110,7 +119,8 @@ function literalsIn(node: ts.Node, out: Lit[], refs: Set<string>) {
   const visit = (n: ts.Node): void => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) {
       const p = n.parent;
-      const permission = ts.isCallExpression(p) && ts.isIdentifier(p.expression) && PERMISSION_CALLS.has(p.expression.text);
+      const permission =
+        ts.isCallExpression(p) && ts.isIdentifier(p.expression) && PERMISSION_CALLS.has(p.expression.text);
       if (!permission) out.push({ text: n.text, templateHead: false });
     } else if (ts.isTemplateExpression(n)) out.push({ text: n.head.text, templateHead: true });
     else if (ts.isIdentifier(n)) refs.add(n.text);
@@ -126,9 +136,23 @@ const bindingNames = (n: ts.BindingName, out: string[] = []): string[] => {
 };
 
 function moduleInfo(file: string, src: string): ModuleInfo {
-  const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-  const info: ModuleInfo = { client: isClientModule(src), units: [], imports: new Map(), bare: [], localExports: new Map(), reexports: [] };
-  const isDefault = (n: ts.Node) => ts.canHaveModifiers(n) && !!ts.getModifiers(n)?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword);
+  const sf = ts.createSourceFile(
+    file,
+    src,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
+  const info: ModuleInfo = {
+    client: isClientModule(src),
+    units: [],
+    imports: new Map(),
+    bare: [],
+    localExports: new Map(),
+    reexports: [],
+  };
+  const isDefault = (n: ts.Node) =>
+    ts.canHaveModifiers(n) && !!ts.getModifiers(n)?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword);
   for (const st of sf.statements) {
     if (ts.isImportDeclaration(st)) {
       const spec = (st.moduleSpecifier as ts.StringLiteral).text;
@@ -138,17 +162,28 @@ function moduleInfo(file: string, src: string): ModuleInfo {
         if (c.name) info.imports.set(c.name.text, { spec, name: 'default' });
         const b = c.namedBindings;
         if (b && ts.isNamespaceImport(b)) info.imports.set(b.name.text, { spec, name: '*' });
-        else if (b) for (const e of b.elements) if (!e.isTypeOnly) info.imports.set(e.name.text, { spec, name: (e.propertyName ?? e.name).text });
+        else if (b)
+          for (const e of b.elements)
+            if (!e.isTypeOnly) info.imports.set(e.name.text, { spec, name: (e.propertyName ?? e.name).text });
       }
       continue;
     }
     if (ts.isExportDeclaration(st)) {
       if (st.isTypeOnly) continue;
-      const elements = st.exportClause && ts.isNamedExports(st.exportClause) ? st.exportClause.elements.filter((e) => !e.isTypeOnly) : null;
+      const elements =
+        st.exportClause && ts.isNamedExports(st.exportClause)
+          ? st.exportClause.elements.filter((e) => !e.isTypeOnly)
+          : null;
       if (st.moduleSpecifier) {
         const spec = (st.moduleSpecifier as ts.StringLiteral).text;
-        info.reexports.push({ spec, names: elements ? new Map(elements.map((e) => [e.name.text, (e.propertyName ?? e.name).text])) : '*' });
-      } else if (elements) for (const e of elements) info.localExports.set(e.name.text, (e.propertyName ?? e.name).text);
+        info.reexports.push({
+          spec,
+          names: elements
+            ? new Map(elements.map((e) => [e.name.text, (e.propertyName ?? e.name).text]))
+            : '*',
+        });
+      } else if (elements)
+        for (const e of elements) info.localExports.set(e.name.text, (e.propertyName ?? e.name).text);
       continue;
     }
     const unit: Unit = { names: [], literals: [], refs: new Set(), always: false };
@@ -158,7 +193,8 @@ function moduleInfo(file: string, src: string): ModuleInfo {
     } else if (ts.isVariableStatement(st)) {
       for (const d of st.declarationList.declarations) bindingNames(d.name, unit.names);
     } else if (ts.isExportAssignment(st)) unit.names.push('default');
-    else if (ts.isInterfaceDeclaration(st) || ts.isTypeAliasDeclaration(st)) continue; // types carry no runtime code
+    else if (ts.isInterfaceDeclaration(st) || ts.isTypeAliasDeclaration(st))
+      continue; // types carry no runtime code
     else unit.always = true;
     literalsIn(st, unit.literals, unit.refs);
     info.units.push(unit);
@@ -182,7 +218,8 @@ export function analyseRoutes(root: string, catalogue: unknown): RouteReport[] {
     if (spec.startsWith('@/')) base = join(web, spec.slice(2));
     else if (spec.startsWith('.')) base = join(dirname(from), spec);
     else return null; // packages: their components take translated strings as props
-    for (const c of [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts'), join(base, 'index.tsx')]) if (/\.tsx?$/.test(c) && existsSync(c) && statSync(c).isFile()) return c;
+    for (const c of [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts'), join(base, 'index.tsx')])
+      if (/\.tsx?$/.test(c) && existsSync(c) && statSync(c).isFile()) return c;
     return null;
   };
   const keysOf = (lits: Lit[], file: string): KeyUse[] => {
@@ -191,7 +228,8 @@ export function analyseRoutes(root: string, catalogue: unknown): RouteReport[] {
       if (templateHead) {
         const m = /^([a-zA-Z][\w-]*(?:\.[\w-]+)*)\.$/.exec(text);
         if (m && prefixes.has(m[1]!)) out.push({ key: m[1]!, file });
-      } else if (/^[a-zA-Z][\w-]*(?:\.[\w-]+)+$/.test(text) && prefixes.has(text)) out.push({ key: text, file });
+      } else if (/^[a-zA-Z][\w-]*(?:\.[\w-]+)+$/.test(text) && prefixes.has(text))
+        out.push({ key: text, file });
     }
     return out;
   };
@@ -201,7 +239,9 @@ export function analyseRoutes(root: string, catalogue: unknown): RouteReport[] {
     const out: KeyUse[] = [];
     const done = new Set<string>();
     const included = new Set<string>();
-    const work: Array<{ file: string; name: string; fromClient: boolean }> = [{ file: entry, name: 'default', fromClient: false }];
+    const work: Array<{ file: string; name: string; fromClient: boolean }> = [
+      { file: entry, name: 'default', fromClient: false },
+    ];
     const follow = (from: string, spec: string, name: string, client: boolean) => {
       const target = resolve(from, spec);
       if (target) work.push({ file: target, name, fromClient: client });
@@ -274,9 +314,16 @@ export function analyseRoutes(root: string, catalogue: unknown): RouteReport[] {
         provided.push(...(providedBy(readFileSync(layout, 'utf8'), toPosix(relative(root, layout))) ?? []));
       }
       // a layout's own client code sees what it and the layouts above it provide
-      for (const special of SPECIAL) if (existsSync(join(seg, special))) check(join(seg, special), [...provided]);
+      for (const special of SPECIAL)
+        if (existsSync(join(seg, special))) check(join(seg, special), [...provided]);
     }
     check(page, provided);
-    return { page: toPosix(relative(root, page)), layouts, provided, uses: uniq(uses), missing: uniq(missing) };
+    return {
+      page: toPosix(relative(root, page)),
+      layouts,
+      provided,
+      uses: uniq(uses),
+      missing: uniq(missing),
+    };
   });
 }

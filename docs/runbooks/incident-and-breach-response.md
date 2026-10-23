@@ -6,11 +6,11 @@ The breach register and its deadline reminders live in the product (back office 
 
 ## 1. Severity
 
-| Level | Examples | Response |
-| --- | --- | --- |
-| SEV-1 | Confirmed or likely personal-data breach; a cross-tenant data exposure; a region-residency violation; a full outage of a cell | Page the on-call lead immediately, all hands, updates every 30 min |
-| SEV-2 | Partial outage or degraded performance for many tenants; a security vulnerability being exploited without a confirmed data impact | On-call lead within 30 min |
-| SEV-3 | A single feature broken, no data risk | Normal working hours |
+| Level | Examples                                                                                                                          | Response                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| SEV-1 | Confirmed or likely personal-data breach; a cross-tenant data exposure; a region-residency violation; a full outage of a cell     | Page the on-call lead immediately, all hands, updates every 30 min |
+| SEV-2 | Partial outage or degraded performance for many tenants; a security vulnerability being exploited without a confirmed data impact | On-call lead within 30 min                                         |
+| SEV-3 | A single feature broken, no data risk                                                                                             | Normal working hours                                               |
 
 ## 2. First hour (SEV-1 and SEV-2)
 
@@ -53,7 +53,7 @@ It is a breach if personal data was, or could have been, accessed, disclosed, al
   - the measures taken and proposed.
 - **How:** `notify-controllers` on the breach register entry (§7, step 4) opens an incident in each affected tenant's own incident log and notifies its owner and HR admins in the app and by email from the home region. Follow up with the customer's privacy contact, and log every further notice.
 - **US employees:** the register lists each affected state's statutory notification rules from the packs (who must be told, and when). The controller decides and notifies. We give them the facts they need.
-- **Regulators:** Thapsus notifies a supervisory authority directly only for its *own* data as controller (back-office staff, billing contacts). In that case: the ICO (UK) or the lead EU authority within 72 hours of awareness. Use the same register.
+- **Regulators:** Thapsus notifies a supervisory authority directly only for its _own_ data as controller (back-office staff, billing contacts). In that case: the ICO (UK) or the lead EU authority within 72 hours of awareness. Use the same register.
 
 ## 5. Recovery
 

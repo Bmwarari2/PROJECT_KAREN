@@ -25,28 +25,54 @@ interface Operation {
   hasBody: boolean;
   responses: string[];
 }
-type SpecOp = { tags?: string[]; summary?: string; deprecated?: boolean; parameters?: Array<{ name: string; in: string; required?: boolean }>; requestBody?: unknown; responses?: Record<string, unknown> };
+type SpecOp = {
+  tags?: string[];
+  summary?: string;
+  deprecated?: boolean;
+  parameters?: Array<{ name: string; in: string; required?: boolean }>;
+  requestBody?: unknown;
+  responses?: Record<string, unknown>;
+};
 
 const HIDDEN_TAGS = new Set(['backoffice', 'global']);
 const METHODS = ['get', 'post', 'put', 'patch', 'delete'];
 
 function groups(): Array<[string, Operation[]]> {
   const byTag = new Map<string, Operation[]>();
-  for (const [path, item] of Object.entries((spec as unknown as { paths: Record<string, Record<string, SpecOp>> }).paths)) {
+  for (const [path, item] of Object.entries(
+    (spec as unknown as { paths: Record<string, Record<string, SpecOp>> }).paths,
+  )) {
     for (const method of METHODS) {
       const op = item[method];
       if (!op) continue;
       const tag = op.tags?.[0] ?? 'other';
       if (HIDDEN_TAGS.has(tag) || path.includes('/internal/')) continue;
       const list = byTag.get(tag) ?? [];
-      list.push({ method, path, summary: op.summary, deprecated: op.deprecated, parameters: op.parameters ?? [], hasBody: !!op.requestBody, responses: Object.keys(op.responses ?? {}) });
+      list.push({
+        method,
+        path,
+        summary: op.summary,
+        deprecated: op.deprecated,
+        parameters: op.parameters ?? [],
+        hasBody: !!op.requestBody,
+        responses: Object.keys(op.responses ?? {}),
+      });
       byTag.set(tag, list);
     }
   }
   return [...byTag.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-const GUIDE = ['authentication', 'scopes', 'pagination', 'idempotency', 'rateLimits', 'webhooks', 'versioning', 'residency'] as const;
+const GUIDE = [
+  'authentication',
+  'scopes',
+  'pagination',
+  'idempotency',
+  'rateLimits',
+  'webhooks',
+  'versioning',
+  'residency',
+] as const;
 
 export default async function DevelopersPage() {
   const { t } = await serverContext();
@@ -59,7 +85,9 @@ export default async function DevelopersPage() {
         <h1 id="dev-title" className="mt-4 text-title-1">
           {t('developers.title')}
         </h1>
-        <p className="mt-4 max-w-[var(--prose-width)] text-body-lg text-text-secondary">{t('developers.lead')}</p>
+        <p className="mt-4 max-w-[var(--prose-width)] text-body-lg text-text-secondary">
+          {t('developers.lead')}
+        </p>
         <p className="mt-4 text-callout">
           <a href="/openapi.json">{t('developers.download')}</a>
         </p>
@@ -92,7 +120,9 @@ export default async function DevelopersPage() {
         <h2 id="ref-title" className="text-title-2">
           {t('developers.referenceTitle')}
         </h2>
-        <p className="mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('developers.referenceLead')}</p>
+        <p className="mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('developers.referenceLead')}
+        </p>
         <div className="mt-6 flex flex-col gap-3">
           {all.map(([tag, ops]) => (
             <details key={tag} className="rounded-lg bg-surface-raised p-4 shadow-sm">
@@ -107,12 +137,19 @@ export default async function DevelopersPage() {
                         {o.method}
                       </Badge>
                       <code className="break-all text-footnote">{o.path}</code>
-                      {apiClientMayCall(o.path.replace(/\{(\w+)\}/g, ':$1')) || o.path === '/v1/oauth/token' ? <Badge tone="success">{t('developers.apiClients')}</Badge> : null}
+                      {apiClientMayCall(o.path.replace(/\{(\w+)\}/g, ':$1')) ||
+                      o.path === '/v1/oauth/token' ? (
+                        <Badge tone="success">{t('developers.apiClients')}</Badge>
+                      ) : null}
                       {o.deprecated ? <Badge tone="warning">{t('developers.deprecated')}</Badge> : null}
                     </p>
                     {o.summary ? <p className="mt-1 text-footnote text-text-secondary">{o.summary}</p> : null}
                     <p className="mt-1 text-footnote text-text-secondary">
-                      {t('developers.params', { params: o.parameters.map((p) => `${p.name}${p.required ? '*' : ''} (${p.in})`).join(', ') || t('common.none') })}
+                      {t('developers.params', {
+                        params:
+                          o.parameters.map((p) => `${p.name}${p.required ? '*' : ''} (${p.in})`).join(', ') ||
+                          t('common.none'),
+                      })}
                       {o.hasBody ? ` · ${t('developers.body')}` : ''}
                       {` · ${t('developers.responses', { codes: o.responses.join(', ') })}`}
                     </p>

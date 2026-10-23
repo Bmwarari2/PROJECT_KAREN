@@ -155,11 +155,7 @@
         "2026-12-25",
         "2026-12-26"
       ],
-      "substituteNonWorkingDays": [
-        "2026-05-25",
-        "2026-09-07",
-        "2026-12-28"
-      ],
+      "substituteNonWorkingDays": ["2026-05-25", "2026-09-07", "2026-12-28"],
       "source": "Derived from the statutory rule list (Кодекс на труда чл. 154(1)) for 2026 with Orthodox Easter = 12 April 2026 — no official dated list for 2026 found on an allow-listed source. Substitute days per чл. 154(2): 24 May (Sun) → 25 May; 6 Sep (Sun) → 7 Sep; 26 Dec (Sat) → 28 Dec. Council of Ministers one-off days not included."
     },
     {

@@ -19,8 +19,14 @@ export function checkSbom(bom) {
     const dist = (c.externalReferences ?? []).filter((r) => r.type === 'distribution');
     if (!dist.length) problems.push(`${id}: no distribution location`);
     for (const r of dist) {
-      if (!String(r.url ?? '').startsWith(TRUSTED_REGISTRY)) problems.push(`${id}: from an untrusted location ${r.url}`);
-      if (!(r.hashes ?? []).some((h) => /^SHA-(256|384|512)$/.test(h.alg) && /^[0-9a-f]{64,128}$/.test(h.content))) problems.push(`${id}: no integrity hash`);
+      if (!String(r.url ?? '').startsWith(TRUSTED_REGISTRY))
+        problems.push(`${id}: from an untrusted location ${r.url}`);
+      if (
+        !(r.hashes ?? []).some(
+          (h) => /^SHA-(256|384|512)$/.test(h.alg) && /^[0-9a-f]{64,128}$/.test(h.content),
+        )
+      )
+        problems.push(`${id}: no integrity hash`);
     }
   }
   return { components: components.length, problems };

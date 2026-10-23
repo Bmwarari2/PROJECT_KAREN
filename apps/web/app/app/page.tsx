@@ -26,21 +26,29 @@ export default function AppHome() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardTitle>{t('app.home.security')}</CardTitle>
-          <p className="mt-2 text-callout text-text-secondary">{s?.mfaVerified ? t('app.home.mfaOn') : t('app.home.mfaOff')}</p>
+          <p className="mt-2 text-callout text-text-secondary">
+            {s?.mfaVerified ? t('app.home.mfaOn') : t('app.home.mfaOff')}
+          </p>
           <Link href="/app/security" className="mt-3 inline-block text-callout">
             {t('app.home.manageSecurity')}
           </Link>
         </Card>
         <Card>
           <CardTitle>{t('app.home.roles')}</CardTitle>
-          <p className="mt-2 text-callout text-text-secondary">{s?.roles.map((r) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`))).join(', ')}</p>
+          <p className="mt-2 text-callout text-text-secondary">
+            {s?.roles.map((r) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`))).join(', ')}
+          </p>
         </Card>
         <Card>
           <CardTitle>{t('app.home.region')}</CardTitle>
           <p className="mt-2 text-callout text-text-secondary">{t('app.home.regionBody')}</p>
         </Card>
       </div>
-      <EmptyState icon={<Sparkles aria-hidden />} title={t('app.home.emptyTitle')} body={t('app.home.emptyBody')} />
+      <EmptyState
+        icon={<Sparkles aria-hidden />}
+        title={t('app.home.emptyTitle')}
+        body={t('app.home.emptyBody')}
+      />
     </div>
   );
 }

@@ -36,19 +36,53 @@ export const FIELDS: Record<string, FieldDef> = {
   entityId: { section: 'job', column: 'entity_id', perm: 'entity', type: 'uuid' },
   costCentreId: { section: 'job', column: 'cost_centre_id', perm: 'costCentre', type: 'uuid' },
   gradeId: { section: 'job', column: 'grade_id', perm: 'pay.grade', type: 'uuid' },
-  employmentType: { section: 'job', column: 'employment_type', perm: 'employmentType', type: 'enum', enum: ['full_time', 'part_time', 'casual', 'contractor', 'intern'] },
+  employmentType: {
+    section: 'job',
+    column: 'employment_type',
+    perm: 'employmentType',
+    type: 'enum',
+    enum: ['full_time', 'part_time', 'casual', 'contractor', 'intern'],
+  },
   fte: { section: 'job', column: 'fte', perm: 'fte', type: 'number' },
   weeklyHours: { section: 'job', column: 'weekly_hours', perm: 'weeklyHours', type: 'number' },
   workPattern: { section: 'job', column: 'work_pattern', perm: 'workPattern', type: 'json' },
-  flsaStatus: { section: 'job', column: 'flsa_status', perm: 'flsaStatus', type: 'enum', enum: ['exempt', 'non_exempt'] },
+  flsaStatus: {
+    section: 'job',
+    column: 'flsa_status',
+    perm: 'flsaStatus',
+    type: 'enum',
+    enum: ['exempt', 'non_exempt'],
+  },
 
   payAmountMinor: { section: 'pay', column: 'amount_minor', perm: 'pay.amount', type: 'number' },
   payCurrency: { section: 'pay', column: 'currency', perm: 'pay.amount', type: 'text' },
-  payFrequency: { section: 'pay', column: 'frequency', perm: 'pay.amount', type: 'enum', enum: ['annual', 'monthly', 'weekly', 'hourly', 'daily'] },
+  payFrequency: {
+    section: 'pay',
+    column: 'frequency',
+    perm: 'pay.amount',
+    type: 'enum',
+    enum: ['annual', 'monthly', 'weekly', 'hourly', 'daily'],
+  },
 
-  contractType: { section: 'contract', column: 'contract_type', perm: 'contract.type', type: 'enum', enum: ['permanent', 'fixed_term', 'zero_hours', 'temporary', 'contractor', 'apprenticeship'] },
-  noticePeriodDays: { section: 'contract', column: 'notice_period_days', perm: 'contract.noticePeriod', type: 'number' },
-  probationEndDate: { section: 'contract', column: 'probation_end_date', perm: 'contract.probation', type: 'date' },
+  contractType: {
+    section: 'contract',
+    column: 'contract_type',
+    perm: 'contract.type',
+    type: 'enum',
+    enum: ['permanent', 'fixed_term', 'zero_hours', 'temporary', 'contractor', 'apprenticeship'],
+  },
+  noticePeriodDays: {
+    section: 'contract',
+    column: 'notice_period_days',
+    perm: 'contract.noticePeriod',
+    type: 'number',
+  },
+  probationEndDate: {
+    section: 'contract',
+    column: 'probation_end_date',
+    perm: 'contract.probation',
+    type: 'date',
+  },
 };
 
 export const SECTION_TABLE: Record<Exclude<Section, 'core'>, string> = {

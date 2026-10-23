@@ -31,30 +31,43 @@ afterAll(async () => {
 
 describe('append-only audit log', () => {
   it('redacts sensitive fields in diffs', async () => {
-    const rows = await withTenant(router, tenant, (tx) => tx.query<{ diff: Record<string, unknown> }>('SELECT diff FROM audit.events LIMIT 1'));
+    const rows = await withTenant(router, tenant, (tx) =>
+      tx.query<{ diff: Record<string, unknown> }>('SELECT diff FROM audit.events LIMIT 1'),
+    );
     expect(rows[0]!.diff).toEqual({ password: '[REDACTED]', title: { from: 'x', to: 'y' } });
-    expect(diffObjects({ a: 1, ssn: '1' }, { a: 2, ssn: '2' })).toEqual({ a: { from: 1, to: 2 }, ssn: '[REDACTED]' });
+    expect(diffObjects({ a: 1, ssn: '1' }, { a: 2, ssn: '2' })).toEqual({
+      a: { from: 1, to: 2 },
+      ssn: '[REDACTED]',
+    });
   });
 
   it('the application role cannot UPDATE or DELETE audit rows (no privilege)', async () => {
-    await expect(withTenant(router, tenant, (tx) => tx.exec(`UPDATE audit.events SET action = 'forged'`))).rejects.toThrow(
+    await expect(
+      withTenant(router, tenant, (tx) => tx.exec(`UPDATE audit.events SET action = 'forged'`)),
+    ).rejects.toThrow(/permission denied/);
+    await expect(withTenant(router, tenant, (tx) => tx.exec(`DELETE FROM audit.events`))).rejects.toThrow(
       /permission denied/,
     );
-    await expect(withTenant(router, tenant, (tx) => tx.exec(`DELETE FROM audit.events`))).rejects.toThrow(/permission denied/);
   });
 
   it('even the owner is blocked by the trigger', async () => {
-    await expect(owner.query(`UPDATE audit.events SET action = 'forged' WHERE tenant_id = $1`, [tenant])).rejects.toThrow(
+    await expect(
+      owner.query(`UPDATE audit.events SET action = 'forged' WHERE tenant_id = $1`, [tenant]),
+    ).rejects.toThrow(/append-only/);
+    await expect(owner.query(`DELETE FROM audit.events WHERE tenant_id = $1`, [tenant])).rejects.toThrow(
       /append-only/,
     );
-    await expect(owner.query(`DELETE FROM audit.events WHERE tenant_id = $1`, [tenant])).rejects.toThrow(/append-only/);
     await expect(owner.query(`TRUNCATE audit.events`)).rejects.toThrow(/append-only/);
   });
 
   it('seals entries into a per-tenant hash chain that verifies', async () => {
-    const sealed = await withTenant(router, tenant, (tx) => tx.one<{ n: number }>('SELECT audit.seal_pending() AS n'));
+    const sealed = await withTenant(router, tenant, (tx) =>
+      tx.one<{ n: number }>('SELECT audit.seal_pending() AS n'),
+    );
     expect(sealed.n).toBe(5);
-    const ok = await withTenant(router, tenant, (tx) => tx.one<{ broken: string | null }>('SELECT audit.verify_chain() AS broken'));
+    const ok = await withTenant(router, tenant, (tx) =>
+      tx.one<{ broken: string | null }>('SELECT audit.verify_chain() AS broken'),
+    );
     expect(ok.broken).toBeNull();
     // the sealing flag cannot be abused by the app role to rewrite sealed rows
     await expect(
@@ -68,11 +81,15 @@ describe('append-only audit log', () => {
   it('verification detects tampering', async () => {
     await owner.query('ALTER TABLE audit.events DISABLE TRIGGER audit_events_append_only');
     try {
-      await owner.query(`UPDATE audit.events SET target_id = 'tampered' WHERE tenant_id = $1 AND seq = 3`, [tenant]);
+      await owner.query(`UPDATE audit.events SET target_id = 'tampered' WHERE tenant_id = $1 AND seq = 3`, [
+        tenant,
+      ]);
     } finally {
       await owner.query('ALTER TABLE audit.events ENABLE TRIGGER audit_events_append_only');
     }
-    const res = await withTenant(router, tenant, (tx) => tx.one<{ broken: string | null }>('SELECT audit.verify_chain() AS broken'));
+    const res = await withTenant(router, tenant, (tx) =>
+      tx.one<{ broken: string | null }>('SELECT audit.verify_chain() AS broken'),
+    );
     expect(res.broken).toBe('3');
   });
 });

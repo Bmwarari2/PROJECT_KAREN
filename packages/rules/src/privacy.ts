@@ -1,4 +1,15 @@
-import { addDays, addMinutes, addMonths, addYears, compareDates, compareInstants, dateParts, makeDate, type CivilDate, type Instant } from '@thapsus/core/time';
+import {
+  addDays,
+  addMinutes,
+  addMonths,
+  addYears,
+  compareDates,
+  compareInstants,
+  dateParts,
+  makeDate,
+  type CivilDate,
+  type Instant,
+} from '@thapsus/core/time';
 import type { ResolvedRule, RuleBook } from './engine';
 
 /**
@@ -19,7 +30,11 @@ export interface Period {
 export function parsePeriod(p: string): Period {
   const m = PERIOD_RE.exec(p);
   if (!m || p === 'P') throw new RangeError(`Unsupported period ${p}`);
-  return { years: Number(m[1] ?? 0), months: Number(m[2] ?? 0), days: Number(m[3] ?? 0) * 7 + Number(m[4] ?? 0) };
+  return {
+    years: Number(m[1] ?? 0),
+    months: Number(m[2] ?? 0),
+    days: Number(m[3] ?? 0) * 7 + Number(m[4] ?? 0),
+  };
 }
 
 /** Adds a period to a calendar date: years, then months (clamped to month end), then days. */
@@ -30,7 +45,8 @@ export function addPeriod(date: CivilDate, period: string): CivilDate {
 
 /** True when period a is at least as long as b (compared from a common month-end reference date). */
 export function periodAtLeast(a: string, b: string): boolean {
-  for (const ref of ['2001-01-31', '2004-02-29', '2003-07-15']) if (compareDates(addPeriod(ref, a), addPeriod(ref, b)) < 0) return false;
+  for (const ref of ['2001-01-31', '2004-02-29', '2003-07-15'])
+    if (compareDates(addPeriod(ref, a), addPeriod(ref, b)) < 0) return false;
   return true;
 }
 
@@ -61,7 +77,11 @@ export const ruleRef = (r: ResolvedRule): RuleRef => ({
  * Jurisdiction used for privacy rules: a US state where known (US-CA), otherwise the country
  * (member states resolve through the EU baseline), otherwise the tenant's home-region regime.
  */
-export function privacyJurisdiction(country: string | null | undefined, region: string | null | undefined, homeRegime: 'UK' | 'EU' | 'US'): string {
+export function privacyJurisdiction(
+  country: string | null | undefined,
+  region: string | null | undefined,
+  homeRegime: 'UK' | 'EU' | 'US',
+): string {
   const c = country?.trim().toUpperCase();
   const r = region?.trim().toUpperCase();
   if (c === 'US' && r && /^US-[A-Z]{2}$/.test(r)) return r;
@@ -77,7 +97,12 @@ export interface DsrDeadlineRule {
   period: string;
   /** The clock starts at the LATEST of these events. */
   clockStartsAt: Array<'request_received' | 'information_received' | 'fee_paid'>;
-  extension: { period: string; grounds: string; noticeBefore: 'initial_deadline'; reasonsRequired: boolean } | null;
+  extension: {
+    period: string;
+    grounds: string;
+    noticeBefore: 'initial_deadline';
+    reasonsRequired: boolean;
+  } | null;
   /** Time between asking for clarification and receiving it does not count (UK GDPR Art. 12A(5)). */
   clockStopForClarification: { appliesTo: DsrKind[] } | null;
   appliesTo: DsrKind[];
@@ -110,14 +135,22 @@ export interface DsrDeadline {
  * undefined where no data-subject-request law covers employees in the jurisdiction (e.g. US
  * federal). When dates are ambiguous the earlier (safer) deadline is returned.
  */
-export function dsrDeadline(book: RuleBook, jurisdiction: string, kind: DsrKind, input: DsrClockInput): DsrDeadline | undefined {
+export function dsrDeadline(
+  book: RuleBook,
+  jurisdiction: string,
+  kind: DsrKind,
+  input: DsrClockInput,
+): DsrDeadline | undefined {
   const r = book.tryResolve<DsrDeadlineRule>(jurisdiction, 'privacy.dsr_deadline', input.receivedOn);
   if (!r) return undefined;
   const v = r.value;
   let start = input.receivedOn;
-  if (v.clockStartsAt.includes('information_received') && input.informationReceivedOn) start = latest(start, input.informationReceivedOn);
+  if (v.clockStartsAt.includes('information_received') && input.informationReceivedOn)
+    start = latest(start, input.informationReceivedOn);
   if (v.clockStartsAt.includes('fee_paid') && input.feePaidOn) start = latest(start, input.feePaidOn);
-  const paused = v.clockStopForClarification?.appliesTo.includes(kind) ? Math.max(0, input.pausedDays ?? 0) : 0;
+  const paused = v.clockStopForClarification?.appliesTo.includes(kind)
+    ? Math.max(0, input.pausedDays ?? 0)
+    : 0;
   const due = addDays(addPeriod(start, v.period), paused);
   let extended: CivilDate | null = null;
   if (v.extension) {
@@ -125,10 +158,21 @@ export function dsrDeadline(book: RuleBook, jurisdiction: string, kind: DsrKind,
     // "two further months" = three months in total from the start: take the earlier reading.
     const p = parsePeriod(v.period);
     const e = parsePeriod(v.extension.period);
-    extended = earliest(extended, addDays(addPeriod(start, `P${p.years + e.years}Y${p.months + e.months}M${p.days + e.days}D`), paused));
+    extended = earliest(
+      extended,
+      addDays(addPeriod(start, `P${p.years + e.years}Y${p.months + e.months}M${p.days + e.days}D`), paused),
+    );
     if (v.maxTotal) extended = earliest(extended, addDays(addPeriod(start, v.maxTotal), paused));
   }
-  return { applies: v.appliesTo.includes(kind), startsOn: start, dueOn: due, extendedDueOn: extended, extensionNoticeBy: v.extension ? due : null, rule: ruleRef(r), value: v };
+  return {
+    applies: v.appliesTo.includes(kind),
+    startsOn: start,
+    dueOn: due,
+    extendedDueOn: extended,
+    extensionNoticeBy: v.extension ? due : null,
+    rule: ruleRef(r),
+    value: v,
+  };
 }
 
 // ---- Breach notification -----------------------------------------------------------------------------
@@ -158,7 +202,8 @@ export interface BreachNotificationRule {
   unverified?: string[];
 }
 
-export type BreachAudience = 'regulator' | 'individuals' | 'processorToController' | 'consumerReportingAgencies';
+export type BreachAudience =
+  'regulator' | 'individuals' | 'processorToController' | 'consumerReportingAgencies';
 
 export interface BreachDeadline {
   jurisdiction: string;
@@ -179,16 +224,29 @@ export interface BreachDeadline {
  * jurisdiction with affected people. Hour limits run from awareness; day limits are applied as whole
  * 24-hour days from the same instant (never later than the statutory day count).
  */
-export function breachDeadlines(book: RuleBook, awareAt: Instant, affected: Record<string, number>): BreachDeadline[] {
+export function breachDeadlines(
+  book: RuleBook,
+  awareAt: Instant,
+  affected: Record<string, number>,
+): BreachDeadline[] {
   const out: BreachDeadline[] = [];
   const onDate = awareAt.slice(0, 10);
   for (const [jurisdiction, count] of Object.entries(affected)) {
     const r = book.tryResolve<BreachNotificationRule>(jurisdiction, 'privacy.breach_notification', onDate);
     if (!r) continue;
-    for (const audience of ['regulator', 'individuals', 'processorToController', 'consumerReportingAgencies'] as const) {
+    for (const audience of [
+      'regulator',
+      'individuals',
+      'processorToController',
+      'consumerReportingAgencies',
+    ] as const) {
       const a = r.value[audience];
       if (!a) continue;
-      const minutes = a.deadlineHours ? a.deadlineHours * 60 : a.deadlineDays ? a.deadlineDays * 24 * 60 : null;
+      const minutes = a.deadlineHours
+        ? a.deadlineHours * 60
+        : a.deadlineDays
+          ? a.deadlineDays * 24 * 60
+          : null;
       out.push({
         jurisdiction,
         audience,
@@ -202,12 +260,22 @@ export function breachDeadlines(book: RuleBook, awareAt: Instant, affected: Reco
       });
     }
   }
-  return out.sort((x, y) => (x.dueAt && y.dueAt ? compareInstants(x.dueAt, y.dueAt) : x.dueAt ? -1 : y.dueAt ? 1 : 0));
+  return out.sort((x, y) =>
+    x.dueAt && y.dueAt ? compareInstants(x.dueAt, y.dueAt) : x.dueAt ? -1 : y.dueAt ? 1 : 0,
+  );
 }
 
 // ---- Retention -----------------------------------------------------------------------------------------------
 /** Product data categories the retention engine manages. */
-export const RETENTION_CATEGORIES = ['time_records', 'leave_records', 'sickness_records', 'payroll_records', 'immigration_records', 'personnel_records', 'notifications'] as const;
+export const RETENTION_CATEGORIES = [
+  'time_records',
+  'leave_records',
+  'sickness_records',
+  'payroll_records',
+  'immigration_records',
+  'personnel_records',
+  'notifications',
+] as const;
 export type RetentionCategory = (typeof RETENTION_CATEGORIES)[number];
 
 /** Which pack rules govern each category (rules for other categories are never consulted). */
@@ -221,7 +289,12 @@ export const RETENTION_RULE_KEYS: Record<RetentionCategory, string[]> = {
   notifications: [],
 };
 
-export type RetentionAnchor = 'record_date' | 'end_of_tax_year' | 'employment_end' | 'later_of_record_and_employment_end' | 'end_of_following_pay_reference_period';
+export type RetentionAnchor =
+  | 'record_date'
+  | 'end_of_tax_year'
+  | 'employment_end'
+  | 'later_of_record_and_employment_end'
+  | 'end_of_following_pay_reference_period';
 
 export interface RetentionRuleValue {
   period: string;
@@ -249,7 +322,12 @@ export interface NormalisedRetention {
 }
 
 /** Retention rules for a category in a jurisdiction on a date, normalised from their pack shapes. */
-export function retentionRules(book: RuleBook, jurisdiction: string, category: RetentionCategory, onDate: CivilDate): NormalisedRetention[] {
+export function retentionRules(
+  book: RuleBook,
+  jurisdiction: string,
+  category: RetentionCategory,
+  onDate: CivilDate,
+): NormalisedRetention[] {
   const out: NormalisedRetention[] = [];
   for (const key of RETENTION_RULE_KEYS[category]) {
     const r = book.tryResolve<Record<string, unknown>>(jurisdiction, key, onDate);
@@ -257,9 +335,20 @@ export function retentionRules(book: RuleBook, jurisdiction: string, category: R
     const v = r.value;
     let value: RetentionRuleValue | undefined;
     if (key === 'right_to_work.retention' && typeof v.retainAfterEmploymentEnds === 'string') {
-      value = { period: v.retainAfterEmploymentEnds, from: 'employment_end', statutoryMinimum: true, legalReview: 'pending' };
+      value = {
+        period: v.retainAfterEmploymentEnds,
+        from: 'employment_end',
+        statutoryMinimum: true,
+        legalReview: 'pending',
+      };
     } else if (key === 'i9.retention' && v.rule === 'later_of') {
-      value = { period: `P${Number(v.afterHireYears)}Y`, from: 'later_of_record_and_employment_end', afterEmploymentEnds: `P${Number(v.afterEmploymentEndsYears)}Y`, statutoryMinimum: true, legalReview: 'pending' };
+      value = {
+        period: `P${Number(v.afterHireYears)}Y`,
+        from: 'later_of_record_and_employment_end',
+        afterEmploymentEnds: `P${Number(v.afterEmploymentEndsYears)}Y`,
+        statutoryMinimum: true,
+        legalReview: 'pending',
+      };
     } else if (typeof v.period === 'string' && typeof v.from === 'string') {
       value = v as unknown as RetentionRuleValue;
     }
@@ -311,7 +400,11 @@ export interface RetentionDecision {
  * Combines every rule for the category (latest date wins) with the tenant's own period, which can
  * lengthen but never shorten a statutory minimum. Without any rule or tenant period the record is kept.
  */
-export function retentionDecision(rules: NormalisedRetention[], anchors: RetentionAnchors, tenant?: { period: string; from: RetentionAnchor } | null): RetentionDecision {
+export function retentionDecision(
+  rules: NormalisedRetention[],
+  anchors: RetentionAnchors,
+  tenant?: { period: string; from: RetentionAnchor } | null,
+): RetentionDecision {
   let until: CivilDate | null | undefined;
   let statutory = false;
   for (const r of rules) {
@@ -321,7 +414,10 @@ export function retentionDecision(rules: NormalisedRetention[], anchors: Retenti
     if (r.value.statutoryMinimum || !tenant) until = until ? latest(until, d) : d;
   }
   if (tenant) {
-    const d = retainUntil({ period: tenant.period, from: tenant.from, statutoryMinimum: false, legalReview: 'pending' }, anchors);
+    const d = retainUntil(
+      { period: tenant.period, from: tenant.from, statutoryMinimum: false, legalReview: 'pending' },
+      anchors,
+    );
     if (d === null) return { deletableFrom: null, statutory, rules };
     until = until ? latest(until, d) : d;
   }

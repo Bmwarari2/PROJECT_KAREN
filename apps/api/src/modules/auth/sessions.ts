@@ -35,7 +35,8 @@ export async function loadSecurity(tx: Tx): Promise<TenantSecurity> {
   return { ...DEFAULT_SECURITY, ...(row?.security ?? {}) };
 }
 
-export type AuthMethod = 'password' | 'passkey' | 'magic_link' | 'oidc' | 'saml' | 'support' | 'api_key' | 'oauth_client';
+export type AuthMethod =
+  'password' | 'passkey' | 'magic_link' | 'oidc' | 'saml' | 'support' | 'api_key' | 'oauth_client';
 
 /** Set for machine callers (scoped API key or OAuth 2.0 client credentials token); see modules/platform/api-auth.ts. */
 export interface ApiClientInfo {
@@ -57,13 +58,27 @@ export interface AuthContext {
   /** When this session last proved the user's identity (sign-in or re-authentication). */
   authenticatedAt: Date;
   principal: Principal;
-  user: { email: string; displayName: string; locale: string | null; timeZone: string | null; employeeId: string | null };
+  user: {
+    email: string;
+    displayName: string;
+    locale: string | null;
+    timeZone: string | null;
+    employeeId: string | null;
+  };
   apiClient?: ApiClientInfo;
 }
 
 export async function createSession(
   tx: Tx,
-  opts: { userId: string; tenantId: string; method: AuthMethod; mfaVerified: boolean; ip?: string; userAgent?: string; now: Date },
+  opts: {
+    userId: string;
+    tenantId: string;
+    method: AuthMethod;
+    mfaVerified: boolean;
+    ip?: string;
+    userAgent?: string;
+    now: Date;
+  },
 ): Promise<string> {
   const security = await loadSecurity(tx);
   const secret = newToken();
@@ -85,10 +100,10 @@ export async function createSession(
       opts.userAgent?.slice(0, 512) ?? null,
     ],
   );
-  await tx.exec('UPDATE app.users SET last_login_at = $2, failed_attempts = 0, locked_until = NULL WHERE id = $1', [
-    opts.userId,
-    opts.now,
-  ]);
+  await tx.exec(
+    'UPDATE app.users SET last_login_at = $2, failed_attempts = 0, locked_until = NULL WHERE id = $1',
+    [opts.userId, opts.now],
+  );
   return composeToken(SESSION_PREFIX, opts.tenantId, secret);
 }
 
@@ -96,7 +111,11 @@ export async function createSession(
  * Resolves and slides a session. Returns undefined when missing, revoked, idle-expired or past its
  * absolute lifetime. Idle expiry slides at most once a minute to keep writes low.
  */
-export async function resolveSession(router: TenantRouter, token: string | undefined, now: Date): Promise<AuthContext | undefined> {
+export async function resolveSession(
+  router: TenantRouter,
+  token: string | undefined,
+  now: Date,
+): Promise<AuthContext | undefined> {
   const parsed = parseToken(SESSION_PREFIX, token);
   if (!parsed) return undefined;
   try {
@@ -129,8 +148,17 @@ export async function resolveSession(router: TenantRouter, token: string | undef
       if (now >= new Date(s.idle_expires_at) || now >= new Date(s.absolute_expires_at)) return undefined;
       if (now.getTime() - new Date(s.last_seen_at).getTime() > 60_000) {
         const security = await loadSecurity(tx);
-        const idle = new Date(Math.min(now.getTime() + security.sessionIdleMinutes * 60_000, new Date(s.absolute_expires_at).getTime()));
-        await tx.exec('UPDATE app.sessions SET last_seen_at = $2, idle_expires_at = $3 WHERE id = $1', [s.id, now, idle]);
+        const idle = new Date(
+          Math.min(
+            now.getTime() + security.sessionIdleMinutes * 60_000,
+            new Date(s.absolute_expires_at).getTime(),
+          ),
+        );
+        await tx.exec('UPDATE app.sessions SET last_seen_at = $2, idle_expires_at = $3 WHERE id = $1', [
+          s.id,
+          now,
+          idle,
+        ]);
       }
       const factor = await tx.maybe(
         `SELECT 1 FROM app.totp_factors WHERE user_id = $1 AND verified_at IS NOT NULL
@@ -145,9 +173,20 @@ export async function resolveSession(router: TenantRouter, token: string | undef
         method: s.auth_method,
         mfaVerified: !!s.mfa_verified_at,
         hasMfaFactor: !!factor,
-        authenticatedAt: new Date(Math.max(new Date(s.created_at).getTime(), s.reauthenticated_at ? new Date(s.reauthenticated_at).getTime() : 0)),
+        authenticatedAt: new Date(
+          Math.max(
+            new Date(s.created_at).getTime(),
+            s.reauthenticated_at ? new Date(s.reauthenticated_at).getTime() : 0,
+          ),
+        ),
         principal,
-        user: { email: s.email, displayName: s.display_name, locale: s.locale, timeZone: s.time_zone, employeeId: s.employee_id },
+        user: {
+          email: s.email,
+          displayName: s.display_name,
+          locale: s.locale,
+          timeZone: s.time_zone,
+          employeeId: s.employee_id,
+        },
       } satisfies AuthContext;
     });
   } catch {
@@ -157,7 +196,10 @@ export async function resolveSession(router: TenantRouter, token: string | undef
 
 /** Ends a user's sessions (all of them, or all but `exceptSessionId`); returns how many were ended. */
 export async function revokeUserSessions(tx: Tx, userId: string, exceptSessionId?: string): Promise<number> {
-  return tx.exec('UPDATE app.sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL AND ($2::uuid IS NULL OR id <> $2::uuid)', [userId, exceptSessionId ?? null]);
+  return tx.exec(
+    'UPDATE app.sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL AND ($2::uuid IS NULL OR id <> $2::uuid)',
+    [userId, exceptSessionId ?? null],
+  );
 }
 
 /** True when the session proved the user's identity within REAUTH_WINDOW_MINUTES. */

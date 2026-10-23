@@ -14,7 +14,8 @@ export default function RolesPage() {
   const { data, error } = useApi<Role[]>('/v1/roles');
   const canManage = hasPermission(session, 'roles.manage');
 
-  if (error) return <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('common.error')} />;
+  if (error)
+    return <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('common.error')} />;
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -51,15 +52,23 @@ export default function RolesPage() {
                   <Link href={`/app/settings/roles/${r.id}`} className="font-semibold">
                     {roleName(t, r)}
                   </Link>
-                  {r.description ? <p className="text-footnote text-text-secondary">{r.description}</p> : null}
+                  {r.description ? (
+                    <p className="text-footnote text-text-secondary">{r.description}</p>
+                  ) : null}
                 </TD>
                 <TD>
                   <span className="flex flex-wrap gap-2">
-                    <Badge tone={r.builtIn ? 'neutral' : 'accent'}>{r.builtIn ? t('access.roles.builtIn') : t('access.roles.custom')}</Badge>
+                    <Badge tone={r.builtIn ? 'neutral' : 'accent'}>
+                      {r.builtIn ? t('access.roles.builtIn') : t('access.roles.custom')}
+                    </Badge>
                     {r.isAdmin ? <Badge tone="warning">{t('access.roles.admin')}</Badge> : null}
                   </span>
                 </TD>
-                <TD className="text-text-secondary">{r.permissions.includes('*') ? t('access.roles.allPermissions') : t('access.roles.permissionCount', { count: r.permissions.length })}</TD>
+                <TD className="text-text-secondary">
+                  {r.permissions.includes('*')
+                    ? t('access.roles.allPermissions')
+                    : t('access.roles.permissionCount', { count: r.permissions.length })}
+                </TD>
                 <TD className="text-right tabular-nums">{r.assignmentCount}</TD>
               </TR>
             ))}

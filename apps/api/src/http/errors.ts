@@ -84,10 +84,17 @@ const SECURITY_EVENTS: Partial<Record<ErrorCode, { event: string; level: 'warn' 
   validation: { event: 'input.rejected', level: 'info' },
 };
 
-export function securityEvent(req: FastifyRequest, code: ErrorCode, extra: Record<string, unknown>, detail?: string) {
+export function securityEvent(
+  req: FastifyRequest,
+  code: ErrorCode,
+  extra: Record<string, unknown>,
+  detail?: string,
+) {
   const def = SECURITY_EVENTS[code];
   if (!def) return;
-  const fields = Array.isArray(extra.errors) ? (extra.errors as Array<{ path?: unknown }>).map((e) => String(e.path ?? '')).slice(0, 20) : undefined;
+  const fields = Array.isArray(extra.errors)
+    ? (extra.errors as Array<{ path?: unknown }>).map((e) => String(e.path ?? '')).slice(0, 20)
+    : undefined;
   req.log[def.level](
     {
       securityEvent: def.event,
@@ -105,23 +112,44 @@ export function securityEvent(req: FastifyRequest, code: ErrorCode, extra: Recor
   );
 }
 
-export function problem(req: FastifyRequest, reply: FastifyReply, code: ErrorCode, extra: Record<string, unknown> = {}, detail?: string) {
+export function problem(
+  req: FastifyRequest,
+  reply: FastifyReply,
+  code: ErrorCode,
+  extra: Record<string, unknown> = {},
+  detail?: string,
+) {
   const status = STATUS[code];
   securityEvent(req, code, extra, detail);
   return reply
     .status(status)
     .type('application/problem+json')
-    .send({ type: `about:blank#${code}`, title: title(req.ctx?.locale ?? 'en-GB', code), status, code, detail, requestId: req.id, ...extra });
+    .send({
+      type: `about:blank#${code}`,
+      title: title(req.ctx?.locale ?? 'en-GB', code),
+      status,
+      code,
+      detail,
+      requestId: req.id,
+      ...extra,
+    });
 }
 
-export function errorHandler(err: FastifyError & { code?: string }, req: FastifyRequest, reply: FastifyReply) {
+export function errorHandler(
+  err: FastifyError & { code?: string },
+  req: FastifyRequest,
+  reply: FastifyReply,
+) {
   if (err instanceof ApiError) {
     if (err.status === 429 && err.extra.retryAfter) reply.header('Retry-After', String(err.extra.retryAfter));
     return problem(req, reply, err.code, err.extra, err.message !== err.code ? err.message : undefined);
   }
   if (err.validation) {
     return problem(req, reply, 'validation', {
-      errors: err.validation.map((v) => ({ path: v.instancePath || (v.params as { missingProperty?: string })?.missingProperty, message: v.message })),
+      errors: err.validation.map((v) => ({
+        path: v.instancePath || (v.params as { missingProperty?: string })?.missingProperty,
+        message: v.message,
+      })),
     });
   }
   if (err instanceof TenantNotFoundError) return problem(req, reply, 'notFound');
@@ -145,7 +173,8 @@ export function errorHandler(err: FastifyError & { code?: string }, req: Fastify
     case 'FST_ERR_CTP_EMPTY_JSON_BODY':
       return problem(req, reply, 'validation');
   }
-  if (err.statusCode && err.statusCode < 500) return problem(req, reply, err.statusCode === 404 ? 'notFound' : 'validation');
+  if (err.statusCode && err.statusCode < 500)
+    return problem(req, reply, err.statusCode === 404 ? 'notFound' : 'validation');
   req.log.error({ err }, 'unhandled error');
   return problem(req, reply, 'internal');
 }

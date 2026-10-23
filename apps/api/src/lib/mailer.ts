@@ -77,7 +77,10 @@ export class SesMailer implements Mailer {
         Content: {
           Simple: {
             Subject: { Data: mail.subject, Charset: 'UTF-8' },
-            Body: { Text: { Data: mail.text, Charset: 'UTF-8' }, ...(mail.html ? { Html: { Data: mail.html, Charset: 'UTF-8' } } : {}) },
+            Body: {
+              Text: { Data: mail.text, Charset: 'UTF-8' },
+              ...(mail.html ? { Html: { Data: mail.html, Charset: 'UTF-8' } } : {}),
+            },
           },
         },
       }),
@@ -89,7 +92,8 @@ export function mailerFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process
   const from = env.MAIL_FROM ?? `no-reply@${env.THAPSUS_HR_DOMAIN ?? 'thapsus-hr.localhost'}`;
   if (env.MAIL_TRANSPORT === 'ses') return new SesMailer(cell, from, env.SES_CONFIGURATION_SET);
   if (env.MAIL_TRANSPORT === 'file') {
-    if (env.APP_ENV !== 'dev' && env.APP_ENV !== 'test') throw new Error('MAIL_TRANSPORT=file is only allowed in dev and test');
+    if (env.APP_ENV !== 'dev' && env.APP_ENV !== 'test')
+      throw new Error('MAIL_TRANSPORT=file is only allowed in dev and test');
     return new FileMailer(cell, env.MAIL_DIR ?? '.tmp/mail');
   }
   if (env.SMTP_URL) return new SmtpMailer(cell, env.SMTP_URL, from);

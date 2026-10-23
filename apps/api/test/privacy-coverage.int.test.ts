@@ -25,15 +25,24 @@ describe('privacy table coverage', () => {
     expect(await coverageProblems(asTx(owner))).toEqual([]);
     const cols = await personColumns(asTx(owner));
     expect(cols.length).toBeGreaterThan(40);
-    expect(Object.keys(SUBJECT_TABLES)).toEqual(expect.arrayContaining(['app.employees', 'app.users', 'vault.records', 'audit.events']));
+    expect(Object.keys(SUBJECT_TABLES)).toEqual(
+      expect.arrayContaining(['app.employees', 'app.users', 'vault.records', 'audit.events']),
+    );
   });
 
   it('fails when a new table references employees without an entry in the map', async () => {
     await owner.query('BEGIN');
     try {
-      await owner.query(`CREATE TABLE app.zz_fictional_new_feature (tenant_id uuid NOT NULL, id uuid NOT NULL, employee_id uuid NOT NULL, approved_by uuid, PRIMARY KEY (tenant_id, id), FOREIGN KEY (tenant_id, employee_id) REFERENCES app.employees (tenant_id, id))`);
+      await owner.query(
+        `CREATE TABLE app.zz_fictional_new_feature (tenant_id uuid NOT NULL, id uuid NOT NULL, employee_id uuid NOT NULL, approved_by uuid, PRIMARY KEY (tenant_id, id), FOREIGN KEY (tenant_id, employee_id) REFERENCES app.employees (tenant_id, id))`,
+      );
       const problems = await coverageProblems(asTx(owner));
-      expect(problems).toEqual(expect.arrayContaining([expect.stringContaining('app.zz_fictional_new_feature.employee_id'), expect.stringContaining('app.zz_fictional_new_feature.approved_by')]));
+      expect(problems).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('app.zz_fictional_new_feature.employee_id'),
+          expect.stringContaining('app.zz_fictional_new_feature.approved_by'),
+        ]),
+      );
     } finally {
       await owner.query('ROLLBACK');
     }
@@ -43,7 +52,9 @@ describe('privacy table coverage', () => {
     await owner.query('BEGIN');
     try {
       await owner.query(`ALTER TABLE app.leave_requests ADD COLUMN reviewer_user_id uuid`);
-      expect(await coverageProblems(asTx(owner))).toEqual([expect.stringContaining('app.leave_requests.reviewer_user_id')]);
+      expect(await coverageProblems(asTx(owner))).toEqual([
+        expect.stringContaining('app.leave_requests.reviewer_user_id'),
+      ]);
     } finally {
       await owner.query('ROLLBACK');
     }

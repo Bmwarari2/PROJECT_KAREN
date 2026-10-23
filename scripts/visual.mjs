@@ -4,7 +4,9 @@
 import { execSync, spawnSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
 
-const version = JSON.parse(readFileSync('node_modules/.pnpm/node_modules/@playwright/test/package.json', 'utf8')).version;
+const version = JSON.parse(
+  readFileSync('node_modules/.pnpm/node_modules/@playwright/test/package.json', 'utf8'),
+).version;
 const image = `mcr.microsoft.com/playwright:v${version}-noble`;
 // VISUAL_SERVER_PORT lets parallel checkouts on one machine each run their own browser container.
 const port = Number(process.env.VISUAL_SERVER_PORT ?? 3333);
@@ -17,7 +19,9 @@ spawnSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
 const core = realpathSync('node_modules/.pnpm/node_modules/playwright-core');
 // --unsafe lets the visual projects pass Chromium flags (greyscale text anti-aliasing, sRGB) so
 // screenshots repeat exactly; the port is published on the loopback interface only.
-sh(`docker run -d --rm --name ${name} -p 127.0.0.1:${port}:${port} --add-host=host.docker.internal:host-gateway --ipc=host -v "${core}:/opt/playwright-core:ro" ${image} node /opt/playwright-core/cli.js run-server --port ${port} --host 0.0.0.0 --unsafe`);
+sh(
+  `docker run -d --rm --name ${name} -p 127.0.0.1:${port}:${port} --add-host=host.docker.internal:host-gateway --ipc=host -v "${core}:/opt/playwright-core:ro" ${image} node /opt/playwright-core/cli.js run-server --port ${port} --host 0.0.0.0 --unsafe`,
+);
 try {
   // wait for the server to accept connections
   for (let i = 0; i < 60; i++) {
@@ -28,7 +32,9 @@ try {
   const all = ['visual-desktop-light', 'visual-desktop-dark', 'visual-phone-light', 'visual-phone-dark'];
   const projects = (process.env.VISUAL_PROJECTS?.split(',') ?? all).map((p) => `--project ${p}`).join(' ');
   // 'missing' writes only baselines that do not exist yet; 'all' rewrites every baseline
-  const update = process.env.UPDATE_SNAPSHOTS ? ` --update-snapshots=${process.env.UPDATE_SNAPSHOTS === 'all' ? 'all' : 'missing'}` : '';
+  const update = process.env.UPDATE_SNAPSHOTS
+    ? ` --update-snapshots=${process.env.UPDATE_SNAPSHOTS === 'all' ? 'all' : 'missing'}`
+    : '';
   const r = spawnSync(`pnpm --filter @thapsus/web exec playwright test ${projects}${update}`, {
     shell: true,
     stdio: 'inherit',

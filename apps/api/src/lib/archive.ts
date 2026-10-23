@@ -18,7 +18,8 @@ export interface ZipLimits {
 
 export type ZipProblem = 'badArchive' | 'tooManyEntries' | 'tooLarge';
 
-export const isZipArchive = (b: Buffer) => b.length > 4 && b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
+export const isZipArchive = (b: Buffer) =>
+  b.length > 4 && b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
 
 const EOCD = 0x06054b50;
 const ZIP64_LOCATOR = 0x07064b50;
@@ -37,7 +38,8 @@ export function declaredEntryCount(buf: Buffer): number | undefined {
     const loc = i - 20;
     if (loc < 0 || buf.readUInt32LE(loc) !== ZIP64_LOCATOR) return undefined;
     const at = Number(buf.readBigUInt64LE(loc + 8));
-    if (!Number.isSafeInteger(at) || at < 0 || at + 56 > buf.length || buf.readUInt32LE(at) !== ZIP64_EOCD) return undefined;
+    if (!Number.isSafeInteger(at) || at < 0 || at + 56 > buf.length || buf.readUInt32LE(at) !== ZIP64_EOCD)
+      return undefined;
     const total64 = buf.readBigUInt64LE(at + 32);
     return total64 > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(total64);
   }
@@ -53,7 +55,12 @@ export class InflateBudget {
  * Inflates one entry, stopping as soon as it exceeds `limit` bytes or the budget runs out. With
  * `keep` false the bytes are counted and dropped (a bounds check holds no more than one chunk).
  */
-function inflateBounded(entry: JSZip.JSZipObject, limit: number, budget: InflateBudget, keep: boolean): Promise<Buffer | 'tooLarge' | 'badArchive'> {
+function inflateBounded(
+  entry: JSZip.JSZipObject,
+  limit: number,
+  budget: InflateBudget,
+  keep: boolean,
+): Promise<Buffer | 'tooLarge' | 'badArchive'> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = [];
     let size = 0;
@@ -89,7 +96,11 @@ export interface OpenedZip {
 }
 
 /** Opens an archive after checking its entry count; nothing is inflated yet. */
-export async function openZip(buf: Buffer, limits: ZipLimits, budget = new InflateBudget(limits.maxTotalBytes)): Promise<OpenedZip | ZipProblem> {
+export async function openZip(
+  buf: Buffer,
+  limits: ZipLimits,
+  budget = new InflateBudget(limits.maxTotalBytes),
+): Promise<OpenedZip | ZipProblem> {
   const count = declaredEntryCount(buf);
   if (count === undefined) return 'badArchive';
   if (count > limits.maxEntries) return 'tooManyEntries';

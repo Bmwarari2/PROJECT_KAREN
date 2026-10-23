@@ -15,7 +15,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BackofficeLayout({ children }: { children: React.ReactNode }) {
   const { theme } = await serverContext();
   return (
-    <Messages ns={['backoffice.*', 'backoffice.nav', 'backoffice.cell', 'backoffice.roles', 'backoffice.overview']}>
+    <Messages
+      ns={['backoffice.*', 'backoffice.nav', 'backoffice.cell', 'backoffice.roles', 'backoffice.overview']}
+    >
       <BackofficeShell theme={theme}>{children}</BackofficeShell>
     </Messages>
   );

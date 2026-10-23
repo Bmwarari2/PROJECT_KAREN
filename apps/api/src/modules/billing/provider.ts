@@ -82,7 +82,12 @@ export interface BillingProvider {
   setCancelAt(id: string, at: string | null, idempotencyKey: string): Promise<ProviderSubscription>;
   cancelNow(id: string, idempotencyKey: string): Promise<void>;
   /** Hosted page where the customer adds a card (card data never touches Thapsus-HR). */
-  createPaymentSetupSession(input: { customerId: string; currency: string; returnUrl: string; idempotencyKey: string }): Promise<{ url: string }>;
+  createPaymentSetupSession(input: {
+    customerId: string;
+    currency: string;
+    returnUrl: string;
+    idempotencyKey: string;
+  }): Promise<{ url: string }>;
   /** After a hosted setup completes: make the new payment method the customer's default. */
   completePaymentSetup(input: { customerId: string; setupIntentId: string }): Promise<void>;
 }
@@ -93,14 +98,20 @@ export interface RecordedCall {
   input: unknown;
 }
 
-const iso = (d: Date) => Temporal.Instant.fromEpochMilliseconds(d.getTime()).round({ smallestUnit: 'second', roundingMode: 'floor' }).toString();
+const iso = (d: Date) =>
+  Temporal.Instant.fromEpochMilliseconds(d.getTime())
+    .round({ smallestUnit: 'second', roundingMode: 'floor' })
+    .toString();
 
 /** In-memory provider that records every payload it is sent, for the no-employee-data test. */
 export class FakeBillingProvider implements BillingProvider {
   readonly kind = 'fake' as const;
   readonly calls: RecordedCall[] = [];
   readonly customers = new Map<string, CustomerInput>();
-  readonly subscriptions = new Map<string, ProviderSubscription & { input: SubscriptionInput | SubscriptionUpdate }>();
+  readonly subscriptions = new Map<
+    string,
+    ProviderSubscription & { input: SubscriptionInput | SubscriptionUpdate }
+  >();
   constructor(
     private readonly now: () => Date = () => new Date(),
     private readonly checkoutBase = '/app/billing',
@@ -119,7 +130,11 @@ export class FakeBillingProvider implements BillingProvider {
 
   private period(interval: 'month' | 'year', from: Date) {
     const start = iso(from);
-    const end = Temporal.Instant.from(start).toZonedDateTimeISO('UTC').add(interval === 'month' ? { months: 1 } : { years: 1 }).toInstant().toString();
+    const end = Temporal.Instant.from(start)
+      .toZonedDateTimeISO('UTC')
+      .add(interval === 'month' ? { months: 1 } : { years: 1 })
+      .toInstant()
+      .toString();
     return { currentPeriodStart: start, currentPeriodEnd: end };
   }
 
@@ -127,7 +142,14 @@ export class FakeBillingProvider implements BillingProvider {
     this.record('createSubscription', input);
     const id = `sub_fake_${randomUUID().replace(/-/g, '').slice(0, 14)}`;
     const start = input.trialEnd ? new Date(input.trialEnd) : this.now();
-    const sub = { id, status: input.trialEnd ? 'trialing' : 'active', ...this.period(input.interval, start), trialEnd: input.trialEnd ?? null, cancelAt: null, input };
+    const sub = {
+      id,
+      status: input.trialEnd ? 'trialing' : 'active',
+      ...this.period(input.interval, start),
+      trialEnd: input.trialEnd ?? null,
+      cancelAt: null,
+      input,
+    };
     if (input.trialEnd) sub.currentPeriodStart = iso(this.now());
     this.subscriptions.set(id, sub);
     return this.view(sub);
@@ -139,7 +161,8 @@ export class FakeBillingProvider implements BillingProvider {
     if (!sub) throw new Error('No such subscription');
     const prev = sub.input as SubscriptionUpdate;
     // Interval changes reset the billing cycle (as Stripe does).
-    if (prev.interval !== input.interval) Object.assign(sub, this.period(input.interval, this.now()), { status: 'active', trialEnd: null });
+    if (prev.interval !== input.interval)
+      Object.assign(sub, this.period(input.interval, this.now()), { status: 'active', trialEnd: null });
     sub.input = input;
     return this.view(sub);
   }
@@ -158,9 +181,16 @@ export class FakeBillingProvider implements BillingProvider {
     if (sub) sub.status = 'canceled';
   }
 
-  async createPaymentSetupSession(input: { customerId: string; currency: string; returnUrl: string; idempotencyKey: string }) {
+  async createPaymentSetupSession(input: {
+    customerId: string;
+    currency: string;
+    returnUrl: string;
+    idempotencyKey: string;
+  }) {
     this.record('createPaymentSetupSession', input);
-    return { url: `${input.returnUrl}${input.returnUrl.includes('?') ? '&' : '?'}setup=fake_${randomUUID().slice(0, 8)}` };
+    return {
+      url: `${input.returnUrl}${input.returnUrl.includes('?') ? '&' : '?'}setup=fake_${randomUUID().slice(0, 8)}`,
+    };
   }
 
   async completePaymentSetup(input: { customerId: string; setupIntentId: string }) {
@@ -168,7 +198,14 @@ export class FakeBillingProvider implements BillingProvider {
   }
 
   private view(s: ProviderSubscription): ProviderSubscription {
-    return { id: s.id, status: s.status, currentPeriodStart: s.currentPeriodStart, currentPeriodEnd: s.currentPeriodEnd, trialEnd: s.trialEnd, cancelAt: s.cancelAt };
+    return {
+      id: s.id,
+      status: s.status,
+      currentPeriodStart: s.currentPeriodStart,
+      currentPeriodEnd: s.currentPeriodEnd,
+      trialEnd: s.trialEnd,
+      cancelAt: s.cancelAt,
+    };
   }
 }
 
@@ -208,16 +245,33 @@ export class WebhookSignatureError extends Error {
 const ts = (v: unknown): string | null => (typeof v === 'number' && v > 0 ? iso(new Date(v * 1000)) : null);
 const int = (v: unknown): number => (typeof v === 'number' && Number.isSafeInteger(v) ? v : 0);
 const str = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
-const idOf = (v: unknown): string | null => (typeof v === 'string' ? v : v && typeof v === 'object' && typeof (v as { id?: unknown }).id === 'string' ? (v as { id: string }).id : null);
+const idOf = (v: unknown): string | null =>
+  typeof v === 'string'
+    ? v
+    : v && typeof v === 'object' && typeof (v as { id?: unknown }).id === 'string'
+      ? (v as { id: string }).id
+      : null;
 
 /**
  * Verifies the `Stripe-Signature` header with the official SDK (HMAC-SHA256, 5-minute tolerance) and
  * reduces the event to the fields above. https://docs.stripe.com/webhooks#verify-events
  */
-export function verifyWebhook(rawBody: Buffer, signature: string | undefined, secret: string, nowMs?: number): BillingEvent {
+export function verifyWebhook(
+  rawBody: Buffer,
+  signature: string | undefined,
+  secret: string,
+  nowMs?: number,
+): BillingEvent {
   let event: { id: string; type: string; data: { object: Record<string, unknown> } };
   try {
-    event = Stripe.webhooks.constructEvent(rawBody, signature ?? '', secret, undefined, undefined, nowMs) as never;
+    event = Stripe.webhooks.constructEvent(
+      rawBody,
+      signature ?? '',
+      secret,
+      undefined,
+      undefined,
+      nowMs,
+    ) as never;
   } catch {
     throw new WebhookSignatureError();
   }
@@ -236,8 +290,10 @@ export function verifyWebhook(rawBody: Buffer, signature: string | undefined, se
       tenantId: str((o.metadata as Record<string, unknown> | undefined)?.thapsus_tenant_id),
     };
   } else if (event.type.startsWith('invoice.')) {
-    const parent = (o.parent as { subscription_details?: { subscription?: unknown } } | undefined)?.subscription_details;
-    const line = ((o.lines as { data?: Array<{ period?: { start?: number; end?: number } }> } | undefined)?.data ?? [])[0];
+    const parent = (o.parent as { subscription_details?: { subscription?: unknown } } | undefined)
+      ?.subscription_details;
+    const line = ((o.lines as { data?: Array<{ period?: { start?: number; end?: number } }> } | undefined)
+      ?.data ?? [])[0];
     out.invoice = {
       id: String(o.id),
       number: str(o.number),

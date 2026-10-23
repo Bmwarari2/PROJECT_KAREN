@@ -2,7 +2,19 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Search, UserPlus, Users } from 'lucide-react';
-import { Badge, Button, EmptyState, Input, Skeleton, Table, TD, TH, THead, TR, buttonVariants } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  buttonVariants,
+} from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useDebounced } from '@/lib/use-api';
@@ -31,7 +43,9 @@ export default function PeoplePage() {
   const [rows, setRows] = React.useState<Row[] | null>(null);
   const [cursor, setCursor] = React.useState<string | null>(null);
   const [loadingMore, setLoadingMore] = React.useState(false);
-  const canCreate = session?.permissions.some((p) => p === '*' || p === 'employees.*' || p === 'employees.create');
+  const canCreate = session?.permissions.some(
+    (p) => p === '*' || p === 'employees.*' || p === 'employees.create',
+  );
 
   const load = React.useCallback(
     async (after: string | null) => {
@@ -64,12 +78,25 @@ export default function PeoplePage() {
       <div className="flex flex-wrap gap-3">
         <label className="relative min-w-[240px] flex-1">
           <span className="sr-only">{t('common.search')}</span>
-          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 stroke-[1.5] text-text-secondary" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('people.searchPlaceholder')} className="pl-9" type="search" />
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 stroke-[1.5] text-text-secondary"
+          />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('people.searchPlaceholder')}
+            className="pl-9"
+            type="search"
+          />
         </label>
         <label className="flex items-center gap-2 text-callout">
           <span className="text-text-secondary">{t('common.status')}</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+          >
             {(['active', 'pre_start', 'leaver', 'all'] as const).map((s) => (
               <option key={s} value={s}>
                 {t(`people.status.${s}`)}
@@ -99,7 +126,10 @@ export default function PeoplePage() {
               {rows.map((r) => (
                 <TR key={r.id}>
                   <TD>
-                    <Link href={`/app/people/${r.id}`} className="font-semibold text-text no-underline hover:text-accent">
+                    <Link
+                      href={`/app/people/${r.id}`}
+                      className="font-semibold text-text no-underline hover:text-accent"
+                    >
                       {r.displayName}
                     </Link>
                   </TD>
@@ -107,7 +137,13 @@ export default function PeoplePage() {
                   <TD>{r.jobTitle}</TD>
                   <TD className="hidden lg:table-cell">{r.department}</TD>
                   <TD className="hidden lg:table-cell">{r.location}</TD>
-                  <TD>{r.status ? <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>{t(`people.status.${r.status}`)}</Badge> : null}</TD>
+                  <TD>
+                    {r.status ? (
+                      <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
+                        {t(`people.status.${r.status}`)}
+                      </Badge>
+                    ) : null}
+                  </TD>
                 </TR>
               ))}
             </tbody>

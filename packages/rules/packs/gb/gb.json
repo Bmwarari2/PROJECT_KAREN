@@ -12,17 +12,10 @@
         {
           "effectiveFrom": "2021-01-01",
           "effectiveTo": "2026-02-05",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
           "value": {
             "period": "P1M",
-            "clockStartsAt": [
-              "request_received"
-            ],
+            "clockStartsAt": ["request_received"],
             "extension": {
               "period": "P2M",
               "grounds": "where necessary, taking into account the complexity and number of the requests",
@@ -30,11 +23,7 @@
               "reasonsRequired": true
             },
             "clockStopForClarification": null,
-            "appliesTo": [
-              "access",
-              "correction",
-              "deletion"
-            ],
+            "appliesTo": ["access", "correction", "deletion"],
             "maxTotal": "P3M"
           },
           "source": {
@@ -48,19 +37,10 @@
         {
           "effectiveFrom": "2026-02-05",
           "effectiveTo": null,
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
           "value": {
             "period": "P1M",
-            "clockStartsAt": [
-              "request_received",
-              "information_received",
-              "fee_paid"
-            ],
+            "clockStartsAt": ["request_received", "information_received", "fee_paid"],
             "extension": {
               "period": "P2M",
               "grounds": "necessary by reason of the complexity of the requests or the number of requests",
@@ -68,15 +48,9 @@
               "reasonsRequired": true
             },
             "clockStopForClarification": {
-              "appliesTo": [
-                "access"
-              ]
+              "appliesTo": ["access"]
             },
-            "appliesTo": [
-              "access",
-              "correction",
-              "deletion"
-            ],
+            "appliesTo": ["access", "correction", "deletion"],
             "maxTotal": "P3M"
           },
           "source": {
@@ -96,12 +70,7 @@
         {
           "effectiveFrom": "2021-01-01",
           "effectiveTo": "2026-09-30",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
           "value": {
             "regulator": {
               "body": "Information Commissioner",
@@ -130,12 +99,7 @@
         {
           "effectiveFrom": "2026-09-30",
           "effectiveTo": null,
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
           "value": {
             "regulator": {
               "body": "Information Commission",
@@ -170,11 +134,7 @@
         {
           "effectiveFrom": "2024-01-01",
           "effectiveTo": null,
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"],
           "value": {
             "period": "P2Y",
             "from": "record_date",
@@ -198,12 +158,7 @@
         {
           "effectiveFrom": "2024-01-01",
           "effectiveTo": null,
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
           "value": {
             "period": "P3Y",
             "from": "end_of_tax_year",
@@ -228,12 +183,7 @@
         {
           "effectiveFrom": "2021-04-01",
           "effectiveTo": null,
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ],
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
           "value": {
             "period": "P6Y",
             "from": "end_of_following_pay_reference_period",
@@ -257,10 +207,7 @@
         {
           "effectiveFrom": "2024-01-01",
           "effectiveTo": null,
-          "regions": [
-            "GB-ENG",
-            "GB-WLS"
-          ],
+          "regions": ["GB-ENG", "GB-WLS"],
           "value": {
             "period": "P6Y",
             "from": "employment_end",
@@ -301,11 +248,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 13(1): four weeks; reg. 13A(2)(e): 1.6 weeks in any leave year beginning on or after 1 April 2009; reg. 13A(3): aggregate maximum 28 days. Applies per LEAVE YEAR beginning on/after effectiveFrom. GOV.UK (https://www.gov.uk/holiday-entitlement-rights) confirms 5.6 weeks, 28-day cap and that employers may include bank holidays. Reg. 13(9)(b): no payment in lieu except on termination. Irregular-hours accrual: see leave.irregular_hours_accrual. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -317,10 +260,7 @@
           "effectiveFrom": "2024-04-01",
           "effectiveTo": null,
           "value": {
-            "appliesTo": [
-              "irregular_hours_worker",
-              "part_year_worker"
-            ],
+            "appliesTo": ["irregular_hours_worker", "part_year_worker"],
             "appliesToLeaveYearsBeginningOnOrAfter": "2024-04-01",
             "accrualPercentOfHoursWorked": 12.07,
             "accrualBasis": "hours_worked_in_pay_period",
@@ -346,11 +286,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 15B(1): applies to irregular hours workers and part-year workers in respect of leave years beginning on or after 1 April 2024; 15B(3): accrues at 12.07% of hours worked in the pay period; 15B(4): max 28 days per leave year. Reg. 16A (inserted 1.1.2024 by S.I. 2023/1426): holiday pay for reg. 15B leave may be paid as a 12.07% uplift; itemised pay statements must show the holiday pay amount (16A(7)). Source for 16A: https://www.legislation.gov.uk/uksi/1998/1833/regulation/16A. For leave years beginning on or before 31 March 2024 GOV.UK says accrual is not required (not modelled). Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR. Phase 5 (verified 2026-10-18): reg. 15B(3) leave accrues \"on the last day of each pay period\"; reg. 15B(5) a fraction of an hour is treated as zero if less than 30 minutes and as one hour if 30 minutes or more. GOV.UK worked example (68 hours in June -> 8.2076 -> 8 hours): https://www.gov.uk/government/publications/simplifying-holiday-entitlement-and-holiday-pay-calculations/holiday-pay-and-entitlement-reforms-from-1-january-2024 (updated 1 April 2024).",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -396,11 +332,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 13(9): reg. 13 leave may only be taken in the leave year it is due, except under paras (14), (15), (17). 13(14): statutory leave -> carry to following leave year; 13(15): sick leave -> must be taken within 18 months of end of the leave year; 13(16)-(18): employer failure to give reasonable opportunity/encourage/inform -> carry until end of first full leave year after the failure ends. Paras (14)-(18) inserted 1.1.2024 by S.I. 2023/1426. Reg. 13A(7): relevant agreement may allow carry-forward of 13A leave; 13A(7A): statutory leave carry-forward (https://www.legislation.gov.uk/uksi/1998/1833/regulation/13A). Pre-2024 case-law / COVID carry-over not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -427,11 +359,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 4(1): average 48 hours for each seven days unless written opt-out; reg. 4(3): any 17-week reference period; reg. 4(5): 26 weeks for listed special cases. WTR in force 1 October 1998 (reg. 1(1), https://www.legislation.gov.uk/uksi/1998/1833/regulation/1/made). Current text verified; intermediate amendments not modelled. Reference periods up to 52 weeks via collective/workforce agreement were NOT verified in this pass and are not encoded. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -458,11 +386,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 4(1) (worker's agreement in writing), reg. 4(2) (up-to-date records of workers to whom the limit does not apply), reg. 5(2)(b) (terminable by the worker on not less than 7 days' written notice unless agreement provides otherwise), reg. 5(3) (agreed notice period must not exceed three months). Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -490,11 +414,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 10(1)/(2). Young-worker figure reflects current text; its historical commencement is not modelled. Exceptions (regs. 21-24) not encoded. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -534,11 +454,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 11(1)-(3). Young-worker figure reflects current text; its historical commencement is not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -566,11 +482,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Reg. 12(1),(3),(4). Adult break detail subject to collective/workforce agreement. Young-worker figure reflects current text. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -604,11 +516,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "GOV.UK rates and thresholds 2025-26: SSP £118.75 (7 qualifying days table), LEL £125/week. Waiting days: SSCBA 1992 s.155(1) \"not payable for the first three qualifying days\" (https://www.legislation.gov.uk/ukpga/1992/4/section/155/2022-03-25). PIW: s.152(2) \"four or more consecutive days\" (https://www.legislation.gov.uk/ukpga/1992/4/section/152/2022-03-25). Linking: s.152(3) 8 weeks. 28 weeks per GOV.UK. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         },
         {
           "effectiveFrom": "2026-04-06",
@@ -653,11 +561,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "IN FORCE 6 April 2026: Employment Rights Act 2025 ss.10-13 commenced by S.I. 2026/373 reg. 2 (https://www.legislation.gov.uk/uksi/2026/373/made). s.155(1) waiting days omitted (6.4.2026); s.152(2) PIW now \"one day\" or more; s.157(1) weekly rate = lower of £123.25 and 80% of normal weekly earnings; LEL eligibility removed (s.11). £123.25 set by S.I. 2026/148 from 6.4.2026. GOV.UK employer guide (https://www.gov.uk/employers-sick-pay) confirms \"£123.25 a week or 80% of average weekly earnings - whichever is lower\", 28 weeks; average weekly earnings over 8 weeks per https://www.gov.uk/statutory-sick-pay/what-youll-get. Transitional regs 3, 5, 6 of S.I. 2026/373 (waiting days spanning the change, sub-LEL earners) not encoded. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -683,10 +587,7 @@
               {
                 "id": "home_office_online_check",
                 "for": "evisa_holders",
-                "requires": [
-                  "share_code",
-                  "date_of_birth"
-                ],
+                "requires": ["share_code", "date_of_birth"],
                 "service": "https://www.gov.uk/view-right-to-work",
                 "retain": "pdf_or_html_profile_with_photo_and_check_date"
               },
@@ -694,10 +595,7 @@
                 "id": "rtw_digital_verification_service_provider",
                 "optional": true,
                 "providerMustBeRegisteredWith": "OfDIA",
-                "eligibleDocuments": [
-                  "eligible_british_passport",
-                  "eligible_irish_passport"
-                ]
+                "eligibleDocuments": ["eligible_british_passport", "eligible_irish_passport"]
               }
             ],
             "britishAndIrishCitizensCannotUseShareCode": true,
@@ -773,12 +671,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Summarised from the Home Office Employers' right to work checklist (last updated 1 October 2026) and https://www.gov.uk/check-job-applicant-right-to-work. effectiveFrom = date of the guidance version verified; earlier guidance versions are NOT modelled. Exact acceptable document lists live in the Employer's guide (PDF, 1 Oct 2026) — deeper rule TODO. The online check covers eVisa holders; RtW DVSPs can check eligible British/Irish passports (IDVT). Extent: UK-wide — the illegal-working civil penalty and offence (Immigration, Asylum and Nationality Act 2006 ss.15 and 21) extend to the whole UK (legislation.gov.uk extent \"U.K.\", https://www.legislation.gov.uk/ukpga/2006/13/section/15), so this version also answers GB-NIR. Phase 5 (verified 2026-10-18): document catalogue ids follow the checklist lists A, B Group 1 and B Group 2 (accessible version, updated 1 October 2026). Follow-up timing from the Employer's guide to right to work checks (1 October 2026, https://assets.publishing.service.gov.uk/media/6abd2b2c26660e5f62a7f193/FINAL_-_Employer_s_guide_to_right_to_work_checks.pdf): time-limited permission must be re-checked \"on, or before, the date their permission comes to an end\" (section 4, p. 55); a PVN gives an excuse \"for 6 months from the date specified in the PVN\" and \"The follow-up check must be carried out before the six-month statutory excuse expires\" (pp. 35-36); no follow-up where the initial check confirmed settled status or status under the EU Settlement Scheme.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"]
         }
       ]
     },
@@ -802,12 +695,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "GOV.UK: keep copies \"during the applicant's employment and for 2 years after they stop working for you\"; checklist: keep securely during employment and for two years afterwards, then destroy. effectiveFrom = guidance version verified; earlier periods not modelled. Extent: UK-wide — the illegal-working civil penalty and offence (Immigration, Asylum and Nationality Act 2006 ss.15 and 21) extend to the whole UK (legislation.gov.uk extent \"U.K.\", https://www.legislation.gov.uk/ukpga/2006/13/section/15), so this version also answers GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"]
         }
       ]
     },
@@ -830,11 +718,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "ERA 1996 s.108(1) \"two years\" (substituted by S.I. 2012/989 from 6.4.2012 for employment beginning on/after that date — https://www.legislation.gov.uk/uksi/2012/989/made). Automatically-unfair reasons with no qualifying period are not modelled. Resolve by effective date of termination (EDT), not dismissal date. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         },
         {
           "effectiveFrom": "2027-01-01",
@@ -851,11 +735,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Employment Rights Act 2025 s.25(2) substitutes \"six months\" for \"two years\" in ERA 1996 s.108(1),(2) (https://www.legislation.gov.uk/ukpga/2025/36/section/25); s.25(3) omits s.124 (compensatory award cap). Commencement made: S.I. 2026/559 reg. 3 brings s.25 (remainder) and Sch. 3 into force on 1 January 2027 (legislation.gov.uk still shows the s.108 change as prospective on 2026-10-18). Reg. 4: amendments have effect even where the employee is dismissed before 1.1.2027 but NOT where the EDT falls before 1.1.2027 — select the version by EDT. s.25(5) partly commenced 1 July 2026 (consequential). Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -886,11 +766,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "s.86(1): employee continuously employed one month or more: (a) <2 years: 1 week; (b) 2 to <12 years: 1 week per year of continuous employment; (c) 12+ years: 12 weeks. s.86(2): employee gives at least 1 week. ERA 1996 dated 22 May 1996, in force at end of 3 months beginning with that day (s.243) = 22 August 1996. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -904,11 +780,7 @@
           "value": {
             "employeeThreshold": 250,
             "headcountBasis": "individual_employees_on_snapshot_date",
-            "territory": [
-              "GB-ENG",
-              "GB-WLS",
-              "GB-SCT"
-            ],
+            "territory": ["GB-ENG", "GB-WLS", "GB-SCT"],
             "snapshotDates": {
               "publicAuthority": {
                 "month": 3,
@@ -980,10 +852,7 @@
             ],
             "bonusRelevantPeriodMonthsEndingWithSnapshot": 12,
             "hourlyRate": {
-              "includes": [
-                "ordinary_pay",
-                "bonus_pay_attributed_to_relevant_pay_period"
-              ],
+              "includes": ["ordinary_pay", "bonus_pay_attributed_to_relevant_pay_period"],
               "weeklyMultiplier": "7 / days_in_relevant_pay_period",
               "daysPerMonth": 30.44,
               "daysPerYear": 365.25,
@@ -992,27 +861,13 @@
             },
             "fullPayRelevantEmployee": "relevant employee not paid at a reduced rate or nil in the relevant pay period as a result of being on leave",
             "quartiles": {
-              "bands": [
-                "lower",
-                "lower_middle",
-                "upper_middle",
-                "upper"
-              ],
+              "bands": ["lower", "lower_middle", "upper_middle", "upper"],
               "rankBy": "hourly_rate_lowest_to_highest",
               "equalSizeSoFarAsPossible": true,
               "remainderAllocation": {
-                "1": [
-                  "lower"
-                ],
-                "2": [
-                  "lower",
-                  "upper_middle"
-                ],
-                "3": [
-                  "lower",
-                  "lower_middle",
-                  "upper_middle"
-                ]
+                "1": ["lower"],
+                "2": ["lower", "upper_middle"],
+                "3": ["lower", "lower_middle", "upper_middle"]
               },
               "sameRateAcrossBands": "same_male_female_proportion_in_each_band"
             },
@@ -1027,11 +882,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "GOV.UK guidance: 250+ employees on the snapshot date (headcount, not FTE); snapshot 31 March (most public authorities) / 5 April (private, voluntary, all other public authorities); deadlines 30 March / 4 April the following year. Applies to England, Scotland and Wales; different rules for public authorities in Scotland and Wales; NI-based employers with 250+ employees in GB are included (https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/who-needs-to-report). Private-sector regs (S.I. 2017/172) in force 6 April 2017; reg. 2(2) publish within 12 months of snapshot. ERA 2025 equality action plans (GOV.UK guidance 7 April 2026) not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR. Phase 5 (verified 2026-10-18): the six figures are S.I. 2017/172 reg. 2(1)(a)-(f) (https://www.legislation.gov.uk/uksi/2017/172/regulation/2); definitions reg. 1 (\"full-pay relevant employee\", \"snapshot date\"), reg. 6 hourly rate (weekly multiplier 7 / days in the relevant pay period, a month = 30.44 days, a year = 365.25 days), regs. 8-11 gaps expressed as a percentage of the male figure, reg. 10(2)/12(3) bonus period = 12 months ending with the snapshot date, reg. 13 quartiles (equal sections so far as possible; employees on the same rate spanning bands split in the same male/female proportion). Remainder allocation (1 -> lower; 2 -> lower and upper middle; 3 -> lower, lower middle and upper middle), worked examples and \"whole percentages or rounded to one decimal place\" from GOV.UK \"Making your calculations\" (updated 21 May 2026, https://www.gov.uk/government/publications/gender-pay-gap-reporting-guidance-for-employers/making-your-calculations). The guidance gives no rule on which sex/gender classification to use: left to the employer (legal review).",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -1078,11 +929,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "SMP £187.18 and LEL £125 from GOV.UK Rates and thresholds 2025-26. Leave rules from https://www.gov.uk/maternity-pay-leave/leave. Versions before 2025-04-06 not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         },
         {
           "effectiveFrom": "2026-04-05",
@@ -1123,11 +970,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "SMP prescribed rate £194.32 substituted by S.I. 2026/148 art. 9 with effect 5 April 2026 (6 April for maternity allowance purposes). GOV.UK: 52 weeks (26 ordinary + 26 additional), compulsory 2 weeks (4 factory), earliest start 11 weeks before EWC, SMP 39 weeks: 90% AWE for 6 weeks then £194.32 or 90% whichever lower (https://www.gov.uk/maternity-pay-leave/pay); SMP needs 26 weeks' service into the qualifying week and average earnings of at least £129/week (https://www.gov.uk/maternity-pay-leave/eligibility). The exact start date of the £129 LEL was not separately verified (assumed to align with the 2026-27 uprating). Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -1168,11 +1011,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Leave pattern: S.I. 2024/329 (two non-consecutive weeks; within 52 weeks of birth) for children whose EWC is after 6 April 2024 (https://www.legislation.gov.uk/uksi/2024/329/note/made). Leave qualifying service: PAL Regs 2002 reg. 4(2)(a) as at 2025. SPP £187.18 and LEL £125: GOV.UK rates and thresholds 2025-26. Versions before 2025-04-06 not modelled. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         },
         {
           "effectiveFrom": "2026-04-06",
@@ -1209,11 +1048,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "Day-one paternity leave: Employment Rights Act 2025 s.16 fully in force 6 April 2026 (S.I. 2026/3 reg. 4, transitional provisions in Sch. 1 — https://www.legislation.gov.uk/uksi/2026/3/body/made); PAL Regs reg. 4(2)(a) omitted by S.I. 2026/15. GOV.UK: \"eligible for Paternity Leave from the first day of employment\"; pay still needs 26 weeks' service and average earnings of at least £129 (https://www.gov.uk/paternity-pay-leave/eligibility). SPP rate £194.32 substituted from 6 April 2026 by S.I. 2026/148 art. 10(1)(a) (https://www.legislation.gov.uk/uksi/2002/2818/regulation/2). GB only — Northern Ireland differs. Extent: England, Wales and Scotland only (legislation.gov.uk marks the provision \"E+W+S\"); Northern Ireland has separate legislation, so this version does not answer GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT"]
         }
       ]
     },
@@ -1253,12 +1088,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "GOV.UK table column \"April 2025 to March 2026\". \"The rates change on 1 April every year.\" Accommodation offset not verified in this pass. Extent: UK-wide — the National Minimum Wage Act 1998 extends to the whole UK (legislation.gov.uk extent \"U.K.\", https://www.legislation.gov.uk/ukpga/1998/39/section/1), so this version also answers GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"]
         },
         {
           "effectiveFrom": "2026-04-01",
@@ -1292,12 +1122,7 @@
           "verifiedOn": "2026-10-18",
           "reviewer": "research-agent (pending legal review)",
           "notes": "GOV.UK table column \"April 2026\": 21+ £12.71, 18-20 £10.85, under 18 £8, apprentice £8. Extent: UK-wide — the National Minimum Wage Act 1998 extends to the whole UK (legislation.gov.uk extent \"U.K.\", https://www.legislation.gov.uk/ukpga/1998/39/section/1), so this version also answers GB-NIR.",
-          "regions": [
-            "GB-ENG",
-            "GB-WLS",
-            "GB-SCT",
-            "GB-NIR"
-          ]
+          "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"]
         }
       ]
     }
@@ -1312,12 +1137,7 @@
         "day": 1
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1337,9 +1157,7 @@
         "day": 2
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-SCT"
-      ],
+      "regions": ["GB-SCT"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1359,9 +1177,7 @@
         "day": 17
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-NIR"
-      ],
+      "regions": ["GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1380,12 +1196,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1404,11 +1215,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1429,12 +1236,7 @@
         "n": 1
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": "2020-01-01",
       "source": {
@@ -1452,12 +1254,7 @@
         "date": "2020-05-08"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": "2021-01-01",
       "source": {
@@ -1478,12 +1275,7 @@
         "n": 1
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2021-01-01",
       "effectiveTo": null,
       "source": {
@@ -1503,12 +1295,7 @@
         "n": -1
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": "2022-01-01",
       "source": {
@@ -1526,12 +1313,7 @@
         "date": "2022-06-02"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2022-01-01",
       "effectiveTo": "2023-01-01",
       "source": {
@@ -1552,12 +1334,7 @@
         "n": -1
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2023-01-01",
       "effectiveTo": null,
       "source": {
@@ -1576,9 +1353,7 @@
         "day": 12
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-NIR"
-      ],
+      "regions": ["GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1598,11 +1373,7 @@
         "n": -1
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1623,9 +1394,7 @@
         "n": 1
       },
       "observance": "none",
-      "regions": [
-        "GB-SCT"
-      ],
+      "regions": ["GB-SCT"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1645,9 +1414,7 @@
         "day": 30
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-SCT"
-      ],
+      "regions": ["GB-SCT"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1666,12 +1433,7 @@
         "day": 25
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1691,12 +1453,7 @@
         "day": 26
       },
       "observance": "uk_substitute",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2019-01-01",
       "effectiveTo": null,
       "source": {
@@ -1715,12 +1472,7 @@
         "date": "2022-06-03"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2022-06-03",
       "effectiveTo": "2022-06-04",
       "source": {
@@ -1738,12 +1490,7 @@
         "date": "2022-09-19"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2022-09-19",
       "effectiveTo": "2022-09-20",
       "source": {
@@ -1761,12 +1508,7 @@
         "date": "2023-05-08"
       },
       "observance": "none",
-      "regions": [
-        "GB-ENG",
-        "GB-WLS",
-        "GB-SCT",
-        "GB-NIR"
-      ],
+      "regions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"],
       "effectiveFrom": "2023-05-08",
       "effectiveTo": "2023-05-09",
       "source": {
@@ -1784,9 +1526,7 @@
         "date": "2026-06-15"
       },
       "observance": "none",
-      "regions": [
-        "GB-SCT"
-      ],
+      "regions": ["GB-SCT"],
       "effectiveFrom": "2026-06-15",
       "effectiveTo": "2026-06-16",
       "source": {
@@ -1818,10 +1558,5 @@
       "Gender pay gap: which sex/gender classification employers should record (GOV.UK gives no rule; HUMAN_TODO 3.6)"
     ]
   },
-  "subdivisions": [
-    "GB-ENG",
-    "GB-WLS",
-    "GB-SCT",
-    "GB-NIR"
-  ]
+  "subdivisions": ["GB-ENG", "GB-WLS", "GB-SCT", "GB-NIR"]
 }

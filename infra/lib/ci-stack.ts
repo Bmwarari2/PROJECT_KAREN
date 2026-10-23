@@ -35,7 +35,10 @@ export class CiStack extends Stack {
     // environments share an account, the second one points `ci.oidcProviderArn` at the first one's.
     const provider = ci.oidcProviderArn
       ? iam.OidcProviderNative.fromOidcProviderArn(this, 'GitHubOidc', ci.oidcProviderArn)
-      : new iam.OidcProviderNative(this, 'GitHubOidc', { url: GITHUB_OIDC_URL, clientIds: ['sts.amazonaws.com'] });
+      : new iam.OidcProviderNative(this, 'GitHubOidc', {
+          url: GITHUB_OIDC_URL,
+          clientIds: ['sts.amazonaws.com'],
+        });
 
     for (const region of props.deployRegions) {
       const role = new iam.Role(this, `Deploy-${region}`, {
@@ -48,35 +51,80 @@ export class CiStack extends Stack {
           },
         }),
       });
-      const allow = (sid: string, actions: string[], resources: string[], conditions?: Record<string, unknown>) =>
-        role.addToPolicy(new iam.PolicyStatement({ sid, actions, resources, conditions }));
+      const allow = (
+        sid: string,
+        actions: string[],
+        resources: string[],
+        conditions?: Record<string, unknown>,
+      ) => role.addToPolicy(new iam.PolicyStatement({ sid, actions, resources, conditions }));
 
       allow(
         'AssumeCdkBootstrapRolesInThisRegionOnly',
         ['sts:AssumeRole', 'sts:TagSession'],
-        ['deploy', 'file-publishing', 'image-publishing', 'lookup'].map((kind) => `arn:aws:iam::${account}:role/cdk-${CDK_QUALIFIER}-${kind}-role-${account}-${region}`),
+        ['deploy', 'file-publishing', 'image-publishing', 'lookup'].map(
+          (kind) => `arn:aws:iam::${account}:role/cdk-${CDK_QUALIFIER}-${kind}-role-${account}-${region}`,
+        ),
       );
-      allow('ReadStackOutputs', ['cloudformation:DescribeStacks'], [`arn:aws:cloudformation:${region}:${account}:stack/ThapsusHr-${env}-*/*`]);
-      new CfnOutput(this, `DeployRoleArn${region.replace(/-/g, '')}`, { value: role.roleArn, description: `Deploy role for ${region}` });
+      allow(
+        'ReadStackOutputs',
+        ['cloudformation:DescribeStacks'],
+        [`arn:aws:cloudformation:${region}:${account}:stack/ThapsusHr-${env}-*/*`],
+      );
+      new CfnOutput(this, `DeployRoleArn${region.replace(/-/g, '')}`, {
+        value: role.roleArn,
+        description: `Deploy role for ${region}`,
+      });
 
       const cell = props.cellsByRegion[region];
       if (!cell) continue;
       const prefix = `thapsus-hr-${env}-${cell}`;
-      allow('RunMigrator', ['ecs:RunTask'], [`arn:aws:ecs:${region}:${account}:task-definition/${prefix}-migrator:*`]);
+      allow(
+        'RunMigrator',
+        ['ecs:RunTask'],
+        [`arn:aws:ecs:${region}:${account}:task-definition/${prefix}-migrator:*`],
+      );
       allow('WatchTasks', ['ecs:DescribeTasks'], [`arn:aws:ecs:${region}:${account}:task/${prefix}/*`]);
-      allow('RestartServices', ['ecs:UpdateService', 'ecs:DescribeServices'], [`arn:aws:ecs:${region}:${account}:service/${prefix}/*`]);
-      allow('PassTaskRolesToEcs', ['iam:PassRole'], [`arn:aws:iam::${account}:role/ThapsusHr-${env}-cell-${cell}-*`], { StringEquals: { 'iam:PassedToService': 'ecs-tasks.amazonaws.com' } });
+      allow(
+        'RestartServices',
+        ['ecs:UpdateService', 'ecs:DescribeServices'],
+        [`arn:aws:ecs:${region}:${account}:service/${prefix}/*`],
+      );
+      allow(
+        'PassTaskRolesToEcs',
+        ['iam:PassRole'],
+        [`arn:aws:iam::${account}:role/ThapsusHr-${env}-cell-${cell}-*`],
+        { StringEquals: { 'iam:PassedToService': 'ecs-tasks.amazonaws.com' } },
+      );
       allow(
         'CellSecrets',
         ['secretsmanager:GetSecretValue', 'secretsmanager:PutSecretValue', 'secretsmanager:DescribeSecret'],
-        [names.cellInternalTokenSecret(env, cell), `thapsus-hr/${env}/vapid`, `thapsus-hr/${env}/mock-idp`].map((n) => `arn:aws:secretsmanager:${region}:${account}:secret:${n}-*`),
+        [
+          names.cellInternalTokenSecret(env, cell),
+          `thapsus-hr/${env}/vapid`,
+          `thapsus-hr/${env}/mock-idp`,
+        ].map((n) => `arn:aws:secretsmanager:${region}:${account}:secret:${n}-*`),
       );
-      allow('CellSecretsKms', ['kms:Decrypt', 'kms:GenerateDataKey'], [`arn:aws:kms:${region}:${account}:key/*`], { StringEquals: { 'kms:ViaService': `secretsmanager.${region}.amazonaws.com` } });
+      allow(
+        'CellSecretsKms',
+        ['kms:Decrypt', 'kms:GenerateDataKey'],
+        [`arn:aws:kms:${region}:${account}:key/*`],
+        { StringEquals: { 'kms:ViaService': `secretsmanager.${region}.amazonaws.com` } },
+      );
       // The single cross-region exception: read the env's internal service token (not personal data)
       // from the global layer so the cell's own copy can be filled.
-      allow('ReadGlobalInternalToken', ['secretsmanager:GetSecretValue'], [`arn:aws:secretsmanager:${GLOBAL_REGION}:${account}:secret:${names.internalTokenSecret(env)}-*`]);
-      allow('ReadGlobalInternalTokenKms', ['kms:Decrypt'], [`arn:aws:kms:${GLOBAL_REGION}:${account}:key/*`], { StringEquals: { 'kms:ViaService': `secretsmanager.${GLOBAL_REGION}.amazonaws.com` } });
+      allow(
+        'ReadGlobalInternalToken',
+        ['secretsmanager:GetSecretValue'],
+        [`arn:aws:secretsmanager:${GLOBAL_REGION}:${account}:secret:${names.internalTokenSecret(env)}-*`],
+      );
+      allow(
+        'ReadGlobalInternalTokenKms',
+        ['kms:Decrypt'],
+        [`arn:aws:kms:${GLOBAL_REGION}:${account}:key/*`],
+        { StringEquals: { 'kms:ViaService': `secretsmanager.${GLOBAL_REGION}.amazonaws.com` } },
+      );
     }
-    if (!ci.oidcProviderArn) new CfnOutput(this, 'GitHubOidcProviderArn', { value: provider.oidcProviderArn });
+    if (!ci.oidcProviderArn)
+      new CfnOutput(this, 'GitHubOidcProviderArn', { value: provider.oidcProviderArn });
   }
 }

@@ -116,10 +116,7 @@
             "reportedCollectiveAgreementRange": {
               "minDays": 15,
               "maxMonths": 6,
-              "dependsOn": [
-                "length_of_service",
-                "job_category"
-              ]
+              "dependsOn": ["length_of_service", "job_category"]
             }
           },
           "source": {
@@ -144,9 +141,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -167,9 +162,7 @@
         "day": 6
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -189,9 +182,7 @@
         "offset": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -212,9 +203,7 @@
         "day": 25
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -235,9 +224,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -258,9 +245,7 @@
         "day": 2
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -281,9 +266,7 @@
         "day": 15
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -304,9 +287,7 @@
         "day": 4
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -327,9 +308,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -350,9 +329,7 @@
         "day": 8
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -373,9 +350,7 @@
         "day": 25
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -396,9 +371,7 @@
         "day": 26
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {

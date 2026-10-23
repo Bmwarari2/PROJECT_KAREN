@@ -34,7 +34,12 @@ function countOf(vars: MessageVars): number | null {
 }
 
 /** The template for a key (choosing the plural form when the key has them), or undefined when missing. */
-export function lookupMessage(messages: Readonly<Record<string, string>>, key: string, vars: MessageVars, locale: Locale): string | undefined {
+export function lookupMessage(
+  messages: Readonly<Record<string, string>>,
+  key: string,
+  vars: MessageVars,
+  locale: Locale,
+): string | undefined {
   const count = countOf(vars);
   if (count !== null) {
     const form = messages[`${key}_${pluralRules(locale).select(count)}`] ?? messages[`${key}_other`];
@@ -48,7 +53,12 @@ export function interpolate(template: string, vars: MessageVars): string {
 }
 
 /** Translates a key from a flat catalogue; a missing key renders as the key itself. */
-export function formatMessage(messages: Readonly<Record<string, string>>, key: string, vars: MessageVars = {}, locale: Locale = 'en-GB'): string {
+export function formatMessage(
+  messages: Readonly<Record<string, string>>,
+  key: string,
+  vars: MessageVars = {},
+  locale: Locale = 'en-GB',
+): string {
   const template = lookupMessage(messages, key, vars, locale);
   return template === undefined ? key : interpolate(template, vars);
 }

@@ -1,4 +1,14 @@
-import { TenantUnavailableError, withRegistry, withTenant, type EventSubscriber, type JobHandler, type JobRow, type OutboxEvent, type TenantRouter, type Tx } from '@thapsus/db';
+import {
+  TenantUnavailableError,
+  withRegistry,
+  withTenant,
+  type EventSubscriber,
+  type JobHandler,
+  type JobRow,
+  type OutboxEvent,
+  type TenantRouter,
+  type Tx,
+} from '@thapsus/db';
 import type { Logger } from '@thapsus/core/logger';
 
 /** Publishes domain events beyond the cell database (SQS/EventBridge in AWS). Must tolerate redelivery. */
@@ -47,7 +57,10 @@ export class Engine<D> {
       ),
     );
     const tenants = [...new Set(signals.map((s) => s.tenant_id))];
-    for (const t of tenants) await this.processTenant(t).catch((err) => this.o.log?.error({ err, tenantId: t }, 'tenant processing failed'));
+    for (const t of tenants)
+      await this.processTenant(t).catch((err) =>
+        this.o.log?.error({ err, tenantId: t }, 'tenant processing failed'),
+      );
     return tenants.length;
   }
 
@@ -81,7 +94,14 @@ export class Engine<D> {
 
   async dispatchOutbox(tenantId: string, batch = 200): Promise<number> {
     return withTenant(this.o.router, tenantId, async (tx) => {
-      const rows = await tx.query<{ id: string; topic: string; aggregate_type: string | null; aggregate_id: string | null; payload: Record<string, unknown>; created_at: string }>(
+      const rows = await tx.query<{
+        id: string;
+        topic: string;
+        aggregate_type: string | null;
+        aggregate_id: string | null;
+        payload: Record<string, unknown>;
+        created_at: string;
+      }>(
         `SELECT id, topic, aggregate_type, aggregate_id, payload, created_at FROM app.outbox
           WHERE published_at IS NULL ORDER BY id FOR UPDATE SKIP LOCKED LIMIT ${batch}`,
       );
@@ -97,13 +117,20 @@ export class Engine<D> {
       }));
       for (const e of events) {
         for (const [pattern, subs] of Object.entries(this.o.subscribers)) {
-          if (pattern === '*' || pattern === e.topic || (pattern.endsWith('.*') && e.topic.startsWith(pattern.slice(0, -1)))) {
+          if (
+            pattern === '*' ||
+            pattern === e.topic ||
+            (pattern.endsWith('.*') && e.topic.startsWith(pattern.slice(0, -1)))
+          ) {
             for (const s of subs) await s(tx, e);
           }
         }
       }
       await this.o.publisher.publish(events);
-      await tx.exec(`UPDATE app.outbox SET published_at = now(), attempts = attempts + 1 WHERE id = ANY($1::bigint[])`, [rows.map((r) => r.id)]);
+      await tx.exec(
+        `UPDATE app.outbox SET published_at = now(), attempts = attempts + 1 WHERE id = ANY($1::bigint[])`,
+        [rows.map((r) => r.id)],
+      );
       return rows.length;
     });
   }
@@ -158,7 +185,10 @@ export class Engine<D> {
         tx: (fn) => withTenant(this.o.router, tenantId, fn, { actorId: job.created_by }),
         progress: (done, total) =>
           withTenant(this.o.router, tenantId, (tx) =>
-            tx.exec('UPDATE app.jobs SET progress_done = $2, progress_total = coalesce($3, progress_total) WHERE id = $1', [job.id, done, total ?? null]),
+            tx.exec(
+              'UPDATE app.jobs SET progress_done = $2, progress_total = coalesce($3, progress_total) WHERE id = $1',
+              [job.id, done, total ?? null],
+            ),
           ).then(() => undefined),
       });
       await finish('succeeded', result ?? {}, null);

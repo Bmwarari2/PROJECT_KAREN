@@ -26,9 +26,20 @@ export default function AutomationPage() {
   async function create(e: React.FormEvent) {
     e.preventDefault();
     const trig =
-      trigger === 'date.reached' ? { type: 'date.reached', dateField: 'workAnniversary', offsetDays: 0 } : trigger === 'document.expiring' ? { type: 'document.expiring', offsetDays: 30 } : { type: trigger, entity: 'employee' };
+      trigger === 'date.reached'
+        ? { type: 'date.reached', dateField: 'workAnniversary', offsetDays: 0 }
+        : trigger === 'document.expiring'
+          ? { type: 'document.expiring', offsetDays: 30 }
+          : { type: trigger, entity: 'employee' };
     try {
-      await api('/v1/automation/rules', { method: 'POST', json: { name, trigger: trig, actions: [{ type: 'task', title, assignee: { type: 'role', value: 'hr_admin' }, dueInDays: 7 }] } });
+      await api('/v1/automation/rules', {
+        method: 'POST',
+        json: {
+          name,
+          trigger: trig,
+          actions: [{ type: 'task', title, assignee: { type: 'role', value: 'hr_admin' }, dueInDays: 7 }],
+        },
+      });
       setName('');
       setTitle('');
       reload();
@@ -38,8 +49,17 @@ export default function AutomationPage() {
   }
 
   async function dryRun(id: string) {
-    const r = await api<{ matched: boolean; candidates: number; actions: unknown[] }>(`/v1/automation/rules/${id}/dry-run`, { method: 'POST', json: {} });
-    setDry((d) => ({ ...d, [id]: t('automation.dryResult', { people: t('automation.dryPeople', { count: r.candidates }), actions: t('automation.dryActions', { count: r.actions.length }) }) }));
+    const r = await api<{ matched: boolean; candidates: number; actions: unknown[] }>(
+      `/v1/automation/rules/${id}/dry-run`,
+      { method: 'POST', json: {} },
+    );
+    setDry((d) => ({
+      ...d,
+      [id]: t('automation.dryResult', {
+        people: t('automation.dryPeople', { count: r.candidates }),
+        actions: t('automation.dryActions', { count: r.actions.length }),
+      }),
+    }));
   }
 
   return (
@@ -48,10 +68,17 @@ export default function AutomationPage() {
       <Card>
         <CardTitle>{t('automation.new')}</CardTitle>
         <form onSubmit={create} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
-          <Field id="name" label={t('automation.name')}>{(p) => <Input {...p} required value={name} onChange={(e) => setName(e.target.value)} />}</Field>
+          <Field id="name" label={t('automation.name')}>
+            {(p) => <Input {...p} required value={name} onChange={(e) => setName(e.target.value)} />}
+          </Field>
           <Field id="trigger" label={t('automation.trigger')}>
             {(p) => (
-              <select {...p} value={trigger} onChange={(e) => setTrigger(e.target.value)} className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
+              <select
+                {...p}
+                value={trigger}
+                onChange={(e) => setTrigger(e.target.value)}
+                className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+              >
                 {['record.created', 'record.changed', 'date.reached', 'document.expiring'].map((x) => (
                   <option key={x} value={x}>
                     {t(`automation.triggers.${x}`)}
@@ -60,7 +87,9 @@ export default function AutomationPage() {
               </select>
             )}
           </Field>
-          <Field id="title" label={t('automation.taskTitle')}>{(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
+          <Field id="title" label={t('automation.taskTitle')}>
+            {(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}
+          </Field>
           <Button type="submit">{t('common.add')}</Button>
         </form>
       </Card>
@@ -75,7 +104,9 @@ export default function AutomationPage() {
               <Zap aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
               <span className="text-callout font-semibold">{r.name}</span>
               <Badge>{t(`automation.triggers.${r.trigger.type}`)}</Badge>
-              <Badge tone={r.enabled ? 'success' : 'neutral'}>{r.enabled ? t('automation.on') : t('automation.off')}</Badge>
+              <Badge tone={r.enabled ? 'success' : 'neutral'}>
+                {r.enabled ? t('automation.on') : t('automation.off')}
+              </Badge>
               <span className="ml-auto text-footnote text-text-secondary">{dry[r.id]}</span>
               <Button size="sm" variant="secondary" onClick={() => dryRun(r.id)}>
                 {t('automation.dryRun')}

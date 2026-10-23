@@ -14,7 +14,14 @@
   "discounts": {
     "terms": { "monthly": 0, "annual": 1500 },
     "codes": [
-      { "code": "CHARITY20", "basisPoints": 2000, "plans": ["core", "plus"], "validFrom": "2026-10-18", "validTo": null, "description": "Registered charities and non-profits (verified by Thapsus support)" }
+      {
+        "code": "CHARITY20",
+        "basisPoints": 2000,
+        "plans": ["core", "plus"],
+        "validFrom": "2026-10-18",
+        "validTo": null,
+        "description": "Registered charities and non-profits (verified by Thapsus support)"
+      }
     ]
   },
   "plans": [
@@ -26,10 +33,30 @@
       "minimumEmployees": 5,
       "features": ["people", "documents", "orgChart", "timeOff", "selfService", "helpCentre"],
       "bands": [
-        { "id": "1-49", "minEmployees": 1, "maxEmployees": 49, "monthlyUnit": { "GBP": 400, "EUR": 450, "USD": 500 } },
-        { "id": "50-249", "minEmployees": 50, "maxEmployees": 249, "monthlyUnit": { "GBP": 360, "EUR": 410, "USD": 450 } },
-        { "id": "250-999", "minEmployees": 250, "maxEmployees": 999, "monthlyUnit": { "GBP": 320, "EUR": 360, "USD": 400 } },
-        { "id": "1000-4999", "minEmployees": 1000, "maxEmployees": 4999, "monthlyUnit": { "GBP": 280, "EUR": 320, "USD": 350 } }
+        {
+          "id": "1-49",
+          "minEmployees": 1,
+          "maxEmployees": 49,
+          "monthlyUnit": { "GBP": 400, "EUR": 450, "USD": 500 }
+        },
+        {
+          "id": "50-249",
+          "minEmployees": 50,
+          "maxEmployees": 249,
+          "monthlyUnit": { "GBP": 360, "EUR": 410, "USD": 450 }
+        },
+        {
+          "id": "250-999",
+          "minEmployees": 250,
+          "maxEmployees": 999,
+          "monthlyUnit": { "GBP": 320, "EUR": 360, "USD": 400 }
+        },
+        {
+          "id": "1000-4999",
+          "minEmployees": 1000,
+          "maxEmployees": 4999,
+          "monthlyUnit": { "GBP": 280, "EUR": 320, "USD": 350 }
+        }
       ],
       "support": {
         "coverage": "business_hours",
@@ -47,12 +74,44 @@
       "selfServe": true,
       "providerProductName": "Thapsus-HR Plus",
       "minimumEmployees": 5,
-      "features": ["people", "documents", "orgChart", "timeOff", "selfService", "helpCentre", "rotas", "timeTracking", "workflows", "automation", "compliance"],
+      "features": [
+        "people",
+        "documents",
+        "orgChart",
+        "timeOff",
+        "selfService",
+        "helpCentre",
+        "rotas",
+        "timeTracking",
+        "workflows",
+        "automation",
+        "compliance"
+      ],
       "bands": [
-        { "id": "1-49", "minEmployees": 1, "maxEmployees": 49, "monthlyUnit": { "GBP": 700, "EUR": 800, "USD": 900 } },
-        { "id": "50-249", "minEmployees": 50, "maxEmployees": 249, "monthlyUnit": { "GBP": 630, "EUR": 720, "USD": 810 } },
-        { "id": "250-999", "minEmployees": 250, "maxEmployees": 999, "monthlyUnit": { "GBP": 560, "EUR": 640, "USD": 720 } },
-        { "id": "1000-4999", "minEmployees": 1000, "maxEmployees": 4999, "monthlyUnit": { "GBP": 490, "EUR": 560, "USD": 630 } }
+        {
+          "id": "1-49",
+          "minEmployees": 1,
+          "maxEmployees": 49,
+          "monthlyUnit": { "GBP": 700, "EUR": 800, "USD": 900 }
+        },
+        {
+          "id": "50-249",
+          "minEmployees": 50,
+          "maxEmployees": 249,
+          "monthlyUnit": { "GBP": 630, "EUR": 720, "USD": 810 }
+        },
+        {
+          "id": "250-999",
+          "minEmployees": 250,
+          "maxEmployees": 999,
+          "monthlyUnit": { "GBP": 560, "EUR": 640, "USD": 720 }
+        },
+        {
+          "id": "1000-4999",
+          "minEmployees": 1000,
+          "maxEmployees": 4999,
+          "monthlyUnit": { "GBP": 490, "EUR": 560, "USD": 630 }
+        }
       ],
       "support": {
         "coverage": "business_hours",
@@ -70,7 +129,24 @@
       "selfServe": false,
       "providerProductName": "Thapsus-HR Enterprise",
       "minimumEmployees": 250,
-      "features": ["people", "documents", "orgChart", "timeOff", "selfService", "helpCentre", "rotas", "timeTracking", "workflows", "automation", "compliance", "sso", "scim", "api", "dedicatedDatabase", "multiEntityBilling"],
+      "features": [
+        "people",
+        "documents",
+        "orgChart",
+        "timeOff",
+        "selfService",
+        "helpCentre",
+        "rotas",
+        "timeTracking",
+        "workflows",
+        "automation",
+        "compliance",
+        "sso",
+        "scim",
+        "api",
+        "dedicatedDatabase",
+        "multiEntityBilling"
+      ],
       "bands": [],
       "support": {
         "coverage": "always",

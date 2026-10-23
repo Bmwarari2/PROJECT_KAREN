@@ -5,7 +5,14 @@ import { Button, Card, CardTitle, EmptyState, Field, Input, useToast } from '@th
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { errorText, FeatureOff, PageHeader, SecretOnce, StatusBadge, useDateTime } from '@/components/platform';
+import {
+  errorText,
+  FeatureOff,
+  PageHeader,
+  SecretOnce,
+  StatusBadge,
+  useDateTime,
+} from '@/components/platform';
 import { useFeature, useExperience } from '../../shell';
 
 interface Sandbox {
@@ -39,7 +46,13 @@ export default function SandboxPage() {
     return () => clearInterval(id);
   }, [creating, reload]);
 
-  if (!enabled || isSandbox) return <div className="flex flex-col gap-6"><PageHeader title={t('platform.sandbox.title')} /><FeatureOff /></div>;
+  if (!enabled || isSandbox)
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader title={t('platform.sandbox.title')} />
+        <FeatureOff />
+      </div>
+    );
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -56,7 +69,9 @@ export default function SandboxPage() {
   }
   async function signIn(s: Sandbox) {
     try {
-      const r = await api<{ url: string; email: string }>(`/v1/sandboxes/${s.id}/sign-in-link`, { method: 'POST' });
+      const r = await api<{ url: string; email: string }>(`/v1/sandboxes/${s.id}/sign-in-link`, {
+        method: 'POST',
+      });
       setLink(r);
     } catch (err) {
       toast({ title: errorText(t, err), tone: 'danger' });
@@ -76,7 +91,18 @@ export default function SandboxPage() {
         </ul>
         <form onSubmit={create} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <Field id="sb-people" label={t('platform.sandbox.people')} hint={t('platform.sandbox.peopleHint')}>
-            {(p) => <Input {...p} type="number" min={0} max={200} required value={people} onChange={(e) => setPeople(Number(e.target.value))} className="w-32" />}
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                min={0}
+                max={200}
+                required
+                value={people}
+                onChange={(e) => setPeople(Number(e.target.value))}
+                className="w-32"
+              />
+            )}
           </Field>
           <Button type="submit" loading={busy}>
             {t('platform.sandbox.create')}
@@ -85,17 +111,33 @@ export default function SandboxPage() {
       </Card>
       {link ? (
         <div className="flex flex-col gap-2">
-          <SecretOnce title={t('platform.sandbox.linkTitle')} items={[{ label: t('platform.sandbox.linkLabel'), value: link.url }, { label: t('platform.sandbox.ownerLabel'), value: link.email }]} onDone={() => setLink(null)} />
+          <SecretOnce
+            title={t('platform.sandbox.linkTitle')}
+            items={[
+              { label: t('platform.sandbox.linkLabel'), value: link.url },
+              { label: t('platform.sandbox.ownerLabel'), value: link.email },
+            ]}
+            onDone={() => setLink(null)}
+          />
           <p className="text-footnote text-text-secondary">{t('platform.sandbox.linkNote')}</p>
         </div>
       ) : null}
-      {list.data && !list.data.length ? <EmptyState icon={<FlaskConical aria-hidden />} title={t('platform.sandbox.none')} /> : null}
+      {list.data && !list.data.length ? (
+        <EmptyState icon={<FlaskConical aria-hidden />} title={t('platform.sandbox.none')} />
+      ) : null}
       {(list.data ?? []).map((s) => (
         <Card key={s.id}>
           <div className="flex flex-wrap items-start gap-3">
             <div className="mr-auto">
               <CardTitle>{s.name}</CardTitle>
-              <p className="mt-1 text-footnote text-text-secondary">{t('platform.sandbox.meta', { slug: s.slug, people: s.report?.syntheticPeople ?? s.syntheticPeople, count: s.report?.syntheticPeople ?? s.syntheticPeople, created: when(s.createdAt) })}</p>
+              <p className="mt-1 text-footnote text-text-secondary">
+                {t('platform.sandbox.meta', {
+                  slug: s.slug,
+                  people: s.report?.syntheticPeople ?? s.syntheticPeople,
+                  count: s.report?.syntheticPeople ?? s.syntheticPeople,
+                  created: when(s.createdAt),
+                })}
+              </p>
               {s.error ? <p className="mt-1 text-footnote text-danger">{s.error}</p> : null}
             </div>
             <StatusBadge status={s.status} />

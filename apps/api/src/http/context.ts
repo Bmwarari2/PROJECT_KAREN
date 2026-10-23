@@ -28,7 +28,12 @@ declare module 'fastify' {
     deps: Deps;
     /** Runs fn in the caller's tenant context; throws 401 when not signed in. */
     tenantTx<T>(req: FastifyRequest, fn: (tx: Tx) => Promise<T>, opts?: { readOnly?: boolean }): Promise<T>;
-    audit(tx: Tx, req: FastifyRequest, entry: Omit<AuditEntry, 'actorType' | 'actorId' | 'ip' | 'userAgent' | 'requestId'> & Partial<AuditEntry>): Promise<void>;
+    audit(
+      tx: Tx,
+      req: FastifyRequest,
+      entry: Omit<AuditEntry, 'actorType' | 'actorId' | 'ip' | 'userAgent' | 'requestId'> &
+        Partial<AuditEntry>,
+    ): Promise<void>;
   }
   interface FastifyContextConfig {
     /** 'public' skips session resolution; 'mfa-setup' is reachable by admins before MFA; default 'user'. */
@@ -104,14 +109,17 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
     if (isApiCredential(bearer)) {
       // Public API: scoped API key or OAuth access token → api_client principal (modules/platform).
       auth = await resolveApiCredential(opts.deps, bearer!);
-      if (auth && !apiClientMayCall(req.routeOptions.url)) throw new ApiError('forbidden', 'apiClientNotAllowed');
+      if (auth && !apiClientMayCall(req.routeOptions.url))
+        throw new ApiError('forbidden', 'apiClientNotAllowed');
     } else {
-      const token = req.cookies?.[cookie.name] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
+      const token =
+        req.cookies?.[cookie.name] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
       auth = await resolveSession(opts.deps.router, token, opts.deps.now());
     }
     if (!auth) throw new ApiError('unauthorised');
     req.auth = auth;
-    if (auth.user.locale && isLocale(auth.user.locale) && !req.headers['accept-language']) req.ctx.locale = auth.user.locale;
+    if (auth.user.locale && isLocale(auth.user.locale) && !req.headers['accept-language'])
+      req.ctx.locale = auth.user.locale;
     if (mode !== 'mfa-setup') {
       const gate = mfaGate(auth);
       if (gate !== 'ok') throw new ApiError(gate);
@@ -120,7 +128,13 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
 
   // Authenticated responses are never cacheable anywhere (no CDN/edge caching).
   app.addHook('onSend', async (req, reply, payload) => {
-    if (req.routeOptions.config?.edgeCacheable && req.routeOptions.config.auth === 'public' && reply.statusCode < 400 && reply.getHeader('cache-control')) return payload;
+    if (
+      req.routeOptions.config?.edgeCacheable &&
+      req.routeOptions.config.auth === 'public' &&
+      reply.statusCode < 400 &&
+      reply.getHeader('cache-control')
+    )
+      return payload;
     reply.header('Cache-Control', 'private, no-store');
     reply.header('Pragma', 'no-cache');
     return payload;
@@ -130,7 +144,8 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
   // the response is sent, so a client never sees success for a change that has no audit entry yet.
   app.addHook('onSend', async (req: FastifyRequest, reply: FastifyReply, payload) => {
     if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return payload;
-    if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth) return payload;
+    if (req.auditWritten || req.routeOptions.config?.selfAudited || reply.statusCode >= 400 || !req.auth)
+      return payload;
     req.auditWritten = true;
     await withTenant(opts.deps.router, req.auth.tenantId, (tx) =>
       writeAudit(tx, {
@@ -145,20 +160,25 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
     return payload;
   });
 
-  app.decorate('tenantTx', function <T>(req: FastifyRequest, fn: (tx: Tx) => Promise<T>, o: { readOnly?: boolean } = {}) {
+  app.decorate('tenantTx', function <
+    T,
+  >(req: FastifyRequest, fn: (tx: Tx) => Promise<T>, o: { readOnly?: boolean } = {}) {
     const auth = requireAuth(req);
     return withTenant(opts.deps.router, auth.tenantId, fn, { actorId: auth.userId, readOnly: o.readOnly });
   });
 
-  app.decorate('audit', async function (tx: Tx, req: FastifyRequest, entry: Partial<AuditEntry> & { action: string }) {
-    req.auditWritten = true;
-    await writeAudit(tx, {
-      actorType: entry.actorType ?? actorTypeOf(req.auth),
-      actorId: entry.actorId ?? req.auth?.userId ?? null,
-      ip: req.ctx.ip,
-      userAgent: req.ctx.userAgent,
-      requestId: req.id,
-      ...entry,
-    });
-  });
+  app.decorate(
+    'audit',
+    async function (tx: Tx, req: FastifyRequest, entry: Partial<AuditEntry> & { action: string }) {
+      req.auditWritten = true;
+      await writeAudit(tx, {
+        actorType: entry.actorType ?? actorTypeOf(req.auth),
+        actorId: entry.actorId ?? req.auth?.userId ?? null,
+        ip: req.ctx.ip,
+        userAgent: req.ctx.userAgent,
+        requestId: req.id,
+        ...entry,
+      });
+    },
+  );
 });

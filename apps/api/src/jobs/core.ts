@@ -18,7 +18,8 @@ registerJob('employees.refresh_effective', async (ctx) => {
        ) x`,
       [date],
     );
-    for (const c of changed) await tx.query('SELECT app.refresh_employee_current($1, $2)', [c.employee_id, date]);
+    for (const c of changed)
+      await tx.query('SELECT app.refresh_employee_current($1, $2)', [c.employee_id, date]);
     return changed.length;
   });
   return { date, refreshed: n };
@@ -33,7 +34,18 @@ periodic.push(async (tx, now) => {
 registerJob('notifications.deliver', async (ctx) => {
   const id = String(ctx.job.input.notificationId);
   const n = await ctx.tx((tx) =>
-    tx.maybe<{ id: string; kind: string; title_key: string; params: Record<string, string>; link: string | null; emailed_at: string | null; email: string; locale: string | null; user_id: string; prefs: NotificationPrefs }>(
+    tx.maybe<{
+      id: string;
+      kind: string;
+      title_key: string;
+      params: Record<string, string>;
+      link: string | null;
+      emailed_at: string | null;
+      email: string;
+      locale: string | null;
+      user_id: string;
+      prefs: NotificationPrefs;
+    }>(
       `SELECT n.id, n.kind, n.title_key, n.params, n.link, n.emailed_at, u.email, u.locale, n.user_id, u.notification_prefs AS prefs FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE n.id = $1`,
       [id],
     ),
@@ -47,10 +59,19 @@ registerJob('notifications.deliver', async (ctx) => {
   const push = channelEnabled(n.prefs, n.kind, 'push');
   if (email) await ctx.deps.mailer.send({ to: n.email, subject: title, text: `${title}\n\n${link}` });
   if (ctx.deps.webPush && push) {
-    const subs = await ctx.tx((tx) => tx.query<{ endpoint: string; p256dh: string; auth: string }>('SELECT endpoint, p256dh, auth FROM app.push_subscriptions WHERE user_id = $1', [n.user_id]));
+    const subs = await ctx.tx((tx) =>
+      tx.query<{ endpoint: string; p256dh: string; auth: string }>(
+        'SELECT endpoint, p256dh, auth FROM app.push_subscriptions WHERE user_id = $1',
+        [n.user_id],
+      ),
+    );
     for (const s of subs) {
       await webpush
-        .sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: t(locale, 'common.appName'), body: title, url: n.link ?? '/app' }), { vapidDetails: ctx.deps.webPush, TTL: 3600 })
+        .sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          JSON.stringify({ title: t(locale, 'common.appName'), body: title, url: n.link ?? '/app' }),
+          { vapidDetails: ctx.deps.webPush, TTL: 3600 },
+        )
         .catch(() => undefined);
     }
   }

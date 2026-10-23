@@ -27,8 +27,26 @@ const PASSWORD_PROBLEMS = ['tooShort', 'tooLong', 'tooCommon', 'contextSpecific'
 /** A short, recognisable device name from a user agent (browser and platform names are product names). */
 function deviceOf(ua: string | null): { browser: string; os: string } | null {
   if (!ua) return null;
-  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : null;
-  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : null;
+  const browser = /Edg\//.test(ua)
+    ? 'Edge'
+    : /Firefox\//.test(ua)
+      ? 'Firefox'
+      : /Chrome\//.test(ua)
+        ? 'Chrome'
+        : /Safari\//.test(ua)
+          ? 'Safari'
+          : null;
+  const os = /iPhone|iPad/.test(ua)
+    ? 'iOS'
+    : /Android/.test(ua)
+      ? 'Android'
+      : /Windows/.test(ua)
+        ? 'Windows'
+        : /Mac OS X/.test(ua)
+          ? 'macOS'
+          : /Linux/.test(ua)
+            ? 'Linux'
+            : null;
   return browser && os ? { browser, os } : null;
 }
 
@@ -74,12 +92,29 @@ function SessionsCard() {
                 {s.current ? <Badge tone="success">{t('app.security.sessions.current')}</Badge> : null}
               </span>
               <span className="text-footnote text-text-secondary">
-                {t('app.security.sessions.signedIn', { when: formatDateTime(s.createdAt, locale, zone), method: METHODS.includes(s.method) ? t(`app.security.sessions.method.${s.method}`) : s.method })}
+                {t('app.security.sessions.signedIn', {
+                  when: formatDateTime(s.createdAt, locale, zone),
+                  method: METHODS.includes(s.method)
+                    ? t(`app.security.sessions.method.${s.method}`)
+                    : s.method,
+                })}
               </span>
-              <span className="text-footnote text-text-secondary">{t('app.security.sessions.lastActive', { when: formatDateTime(s.lastSeenAt, locale, zone) })}</span>
+              <span className="text-footnote text-text-secondary">
+                {t('app.security.sessions.lastActive', { when: formatDateTime(s.lastSeenAt, locale, zone) })}
+              </span>
             </div>
             {s.current ? null : (
-              <Button size="sm" variant="secondary" aria-label={t('app.security.sessions.endOneLabel', { device: label(s) })} onClick={() => act(() => api(`/v1/auth/sessions/${s.id}`, { method: 'DELETE' }), t('app.security.sessions.ended'))}>
+              <Button
+                size="sm"
+                variant="secondary"
+                aria-label={t('app.security.sessions.endOneLabel', { device: label(s) })}
+                onClick={() =>
+                  act(
+                    () => api(`/v1/auth/sessions/${s.id}`, { method: 'DELETE' }),
+                    t('app.security.sessions.ended'),
+                  )
+                }
+              >
                 {t('app.security.sessions.endOne')}
               </Button>
             )}
@@ -87,7 +122,16 @@ function SessionsCard() {
         ))}
       </ul>
       {others.length ? (
-        <Button className="mt-4" variant="secondary" onClick={() => act(() => api('/v1/auth/sessions/end-others', { method: 'POST' }), t('app.security.sessions.endedOthers'))}>
+        <Button
+          className="mt-4"
+          variant="secondary"
+          onClick={() =>
+            act(
+              () => api('/v1/auth/sessions/end-others', { method: 'POST' }),
+              t('app.security.sessions.endedOthers'),
+            )
+          }
+        >
           {t('app.security.sessions.endOthers')}
         </Button>
       ) : sessions.data ? (
@@ -115,15 +159,29 @@ function PasswordCard() {
     setBusy(true);
     setError(null);
     try {
-      const ok = await stepUp.run(() => api('/v1/auth/password', { method: 'POST', json: has ? { currentPassword: current, newPassword: next } : { newPassword: next } }));
+      const ok = await stepUp.run(() =>
+        api('/v1/auth/password', {
+          method: 'POST',
+          json: has ? { currentPassword: current, newPassword: next } : { newPassword: next },
+        }),
+      );
       if (ok) {
         setCurrent('');
         setNext('');
         toast({ title: t('app.security.password.changed'), tone: 'success' });
       }
     } catch (err) {
-      const problem = err instanceof ApiProblem ? (err.body.errors as Array<{ message?: string }> | undefined)?.[0]?.message : undefined;
-      setError(problem && PASSWORD_PROBLEMS.includes(problem) ? t(`app.security.password.problem.${problem}`) : err instanceof ApiProblem ? err.title : t('common.error'));
+      const problem =
+        err instanceof ApiProblem
+          ? (err.body.errors as Array<{ message?: string }> | undefined)?.[0]?.message
+          : undefined;
+      setError(
+        problem && PASSWORD_PROBLEMS.includes(problem)
+          ? t(`app.security.password.problem.${problem}`)
+          : err instanceof ApiProblem
+            ? err.title
+            : t('common.error'),
+      );
     } finally {
       setBusy(false);
     }
@@ -135,15 +193,41 @@ function PasswordCard() {
         <LockKeyhole aria-hidden className="h-6 w-6 stroke-[1.5] text-accent" />
         <CardTitle>{t('app.security.password.title')}</CardTitle>
       </div>
-      <p className="mt-2 text-callout text-text-secondary">{has ? t('app.security.password.changeBody') : t('app.security.password.setBody')}</p>
+      <p className="mt-2 text-callout text-text-secondary">
+        {has ? t('app.security.password.changeBody') : t('app.security.password.setBody')}
+      </p>
       <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
         {has ? (
           <Field id="current-password" label={t('app.security.password.current')}>
-            {(p) => <Input {...p} type="password" autoComplete="current-password" required value={current} onChange={(e) => setCurrent(e.target.value)} />}
+            {(p) => (
+              <Input
+                {...p}
+                type="password"
+                autoComplete="current-password"
+                required
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+              />
+            )}
           </Field>
         ) : null}
-        <Field id="new-password" label={t('app.security.password.new')} hint={t('app.security.password.hint')}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={next} onChange={(e) => setNext(e.target.value)} />}
+        <Field
+          id="new-password"
+          label={t('app.security.password.new')}
+          hint={t('app.security.password.hint')}
+        >
+          {(p) => (
+            <Input
+              {...p}
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={12}
+              maxLength={128}
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+            />
+          )}
         </Field>
         {error ? (
           <p role="alert" className="text-callout text-danger">
@@ -186,7 +270,10 @@ export default function SecurityPage() {
     setBusy(true);
     setError(null);
     try {
-      await api(session?.hasMfaFactor && !enrol ? '/v1/auth/mfa/totp/verify' : '/v1/auth/mfa/totp/confirm', { method: 'POST', json: { code } });
+      await api(session?.hasMfaFactor && !enrol ? '/v1/auth/mfa/totp/verify' : '/v1/auth/mfa/totp/confirm', {
+        method: 'POST',
+        json: { code },
+      });
       toast({ title: t('app.security.mfaDone'), tone: 'success' });
       router.replace('/app');
       router.refresh();
@@ -201,7 +288,10 @@ export default function SecurityPage() {
     setError(null);
     try {
       const added = await stepUp.run(async () => {
-        const { challengeId, options } = await api<{ challengeId: string; options: Parameters<typeof startRegistration>[0]['optionsJSON'] }>('/v1/auth/passkeys/register/options', { method: 'POST' });
+        const { challengeId, options } = await api<{
+          challengeId: string;
+          options: Parameters<typeof startRegistration>[0]['optionsJSON'];
+        }>('/v1/auth/passkeys/register/options', { method: 'POST' });
         const response = await startRegistration({ optionsJSON: options });
         await api('/v1/auth/passkeys/register/verify', { method: 'POST', json: { challengeId, response } });
       });
@@ -244,7 +334,17 @@ export default function SecurityPage() {
         {enrol || (session?.hasMfaFactor && !session.mfaVerified) ? (
           <form onSubmit={confirmTotp} className="mt-4 flex flex-col gap-3">
             <Field id="code" label={t('auth.mfa.codeLabel')} hint={t('auth.mfa.codeHint')}>
-              {(p) => <Input {...p} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                />
+              )}
             </Field>
             <Button type="submit" loading={busy}>
               {t('auth.mfa.verify')}

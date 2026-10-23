@@ -93,11 +93,7 @@
   "holidays": [],
   "coverage": {
     "priority": "high",
-    "deeperRulesTodo": [
-      "State holidays (not modelled yet)",
-      "Massachusetts PFML",
-      "Pay transparency law"
-    ],
+    "deeperRulesTodo": ["State holidays (not modelled yet)", "Massachusetts PFML", "Pay transparency law"],
     "notes": "Local ordinances: none identified for sick leave or minimum wage (not verified). Massachusetts Paid Family and Medical Leave (PFML) and the Sunday/holiday premium pay phase-out (blue laws) are not modelled. No daily overtime."
   }
 }
