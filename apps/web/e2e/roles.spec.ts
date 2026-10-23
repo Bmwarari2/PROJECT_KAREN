@@ -162,7 +162,9 @@ test.describe('roles and access', () => {
     await page.goto('/app/settings/users');
     await page.getByRole('searchbox', { name: 'Search by name or email' }).fill('Dana');
     await page.getByRole('link', { name: 'Dana Developer' }).click();
-    await expect(page.getByRole('heading', { name: 'Dana Developer' }).first()).toBeVisible();
+    // the user's page sits under the Settings module header; its title is the page's h2
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Dana Developer' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Only themselves', exact: true })).toBeVisible();
     await page.getByLabel('Role', { exact: true }).selectOption({ label: 'Engineering viewer' });
     await page.getByLabel('Applies to', { exact: true }).selectOption({ label: 'Departments' });
