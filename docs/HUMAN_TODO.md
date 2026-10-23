@@ -169,6 +169,12 @@ Things only a person with the right accounts or authority can do. The build runs
   1. Commission a CREST- or equivalent-accredited tester for the staging stacks (all three regions), scoped to the app, API, SCIM, SSO, public API (API keys and OAuth) and back office, with fictional data only.
   2. Share `docs/ASVS.md`, `docs/SECURITY.md` and the OpenAPI document (`/openapi.json`) with them.
   3. File every finding as an issue; fix or record each one in `docs/SECURITY.md` → "Accepted risks and follow-ups" and update `docs/ASVS.md`.
+- [ ] 5.3 **Repository security settings on GitHub (Phase 12.4).** `pnpm verify` already runs the dependency audit, secret scan and SBOM on every pull request; these settings add GitHub's own checks as a second line. In the repository's Settings:
+  1. **Code security → Secret Protection:** turn on secret scanning and push protection.
+  2. **Code security → Dependabot:** turn on Dependabot alerts and Dependabot security updates. Version updates are optional; every Dependabot pull request still has to pass `pnpm verify`.
+  3. **Branches → add a branch ruleset for `main`:** require a pull request, require the `verify` status check to pass, and block force pushes and deletion.
+  4. **Environments → `production`:** check that required reviewers are set (deploys to production wait for approval; `docs/runbooks/deploy.md`).
+- [ ] 5.4 **Vulnerability scanning of deployed infrastructure (COMPLIANCE.md gap G4; recurring cost, so it needs your approval).** Amazon Inspector scans the ECR images and Lambda functions in each cell for known CVEs. It is billed per image scanned and per re-scan (check https://aws.amazon.com/inspector/pricing/ and add the line to `docs/COSTS.md`). If approved, enable Inspector in eu-west-2, eu-central-1 and us-east-2 only, with ECR enhanced scanning on the `thapsus-hr-*` repositories, and route findings of high or critical severity to the security alarm topic. Fix findings within the timeframes in `docs/SECURITY.md` → "Dependency remediation".
 
 ## 6. Enterprise platform (Phase 9)
 

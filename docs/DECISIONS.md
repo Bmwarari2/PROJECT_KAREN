@@ -1282,3 +1282,11 @@ Sources:
 - `packages/core/test/i18n-plural.test.ts` fails when an en-GB or en-US message has a placeholder immediately followed (optionally after one adjective) or preceded by a plural English noun and is not a plural form, with a small commented allowlist for placeholders that are names, not numbers. A label ending in a colon ("Swap requests: {n}") is allowed. Every plural family must have an `_other` form and no plain key beside it. The scoping check (ADR-0150) and the key-existence test treat `key_one`/`key_other` as `key`.
 
 **Consequences.** 67 messages were converted (60 plural families, 7 two-count sentences split into counted phrases), with the en-US overlay converted alongside and the overrides that only repeated the en-GB text removed. New count messages must use plural forms or the test fails.
+
+## ADR-0152 — The dependency audit covers the whole lockfile (2026-10-23)
+
+**Context.** CLAUDE.md requires `pnpm audit` to pass at high severity. The verify `security` step ran `pnpm audit --audit-level high --prod`, which leaves out development tools (bundlers, test runners, CDK, code generators). Those tools run in CI and build the images that ship, so a compromised or vulnerable one is a supply-chain risk too (SECURITY.md T31). On 2026-10-23 the full audit has one moderate advisory and nothing high or critical.
+
+**Decision.** The verify `security` step runs `pnpm audit --audit-level high` over the whole lockfile. Advisories are handled through the process in SECURITY.md → "Dependency and secret scanning": fix within the remediation timeframes, or, when no fix exists and the code is unreachable, record an accepted risk with a review date before adding the advisory to pnpm's audit ignore list. The SBOM stays limited to production dependencies, because it describes what ships.
+
+**Consequences.** A new high advisory in a development tool now fails CI, like one in a runtime dependency. The moderate `uuid` advisory reached through `exceljs` is recorded under "Accepted risks" (unreachable, review by 2027-01-21).

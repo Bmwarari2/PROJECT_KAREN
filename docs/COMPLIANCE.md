@@ -116,7 +116,7 @@ Evidence paths are relative to the repository root. Test names are the `describe
 | G1 | Organisational ISMS: policies, roles, HR security for staff, supplier policy, physical security of offices and laptops | Thapsus leadership | Write the policy set and appoint an information security owner (HUMAN_TODO) |
 | G2 | Threat intelligence and the STRIDE threat model | Engineering | PROGRESS.md 12.2 |
 | G3 | Malware scanning of uploaded files | Engineering | Add scanning in the home region before documents become `ready` |
-| G4 | Continuous vulnerability scanning of deployed infrastructure (e.g. Amazon Inspector) | Engineering | Phase 12 hardening; check COSTS.md first |
+| G4 | Continuous vulnerability scanning of deployed infrastructure (e.g. Amazon Inspector) | Engineering | Recurring cost, waits for approval: HUMAN_TODO 5.4 |
 | G5 | Security alerting and on-call | Operations | Alarms on audit anomalies and failed logins; on-call rota |
 | G6 | Load tests, restore and AZ failure drills | Engineering | PROGRESS.md 12.1 and 12.8 |
 | G7 | Supplier security reviews | Thapsus leadership | Collect AWS and Stripe reports; record review dates |
