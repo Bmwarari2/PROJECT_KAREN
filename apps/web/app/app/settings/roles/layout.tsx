@@ -11,6 +11,8 @@ export default function RolesLayout({ children }: { children: React.ReactNode })
         'access.perm',
         'access.field',
         'access.errors',
+        'access.compare',
+        'access.scope',
       ]}
     >
       {children}

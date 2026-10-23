@@ -1,10 +1,12 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
-import { ArrowLeft, CalendarClock, Lock, Plus, Trash2, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { CalendarClock, Plus, Trash2, X } from 'lucide-react';
 import {
   Badge,
   Button,
+  Card,
+  cn,
   Dialog,
   DialogContent,
   DialogTrigger,
@@ -13,6 +15,7 @@ import {
   Input,
   Skeleton,
   Table,
+  TableToolbar,
   TD,
   TH,
   THead,
@@ -23,8 +26,8 @@ import { formatTimeOfDay } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
-import { useSession } from '../../shell';
-import { problemText, selectClass, weekdayName, zones } from '../ui';
+import { PageTitle, useSession } from '../../shell';
+import { NoReportsAccess, problemText, selectClass, weekdayName, zones } from '../ui';
 
 interface Schedule {
   id: string;
@@ -129,17 +132,26 @@ export default function SchedulesPage() {
   };
   const [form, setForm] = React.useState(blank);
   const tzList = React.useMemo(zones, []);
+  const [query, setQuery] = React.useState('');
+  const [status, setStatus] = React.useState<'all' | 'on' | 'off'>('all');
+  // "Schedule" in the builder or on a ready-made report opens the form for that saved report
+  const preselect = useSearchParams().get('report');
+  const [preselected, setPreselected] = React.useState(false);
+  React.useEffect(() => {
+    if (preselected || !preselect || !saved.data) return;
+    setPreselected(true);
+    if (saved.data.some((r) => r.id === preselect)) {
+      setForm((f) => ({ ...f, savedReportId: preselect }));
+      setOpen(true);
+    }
+  }, [preselect, preselected, saved.data]);
 
-  if (schedules.error)
-    return (
-      <EmptyState
-        level={1}
-        icon={<Lock aria-hidden />}
-        title={t('reports.noAccess')}
-        body={t('reports.noAccessBody')}
-      />
-    );
+  if (schedules.error) return <NoReportsAccess />;
   if (!schedules.data) return <Skeleton className="h-64 w-full" />;
+  const q = query.trim().toLocaleLowerCase();
+  const rows = schedules.data
+    .filter((s) => status === 'all' || (status === 'on' ? s.enabled : !s.enabled))
+    .filter((s) => !q || s.savedReportName.toLocaleLowerCase().includes(q));
 
   const when = (s: Pick<Schedule, 'frequency' | 'timeOfDay' | 'weekday' | 'dayOfMonth' | 'timeZone'>) => {
     const time = formatTimeOfDay(s.timeOfDay, locale);
@@ -197,12 +209,13 @@ export default function SchedulesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/app/reports" className="inline-flex w-fit items-center gap-1 text-callout">
-        <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-        {t('reports.title')}
-      </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('reports.schedules.title')}</h1>
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="mr-auto min-w-0">
+          <PageTitle>{t('reports.schedules.title')}</PageTitle>
+          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+            {t('reports.schedules.intro')}
+          </p>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" disabled={!saved.data?.length}>
@@ -349,53 +362,83 @@ export default function SchedulesPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('reports.schedules.intro')}
-      </p>
       {schedules.data.length ? (
-        <Table>
-          <caption className="sr-only">{t('reports.schedules.title')}</caption>
-          <THead>
-            <tr>
-              <TH>{t('reports.schedules.report')}</TH>
-              <TH>{t('reports.schedules.when')}</TH>
-              <TH>{t('reports.schedules.format')}</TH>
-              <TH className="text-right">{t('reports.schedules.recipients')}</TH>
-              <TH>{t('common.status')}</TH>
-              <TH>
-                <span className="sr-only">{t('common.actions')}</span>
-              </TH>
-            </tr>
-          </THead>
-          <tbody>
-            {schedules.data.map((s) => (
-              <TR key={s.id}>
-                <TD>{s.savedReportName}</TD>
-                <TD>{when(s)}</TD>
-                <TD className="uppercase">{s.format}</TD>
-                <TD className="text-right tabular-nums">{s.recipientUserIds.length}</TD>
-                <TD>
-                  <Badge tone={s.enabled ? 'success' : 'neutral'}>
-                    {t(s.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}
-                  </Badge>
-                </TD>
-                <TD className="whitespace-nowrap text-right">
-                  <Button size="sm" variant="ghost" onClick={() => toggle(s)}>
-                    {t(s.enabled ? 'reports.schedules.pause' : 'reports.schedules.resume')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => remove(s)}
-                    aria-label={t('reports.schedules.deleteNamed', { name: s.savedReportName })}
-                  >
-                    <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                  </Button>
-                </TD>
-              </TR>
-            ))}
-          </tbody>
-        </Table>
+        <Card className="overflow-hidden p-0">
+          <TableToolbar
+            count={t('reports.ui.scheduleCount', { count: rows.length })}
+            search={
+              <Input
+                type="search"
+                aria-label={t('reports.ui.searchSchedules')}
+                placeholder={t('reports.ui.searchSchedules')}
+                className="h-10 w-full sm:w-56"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            }
+            filters={
+              <select
+                aria-label={t('reports.ui.statusFilter.label')}
+                className={cn(selectClass, 'w-auto')}
+                value={status}
+                onChange={(e) => setStatus(e.target.value as typeof status)}
+              >
+                <option value="all">{t('reports.ui.statusFilter.all')}</option>
+                <option value="on">{t('reports.schedules.on')}</option>
+                <option value="off">{t('reports.schedules.off')}</option>
+              </select>
+            }
+          />
+          {rows.length ? (
+            <Table scrollLabel={t('reports.schedules.title')}>
+              <caption className="sr-only">{t('reports.schedules.title')}</caption>
+              <THead>
+                <tr>
+                  <TH>{t('reports.schedules.report')}</TH>
+                  <TH>{t('reports.schedules.when')}</TH>
+                  <TH>{t('reports.schedules.format')}</TH>
+                  <TH className="text-right">{t('reports.schedules.recipients')}</TH>
+                  <TH>{t('common.status')}</TH>
+                  <TH>
+                    <span className="sr-only">{t('common.actions')}</span>
+                  </TH>
+                </tr>
+              </THead>
+              <tbody>
+                {rows.map((s) => (
+                  <TR key={s.id}>
+                    <TD>{s.savedReportName}</TD>
+                    <TD>{when(s)}</TD>
+                    <TD className="uppercase">{s.format}</TD>
+                    <TD className="text-right tabular-nums">{s.recipientUserIds.length}</TD>
+                    <TD>
+                      <Badge tone={s.enabled ? 'success' : 'neutral'}>
+                        {t(s.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}
+                      </Badge>
+                    </TD>
+                    <TD className="whitespace-nowrap text-right">
+                      <Button size="sm" variant="ghost" onClick={() => toggle(s)}>
+                        {t(s.enabled ? 'reports.schedules.pause' : 'reports.schedules.resume')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => remove(s)}
+                        aria-label={t('reports.schedules.deleteNamed', { name: s.savedReportName })}
+                      >
+                        <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      </Button>
+                    </TD>
+                  </TR>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <p role="status" className="px-5 py-6 text-callout text-text-secondary">
+              {t('reports.ui.noScheduleMatches')}
+            </p>
+          )}
+        </Card>
       ) : (
         <EmptyState
           icon={<CalendarClock aria-hidden />}

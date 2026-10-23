@@ -28,6 +28,7 @@ import { actionMatches } from '@thapsus/core/permissions';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageTitle } from '../../shell';
 import {
   adminGrade,
   fieldLabel,
@@ -178,7 +179,9 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
   return (
     <form onSubmit={save} className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{title}</h1>
+        <div className="mr-auto min-w-0">
+          <PageTitle>{title}</PageTitle>
+        </div>
         {role?.builtIn ? <Badge>{t('access.roles.builtIn')}</Badge> : null}
         {role && canManage && !role.permissions.includes('*') ? (
           <Link

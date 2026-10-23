@@ -17,6 +17,7 @@ import type { SessionInfo } from '@/lib/api';
 import { applyTheme, switchLocale } from '@/components/client';
 import { useLocale, useT } from '@/lib/i18n-client';
 import type { ThemeChoice } from '@/lib/i18n-shared';
+import { bySeniority } from '@/lib/role-order';
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -27,7 +28,7 @@ export function initials(name: string): string {
 
 /** Readable names of the session's roles (built-in names from the catalogue, custom roles as stored). */
 export function roleNames(t: (k: string) => string, roles: string[]): string[] {
-  return roles.map((r) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`)));
+  return bySeniority(roles).map((r) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`)));
 }
 
 /**
