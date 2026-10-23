@@ -18,7 +18,8 @@ import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { useSession } from '../shell';
+import { useInModule, useSectionLevel } from '@/components/module-page';
+import { PageTitle, useSession } from '../shell';
 
 interface Onboarding {
   employee: {
@@ -79,6 +80,8 @@ export default function WelcomePage() {
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
+  const inModule = useInModule();
+  const sec = useSectionLevel();
   const { data, error, reload } = useApi<Onboarding>(session?.employeeId ? '/v1/me/onboarding' : null);
   const [personal, setPersonal] = React.useState<Record<string, string>>({});
   const [address, setAddress] = React.useState<Record<string, string>>({});
@@ -101,7 +104,7 @@ export default function WelcomePage() {
   if (error)
     return (
       <EmptyState
-        level={1}
+        level={inModule ? 2 : 1}
         icon={<UserRound aria-hidden />}
         title={error.status === 404 ? t('onboarding.notLinked') : t('common.error')}
       />
@@ -151,7 +154,7 @@ export default function WelcomePage() {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3">
-        <h1 className="text-title-2">{t('onboarding.heading', { company: e.company, name: firstName })}</h1>
+        <PageTitle>{t('onboarding.heading', { company: e.company, name: firstName })}</PageTitle>
         <p className="text-body text-text-secondary">
           {pre
             ? t('onboarding.startsOn', { date: formatDate(e.startDate, locale, 'long') })
@@ -190,7 +193,7 @@ export default function WelcomePage() {
       </header>
 
       <Card>
-        <CardTitle>{t('onboarding.documentsTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('onboarding.documentsTitle')}</CardTitle>
         {data.documents.length ? (
           <ul className="mt-3 flex flex-col gap-2">
             {data.documents.map((d) => (
@@ -221,7 +224,9 @@ export default function WelcomePage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <div className="flex items-start gap-3">
-            <CardTitle className="mr-auto">{t('onboarding.personalTitle')}</CardTitle>
+            <CardTitle as={sec.heading} className="mr-auto">
+              {t('onboarding.personalTitle')}
+            </CardTitle>
             <StatusBadge complete={data.forms.personalDetails.complete} />
           </div>
           <p className="mt-1 text-callout text-text-secondary">{t('onboarding.personalBody')}</p>
@@ -268,7 +273,9 @@ export default function WelcomePage() {
 
         <Card>
           <div className="flex items-start gap-3">
-            <CardTitle className="mr-auto">{t('onboarding.contactsTitle')}</CardTitle>
+            <CardTitle as={sec.heading} className="mr-auto">
+              {t('onboarding.contactsTitle')}
+            </CardTitle>
             <StatusBadge complete={data.forms.emergencyContacts.complete} />
           </div>
           <p className="mt-1 text-callout text-text-secondary">{t('onboarding.contactsBody')}</p>
@@ -313,7 +320,7 @@ export default function WelcomePage() {
       </div>
 
       <Card>
-        <CardTitle>{t('onboarding.checklistTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('onboarding.checklistTitle')}</CardTitle>
         {data.tasks.length ? (
           <ul className="mt-3 flex flex-col gap-2">
             {data.tasks.map((k) => (
@@ -351,7 +358,11 @@ export default function WelcomePage() {
             ))}
           </ul>
         ) : (
-          <EmptyState icon={<ListChecks aria-hidden />} title={t('onboarding.checklistEmpty')} />
+          <EmptyState
+            level={sec.level}
+            icon={<ListChecks aria-hidden />}
+            title={t('onboarding.checklistEmpty')}
+          />
         )}
       </Card>
     </div>

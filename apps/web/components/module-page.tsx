@@ -16,6 +16,14 @@ export function useInModule(): boolean {
 }
 
 /**
+ * The heading level for sections under a page title that is kept (`PageTitle`): h3 under the h2 it is
+ * inside a module, h2 under the h1 it is elsewhere, so headings never skip a level (WCAG 1.3.1).
+ */
+export function useSectionLevel(): { heading: 'h2' | 'h3'; level: 2 | 3 } {
+  return useInModule() ? { heading: 'h3', level: 3 } : { heading: 'h2', level: 2 };
+}
+
+/**
  * A page's header row: its title, a lead paragraph and the primary actions. A title that only repeats
  * the tab's name (`titleIsTab`) is dropped under the module header, which already shows it, and stays
  * as the h1 when the page opens outside a module. Any other title is a `PageTitle`.

@@ -246,8 +246,13 @@ test.describe('pre-start portal', () => {
     await jp.waitForURL(/\/app$/);
     await jp.getByRole('link', { name: 'Open your onboarding' }).click();
     await jp.waitForURL(/\/app\/welcome$/);
+    // the onboarding tab of My profile: the module is the h1, the welcome the page's own title
+    await expect(jp.getByRole('heading', { level: 1, name: 'My profile' })).toBeVisible();
     await expect(
-      jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
+      jp.getByRole('navigation', { name: 'My profile sections' }).getByRole('link', { name: 'Onboarding' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(
+      jp.getByRole('heading', { level: 2, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
     ).toBeVisible();
     await expect(jp.getByText(/Days until you start: 2[01]\b/)).toBeVisible();
     await expect(jp.getByText('0 of 5 steps complete')).toBeVisible();

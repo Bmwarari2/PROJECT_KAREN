@@ -9,6 +9,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
+import { PageIntro } from '@/components/module-page';
 import { needsSecondFactor, useSession } from '../shell';
 import { useStepUp } from '../step-up';
 
@@ -305,7 +306,7 @@ export default function SecurityPage() {
 
   return (
     <div className="flex max-w-[var(--prose-width)] flex-col gap-6">
-      <h1 className="text-title-2">{t('app.security.title')}</h1>
+      <PageIntro title={t('app.security.title')} titleIsTab />
       {needsMfa ? (
         <p role="status" className="rounded-md bg-accent-subtle p-4 text-callout">
           {session?.hasMfaFactor ? t('app.security.verifyRequired') : t('app.security.setupRequired')}

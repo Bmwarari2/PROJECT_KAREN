@@ -16,6 +16,7 @@ import { Badge, Card, EmptyState, Skeleton } from '@thapsus/ui';
 import { formatDate, formatInstantTime, formatTimeOfDay, numberFormat } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface Summary {
@@ -95,10 +96,7 @@ export default function MePage() {
   if (error || !data)
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-title-2">{t('ess.title')}</h1>
-          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('ess.intro')}</p>
-        </div>
+        <PageIntro title={t('ess.title')} titleIsTab lead={t('ess.intro')} />
         {error ? (
           <EmptyState icon={<UserRound aria-hidden />} title={t('common.error')} />
         ) : (
@@ -148,15 +146,13 @@ export default function MePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-title-2">{t('ess.title')}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('ess.intro')}</p>
-        <p className="mt-1 text-callout text-text-secondary">
+      <PageIntro title={t('ess.title')} titleIsTab lead={t('ess.intro')}>
+        <p className="text-callout text-text-secondary">
           {data.employee
             ? [data.employee.displayName, data.employee.jobTitle].filter(Boolean).join(' · ')
             : t('ess.noEmployee')}
         </p>
-      </div>
+      </PageIntro>
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.employee ? (
           <Tile
