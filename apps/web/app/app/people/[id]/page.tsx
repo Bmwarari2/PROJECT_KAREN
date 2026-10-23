@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useParams } from 'next/navigation';
 import { FileText, History, Pencil, Send } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, Dialog, DialogContent, DialogTrigger, EmptyState, Field, Input, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, useToast } from '@thapsus/ui';
-import { formatDate, formatMoney, type Locale } from '@thapsus/core/i18n';
+import { formatDate, formatMoney, numberFormat, type Locale } from '@thapsus/core/i18n';
 import { money, parseDecimal } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -26,10 +26,23 @@ const SECTIONS: Array<{ key: string; fields: string[] }> = [
 ];
 const EDITABLE = ['jobTitle', 'employmentType', 'weeklyHours', 'fte', 'payAmountMinor', 'payFrequency', 'contractType', 'noticePeriodDays', 'probationEndDate', 'preferredName', 'pronouns', 'personalEmail', 'personalPhone'];
 
-function display(field: string, v: unknown, emp: Record<string, unknown>, locale: Locale): string {
+const ENUM_FIELDS = new Set(['employmentType', 'contractType', 'payFrequency']);
+const NUMBER_FIELDS = new Set(['fte', 'weeklyHours', 'noticePeriodDays']);
+
+/**
+ * A field's value for reading. With `t`, coded values (employment type, contract type, pay frequency)
+ * are shown in words and numbers in the locale's format; without it (form placeholders) the raw value
+ * the API expects is kept.
+ */
+function display(field: string, v: unknown, emp: Record<string, unknown>, locale: Locale, t?: (k: string) => string): string {
   if (v === null || v === undefined || v === '') return '—';
   if (field === 'payAmountMinor' && typeof emp.payCurrency === 'string') return formatMoney(money(BigInt(String(v)), emp.payCurrency), locale);
   if (/Date$|^dateOfBirth$/.test(field) && typeof v === 'string') return formatDate(v, locale);
+  if (t && ENUM_FIELDS.has(field)) {
+    const key = `reports.enum.${field}.${String(v)}`;
+    return t(key) === key ? String(v) : t(key);
+  }
+  if (t && NUMBER_FIELDS.has(field) && v !== '' && Number.isFinite(Number(v))) return numberFormat(locale, { maximumFractionDigits: 4 }).format(Number(v));
   return String(v);
 }
 
@@ -171,7 +184,7 @@ export default function EmployeePage() {
                     {visible.map((f) => (
                       <React.Fragment key={f}>
                         <dt className="text-text-secondary">{t(`people.field.${f}`)}</dt>
-                        <dd className="break-words">{display(f, e[f], e, locale)}</dd>
+                        <dd className="break-words">{display(f, e[f], e, locale, t)}</dd>
                       </React.Fragment>
                     ))}
                   </dl>
