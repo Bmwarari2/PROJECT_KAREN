@@ -20,3 +20,8 @@ apps/web/playwright-report/
 .verify/
 .deploy/
 .loadtest/
+# OpenTofu working files (the .terraform.lock.hcl provider lock is committed)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
