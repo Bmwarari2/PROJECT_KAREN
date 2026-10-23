@@ -11,6 +11,7 @@ import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import type { ThemeChoice } from '@/lib/i18n-shared';
+import { visibleSections } from './settings/sections';
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
@@ -62,7 +63,8 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string,
     { href: '/app/privacy', label: t('app.nav.privacy'), icon: <Lock aria-hidden />, show: has('privacy.read') },
     { href: '/app/notifications', label: t('app.nav.notifications'), icon: <Bell aria-hidden />, show: true },
     { href: '/app/security', label: t('app.nav.security'), icon: <ShieldCheck aria-hidden />, show: true },
-    { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') || has('roles.read') },
+    // Shown when the user may open at least one settings section (the settings area filters each one).
+    { href: '/app/settings', label: t('app.nav.settings'), icon: <Settings aria-hidden />, show: has('settings.read') || visibleSections(has).length > 0 },
     { href: '/app/billing', label: t('app.nav.billing'), icon: <CreditCard aria-hidden />, show: has('billing.manage') },
     { href: '/app/help', label: t('app.nav.help'), icon: <CircleHelp aria-hidden />, show: true },
     { href: '/app/support', label: t('app.nav.support'), icon: <LifeBuoy aria-hidden />, show: has('support.ticket') },

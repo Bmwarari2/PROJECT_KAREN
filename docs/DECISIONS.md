@@ -1164,3 +1164,26 @@ Sources:
 **Decision.** `GET /v1/users` and a person's assignments are visible to any holder of `roles.read`, whatever the scope of that grant. The list shows name, sign-in email, status, role keys and whether a second factor is set up. It holds no HR record data (employee fields stay behind field-level access), and names and work emails are already visible to every signed-in person in the directory. Whether a listed assignment may be revoked is computed for the caller with the same scope rule.
 
 **Consequences.** A scoped access administrator can see who holds which role across the company (useful for audits), but can change only what is inside their scope.
+
+## ADR-0125 — Admin settings screens, and the small API additions they need (2026-10-18)
+
+**Context.** Many admin capabilities (SSO, SCIM tokens, approval chains, delegations, leave policies, absence triggers, cover rules, closure calendars) existed only as create endpoints with no way to list, change or remove what had been created, so customers could not configure their workspace in the app.
+
+**Decision.**
+- One settings area under `/app/settings`, grouped into Workspace, Sign-in and security, Approvals and workflows, Time off and absence, and Time and attendance. A single registry (`apps/web/app/app/settings/sections.ts`) maps each section to the permission keys the API checks; the settings index, the settings sub-navigation and the sidebar entry are all derived from it, so they never disagree. Delegations are visible to anyone who approves (`approvals.act`, `approvals.manage`, `leave.approve`, `time.approve`), so managers see a settings area with only that section.
+- People actions that were API-only (start a leaver, internal transfer, balance adjustments such as TOIL) live on the person's profile, gated by `employees.terminate`, `employees.update` and `leave.adjust`.
+- API additions are additive and follow the existing pattern (Typebox schema, permission check, audit for every mutation, integration test in `apps/api/test/admin-settings.int.test.ts`): list endpoints for SSO connections (never returning the client secret), the sign-in policy, SCIM tokens (never the token), approval chains, delegations, leave policies, absence triggers, cover rules and company calendars; and the mutations the screens cannot work without: turn an SSO connection on or off and delete it, revoke a SCIM token, replace an approval chain, end your own delegation.
+- Turning off or deleting the last enabled SSO connection is refused (422) while SSO is enforced, because it would lock everyone out.
+- Replacing an approval chain does not change requests already in progress: they keep the steps snapshotted when they started.
+- Ending an active delegation sets its end to now (the history stays for the audit trail); a delegation that has not started is deleted.
+- Picking a colleague (delegate, approver, task assignee) uses `GET /v1/delegations/candidates`, which returns only active users' names and job titles, the same information the directory already shows to every signed-in user.
+
+**Consequences.** Admins can configure every listed capability from the app. Edit and delete for workflow templates, leave policies, absence triggers, cover rules and company calendars, and creating leave types, still have no endpoint; the screens list and create them, and those changes are follow-ups.
+
+## ADR-0126 — Wide tables get a focusable, named scroll area (2026-10-18)
+
+**Context.** Settings tables scroll sideways on phones. axe (`scrollable-region-focusable`, WCAG 2.1.1) fails when the scrolling wrapper contains nothing focusable, because keyboard users cannot scroll it.
+
+**Decision.** `Table` in `packages/ui` takes an optional `scrollLabel`. With it, the overflow wrapper becomes a focusable `region` named by the label, with the standard focus ring. Without it, the table renders exactly as before.
+
+**Consequences.** New screens pass the label on every table that may overflow (all the settings tables and the leave balances table). Existing tables are unchanged; adding the label to them is a safe follow-up.
