@@ -7,8 +7,10 @@ import {
   daysBetween,
   makeDate,
   maxDate,
+  minDate,
 } from '@thapsus/core/time';
 import type { ResolvedRule, RuleBook } from '@thapsus/rules';
+import { gpgDates } from '../../modules/compliance/engine';
 import { FIRST_NAMES, LAST_NAMES, prng } from '../fixtures';
 import type { LoginRole } from './config';
 
@@ -878,16 +880,16 @@ const PART_PATTERNS: Array<{ pattern: WorkPattern; fte: number }> = [
 const weekly = (p: WorkPattern) => Object.values(p).reduce((a, b) => a + b, 0);
 
 const FEMALE_SHARE: Record<DeptKey, number> = {
-  leadership: 0.4,
-  engineering: 0.3,
-  product: 0.5,
-  sales: 0.45,
-  marketing: 0.6,
-  finance: 0.5,
-  people: 0.75,
-  support: 0.6,
-  operations: 0.45,
-  logistics: 0.25,
+  leadership: 0.35,
+  engineering: 0.2,
+  product: 0.45,
+  sales: 0.4,
+  marketing: 0.65,
+  finance: 0.55,
+  people: 0.8,
+  support: 0.75,
+  operations: 0.5,
+  logistics: 0.45,
   legal: 0.5,
 };
 const UK_NATIONALITIES = [
@@ -1128,6 +1130,16 @@ export function buildPlan(opts: { book: RuleBook; anchor: string; size?: number;
   }
 
   // ---- people ----
+  const gpgRule = ruleAtOrFirst<Parameters<typeof gpgDates>[0]>(
+    book,
+    'GB',
+    'reporting.gender_pay_gap',
+    anchor,
+  ).value;
+  const { year: anchorYear } = dateParts(anchor);
+  let gpgSnapshot = gpgDates(gpgRule, anchorYear, 'privateAndVoluntary').snapshotDate;
+  if (compareDates(gpgSnapshot, anchor) > 0)
+    gpgSnapshot = gpgDates(gpgRule, anchorYear - 1, 'privateAndVoluntary').snapshotDate;
   const people: PlanPerson[] = [];
   const leadSince = new Map<number, string>(); // seat → the date they started leading
   const reviewDates = [2025, 2026]
@@ -1153,7 +1165,13 @@ export function buildPlan(opts: { book: RuleBook; anchor: string; size?: number;
       const earliest = maxDate(addDays(mgrStart, 14), t!.since);
       const latestOffset =
         s.kind === 'past_leaver' ? Math.min(-200, daysBetween(anchor, s.endDate!) - 120) : -60;
-      start = randomDate(pr, earliest, maxDate(earliest, addDays(anchor, latestOffset)));
+      // UK staff (other than the recent joiners) were already employed on the last gender pay gap
+      // snapshot date, so the UK entity's relevant headcount is above the threshold
+      const latest =
+        entity === 'uk' && s.kind === 'roster'
+          ? minDate(addDays(anchor, latestOffset), addDays(gpgSnapshot, -1))
+          : addDays(anchor, latestOffset);
+      start = randomDate(pr, earliest, maxDate(earliest, latest));
     }
     if (s.level === 'lead') leadSince.set(i, t!.promotedFrom ? t!.promotedFrom[1] : start);
     // ---- job ----
@@ -1287,7 +1305,9 @@ export function buildPlan(opts: { book: RuleBook; anchor: string; size?: number;
     });
     // ---- personal ----
     const sexRoll = pr();
-    const sex: PlanPerson['sex'] = sexRoll < 0.03 ? null : pr() < FEMALE_SHARE[dept] ? 'female' : 'male';
+    // fewer women in senior roles, as in most UK gender pay gap reports
+    const femaleShare = FEMALE_SHARE[dept] * (s.level === 'member' ? 1 : 0.55);
+    const sex: PlanPerson['sex'] = sexRoll < 0.03 ? null : pr() < femaleShare ? 'female' : 'male';
     const ageAtStart =
       s.level === 'exec'
         ? between(pr, 36, 48)

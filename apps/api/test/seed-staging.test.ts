@@ -14,6 +14,7 @@ import {
 import {
   buildPlan,
   currentJob,
+  employedOn,
   minimumWageMinor,
   ruleAtOrFirst,
   type PlanPerson,
@@ -154,6 +155,18 @@ describe('staging company plan', () => {
     expect(roster).toHaveLength(FULL_SIZE);
     const byEntity = (e: string) => roster.filter((p) => p.entity === e).length;
     expect(byEntity('uk')).toBeGreaterThanOrEqual(threshold);
+    // and the UK entity was above it on the last snapshot date, so the report is required
+    for (const anchor of [ANCHOR, '2027-02-15', '2027-06-30']) {
+      const p = buildPlan({ book, anchor });
+      const snapshot =
+        compareDates(anchor, `${anchor.slice(0, 4)}-04-05`) >= 0
+          ? `${anchor.slice(0, 4)}-04-05`
+          : `${Number(anchor.slice(0, 4)) - 1}-04-05`;
+      expect(
+        p.people.filter((x) => x.entity === 'uk' && employedOn(x, snapshot)).length,
+        anchor,
+      ).toBeGreaterThanOrEqual(threshold + 5);
+    }
     expect([byEntity('uk'), byEntity('ie'), byEntity('us')]).toEqual([262, 22, 16]);
     expect(new Set(roster.map((p) => at(p).location))).toEqual(new Set(['LON', 'MAN', 'EDI', 'DUB', 'NYC']));
     const past = plan.people.filter((p) => p.kind === 'past_leaver');
