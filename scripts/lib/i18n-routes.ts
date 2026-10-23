@@ -208,6 +208,19 @@ function moduleInfo(file: string, src: string): ModuleInfo {
     literalsIn(st, unit.literals, unit.refs);
     info.units.push(unit);
   }
+  // Code loaded on demand (`import('…')`, next/dynamic) renders under the same layouts, so its keys are
+  // checked as if it were imported for its side effects.
+  const dynamicImports = (n: ts.Node) => {
+    if (
+      ts.isCallExpression(n) &&
+      n.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      n.arguments[0] &&
+      ts.isStringLiteralLike(n.arguments[0])
+    )
+      info.bare.push(n.arguments[0].text);
+    ts.forEachChild(n, dynamicImports);
+  };
+  dynamicImports(sf);
   return info;
 }
 

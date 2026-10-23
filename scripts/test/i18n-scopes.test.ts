@@ -25,7 +25,8 @@ describe('per-route message scoping', () => {
       'apps/web/app/app/layout.tsx',
       'apps/web/app/app/assets/layout.tsx',
     ]);
-    // the page itself, the shell (via the /app layout), the workspace map and the account menu it renders
+    // the page itself, the shell (via the /app layout), the workspace map and the account menu it loads
+    // on demand (dynamic imports count)
     expect(assets.uses.map((u) => u.file)).toEqual(
       expect.arrayContaining([
         'apps/web/app/app/assets/page.tsx',

@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
+import { IntentLink as Link } from '@/components/intent-link';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';

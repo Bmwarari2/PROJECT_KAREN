@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { IntentLink as Link } from '@/components/intent-link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, CircleHelp, Menu as MenuIcon, Search } from 'lucide-react';
 import {
@@ -16,15 +17,27 @@ import {
 import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
 import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
 import { Logo } from '@/components/logo';
-import { GlobalSearch } from '@/components/workspace/global-search';
 import { RailNav, RailToggle, useRailCollapsed } from '@/components/workspace/rail';
-import { UserMenu } from '@/components/workspace/user-menu';
+import { UserMenuButton } from '@/components/workspace/user-menu-button';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
+import { useIdle } from '@/lib/use-idle';
 import { revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
 import { isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
+
+// The search palette and the account menu (and the dialog and menu primitives behind them) load
+// after the page, so they add nothing to what a phone must download and run before it can show it.
+const GlobalSearch = dynamic(
+  () => import('@/components/workspace/global-search').then((m) => m.GlobalSearch),
+  {
+    ssr: false,
+  },
+);
+const loadSearch = () => import('@/components/workspace/global-search');
+type UserMenuType = typeof import('@/components/workspace/user-menu').UserMenu;
+const loadUserMenu = () => import('@/components/workspace/user-menu').then((m) => m.UserMenu);
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
@@ -100,8 +113,26 @@ export function AppShell({
   const [experience, setExperience] = React.useState<Experience | null>(null);
   const [experienceTick, setExperienceTick] = React.useState(0);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  // the palette is mounted the first time it opens and stays mounted (it keeps its recents)
+  const [searchUsed, setSearchUsed] = React.useState(false);
+  React.useEffect(() => {
+    if (searchOpen) setSearchUsed(true);
+  }, [searchOpen]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [collapsed, setCollapsed] = useRailCollapsed();
+  // The account menu's code loads once the browser is idle; until then (or if clicked sooner) the
+  // same-looking button stands in and opens the menu when it arrives.
+  const [UserMenu, setUserMenu] = React.useState<UserMenuType | null>(null);
+  const [userMenuWanted, setUserMenuWanted] = React.useState(false);
+  const idle = useIdle();
+  React.useEffect(() => {
+    if (!idle && !userMenuWanted) return;
+    let live = true;
+    void loadUserMenu().then((C) => live && setUserMenu(() => C));
+    return () => {
+      live = false;
+    };
+  }, [idle, userMenuWanted]);
   // the shortcut hint names the key the viewer's keyboard has (set after hydration)
   const [mac, setMac] = React.useState(false);
   React.useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
@@ -273,6 +304,8 @@ export function AppShell({
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
+              onPointerEnter={() => void loadSearch()}
+              onFocus={() => void loadSearch()}
               disabled={!ready}
               aria-keyshortcuts="Control+K Meta+K"
               className="ml-auto flex h-10 min-w-10 items-center justify-center gap-2 rounded-md bg-chrome-raised px-2.5 text-left text-callout text-on-chrome-secondary hover:text-on-chrome focus-visible:outline-2 focus-visible:outline-chrome-focus disabled:opacity-60 sm:ml-2 sm:max-w-[560px] sm:flex-1 sm:justify-start sm:px-3"
@@ -316,7 +349,18 @@ export function AppShell({
                   </span>
                 ) : null}
               </Link>
-              {session ? <UserMenu session={session} theme={theme} onSignOut={signOut} /> : null}
+              {session ? (
+                UserMenu ? (
+                  <UserMenu
+                    session={session}
+                    theme={theme}
+                    onSignOut={signOut}
+                    defaultOpen={userMenuWanted}
+                  />
+                ) : (
+                  <UserMenuButton session={session} onOpen={() => setUserMenuWanted(true)} />
+                )
+              ) : null}
             </div>
           </header>
           <div className="flex flex-1">
@@ -380,7 +424,7 @@ export function AppShell({
             </div>
           </div>
         </div>
-        {session && viewer ? (
+        {session && viewer && (searchOpen || searchUsed) ? (
           <GlobalSearch
             open={searchOpen}
             onOpenChange={setSearchOpen}

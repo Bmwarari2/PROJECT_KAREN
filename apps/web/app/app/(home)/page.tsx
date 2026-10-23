@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
+import { IntentLink as Link } from '@/components/intent-link';
 import {
   ChevronDown,
   ChevronRight,
@@ -26,6 +26,7 @@ import { compareDates, today as todayIn } from '@thapsus/core/time';
 import { numberFormat } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { useIdle } from '@/lib/use-idle';
 import { dayLong, viewerZone } from '@/lib/week';
 import {
   usePeopleInsights,
@@ -90,8 +91,11 @@ export default function HomePage() {
   const showInsights =
     viewer.has('employees.read') && (viewer.has('reports.run') || viewer.has('reports.read_team'));
   const showCalendar = viewer.has('leave.read');
-  const insights = usePeopleInsights(today, showInsights);
-  const calendar = useWeekCalendar(today, showCalendar);
+  // the organisation charts and the week calendar sit below "needs your attention" and "you": they
+  // load once the browser is idle, after the page's first content and its own data
+  const idle = useIdle();
+  const insights = usePeopleInsights(today, showInsights && idle);
+  const calendar = useWeekCalendar(today, showCalendar && idle);
 
   // ---- needs your attention ----------------------------------------------------------------------
   const settled = (q: { data?: unknown; error: unknown }) => q.data !== undefined || !!q.error;
@@ -164,6 +168,7 @@ export default function HomePage() {
         <div className="min-w-0">
           <p className="min-h-6 text-callout text-text-secondary">{today ? dayLong(today, locale) : null}</p>
           <PageTitle>{t('dashboard.greeting', { name: first })}</PageTitle>
+          <p className="mt-1 max-w-[60ch] text-body text-text-secondary">{t('dashboard.intro')}</p>
         </div>
         {actions.length ? (
           <nav aria-label={t('dashboard.quickActions')}>
@@ -285,14 +290,19 @@ export default function HomePage() {
               </Link>
             ) : null}
           </SectionHeading>
-          <Insights
-            insights={insights.data}
-            insightsFailed={insights.failed}
-            showInsights={showInsights}
-            calendar={calendar.data}
-            showCalendar={showCalendar && !calendar.error}
-            today={today}
-          />
+          {/* rendered once the browser is idle: below the fold, and the heaviest part of the page */}
+          {idle ? (
+            <Insights
+              insights={insights.data}
+              insightsFailed={insights.failed}
+              showInsights={showInsights}
+              calendar={calendar.data}
+              showCalendar={showCalendar && !calendar.error}
+              today={today}
+            />
+          ) : (
+            <Skeleton className="h-64 w-full" />
+          )}
         </section>
       ) : null}
     </div>

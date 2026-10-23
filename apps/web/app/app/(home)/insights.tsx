@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
+import { IntentLink as Link } from '@/components/intent-link';
 import { CalendarCheck, ChevronDown, UserPlus, Users, UserRoundPlus } from 'lucide-react';
 import {
   BarList,
