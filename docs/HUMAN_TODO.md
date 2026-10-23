@@ -237,3 +237,47 @@ The automated sweep (`apps/web/e2e/a11y-sweep.spec.ts`) and the flow specs cover
 - [ ] 8.4 **Speech input**: complete sign-in, a leave request and a rota change with Voice Control (macOS or iOS) and Dragon (Windows), using the visible labels only.
 - [ ] 8.5 **Kiosk in place**: on the tablet model customers will mount, check the keypad and Clock in buttons at arm's length, with gloves if the site uses them, and with the screen reader on.
 - [ ] 8.6 **Accessibility statement**: have legal review an accessibility statement (WCAG 2.2 AA, known limitations from 8.1–8.5, contact route) for the trust centre; publish it in both catalogues.
+
+## 9. Google Cloud staging (one region, fictional data; owner decision 2026-10-23)
+
+This replaces the AWS staging steps in §1 for testing. It is one UK cell in London (europe-west2). Cost is about £35–45 a month (`docs/COSTS.md`). Engineering cannot do these steps: they need your Google and GitHub accounts. The whole guide is `infra/gcp/README.md`.
+
+- [ ] 9.1 **Project and billing.**
+  1. Go to https://console.cloud.google.com/projectcreate.
+  2. Create a project used only for this, for example `thapsus-hr-staging`. Note its project ID.
+  3. In Billing → My projects, link it to a billing account.
+- [ ] 9.2 **Budget alert (recommended).**
+  1. Go to Billing → Budgets & alerts → Create budget.
+  2. Scope it to the project and set the amount to £60 a month.
+  3. Add alerts at 50%, 90% and 100%, sent to billing admins.
+- [ ] 9.3 **Bootstrap (about 2 minutes).**
+  1. Open Cloud Shell (the `>_` icon in the console).
+  2. Run:
+     ```sh
+     git clone https://github.com/Bmwarari2/PROJECT_KAREN.git && cd PROJECT_KAREN
+     bash infra/gcp/bootstrap.sh <project-id>
+     ```
+     It enables the APIs and creates the private state bucket, the image repository, the `thapsus-deployer` service account and a Workload Identity Federation trust. The trust only works for GitHub Actions runs on the `main` branch of this repository. No keys are created.
+- [ ] 9.4 **GitHub variables.**
+  1. Go to GitHub → Settings → Secrets and variables → Actions → Variables → New repository variable.
+  2. Add the five values the script printed: `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`, `GCP_STATE_BUCKET` and `GCP_STAGING_ENABLED=true`. They are identifiers, not secrets.
+- [ ] 9.5 **Approval gate.**
+  1. Go to GitHub → Settings → Environments → New environment and name it `staging-gcp`.
+  2. Tick **Required reviewers** and add yourself.
+  3. Under **Deployment branches**, choose **Selected branches** and add `main`.
+
+  Every deploy then waits for you to approve its plan. The workflow refuses to apply without this rule.
+
+- [ ] 9.6 **First deploy.**
+  1. Go to GitHub → Actions → **Deploy staging (Google Cloud)** → Run workflow (branch `main`).
+  2. When the run pauses, open it and read the plan table in the summary.
+  3. Click **Review deployments → staging-gcp → Approve**. The first run takes about 25 minutes, mostly creating the database.
+  4. When it finishes, the summary shows the app URL. Later pushes to `main` deploy after CI passes; each one again waits for your approval.
+- [ ] 9.7 **Sign in.**
+  1. In Cloud Shell, run:
+     `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`.
+     It prints the URL, the workspace `kestrel`, and the email and password for each role (owner, HR admin, payroll admin, manager, employee).
+  2. Sign in at `<url>/signin`. The owner, HR admin and payroll admin are asked to set up an authenticator app the first time.
+  3. Keep these passwords private. The site is reachable from the internet, though the data is fictional.
+- [ ] 9.8 **(Optional, if the project is in a Google Cloud organisation) location policy.** Go to IAM & Admin → Organization policies → "Resource Location Restriction" (`gcp.resourceLocations`). On the project, allow only `in:europe-west2-locations`. This is the Google Cloud equivalent of the AWS region allow-list. A personal project without an organisation cannot set it; the OpenTofu tests check locations instead.
+- [ ] 9.9 **(Optional) restrict who can reach the app.** The sign-in page is public; the app's sign-in, MFA, lockout and rate limits protect it. To limit it to named Google accounts, set `public_access = false` in `infra/gcp/staging/variables.tf` (ask engineering). People then need the Cloud Run Invoker role, or an Identity-Aware Proxy, which adds a step.

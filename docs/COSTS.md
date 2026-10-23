@@ -2,6 +2,21 @@
 
 These are on-demand list-price estimates (USD per month, about 730 hours, October 2026) for the CDK stacks in `infra/`. Every cell stack has an AWS Budgets alarm at 80% and 100% of its line here. Anything that would push recurring cost past these estimates needs the product owner's approval first (CLAUDE.md).
 
+## Google Cloud staging (one UK cell in europe-west2; ADR-0156)
+
+Approved by the product owner on 2026-10-23 ("deploy to one region only as this is only testing"). Estimated list prices at light test use, in USD per month; GBP is roughly 0.8×. Set a budget alert on the project (HUMAN_TODO 9.2).
+
+| Item                                                                                                                  | Per month                  |
+| --------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Cloud SQL PostgreSQL 17, `db-g1-small` zonal, 10 GB SSD, 7 days of backups and PITR in London                         | ~$30–35                    |
+| Cloud Run app (web + API, 2 vCPU / 2 GiB while serving, scales to zero; free tier applies first)                      | ~$3–12                     |
+| Cloud Run worker (drain call every minute, request-based billing)                                                     | ~$1–4                      |
+| Cloud Scheduler (1 job; 3 free per billing account)                                                                   | $0                         |
+| Secret Manager (8 secrets), Cloud KMS (2 keys), Cloud Storage (files, mail), Artifact Registry (about 5 GB of images) | ~$2–3                      |
+| Cloud Logging (within the 50 GiB free allotment) and egress                                                           | ~$0–2                      |
+| **Total**                                                                                                             | **~$40–55 (about £35–45)** |
+| Optional: `app_min_instances = 1` (no cold starts)                                                                    | +~$15                      |
+
 ## Staging (cost-lean: Aurora Serverless v2 at 0.5 ACU minimum, 1 NAT gateway, one task per service)
 
 | Item                                                                                                                                  | Per cell region (UK, EU, US) |
