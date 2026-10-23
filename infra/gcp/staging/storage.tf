@@ -26,8 +26,17 @@ resource "google_storage_bucket" "files" {
     }
   }
 
+  # Off: deleted files must be gone when the app deletes them (erasure requests are verified).
   soft_delete_policy {
-    retention_duration_seconds = 604800
+    retention_duration_seconds = 0
+  }
+
+  # Signed download URLs are opened by the browser from the app's origin.
+  cors {
+    origin          = [local.app_url]
+    method          = ["GET", "HEAD", "PUT"]
+    response_header = ["Content-Type", "Content-Disposition"]
+    max_age_seconds = 3600
   }
 
   depends_on = [google_kms_crypto_key_iam_member.files_gcs]
@@ -56,6 +65,10 @@ resource "google_storage_bucket" "mail" {
     }
   }
 
+  soft_delete_policy {
+    retention_duration_seconds = 0
+  }
+
   depends_on = [google_kms_crypto_key_iam_member.files_gcs]
 }
 
@@ -70,5 +83,20 @@ resource "google_storage_bucket_iam_member" "mail_runtime" {
   for_each = local.runtime_accounts
   bucket   = google_storage_bucket.mail.name
   role     = "roles/storage.objectAdmin"
+  member   = "serviceAccount:${each.value}"
+}
+
+# The adapters check each bucket's location before first use (storage.buckets.get).
+resource "google_storage_bucket_iam_member" "files_location" {
+  for_each = local.runtime_accounts
+  bucket   = google_storage_bucket.files.name
+  role     = "roles/storage.legacyBucketReader"
+  member   = "serviceAccount:${each.value}"
+}
+
+resource "google_storage_bucket_iam_member" "mail_location" {
+  for_each = local.runtime_accounts
+  bucket   = google_storage_bucket.mail.name
+  role     = "roles/storage.legacyBucketReader"
   member   = "serviceAccount:${each.value}"
 }

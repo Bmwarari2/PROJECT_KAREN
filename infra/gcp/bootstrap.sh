@@ -69,6 +69,7 @@ fi
 # only this staging cell.
 for role in \
   roles/artifactregistry.admin roles/cloudkms.admin roles/cloudscheduler.admin roles/cloudsql.admin \
+  roles/logging.configWriter \
   roles/iam.serviceAccountAdmin roles/iam.serviceAccountUser roles/resourcemanager.projectIamAdmin \
   roles/run.admin roles/secretmanager.admin roles/serviceusage.serviceUsageAdmin roles/storage.admin; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="$role" \

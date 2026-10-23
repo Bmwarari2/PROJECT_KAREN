@@ -50,6 +50,8 @@ run "uk_cell_stays_in_london" {
       google_cloud_scheduler_job.drain.region == "europe-west2",
       google_storage_bucket.files.location == "EUROPE-WEST2",
       google_storage_bucket.mail.location == "EUROPE-WEST2",
+      google_logging_project_bucket_config.cell.location == "europe-west2",
+      strcontains(google_logging_project_sink.cell.destination, "/locations/europe-west2/"),
     ])
     error_message = "a UK resource is outside europe-west2"
   }
@@ -95,6 +97,13 @@ run "nothing_is_open_that_should_not_be" {
   assert {
     condition     = google_storage_bucket.files.versioning[0].enabled
     error_message = "the files bucket keeps versions"
+  }
+  assert {
+    condition = alltrue([
+      for b in [google_storage_bucket.files, google_storage_bucket.mail] :
+      b.soft_delete_policy[0].retention_duration_seconds == 0
+    ])
+    error_message = "soft delete is off, so deleted files are really gone"
   }
   # Only the jobs account reads the test logins and the owner (migrator) credentials.
   assert {
