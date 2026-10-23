@@ -1449,3 +1449,25 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - Every e2e test that clicked a sidebar link now goes through the rail or the tab bar.
 - Visual baselines are regenerated.
 - New modules and tabs are added to the map, not to the shell.
+
+## ADR-0155 — The report builder picks its chart; the role preview reuses the workspace map (2026-10-23)
+
+**Context.** The reworked report builder (ADR-0154) shows a chart above every result, and Settings → Roles gained "Compare and preview" so customers can see how each role is gated.
+
+**Decision.**
+
+- **The builder chooses the chart from the result** (`reports/builder/chart-model.ts`, unit-tested):
+  - columns over a date grouping, which have one unit and so one axis;
+  - a donut for at most six shares of a count or total;
+  - a bar list otherwise.
+- **Two grouping levels give stacked columns.** Series past six fold into "Other", but only for counts and totals, where adding them up is meaningful.
+- **Money in several currencies is shown as a table only.**
+- **Saved reports remember only Chart or Table.** `spec.chart` stores the choice, and `none` means Table.
+- **The role preview is computed in the browser.** It takes the role's permission list and runs it through the same functions the shell uses: `viewerFromSession`, `visibleModules`, `visibleActions` and `visibleSections`. A unit test checks it agrees with the shell for every built-in role.
+- **The preview never changes the viewer's session.** It says that the API still applies the scope the role is assigned at.
+- **Ask HR is previewed as available when the role holds `ai.ask`.** A footnote says it also needs the workspace setting and the region.
+
+**Consequences.**
+
+- The builder no longer asks people to pick a chart type that might not fit the data.
+- What the preview shows cannot drift from what the app shows, because both read one map.

@@ -64,7 +64,7 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   },
   {
     name: 'time off, rota, clock and timesheets',
-    match: (r) => /^\/app\/(time-off|rota|clock|timesheets)(\/|$)/.test(r),
+    match: (r) => /^\/app\/(time|time-off|rota|clock|timesheets)(\/|$)/.test(r),
     as: 'owner',
   },
   {
@@ -75,7 +75,17 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   },
   { name: 'reports', match: (r) => r.startsWith('/app/reports'), as: 'owner' },
   { name: 'compliance and privacy', match: (r) => /^\/app\/(compliance|privacy)(\/|$)/.test(r), as: 'owner' },
-  { name: 'settings', match: (r) => r.startsWith('/app/settings'), as: 'owner' },
+  // roles and their comparison (permission and field matrices, preview as role) are swept on their own
+  {
+    name: 'roles and access',
+    match: (r) => r.startsWith('/app/settings/roles'),
+    as: 'owner',
+  },
+  {
+    name: 'settings',
+    match: (r) => r.startsWith('/app/settings') && !r.startsWith('/app/settings/roles'),
+    as: 'owner',
+  },
   { name: 'back office', match: isBackoffice, as: 'staff' },
 ];
 

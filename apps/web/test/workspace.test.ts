@@ -110,6 +110,16 @@ describe('workspace map', () => {
     ).toContain('/app/ask');
   });
 
+  it('Time opens on its overview, for every role', () => {
+    for (const key of ['owner', 'hr_admin', 'manager', 'employee'])
+      expect(tabs(key, 'time')[0], key).toBe('/app/time');
+    const all = visibleModules(viewer('employee'));
+    expect(all.find((m) => m.key === 'time')?.href).toBe('/app/time');
+    // the overview tab is exact, so time off (which shares its prefix) keeps its own tab
+    expect(locate(all, '/app/time')?.tab?.href).toBe('/app/time');
+    expect(locate(all, '/app/time-off')?.tab?.href).toBe('/app/time-off');
+  });
+
   it('locates a path in its module and tab, detail pages included', () => {
     const all = visibleModules(viewer('owner'));
     expect(locate(all, '/app')?.module.key).toBe('home');
@@ -122,5 +132,18 @@ describe('workspace map', () => {
     expect(locate(all, '/app/compliance/reports/eeo-1')?.tab?.href).toBe('/app/compliance/reports/eeo-1');
     expect(locate(all, '/app/settings/sso')?.module.key).toBe('settings');
     expect(locate(all, '/app/unknown')).toBeNull();
+  });
+});
+
+describe('account menu role line', () => {
+  it('shows the most senior role first: admin roles, custom roles, then manager and employee', async () => {
+    const { bySeniority } = await import('../lib/role-order');
+    expect(bySeniority(['employee', 'manager'])).toEqual(['manager', 'employee']);
+    expect(bySeniority(['employee', 'Night shift lead', 'manager'])).toEqual([
+      'Night shift lead',
+      'manager',
+      'employee',
+    ]);
+    expect(bySeniority(['manager', 'payroll_admin', 'owner'])).toEqual(['owner', 'payroll_admin', 'manager']);
   });
 });

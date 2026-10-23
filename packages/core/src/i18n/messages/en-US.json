@@ -961,6 +961,11 @@
     "builder": {
       "modeSummary": "Summarize",
       "intro": "Choose what to report on, the fields to show, filters and how to summarize. You only see people and fields your access allows."
+    },
+    "ui": {
+      "noChart": {
+        "list": "Choose Summarize and group the rows to see a chart."
+      }
     }
   },
   "ess": {
@@ -1019,6 +1024,17 @@
     },
     "users": {
       "noScopeValues": "There is nothing to choose yet. Add them under Organization structure."
+    }
+  },
+  "dashboard": {
+    "you": {
+      "openRota": "Open your schedule",
+      "payslip": "Latest pay stub",
+      "noPayslip": "No pay stubs yet",
+      "viewPayslips": "View pay stubs"
+    },
+    "org": {
+      "titleCompany": "Your organization"
     }
   }
 }

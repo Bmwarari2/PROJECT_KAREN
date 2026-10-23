@@ -3,12 +3,12 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Download, FileClock } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Skeleton, useToast } from '@thapsus/ui';
+import { Badge, Button, Card, CardTitle, Skeleton, useToast } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { useSession } from '../../../shell';
-import { downloadRun, problemText, RunProgress, useBackgroundRun } from '../../ui';
+import { PageTitle, useSession } from '../../../shell';
+import { downloadRun, NoReportsAccess, problemText, RunProgress, runTone, useBackgroundRun } from '../../ui';
 
 interface Run {
   id: string;
@@ -25,13 +25,6 @@ interface Run {
   finishedAt: string | null;
   expiresAt: string | null;
 }
-const tone = {
-  succeeded: 'success',
-  failed: 'danger',
-  expired: 'neutral',
-  queued: 'neutral',
-  running: 'accent',
-} as const;
 
 /** One report run (the link in a scheduled-delivery email lands here, behind sign-in). */
 export default function RunPage() {
@@ -63,22 +56,28 @@ export default function RunPage() {
     };
   }, [id, poll]);
 
-  if (missing) return <EmptyState level={1} icon={<FileClock aria-hidden />} title={t('errors.notFound')} />;
+  if (missing) return <NoReportsAccess title={t('errors.notFound')} />;
   if (!run) return <Skeleton className="h-48 w-full" />;
   const when = (v: string | null) => (v ? formatDateTime(v, locale, zone) : '—');
   return (
     <div className="flex flex-col gap-6">
       <Link href="/app/reports" className="inline-flex w-fit items-center gap-1 text-callout">
         <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-        {t('reports.title')}
+        {t('reports.ui.catalogueTitle')}
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{run.title}</h1>
-        <Badge tone={tone[run.status as keyof typeof tone] ?? 'neutral'}>
+        <div className="mr-auto min-w-0">
+          <PageTitle>{run.title}</PageTitle>
+        </div>
+        <Badge tone={runTone[run.status as keyof typeof runTone] ?? 'neutral'}>
           {t(`reports.runStatus.${run.status}`)}
         </Badge>
       </div>
       <Card className="flex flex-col gap-4">
+        <CardTitle className="flex items-center gap-2 text-callout font-semibold">
+          <FileClock aria-hidden className="h-5 w-5 stroke-[1.5] text-text-secondary" />
+          {t('reports.ui.runDetails')}
+        </CardTitle>
         {run.status === 'queued' || run.status === 'running' ? <RunProgress run={bg.run ?? run} /> : null}
         <dl className="grid gap-x-6 gap-y-2 text-callout sm:grid-cols-2">
           <div className="flex justify-between gap-3">

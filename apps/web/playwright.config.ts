@@ -3,6 +3,8 @@ import { e2eEnv } from './e2e/env';
 
 /**
  * - `functional` (local Chromium): flows, accessibility (axe), PWA.
+ * - `role-views` (local Chromium, on demand only; not in `functional` or `pnpm verify`): screenshots of
+ *   the app as each built-in role sees it, written to ROLE_VIEWS_DIR (e2e/role-views.spec.ts).
  * - `visual-*` (Linux Chromium in the official Playwright container via run-server, so screenshots are
  *   identical on Windows, macOS and CI): light/dark × phone/desktop.
  */
@@ -42,10 +44,22 @@ export default defineConfig({
   projects: [
     {
       name: 'functional',
-      testIgnore: /visual\.spec\.ts/,
+      testIgnore: /(visual|role-views)\.spec\.ts/,
       // PW_CHROMIUM_PATH: use a pre-installed Chromium where `playwright install` is unavailable (CI installs its own).
       use: {
         ...devices['Desktop Chrome'],
+        baseURL: `http://127.0.0.1:${webPort}`,
+        launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
+      },
+    },
+    {
+      name: 'role-views',
+      testMatch: /role-views\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+        deviceScaleFactor: 1,
+        colorScheme: 'light',
         baseURL: `http://127.0.0.1:${webPort}`,
         launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
       },
