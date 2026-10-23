@@ -2,7 +2,17 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowDown, ArrowUp, ArrowUpDown, ListFilter, Search, UserPlus, Users } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ListFilter,
+  Lock,
+  Network,
+  Search,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import {
   Badge,
   Button,
@@ -35,7 +45,7 @@ import { viewerZone } from '@/lib/week';
 import { useStatusCounts } from '@/lib/dashboard-data';
 import { Avatar } from '@/components/dashboard/parts';
 import { ExportLinks } from '@/components/export-links';
-import { hasPermission, useSession } from '../shell';
+import { ModuleFrameContext, hasPermission, useSession } from '../shell';
 
 interface Row {
   id: string;
@@ -149,6 +159,10 @@ export default function PeoplePage() {
   const [cursor, setCursor] = React.useState<string | null>(null);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const canCreate = hasPermission(session, 'employees.create');
+  // the rail hides the directory without this permission; opened directly, the page says why
+  const canRead = hasPermission(session, 'employees.read');
+  // without the directory tab the page may sit outside the People header, so it brings its own h1
+  const inModule = React.useContext(ModuleFrameContext);
 
   const load = React.useCallback(
     async (after: string | null) => {
@@ -163,9 +177,10 @@ export default function PeoplePage() {
     [filters],
   );
   React.useEffect(() => {
+    if (!canRead) return;
     setRows(null);
     void load(null).catch(() => setRows([]));
-  }, [load]);
+  }, [load, canRead]);
 
   // headline counts by status, where the viewer may run reports (the API scopes them)
   // dates come from the browser's clock after hydration (the server's clock never shows through)
@@ -173,7 +188,7 @@ export default function PeoplePage() {
   React.useEffect(() => setMounted(true), []);
   const zone = mounted ? viewerZone(session.timeZone) : null;
   const canReport = hasPermission(session, 'reports.run') || hasPermission(session, 'reports.read_team');
-  const counts = useStatusCounts(zone ? todayIn(zone) : null, canReport);
+  const counts = useStatusCounts(zone ? todayIn(zone) : null, canReport && canRead);
 
   // filter choices (reference data everyone signed in may read), loaded once a filter needs them
   const [filterOpen, setFilterOpen] = React.useState(false);
@@ -263,6 +278,25 @@ export default function PeoplePage() {
       <Skeleton key={status} className="h-28 w-full" />
     ),
   );
+
+  if (!canRead)
+    return (
+      <EmptyState
+        level={inModule ? 2 : 1}
+        icon={<Lock aria-hidden />}
+        title={t('people.dir.noAccessTitle')}
+        body={t('people.dir.noAccessBody', { permission: t('access.perm.employees.read') })}
+        action={
+          <Link
+            href="/app/org-chart"
+            className={cn(buttonVariants({ variant: 'secondary' }), 'no-underline')}
+          >
+            <Network aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('people.dir.openOrgChart')}
+          </Link>
+        }
+      />
+    );
 
   return (
     <div className="flex flex-col gap-5">

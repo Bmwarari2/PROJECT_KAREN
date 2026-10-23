@@ -695,7 +695,10 @@
       "emptyBody": "Try another search or remove a filter.",
       "kpiActiveHint": "Working here today",
       "kpiPreStartHint": "Hired, not started yet",
-      "kpiLeaverHint": "No longer working here"
+      "kpiLeaverHint": "No longer working here",
+      "noAccessTitle": "The directory isn’t part of your access",
+      "noAccessBody": "Opening the directory needs the “{permission}” permission. Ask an admin if you need it, or find colleagues in the org chart.",
+      "openOrgChart": "Open the org chart"
     },
     "profile": {
       "noManager": "No manager"

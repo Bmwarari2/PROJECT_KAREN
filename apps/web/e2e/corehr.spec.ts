@@ -291,6 +291,18 @@ test.describe('pre-start portal', () => {
     await expect(jp.getByText(/^Signed on /)).toBeVisible();
     await expectAccessible(jp);
 
+    // without permission to view people, the directory says so and points to the org chart
+    await jp.goto('/app/people');
+    await expect(jp.getByRole('heading', { name: 'The directory isn’t part of your access' })).toBeVisible();
+    await expect(
+      jp.getByText('Opening the directory needs the “View people” permission.', { exact: false }),
+    ).toBeVisible();
+    await expect(jp.getByRole('link', { name: 'Open the org chart' })).toHaveAttribute(
+      'href',
+      '/app/org-chart',
+    );
+    await expectAccessible(jp);
+
     // HR sees the joiner's details from their start date
     const hr = await apiCall<{ employee: { personalPhone: string } }>(
       page.request,
