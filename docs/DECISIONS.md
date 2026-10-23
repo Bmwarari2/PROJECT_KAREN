@@ -1480,11 +1480,11 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 - **Region map.** `packages/core/src/regions.ts` gains `gcpRegion` and `gcpBackupRegion`, with the same jurisdiction rule as the AWS map (ADR-0001):
 
-  | Cell | Google Cloud region      | Backup copies           |
-  | ---- | ------------------------ | ----------------------- |
-  | UK   | europe-west2 (London)    | none (London only)      |
-  | EU   | europe-west3 (Frankfurt) | europe-west1 (Belgium)  |
-  | US   | us-east5 (Columbus, Ohio) | us-west1 (Oregon)       |
+  | Cell | Google Cloud region       | Backup copies          |
+  | ---- | ------------------------- | ---------------------- |
+  | UK   | europe-west2 (London)     | none (London only)     |
+  | EU   | europe-west3 (Frankfurt)  | europe-west1 (Belgium) |
+  | US   | us-east5 (Columbus, Ohio) | us-west1 (Oregon)      |
 
   Only the UK cell runs on Google Cloud today. The EU and US entries exist so the residency guard and the test matrix cover every region pair. `allowedGcpLocations(cell, purpose)` mirrors `allowedAwsRegions`.
 
