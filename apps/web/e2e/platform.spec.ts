@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible, signUpAndEnrol } from './helpers';
+import { expectPageTitle } from './module-helpers';
 
 /** Phase 9 settings screens: API credentials, webhooks and branding (functional + axe, WCAG 2.2 AA). */
 test.describe('enterprise platform settings', () => {
@@ -8,7 +9,7 @@ test.describe('enterprise platform settings', () => {
     await page.goto('/app/settings');
     await page.getByRole('link', { name: /API access/ }).click();
     await page.waitForURL(/\/app\/settings\/api$/);
-    await expect(page.getByRole('heading', { name: 'API access', level: 1 })).toBeVisible();
+    await expectPageTitle(page, 'Settings', 'API access');
     await expectAccessible(page);
 
     await page.getByLabel('Name', { exact: true }).fill('Fictional payroll sync');
@@ -45,7 +46,7 @@ test.describe('enterprise platform settings', () => {
   }) => {
     await signUpAndEnrol(page);
     await page.goto('/app/settings/webhooks');
-    await expect(page.getByRole('heading', { name: 'Webhooks', level: 1 })).toBeVisible();
+    await expectPageTitle(page, 'Settings', 'Webhooks');
     await expectAccessible(page);
 
     // private and non-https addresses are refused
@@ -75,7 +76,7 @@ test.describe('enterprise platform settings', () => {
   test('a brand accent is rejected when contrast fails and applied when it passes', async ({ page }) => {
     await signUpAndEnrol(page);
     await page.goto('/app/settings/branding');
-    await expect(page.getByRole('heading', { name: 'Branding', level: 1 })).toBeVisible();
+    await expectPageTitle(page, 'Settings', 'Branding');
 
     await page.getByLabel(/Accent colou?r \(light mode\)/).fill('#FFFF00');
     await page.getByRole('button', { name: /Save colou?r/ }).click();

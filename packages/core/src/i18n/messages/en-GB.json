@@ -5146,6 +5146,11 @@
         "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
         "resetMfaConfirm": "I have confirmed who they are. Reset it",
         "mfaReset": "Two-step verification has been reset."
+      },
+      "list": {
+        "count_one": "{count} person",
+        "count_other": "{count} people",
+        "countMore": "First {count} shown"
       }
     },
     "errors": {

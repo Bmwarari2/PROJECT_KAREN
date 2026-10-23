@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { signUpAndEnrol } from './helpers';
 import { axeBoth } from './settings-helpers';
+import { expectPageTitle, openModule } from './module-helpers';
 
 // UK English labels; fictional data only.
 test.use({ locale: 'en-GB' });
@@ -10,8 +11,10 @@ test.describe('sign-in and security settings', () => {
     page,
   }) => {
     const { slug } = await signUpAndEnrol(page);
-    await page.getByRole('navigation', { name: 'App' }).getByRole('link', { name: 'Settings' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await openModule(page, 'Settings');
+    await page.waitForURL(/\/app\/settings$/);
+    // one tab, so no tab bar: the settings area keeps its grouped sub-navigation
+    await expect(page.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(1);
     await expect(page.getByRole('region', { name: 'Sign-in and security', exact: true })).toContainText(
       'User provisioning (SCIM)',
     );
@@ -21,7 +24,7 @@ test.describe('sign-in and security settings', () => {
       .getByRole('navigation', { name: 'Settings sections' })
       .getByRole('link', { name: 'Single sign-on' })
       .click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Single sign-on' })).toBeVisible();
+    await expectPageTitle(page, 'Settings', 'Single sign-on');
     await expect(page.getByText('No connections yet')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Require single sign-on' })).toBeDisabled();
     const form = page.getByRole('region', { name: 'Add a connection', exact: true });
@@ -159,7 +162,7 @@ test.describe('sign-in and security settings', () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await subnav.getByRole('link', { name: 'Leave policies' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Leave policies' })).toBeVisible();
+    await expectPageTitle(page, 'Settings', 'Leave policies');
     await expect(subnav.getByRole('button', { name: 'Leave policies', exact: true })).toHaveAttribute(
       'aria-expanded',
       'false',

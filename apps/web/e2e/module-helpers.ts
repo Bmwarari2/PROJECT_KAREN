@@ -35,3 +35,9 @@ export async function openModule(page: Page, module: string, tab?: string) {
     await expectModulePage(page, module, tab);
   }
 }
+
+/** A page with its own title under a module header: the module is the h1, the page title an h2. */
+export async function expectPageTitle(page: Page, module: string, title: string) {
+  await expect(page.getByRole('heading', { level: 1, name: module, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: title, exact: true })).toBeVisible();
+}
