@@ -34,8 +34,12 @@ export default function TimeOverviewPage() {
   // dates come from the browser's clock after hydration (the server's clock never shows through)
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  const zone = mounted ? viewerZone(session.timeZone) : null;
-  const today = zone ? todayIn(zone) : null;
+  // time zone and date computations are slow in the Temporal polyfill: once per mount, not per render
+  const zone = React.useMemo(
+    () => (mounted ? viewerZone(session.timeZone) : null),
+    [mounted, session.timeZone],
+  );
+  const today = React.useMemo(() => (zone ? todayIn(zone) : null), [zone]);
 
   const employeeId = session.employeeId;
   const canClock = !!employeeId && hasPermission(session, 'time.clock');
@@ -45,8 +49,10 @@ export default function TimeOverviewPage() {
   const approvals = useApi<ApprovalItem[]>('/v1/approvals?view=mine');
   const calendar = useWeekCalendar(today);
   const settings = useApi<{ workweekStartsOn: number }>(canClock ? '/v1/settings/time' : null);
-  const lastWeek =
-    settings.data && today ? addDays(weekStartOf(today, settings.data.workweekStartsOn), -7) : null;
+  const lastWeek = React.useMemo(
+    () => (settings.data && today ? addDays(weekStartOf(today, settings.data.workweekStartsOn), -7) : null),
+    [settings.data, today],
+  );
   const sheet = useApi<WeekSheet>(
     canClock && lastWeek ? `/v1/timesheets/employees/${employeeId}/weeks/${lastWeek}` : null,
   );

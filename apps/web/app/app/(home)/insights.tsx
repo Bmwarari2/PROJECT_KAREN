@@ -36,7 +36,7 @@ const monthDate = (m: string) => new Date(`${m}T00:00:00Z`);
  * by department and who is out. Each widget appears only when the viewer's permissions let the API
  * answer it; a refused or failed request hides the widget instead of showing it broken.
  */
-export function Insights({
+function InsightsImpl({
   insights,
   insightsFailed,
   showInsights,
@@ -273,3 +273,6 @@ export function Insights({
     </div>
   );
 }
+
+/** Re-renders only when its own props change (the page around it re-renders as each request lands). */
+export const Insights = React.memo(InsightsImpl);

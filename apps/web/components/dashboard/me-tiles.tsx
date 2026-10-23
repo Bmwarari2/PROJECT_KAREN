@@ -72,7 +72,7 @@ const Detail = ({ children, tone }: { children: React.ReactNode; tone?: 'warning
  * The viewer's own time off, next shift, clock status and latest payslip from GET /v1/me/summary.
  * A tile appears only when the summary has that part (it is null without the permission or record).
  */
-export function MeTiles({
+function MeTilesImpl({
   summary,
   level,
   today,
@@ -206,3 +206,6 @@ export function MeTiles({
   if (!tiles.length) return null;
   return <ul className={className}>{tiles}</ul>;
 }
+
+/** Re-renders only when its own props change (the page around it re-renders as each request lands). */
+export const MeTiles = React.memo(MeTilesImpl);

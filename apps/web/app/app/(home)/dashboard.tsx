@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { IntentLink as Link } from '@/components/intent-link';
 import {
   ChevronDown,
@@ -11,22 +12,13 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
-import {
-  Badge,
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuTrigger,
-  Skeleton,
-  buttonVariants,
-  cn,
-  focusRing,
-} from '@thapsus/ui';
+import { Badge, Skeleton, buttonVariants, cn, focusRing } from '@thapsus/ui';
 import { compareDates, today as todayIn } from '@thapsus/core/time';
 import { numberFormat } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useIdle } from '@/lib/use-idle';
+import { useInView } from '@/lib/use-in-view';
 import { dayLong, viewerZone } from '@/lib/week';
 import {
   usePeopleInsights,
@@ -39,7 +31,14 @@ import { IconTile, SectionHeading } from '@/components/dashboard/parts';
 import { MeTiles } from '@/components/dashboard/me-tiles';
 import { PageTitle, useFeature, useSession } from '../shell';
 import { viewerFromSession, visibleActions } from '../workspace';
-import { Insights } from './insights';
+import type { MoreActionsMenu as MoreActionsMenuType } from './more-actions';
+
+// Below the fold, or behind a click: the charts and the menu primitives load after the page.
+const Insights = dynamic(() => import('./insights').then((m) => m.Insights), {
+  ssr: false,
+  loading: () => <Skeleton className="h-64 w-full" />,
+});
+const loadMoreActions = () => import('./more-actions').then((m) => m.MoreActionsMenu);
 
 /** Quick actions shown as buttons; the rest sit in the "More actions" menu. */
 const VISIBLE_ACTIONS = 3;
@@ -60,7 +59,14 @@ const sectionLink = cn('inline-flex min-h-8 items-center rounded-sm text-callout
  * actions render with the page; then what needs the viewer, their own time and pay, and the team or
  * company insights their permissions allow. Everything comes from existing permission-scoped endpoints.
  */
-export default function HomePage() {
+export interface HomeData {
+  summary?: MeSummary;
+  approvals?: ApprovalItem[];
+  tasks?: TaskItem[];
+  onboarding?: { employee: { status: string } };
+}
+
+export function HomeDashboard({ initial }: { initial: HomeData }) {
   const t = useT();
   const locale = useLocale();
   const session = useSession()!;
@@ -77,25 +83,32 @@ export default function HomePage() {
   // through (the line keeps its height meanwhile, so nothing moves).
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  const zone = mounted ? viewerZone(session.timeZone) : null;
-  const today = zone ? todayIn(zone) : null;
+  // time zone and date computations are slow in the Temporal polyfill: once per mount, not per render
+  const zone = React.useMemo(
+    () => (mounted ? viewerZone(session.timeZone) : null),
+    [mounted, session.timeZone],
+  );
+  const today = React.useMemo(() => (zone ? todayIn(zone) : null), [zone]);
   const first = session.displayName.split(' ')[0] ?? '';
 
-  const summary = useApi<MeSummary>('/v1/me/summary');
-  const approvals = useApi<ApprovalItem[]>('/v1/approvals?view=mine');
-  const tasks = useApi<TaskItem[]>('/v1/tasks?status=open');
+  const summary = useApi<MeSummary>('/v1/me/summary', initial.summary);
+  const approvals = useApi<ApprovalItem[]>('/v1/approvals?view=mine', initial.approvals);
+  const tasks = useApi<TaskItem[]>('/v1/tasks?status=open', initial.tasks);
   const onboarding = useApi<{ employee: { status: string } }>(
     session.employeeId ? '/v1/me/onboarding' : null,
+    initial.onboarding,
   );
 
   const showInsights =
     viewer.has('employees.read') && (viewer.has('reports.run') || viewer.has('reports.read_team'));
   const showCalendar = viewer.has('leave.read');
   // the organisation charts and the week calendar sit below "needs your attention" and "you": they
-  // load once the browser is idle, after the page's first content and its own data
+  // load once the browser is idle and the section is close to the screen
   const idle = useIdle();
-  const insights = usePeopleInsights(today, showInsights && idle);
-  const calendar = useWeekCalendar(today, showCalendar && idle);
+  const [orgRef, orgInView] = useInView<HTMLElement>();
+  const orgReady = idle && orgInView;
+  const insights = usePeopleInsights(today, showInsights && orgReady);
+  const calendar = useWeekCalendar(today, showCalendar && orgReady);
 
   // ---- needs your attention ----------------------------------------------------------------------
   const settled = (q: { data?: unknown; error: unknown }) => q.data !== undefined || !!q.error;
@@ -160,6 +173,17 @@ export default function HomePage() {
   const showYou = !!session.employeeId && (!s || !!(s.leave || s.rota || s.clock || s.payslips));
   const showOrg = showInsights || showCalendar;
   const primary = actions.slice(0, VISIBLE_ACTIONS);
+  // the menu's code loads once the browser is idle (or at once if the stand-in button is clicked)
+  const [MoreActions, setMoreActions] = React.useState<typeof MoreActionsMenuType | null>(null);
+  const [moreWanted, setMoreWanted] = React.useState(false);
+  React.useEffect(() => {
+    if (!idle && !moreWanted) return;
+    let live = true;
+    void loadMoreActions().then((C) => live && React.startTransition(() => setMoreActions(() => C)));
+    return () => {
+      live = false;
+    };
+  }, [idle, moreWanted]);
   const more = actions.slice(VISIBLE_ACTIONS);
 
   return (
@@ -189,25 +213,20 @@ export default function HomePage() {
               })}
               {more.length ? (
                 <li>
-                  <Menu>
-                    <MenuTrigger className={buttonVariants({ variant: 'secondary', size: 'md' })}>
+                  {MoreActions ? (
+                    <MoreActions actions={more} defaultOpen={moreWanted} />
+                  ) : (
+                    <button
+                      type="button"
+                      aria-haspopup="menu"
+                      aria-expanded={false}
+                      className={buttonVariants({ variant: 'secondary', size: 'md' })}
+                      onClick={() => setMoreWanted(true)}
+                    >
                       {t('dashboard.moreActions')}
                       <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    </MenuTrigger>
-                    <MenuContent>
-                      {more.map((a) => {
-                        const Icon = a.icon;
-                        return (
-                          <MenuItem key={a.key} asChild>
-                            <Link href={a.href} className="text-text no-underline">
-                              <Icon aria-hidden />
-                              {t(a.label)}
-                            </Link>
-                          </MenuItem>
-                        );
-                      })}
-                    </MenuContent>
-                  </Menu>
+                    </button>
+                  )}
                 </li>
               ) : null}
             </ul>
@@ -215,63 +234,67 @@ export default function HomePage() {
         ) : null}
       </div>
 
-      <section aria-labelledby="home-attention" className="flex flex-col gap-4">
-        <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
-        {!attentionReady ? (
-          <Skeleton className="h-20 w-full" />
-        ) : attention.length ? (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="attention">
-            {attention.map((a) => (
-              <li key={a.key}>
-                <Link
-                  href={a.href}
-                  className={cn(
-                    'flex h-full min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-raised p-4 text-text no-underline transition-colors duration-[var(--duration-fast)] hover:border-border-strong',
-                    focusRing,
-                  )}
-                >
-                  <IconTile>{a.icon}</IconTile>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-callout font-semibold">{a.label}</span>
-                    {a.hint ? (
-                      <span className="break-words text-footnote text-text-secondary">{a.hint}</span>
-                    ) : null}
-                  </span>
-                  {a.badge}
-                  <ChevronRight aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-text-secondary" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div
-            className="flex items-center gap-4 rounded-lg border border-border bg-surface-raised p-5"
-            data-testid="caught-up"
-          >
-            <IconTile>
-              <CircleCheck />
-            </IconTile>
-            <div className="min-w-0">
-              <p className="text-callout font-semibold text-text">{t('dashboard.attention.caughtUp')}</p>
-              <p className="text-footnote text-text-secondary">{t('dashboard.attention.caughtUpBody')}</p>
+      <React.Suspense fallback={null}>
+        <section aria-labelledby="home-attention" className="flex flex-col gap-4">
+          <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
+          {!attentionReady ? (
+            <Skeleton className="h-20 w-full" />
+          ) : attention.length ? (
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="attention">
+              {attention.map((a) => (
+                <li key={a.key}>
+                  <Link
+                    href={a.href}
+                    className={cn(
+                      'flex h-full min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-raised p-4 text-text no-underline transition-colors duration-[var(--duration-fast)] hover:border-border-strong',
+                      focusRing,
+                    )}
+                  >
+                    <IconTile>{a.icon}</IconTile>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-callout font-semibold">{a.label}</span>
+                      {a.hint ? (
+                        <span className="break-words text-footnote text-text-secondary">{a.hint}</span>
+                      ) : null}
+                    </span>
+                    {a.badge}
+                    <ChevronRight aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-text-secondary" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div
+              className="flex items-center gap-4 rounded-lg border border-border bg-surface-raised p-5"
+              data-testid="caught-up"
+            >
+              <IconTile>
+                <CircleCheck />
+              </IconTile>
+              <div className="min-w-0">
+                <p className="text-callout font-semibold text-text">{t('dashboard.attention.caughtUp')}</p>
+                <p className="text-footnote text-text-secondary">{t('dashboard.attention.caughtUpBody')}</p>
+              </div>
             </div>
-          </div>
-        )}
-      </section>
-
-      {showYou ? (
-        <section aria-labelledby="home-you" className="flex flex-col gap-4">
-          <SectionHeading id="home-you" title={t('dashboard.you.title')} />
-          {s && today && zone ? (
-            <MeTiles summary={s} level={3} today={today} zone={zone} />
-          ) : summary.error ? null : (
-            <Skeleton className="h-40 w-full" />
           )}
         </section>
-      ) : null}
+      </React.Suspense>
+
+      <React.Suspense fallback={null}>
+        {showYou ? (
+          <section aria-labelledby="home-you" className="flex flex-col gap-4">
+            <SectionHeading id="home-you" title={t('dashboard.you.title')} />
+            {s && today && zone ? (
+              <MeTiles summary={s} level={3} today={today} zone={zone} />
+            ) : summary.error ? null : (
+              <Skeleton className="h-40 w-full" />
+            )}
+          </section>
+        ) : null}
+      </React.Suspense>
 
       {showOrg ? (
-        <section aria-labelledby="home-org" className="flex flex-col gap-4">
+        <section ref={orgRef} aria-labelledby="home-org" className="flex flex-col gap-4">
           <SectionHeading
             id="home-org"
             title={session.isAdmin ? t('dashboard.org.titleCompany') : t('dashboard.org.titleTeam')}
@@ -290,8 +313,9 @@ export default function HomePage() {
               </Link>
             ) : null}
           </SectionHeading>
-          {/* rendered once the browser is idle: below the fold, and the heaviest part of the page */}
-          {idle ? (
+          {/* rendered once the browser is idle and the section is near the screen: it is below the fold
+              on phones, and the heaviest part of the page */}
+          {orgReady ? (
             <Insights
               insights={insights.data}
               insightsFailed={insights.failed}
@@ -301,7 +325,8 @@ export default function HomePage() {
               today={today}
             />
           ) : (
-            <Skeleton className="h-64 w-full" />
+            // a still placeholder (not a pulsing skeleton) while the section waits to be scrolled near
+            <div className="h-64 w-full rounded-lg bg-surface-raised" />
           )}
         </section>
       ) : null}

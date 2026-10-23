@@ -11,7 +11,7 @@ import { GROUPS, type VisibleModule } from '@/app/app/workspace';
  * the foot. Each entry opens the module's first tab the viewer may see; the tab bar does the rest.
  * Collapsed, it shows icons only (each still has its name), and the choice is remembered on this device.
  */
-export function RailNav({
+function RailNavImpl({
   modules,
   currentKey,
   collapsed = false,
@@ -139,3 +139,6 @@ export function RailToggle({ collapsed, onToggle }: { collapsed: boolean; onTogg
     </button>
   );
 }
+
+/** Re-renders only when its own props change (the page around it re-renders as each request lands). */
+export const RailNav = React.memo(RailNavImpl);

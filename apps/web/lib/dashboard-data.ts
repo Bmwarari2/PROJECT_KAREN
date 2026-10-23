@@ -79,8 +79,10 @@ export interface LeaveCalendar {
 
 /** The leave calendar for the ISO week (Monday to Sunday) holding `today`. */
 export function useWeekCalendar(today: string | null, enabled = true) {
-  const from = today ? startOfIsoWeek(today) : null;
-  const to = from ? addDays(from, 6) : null;
+  const [from, to] = React.useMemo(() => {
+    const start = enabled && today ? startOfIsoWeek(today) : null;
+    return [start, start ? addDays(start, 6) : null];
+  }, [today, enabled]);
   return {
     from,
     to,

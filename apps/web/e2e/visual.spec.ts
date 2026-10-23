@@ -100,6 +100,12 @@ async function markVolatile(page: Page, app: boolean) {
 async function capture(page: Page, route: string, path = route) {
   await page.goto(path);
   await expect(page.locator('h1').first()).toBeVisible({ timeout: 30_000 });
+  // sections below the fold load when scrolled near (home dashboard): bring them in, then go back up
+  await page.evaluate(async () => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)));
+    window.scrollTo(0, 0);
+  });
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
   await expect(page.locator('main .animate-pulse'))
     .toHaveCount(0, { timeout: 15_000 })
