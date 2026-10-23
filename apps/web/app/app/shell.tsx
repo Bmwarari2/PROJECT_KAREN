@@ -10,6 +10,7 @@ import { Logo } from '@/components/logo';
 import { LocaleSwitch, ThemeSwitch } from '@/components/client';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
+import { revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
 import { visibleSections } from './settings/sections';
 
@@ -114,7 +115,8 @@ export function AppShell({ children, theme, initialSession = null }: { children:
 
   // The sidebar scrolls on its own: keep the current entry in view (it may sit below the fold).
   React.useEffect(() => {
-    document.querySelector<HTMLElement>('aside nav a[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+    const link = document.querySelector<HTMLElement>('aside nav a[aria-current="page"]');
+    revealIn(link?.closest('aside') ?? null, link);
   }, [path, session]);
 
   const signOut = async () => {

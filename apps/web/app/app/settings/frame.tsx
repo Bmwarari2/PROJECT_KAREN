@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
+import { revealIn } from '@/lib/reveal';
 import { SETTINGS_GROUPS, visibleSections } from './sections';
 import { usePermission } from './kit';
 
@@ -29,7 +30,7 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
   // The list scrolls on its own on large screens: bring the current section into view.
   const navRef = React.useRef<HTMLElement>(null);
   React.useEffect(() => {
-    navRef.current?.querySelector<HTMLElement>('#settings-sections [aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+    revealIn(navRef.current, navRef.current?.querySelector<HTMLElement>('#settings-sections [aria-current="page"]') ?? null);
   }, [path]);
 
   return (
