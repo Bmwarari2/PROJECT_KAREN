@@ -105,6 +105,7 @@ afterAll(async () => {
 describe('staging seed', () => {
   it('creates the UK workspace with about 300 people across a UK, an Ireland and a US entity', async () => {
     expect(first).toMatchObject({ tenantCreated: true, dataSeeded: true });
+    expect(first.passwordsSet.sort()).toEqual([...LOGIN_ROLES].sort());
     expect((await directory.bySlug('kestrel'))?.homeRegion).toBe('uk');
     const t = await tx((x) =>
       x.one<{ name: string; home_region: string }>('SELECT name, home_region FROM app.tenants'),

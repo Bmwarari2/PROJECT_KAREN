@@ -83,7 +83,8 @@ export async function seedStaging(
     tx.maybe('SELECT 1 FROM audit.events WHERE action = $1 LIMIT 1', [SEED_MARKER]),
   );
   const counts: Record<string, number> = {};
-  const passwordsSet = new Set<LoginRole>();
+  // a new workspace's owner password was set when the workspace was created
+  const passwordsSet = new Set<LoginRole>(created ? ['owner'] : []);
   if (!already) {
     await withTenant(deps.router, tenantId, async (tx) => {
       const { vault, system } = newSeedVault(deps.keys);
