@@ -1510,6 +1510,7 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - Staging runs the image's `node dist/seed-staging.mjs` as a one-off job, after migrations, with the same database, directory, key and file-store settings as the API, plus `STAGING_LOGINS`.
 - A full run takes about 25 s against a local database. It makes about 12,000 database round trips, about 650 key-provider calls and about 880 file uploads (8 in parallel).
 - Rotating the logins secret and re-running the job resets the passwords without touching any data.
+- The data ages from the day it was seeded. Rotas run two weeks ahead, and pending requests eventually lie in the past. To refresh it, reset the staging database and run the job again.
 - `apps/api/test/seed-staging.int.test.ts` runs the full-size seed into a fresh database and uses the real API as each login. It checks:
   - the entity split and the threshold, and that every login can sign in;
   - that the manager sees only their team and the employee only their own record;
