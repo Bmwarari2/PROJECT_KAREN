@@ -13,6 +13,11 @@ import {
   Field,
   Input,
   Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
   useToast,
 } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
@@ -21,6 +26,14 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useSession } from '../shell';
 import { ExportLinks } from '@/components/export-links';
+import {
+  ListCard,
+  ListFilter,
+  ListNoMatches,
+  ListSearch,
+  matches,
+  PageIntro,
+} from '@/components/module-page';
 
 interface SigReq {
   id: string;
@@ -50,6 +63,8 @@ export default function DocumentsPage() {
   const [name, setName] = React.useState('');
   const [consent, setConsent] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const [category, setCategory] = React.useState('');
 
   React.useEffect(() => {
     const id = params.get('sign');
@@ -84,12 +99,18 @@ export default function DocumentsPage() {
   }
 
   const pending = (sigs.data ?? []).filter((s) => s.status === 'pending');
+  // The documents are filtered on the page: the API returns every one the viewer may see.
+  const rows = docs.data ?? [];
+  const categories = [...new Set(rows.map((d) => d.category))].sort((a, b) => a.localeCompare(b, locale));
+  const shown = rows.filter((d) => (!category || d.category === category) && matches(query, d.title));
+  const filtered = !!category || !!query.trim();
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('documents.title')}</h1>
-        <ExportLinks list="documents" params={{ employeeId: session?.employeeId ?? undefined }} />
-      </div>
+      <PageIntro
+        title={t('documents.title')}
+        titleIsTab
+        actions={<ExportLinks list="documents" params={{ employeeId: session?.employeeId ?? undefined }} />}
+      />
       {pending.length ? (
         <Card>
           <CardTitle>{t('documents.toSign')}</CardTitle>
@@ -109,30 +130,91 @@ export default function DocumentsPage() {
           </ul>
         </Card>
       ) : null}
-      {!docs.data ? (
-        <Skeleton className="h-40 w-full" />
-      ) : docs.data.length === 0 ? (
-        <EmptyState icon={<FileText aria-hidden />} title={t('documents.empty')} />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {docs.data.map((d) => (
-            <li key={d.id} className="flex items-center gap-3 rounded-md border border-border p-3">
-              <FileText aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-              <button
-                type="button"
-                className="text-left text-callout text-accent hover:underline"
-                onClick={() => open(d.id)}
-              >
-                {d.title}
-              </button>
-              <Badge>{d.category}</Badge>
-              <span className="ml-auto text-footnote text-text-secondary">
-                {formatDate(d.createdAt.slice(0, 10), locale)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ListCard
+        title={session?.employeeId ? t('documents.list.mine') : t('documents.list.all')}
+        count={
+          docs.data
+            ? filtered
+              ? t('documents.list.countFiltered', { shown: shown.length, count: rows.length })
+              : t('documents.list.count', { count: rows.length })
+            : undefined
+        }
+        search={
+          rows.length ? (
+            <ListSearch value={query} onChange={setQuery} label={t('documents.list.search')} />
+          ) : undefined
+        }
+        filters={
+          categories.length > 1 || category ? (
+            <ListFilter
+              value={category}
+              onChange={setCategory}
+              label={t('documents.list.category')}
+              anyLabel={t('documents.list.anyCategory')}
+              options={categories.map((c) => ({ value: c, label: c }))}
+            />
+          ) : undefined
+        }
+        applied={
+          category
+            ? [
+                {
+                  key: 'category',
+                  label: t('documents.list.categoryChip', { category }),
+                  clear: () => setCategory(''),
+                },
+              ]
+            : []
+        }
+        empty={
+          !docs.data ? (
+            <Skeleton className="h-40 w-full" />
+          ) : rows.length === 0 ? (
+            <EmptyState level={3} icon={<FileText aria-hidden />} title={t('documents.empty')} />
+          ) : shown.length === 0 ? (
+            <ListNoMatches
+              onClear={() => {
+                setQuery('');
+                setCategory('');
+              }}
+            />
+          ) : undefined
+        }
+      >
+        <Table scrollLabel={session?.employeeId ? t('documents.list.mine') : t('documents.list.all')}>
+          <THead>
+            <tr>
+              <TH>{t('documents.list.colTitle')}</TH>
+              <TH>{t('documents.list.category')}</TH>
+              <TH>{t('documents.list.colAdded')}</TH>
+            </tr>
+          </THead>
+          <tbody>
+            {shown.map((d) => (
+              <TR key={d.id}>
+                <TD>
+                  <span className="flex items-center gap-3">
+                    <FileText aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-accent" />
+                    <button
+                      type="button"
+                      className="text-left text-callout text-accent hover:underline"
+                      onClick={() => open(d.id)}
+                    >
+                      {d.title}
+                    </button>
+                  </span>
+                </TD>
+                <TD>
+                  <Badge>{d.category}</Badge>
+                </TD>
+                <TD className="text-footnote text-text-secondary">
+                  {formatDate(d.createdAt.slice(0, 10), locale)}
+                </TD>
+              </TR>
+            ))}
+          </tbody>
+        </Table>
+      </ListCard>
       <Dialog open={!!signing} onOpenChange={(o) => !o && setSigning(null)}>
         {signing ? (
           <DialogContent

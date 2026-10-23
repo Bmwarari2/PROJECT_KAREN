@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Pencil, Send } from 'lucide-react';
+import { Pencil, Send } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -23,6 +22,7 @@ import { today } from '@thapsus/core/time';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { useSession } from '../../shell';
 import { problemText } from '../../reports/ui';
 
@@ -105,27 +105,15 @@ export default function MyDetailsPage() {
   const [ask, setAsk] = React.useState<Record<string, string>>({});
   const [busy, setBusy] = React.useState(false);
 
-  // The back link and heading render while the profile loads (and when there is none), in the same
-  // elements as the loaded page: every state has a page heading, and React keeps them (no repaint).
-  const back = (
-    <Link href="/app/me" className="inline-flex w-fit items-center gap-1 text-callout">
-      <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-      {t('ess.title')}
-    </Link>
-  );
-  const heading = (
-    <div className="mr-auto">
-      <h1 className="text-title-2">{t('ess.details.title')}</h1>
-      <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('ess.details.intro')}
-      </p>
-    </div>
+  // The intro renders while the profile loads (and when there is none), in the same element as the
+  // loaded page, so React keeps it (no repaint).
+  const intro = (actions?: React.ReactNode) => (
+    <PageIntro title={t('ess.details.title')} titleIsTab lead={t('ess.details.intro')} actions={actions} />
   );
   if (profile.error || !profile.data)
     return (
       <div className="flex flex-col gap-6">
-        {back}
-        <div className="flex flex-wrap items-start gap-3">{heading}</div>
+        {intro()}
         {profile.error ? (
           <EmptyState title={profile.error.status === 404 ? t('ess.noEmployee') : t('common.error')} />
         ) : (
@@ -177,113 +165,115 @@ export default function MyDetailsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {back}
-      <div className="flex flex-wrap items-start gap-3">
-        {heading}
-        {editable.length ? (
-          <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogTrigger asChild>
-              <Button variant="secondary">
-                <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('ess.details.editContact')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              title={t('ess.details.editContact')}
-              description={t('ess.details.editContactBody')}
-              closeLabel={t('common.close')}
-            >
-              <form onSubmit={saveContact} className="flex flex-col gap-4">
-                {editable.map((f) => (
-                  <Field key={f} id={`c-${f}`} label={t(`people.field.${f}`)}>
+      {intro(
+        <>
+          {editable.length ? (
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary">
+                  <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {t('ess.details.editContact')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                title={t('ess.details.editContact')}
+                description={t('ess.details.editContactBody')}
+                closeLabel={t('common.close')}
+              >
+                <form onSubmit={saveContact} className="flex flex-col gap-4">
+                  {editable.map((f) => (
+                    <Field key={f} id={`c-${f}`} label={t(`people.field.${f}`)}>
+                      {(a) => (
+                        <Input
+                          {...a}
+                          type={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'text'}
+                          autoComplete={
+                            f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'off'
+                          }
+                          placeholder={display(f, e[f], e, locale)}
+                          value={edit[f] ?? ''}
+                          onChange={(ev) => setEdit((v) => ({ ...v, [f]: ev.target.value }))}
+                        />
+                      )}
+                    </Field>
+                  ))}
+                  <Button type="submit" loading={busy}>
+                    {t('common.save')}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          ) : null}
+          {requestable.length ? (
+            <Dialog open={reqOpen} onOpenChange={setReqOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {t('ess.details.requestChange')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                title={t('ess.details.requestChange')}
+                description={t('ess.details.requestChangeBody')}
+                closeLabel={t('common.close')}
+              >
+                <form onSubmit={sendRequest} className="flex flex-col gap-4">
+                  {requestable.map((f) => (
+                    <Field
+                      key={f}
+                      id={`r-${f}`}
+                      label={t(`people.field.${f}`)}
+                      hint={f === 'nationality' ? t('ess.details.countryHint') : undefined}
+                    >
+                      {(a) => (
+                        <Input
+                          {...a}
+                          type={f === 'dateOfBirth' ? 'date' : 'text'}
+                          maxLength={f === 'nationality' ? 2 : 100}
+                          pattern={f === 'nationality' ? '[A-Z]{2}' : undefined}
+                          placeholder={f === 'dateOfBirth' ? undefined : display(f, e[f], e, locale)}
+                          value={ask[f] ?? ''}
+                          onChange={(ev) =>
+                            setAsk((v) => ({
+                              ...v,
+                              [f]: f === 'nationality' ? ev.target.value.toUpperCase() : ev.target.value,
+                            }))
+                          }
+                        />
+                      )}
+                    </Field>
+                  ))}
+                  <Field id="r-effective" label={t('people.effectiveDate')}>
                     {(a) => (
                       <Input
                         {...a}
-                        type={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'text'}
-                        autoComplete={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'off'}
-                        placeholder={display(f, e[f], e, locale)}
-                        value={edit[f] ?? ''}
-                        onChange={(ev) => setEdit((v) => ({ ...v, [f]: ev.target.value }))}
+                        type="date"
+                        value={ask.effectiveDate ?? ''}
+                        onChange={(ev) => setAsk((v) => ({ ...v, effectiveDate: ev.target.value }))}
                       />
                     )}
                   </Field>
-                ))}
-                <Button type="submit" loading={busy}>
-                  {t('common.save')}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-        {requestable.length ? (
-          <Dialog open={reqOpen} onOpenChange={setReqOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('ess.details.requestChange')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              title={t('ess.details.requestChange')}
-              description={t('ess.details.requestChangeBody')}
-              closeLabel={t('common.close')}
-            >
-              <form onSubmit={sendRequest} className="flex flex-col gap-4">
-                {requestable.map((f) => (
-                  <Field
-                    key={f}
-                    id={`r-${f}`}
-                    label={t(`people.field.${f}`)}
-                    hint={f === 'nationality' ? t('ess.details.countryHint') : undefined}
-                  >
+                  <Field id="r-reason" label={t('ess.details.reason')}>
                     {(a) => (
-                      <Input
+                      <Textarea
                         {...a}
-                        type={f === 'dateOfBirth' ? 'date' : 'text'}
-                        maxLength={f === 'nationality' ? 2 : 100}
-                        pattern={f === 'nationality' ? '[A-Z]{2}' : undefined}
-                        placeholder={f === 'dateOfBirth' ? undefined : display(f, e[f], e, locale)}
-                        value={ask[f] ?? ''}
-                        onChange={(ev) =>
-                          setAsk((v) => ({
-                            ...v,
-                            [f]: f === 'nationality' ? ev.target.value.toUpperCase() : ev.target.value,
-                          }))
-                        }
+                        rows={3}
+                        maxLength={300}
+                        value={ask.reason ?? ''}
+                        onChange={(ev) => setAsk((v) => ({ ...v, reason: ev.target.value }))}
                       />
                     )}
                   </Field>
-                ))}
-                <Field id="r-effective" label={t('people.effectiveDate')}>
-                  {(a) => (
-                    <Input
-                      {...a}
-                      type="date"
-                      value={ask.effectiveDate ?? ''}
-                      onChange={(ev) => setAsk((v) => ({ ...v, effectiveDate: ev.target.value }))}
-                    />
-                  )}
-                </Field>
-                <Field id="r-reason" label={t('ess.details.reason')}>
-                  {(a) => (
-                    <Textarea
-                      {...a}
-                      rows={3}
-                      maxLength={300}
-                      value={ask.reason ?? ''}
-                      onChange={(ev) => setAsk((v) => ({ ...v, reason: ev.target.value }))}
-                    />
-                  )}
-                </Field>
-                <p className="text-footnote text-text-secondary">{t('ess.details.requestPrivacy')}</p>
-                <Button type="submit" loading={busy} disabled={!requestable.some((f) => ask[f]?.trim())}>
-                  {t('ess.details.send')}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-      </div>
+                  <p className="text-footnote text-text-secondary">{t('ess.details.requestPrivacy')}</p>
+                  <Button type="submit" loading={busy} disabled={!requestable.some((f) => ask[f]?.trim())}>
+                    {t('ess.details.send')}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          ) : null}
+        </>,
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {SECTIONS.map((s) => {

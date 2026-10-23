@@ -18,6 +18,7 @@ import {
 import { formatDate } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { selectClass, SourceLink, usePct } from '../../ui';
 
 interface Gpg {
@@ -63,10 +64,7 @@ export default function GenderPayGapPage() {
   );
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-title-2">{t('compliance.gpg.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('compliance.gpg.intro')}
-      </p>
+      <PageIntro title={t('compliance.gpg.title')} titleIsTab lead={t('compliance.gpg.intro')} />
       <form
         className="grid gap-3 md:grid-cols-3 md:items-end"
         onSubmit={(e) => {

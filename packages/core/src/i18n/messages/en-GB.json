@@ -530,7 +530,21 @@
     "typedName": "Type your full name",
     "consent": "I have read this document and agree to sign it electronically.",
     "signNow": "Sign document",
-    "signed": "Document signed."
+    "signed": "Document signed.",
+    "list": {
+      "mine": "Your documents",
+      "all": "Company documents",
+      "count_one": "{count} document",
+      "count_other": "{count} documents",
+      "countFiltered_one": "{shown} of {count} document",
+      "countFiltered_other": "{shown} of {count} documents",
+      "search": "Search documents",
+      "category": "Category",
+      "anyCategory": "All categories",
+      "categoryChip": "Category: {category}",
+      "colTitle": "Document",
+      "colAdded": "Added"
+    }
   },
   "notify": {
     "signatureRequested": "You have a document to sign",
@@ -728,6 +742,20 @@
       "document": "Document",
       "manual": "Task",
       "compliance": "Compliance"
+    },
+    "lead": "Open tasks assigned to you or your roles, earliest due date first.",
+    "list": {
+      "title": "Open tasks",
+      "count_one": "{count} task",
+      "count_other": "{count} tasks",
+      "countFiltered_one": "{shown} of {count} task",
+      "countFiltered_other": "{shown} of {count} tasks",
+      "search": "Search tasks",
+      "source": "Source",
+      "anySource": "All sources",
+      "sourceChip": "Source: {source}",
+      "overdueOnly": "Overdue only",
+      "overdue": "Overdue"
     }
   },
   "approvals": {
@@ -743,6 +771,18 @@
       "person": "Person",
       "details": "Details",
       "requested": "Requested"
+    },
+    "lead": "Requests waiting for your decision. Tick several to approve or reject them together.",
+    "list": {
+      "title": "Waiting for you",
+      "count_one": "{count} request",
+      "count_other": "{count} requests",
+      "countFiltered_one": "{shown} of {count} request",
+      "countFiltered_other": "{shown} of {count} requests",
+      "search": "Search requests",
+      "type": "Request type",
+      "anyType": "All request types",
+      "typeChip": "Type: {type}"
     }
   },
   "imports": {
@@ -796,6 +836,12 @@
       "date.reached": "A date is reached",
       "document.expiring": "A document is expiring",
       "threshold": "A threshold is crossed"
+    },
+    "lead": "Rules that create a task when a record is added or changed, a date is reached or a document is about to expire.",
+    "list": {
+      "title": "Rules",
+      "count_one": "{count} rule",
+      "count_other": "{count} rules"
     }
   },
   "platform": {
@@ -2254,7 +2300,6 @@
   },
   "compliance": {
     "title": "Compliance centre",
-    "subnav": "Compliance sections",
     "nav": {
       "overview": "Overview",
       "rightToWork": "Right to work",
@@ -2787,7 +2832,16 @@
     "attachFile": "Attach a file",
     "close": "Close ticket",
     "closedToast": "Ticket closed",
-    "closedNote": "This ticket is closed. Raise a new ticket if you need more help."
+    "closedNote": "This ticket is closed. Raise a new ticket if you need more help.",
+    "list": {
+      "count_one": "{count} ticket",
+      "count_other": "{count} tickets",
+      "countFiltered_one": "{shown} of {count} ticket",
+      "countFiltered_other": "{shown} of {count} tickets",
+      "search": "Search tickets",
+      "anyStatus": "All statuses",
+      "statusChip": "Status: {status}"
+    }
   },
   "pricing": {
     "meta": {
@@ -3315,14 +3369,6 @@
     "ui": {
       "title": "Privacy",
       "lead": "Handle data subject requests within their legal deadlines, keep data only as long as needed, and manage your account data, incidents and legal terms.",
-      "sections": "Privacy sections",
-      "tab": {
-        "requests": "Requests",
-        "retention": "Retention",
-        "incidents": "Incidents",
-        "legal": "DPA and notices",
-        "exports": "Export and closure"
-      },
       "kind": {
         "access": "Access (copy of data)",
         "correction": "Correction",
@@ -3842,7 +3888,19 @@
     "markReturned": "Mark as returned",
     "markLost": "Mark as lost",
     "returned": "Return recorded",
-    "markedLost": "Marked as lost"
+    "markedLost": "Marked as lost",
+    "list": {
+      "count_one": "{count} asset",
+      "count_other": "{count} assets",
+      "countFiltered_one": "{shown} of {count} asset",
+      "countFiltered_other": "{shown} of {count} assets",
+      "search": "Search assets",
+      "anyType": "All types",
+      "anyStatus": "All statuses",
+      "typeChip": "Type: {type}",
+      "statusChip": "Status: {status}",
+      "addTitle": "Add an asset"
+    }
   },
   "payroll": {
     "title": "Payroll",
@@ -4088,6 +4146,17 @@
       "succeeded": "Done",
       "failed": "Failed",
       "skipped": "Skipped"
+    },
+    "list": {
+      "count_one": "{count} call",
+      "count_other": "{count} calls",
+      "countFiltered_one": "{shown} of {count} call",
+      "countFiltered_other": "{shown} of {count} calls",
+      "search": "Search activity",
+      "anyProvider": "All providers",
+      "anyStatus": "All statuses",
+      "providerChip": "Provider: {provider}",
+      "statusChip": "Status: {status}"
     }
   },
   "reports": {
@@ -5213,6 +5282,11 @@
         "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
         "resetMfaConfirm": "I have confirmed who they are. Reset it",
         "mfaReset": "Two-step verification has been reset."
+      },
+      "list": {
+        "count_one": "{count} person",
+        "count_other": "{count} people",
+        "countMore": "First {count} shown"
       }
     },
     "errors": {
@@ -5400,5 +5474,11 @@
       "submit": "Review and submit it",
       "open": "Open timesheets"
     }
+  },
+  "listView": {
+    "applied": "Filtered by",
+    "removeFilter": "Remove filter: {label}",
+    "clearAll": "Clear filters",
+    "noMatches": "Nothing matches these filters"
   }
 }

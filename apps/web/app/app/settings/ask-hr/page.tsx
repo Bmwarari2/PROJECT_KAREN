@@ -25,6 +25,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageHeader } from '@/components/platform';
 import { useSession } from '../../shell';
+import { useInModule, useSectionLevel } from '@/components/module-page';
 
 interface Settings {
   enabled: boolean;
@@ -61,6 +62,8 @@ interface Settings {
 
 export default function AskHrSettingsPage() {
   const t = useT();
+  const sec = useSectionLevel();
+  const inModule = useInModule();
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
@@ -108,7 +111,8 @@ export default function AskHrSettingsPage() {
       toast({ title: t('askHr.settings.saved'), tone: 'success' });
     });
 
-  if (settings.error) return <EmptyState level={1} icon={<Bot aria-hidden />} title={settings.error.title} />;
+  if (settings.error)
+    return <EmptyState level={inModule ? 2 : 1} icon={<Bot aria-hidden />} title={settings.error.title} />;
   if (!s) return <Skeleton className="h-96 w-full" />;
   const toggle = (list: string[], id: string, on: boolean) =>
     on ? [...new Set([...list, id])] : list.filter((x) => x !== id);
@@ -119,7 +123,7 @@ export default function AskHrSettingsPage() {
       <PageHeader title={t('askHr.settings.title')} lead={t('askHr.settings.body')} />
 
       <Card className="flex flex-col gap-3">
-        <CardTitle>{t('askHr.settings.status')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('askHr.settings.status')}</CardTitle>
         <p className="text-callout" data-testid="ai-region">
           {s.available && s.model
             ? t('askHr.settings.regionAvailable', { awsRegion: s.awsRegion, model: s.model.name })
@@ -159,7 +163,7 @@ export default function AskHrSettingsPage() {
 
       {s.canManageSources ? (
         <Card className="flex flex-col gap-4">
-          <CardTitle>{t('askHr.settings.folders')}</CardTitle>
+          <CardTitle as={sec.heading}>{t('askHr.settings.folders')}</CardTitle>
           <p className="text-callout text-text-secondary">{t('askHr.settings.foldersHint')}</p>
           <fieldset className="flex flex-col gap-2">
             <legend className="sr-only">{t('askHr.settings.folders')}</legend>
@@ -246,7 +250,7 @@ export default function AskHrSettingsPage() {
 
       {s.canManageSources && s.policyFolderIds.length ? (
         <Card>
-          <CardTitle>{t('askHr.settings.addText')}</CardTitle>
+          <CardTitle as={sec.heading}>{t('askHr.settings.addText')}</CardTitle>
           <p className="mt-2 text-callout text-text-secondary">{t('askHr.settings.addTextHint')}</p>
           <form
             className="mt-4 flex flex-col gap-4"
@@ -309,7 +313,9 @@ export default function AskHrSettingsPage() {
 
       <Card>
         <div className="flex flex-wrap items-center gap-3">
-          <CardTitle className="mr-auto">{t('askHr.settings.indexed')}</CardTitle>
+          <CardTitle as={sec.heading} className="mr-auto">
+            {t('askHr.settings.indexed')}
+          </CardTitle>
           {s.canManageSources ? (
             <Button
               size="sm"
@@ -329,7 +335,11 @@ export default function AskHrSettingsPage() {
         </div>
         <div className="mt-4">
           {s.documents.length === 0 ? (
-            <EmptyState icon={<Bot aria-hidden />} title={t('askHr.settings.noDocuments')} />
+            <EmptyState
+              level={sec.level}
+              icon={<Bot aria-hidden />}
+              title={t('askHr.settings.noDocuments')}
+            />
           ) : (
             <Table>
               <THead>
@@ -371,7 +381,7 @@ export default function AskHrSettingsPage() {
       </Card>
 
       <Card>
-        <CardTitle>{t('askHr.settings.stats')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('askHr.settings.stats')}</CardTitle>
         <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {(
             [

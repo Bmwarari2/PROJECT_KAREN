@@ -5,6 +5,7 @@ import { helpArticle } from '@thapsus/core/help';
 import { formatDate } from '@thapsus/core/i18n';
 import { buttonVariants } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
+import { PageTitle } from '../../shell';
 
 export default async function HelpArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { t, locale } = await serverContext();
@@ -17,7 +18,7 @@ export default async function HelpArticlePage({ params }: { params: Promise<{ sl
         <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
         {t('help.back')}
       </Link>
-      <h1 className="text-title-2">{a.title}</h1>
+      <PageTitle>{a.title}</PageTitle>
       <p className="text-body-lg text-text-secondary">{a.summary}</p>
       {a.body.map((p, i) => (
         <p key={i} className="text-body">

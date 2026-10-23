@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { FormError, PageHeader, selectClass, SettingsCard, useAction, useFormat, useOrg } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Calendar {
   id: string;
@@ -171,6 +172,7 @@ function AddCalendar({ onCreated }: { onCreated: () => void }) {
 /** Company closure days (on top of public holidays), for everyone, an entity or a location. */
 export default function CalendarsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const fmt = useFormat();
   const calendars = useApi<Calendar[]>('/v1/settings/company-calendars');
   const entities = useOrg('legal-entities');
@@ -189,12 +191,16 @@ export default function CalendarsPage() {
         {!calendars.data ? (
           <Skeleton className="h-24" />
         ) : calendars.data.length === 0 ? (
-          <EmptyState icon={<CalendarOff aria-hidden />} title={t('admin.calendars.none')} />
+          <EmptyState
+            level={sec.level}
+            icon={<CalendarOff aria-hidden />}
+            title={t('admin.calendars.none')}
+          />
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
             {calendars.data.map((c) => (
               <li key={c.id} className="flex flex-col gap-2 rounded-md border border-border p-4">
-                <h3 className="text-callout font-semibold">{c.name}</h3>
+                <sec.sub className="text-callout font-semibold">{c.name}</sec.sub>
                 <p className="text-footnote text-text-secondary">{scope(c)}</p>
                 <ul className="flex flex-col gap-1 text-callout">
                   {c.days.map((d) => (

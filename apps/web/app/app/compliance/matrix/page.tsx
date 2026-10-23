@@ -24,6 +24,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useSession } from '../../shell';
+import { PageIntro } from '@/components/module-page';
 import { selectClass, StatusBadge } from '../ui';
 
 const KINDS = ['licence', 'certification', 'background_check', 'training', 'other'] as const;
@@ -154,18 +155,19 @@ export default function MatrixPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('compliance.matrix.title')}</h1>
-        {canManage ? (
-          <Button size="sm" onClick={() => setAdding(true)}>
-            <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-            {t('compliance.matrix.addRequirement')}
-          </Button>
-        ) : null}
-      </div>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('compliance.matrix.intro')}
-      </p>
+      <PageIntro
+        title={t('compliance.matrix.title')}
+        titleIsTab
+        lead={t('compliance.matrix.intro')}
+        actions={
+          canManage ? (
+            <Button size="sm" onClick={() => setAdding(true)}>
+              <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('compliance.matrix.addRequirement')}
+            </Button>
+          ) : undefined
+        }
+      />
       {matrix.data ? (
         <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {STATUSES.map((s) => (

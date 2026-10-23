@@ -23,6 +23,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { dayLong, thisWeek, viewerZone } from '@/lib/week';
 import { FindingList, type FindingDto } from '@/components/findings';
+import { PageIntro } from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 
 interface Timesheet {
@@ -306,32 +307,35 @@ export default function TimesheetsPage() {
   const canTeam = hasPermission(session, 'time.read');
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('timesheets.title')}</h1>
-        {week ? (
-          <div className="flex items-center gap-2" role="group" aria-label={t('rota.weekNav')}>
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label={t('rota.prevWeek')}
-              onClick={() => setWeek(addDays(week, -7))}
-            >
-              <ChevronLeft aria-hidden className="h-5 w-5 stroke-[1.5]" />
-            </Button>
-            <span className="text-callout font-semibold" aria-live="polite">
-              {t('rota.weekOf', { date: formatDate(week, locale) })}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label={t('rota.nextWeek')}
-              onClick={() => setWeek(addDays(week, 7))}
-            >
-              <ChevronRight aria-hidden className="h-5 w-5 stroke-[1.5]" />
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      <PageIntro
+        title={t('timesheets.title')}
+        titleIsTab
+        actions={
+          week ? (
+            <div className="flex items-center gap-2" role="group" aria-label={t('rota.weekNav')}>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={t('rota.prevWeek')}
+                onClick={() => setWeek(addDays(week, -7))}
+              >
+                <ChevronLeft aria-hidden className="h-5 w-5 stroke-[1.5]" />
+              </Button>
+              <span className="text-callout font-semibold" aria-live="polite">
+                {t('rota.weekOf', { date: formatDate(week, locale) })}
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={t('rota.nextWeek')}
+                onClick={() => setWeek(addDays(week, 7))}
+              >
+                <ChevronRight aria-hidden className="h-5 w-5 stroke-[1.5]" />
+              </Button>
+            </div>
+          ) : null
+        }
+      />
       {!week ? (
         <Skeleton className="h-64 w-full" />
       ) : (

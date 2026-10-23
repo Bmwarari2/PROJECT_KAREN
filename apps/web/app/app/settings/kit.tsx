@@ -19,7 +19,8 @@ import { ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
-import { hasPermission, useSession } from '../shell';
+import { useSectionLevel } from '@/components/module-page';
+import { hasPermission, PageTitle, useSession } from '../shell';
 
 /** Shared building blocks for the settings screens (tokens and @thapsus/ui components only). */
 
@@ -107,7 +108,7 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-start gap-3">
       <div className="mr-auto max-w-[var(--prose-width)]">
-        <h1 className="text-title-2">{title}</h1>
+        <PageTitle>{title}</PageTitle>
         {lead ? <p className="mt-1 text-callout text-text-secondary">{lead}</p> : null}
       </div>
       {children}
@@ -131,12 +132,16 @@ export function SettingsCard({
   children?: React.ReactNode;
   className?: string;
 }) {
+  // a section of the page: one level below the page title
+  const sec = useSectionLevel();
   return (
     <section aria-labelledby={`${id}-title`}>
       <Card className={cn('flex flex-col gap-4', className)}>
         <div className="flex flex-wrap items-start gap-3">
           <div className="mr-auto max-w-[var(--prose-width)]">
-            <CardTitle id={`${id}-title`}>{title}</CardTitle>
+            <CardTitle id={`${id}-title`} as={sec.heading}>
+              {title}
+            </CardTitle>
             {description ? <p className="mt-1 text-callout text-text-secondary">{description}</p> : null}
           </div>
           {actions}

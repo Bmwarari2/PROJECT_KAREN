@@ -18,6 +18,7 @@ import {
   useFormat,
   usePermission,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface SsoConnection {
   id: string;
@@ -80,6 +81,7 @@ function ConnectionItem({
   onChanged: () => void;
 }) {
   const t = useT();
+  const sec = useSectionLevel();
   const fmt = useFormat();
   const action = useAction();
   const patch = (body: Record<string, unknown>, success: string) =>
@@ -89,7 +91,7 @@ function ConnectionItem({
   return (
     <li className="flex flex-col gap-3 rounded-md border border-border p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="mr-auto text-callout font-semibold">{c.name}</h3>
+        <sec.sub className="mr-auto text-callout font-semibold">{c.name}</sec.sub>
         <Badge>{t(`admin.sso.protocol.${c.protocol}`)}</Badge>
         {c.enabled ? <Badge tone="success">{t('admin.on')}</Badge> : <Badge>{t('admin.off')}</Badge>}
       </div>
@@ -450,6 +452,7 @@ function Enforcement({
 
 export default function SsoPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const has = usePermission();
   const canManage = has('settings.manage');
   const connections = useApi<SsoConnection[]>('/v1/settings/sso-connections');
@@ -459,7 +462,9 @@ export default function SsoPage() {
   return (
     <>
       <PageHeader title={t('admin.section.sso.title')} lead={t('admin.sso.lead')} />
-      {connections.error?.status === 403 ? <EmptyState title={t('errors.forbidden')} /> : null}
+      {connections.error?.status === 403 ? (
+        <EmptyState level={sec.level} title={t('errors.forbidden')} />
+      ) : null}
       {security.data && connections.data ? (
         <Enforcement
           security={security.data}
@@ -473,6 +478,7 @@ export default function SsoPage() {
           <Skeleton className="h-24" />
         ) : connections.data.length === 0 ? (
           <EmptyState
+            level={sec.level}
             icon={<KeyRound aria-hidden />}
             title={t('admin.sso.none')}
             body={t('admin.sso.noneBody')}

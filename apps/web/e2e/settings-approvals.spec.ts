@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { addDays, today } from '../../../packages/core/src/time';
 import { apiCall, lastMailTo, signUpAndEnrol } from './helpers';
 import { axeBoth } from './settings-helpers';
+import { expectPageTitle } from './module-helpers';
 
 // UK English labels; fictional data only.
 test.use({ locale: 'en-GB' });
@@ -250,7 +251,7 @@ test.describe('approvals and workflows settings', () => {
     await mp.waitForURL(/\/app$/);
     await mp.goto('/app/approvals');
     await mp.getByRole('link', { name: 'Delegate approvals' }).click();
-    await expect(mp.getByRole('heading', { level: 1, name: 'Delegations' })).toBeVisible();
+    await expectPageTitle(mp, 'Settings', 'Delegations');
     // a manager sees only the settings they may use
     const subnav = mp.getByRole('navigation', { name: 'Settings sections' });
     await expect(subnav.getByRole('link', { name: 'Delegations' })).toBeVisible();

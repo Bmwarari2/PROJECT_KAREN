@@ -34,6 +34,7 @@ import {
   useOrg,
   usePermission,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface TimeSettings {
   enforcement: 'warn' | 'block';
@@ -116,6 +117,7 @@ function WorkingTime({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
 
 function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   const t = useT();
+  const sec = useSectionLevel();
   const action = useAction();
   const [country, setCountry] = React.useState('');
   const [notice, setNotice] = React.useState<Record<string, string>>({});
@@ -176,9 +178,9 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
               data-testid={`geofence-${c}`}
             >
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="mr-auto text-callout font-semibold">
+                <sec.sub className="mr-auto text-callout font-semibold">
                   {t('admin.time.countryN', { country: c })}
-                </h3>
+                </sec.sub>
                 <Badge tone="success">{t('admin.on')}</Badge>
                 <Button
                   size="sm"
@@ -215,14 +217,14 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
         className="flex flex-col gap-4 border-t border-border pt-4"
         aria-labelledby="geofence-form-title"
       >
-        <h3
+        <sec.sub
           id="geofence-form-title"
           ref={form}
           tabIndex={-1}
           className="text-callout font-semibold outline-none"
         >
           {editing ? t('admin.time.editNoticeTitle', { country }) : t('admin.time.addCountry')}
-        </h3>
+        </sec.sub>
         <Field id="geo-country" label={t('admin.time.country')} hint={t('admin.time.countryHint')}>
           {(p) => (
             <Input
@@ -386,6 +388,7 @@ function SiteDialog({ loc, onClose, onSaved }: { loc: Location; onClose: () => v
 
 function Sites({ countries }: { countries: string[] }) {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const locations = useOrg<Location>('locations');
   const [editing, setEditing] = React.useState<Location | null>(null);
@@ -395,7 +398,7 @@ function Sites({ countries }: { countries: string[] }) {
       {!locations.data ? (
         <Skeleton className="h-20" />
       ) : locations.data.length === 0 ? (
-        <EmptyState icon={<MapPin aria-hidden />} title={t('admin.time.noSites')} />
+        <EmptyState level={sec.level} icon={<MapPin aria-hidden />} title={t('admin.time.noSites')} />
       ) : (
         <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.time.sitesTitle') })}>
           <THead>

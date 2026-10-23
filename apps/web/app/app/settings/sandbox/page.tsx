@@ -14,6 +14,7 @@ import {
   useDateTime,
 } from '@/components/platform';
 import { useFeature, useExperience } from '../../shell';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Sandbox {
   id: string;
@@ -29,6 +30,7 @@ interface Sandbox {
 
 export default function SandboxPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const toast = useToast();
   const when = useDateTime();
   const enabled = useFeature('sandboxes');
@@ -82,7 +84,7 @@ export default function SandboxPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('platform.sandbox.title')} lead={t('platform.sandbox.lead')} />
       <Card>
-        <CardTitle>{t('platform.sandbox.whatTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.sandbox.whatTitle')}</CardTitle>
         <ul className="mt-3 list-disc pl-5 text-callout text-text-secondary">
           <li>{t('platform.sandbox.copied')}</li>
           <li>{t('platform.sandbox.notCopied')}</li>
@@ -123,13 +125,17 @@ export default function SandboxPage() {
         </div>
       ) : null}
       {list.data && !list.data.length ? (
-        <EmptyState icon={<FlaskConical aria-hidden />} title={t('platform.sandbox.none')} />
+        <EmptyState
+          level={sec.level}
+          icon={<FlaskConical aria-hidden />}
+          title={t('platform.sandbox.none')}
+        />
       ) : null}
       {(list.data ?? []).map((s) => (
         <Card key={s.id}>
           <div className="flex flex-wrap items-start gap-3">
             <div className="mr-auto">
-              <CardTitle>{s.name}</CardTitle>
+              <CardTitle as={sec.heading}>{s.name}</CardTitle>
               <p className="mt-1 text-footnote text-text-secondary">
                 {t('platform.sandbox.meta', {
                   slug: s.slug,

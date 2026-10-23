@@ -33,6 +33,7 @@ import {
   useFormat,
   useOrg,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface LeaveType {
   id: string;
@@ -752,6 +753,7 @@ function BalanceCheck({ typeName, version }: { typeName: (k: string) => string; 
 /** Leave types and policies: entitlement, accrual, carry-over, caps, waiting periods, TOIL. */
 export default function LeaveSettingsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const types = useApi<LeaveType[]>('/v1/leave/types');
   const policies = useApi<Policy[]>('/v1/leave/policies');
   const typeName = useTypeName(types.data);
@@ -803,13 +805,13 @@ export default function LeaveSettingsPage() {
         {!policies.data ? (
           <Skeleton className="h-40" />
         ) : policies.data.length === 0 ? (
-          <EmptyState icon={<CalendarDays aria-hidden />} title={t('admin.leave.none')} />
+          <EmptyState level={sec.level} icon={<CalendarDays aria-hidden />} title={t('admin.leave.none')} />
         ) : (
           <ul className="grid gap-3 xl:grid-cols-2">
             {policies.data.map((p) => (
               <li key={p.id} className="flex flex-col gap-2 rounded-md border border-border p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="mr-auto text-callout font-semibold">{p.name}</h3>
+                  <sec.sub className="mr-auto text-callout font-semibold">{p.name}</sec.sub>
                   <Badge>{t('admin.leave.assignedN', { n: p.assignedEmployees })}</Badge>
                   <Button
                     size="sm"

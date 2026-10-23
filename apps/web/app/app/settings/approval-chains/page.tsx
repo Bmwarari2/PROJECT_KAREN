@@ -17,6 +17,7 @@ import {
   useRoleName,
   type AssigneeDraft,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 type Op = 'present' | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in';
 interface Approver {
@@ -227,6 +228,7 @@ function ConditionFields({
 
 function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved: boolean) => void }) {
   const t = useT();
+  const sec = useSectionLevel();
   const action = useAction();
   const heading = React.useRef<HTMLHeadingElement>(null);
   const [name, setName] = React.useState(policy?.name ?? '');
@@ -284,9 +286,9 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
       aria-labelledby="chain-editor-title"
       className="rounded-lg border border-border bg-surface-raised p-5 shadow-sm"
     >
-      <h2 id="chain-editor-title" ref={heading} tabIndex={-1} className="text-title-3 outline-none">
+      <sec.heading id="chain-editor-title" ref={heading} tabIndex={-1} className="text-title-3 outline-none">
         {policy ? t('admin.approvals.editTitle', { name: policy.name }) : t('admin.approvals.newTitle')}
-      </h2>
+      </sec.heading>
       <form onSubmit={submit} className="mt-4 flex flex-col gap-5">
         <div className="grid gap-4 md:grid-cols-3">
           <Field id="chain-name" label={t('admin.name')}>
@@ -349,9 +351,9 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
           {steps.map((s, i) => (
             <li key={s.key} className="flex flex-col gap-4 rounded-md border border-border p-4">
               <div className="flex items-center gap-2">
-                <h3 className="mr-auto text-callout font-semibold">
+                <sec.sub className="mr-auto text-callout font-semibold">
                   {t('admin.approvals.stepN', { n: i + 1 })}
-                </h3>
+                </sec.sub>
                 {steps.length > 1 ? (
                   <Button
                     type="button"
@@ -439,12 +441,13 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
 
 function PolicyItem({ p, onEdit }: { p: Policy; onEdit: () => void }) {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const describe = useDescribe();
   return (
     <li className="flex flex-col gap-3 rounded-md border border-border p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="mr-auto text-callout font-semibold">{p.name}</h3>
+        <sec.sub className="mr-auto text-callout font-semibold">{p.name}</sec.sub>
         {p.enabled ? <Badge tone="success">{t('admin.on')}</Badge> : <Badge>{t('admin.off')}</Badge>}
         <Badge>{t('admin.approvals.priorityN', { n: p.priority })}</Badge>
         <Button
@@ -493,6 +496,7 @@ function PolicyItem({ p, onEdit }: { p: Policy; onEdit: () => void }) {
 /** Approval chains: which requests need approval, by whom, in which order, with escalation. */
 export default function ApprovalChainsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const policies = useApi<Policy[]>('/v1/approval-policies');
   const [editing, setEditing] = React.useState<Policy | 'new' | null>(null);
   const done = (saved: boolean) => {
@@ -527,6 +531,7 @@ export default function ApprovalChainsPage() {
         <Skeleton className="h-40" />
       ) : policies.data && policies.data.length === 0 ? (
         <EmptyState
+          level={sec.level}
           icon={<GitBranch aria-hidden />}
           title={t('admin.approvals.none')}
           body={t('admin.approvals.noneBody')}

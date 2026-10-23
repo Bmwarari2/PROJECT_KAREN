@@ -1,5 +1,5 @@
 import { Messages } from '@/lib/i18n-scope';
 
 export default function DocumentsLayout({ children }: { children: React.ReactNode }) {
-  return <Messages ns={['documents']}>{children}</Messages>;
+  return <Messages ns={['documents', 'listView']}>{children}</Messages>;
 }

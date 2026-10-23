@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible, signUpAndEnrol } from './helpers';
+import { expectModulePage, moduleTabs, openModule } from './module-helpers';
 
 test.describe('public trust pages', () => {
   for (const path of ['/trust', '/trust/subprocessors', '/trust/subprocessors?region=us']) {
@@ -77,13 +78,11 @@ test.describe('privacy administration', () => {
     });
 
     await page.goto('/app');
-    await page
-      .getByRole('navigation', { name: 'App' })
-      .first()
-      .getByRole('link', { name: 'Privacy' })
-      .click();
+    await openModule(page, 'Privacy');
     await page.waitForURL(/\/app\/privacy$/);
-    await expect(page.getByRole('heading', { name: 'Privacy', level: 1 })).toBeVisible();
+    await expectModulePage(page, 'Privacy', 'Requests');
+    // the shell's tab bar is the only privacy navigation (no second sub-navigation)
+    await expect(page.getByRole('navigation', { name: 'Privacy sections' })).toHaveCount(1);
     await expectAccessible(page);
 
     await page.getByLabel('Request type').selectOption('access');
@@ -135,17 +134,12 @@ test.describe('privacy administration', () => {
     for (const [tab, heading] of [
       ['Retention', 'Retention rules from the law'],
       ['Incidents', 'Log an incident'],
-      ['DPA and notices', 'Data processing agreement'],
-      ['Export and closure', 'Export all company data'],
+      ['Legal documents', 'Data processing agreement'],
+      ['Exports', 'Export all company data'],
     ] as const) {
-      await page
-        .getByRole('navigation', { name: 'Privacy sections' })
-        .getByRole('link', { name: tab })
-        .click();
+      await moduleTabs(page, 'Privacy').getByRole('link', { name: tab, exact: true }).click();
       await expect(page.getByRole('heading', { name: heading })).toBeVisible();
-      await expect(
-        page.getByRole('navigation', { name: 'Privacy sections' }).getByRole('link', { name: tab }),
-      ).toHaveAttribute('aria-current', 'page');
+      await expectModulePage(page, 'Privacy', tab);
       await expectAccessible(page);
     }
     await expect(page.getByText(/Your account will be closed|Type .* to confirm/).first()).toBeVisible();

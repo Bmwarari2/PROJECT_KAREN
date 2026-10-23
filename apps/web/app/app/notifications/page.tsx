@@ -19,6 +19,7 @@ import { formatDateTime } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface Note {
@@ -289,10 +290,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex max-w-[var(--prose-width)] flex-col gap-8">
-      <div>
-        <h1 className="text-title-2">{t('app.notifications.title')}</h1>
-        <p className="mt-1 text-callout text-text-secondary">{t('app.notifications.intro')}</p>
-      </div>
+      <PageIntro title={t('app.notifications.title')} titleIsTab lead={t('app.notifications.intro')} />
       <NotificationList />
       <Card>
         <div className="flex items-center gap-3">

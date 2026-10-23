@@ -6,6 +6,7 @@ import { Input, Skeleton } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useDebounced } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 
 interface OrgNode {
   id: string;
@@ -105,7 +106,7 @@ export default function OrgChartPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-title-2">{t('org.title')}</h1>
+      <PageIntro title={t('org.title')} titleIsTab />
       <div className="relative max-w-md">
         <label>
           <span className="sr-only">{t('org.search')}</span>

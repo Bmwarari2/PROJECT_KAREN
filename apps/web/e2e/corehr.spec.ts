@@ -127,8 +127,9 @@ test.describe('org chart', () => {
 
     const runs: Array<{ firstRenderMs: number; expandMs: number }> = [];
     for (let i = 0; i < 3; i++) {
-      await page.goto('/app');
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // start from another People tab: the org chart is a tab of the People module
+      await page.goto('/app/people');
+      await expect(page.getByRole('navigation', { name: 'People sections' })).toBeVisible();
       runs.push(
         await page.evaluate(async () => {
           const waitFor = (pred: () => boolean) =>
@@ -142,9 +143,9 @@ test.describe('org chart', () => {
                     : requestAnimationFrame(tick);
               tick();
             });
-          // in-app navigation to the org chart until the first level is on screen
-          const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="/app/org-chart"]')].find(
-            (a) => a.offsetParent !== null,
+          // in-app navigation (the People tab bar) to the org chart until the first level is on screen
+          const link = document.querySelector<HTMLAnchorElement>(
+            'nav[aria-label="People sections"] a[href="/app/org-chart"]',
           )!;
           const t0 = performance.now();
           link.click();
@@ -247,8 +248,13 @@ test.describe('pre-start portal', () => {
     // Home lists the onboarding among what needs the joiner's attention
     await jp.getByRole('link', { name: /Get ready for your first day/ }).click();
     await jp.waitForURL(/\/app\/welcome$/);
+    // the onboarding tab of My profile: the module is the h1, the welcome the page's own title
+    await expect(jp.getByRole('heading', { level: 1, name: 'My profile' })).toBeVisible();
     await expect(
-      jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
+      jp.getByRole('navigation', { name: 'My profile sections' }).getByRole('link', { name: 'Onboarding' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(
+      jp.getByRole('heading', { level: 2, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
     ).toBeVisible();
     await expect(jp.getByText(/Days until you start: 2[01]\b/)).toBeVisible();
     await expect(jp.getByText('0 of 5 steps complete')).toBeVisible();

@@ -32,6 +32,7 @@ import {
   useRoleName,
   type AssigneeDraft,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 type Kind = 'onboarding' | 'offboarding' | 'transfer' | 'custom';
 interface TaskDef {
@@ -89,6 +90,7 @@ function useDue() {
 
 function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
   const t = useT();
+  const sec = useSectionLevel();
   const action = useAction();
   const entities = useOrg('legal-entities');
   const heading = React.useRef<HTMLHeadingElement>(null);
@@ -139,9 +141,14 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
       aria-labelledby="template-editor-title"
       className="rounded-lg border border-border bg-surface-raised p-5 shadow-sm"
     >
-      <h2 id="template-editor-title" ref={heading} tabIndex={-1} className="text-title-3 outline-none">
+      <sec.heading
+        id="template-editor-title"
+        ref={heading}
+        tabIndex={-1}
+        className="text-title-3 outline-none"
+      >
         {t('admin.workflows.newTitle')}
-      </h2>
+      </sec.heading>
       <form onSubmit={submit} className="mt-4 flex flex-col gap-5">
         <div className="grid gap-4 md:grid-cols-3">
           <Field id="tpl-name" label={t('admin.name')}>
@@ -196,9 +203,9 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
           {tasks.map((x, i) => (
             <li key={x.key} className="flex flex-col gap-4 rounded-md border border-border p-4">
               <div className="flex items-center gap-2">
-                <h3 className="mr-auto text-callout font-semibold">
+                <sec.sub className="mr-auto text-callout font-semibold">
                   {t('admin.workflows.taskN', { n: i + 1 })}
-                </h3>
+                </sec.sub>
                 {tasks.length > 1 ? (
                   <Button
                     type="button"
@@ -381,6 +388,7 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
 /** Onboarding, offboarding and transfer checklists: tasks, who does them and when. */
 export default function WorkflowsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const has = usePermission();
   const templates = useApi<Template[]>('/v1/workflow-templates');
   const entities = useOrg('legal-entities');
@@ -409,6 +417,7 @@ export default function WorkflowsPage() {
         <Skeleton className="h-40" />
       ) : templates.data.length === 0 ? (
         <EmptyState
+          level={sec.level}
           icon={<ListChecks aria-hidden />}
           title={t('admin.workflows.none')}
           body={t('admin.workflows.noneBody')}

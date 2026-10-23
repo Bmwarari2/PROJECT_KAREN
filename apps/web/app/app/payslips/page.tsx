@@ -21,6 +21,7 @@ import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface MyPayslip {
@@ -152,7 +153,7 @@ export default function PayslipsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-2">{t('payslips.title')}</h1>
+      <PageIntro title={t('payslips.title')} titleIsTab />
 
       {session?.employeeId ? (
         <Card>
@@ -190,6 +191,7 @@ export default function PayslipsPage() {
             </ul>
           ) : (
             <EmptyState
+              level={3}
               icon={<FileText aria-hidden />}
               title={t('payslips.none')}
               body={t('payslips.noneBody')}

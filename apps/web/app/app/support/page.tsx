@@ -11,6 +11,7 @@ import {
   EmptyState,
   Field,
   Input,
+  Skeleton,
   Table,
   TD,
   TH,
@@ -23,6 +24,14 @@ import { formatDateTime, type Locale } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
+import {
+  ListCard,
+  ListFilter,
+  ListNoMatches,
+  ListSearch,
+  matches,
+  PageIntro,
+} from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 import { duration, selectClass, slaTone, type TicketSummary } from './ui';
 
@@ -34,6 +43,7 @@ interface Contact {
   channels: Array<{ kind: string; value?: string | null; hours?: string }>;
   sla: Record<string, { firstResponseMinutes: number; resolutionMinutes: number }>;
 }
+const STATUSES = ['open', 'awaiting_customer', 'resolved', 'closed'];
 const CHANNEL_ICON: Record<string, React.ReactNode> = {
   email: <Mail aria-hidden className="h-4 w-4 stroke-[1.5]" />,
   phone: <Phone aria-hidden className="h-4 w-4 stroke-[1.5]" />,
@@ -56,6 +66,15 @@ export default function SupportPage() {
   const [form, setForm] = React.useState({ subject: '', body: '', category: 'question', priority: 'normal' });
   const [file, setFile] = React.useState<File | null>(null);
   const [busy, setBusy] = React.useState(false);
+  // The tickets (the latest the API returns for the scope) are searched and filtered on the page.
+  const [query, setQuery] = React.useState('');
+  const [status, setStatus] = React.useState('');
+  const rows = tickets.data ?? [];
+  const shown = rows.filter(
+    (tk) => (!status || tk.status === status) && matches(query, tk.reference, tk.subject),
+  );
+  const filtered = !!status || !!query.trim();
+  const listTitle = scope === 'all' ? t('support.allTickets') : t('support.myTickets');
   const tz = session?.timeZone ?? 'UTC';
 
   async function submit(e: React.FormEvent) {
@@ -82,12 +101,15 @@ export default function SupportPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title-2">{t('support.title')}</h1>
-        <Link href="/app/help" className="text-callout">
-          {t('support.searchHelpFirst')}
-        </Link>
-      </div>
+      <PageIntro
+        title={t('support.title')}
+        titleIsTab
+        actions={
+          <Link href="/app/help" className="text-callout">
+            {t('support.searchHelpFirst')}
+          </Link>
+        }
+      />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card>
           <CardTitle>{t('support.newTitle')}</CardTitle>
@@ -234,68 +256,111 @@ export default function SupportPage() {
         </Card>
       </div>
 
-      <section aria-labelledby="tickets-title" className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="tickets-title" className="text-title-3">
-            {scope === 'all' ? t('support.allTickets') : t('support.myTickets')}
-          </h2>
-          {isAdmin ? (
-            <div role="group" aria-label={t('support.scopeLabel')} className="flex gap-2">
-              <Button
-                size="sm"
-                variant={scope === 'mine' ? 'primary' : 'secondary'}
-                aria-pressed={scope === 'mine'}
-                onClick={() => setScope('mine')}
-              >
-                {t('support.myTickets')}
-              </Button>
-              <Button
-                size="sm"
-                variant={scope === 'all' ? 'primary' : 'secondary'}
-                aria-pressed={scope === 'all'}
-                onClick={() => setScope('all')}
-              >
-                {t('support.allTickets')}
-              </Button>
-            </div>
-          ) : null}
-        </div>
-        {tickets.data && tickets.data.length === 0 ? (
-          <EmptyState icon={<Ticket aria-hidden />} title={t('support.noTickets')} />
-        ) : (
-          <Table>
-            <caption className="sr-only">{t('support.myTickets')}</caption>
-            <THead>
-              <tr>
-                <TH>{t('support.reference')}</TH>
-                <TH>{t('support.subject')}</TH>
-                <TH>{t('support.priority')}</TH>
-                <TH>{t('common.status')}</TH>
-                <TH>{t('support.sla')}</TH>
-                <TH>{t('support.updated')}</TH>
-              </tr>
-            </THead>
-            <tbody>
-              {(tickets.data ?? []).map((tk) => (
-                <TR key={tk.id}>
-                  <TD>
-                    <Link href={`/app/support/${tk.id}`}>{tk.reference}</Link>
-                  </TD>
-                  <TD className="max-w-[28ch] truncate">{tk.subject}</TD>
-                  <TD>{t(`support.priorities.${tk.priority}`)}</TD>
-                  <TD>{t(`support.statuses.${tk.status}`)}</TD>
-                  <TD>
-                    <Badge tone={slaTone(tk.sla.flag)}>{t(`support.slaStates.${tk.sla.flag}`)}</Badge>
-                  </TD>
-                  <TD className="text-footnote text-text-secondary">
-                    {formatDateTime(tk.lastActivityAt, locale, tz)}
-                  </TD>
-                </TR>
-              ))}
-            </tbody>
-          </Table>
-        )}
-      </section>
+      <ListCard
+        title={listTitle}
+        count={
+          tickets.data
+            ? filtered
+              ? t('support.list.countFiltered', { shown: shown.length, count: rows.length })
+              : t('support.list.count', { count: rows.length })
+            : undefined
+        }
+        search={
+          rows.length ? (
+            <ListSearch value={query} onChange={setQuery} label={t('support.list.search')} />
+          ) : undefined
+        }
+        filters={
+          <>
+            {rows.length ? (
+              <ListFilter
+                value={status}
+                onChange={setStatus}
+                label={t('common.status')}
+                anyLabel={t('support.list.anyStatus')}
+                options={STATUSES.map((x) => ({ value: x, label: t(`support.statuses.${x}`) }))}
+              />
+            ) : null}
+            {isAdmin ? (
+              <div role="group" aria-label={t('support.scopeLabel')} className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={scope === 'mine' ? 'primary' : 'secondary'}
+                  aria-pressed={scope === 'mine'}
+                  onClick={() => setScope('mine')}
+                >
+                  {t('support.myTickets')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={scope === 'all' ? 'primary' : 'secondary'}
+                  aria-pressed={scope === 'all'}
+                  onClick={() => setScope('all')}
+                >
+                  {t('support.allTickets')}
+                </Button>
+              </div>
+            ) : null}
+          </>
+        }
+        applied={
+          status
+            ? [
+                {
+                  key: 'status',
+                  label: t('support.list.statusChip', { status: t(`support.statuses.${status}`) }),
+                  clear: () => setStatus(''),
+                },
+              ]
+            : []
+        }
+        empty={
+          !tickets.data ? (
+            <Skeleton className="h-24 w-full" />
+          ) : rows.length === 0 ? (
+            <EmptyState level={3} icon={<Ticket aria-hidden />} title={t('support.noTickets')} />
+          ) : shown.length === 0 ? (
+            <ListNoMatches
+              onClear={() => {
+                setQuery('');
+                setStatus('');
+              }}
+            />
+          ) : undefined
+        }
+      >
+        <Table scrollLabel={listTitle}>
+          <caption className="sr-only">{listTitle}</caption>
+          <THead>
+            <tr>
+              <TH>{t('support.reference')}</TH>
+              <TH>{t('support.subject')}</TH>
+              <TH>{t('support.priority')}</TH>
+              <TH>{t('common.status')}</TH>
+              <TH>{t('support.sla')}</TH>
+              <TH>{t('support.updated')}</TH>
+            </tr>
+          </THead>
+          <tbody>
+            {shown.map((tk) => (
+              <TR key={tk.id}>
+                <TD>
+                  <Link href={`/app/support/${tk.id}`}>{tk.reference}</Link>
+                </TD>
+                <TD className="max-w-[28ch] truncate">{tk.subject}</TD>
+                <TD>{t(`support.priorities.${tk.priority}`)}</TD>
+                <TD>{t(`support.statuses.${tk.status}`)}</TD>
+                <TD>
+                  <Badge tone={slaTone(tk.sla.flag)}>{t(`support.slaStates.${tk.sla.flag}`)}</Badge>
+                </TD>
+                <TD className="text-footnote text-text-secondary">
+                  {formatDateTime(tk.lastActivityAt, locale, tz)}
+                </TD>
+              </TR>
+            ))}
+          </tbody>
+        </Table>
+      </ListCard>
     </div>
   );
 }

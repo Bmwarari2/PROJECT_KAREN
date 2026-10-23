@@ -4,6 +4,7 @@ import pg from 'pg';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { E2E_DB } from './env';
 import { expectAccessible, PASSWORD, signUpAndEnrol } from './helpers';
+import { expectModulePage, moduleTabs, openModule } from './module-helpers';
 
 /**
  * Phase 6 flows in the browser (functional project, axe on every screen): a payroll admin exports a
@@ -110,7 +111,7 @@ test('a payroll admin exports a pay period and downloads the file', async ({ pag
   });
 
   await page.goto('/app/payroll');
-  await expect(page.getByRole('heading', { name: 'Payroll', level: 1 })).toBeVisible();
+  await expectModulePage(page, 'Pay', 'Payroll');
   await page.getByLabel('Connector name').fill('Bureau CSV');
   await page.getByLabel('Payroll system or format').selectOption('csv');
   await page.getByRole('button', { name: 'Add connector' }).click();
@@ -157,8 +158,10 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
 
   await employeeLogin();
   await signIn(page, person.email);
-  await page.getByRole('navigation', { name: 'App' }).first().getByRole('link', { name: 'Payslips' }).click();
+  // an employee's Pay module has one tab, so the rail opens their payslips (no payroll tab)
+  await openModule(page, 'Pay');
   await page.waitForURL(/\/app\/payslips$/);
+  await expect(moduleTabs(page, 'Pay')).toHaveCount(0);
   await expect(page.getByText('March 2026')).toBeVisible();
   await expect(page.getByText('New', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Upload payslips or year-end documents' })).toHaveCount(0);
@@ -175,13 +178,25 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
 test('an employee acknowledges the handover of an asset', async ({ page }) => {
   await asAdmin(page);
   await page.goto('/app/assets');
-  await page.getByLabel('Asset tag').fill('LT-E2E-1');
-  await page.getByLabel('Name', { exact: true }).fill('Fictional Laptop 13');
-  await page.getByLabel('Type').selectOption('laptop');
-  await page.getByLabel('Serial number').fill('FL13-0001');
-  await page.getByLabel('Cost (GBP)').fill('999.00');
+  await expectModulePage(page, 'IT', 'Equipment');
+  // the register's toolbar opens the form in a dialog
   await page.getByRole('button', { name: 'Add asset' }).click();
-  await expect(page.getByRole('cell', { name: 'Fictional Laptop 13', exact: true })).toBeVisible();
+  const add = page.getByRole('dialog', { name: 'Add an asset' });
+  await add.getByLabel('Asset tag').fill('LT-E2E-1');
+  await add.getByLabel('Name', { exact: true }).fill('Fictional Laptop 13');
+  await add.getByLabel('Type').selectOption('laptop');
+  await add.getByLabel('Serial number').fill('FL13-0001');
+  await add.getByLabel('Cost (GBP)').fill('999.00');
+  await add.getByRole('button', { name: 'Add asset' }).click();
+  await expect(add).toBeHidden();
+  const register = page.getByRole('region', { name: 'Asset register' });
+  await expect(register.getByRole('cell', { name: 'Fictional Laptop 13', exact: true })).toBeVisible();
+  await expect(page.getByText('1 asset', { exact: true })).toBeVisible();
+  // the search in the toolbar narrows the register
+  await page.getByRole('searchbox', { name: 'Search assets' }).fill('no such laptop');
+  await expect(page.getByText('Nothing matches these filters')).toBeVisible();
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(register.getByRole('cell', { name: 'Fictional Laptop 13', exact: true })).toBeVisible();
   await expect(page.getByText('£999.00')).toBeVisible();
   await page.getByRole('button', { name: 'Issue: Fictional Laptop 13' }).click();
   await page.getByLabel('Employee').selectOption({ label: 'Emma Fictional' });

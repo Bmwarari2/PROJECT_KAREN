@@ -14,7 +14,8 @@ import {
 import { Card, CardTitle, EmptyState } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { SETTINGS_GROUPS, visibleSections, type SettingsGroup } from './sections';
-import { PageHeader, usePermission } from './kit';
+import { PageIntro } from '@/components/module-page';
+import { usePermission } from './kit';
 import { PlatformSettingsLinks } from './platform-links';
 
 const ICONS: Record<SettingsGroup, React.ReactNode> = {
@@ -33,7 +34,7 @@ export default function SettingsPage() {
   const sections = visibleSections(has);
   return (
     <>
-      <PageHeader title={t('app.settings.title')} lead={t('admin.index.lead')} />
+      <PageIntro title={t('app.settings.title')} titleIsTab lead={t('admin.index.lead')} />
       {sections.length === 0 ? (
         <EmptyState icon={<Settings aria-hidden />} title={t('admin.index.none')} />
       ) : (

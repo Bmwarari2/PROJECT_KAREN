@@ -5,6 +5,7 @@ import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, use
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { ListCard, PageIntro } from '@/components/module-page';
 
 interface Rule {
   id: string;
@@ -64,7 +65,7 @@ export default function AutomationPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-2">{t('automation.title')}</h1>
+      <PageIntro title={t('automation.title')} titleIsTab lead={t('automation.lead')} />
       <Card>
         <CardTitle>{t('automation.new')}</CardTitle>
         <form onSubmit={create} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
@@ -93,13 +94,19 @@ export default function AutomationPage() {
           <Button type="submit">{t('common.add')}</Button>
         </form>
       </Card>
-      {!data ? (
-        <Skeleton className="h-40 w-full" />
-      ) : data.length === 0 ? (
-        <EmptyState icon={<Zap aria-hidden />} title={t('automation.empty')} />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {data.map((r) => (
+      <ListCard
+        title={t('automation.list.title')}
+        count={data ? t('automation.list.count', { count: data.length }) : undefined}
+        empty={
+          !data ? (
+            <Skeleton className="h-40 w-full" />
+          ) : data.length === 0 ? (
+            <EmptyState level={3} icon={<Zap aria-hidden />} title={t('automation.empty')} />
+          ) : undefined
+        }
+      >
+        <ul className="flex flex-col gap-2 p-4">
+          {(data ?? []).map((r) => (
             <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
               <Zap aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
               <span className="text-callout font-semibold">{r.name}</span>
@@ -114,7 +121,7 @@ export default function AutomationPage() {
             </li>
           ))}
         </ul>
-      )}
+      </ListCard>
     </div>
   );
 }
