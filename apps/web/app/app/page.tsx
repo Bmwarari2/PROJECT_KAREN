@@ -33,7 +33,7 @@ export default function AppHome() {
         </Card>
         <Card>
           <CardTitle>{t('app.home.roles')}</CardTitle>
-          <p className="mt-2 text-callout text-text-secondary">{s?.roles.map((r) => t(`roles.${r}`)).join(', ')}</p>
+          <p className="mt-2 text-callout text-text-secondary">{s?.roles.map((r) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`))).join(', ')}</p>
         </Card>
         <Card>
           <CardTitle>{t('app.home.region')}</CardTitle>

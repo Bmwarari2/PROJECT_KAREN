@@ -29,6 +29,7 @@ import { statusRoutes } from './status/routes';
 import { backofficeRoutes } from './backoffice/routes';
 import { platformRoutes } from './platform';
 import { aiRoutes } from './ai/routes';
+import { roleRoutes } from './authz/routes';
 
 /** Feature modules registered per phase. Importing a module also registers its jobs and subscribers. */
 export async function registerModules(app: FastifyInstance) {
@@ -67,4 +68,6 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(backofficeRoutes);
   // Phase 11: Ask HR assistant
   await app.register(aiRoutes);
+  // Role and access management
+  await app.register(roleRoutes);
 }

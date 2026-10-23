@@ -121,7 +121,7 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.push_subscriptions': { subject: [U()], category: 'account', erase: DEL },
   'app.notifications': { subject: [U()], category: 'notifications', erase: DEL },
   'app.group_members': { subject: [U()], category: 'account', erase: DEL },
-  'app.role_assignments': { subject: [U()], category: 'account', erase: DEL },
+  'app.role_assignments': { subject: [U()], actor: ['created_by'], category: 'account', erase: DEL },
   'app.delegations': { subject: [U('from_user_id'), U('to_user_id')], category: 'account', erase: DEL },
   'app.subprocessor_subscriptions': { subject: [U()], category: 'account', erase: DEL },
   'app.support_grants': { subject: [], actor: ['granted_by_user_id'], category: 'accountability', erase: { keep: 'security record of support access' } },

@@ -915,5 +915,38 @@
   "onboarding": {
     "addressPostcode": "ZIP code",
     "addressCity": "City"
+  },
+  "access": {
+    "area": {
+      "org": "Organization",
+      "rota": "Schedules",
+      "absence": "Sick leave and absence",
+      "help": "Help center"
+    },
+    "perm": {
+      "org": {
+        "manage": "Manage organization structure"
+      },
+      "absence": {
+        "record": "Record sick leave"
+      },
+      "rota": {
+        "view": "View schedules",
+        "manage": "Build and publish schedules"
+      },
+      "vault": {
+        "read:sickness": "View sick leave details and doctor’s notes",
+        "write:sickness": "Record sick leave details and doctor’s notes"
+      },
+      "help": {
+        "read": "Read the help center"
+      }
+    },
+    "field": {
+      "costCentre": "Cost center"
+    },
+    "users": {
+      "noScopeValues": "There is nothing to choose yet. Add them under Organization structure."
+    }
   }
 }

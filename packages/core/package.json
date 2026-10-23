@@ -17,6 +17,7 @@
     "./config": "./src/config.ts",
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
+    "./access": "./src/access.ts",
     "./residency": "./src/residency.ts",
     "./billing": "./src/billing/index.ts",
     "./help": "./src/help/index.ts",
