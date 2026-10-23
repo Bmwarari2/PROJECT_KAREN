@@ -1607,6 +1607,7 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
   - an in-process rate limiter (no Valkey);
   - mail to a bucket;
   - generated passwords in the private, versioned state bucket as well as in Secret Manager.
+- The deploy's first, targeted step must create everything the jobs need, secret values included, because Cloud Run refuses a secret with no version. The first real deploy (2026-10-23) failed on exactly that, so the services and jobs now depend on the secret versions, and `tests/first-deploy.tftest.hcl` plans that step from an empty state.
 
 ## ADR-0158 — A deterministic staging workspace seeded through the app's own services (2026-10-23)
 

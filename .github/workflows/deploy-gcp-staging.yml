@@ -42,6 +42,8 @@ env:
   TF_VAR_api_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/api:${{ github.event.workflow_run.head_sha || github.sha }}
   TF_VAR_worker_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/worker:${{ github.event.workflow_run.head_sha || github.sha }}
   SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  # gcloud's default project (the jobs and secrets commands below do not repeat it)
+  CLOUDSDK_CORE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
 
 jobs:
   build:
