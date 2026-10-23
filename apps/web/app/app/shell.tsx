@@ -261,13 +261,15 @@ export function AppShell({
               type="button"
               onClick={() => setSearchOpen(true)}
               disabled={!ready}
-              aria-label={t('app.ws.search.open')}
               aria-keyshortcuts="Control+K Meta+K"
               className="ml-auto flex h-10 min-w-10 items-center justify-center gap-2 rounded-md bg-chrome-raised px-2.5 text-left text-callout text-on-chrome-secondary hover:text-on-chrome focus-visible:outline-2 focus-visible:outline-chrome-focus disabled:opacity-60 sm:ml-2 sm:max-w-[560px] sm:flex-1 sm:justify-start sm:px-3"
             >
               <Search aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5]" />
-              <span className="hidden truncate sm:inline">{t('app.ws.search.placeholder')}</span>
-              <kbd className="ml-auto hidden rounded border border-on-chrome-secondary px-1.5 text-footnote md:inline">
+              <span className="sr-only sm:not-sr-only sm:truncate">{t('app.ws.search.placeholder')}</span>
+              <kbd
+                aria-hidden
+                className="ml-auto hidden rounded border border-on-chrome-secondary px-1.5 text-footnote md:inline"
+              >
                 {mac ? t('app.ws.search.shortcutMac') : t('app.ws.search.shortcut')}
               </kbd>
             </button>
