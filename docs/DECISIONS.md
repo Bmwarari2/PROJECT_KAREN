@@ -1471,3 +1471,47 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 - The builder no longer asks people to pick a chart type that might not fit the data.
 - What the preview shows cannot drift from what the app shows, because both read one map.
+
+## ADR-0156 — A deterministic staging workspace seeded through the app's own services (2026-10-23)
+
+**Context.** The one-region staging environment (UK cell) needs a test organisation that looks lived-in, so the product owner can click through every module, and one sign-in per built-in role. The existing `pnpm db:seed` (25 people, one entity, no activity) and `pnpm synth:enterprise` (200,000 people bulk-copied as the owner role, no module data) do not serve that.
+
+**Decision.**
+
+- **`pnpm db:seed:staging`** (`apps/api/src/cli/seed-staging.ts`, bundled as `dist/seed-staging.mjs` in the API image) seeds workspace `kestrel`, "Kestrel Fictional Group Ltd", homed in the UK. It has 300 current staff: 262 in the UK entity (London, Manchester, Edinburgh), 22 in Ireland and 16 in New York. On top are 8 leavers and 5 future joiners. Every module with tables gets data.
+- **The company is a pure, deterministic plan** (`staging/plan.ts`): a fixed PRNG seed, the roster size, and an anchor date (today in Europe/London). Who is who (employee numbers, names, teams, logins) never depends on the anchor. Unit tests check the plan's invariants: the UK entity is above the gender pay gap threshold from the GB pack, the manager has 6 to 10 reports, every pay record is at or above the minimum wage in the packs, and contact details use only fictional ranges.
+- **Data is written the way the app writes it.**
+  - Existing staff go through the bulk-import service functions. That path emits no `employee.created` events, so the worker does not start onboarding for people hired years ago.
+  - History uses the effective-dated change functions, and pending requests and their decisions use the approval service.
+  - Onboarding uses the workflow service, sensitive values use the vault (through the configured key provider), and letters use the document generator.
+  - Pay periods use the payroll inputs and exports, and timesheets use the timesheet engine.
+  - Plain SQL inside `withTenant` is used only where the API itself writes inline SQL in a route.
+  - The seed connects as the application role (RLS applies), never as the owner or migrator.
+- **Rule values come from the packs.** A pack may have no version for a historic date: GB right-to-work rules start on 2026-10-01 and the GB minimum wage on 2025-04-01. For those dates the first version is used and recorded as the rule source (`ruleAtOrFirst`). The company's own settings are policy, not law: salaries, notice periods, 1 April pay reviews, a fit note after 7 days, 3 extra Irish days, 15 US days of paid time off and a 24 December closure.
+- **Idempotent.** All data is written in one tenant transaction that ends with the audit marker `staging.seed_completed`, so a failed run leaves nothing behind. A repeated run only brings the logins in line with `STAGING_LOGINS`: email, password and built-in roles. A changed password also clears any lockout and revokes the user's sessions. Roles a tester added are kept.
+- **Logins.** `STAGING_LOGINS={"workspace":"kestrel","logins":[{"role":"owner","email":"…","password":"…"}, …]}` must name each of `owner`, `hr_admin`, `payroll_admin`, `manager` and `employee` exactly once. Passwords must pass the app's password policy. The variable is required unless `APP_ENV` is `dev` or `test`. Without it, locally only, the default `.example.test` emails get fresh passwords, which are printed once. Outside local development the seed prints neither emails nor passwords. No MFA factor is created: admin roles enrol at first sign-in, as the app enforces.
+- **No message burst.** The seeded history raises in-app notifications through the normal paths, but their email and push delivery jobs are cancelled.
+- **Guards.** The seed refuses `APP_ENV=prod`, a cell other than the UK, and an in-memory object store outside local development.
+- **Out of scope stays out.** Payslips and P60s are sample PDFs that show gross pay only; tax and deductions belong to the payroll provider.
+- **Not seeded, and why:**
+  - bank details and national identifiers: the schema has no place for them;
+  - IT automation: it needs a consented Microsoft 365 or Google Workspace connection;
+  - API keys, webhooks, SSO and SCIM: each issues a secret that is shown once;
+  - data-export destinations: they are customer-owned buckets;
+  - support tickets: they would enter the real back-office queue;
+  - FMLA cases: the US entity is below the FMLA employer threshold in the US pack;
+  - kiosks: the token is shown once;
+  - the Ask HR index: the assistant is off by default;
+  - billing beyond the trial: the worker starts the trial from `tenant.created`, as it does at sign-up.
+- **Image.** The Dockerfile bundles the seed and copies `packages/rules/packs` to `/srv/packs`. The bundles resolve the packs from `../packs` relative to `dist/`.
+
+**Consequences.**
+
+- Staging runs the image's `node dist/seed-staging.mjs` as a one-off job, after migrations, with the same database, directory, key and file-store settings as the API, plus `STAGING_LOGINS`.
+- A full run takes about 25 s against a local database. It makes about 12,000 database round trips, about 650 key-provider calls and about 880 file uploads (8 in parallel).
+- Rotating the logins secret and re-running the job resets the passwords without touching any data.
+- `apps/api/test/seed-staging.int.test.ts` runs the full-size seed into a fresh database and uses the real API as each login. It checks:
+  - the entity split and the threshold, and that every login can sign in;
+  - that the manager sees only their team and the employee only their own record;
+  - that every booked leave is within its balance (leave engine);
+  - that vault values are ciphertext only, and that a second run changes nothing but the passwords.
