@@ -18,6 +18,9 @@ const visual = (name: string, device: object, colorScheme: 'light' | 'dark') => 
     ...device,
     colorScheme,
     reducedMotion: 'reduce' as const,
+    // Text inside composited layers (the translucent top bar) switched between subpixel and greyscale
+    // anti-aliasing from run to run; greyscale everywhere makes screenshots repeatable.
+    launchOptions: { args: ['--disable-lcd-text', '--force-color-profile=srgb'] },
     baseURL: `http://${hostForBrowser}:${webPort}`,
     ...(remote ? { connectOptions: { wsEndpoint: remote } } : {}),
   },

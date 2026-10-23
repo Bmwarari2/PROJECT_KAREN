@@ -44,8 +44,10 @@ function shotName(route: string) {
 }
 
 /**
- * Marks text that changes with the real date, random ids or the host (timestamps, relative times,
- * UUIDs, references, URLs) so it is masked; the masks keep the layout under test.
+ * Text that changes with the real date, random ids or the host (timestamps, relative times, UUIDs,
+ * references, URLs) is replaced by a constant and masked, so the layout around it stays under test.
+ * Native selects are laid out again once fonts have loaded (one laid out with the fallback font
+ * kept its old text metrics).
  */
 async function markVolatile(page: Page, app: boolean) {
   await page.evaluate((app) => {
@@ -66,7 +68,11 @@ async function markVolatile(page: Page, app: boolean) {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const text = n.textContent ?? '';
-      if (text.trim() && patterns.some((p) => p.test(text))) n.parentElement?.setAttribute('data-visual-mask', '');
+      if (!text.trim() || !patterns.some((p) => p.test(text))) continue;
+      // a constant stand-in keeps the layout identical whatever the real value's length; the mask
+      // then hides it
+      n.textContent = '00:00';
+      n.parentElement?.setAttribute('data-visual-mask', '');
     }
   }, app);
 }
@@ -82,6 +88,14 @@ async function capture(page: Page, route: string, path = route) {
     await Promise.all(document.getAnimations().filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime))).map((a) => a.finished.catch(() => undefined)));
   });
   await markVolatile(page, route.startsWith('/app'));
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll<HTMLSelectElement>('select')) {
+      const display = el.style.display;
+      el.style.display = 'none';
+      void el.offsetHeight;
+      el.style.display = display;
+    }
+  });
   await expect.soft(page).toHaveScreenshot(shotName(route), {
     fullPage: true,
     timeout: 300_000,
