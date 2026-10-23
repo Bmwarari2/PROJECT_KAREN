@@ -10,21 +10,14 @@ import type { QuickAction } from '../workspace';
 export function MoreActionsMenu({
   actions,
   defaultOpen = false,
-  focusOnMount = false,
 }: {
   actions: QuickAction[];
   defaultOpen?: boolean;
-  /** Take the keyboard focus from the stand-in button it replaces. */
-  focusOnMount?: boolean;
 }) {
   const t = useT();
-  const trigger = React.useRef<HTMLButtonElement>(null);
-  React.useEffect(() => {
-    if (focusOnMount) trigger.current?.focus();
-  }, [focusOnMount]);
   return (
     <Menu defaultOpen={defaultOpen}>
-      <MenuTrigger ref={trigger} className={buttonVariants({ variant: 'secondary', size: 'md' })}>
+      <MenuTrigger className={buttonVariants({ variant: 'secondary', size: 'md' })}>
         {t('dashboard.moreActions')}
         <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
       </MenuTrigger>

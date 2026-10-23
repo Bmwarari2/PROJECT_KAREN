@@ -173,9 +173,9 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   const showYou = !!session.employeeId && (!s || !!(s.leave || s.rota || s.clock || s.payslips));
   const showOrg = showInsights || showCalendar;
   const primary = actions.slice(0, VISIBLE_ACTIONS);
-  // the menu's code loads when someone reaches for the stand-in button (pointer, focus, touch)
+  // the menu's code loads when someone points at, touches or activates the stand-in button
   const [MoreActions, setMoreActions] = React.useState<typeof MoreActionsMenuType | null>(null);
-  const [moreLoad, setMoreLoad] = React.useState<'no' | 'load' | 'focus' | 'open'>('no');
+  const [moreLoad, setMoreLoad] = React.useState<'no' | 'load' | 'open'>('no');
   const wantMore = moreLoad !== 'no';
   React.useEffect(() => {
     if (!wantMore) return;
@@ -185,8 +185,7 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
       live = false;
     };
   }, [wantMore]);
-  const moreIntent = (focused: boolean) =>
-    setMoreLoad((v) => (v === 'open' ? v : focused ? 'focus' : v === 'no' ? 'load' : v));
+  const moreIntent = () => setMoreLoad((v) => (v === 'no' ? 'load' : v));
   const more = actions.slice(VISIBLE_ACTIONS);
 
   return (
@@ -217,20 +216,15 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
               {more.length ? (
                 <li>
                   {MoreActions ? (
-                    <MoreActions
-                      actions={more}
-                      defaultOpen={moreLoad === 'open'}
-                      focusOnMount={moreLoad === 'focus' || moreLoad === 'open'}
-                    />
+                    <MoreActions actions={more} defaultOpen={moreLoad === 'open'} />
                   ) : (
                     <button
                       type="button"
                       aria-haspopup="menu"
                       aria-expanded={false}
                       className={buttonVariants({ variant: 'secondary', size: 'md' })}
-                      onPointerEnter={() => moreIntent(false)}
-                      onTouchStart={() => moreIntent(false)}
-                      onFocus={() => moreIntent(true)}
+                      onPointerEnter={moreIntent}
+                      onTouchStart={moreIntent}
                       onClick={() => setMoreLoad('open')}
                     >
                       {t('dashboard.moreActions')}

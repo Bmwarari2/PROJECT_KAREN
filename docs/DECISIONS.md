@@ -1660,10 +1660,10 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 **Decision.**
 
 - **`packages/core/src/time.ts` imports `Temporal` from `temporal-polyfill`** (MIT, maintained, spec-complete for the stage-4 proposal), pinned exactly at 1.0.5. It is about 20 KB gzipped and uses native `BigInt`, not JSBI. It remains the only place that imports a Temporal implementation, so the rule "time through `@thapsus/core/time` only" is unchanged. The time utilities' unit, integration and golden tests run unchanged against it.
-- **The account menu and "More actions" load on intent.** A same-looking stand-in button loads the menu's code on pointer enter, touch start or focus, and opens it on click. If the stand-in had the keyboard focus, the real trigger takes the focus over when it mounts, so keyboard users lose nothing. The shell's badge counts still wait for idle.
+- **The account menu and "More actions" load on intent.** A same-looking stand-in button loads the menu's code on pointer enter or touch start, and a click, Enter or Space loads it and opens it. Keyboard focus alone does not load it: swapping the button while it has the focus would drop the focus, or pull it back after the person had tabbed on (the keyboard sweep in `a11y-sweep.spec.ts` caught that in a first version). The shell's badge counts still wait for idle.
 
 **Consequences.**
 
 - About 25 KB gzipped less JavaScript, and less start-up work, on every app page.
-- The first open of either menu can wait for one small chunk on a very slow connection. Pointing at or focusing the button usually covers that time.
+- The first open of either menu can wait for one small chunk on a very slow connection; pointing at the button usually covers that time. A keyboard user who opens it waits for the same chunk, and the menu takes the focus when it opens.
 - When the platform ships Temporal natively everywhere we support, the import in `time.ts` is the one line to remove.

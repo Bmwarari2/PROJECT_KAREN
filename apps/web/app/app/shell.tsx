@@ -120,10 +120,10 @@ export function AppShell({
   }, [searchOpen]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [collapsed, setCollapsed] = useRailCollapsed();
-  // The account menu's code loads when someone reaches for it (pointer, focus, touch): until then the
-  // same-looking button stands in, opens the menu when it arrives, and hands the focus over.
+  // The account menu's code loads when someone points at or touches the button, or activates it:
+  // until then the same-looking button stands in, and opens the menu when it arrives if it was used.
   const [UserMenu, setUserMenu] = React.useState<UserMenuType | null>(null);
-  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'load' | 'focus' | 'open'>('no');
+  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'load' | 'open'>('no');
   const idle = useIdle();
   // The rail column only shows from the lg breakpoint; on phones (the menu sheet has its own copy)
   // it is not rendered at all, so a phone does not build and hydrate a menu it cannot see.
@@ -379,14 +379,11 @@ export function AppShell({
                     theme={theme}
                     onSignOut={signOut}
                     defaultOpen={userMenuLoad === 'open'}
-                    focusOnMount={userMenuLoad === 'focus' || userMenuLoad === 'open'}
                   />
                 ) : (
                   <UserMenuButton
                     session={session}
-                    onIntent={(focused) =>
-                      setUserMenuLoad((v) => (v === 'open' ? v : focused ? 'focus' : v === 'no' ? 'load' : v))
-                    }
+                    onIntent={() => setUserMenuLoad((v) => (v === 'no' ? 'load' : v))}
                     onOpen={() => setUserMenuLoad('open')}
                   />
                 )

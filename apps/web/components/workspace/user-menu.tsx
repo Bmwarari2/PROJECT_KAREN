@@ -28,28 +28,21 @@ export function UserMenu({
   theme,
   onSignOut,
   defaultOpen = false,
-  focusOnMount = false,
 }: {
   session: SessionInfo;
   theme: ThemeChoice;
   onSignOut: () => void;
   /** Open straight away (the placeholder button was clicked before the menu had loaded). */
   defaultOpen?: boolean;
-  /** Take the keyboard focus from the stand-in button it replaces. */
-  focusOnMount?: boolean;
 }) {
   const t = useT();
   const locale = useLocale();
   const router = useRouter();
   const [choice, setChoice] = React.useState<ThemeChoice>(theme);
-  const trigger = React.useRef<HTMLButtonElement>(null);
-  React.useEffect(() => {
-    if (focusOnMount) trigger.current?.focus();
-  }, [focusOnMount]);
   const roles = roleNames(t, session.roles);
   return (
     <Menu defaultOpen={defaultOpen}>
-      <MenuTrigger ref={trigger} className={USER_MENU_TRIGGER}>
+      <MenuTrigger className={USER_MENU_TRIGGER}>
         <UserMenuFace session={session} />
       </MenuTrigger>
       <MenuContent className="w-[280px]">
