@@ -1,6 +1,7 @@
 # Handover — 2026-10-23
 
 Everything in brief §10 except the AWS work is done and merged to `main`. What remains is the AWS phase:
+
 - staging in three regions;
 - the staging smoke runs;
 - the load test;
@@ -28,14 +29,15 @@ The product owner hands that back to the original agent on the owner's machine. 
 
 ## What is left (AWS phase)
 
-| PROGRESS | Work | Where it is described |
-| --- | --- | --- |
-| 12.9 | Deploy staging in eu-west-2, eu-central-1 and us-east-2 (global stack in eu-west-2), then `pnpm smoke:staging` in each region | `docs/runbooks/deploy.md`; steps 1–4 below |
-| 12.1 | `pnpm loadtest --provision` against the temporary `loadtest` environment; results into PERFORMANCE.md §3; teardown | `docs/runbooks/load-test.md`; step 5 below |
-| 12.8 | Backup restore drill and AZ failure drill on staging; results into PERFORMANCE.md §4 | `docs/runbooks/backup-restore.md` §5, `docs/runbooks/az-failure.md` §2; step 6 below |
-| §10 | Tick 12.1, 12.8, 12.9, Phase 12 and the remaining Definition of done items once the runs pass | `docs/PROGRESS.md` |
+| PROGRESS | Work                                                                                                                          | Where it is described                                                                |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 12.9     | Deploy staging in eu-west-2, eu-central-1 and us-east-2 (global stack in eu-west-2), then `pnpm smoke:staging` in each region | `docs/runbooks/deploy.md`; steps 1–4 below                                           |
+| 12.1     | `pnpm loadtest --provision` against the temporary `loadtest` environment; results into PERFORMANCE.md §3; teardown            | `docs/runbooks/load-test.md`; step 5 below                                           |
+| 12.8     | Backup restore drill and AZ failure drill on staging; results into PERFORMANCE.md §4                                          | `docs/runbooks/backup-restore.md` §5, `docs/runbooks/az-failure.md` §2; step 6 below |
+| §10      | Tick 12.1, 12.8, 12.9, Phase 12 and the remaining Definition of done items once the runs pass                                 | `docs/PROGRESS.md`                                                                   |
 
 **Rules that still apply:**
+
 - **Regions:** approved regions are eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1. Never us-east-1 or us-west-2; the planner refuses them.
 - **Ask the owner first** before:
   - any production deploy;
@@ -95,6 +97,7 @@ AWS_REGION=eu-west-2 node --import tsx scripts/deploy.mjs --env staging --only g
 ```
 
 Each cell target:
+
 - deploys the stack and copies the internal token;
 - fills the VAPID and mock IdP keys;
 - runs the migrator for every database of the cell;
@@ -110,6 +113,7 @@ pnpm smoke:staging --regions eu --insecure-tls      # one region
 ```
 
 In each region it:
+
 - signs up a fictional tenant and checks its home region;
 - signs in through the staging mock IdP;
 - adds an employee, requests leave, clocks in and exports data;
@@ -126,20 +130,23 @@ pnpm loadtest --provision --insecure-tls --record \
 ```
 
 The run:
+
 1. provisions `ThapsusHr-loadtest-global` and `ThapsusHr-loadtest-cell-uk`;
 2. generates the 200,000-employee / 50-entity tenant in-region;
 3. runs the three scenarios, whose thresholds are the §3 targets;
 4. appends the results to PERFORMANCE.md §3;
 5. deletes the environment.
 
-Confirm in CloudFormation that both stacks are gone.
+Confirm in CloudFormation that both stacks are gone. Then run `pnpm format`, because `--record` appends unformatted tables to PERFORMANCE.md.
 
 **6. Resilience drills** (12.8, staging only).
+
 1. Follow `docs/runbooks/backup-restore.md` §5 and `docs/runbooks/az-failure.md` §2.
 2. Fill PERFORMANCE.md §4.
 3. Delete the drill's restored cluster afterwards.
 
 **7. Close out.**
+
 1. Tick 12.1, 12.8 and 12.9 in PROGRESS.md with their evidence.
 2. Set Phase 12 to `[x]` and tick the remaining Definition of done items.
 3. Run `pnpm verify`.

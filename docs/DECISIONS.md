@@ -9,6 +9,7 @@ Dated records of implementation choices, especially where they differ from the d
 **Context.** The staging account (`247115937622`) sits in an AWS Organization whose service control policy (`p-muwhpaps`, set from the management account) first denied every regional API. The product owner then relaxed it. Workloads are now allowed in eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1. In us-east-1 only global services are allowed, and us-west-2 is blocked for workloads. The brief's original backup map sent US backups to us-west-2, and the usual home for CloudFront certificates and global stacks is us-east-1.
 
 **Decision.** The product owner set these rules on 2026-10-18:
+
 - Home regions are unchanged: UK = eu-west-2, EU = eu-central-1, US = us-east-2.
 - Backup copies: EU → eu-west-1, **US → us-west-1** (was us-west-2), UK → none (London only, across AZs).
 - The **global stack runs in eu-west-2**. That covers the tenant directory, region-aware sign-in, the marketing site and billing.
@@ -115,13 +116,13 @@ Dated records of implementation choices, especially where they differ from the d
 
 **Decision.** Folder visibility controls lists and downloads in exactly the same way. A shared SQL predicate and a matching row check implement it, and one test exercises both against every visibility.
 
-| Folder | Document about a person | Company document |
-| --- | --- | --- |
-| none | the person, and whoever may read their documents (managers, HR) | HR (`documents.manage`) |
-| `employee` | the person, managers, HR | everyone signed in |
-| `managers` | managers and HR, **not** the person (e.g. manager notes) | anyone with `documents.read`/`manage` |
-| `hr` | HR who manage that person's documents only | HR |
-| `everyone` | everyone signed in | everyone signed in |
+| Folder     | Document about a person                                         | Company document                      |
+| ---------- | --------------------------------------------------------------- | ------------------------------------- |
+| none       | the person, and whoever may read their documents (managers, HR) | HR (`documents.manage`)               |
+| `employee` | the person, managers, HR                                        | everyone signed in                    |
+| `managers` | managers and HR, **not** the person (e.g. manager notes)        | anyone with `documents.read`/`manage` |
+| `hr`       | HR who manage that person's documents only                      | HR                                    |
+| `everyone` | everyone signed in                                              | everyone signed in                    |
 
 Without HR rights, a person may only file their own upload in no folder, an `employee` folder or an `everyone` folder, so they can still see it afterwards.
 
@@ -132,6 +133,7 @@ Without HR rights, a person may only file their own upload in no folder, an `emp
 ## ADR-0017 — Pre-start portal, invitations and person-assigned tasks (2026-10-18)
 
 **Decision.**
+
 - `POST /v1/employees/:id/invite` (`users.invite`, in scope) gives a person a self-service sign-in linked to their employee record. The address defaults to work email, then personal email. The optional extra role is limited to `manager`; admin roles are assigned through role settings, which require MFA. The person is emailed a one-time link from the home region, valid for 7 days, using the magic-link mechanism. When the tenant enforces SSO, the email points to the sign-in page instead. Re-inviting sends a new link and keeps the account.
 - Workflow tasks for the joiner or their manager record `assignee_employee_id` (migration 0007e). Tasks created before the person can sign in are handed to them when they are invited. `GET /v1/me/onboarding` and `/app/welcome` show documents to sign, two built-in forms (personal details, emergency contact) and the joiner's own checklist, with progress. Before the start date, form answers are effective from the start date, because the records begin then.
 - Each task stores `reminder_days_before` from its template. Previously the field was accepted and then ignored. The reminder job sends one due-soon reminder at that lead time (default 2 days) and one overdue reminder.
@@ -142,6 +144,7 @@ Without HR rights, a person may only file their own upload in no folder, an `emp
 ## ADR-0018 — Dispatching "call integration" automation actions (2026-10-18)
 
 **Decision.** The action emits `integration.requested` to the outbox, as before. A subscriber now records an `app.integration_calls` row, one per event, which is the execution log. It also enqueues an idempotent `integrations.dispatch` job, which runs the handler registered for that integration id and stores the result (`GET /v1/automation/integration-calls`). Later phases register connectors in the same registry. Two handlers are built in:
+
 - `log` makes no external call.
 - `http` POSTs identifiers only (rule, event, employee id, date) as JSON to a public `https` URL. It is signed with a per-tenant HMAC key derived from `INTEGRATION_SIGNING_KEY`. If that key is not configured, the handler refuses to run rather than signing with a placeholder (webhooks still do).
 
@@ -154,6 +157,7 @@ Rules are validated when saved. Unknown integrations are rejected, as are non-ht
 **Context.** The import job made about 15 sequential statements per row and 5 per manager link: 2,000 rows took 55 s. It ended with a tenant-wide refresh whose `UPDATE … FROM` self-join planned as a quadratic nested loop: 20,000 people took 160 s, above the 30 s statement timeout. Right after a bulk insert, planner statistics still describe the tenant as tiny, so set-based joins picked whole-table scans per row.
 
 **Decision.**
+
 - New people are created per 500-row chunk with one `INSERT … SELECT FROM unnest` per table, grouped by the set of fields present. Existing people are compared with a bulk read of the values in force; numbers compare numerically, so `30` equals `30.00` and re-imports stay idempotent. Any constraint failure in a chunk rolls back to a savepoint and replays that chunk row by row, which gives exact row errors. Duplicate numbers in a file, updates, and rows without required fields always take the row-by-row path.
 - Manager links for people without a reporting line are inserted in bulk. The current manager is kept up to date as links are written. An in-memory check plus a SQL check (both covering links to existing people) send any cycle to the per-row path, which rejects it with a row error. This also fixes a gap where two rows naming each other could create a cycle, because `assertNoCycle` reads current managers that the import had not refreshed.
 - `app.refresh_employees_current(ids[])` (0007h) is a correlated per-row UPDATE and runs in linear time. `refresh_employee_current` keeps its contract on top of it. The job refreshes only the people it wrote, 2,000 at a time.
@@ -222,6 +226,7 @@ Rules are validated when saved. Unknown integrations are rejected, as are non-ht
 **Context.** The member-state packs hold different `sick_pay.statutory` shapes. The engine only read DE/NL (percent and weeks) and IE (days per year), so FR, ES and PL returned meaningless numbers.
 
 **Decision.** `employerContinuedPay(rule, input)` detects the shape and returns a common result (scheme, eligibility, paid days and basis, percent, amounts, bands, notes):
+
 - **DE/NL:** percentage for the first N weeks of the incapacity, counted from the first sick day, once the qualifying service is served. Paid working days × daily pay (weekly pay ÷ working days).
 - **IE:** days per calendar year at a percentage with a daily cap, after the qualifying service. Earlier spells in the year count.
 - **ES:** the employer window is days `from`–`to` of the incapacity (calendar days). The benefit percentage is not in the pack, so no amount is computed.
@@ -245,6 +250,7 @@ Values the pack does not hold are flagged in `notes`, never invented: NL minimum
 **Context.** Per-hour-worked accrual, FMLA's 1,250-hour test and US paid sick leave need actual hours. Timesheets arrive with phase 4 (`app.timesheets`, weekly minutes), which is not on this branch.
 
 **Decision.** `hoursWorked(employee, from, to)` uses this precedence:
+
 1. Approved timesheets whose week starts in the range, if `app.timesheets` exists (checked with `to_regclass`, so no code change is needed when phase 4 merges).
 2. Otherwise `app.worked_hours`: new table, forced RLS, recorded by HR via `POST /v1/leave/worked-hours` (audited), pro-rated by days for partial overlaps.
 3. Otherwise, for FMLA and US sick leave only, an estimate from the contracted working pattern over the days employed. Leave accrual never estimates: no recorded hours means nothing accrued.
@@ -258,6 +264,7 @@ For FMLA, an HR-provided `hoursPrior12Months` takes precedence. Every result rep
 **Context.** `usSickAccrual` ignored annual and 12-month caps, employer-size paid thresholds and the dates when use may begin. A locality (city or county) layer is being added on another branch.
 
 **Decision.**
+
 - **Accrual period:** the calendar year to the balance date.
 - **Accrual:** whole increments of `hoursEarned` per `perHoursWorked`.
 - **Caps:** the lowest of the balance cap (CA, greater or lesser of hours and days × hours per day), `annualCapHours` (CO, MA, OR), `capHoursPer12Months` (IL) and the NY size tier.
@@ -273,6 +280,7 @@ For FMLA, an HR-provided `hoursPrior12Months` takes precedence. Every result rep
 **Context.** The route enum used `rolling_backward` while the pack says `rolling_backward_from_leave_date`. The window maths lived in the route and used 365-day years. Coverage counted today's headcount instead of the "50 employees in 20+ workweeks" test.
 
 **Decision.**
+
 - **Leave-year method:** validated against `family_leave.fmla.leaveYearMethods`. The database only checks the format (migration `0009b`), and the legacy value is read as the pack name. The pack's `leaveYearMethodMustBeUniform` is enforced against the company setting (`PUT /v1/settings/absence`, `fmla.leaveYearMethod`) and existing cases. `fmlaLeaveYear` in the engine computes the window for the four pack methods using calendar months (DOL Fact Sheet #28H). A fixed 12-month year starts on the company `fixedYearStart`, else the hire anniversary. Military caregiver leave uses its single 12-month period.
 - **Coverage:** for each ISO workweek of the current and preceding calendar year, count US employees employed for the whole week (29 CFR 825.105 payroll method, as a conservative reading). All US employees in the tenant are treated as one employer. Public agencies are covered when the company setting says so.
 - **Worksite:** active employees at locations within the pack's `radiusMiles` of the employee's location, using geofence coordinates. Without coordinates only the same location counts.
@@ -285,6 +293,7 @@ For FMLA, an HR-provided `hoursPrior12Months` takes precedence. Every result rep
 **Context.** Masking of sensitive leave types used "has absence.read anywhere". So a manager with any absence permission saw sickness for everyone they could see on the calendar. There was no way to read medical detail. A user could "revoke" another user's ICS token: the request got a 204 and a false audit row.
 
 **Decision.**
+
 - Calendar and request lists compute, per row, whether the viewer has `absence.read` in scope for that employee (the same scope predicate as reads). Otherwise sickness, family and FMLA show as "away" with no note.
 - `GET /v1/sickness` lists dates and status only.
 - `GET /v1/sickness/:id/medical` decrypts reason, fit note name and return-to-work answers only with `vault.read:sickness` (HR), or for the employee's own record (self-disclosure). Managers are refused. The refusal is audited in a committed transaction, and each decrypted field is audit-logged.
@@ -308,8 +317,9 @@ This work also fixed `scopePredicate`: an all-scope grant after a narrower grant
 **Context.** Brief §6.3 and PROGRESS 4.3 ask for working-time rules from the packs, surfaced as warnings or blocks per tenant configuration, with the UK 48-hour opt-out and daily time recording where a country requires it.
 
 **Decision.**
-- Statutory limits from the packs (daily rest, weekly rest, rest breaks, the averaged maximum week) are *violations*. With `features.time.enforcement = 'block'` a shift that adds one is refused with 422 and the violations. With `'warn'` (the default) it is saved and they come back as warnings. Each finding carries the rule's official source URL.
-- Only findings the change *adds* are reported, so an existing breach does not block unrelated edits. The averaged maximum is the exception: a shift inside the reference window always adds to it.
+
+- Statutory limits from the packs (daily rest, weekly rest, rest breaks, the averaged maximum week) are _violations_. With `features.time.enforcement = 'block'` a shift that adds one is refused with 422 and the violations. With `'warn'` (the default) it is saved and they come back as warnings. Each finding carries the rule's official source URL.
+- Only findings the change _adds_ are reported, so an existing breach does not block unrelated edits. The averaged maximum is the exception: a shift inside the reference window always adds to it.
 - Projected overtime (US FLSA weekly, state daily and seventh-day tiers) and availability conflicts are always warnings. Overtime is a cost, not a breach.
 - Claims and swaps are re-checked when the manager approves. A block then refuses the approval and the request stays pending. Applying a template leaves a slot open (and reports it) rather than assigning a blocked person.
 - The 48-hour opt-out is honoured only where the pack's `working_time.max_weekly_hours.optOutAvailable` is true. Records can be created only where `working_time.opt_out.permitted` is true (GB), and notice is capped by `maxAgreedTerminationNoticeMonths`.
@@ -325,13 +335,14 @@ This work also fixed `scopePredicate`: an all-scope grant after a narrower grant
 
 ## ADR-0037 — Geofencing is opt-in per country, with notice, and location is otherwise never collected (2026-10-18)
 
-**Decision.** Geofencing is off by default. A tenant enables it per country (`features.time.geofence.countries`). Enabling a country requires notice text (per locale) that workers see on the clock screen; the API refuses the setting without it. The browser asks for location only when the worker's country is enabled *and* their location has a fence. The server stores coordinates (rounded to 4 decimal places, about 11 m) and `within_geofence` only in that case. Coordinates sent in any other case are discarded before the insert. Coordinates are never logged, never written to the audit trail and never returned by the API: only the within/outside flag is.
+**Decision.** Geofencing is off by default. A tenant enables it per country (`features.time.geofence.countries`). Enabling a country requires notice text (per locale) that workers see on the clock screen; the API refuses the setting without it. The browser asks for location only when the worker's country is enabled _and_ their location has a fence. The server stores coordinates (rounded to 4 decimal places, about 11 m) and `within_geofence` only in that case. Coordinates sent in any other case are discarded before the insert. Coordinates are never logged, never written to the audit trail and never returned by the API: only the within/outside flag is.
 
 **Consequences.** This meets workplace-monitoring expectations (UK GDPR/ICO, EU works-council rules) by default. Outside-the-fence punches are recorded and flagged on the timesheet, not refused, because offline punches cannot be refused at the time they happen.
 
 ## ADR-0038 — Shared kiosk: hashed device token plus employee number and Argon2id PIN, lockout without enumeration (2026-10-18)
 
 **Decision.**
+
 - A kiosk is registered by a time manager and receives a `kio_<tenant>.<secret>` token. The token is shown once as a pairing link and only its SHA-256 is stored. It can be revoked.
 - The kiosk sends `Authorization: Kiosk <token>` to the public `POST /v1/kiosk/clock`, together with the employee number and PIN. PINs are 4–8 digits, Argon2id-hashed (the password parameters), and trivial sequences are refused.
 - Throttles: per IP (120/min) and per kiosk (`kiosk.attemptsPerMinute`, default 30).
@@ -343,6 +354,7 @@ This work also fixed `scopePredicate`: an all-scope grant after a narrower grant
 ## ADR-0039 — Timesheet snapshots and the payroll export feed (2026-10-18)
 
 **Decision.** A timesheet is computed live: recorded time from clock events not superseded by a manager correction, compared day by day with the published rota. Variances beyond `timesheets.varianceToleranceMinutes` (default 15) are flagged. Overtime and findings come from the packs. Submitting freezes a snapshot (days, totals, findings, sources) and starts a `timesheet` approval, using a manager policy created on first use as for leave. While a week is submitted or approved, corrections to it are refused. A manager can reopen a week only if it has not been exported. `GET /v1/timesheets/export` returns the approved snapshots of a week as CSV:
+
 - ordered by employee number;
 - hours with two decimals, derived from integer minutes;
 - spreadsheet formula injection neutralised.
@@ -382,6 +394,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** The deploy workflow called a `scripts/deploy.mjs` that did not exist, and the OIDC stack that HUMAN_TODO told the owner to deploy did not exist either. The global stack and the UK cell both created a secret named `thapsus-hr/<env>/internal-token` in eu-west-2, so the second deploy would have failed (synth cannot catch that).
 
 **Decision.**
+
 - `ThapsusHr-<env>-ci` creates the GitHub OIDC provider and one role per deploy region. Each role is trusted only for `repo:<owner>/<repo>:environment:<staging|production>`. It may only assume that region's CDK bootstrap roles and, in cell regions, run the post-deploy steps.
 - The single documented cross-region permission is reading the global internal service token, which is not personal data.
 - `scripts/deploy.mjs` (planner in `scripts/deploy-plan.ts`, unit-tested) deploys in dependency order and runs the post-deploy steps. It refuses us-east-1 and us-west-2, refuses credentials for the wrong region, and refuses production without explicit approval.
@@ -482,6 +495,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** Brief §6.5 asks for exports of hours, absences, sick pay data, pay changes, starters and leavers through per-tenant field mappings, and for a closed period's export to be reproducible. Connectors differ (files, APIs), and live HR data keeps changing after payroll has run.
 
 **Decision.**
+
 - Every connector receives the same canonical `PayrollInputs` document, built in `apps/api/src/modules/payroll/inputs.ts`. Its arrays are sorted, it holds no timestamps of "now", and it contains only people who appear in a section.
 - Closing a pay period stores that document in the append-only `app.pay_period_snapshots` table, with the SHA-256 of its canonical JSON (keys sorted). A trigger blocks updates, and closed periods cannot be reopened or moved.
 - Exports of a closed period are rendered only from the snapshot, after an integrity check against that hash.
@@ -490,6 +504,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 - Field mapping is a validated, typed list of columns per section, with a closed field catalogue and a small transform set: date, number, hours or minutes, money, code map, boolean, case and fixed values.
 
 **Consequences.**
+
 - The same closed period with the same connector configuration produces byte-identical files, which the tests prove with SHA-256.
 - A changed mapping produces a different file, and its configuration hash shows why.
 - Corrections go into the next period rather than mutating a closed one.
@@ -500,6 +515,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** Timesheets are weekly. Pay periods can be monthly, and leave can straddle a period boundary.
 
 **Decision.**
+
 - **Hours**: an approved timesheet belongs to the period that contains its week start. Weeks are never split.
 - **Absences**: approved leave of any type overlapping the period is clipped to the period. Working days are recalculated for the clipped part with the leave engine (pattern and public holidays).
 - **Sick pay**: UK SSP for the period is the difference between cumulative SSP to the period end and cumulative SSP to the day before the period start, using the GB pack rule `sick_pay.statutory` in force at the period end. The pack's pre-April-2026 flat-rate shape is adapted for the engine, and the lower earnings limit is applied when the pack has one. Other jurisdictions' sick pay is exported as absences only until their packs are modelled.
@@ -511,6 +527,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** Exports must be delivered by download, SFTP or API, safely and idempotently.
 
 **Decision.**
+
 - **Download** returns a five-minute presigned link to the home-region bucket and writes a delivery-log row.
 - **SFTP** uses `ssh2` 1.17.0 (MIT, maintained). Its optional native crypto builds are denied in `pnpm-workspace.yaml`, and minimal local typings replace `@types/ssh2` (which pulls `@types/node@18`).
   - The server host key is always pinned with an OpenSSH `SHA256:` fingerprint.
@@ -527,6 +544,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** OAuth refresh tokens, client secrets, service-account keys and SFTP credentials must never sit in plaintext columns or logs. Personal data may go only to destinations listed in SUBPROCESSORS.md.
 
 **Decision.**
+
 - **Secrets**:
   - `app.integration_credentials` stores one sealed envelope per integration. It uses the existing envelope scheme (a fresh data key wrapped by the regional KMS key), with the AAD bound to tenant and owner.
   - The API returns only the names of the configured secrets, and audit entries record names only.
@@ -545,6 +563,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** The general document library lets managers and HR read employee documents in scope. Payslips and year-end tax forms should be visible only to the employee and payroll.
 
 **Decision.**
+
 - Payslip batches and files live in their own tables (`app.payslip_batches`, `app.payslips`), not in `app.documents`.
 - Only the employee (`payslips.read_own`) and payroll roles (`payslips.read`, `payslips.manage`) can list or download them. Every download is audited as sensitive.
 - Matching uses whole employee-number tokens in file names, or a customer regex with an `employeeNumber` group. Several matches are "ambiguous" and are never guessed.
@@ -557,6 +576,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** Brief §6.6 asks for Microsoft 365 and Google Workspace account automation with per-customer admin consent, least privilege, a dry-run preview and an audit log.
 
 **Decision.**
+
 - **Plans**: a pure plan builder (`apps/api/src/modules/it/plan.ts`) turns the employee and the customer's mapping rules into the exact provider calls. The dry run returns that plan. Execution stores the same calls, one row each in `app.it_operations` with an idempotency key, and runs them. Only the generated one-time password (never stored or logged) and the new account id are filled in at run time.
 - **Microsoft 365** uses Entra admin consent to a multi-tenant app, or the customer's own app, with the least-privilege application permissions listed per call.
 - **Google Workspace** uses domain-wide delegation for a service account with four narrow scopes, via an RS256 JWT bearer grant (`jose`).
@@ -572,6 +592,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 - **Attributes** (job title, department, country) are resolved as of the start date for future joiners.
 
 **Consequences.**
+
 - Previews are trustworthy: the tests assert that the executed requests equal the preview.
 - Re-runs never repeat completed calls.
 - Privileged-user disabling in Entra may also need an admin role on the app; this is documented, not granted by default.
@@ -581,6 +602,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 **Context.** The asset return checklist must be tied to offboarding. Separate outbox subscribers for workflows and assets would race, because jobs created in the same transaction have equal timestamps. Separately, the in-memory object store used in dev and e2e returned `memory://` links that a browser cannot open.
 
 **Decision.**
+
 - **Return tasks**: `workflows/service.ts` gains `workflowStartHooks`, which run in the transaction that starts a workflow. The asset register adds one return task per issued asset to an offboarding instance:
   - source `workflow`, so the instance completes when everything is done;
   - deduplicated per assignment;
@@ -591,6 +613,7 @@ Each export is recorded in `app.timesheet_exports` with a SHA-256 checksum, whic
 - **Dev and test downloads**: the memory store can sign five-minute HMAC download links served by a hidden `/v1/dev/objects` route. The route is registered only in dev and test, and production keeps S3 presigned URLs.
 
 **Consequences.**
+
 - Return tasks appear whether the workflow starts automatically or by hand.
 - A sign-off can be proven later.
 - Browser downloads work in local dev and e2e without an S3 emulator.
@@ -604,6 +627,7 @@ Numbered from the unused 0067–0069 range because 0100–0129 are reserved by o
 **Context.** The router already reads `DEDICATED_DATABASE_HOSTS`, and the move tool and back-office requests exist (ADR-0099). But the runbook told operators to add `dedicatedDatabases` to `infra/config/<env>.json`, a setting infra did not have. The cluster, its migrations, the owner credentials for the move runner and a task to run it were all left to hand work. The router's handling of the setting and its residency check had no tests.
 
 **Decision.**
+
 - **Config:** `dedicatedDatabases?: [{ key, cell, minAcu?, maxAcu? }]` in the env config, validated by `validateConfig` (`infra/lib/config.ts`). The key must be lower-case letters, digits and single hyphens, start with a letter, be at most 24 characters and not be `shared`, and keys must be unique ignoring hyphens. The cell must be a home cell and capacity must be 0.5–256 ACU with min ≤ max. Unknown fields are refused. The committed configs declare none.
 - **Per entry, in that cell's stack only:** an Aurora PostgreSQL 17 Serverless v2 cluster `thapsus-hr-<env>-<cell>-<key>` and its RDS Proxy. Both come from the same helper as the shared cluster: writer and reporting reader in two AZs, the cell's data KMS key, backup retention and deletion protection from `aurora`, isolated subnets and the cell's database security group, TLS on the proxy, encrypted log groups. The cluster is added to the cell's AWS Backup selection and gets a CPU alarm. Each cluster has its **own owner secret**. The app, back-office and reporting role secrets are the cell's shared ones, so the migrator sets the same passwords everywhere.
 - **Routing:** the api and worker get `DEDICATED_DATABASE_HOSTS={"<key>":"<proxy endpoint>"}` and `DEDICATED_READER_HOSTS={"<key>":"<reader endpoint>"}`, the JSON form `TenantRouter.fromEnv` reads with `DATABASE_SECRET` and `REPORTING_DATABASE_SECRET`. The variables are absent when a cell has no entry.
@@ -616,6 +640,7 @@ Numbered from the unused 0067–0069 range because 0100–0129 are reserved by o
 - **Deploys:** `scripts/deploy-plan.ts` adds a `run-migrator` step for each dedicated database of the cell, after the shared migrator and before the restart. A dedicated tenant therefore never runs on an unmigrated schema.
 
 **Consequences.**
+
 - Moving a tenant is a config entry, a cell deploy, a back-office request and one `run-task` (runbook). It needs no code change and no hand-built AWS resources.
 - Each entry is recurring cost (`docs/COSTS.md`) and needs approval first.
 - Removing an entry deletes the cluster (retained in prod, snapshotted elsewhere), so ask first.
@@ -629,6 +654,7 @@ Numbered from the unused 0067–0069 range because 0100–0129 are reserved by o
 **Context.** ADR-0095 left the IAM grant for S3 audit streaming to a person (HUMAN_TODO 6.2 asked for `sts:AssumeRole` on `arn:aws:iam::*:role/*`). The API accepted any role ARN, so a stream only worked once someone granted every role in every account. Data export (ADR-0077) already solved the same problem in code with a role-name prefix.
 
 **Decision.**
+
 - **Prefix:** an S3 audit stream's role must be named `thapsus-hr-audit-…` (`AUDIT_STREAM_ROLE_PREFIX` in `apps/api/src/modules/platform/siem-s3.ts`), in the `aws` partition, with no role path (IAM matches the prefix against the whole path and name). The name may be at most 64 characters.
 - **API:** `POST /v1/settings/audit-streams` refuses any other role with **422**, `detail: "roleNotAllowed"` and `rolePrefix: "thapsus-hr-audit-"`. A value that is not a role ARN at all is still a 400. Nothing is stored.
 - **Writer:** `AwsCrossAccountS3.put` checks the prefix again after the residency checks and before calling STS, so a stored stream with another role fails with `role_not_allowed` and sends nothing.
@@ -724,6 +750,7 @@ Numbered from the unused 0067–0069 range because 0100–0129 are reserved by o
 **Context.** Data subject request (DSR) deadlines, breach notification deadlines and retention periods are law. They must come from the jurisdiction packs with official sources, like employment rules. Another workstream is changing the pack engine at the same time.
 
 **Decision.** New keys live in `packages/rules/src/privacy-keys.ts` and are spread into `RULE_KEYS`: `privacy.dsr_deadline`, `privacy.breach_notification` and `retention.*`. The packs hold the values, each with its source, verification date and the reviewer `research-agent (pending legal review)`. Golden vectors are in `goldens/privacy.json`. The date maths lives in `packages/rules/src/privacy.ts`; the engine itself is unchanged. Where a statute can be read two ways, the code takes the earlier date:
+
 - months are counted to the corresponding date;
 - no rollover to the next working day is applied;
 - "two further months" is the earlier of due date + 2 months and start + 3 months.
@@ -737,6 +764,7 @@ The UK has two versions: Article 12(3) until 4 February 2026, then Article 12A f
 **Context.** An access export must include every table about the person, and a new table must not be silently missed.
 
 **Decision.** `apps/api/src/modules/privacy/subject-map.ts` classifies every tenant table that references a person:
+
 - **subject columns:** rows exported in full, with credentials omitted;
 - **actor columns:** exported as counts only, so other people's data is never disclosed;
 - **an erasure action:** delete, anonymise or keep with a reason;
@@ -749,11 +777,13 @@ The UK has two versions: Article 12(3) until 4 February 2026, then Article 12A f
 ## ADR-0082 — Erasure semantics (2026-10-18)
 
 **Decision.** Erasure decides per category:
+
 - **Legal holds** block everything, or one category.
 - **Statutory minimums** (`statutoryMinimum: true` in the packs) keep a category until it expires. Examples: WTR reg. 9 for time records, 29 CFR 1602.14 for US personnel records (kept while employment continues).
 - **Suggested defaults and tenant policies** never block an erasure request.
 
 When a category is erased:
+
 - identity is **anonymised**: names, contact details, date of birth, employee number, work email and the search vector are replaced or cleared, and the user account is deactivated with an `erased.invalid` address;
 - emergency contacts, credentials, sessions, documents, files and vault values are **deleted**;
 - pseudonymous job and contract history is kept for workforce statistics.
@@ -773,6 +803,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** Customers can export all their data at any time.
 
 **Decision.**
+
 - **Format:** a background job writes `tables/<schema.table>.csv` for every tenant table (enumerated from the catalog like the tenant-move tool), `sensitive/vault-records.jsonl` (decrypted, with one audit entry per category), every stored file under the tenant prefix, `files/manifest.csv` and `manifest.json` (row counts and SHA-256 per file).
 - **Omitted:** credential hashes, tokens and wrapped keys are never exported.
 - **Library:** `fflate` 0.8.3 is MIT-licensed with no dependencies. It is pinned exactly and is a direct dependency of `@thapsus/api`.
@@ -783,6 +814,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0085 — Account closure: grace period, guarded audit purge, verified deletion and certificate (2026-10-18)
 
 **Decision.**
+
 - **Scheduling:** `POST /v1/privacy/closure` (owner only) schedules deletion after `closureGraceDays` (30, pending legal review), with a cancellable job whose `run_after` is the purge time.
 - **Blocking access:** the purge first sets the registry status to `closing`, which blocks sign-in and API use.
 - **Audit log:** the log is purged by `audit.purge_closed_tenant()`. It is a `SECURITY DEFINER` function that refuses any tenant not `closing` with a closure in `purging`. The append-only trigger allows that delete only, and the app role still has no DELETE privilege.
@@ -815,6 +847,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0089 — Unreachable official sources recorded as gaps, not values (2026-10-18)
 
 **Context.** Some official sources refused automated access during research:
+
 - `leginfo.legislature.ca.gov` returned a bot challenge;
 - `ilga.gov` was unavailable;
 - the official Georgia Code is hosted outside the allow-list.
@@ -832,6 +865,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** Brief §6.10 asks for OAuth 2.0 client credentials and scoped API keys. Credentials must resolve under forced RLS, so the tenant has to be known before the lookup. They must never be stored in a recoverable form, and they must not let an integration do more than an admin intended.
 
 **Decision.**
+
 - **Formats:**
   - API keys are `thr_sk_<tenant id>.<256-bit secret>`.
   - OAuth clients have `thr_ci_<tenant id>.<key>` ids and `thr_cs_…` secrets.
@@ -848,6 +882,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0091 — Per-tenant rate limits and idempotency keys (2026-10-18)
 
 **Decision.**
+
 - **Rate limits:**
   - A fixed 60-second window per **tenant** on the existing `deps.limiter`, which is Valkey in AWS. It applies only to API-client requests.
   - The limit is the per-tenant override (`app.tenants.features->'api'->'rateLimitPerMinute'`, set in the back office) or else the plan default from `platform/config.ts`. Defaults can be overridden with the `API_PLATFORM_CONFIG` environment variable.
@@ -864,6 +899,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0092 — API documentation rendered from the spec in the web app; the SDK stays openapi-fetch (2026-10-18)
 
 **Decision.**
+
 - **Reference page:** `/developers` is a statically rendered Next.js page that imports `packages/sdk/openapi.json` at build time. It renders the guides from the message catalogues and an operation reference grouped by tag, marking operations open to API clients.
 - **No third-party renderer:** there is no Swagger UI or Redoc and no CDN script. This avoids CSP exceptions and JavaScript weight.
 - **Full spec:** stays downloadable at `/openapi.json`.
@@ -875,6 +911,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0093 — Webhooks driven by the outbox, one idempotent job per attempt, Stripe-style signatures (2026-10-18)
 
 **Decision.**
+
 - **Fan-out:** a `*` outbox subscriber creates one `app.webhook_deliveries` row per (endpoint, event), unique while not a replay, plus a `webhooks.deliver` job keyed `<delivery>:<attempt>`.
 - **Retries:** the job makes one HTTP attempt and records it in `app.webhook_attempts`. If the attempt failed, it enqueues the next attempt with `run_after` = base × 2^(n−1), capped at 6 h, up to 8 attempts. The engine's generic retry is reserved for infrastructure errors.
 - **Signing secrets:** sealed with the regional KMS key; at most two are active during a rotation.
@@ -886,6 +923,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0094 — SSRF protection for customer-configured destinations (2026-10-18)
 
 **Decision.**
+
 - **Client:** outbound calls (webhooks, HTTPS SIEM) use `lib/outbound.ts`: node `http`/`https` with a custom DNS `lookup`.
 - **Address check:** every resolved address is checked **at connect time** against a block list, which defeats DNS rebinding. The list covers loopback, RFC 1918 and ULA, link-local, CGNAT, the metadata addresses, multicast, documentation and reserved ranges, and their IPv4-mapped and NAT64 forms.
 - **URL rules:** https only; no credentials in the URL; no redirects followed; 10 s timeout; the response body is read up to 64 KiB, discarded and never stored.
@@ -896,6 +934,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0095 — Audit streaming: sealed-row cursor, idempotent batches, S3 only in the home region; new dependency `@aws-sdk/client-sts` (2026-10-18)
 
 **Decision.**
+
 - **Cursor:** `audit_streams.cursor_seq` follows the per-tenant sealed sequence. Each sync seals first, so every streamed event carries its chain hash.
 - **Batches:** a batch is `(stream, from_seq)`-unique and keeps its range, id and S3 key on retries.
 - **Filters:** filtered-out ranges simply advance the cursor. Sensitive events are streamed without their diff.
@@ -908,6 +947,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0096 — Sandboxes: classified tables, configuration copy, synthetic people (2026-10-18)
 
 **Decision.**
+
 - **Classification:** every table in `app`, `vault` and `audit` is classified in `platform/sandbox-tables.ts` as `config`, `personal`, `operational` or `secret`. A catalog-enumerating test fails for any unclassified table.
 - **Creation:** a sandbox is a new tenant in the **same cell and home region** (registry plus directory, `kind = 'sandbox'`, plan `sandbox`). One transaction copies only the config tables, with their ids, and strips person references. Named approvers and assignees become the HR admin role; `*_by` and employee or user references are nulled. Flags, branding (the logo object is copied) and security settings are copied, with SSO enforcement off.
 - **Synthetic people:** they come from the fixtures generator (new syllable-based `syntheticPersonName`). Candidates that collide with any first, last, display or preferred name, or any employee number, in the source are skipped. Source names are read only for this check and never written.
@@ -919,6 +959,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0097 — Feature flags: core registry, `features->'flags'`, `featureEnabled`, a separate experience endpoint (2026-10-18)
 
 **Decision.**
+
 - **Registry:** `packages/core/src/features.ts`. Each flag has a key, a default, `managedBy` (`tenant` or `staff`) and catalogue keys.
 - **Storage:** tenant overrides live in `app.tenants.features->'flags'`.
 - **Helpers:**
@@ -932,6 +973,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0098 — Custom branding within design-token contrast limits (2026-10-18)
 
 **Decision.**
+
 - **Accent:** the customer accent replaces the single token accent only if every accent pair the design system tests still passes WCAG 2.2 AA against the token surfaces in **both** modes. That means 4.5:1 for accent, hover, on-accent and subtle-background text, and 3:1 for the focus ring (`packages/ui/src/branding.ts`, reusing `contrast()` from the tokens).
 - **Dark mode:** no single colour can reach 4.5:1 on both the light and dark surfaces, so a dark-mode accent may be given. If it is not, a lighter variant is derived until it passes.
 - **Derived variants and storage:** hover, on-accent and subtle are derived and checked. The validated palette is stored, and the shell applies it as CSS variables for both themes. Values are hex only, so CSS injection is impossible.
@@ -944,6 +986,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** The move tool needs owner (migrator) credentials. The API runs as `thapsus_app` and must never hold them.
 
 **Decision.**
+
 - **Request:** super-admin staff create a request in `backoffice.tenant_moves`. The target key must already be in the router configuration (runbook step 2, ADR-0068), and at most one request can be open per tenant.
 - **Runner:** `pnpm --filter @thapsus/db move-tenant -- --process-requests` runs as a one-off task with owner credentials. It claims requests with `FOR UPDATE SKIP LOCKED`, runs `moveTenant`, and records progress lines, the report or the error.
 - **Status and cancellation:** staff follow the status at `/v1/backoffice/database-moves/{id}` and can cancel a request that has not started.
@@ -955,6 +998,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** Brief §6.12 requires published prices by headcount band, monthly rolling or annual terms, a free trial, discounts and cancellation notice, all configurable and never hard-coded. The global stack already publishes `billingConfigLocation` = `builtin:billing-config-v1` (SSM `/thapsus-hr/<env>/billing/config-location`).
 
 **Decision.**
+
 - One JSON document, `packages/core/src/billing/config-v1.json`, loaded by `loadBillingConfig(location)` (`@thapsus/core/billing`, env `BILLING_CONFIG_LOCATION`) and validated on load: contiguous bands, positive integer minor-unit prices for every band in GBP, EUR and USD, term months and notice days, term discounts and discount codes in basis points, the trial length and plan, the Stripe Tax product code, SLA targets per plan and priority, support hours per region and contact channels per plan.
 - Prices are per billable employee per month, excluding tax, with **volume** banding (the whole headcount is priced at its band) and a per-plan minimum billable headcount. Annual = 12 × monthly less the configured term discount, rounded half-up on integer minor units (`multiplyRatio`).
 - Every consumer (pricing page, billing API, back office, quotes) calls the same `quote()`; contract records can override (ADR-0107).
@@ -970,6 +1014,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** Brief §6.11 asks for tickets stored in the home region, open to admins and employees, worked by Thapsus support. CLAUDE.md says back-office users see personal data only through granted, logged support access.
 
 **Decision.**
+
 - Tickets, messages and attachments are tenant tables under forced RLS (`app.support_tickets`, `…_messages`, `…_attachments`); files are in the home-region bucket under `<tenant>/support/<ticket>/`. Admins with `support.manage` see every ticket in their company; everyone else sees their own. Urgent priority is reserved for admins.
 - **Ticket content is shown to staff without a support grant**, because the customer chose to send it to Thapsus support: reading it is the purpose of the submission (the same lawful basis as an email to a support mailbox). The requester's display name is part of that submission. Each staff view, reply, priority change and attachment download is written to the customer's audit log (`actor_type = support`) **and** the staff trail.
 - Anything beyond the ticket (employee records, other users) needs an active support grant (`withSupportAccess`; tested by `backoffice.int.test.ts`).
@@ -992,6 +1037,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Context.** The global layer must hold no employee personal data; Stripe receives only the billing contact fields listed in SUBPROCESSORS.md; webhook payloads must not be logged or kept; failed-payment emails must come from the tenant's home region. A single Stripe account would deliver every webhook (including invoice objects with billing emails) to every registered endpoint, so a UK customer's billing email would reach the EU and US cells.
 
 **Decision.**
+
 - **Billing state is tenant data in the home cell**: billing accounts, billing contacts, subscriptions, invoices (display fields only) and processed webhook ids are tenant tables under forced RLS. The global layer keeps only the directory `planRef`. The back-office store holds a provider-customer-id → tenant routing row (ids only).
 - **One Stripe account per home region** (UK, EU, US), each called only by its own cell with keys from that cell's Secrets Manager secret `thapsus-hr/<env>/stripe/<cell>` (CDK; values entered by a human, test mode only). Each account has its own webhook endpoint `https://api.<cell>.<domain>/v1/billing/webhooks/stripe` and its own tax registrations. Defensive: a cell acknowledges and ignores events for customers not homed in it. The global stack's older `thapsus-hr/<env>/stripe` secret is unused; removing it needs the product owner's approval (HUMAN_TODO 4.1).
 - `BillingProvider` (injected through deps) is the only path to Stripe. Its inputs are typed company-level fields: legal name, company address, company tax id, PO number, primary billing contact name and email, plan, term, currency, prices, an **aggregate** billable headcount and Thapsus ids as metadata. Card details are entered on Stripe-hosted Checkout (setup mode). `billing.int.test.ts` inspects every payload sent to the provider and fails on any employee field or value.
@@ -1006,6 +1052,7 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 ## ADR-0104 — Plan changes, proration, cancellation with notice and reactivation (2026-10-18)
 
 **Decision.**
+
 - **Trial:** created at sign-up (`tenant.created` subscriber, and lazily) for `trial.days` on the trial plan; choosing a plan keeps the remaining trial days (Stripe `trial_end`).
 - **Upgrades** (higher plan rank, or monthly → annual) apply immediately with `proration_behavior=create_prorations`: credit for the unused time at the old price, charge for the rest of the period at the new price. The app shows an estimate by the minute (`prorationPreview`, half-up); Stripe invoices its own figure by the second.
 - **Downgrades** (lower plan, same term) are sent to Stripe at once with `proration_behavior=none`, so the new price starts at the next renewal; the current plan's features stay until the period ends, when the daily job applies the plan change.
@@ -1064,13 +1111,14 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 
 **Findings (official AWS documentation, read on 2026-10-18).**
 
-| Cell | Home region | Claude In-Region on `bedrock-runtime` | Claude In-Region on `bedrock-mantle` | Otherwise |
-| --- | --- | --- | --- | --- |
-| UK | eu-west-2 | **Claude Opus 5.5** (`anthropic.claude-opus-5-5`); also Claude Sonnet 5 (`anthropic.claude-sonnet-5`), Claude Sonnet 4.6 and Claude Opus 4.6 | none | Claude Sonnet 5.5 and Claude Haiku 5.5: Geo/Global only. The `eu.` profile from London routes to eu-central-1, eu-north-1, eu-south-1, eu-south-2, eu-west-1, eu-west-2 and eu-west-3. |
-| EU | eu-central-1 | none | none | Every Claude model only through `eu.` (Frankfurt, Stockholm, Milan, Spain, Ireland, Paris) or `global.` |
-| US | us-east-2 | none | Claude Haiku 4.5 (`anthropic.claude-haiku-4-5`) only | Every Claude model on `bedrock-runtime` only through `us.` (us-east-1, us-east-2, us-west-2) or `global.` |
+| Cell | Home region  | Claude In-Region on `bedrock-runtime`                                                                                                        | Claude In-Region on `bedrock-mantle`                 | Otherwise                                                                                                                                                                              |
+| ---- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UK   | eu-west-2    | **Claude Opus 5.5** (`anthropic.claude-opus-5-5`); also Claude Sonnet 5 (`anthropic.claude-sonnet-5`), Claude Sonnet 4.6 and Claude Opus 4.6 | none                                                 | Claude Sonnet 5.5 and Claude Haiku 5.5: Geo/Global only. The `eu.` profile from London routes to eu-central-1, eu-north-1, eu-south-1, eu-south-2, eu-west-1, eu-west-2 and eu-west-3. |
+| EU   | eu-central-1 | none                                                                                                                                         | none                                                 | Every Claude model only through `eu.` (Frankfurt, Stockholm, Milan, Spain, Ireland, Paris) or `global.`                                                                                |
+| US   | us-east-2    | none                                                                                                                                         | Claude Haiku 4.5 (`anthropic.claude-haiku-4-5`) only | Every Claude model on `bedrock-runtime` only through `us.` (us-east-1, us-east-2, us-west-2) or `global.`                                                                              |
 
 Sources:
+
 - Regional availability by model: https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html
 - Claude Opus 5.5 model card (In-Region in eu-west-2, model id, geo routing tables): https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html
 - Claude Sonnet 5.5: https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5-5.html
@@ -1080,6 +1128,7 @@ Sources:
 - Cross-Region inference (requests are processed in other regions of the profile): https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html
 
 **Decision.**
+
 - **UK:** Claude Opus 5.5, In-Region, `InvokeModel` on `bedrock-runtime.eu-west-2.amazonaws.com` with the bare model id. It is the only current-generation Claude model that runs In-Region in London.
 - **EU and US:** Ask HR **cannot be turned on**. The customer's switch and the back-office entitlement are both refused (`422 aiNotAvailableInRegion`), and the API never builds a provider for these cells. The settings page tells admins why.
 - **No cross-Region inference profiles.** The `eu.` profile would send UK data to EU regions. The `us.` profile would send US data to us-east-1 and us-west-2, which are outside the home region and blocked by the SCP. Global profiles route worldwide. The provider refuses any `global.`, `us.`, `eu.`, `apac.`, `au.`, `jp.`, `in.`, `ca.` or `us-gov.` id and any inference-profile ARN.
@@ -1092,6 +1141,7 @@ Sources:
 **Context.** Ask HR must answer only from the company's policy documents, cite them, and never make or recommend employment decisions (brief §6.13; the EU AI Act lists those uses as high-risk). It must never send sensitive data or other employees' data. CLAUDE.md allows PostgreSQL full-text search and `pg_trgm` only, without a dedicated search service or third-party embeddings.
 
 **Decision.**
+
 - **Policy sources.** Company documents only: `employee_id IS NULL`, in a folder visible to everyone, not in a personal category (payslip, contract, health, fit note, right to work, I-9 and similar). They must be in a designated policy folder or flagged one by one. Personal documents are refused with 422 even if an admin tries. Eligibility is checked again on every query, so a document stops being used the moment it leaves the sources. PDF (through `unpdf`, MIT: a serverless build of Mozilla pdf.js with no native dependencies), plain text and Markdown are indexed. Markdown is now an allowed document type, and HR can also write a policy straight into a policy folder.
 - **Indexing.** Chunks of about 1,200 characters never span a heading or a page. They are stored in `app.ai_policy_chunks` with a generated English `tsvector`. The `ai.index_policies` job is idempotent: an unchanged sha256 is skipped. It also prunes documents that left the sources. It runs when the sources change, on "Re-index now", and in an hourly sweep. Markup and instruction-like sentences ("ignore previous instructions", "you are now…", "the assistant must always recommend…") are removed at index time, and the admin sees a note when this happens.
 - **Retrieval.** An OR query of the question's English lexemes, ranked with `ts_rank_cd` plus a `pg_trgm` word-similarity boost, with a trigram fallback for misspelt questions. pg_trgm lives in the `public` schema, which the app role cannot use, so a pinned-search-path wrapper `app.trgm_word_similarity` exposes only that pure function. At most 5 excerpts are used, at most 3 per document and 8,000 characters in total. With no excerpt, the model is not called.
@@ -1125,6 +1175,7 @@ Sources:
 **Context.** The permission engine supported built-in and custom roles with scopes and field-level access (PROGRESS 0.10), but customers had no way to create a custom role or give anyone a role: roles were only assigned automatically (owner at sign-up, employee through SSO, SCIM and onboarding).
 
 **Decision.**
+
 - `packages/core/src/access.ts` (`@thapsus/core/access`) holds the **permission catalogue** (every key a role may hold, grouped by product area, admin-grade keys marked) and the **employee field catalogue** (`employee.<key>`, plus the `pay`, `contract`, `custom` and reserved `bank` groups). A custom role may hold catalogue keys, area wildcards (`leave.*`) and category wildcards (`vault.read:*`); anything else is refused with 400. `*` (permissions and fields) is the owner's alone. Field keys `employee.custom.<key>` are checked against the tenant's custom fields and objects. Unit tests prove every built-in role is expressible in the catalogue and that the API's employee field model is covered by it.
 - API (tag `roles`, OpenAPI 3.1): `GET /v1/roles/catalogue`, `GET|POST /v1/roles`, `GET|PATCH|DELETE /v1/roles/{id}`, `GET /v1/users`, `GET|POST /v1/users/{userId}/role-assignments`, `DELETE /v1/users/{userId}/role-assignments/{assignmentId}`. New keys `roles.read`, `roles.manage` (define custom roles) and `roles.assign` (assign and revoke). The owner holds them through `*`; the HR admin holds `roles.read`.
 - Built-in roles stay defined in code (`packages/core/src/roles.ts`) and are read-only through the API (409 `builtInRole`); customers copy them instead. A custom role cannot reuse a built-in key, and built-in seeding never overwrites a row that is not `built_in`.
@@ -1140,6 +1191,7 @@ Sources:
 **Context.** Role management is itself a privilege. Without guards, anyone allowed to manage roles could grant themselves or others more than they hold.
 
 **Decision.** Implemented once in `@thapsus/core/access` and enforced by the API:
+
 - **Subset rule.** Creating, editing or deleting a custom role requires that every permission and every field-access level it grants (before and after the change) is held by the caller. A wildcard is covered only by an equal or wider wildcard. Field access is probed for every key either side mentions and every catalogue field, resolved the way the engine resolves it, so a broad `employee.*` cannot hide a narrower denial such as `employee.pay.*: none`.
 - **Scope rule.** Assigning a role at a scope requires that the caller holds `roles.assign` and every permission and field level of the role in grants whose scope covers the requested one: `all` covers everything; value scopes (entity, country, department, location) cover the same type with a subset of values; `self` is covered when the caller's grant covers the assignee's own record; `own_team` is covered only by the caller's own `own_team` grant for themselves or someone in their solid-line team. Delegated authority never counts, so a temporary delegate cannot hand out lasting access. Access a caller holds only for their own record (for example their own pay, through the employee role) therefore lets them define such a role but never hand it out for a department.
 - **Edits reach holders.** An edit that adds anything must also pass the scope rule at every existing assignment's scope (editing a role assigned company-wide by the owner cannot widen it beyond the editor's scope). Narrowing is always allowed.
@@ -1170,6 +1222,7 @@ Sources:
 **Context.** Many admin capabilities (SSO, SCIM tokens, approval chains, delegations, leave policies, absence triggers, cover rules, closure calendars) existed only as create endpoints with no way to list, change or remove what had been created, so customers could not configure their workspace in the app.
 
 **Decision.**
+
 - One settings area under `/app/settings`, grouped into Workspace, Sign-in and security, Approvals and workflows, Time off and absence, and Time and attendance. A single registry (`apps/web/app/app/settings/sections.ts`) maps each section to the permission keys the API checks; the settings index, the settings sub-navigation and the sidebar entry are all derived from it, so they never disagree. Delegations are visible to anyone who approves (`approvals.act`, `approvals.manage`, `leave.approve`, `time.approve`), so managers see a settings area with only that section.
 - People actions that were API-only (start a leaver, internal transfer, balance adjustments such as TOIL) live on the person's profile, gated by `employees.terminate`, `employees.update` and `leave.adjust`.
 - API additions are additive and follow the existing pattern (Typebox schema, permission check, audit for every mutation, integration test in `apps/api/test/admin-settings.int.test.ts`): list endpoints for SSO connections (never returning the client secret), the sign-in policy, SCIM tokens (never the token), approval chains, delegations, leave policies, absence triggers, cover rules and company calendars; and the mutations the screens cannot work without: turn an SSO connection on or off and delete it, revoke a SCIM token, replace an approval chain, end your own delegation.
@@ -1193,6 +1246,7 @@ Sources:
 **Context.** The OWASP ASVS 5.0 level 2 review (PROGRESS 12.3, `docs/ASVS.md`) found: the session cookie `thr_sid` had no `__Host-` prefix (V3.3.1, V3.3.3); every route parsed urlencoded and text bodies, so a same-site page could post a CORS-safelisted form and the only defence was SameSite=Lax (V3.5.1, V3.5.2); the CSP allowed inline scripts and `base-uri 'self'` (V3.4.3); XML and HTML responses could lack a charset (V4.1.1); download names were only stripped of quotes (V5.4.2); plain-HTTP API requests were redirected (V4.1.2).
 
 **Decision.**
+
 - Behind HTTPS the session cookie is `__Host-thr_sid` (Secure, Path=/, no Domain, HttpOnly, SameSite=Lax) and the staff cookie `__Host-thr_staff` (SameSite=Strict; the prefix needs Path=/, so it is no longer path-scoped). Plain-HTTP local development and e2e keep `thr_sid` / `thr_staff`, which browsers would refuse with the prefix. The API reads only the name that matches its own URL. The OIDC sign-in binding cookie is `__Host-thr_sso`.
 - A state-changing request whose `Origin` is not the app, API or global origin, or whose `Sec-Fetch-Site` says `cross-site` / `same-site` without an Origin, is refused (403) before routing, cookie or not. Requests that authenticate only with an Authorization header, and non-browser clients that send neither header, are not forgeable and pass. The SAML ACS is the one route marked `crossSite`: the identity provider's page posts to it by design, and the signed assertion, one-time RelayState and assertion replay cache protect it.
 - `text/plain` is not parsed at all and `application/x-www-form-urlencoded` only inside the SAML ACS, OAuth token endpoint and mock IdP plugin scopes.
@@ -1206,6 +1260,7 @@ Sources:
 **Context.** ASVS V6.3.3, V6.4.3, V6.4.4, V7.2.4, V7.4.3, V7.4.5, V7.5.1 and V7.5.2. Before this review a non-admin who had enrolled an authenticator could skip it (the gate only applied to admins), so an emailed sign-in link also skipped it; nobody could see or end their other sessions; admins could not sign a person out; adding a factor needed no fresh proof of identity; and a lost authenticator had no recovery path.
 
 **Decision.**
+
 - The second-factor gate applies to everyone who has a factor, on every sign-in path (password, magic link, SSO without trusted IdP MFA). Admins without one must still enrol first.
 - "Recent authentication" is the sign-in or `POST /v1/auth/reauth` (password or authenticator code) within 10 minutes. It is required to replace or add a second factor when one exists, to set a first password, to end your own other sessions, to sign everyone out, and to reset someone's factors. Re-authentication issues a new session token (the old one stops working), and a sign-in ends the session the browser presented before.
 - People list their active sessions (device from the user agent, method, signed in, last active) and end one or all of the others. Adding an authenticator or passkey, or changing the password, ends every other session automatically; the current session stays (it just proved the factor).
@@ -1245,6 +1300,7 @@ Sources:
 **Context.** ASVS V15.1.2 (SBOM) and V12.3.1 to V12.3.4. Database pools set `rejectUnauthorized: false` for AWS hosts, and URLs used `sslmode=require` (node-postgres currently treats it as verify-full but warns that it will change to libpq semantics, which do not verify). The migrator and the reporting reader connect to Aurora endpoints, whose certificates chain to the Amazon RDS CA, not a public CA.
 
 **Decision.**
+
 - `pnpm verify` (security step) writes a CycloneDX SBOM of the production dependencies with pnpm's built-in `pnpm sbom` (lockfile only, offline) to `.verify/sbom.cdx.json` and fails if any third-party component does not come from registry.npmjs.org with an integrity hash. CI uploads it as the `sbom-cyclonedx` artifact. No new service.
 - Database connections to AWS always verify certificates: `sslmode=verify-full` and `ssl: { rejectUnauthorized: true }`. The API and worker images add the Amazon RDS global CA bundle, pinned by SHA-256, through `NODE_EXTRA_CA_CERTS` (RDS Proxy already presents a publicly trusted ACM certificate).
 
@@ -1263,6 +1319,7 @@ Sources:
 **Context.** PROGRESS 12.5 asks for a WCAG 2.2 AA audit of the key flows with automated and manual checks. axe already ran in each feature spec, but only on the states those specs visit; nothing proved that every screen was covered, and axe cannot test keyboard reachability, focus visibility, reflow, text spacing or reduced motion. The first sweep showed that no `Button`, `Input`, `Select` or focusable table region had a visible focus ring: Tailwind v4's `outline-none` sets `--tw-outline-style: none`, and `focus-visible:outline-2` reuses that variable, so the two together draw nothing.
 
 **Decision.**
+
 - `apps/web/e2e/a11y-sweep.spec.ts` enumerates `apps/web/app/**/page.tsx` and opens every route (signed out, as the owner of a fictional workspace with representative data, as a paired kiosk and as a Thapsus super admin). On each it runs axe (WCAG 2.0/2.1/2.2 A and AA tags) in light and dark mode at 1280px and again at 320px, and its own checks: no horizontal scroll at 320px (1.4.10), Tab reaches every visible control with a visible and unobscured focus indicator (2.1.1, 2.4.7, 2.4.11), the WCAG text-spacing overrides clip nothing (1.4.12), nothing animates under reduced motion (2.3.3), the contextual help link is in the top bar on every app screen (3.2.6), and no uncaught script error. A route that belongs to no area, or a dynamic route with no fictional record to open, fails the sweep. Separate tests check accessible authentication (3.3.8) and complete sign-in, approving leave and clocking in at the kiosk with the keyboard alone.
 - Problems are collected per area and reported together, so one run lists everything to fix.
 - The shared `focusRing` sets `focus-visible:outline-solid` explicitly; `outline-none` is not combined with `focus-visible:outline-*` anywhere. A unit test guards the classes.
@@ -1275,6 +1332,7 @@ Sources:
 **Context.** PROGRESS 12.6 asks for every screen to be checked against DESIGN.md in light and dark mode on phone and desktop. The visual spec covered nine screens, and its tolerance (1% of pixels) let a desktop page gain sixteen sidebar entries without failing.
 
 **Decision.**
+
 - `visual.spec.ts` enumerates the same `page.tsx` routes and captures a full-page baseline of each in the four visual projects; the only exclusions are listed with a reason in the spec (staff-only back-office screens that list every tenant the run creates, and a support ticket whose SLA deadlines and reference come from the real clock and random bytes). All of them are still opened by the accessibility sweep.
 - Each project signs up its own workspace with a deterministic name (the project name), adds one fictional employee and one report run, and fixes the browser clock (`page.clock.setFixedTime`) so weeks and calendars do not change with the date. Text that depends on the real date, random ids or the host (timestamps, relative times, UUIDs, ticket references, URLs) is detected in the page and masked, so the layout around it stays under test.
 - Screenshots come from one pinned container, so the tolerance is now `maxDiffPixels: 50` instead of a ratio. Text in composited layers (the translucent top bar) switched between subpixel and greyscale anti-aliasing from run to run, so the visual projects launch Chromium with `--disable-lcd-text` and `--force-color-profile=srgb`. The container's run-server accepts those flags only with `--unsafe`, so its port is published on the loopback interface only.
@@ -1297,6 +1355,7 @@ The current entry is scrolled into view on each navigation (in the sidebar and i
 **Context.** PROGRESS 12.7 asks for mobile performance ≥ 90 and accessibility ≥ 95 on key marketing pages and app screens, with margin for slower CI machines. Lighthouse covered six screens. Its simulated throttling estimates the largest paint from the observed trace, so a heading that React re-creates when data arrives, or text repainted after a late font swap, counts as a late largest paint even when the first paint was early.
 
 **Decision.**
+
 - `scripts/lighthouse.mjs` audits `/`, `/pricing`, `/trust`, `/status`, `/developers`, `/signin`, `/signup` and the app's home, Me, people, time off, rota, timesheets, reports, report builder, settings, notifications and security screens (median of three runs). `LIGHTHOUSE_DEBUG=1` prints, per run, the largest-paint element, first paint, server response, page weight, main-thread time and the most expensive scripts.
 - Every page renders its heading and intro on the server, before its data arrives, in the same elements as the loaded page (React keeps them), and every state of a page (loading, empty, no access) has a heading. The rota's explanation of draft shifts moved up next to its heading for that reason.
 - The self-hosted Inter font is preloaded from the document head, so where no system font in the stack exists (Android, Linux) text is drawn once in its final font.
@@ -1309,6 +1368,7 @@ The current entry is scrolled into view on each navigation (in the sidebar and i
 **Context.** The root layout passed the whole flattened catalogue (about 5,000 messages, 200 KB) to the client `I18nProvider`, so every page's HTML and RSC payload carried it: about 219 KB of RSC and 266 KB of HTML for `/app`, growing with every phase. Server components translate with the full catalogue on the server and send only the strings, so only client components need messages in the browser.
 
 **Decision.**
+
 - `apps/web/lib/i18n-scope.tsx` exports a server component `<Messages ns={[…]}>` that sends one slice of the catalogue for the request's locale (cached per locale and namespace list). `I18nProvider` merges a nested provider's messages over its parent's, so each route segment adds only what its pages use. Entries are a namespace (`assets`: every key under it), `ns.*` (only the messages directly in `ns`, e.g. the shared admin labels, not its groups) or a single key.
 - The root layout provides the shared namespaces (`common`, `errors`, `locales`, `regions`, `roles`), `(auth)` the sign-in groups, `/app` the shell (`app.nav`, the home screen, the logo alt text and sandbox banner), and each feature segment its own (for example `/app/assets` → `assets`; `/app/settings` → the admin labels, sub-navigation and platform helpers; `/app/settings/sso` → `admin.sso`). The privacy layout became a server layout around a client `PrivacyFrame`. Segments whose message keys arrive at run time provide the whole namespace those keys come from: `/app/reports` (report definitions, columns, facts and enum values from the API) and `/app/settings/features` (flag names from `@thapsus/core/features`).
 - `serverContext()` no longer returns the whole catalogue; only `lib/i18n.ts` and `lib/server.ts` touch it, and only `lib/i18n-scope.tsx` renders `I18nProvider` (checked by the test below).
@@ -1321,6 +1381,7 @@ The current entry is scrolled into view on each navigation (in the sidebar and i
 **Context.** Many messages put a number next to a noun ("{days} days", "{count} reports", "({count} device(s))"), so they read wrongly for one ("1 days", "in 1 days" for the account-closure reminder sent a day before). `formatUnit` (`Intl.NumberFormat` units) covered day and hour amounts only; there was nothing for arbitrary nouns.
 
 **Decision.**
+
 - A message whose wording depends on a number is stored as plural forms with CLDR category suffixes: `org.reports_one` and `org.reports_other` (`_zero`, `_two`, `_few` and `_many` are available for locales that need them). `t(key, { count })` on the server (`@thapsus/core/i18n`) and on the client (`useT`, via the shared `formatMessage`) picks the form with `Intl.PluralRules` for the locale and falls back to `_other`. Without a numeric `count` the plain key is used, or the `_other` form when only plural forms exist.
 - Placeholders keep their names; call sites add `count` (`{ days, count: days }`). So notifications stored before this change (params without `count`) still render, with their old plural wording, and an older call site that does not pass `count` gets today's text rather than a raw key.
 - A sentence with two counts keeps its key and takes each counted phrase as a parameter, itself a plural family (`rota.publishedToast` = `{shifts} {people}` with `rota.shiftsPublished_*` and `rota.peopleNotified_*`).
@@ -1336,3 +1397,24 @@ The current entry is scrolled into view on each navigation (in the sidebar and i
 **Decision.** The verify `security` step runs `pnpm audit --audit-level high` over the whole lockfile. Advisories are handled through the process in SECURITY.md → "Dependency and secret scanning": fix within the remediation timeframes, or, when no fix exists and the code is unreachable, record an accepted risk with a review date before adding the advisory to pnpm's audit ignore list. The SBOM stays limited to production dependencies, because it describes what ships.
 
 **Consequences.** A new high advisory in a development tool now fails CI, like one in a runtime dependency. The moderate `uuid` advisory reached through `exceljs` is recorded under "Accepted risks" (unreachable, review by 2027-01-21).
+
+## ADR-0153 — Prettier is enforced in verify (2026-10-23)
+
+**Context.** ADR-0041 deferred a whole-repository Prettier pass until the stacked phase branches were merged, and kept ESLint as the only style gate until then. Every phase branch is now merged into `phase-12-launch`.
+
+**Decision.** The repository is formatted in one `style` commit, and the verify `lint` step runs `prettier --check .` after ESLint. A few files are left out in `.prettierignore` because their exact bytes matter:
+
+- **Generated, and compared byte for byte with their generator:** the OpenAPI document and the SDK types, `packages/core/src/trust/generated.json`, `packages/ui/src/theme.css` and `docs/COVERAGE.md`.
+- **Written by a script:** `packages/rules/pack-manifest.json`.
+- **Parsed row by row by a test:** `docs/ASVS.md`.
+- **Served verbatim to customers with a content hash:** the legal templates in `docs/legal/`, where reformatting would mark every template as changed.
+- **The owner's documents:** `docs/BUILD_BRIEF.md` and `CLAUDE.md` stay as written.
+
+Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON changes no versions.
+
+**Consequences.**
+
+- Run `pnpm format` before committing.
+- A script that writes a formatted file (`i18n-merge.mjs`, `loadtest.mjs --record` appending to PERFORMANCE.md) is followed by `pnpm format`.
+- Prettier's first pass did not settle a few files, so a second pass was needed. `prettier --check` in verify catches any recurrence.
+- An `eslint-disable-next-line` comment moved by line wrapping now sits on the line it covers.
