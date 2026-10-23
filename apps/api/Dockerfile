@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # Build context: repository root. Same image runs the cell API, the global API (SERVICE_ROLE=global),
 # the migrator (command override: node dist/migrate.mjs) and the dedicated-database move runner
-# (command override: node dist/move-tenant.mjs --process-requests; runbook move-tenant-to-dedicated-db.md).
+# (command override: node dist/move-tenant.mjs --process-requests; runbook move-tenant-to-dedicated-db.md)
+# and the staging seed (command override: node dist/seed-staging.mjs; staging only, refuses APP_ENV=prod).
 FROM node:24-bookworm-slim AS build
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true
 RUN corepack enable
@@ -12,8 +13,10 @@ RUN node scripts/bundle.mjs apps/api/src/main.ts apps/api/dist/main.mjs \
  && node scripts/bundle.mjs packages/db/src/cli/migrate.ts apps/api/dist/migrate.mjs \
  && node scripts/bundle.mjs apps/api/src/cli/synth-enterprise.ts apps/api/dist/synth.mjs \
  && node scripts/bundle.mjs packages/db/src/cli/move-tenant.ts apps/api/dist/move-tenant.mjs \
+ && node scripts/bundle.mjs apps/api/src/cli/seed-staging.ts apps/api/dist/seed-staging.mjs \
  && cp -r packages/db/migrations apps/api/dist/migrations
-RUN pnpm deploy --filter @thapsus/api --prod --legacy /out && cp -r apps/api/dist /out/dist
+# The bundles read the jurisdiction packs from ../packs relative to dist/ (packages/rules PACKS_DIR).
+RUN pnpm deploy --filter @thapsus/api --prod --legacy /out && cp -r apps/api/dist /out/dist && cp -r packages/rules/packs /out/packs
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production

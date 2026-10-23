@@ -16,6 +16,7 @@
     "verify": "node scripts/verify.mjs",
     "db:migrate": "pnpm --filter @thapsus/db migrate",
     "db:seed": "pnpm --filter @thapsus/db seed",
+    "db:seed:staging": "pnpm --filter @thapsus/db seed:staging",
     "synth:enterprise": "pnpm --filter @thapsus/db synth:enterprise",
     "smoke:staging": "node scripts/smoke-staging.mjs",
     "loadtest": "node scripts/loadtest.mjs",
