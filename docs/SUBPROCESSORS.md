@@ -11,6 +11,16 @@ Thapsus-HR is the processor and each customer is the controller. Personal data g
 
 The global layer runs in AWS eu-west-2. It holds the tenant directory (tenant id, workspace slug, home region, status, plan reference, verified domains). Billing state, billing contacts and invoices live in each tenant's home cell, not in the global layer (ADR-0103). It holds **no employee personal data**.
 
+## Staging environment only: Google Cloud (fictional test data)
+
+The one-region staging environment runs on Google Cloud (ADR-0156). It is not a sub-processor of customer data, so it is not part of the public list per region and needs no customer notice. It is recorded here because this file lists every third party the platform sends data to.
+
+- **Provider:** Google Cloud. The contracting Google entity is the one on the staging billing account.
+- **Purpose:** hosting (Cloud Run), database (Cloud SQL for PostgreSQL), file storage (Cloud Storage, which also holds staging's captured test emails), key management (Cloud KMS) and logs (Cloud Logging).
+- **Location:** europe-west2 (London) only, UK cell only, with no backup copies outside London. The residency guard in `packages/core/src/gcp.ts` refuses every other Google Cloud location, including the multi-regions and dual-regions.
+- **Data:** fictional test data only: the seeded demo company and synthetic tenants. No customer is onboarded to staging, and real personal data must never be entered there.
+- **Production:** production hosting is **not yet decided**. Until the product owner decides, production stays on the AWS design in the tables above. If production moves to Google Cloud, it gets its own entry in the core infrastructure table and a change-log row with the full customer notice period, both before any customer data is moved.
+
 ## Billing (company-level data only)
 
 | Sub-processor                             | Purpose                                                                                                                                | Location                                                                                                                                                                                                | Personal data                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |

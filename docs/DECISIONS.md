@@ -1471,3 +1471,55 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 - The builder no longer asks people to pick a chart type that might not fit the data.
 - What the preview shows cannot drift from what the app shows, because both read one map.
+
+## ADR-0156 — One-region staging on Google Cloud: region map and adapters (2026-10-23)
+
+**Context.** The product owner decided to run a one-region staging environment on Google Cloud: the UK cell only, in europe-west2 (London), with fictional data only. The AWS code and infrastructure stay as they are, and production hosting is not yet decided. The staging infrastructure is written separately in OpenTofu, which sets the environment variables listed below. This ADR fixes the contract between that infrastructure and the application.
+
+**Decision.**
+
+- **Region map.** `packages/core/src/regions.ts` gains `gcpRegion` and `gcpBackupRegion`, with the same jurisdiction rule as the AWS map (ADR-0001):
+
+  | Cell | Google Cloud region      | Backup copies           |
+  | ---- | ------------------------ | ----------------------- |
+  | UK   | europe-west2 (London)    | none (London only)      |
+  | EU   | europe-west3 (Frankfurt) | europe-west1 (Belgium)  |
+  | US   | us-east5 (Columbus, Ohio) | us-west1 (Oregon)       |
+
+  Only the UK cell runs on Google Cloud today. The EU and US entries exist so the residency guard and the test matrix cover every region pair. `allowedGcpLocations(cell, purpose)` mirrors `allowedAwsRegions`.
+
+- **Residency guard** (`packages/core/src/gcp.ts`). `gcpLocationOf()` reads the location from:
+  - resource names (`projects/*/locations/<location>/…`);
+  - Cloud SQL connection names (`project:region:instance`) and `/cloudsql/…` socket paths, also inside a database URL;
+  - Cloud Storage bucket locations (`EUROPE-WEST2`).
+
+  `assertGcpLocationAllowed()` throws `GcpResidencyViolationError`, a `ResidencyViolationError`. Multi-regions (`EU`, `US`, `ASIA`) and dual-regions are refused for every cell, because they place copies outside the home region. The startup residency check (`assertCellResidency`, and the router's own check) now also checks Google Cloud locations, so it covers `GCP_KMS_KEY` and every database host or URL that names a Cloud SQL socket. A bucket name carries no location, so each Cloud Storage adapter reads the bucket's metadata on first use and refuses anything but a single region equal to the cell's `gcpRegion`.
+
+- **Database over the Cloud SQL socket.** When the host starts with `/`, `secretToUrl()` builds `postgres://user:pw@localhost:<port>/<db>?host=<socket directory>` with no `sslmode`, and `tlsFor()` asks for no TLS. Cloud Run mounts the socket at `/cloudsql/<project>:<region>:<instance>/.s.PGSQL.5432`. The Cloud SQL connector behind it already encrypts the connection with mutual TLS. A trailing `/.s.PGSQL.<port>` is accepted and becomes the port. The app, back-office, reporting, migrator and directory connections all build their URLs this way.
+
+- **Tenant directory.** `DIRECTORY_DATABASE_SECRET`, with `DATABASE_HOST`, points the Postgres directory at the `thapsus_global` database on the same instance. `thapsus_global` is the default when the secret has no `dbname`.
+
+- **Files** (`GcsObjectStore`):
+  - Signed URLs are V4, valid for 5 minutes like the S3 ones. Download links carry `response-content-disposition` from `contentDisposition()`. Upload links bind the content type.
+  - The upload size is checked again on the server when the upload is confirmed, as with S3.
+  - `deletePrefix` deletes every object and every noncurrent generation (`versions: true`).
+  - Encryption at rest is the bucket's default key, set by the infrastructure.
+  - On Cloud Run the library signs through the IAM `signBlob` API with the service account from Application Default Credentials, so no key file exists. The Storage client is injectable for tests.
+
+- **Keys** (`GcpKmsKeyProvider`). Cloud KMS has no data-key API, so each 256-bit data key is generated locally (`randomBytes(32)`) and wrapped with Cloud KMS `encrypt`. The wrap is bound to the context through `additionalAuthenticatedData`: SHA-256 of the sorted context entries, the same derivation as the local provider. `decrypt` sends the same AAD, so a wrapped key cannot be opened under another tenant, category or field. The key name's location is checked by the guard. Staging and production still refuse to start without a real KMS key.
+
+- **Email.** Staging has no email provider yet. `MAIL_TRANSPORT=bucket` writes each message as an RFC 822 `.eml` object to `MAIL_BUCKET`, checked by the guard. It is allowed only in dev, test and staging. Object names hold only the date and a random id, never an address or subject.
+
+- **Worker on Cloud Run.** `WORKER_MODE=http` serves `GET /health` and `POST /drain` on `PORT`:
+  - Cloud Scheduler calls `/drain` every minute with an OIDC token. Cloud Run IAM authenticates the call, so the app does not check the token.
+  - A drain runs the loop's own step (sweep if due, heartbeat if due, `engine.tick()`) until no work is left or `WORKER_DRAIN_BUDGET_MS` is spent (default 50 000).
+  - It answers with counts only, never tenant data.
+  - Drains in one process are serialised: a second call waits for the running drain and returns its result.
+
+  The default loop mode is unchanged.
+
+- **Client IP behind Cloud Run.** The API runs as a sidecar of the web container and the web proxy forwards API paths to `http://127.0.0.1:4000`. With `CLIENT_IP_SOURCE=cloud-run`, the proxy takes the **rightmost** `X-Forwarded-For` entry, which is the address Cloud Run's front end appended. It sends exactly that entry, and only when it is an IP address, as `X-Forwarded-For` to the API. Entries to its left are client-supplied and ignored. With `TRUSTED_PROXY_CIDRS=127.0.0.1/32` the API trusts that single hop, so `req.ip`, the per-IP throttles and the audit IPs see the real client. Without the setting, the proxy keeps dropping client forwarding headers. This holds only while Cloud Run's own front end is the only hop. A Google Cloud load balancer in front would append its own address, and this rule would then need to change.
+
+- **Logs.** `LOG_FORMAT=gcp` adds Cloud Logging's `severity` (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) to every JSON line, next to the numeric `level`. The personal-data scrubber is unchanged.
+
+- **Ask HR.** Amazon Bedrock is not reachable from Google Cloud. `AI_PROVIDER=off` is accepted as a synonym of the existing `none`: Ask HR shows as unavailable and never gives fake answers. An unrecognised `AI_PROVIDER` value now stops the service at start instead of silently falling back to Bedrock. Staging on Google Cloud sets `AI_PROVIDER=off`.
