@@ -2804,7 +2804,16 @@
     "attachFile": "Attach a file",
     "close": "Close ticket",
     "closedToast": "Ticket closed",
-    "closedNote": "This ticket is closed. Raise a new ticket if you need more help."
+    "closedNote": "This ticket is closed. Raise a new ticket if you need more help.",
+    "list": {
+      "count_one": "{count} ticket",
+      "count_other": "{count} tickets",
+      "countFiltered_one": "{shown} of {count} ticket",
+      "countFiltered_other": "{shown} of {count} tickets",
+      "search": "Search tickets",
+      "anyStatus": "All statuses",
+      "statusChip": "Status: {status}"
+    }
   },
   "pricing": {
     "meta": {

@@ -3,6 +3,7 @@ import { BookOpen, Search } from 'lucide-react';
 import { articlesForContext, helpArticles, searchHelp } from '@thapsus/core/help';
 import { buttonVariants, Card, EmptyState, Input } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
+import { PageIntro } from '@/components/module-page';
 
 /** In-app help centre: versioned, localised articles from the repo, searched with a local index (ADR-0108). */
 export default async function HelpPage({
@@ -17,15 +18,18 @@ export default async function HelpPage({
   const results = query.trim() ? searchHelp(query, locale) : helpArticles(locale);
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title-2">{t('help.title')}</h1>
-        <Link
-          href="/app/support"
-          className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
-        >
-          {t('help.contactSupport')}
-        </Link>
-      </div>
+      <PageIntro
+        title={t('help.title')}
+        titleIsTab
+        actions={
+          <Link
+            href="/app/support"
+            className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
+          >
+            {t('help.contactSupport')}
+          </Link>
+        }
+      />
       <form role="search" action="/app/help" className="flex max-w-xl gap-2">
         <label htmlFor="help-q" className="sr-only">
           {t('help.searchLabel')}

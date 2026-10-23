@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible, signUpAndEnrol } from './helpers';
+import { expectModulePage, expectPageTitle } from './module-helpers';
 
 // Reduced motion: axe must not sample toasts or reveals mid-transition.
 test.use({ locale: 'en-GB', reducedMotion: 'reduce' });
@@ -23,7 +24,7 @@ test.describe('help centre and support tickets', () => {
     await expectAccessible(page);
 
     await page.goto('/app/support');
-    await expect(page.getByRole('heading', { level: 1, name: 'Support' })).toBeVisible();
+    await expectModulePage(page, 'Help', 'Support');
     await expect(page.getByRole('table', { name: 'Our response targets' })).toBeVisible();
     await page.getByLabel('Subject').fill('Exported payslips show the wrong month');
     await page.getByLabel('Category').selectOption('problem');
@@ -42,9 +43,7 @@ test.describe('help centre and support tickets', () => {
     await expectAccessible(page);
     await page.getByRole('button', { name: 'Send ticket' }).click();
     await page.waitForURL(/\/app\/support\/[0-9a-f-]{36}$/);
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Exported payslips show the wrong month' }),
-    ).toBeVisible();
+    await expectPageTitle(page, 'Help', 'Exported payslips show the wrong month');
     await expect(page.getByRole('button', { name: 'screenshot.png' })).toBeVisible();
     await expect(page.getByText('On track', { exact: true })).toBeVisible();
     await page.getByLabel('Reply').fill('It also happens for September.');
