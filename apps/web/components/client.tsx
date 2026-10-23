@@ -8,6 +8,19 @@ const setCookie = (name: string, value: string) => {
   document.cookie = `${name}=${value}; path=/; max-age=31536000; samesite=lax`;
 };
 
+/** Applies and remembers a theme choice (cookie read on the server, so the next page has no flash). */
+export function applyTheme(v: ThemeChoice) {
+  setCookie(THEME_COOKIE, v);
+  if (v === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+}
+
+/** Switches the interface language and reloads, because the server picks the message catalogue. */
+export function switchLocale(v: string) {
+  setCookie(LOCALE_COOKIE, v);
+  window.location.reload();
+}
+
 export function ThemeSwitch({ initial }: { initial: ThemeChoice }) {
   const t = useT();
   const [choice, setChoice] = React.useState<ThemeChoice>(initial);
@@ -22,9 +35,7 @@ export function ThemeSwitch({ initial }: { initial: ThemeChoice }) {
   ];
   const apply = (v: ThemeChoice) => {
     setChoice(v);
-    setCookie(THEME_COOKIE, v);
-    if (v === 'system') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', v);
+    applyTheme(v);
   };
   return (
     <div
@@ -58,10 +69,7 @@ export function LocaleSwitch() {
       <span className="sr-only">{t('common.language')}</span>
       <select
         value={locale}
-        onChange={(e) => {
-          setCookie(LOCALE_COOKIE, e.target.value);
-          window.location.reload();
-        }}
+        onChange={(e) => switchLocale(e.target.value)}
         className="h-8 rounded-sm border border-border bg-surface-raised px-2 text-footnote text-text"
       >
         <option value="en-GB">{t('locales.en-GB')}</option>

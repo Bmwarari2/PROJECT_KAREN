@@ -370,6 +370,95 @@
       "organisationLink": "Organisation structure",
       "rolesLink": "Roles and permissions",
       "usersLink": "Users and access"
+    },
+    "ws": {
+      "group": {
+        "you": "You",
+        "workforce": "Workforce",
+        "insights": "Insights",
+        "governance": "Governance",
+        "company": "Company",
+        "support": "Help"
+      },
+      "module": {
+        "me": "My profile",
+        "inbox": "Inbox",
+        "time": "Time",
+        "pay": "Pay",
+        "it": "IT",
+        "help": "Help"
+      },
+      "desc": {
+        "home": "Your dashboard: what needs you, your time off and your team at a glance",
+        "me": "Your details, onboarding, notifications and sign-in security",
+        "inbox": "Approvals waiting for you and your tasks",
+        "people": "The directory, org chart, documents and imports",
+        "time": "Time off, schedules, the time clock and timesheets",
+        "pay": "Payroll handoff and payslips",
+        "it": "Equipment, connected apps and automation",
+        "reports": "Ready-made reports, the report builder, schedules and exports",
+        "compliance": "Right to work, Form I-9, the compliance matrix, statutory reports and law changes",
+        "privacy": "Privacy requests, retention, incidents and legal documents",
+        "settings": "Workspace, access, sign-in, approvals and time settings",
+        "billing": "Plan, invoices and payment",
+        "help": "Help articles, support and Ask HR"
+      },
+      "tab": {
+        "overview": "Overview",
+        "myDetails": "My details",
+        "directory": "Directory",
+        "catalogue": "Reports",
+        "builder": "Report builder",
+        "scheduled": "Scheduled",
+        "exports": "Data exports",
+        "privacyRequests": "Requests",
+        "retention": "Retention",
+        "incidents": "Incidents",
+        "legal": "Legal documents",
+        "privacyExports": "Exports"
+      },
+      "action": {
+        "requestLeave": "Request time off",
+        "clockIn": "Clock in or out",
+        "approve": "Review approvals",
+        "addPerson": "Add a person",
+        "buildReport": "Build a report",
+        "import": "Import people",
+        "newRole": "Create a role",
+        "assignRoles": "Give someone a role",
+        "myDocuments": "Open my documents",
+        "askHr": "Ask HR a question"
+      },
+      "search": {
+        "open": "Search people, pages and actions",
+        "title": "Search",
+        "label": "Search people, pages, actions and help",
+        "placeholder": "Search people, pages and actions",
+        "shortcut": "Ctrl K",
+        "results": "Search results",
+        "hint": "Use ↑ and ↓ to move, Enter to open, Esc to close. You only see what your roles allow.",
+        "keepTyping": "Type at least two letters to search people and help articles.",
+        "noResults": "Nothing matches “{query}”. Try a name, a page such as “time off”, or an action such as “request”.",
+        "group": {
+          "recent": "Recent",
+          "actions": "Actions",
+          "pages": "Pages",
+          "people": "People",
+          "help": "Help articles"
+        },
+        "shortcutMac": "⌘ K",
+        "escKey": "Esc"
+      },
+      "sections": "{module} sections",
+      "pending": "pending",
+      "collapseRail": "Collapse menu",
+      "expandRail": "Expand menu",
+      "account": "Account menu for {name}",
+      "yourRoles": "Your roles",
+      "myProfile": "My profile",
+      "notificationSettings": "Notification settings",
+      "notificationsUnread_one": "Notifications, {count} unread",
+      "notificationsUnread_other": "Notifications, {count} unread"
     }
   },
   "gallery": {
@@ -3821,8 +3910,7 @@
       "succeeded": "Delivered",
       "partial": "Partly delivered",
       "failed": "Failed"
-    },
-    "export": "Export"
+    }
   },
   "payslips": {
     "title": "Payslips",

@@ -10,7 +10,16 @@ export const fetchCache = 'force-no-store';
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [{ theme }, session] = await Promise.all([serverContext(), serverSession()]);
   return (
-    <Messages ns={['app.nav', 'app.home', 'platform.branding.logoAlt', 'platform.sandbox.banner']}>
+    <Messages
+      ns={[
+        'app.nav',
+        'app.ws',
+        'app.home',
+        'compliance.nav',
+        'platform.branding.logoAlt',
+        'platform.sandbox.banner',
+      ]}
+    >
       <AppShell theme={theme} initialSession={session}>
         {children}
       </AppShell>

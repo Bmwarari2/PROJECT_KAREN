@@ -97,6 +97,11 @@ export default function OrgChartPage() {
     setRoots(await api<OrgNode[]>('/v1/org-chart/roots'));
     setQ('');
   }
+  // global search opens the chart on a person: /app/org-chart?focus=<employee id>
+  React.useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('focus');
+    if (id && /^[0-9a-f-]{36}$/i.test(id)) void focusOn(id).catch(() => undefined);
+  }, []);
 
   return (
     <div className="flex flex-col gap-5">

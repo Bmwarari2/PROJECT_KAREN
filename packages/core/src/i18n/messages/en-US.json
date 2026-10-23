@@ -194,6 +194,12 @@
       "sessions": {
         "body": "These are the devices and browsers signed in to your account. Sign out of any you do not recognize as yours."
       }
+    },
+    "ws": {
+      "desc": {
+        "pay": "Payroll handoff and pay stubs",
+        "settings": "Workspace, access, sign-in, approvals and time settings"
+      }
     }
   },
   "rota": {
