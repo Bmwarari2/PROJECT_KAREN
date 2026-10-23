@@ -168,9 +168,10 @@ export default function PeoplePage() {
   }, [load]);
 
   // headline counts by status, where the viewer may run reports (the API scopes them)
-  const [deviceZone, setDeviceZone] = React.useState<string | null>(null);
-  React.useEffect(() => setDeviceZone(viewerZone(null)), []);
-  const zone = session.timeZone || deviceZone;
+  // dates come from the browser's clock after hydration (the server's clock never shows through)
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  const zone = mounted ? viewerZone(session.timeZone) : null;
   const canReport = hasPermission(session, 'reports.run') || hasPermission(session, 'reports.read_team');
   const counts = useStatusCounts(zone ? todayIn(zone) : null, canReport);
 
