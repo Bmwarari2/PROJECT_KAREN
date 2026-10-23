@@ -130,7 +130,7 @@ resource "google_cloud_run_v2_service" "app" {
 
       dynamic "env" {
         for_each = merge(local.common_env, {
-          PORT                = "4000"
+          API_PORT            = "4000"
           SERVICE_NAME        = "thapsus-api"
           TRUSTED_PROXY_CIDRS = "127.0.0.1/32"
           DB_POOL_MAX         = "8"
