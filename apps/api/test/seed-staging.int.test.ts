@@ -219,6 +219,20 @@ describe('staging seed', () => {
     expect(s.rota.nextShift).not.toBeNull();
     expect(s.documents.toSign).toBeGreaterThanOrEqual(1);
     expect(s.payslips.total).toBeGreaterThanOrEqual(2);
+    // the standard (statutory-minimum) policy applies to them; the senior policy only by assignment
+    const balances = await get(cookie, `/v1/leave/balances/${me.employeeId}`);
+    expect(balances.statusCode, balances.body).toBe(200);
+    const annual = (balances.json() as Array<{ leaveType: string; policy: string; available: number }>).find(
+      (b) => b.leaveType === 'annual',
+    )!;
+    expect(annual.policy).toMatch(/^Standard annual leave/);
+    const policies = await tx((x) =>
+      x.query<{ name: string; n: number }>(
+        `SELECT p.name, count(DISTINCT a.employee_id)::int AS n FROM app.leave_policies p LEFT JOIN app.leave_policy_assignments a ON a.policy_id = p.id GROUP BY p.name ORDER BY p.name`,
+      ),
+    );
+    expect(policies.find((p) => p.name.startsWith('Senior leadership'))!.n).toBeGreaterThan(5);
+    expect(policies.find((p) => p.name.startsWith('Irregular hours'))!.n).toBeGreaterThan(0);
     const assets = await get(cookie, '/v1/me/assets');
     expect(assets.statusCode).toBe(200);
     expect(
@@ -232,6 +246,7 @@ describe('staging seed', () => {
     const dash = await get(hr, '/v1/compliance/dashboard');
     expect(dash.statusCode, dash.body).toBe(200);
     expect(dash.json().rightToWork.total).toBeGreaterThan(0);
+    if (SIZE >= 300) expect(dash.json().reporting.genderPayGap.required).toBe(true);
     const rtw = await get(hr, '/v1/compliance/right-to-work');
     expect(rtw.statusCode).toBe(200);
     expect((rtw.json() as Array<{ status: string }>).map((r) => r.status)).toEqual(

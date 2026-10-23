@@ -67,9 +67,12 @@ export async function seedLeave(ctx: SeedCtx) {
     anchor,
   ).value;
   const base = { ...uk.config, carryOver: { maxDays: 5, expiresAfterMonths: 3 } };
+  // Policies only reached through an assignment have no entity or country, so the default for an
+  // employee (policyFor: entity, then country, then the oldest) stays the statutory one; created_at
+  // records when the company introduced each policy, which keeps that order deterministic.
   const policies: Record<
     string,
-    { name: string; config: LeavePolicy; entity: string | null; country: string | null }
+    { name: string; config: LeavePolicy; entity: string | null; country: string | null; since: string }
   > = {
     // Ireland: the statutory minimum from the IE pack plus three company days; public holidays are on top
     ie: {
@@ -81,6 +84,7 @@ export async function seedLeave(ctx: SeedCtx) {
       },
       entity: ids.entity.ie,
       country: 'IE',
+      since: '2019-01-07',
     },
     // United States: no federal minimum (US pack), so this is company policy
     us: {
@@ -88,12 +92,14 @@ export async function seedLeave(ctx: SeedCtx) {
       config: { ...base, accrual: { method: 'annual_upfront', days: 15 }, includesPublicHolidays: false },
       entity: ids.entity.us,
       country: 'US',
+      since: '2024-03-04',
     },
     senior: {
       name: 'Senior leadership annual leave (33 days)',
       config: { ...uk.config, accrual: { method: 'annual_upfront', days: 33 } },
-      entity: ids.entity.uk,
-      country: 'GB',
+      entity: null,
+      country: null,
+      since: '2016-01-04',
     },
     // irregular-hours and part-year workers: accrual percentage from the GB pack (in hours)
     irregular: {
@@ -108,16 +114,19 @@ export async function seedLeave(ctx: SeedCtx) {
         allowNegativeDays: 0,
         rounding: 'none',
       },
-      entity: ids.entity.uk,
-      country: 'GB',
+      entity: null,
+      country: null,
+      since: '2024-04-01',
     },
   };
   const policyId: Record<string, string> = { uk: uk.id };
   const policyConfig: Record<string, LeavePolicy> = { uk: uk.config };
+  // the statutory default (and time off in lieu) have applied since the company started
+  await tx.exec(`UPDATE app.leave_policies SET created_at = '2012-03-05T09:00:00Z'`);
   for (const [key, p] of Object.entries(policies)) {
     const row = await tx.one<{ id: string }>(
-      `INSERT INTO app.leave_policies (tenant_id, name, leave_type_id, entity_id, country, config) VALUES (app.current_tenant(), $1, $2, $3, $4, $5) RETURNING id`,
-      [p.name, ids.leaveType.annual, p.entity, p.country, JSON.stringify(p.config)],
+      `INSERT INTO app.leave_policies (tenant_id, name, leave_type_id, entity_id, country, config, created_at) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) RETURNING id`,
+      [p.name, ids.leaveType.annual, p.entity, p.country, JSON.stringify(p.config), `${p.since}T09:00:00Z`],
     );
     policyId[key] = row.id;
     policyConfig[key] = p.config;
