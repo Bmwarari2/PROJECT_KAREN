@@ -1593,6 +1593,7 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
   - A GitHub Actions workflow builds the images, then posts the OpenTofu change set (addresses and actions, no values).
   - It refuses to apply unless the `staging-gcp` environment has required reviewers. After approval it applies only saved plans inside the approved change set.
   - Access is Workload Identity Federation, limited to this repository's id and `refs/heads/main`. A deploy service account gets project-scoped roles in a project dedicated to staging. There are no keys.
+- **Logs in London.** A regional log bucket receives every log; an exclusion keeps them out of the global `_Default` bucket. Only Google's `_Required` admin-activity logs stay global.
 - **No CDN.** Cloud Run serves every response from London with the app's own headers.
 
 **Consequences.**
