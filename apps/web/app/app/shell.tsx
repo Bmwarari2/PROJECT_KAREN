@@ -112,6 +112,11 @@ export function AppShell({ children, theme, initialSession = null }: { children:
       .catch(() => setAskHr(false));
   }, [aiFlag, experienceTick, path]);
 
+  // The sidebar scrolls on its own: keep the current entry in view (it may sit below the fold).
+  React.useEffect(() => {
+    document.querySelector<HTMLElement>('aside nav a[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+  }, [path, session]);
+
   const signOut = async () => {
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
     router.replace('/signin');

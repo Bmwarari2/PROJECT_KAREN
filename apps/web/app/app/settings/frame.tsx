@@ -26,11 +26,17 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
   const sections = visibleSections(has);
   const current = sections.find((s) => path.startsWith(s.href));
   React.useEffect(() => setOpen(false), [path]);
+  // The list scrolls on its own on large screens: bring the current section into view.
+  const navRef = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    navRef.current?.querySelector<HTMLElement>('#settings-sections [aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+  }, [path]);
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
       {/* On large screens the list is sticky and scrolls on its own, so entries below the fold stay reachable (WCAG 2.4.11). */}
       <nav
+        ref={navRef}
         aria-label={t('admin.nav.label')}
         className="lg:sticky lg:top-[calc(var(--topbar-height)_+_var(--space-6))] lg:-mx-1 lg:max-h-[calc(100dvh_-_var(--topbar-height)_-_2_*_var(--space-6))] lg:w-60 lg:shrink-0 lg:scroll-py-2 lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:py-1"
       >
