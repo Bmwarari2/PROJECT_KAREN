@@ -98,6 +98,23 @@ describe('provider selection', () => {
       /never run in production/,
     );
   });
+  it('off (like none) keeps Ask HR unavailable in every environment; an unknown choice stops the service (ADR-0156)', () => {
+    for (const APP_ENV of ['dev', 'test', 'staging', 'prod'])
+      for (const AI_PROVIDER of ['off', 'none'])
+        expect(
+          aiProviderFromEnv('uk', { APP_ENV, AI_PROVIDER }),
+          `${APP_ENV} ${AI_PROVIDER}`,
+        ).toBeUndefined();
+    // A typo must not fall back to Bedrock (unreachable from Google Cloud) or to fake answers.
+    for (const AI_PROVIDER of ['of', 'OFF', 'vertex', 'bedrok'])
+      expect(() => aiProviderFromEnv('uk', { APP_ENV: 'staging', AI_PROVIDER }), AI_PROVIDER).toThrow(
+        /AI_PROVIDER must be one of bedrock, fake, none or off/,
+      );
+    // An empty value means unset, as before.
+    expect(aiProviderFromEnv('uk', { APP_ENV: 'prod', AI_PROVIDER: '' })).toBeInstanceOf(
+      BedrockClaudeProvider,
+    );
+  });
 });
 
 describe('the request a UK cell sends', () => {
