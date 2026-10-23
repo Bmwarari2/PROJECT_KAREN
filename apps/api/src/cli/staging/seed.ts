@@ -17,7 +17,7 @@ import { seedDocuments } from './steps/documents';
 import { seedAssets } from './steps/assets';
 import { seedWorkflows } from './steps/workflows';
 import { seedPayroll } from './steps/payroll';
-import { seedApprovalsReportsPrivacy, suppressSeededDeliveries } from './steps/extras';
+import { seedApprovalsReportsPrivacy, seedSettings, suppressSeededDeliveries } from './steps/extras';
 
 // Importing these modules registers the approval effects and workflow hooks the seeded flows rely on
 // (leave approval → request approved; offboarding → asset return tasks), exactly as in the API process.
@@ -130,6 +130,7 @@ export async function seedStaging(
       await step('onboarding and offboarding', seedWorkflows);
       await step('payroll and payslips', seedPayroll);
       await step('approvals, reports and privacy', seedApprovalsReportsPrivacy);
+      await step('settings and automation', seedSettings);
       await step('notifications', suppressSeededDeliveries);
       await writeAudit(tx, {
         actorType: 'system',

@@ -1,4 +1,5 @@
-import { addDays, compareDates } from '@thapsus/core/time';
+import { createHash } from 'node:crypto';
+import { addDays, addMonths, compareDates } from '@thapsus/core/time';
 import { breachDeadlines } from '@thapsus/rules';
 import { writeAudit } from '@thapsus/db';
 import { requestApproval } from '../../../modules/approvals/service';
@@ -314,6 +315,141 @@ export async function seedApprovalsReportsPrivacy(ctx: SeedCtx) {
   );
   await insertRows(tx, 'app.subprocessor_subscriptions', [{ user_id: ids.user.owner }]);
   ctx.counts.dataSubjectRequests = (leaver ? 1 : 0) + (active ? 1 : 0);
+}
+
+/**
+ * Settings a company builds up over time: automation rules (run by the worker from now on), a custom object
+ * type with records, and the record of the people import that created the workforce (its file in the
+ * object store, as the import keeps it).
+ */
+export async function seedSettings(ctx: SeedCtx) {
+  const { tx, plan, ids, anchor } = ctx;
+  await insertRows(
+    tx,
+    'app.automation_rules',
+    [
+      {
+        name: 'Probation review reminder',
+        enabled: true,
+        trigger: { type: 'date.reached', dateField: 'probationEndDate', offsetDays: -14 },
+        conditions: [],
+        actions: [
+          {
+            type: 'task',
+            title: 'Prepare the probation review',
+            assignee: { type: 'manager' },
+            dueInDays: 10,
+          },
+        ],
+        created_by: ids.user.hr_admin,
+      },
+      {
+        name: 'Work anniversary',
+        enabled: true,
+        trigger: { type: 'date.reached', dateField: 'workAnniversary', offsetDays: 0 },
+        conditions: [],
+        actions: [
+          {
+            type: 'notification',
+            to: { type: 'manager' },
+            message: 'A member of your team has a work anniversary today.',
+          },
+        ],
+        created_by: ids.user.hr_admin,
+      },
+      {
+        name: 'Welcome pack for new joiners',
+        enabled: true,
+        trigger: { type: 'record.created', entity: 'employee' },
+        conditions: [],
+        actions: [
+          {
+            type: 'notification',
+            to: { type: 'role', value: 'hr_admin' },
+            message: 'Order a welcome pack for the new joiner.',
+          },
+        ],
+        created_by: ids.user.hr_admin,
+      },
+    ],
+    { json: ['trigger', 'conditions', 'actions'] },
+  );
+  const typeId = seedUuid('custom-object-type', 'memberships');
+  await insertRows(
+    tx,
+    'app.custom_object_types',
+    [
+      {
+        id: typeId,
+        key: 'professionalMemberships',
+        label: { 'en-GB': 'Professional memberships', 'en-US': 'Professional memberships' },
+        fields: [
+          {
+            key: 'body',
+            label: { 'en-GB': 'Professional body', 'en-US': 'Professional body' },
+            fieldType: 'text',
+            required: true,
+          },
+          {
+            key: 'membershipNumber',
+            label: { 'en-GB': 'Membership number', 'en-US': 'Membership number' },
+            fieldType: 'text',
+          },
+          { key: 'renewsOn', label: { 'en-GB': 'Renews on', 'en-US': 'Renews on' }, fieldType: 'date' },
+        ],
+      },
+    ],
+    { json: ['fields'] },
+  );
+  const BODIES: Record<string, string> = {
+    finance: 'Fictional Institute of Accountants',
+    payroll: 'Fictional Payroll Association',
+    hr: 'Fictional Institute of People Professionals',
+    legal: 'Fictional Law Society',
+  };
+  const members = plan.people.filter((p) => p.kind === 'roster' && BODIES[p.team]);
+  await insertRows(
+    tx,
+    'app.custom_object_records',
+    members.map((p, i) => ({
+      type_id: typeId,
+      employee_id: ids.employee[p.idx],
+      data: {
+        body: BODIES[p.team],
+        membershipNumber: `FICT-${String(1000 + i)}`,
+        renewsOn: addMonths(anchor, 1 + (i % 11)),
+      },
+      valid_from: p.startDate,
+    })),
+  );
+  // the people import that loaded the workforce (a CSV of employee numbers and names, kept like an upload)
+  const rows = [
+    'employeeNumber,legalFirstName,legalLastName,startDate',
+    ...plan.people.map((p) => `${p.number},${p.first},${p.last},${p.startDate}`),
+  ];
+  const csv = Buffer.from(rows.join('\r\n'));
+  const key = `${ctx.tenantId}/imports/${seedUuid('import', 'people')}.csv`;
+  await ctx.objects.put(key, csv, 'text/csv');
+  await insertRows(
+    tx,
+    'app.import_batches',
+    [
+      {
+        kind: 'employees',
+        file_key: key,
+        file_name: 'kestrel-people.csv',
+        file_sha256: createHash('sha256').update(csv).digest('hex'),
+        mapping: {},
+        status: 'completed',
+        row_count: plan.people.length,
+        stats: { created: plan.people.length, updated: 0, unchanged: 0, failed: 0, dryRun: false, errors: 0 },
+        created_by: ids.user.hr_admin,
+      },
+    ],
+    { json: ['mapping', 'stats'] },
+  );
+  ctx.counts.automationRules = 3;
+  ctx.counts.customObjectRecords = members.length;
 }
 
 /**
