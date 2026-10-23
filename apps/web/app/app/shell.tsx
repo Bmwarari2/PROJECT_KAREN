@@ -254,7 +254,11 @@ export function AppShell({
                   className="h-8 max-w-[140px] object-contain"
                 />
               ) : (
-                <Logo label={t('common.appName')} className="!text-on-chrome [&_svg]:!text-chrome-focus" />
+                // on phones the mark alone fits the bar; the name stays for screen readers
+                <Logo
+                  label={t('common.appName')}
+                  className="!text-on-chrome [&>span]:sr-only sm:[&>span]:not-sr-only [&_svg]:!text-chrome-focus"
+                />
               )}
             </Link>
             <button
