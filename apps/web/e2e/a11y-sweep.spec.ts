@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { apiCall, axeViolations, PASSWORD, totp } from './helpers';
 import { createStaff, staffSignIn } from './phase10-helpers';
 import { companyWithStaff, sql } from './time-helpers';
@@ -15,7 +16,8 @@ import { companyWithStaff, sql } from './time-helpers';
  *    shows a focus indicator and is not entirely hidden behind sticky bars;
  *  - 1.4.12 text spacing: the WCAG spacing overrides do not clip text in fixed-height boxes;
  *  - 2.3.3 / reduced motion: nothing animates when the user asks for reduced motion;
- *  - 3.2.6 consistent help: every app screen has the contextual help link in the same place.
+ *  - 3.2.6 consistent help: every app screen has the contextual help link in the same place;
+ *  - 1.3.1 structure: headings do not skip levels, one h1, distinct landmark names.
  * Problems are collected per area and reported together, so one run lists everything to fix.
  */
 test.use({ locale: 'en-GB', reducedMotion: 'reduce' });
@@ -297,6 +299,9 @@ async function checks(page: Page, path: string, app: boolean): Promise<string[]>
     for (const v of await axeViolations(page)) problems.push(`axe (${colorScheme}) ${v}`);
   }
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  // 1.3.1: headings do not skip levels and landmarks have distinct names (axe best-practice rules, which Lighthouse scores)
+  const structure = await new AxeBuilder({ page }).withRules(['heading-order', 'page-has-heading-one', 'landmark-unique']).analyze();
+  for (const v of structure.violations) problems.push(`1.3.1 ${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 2).join(', ')})`);
   problems.push(...(await motionProblems(page)), ...(await textSpacingProblems(page)), ...(await reflowProblems(page)));
   // 3.2.6: the help mechanism sits in the same place (the top bar) on every app screen.
   if (app && (await page.locator('header a[href^="/app/help?context="]').count()) !== 1) problems.push('3.2.6 contextual help link missing from the top bar');

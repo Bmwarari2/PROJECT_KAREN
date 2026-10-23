@@ -40,6 +40,7 @@ Content customers write themselves (policy documents, help article overrides, up
 | 2.5.8 Target size | axe `target-size` (24×24px or enough spacing) | sweep at 1280px and 320px |
 | 3.2.6 Consistent help | every app screen has the contextual help link in the same place in the top bar | sweep |
 | 3.3.8 Accessible authentication | sign-in, sign-up, MFA and back-office sign-in fields carry `autocomplete` (`username`, `current-password`, `new-password`, `one-time-code`), and paste is never blocked | sweep (accessible authentication test) |
+| 1.3.1 Info and relationships (structure) | headings do not skip levels, one `h1` per page, landmarks have distinct names (axe `heading-order`, `page-has-heading-one`, `landmark-unique`; Lighthouse scores these) | sweep |
 | Robustness | no uncaught script error on any route | sweep |
 
 Run it locally: `E2E_WEB_PORT=… E2E_API_PORT=… pnpm --filter @thapsus/web exec playwright test --project=functional e2e/a11y-sweep.spec.ts` after `pnpm --filter @thapsus/web build`.
@@ -65,6 +66,8 @@ The first sweep found the issues below; all are fixed and the sweep passes on ev
 | The offline page had no page heading | 1.3.1, 2.4.6 | `/offline` | the empty state renders an `h1` |
 | In US English the same feature was called "Pay stubs" in the navigation but "Payslips" on the Me hub, in notification settings and in role permissions | 3.2.4 | `/app/me`, `/app/notifications`, role editor | the en-US catalogue says pay stubs everywhere |
 | A person's employment type, contract type and pay frequency showed coded values (`full_time`, `permanent`) | 3.3.2, 1.3.1 (understandable content) | `/app/people/[id]` | shown as words, numbers in the locale's format |
+| Headings skipped a level (page `h1`, then card titles and empty states as `h3`) on 57 app screens; some forms then used `h4` | 1.3.1 | almost every app screen | `CardTitle` and `EmptyState` default to `h2`; nested headings are `h3` |
+| The sub-processor tables' scroll regions had the same names as their sections | 1.3.1, 4.1.2 | `/trust/subprocessors` | named "… (scrollable table)" |
 | Pages had no heading in their no-record or no-access state (for example My details and Welcome for someone without an employee record) | 1.3.1, 2.4.6 | `/app/me/details`, `/app/welcome`, people, reports, settings, billing and compliance pages | My details keeps its heading in every state; full-page empty states render their title as the `h1` |
 
 ## 5. Manual checklist by key flow

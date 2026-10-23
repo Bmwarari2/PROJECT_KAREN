@@ -170,6 +170,8 @@ try {
             .map((x) => `${String(x.url).split('/').pop()} ${Math.round(x.total)}ms`)
             .join(', ');
           console.log(`  ${p.path} run ${run + 1}: LCP element ${lcpElement}`);
+          const a11yMisses = res.lhr.categories.accessibility.auditRefs.filter((r) => r.weight > 0 && a[r.id]?.score !== null && a[r.id]?.score < 1).map((r) => r.id);
+          if (a11yMisses.length) console.log(`    accessibility audits not passed: ${a11yMisses.join(', ')}`);
           console.log(`    FCP ${ms('first-contentful-paint')}ms  LCP ${ms('largest-contentful-paint')}ms  TTFB ${ms('server-response-time')}ms  bytes ${Math.round((a['total-byte-weight']?.numericValue ?? 0) / 1024)}KiB  main thread ${ms('mainthread-work-breakdown')}ms  scripts: ${scripts}`);
         }
         const c = res.lhr.categories;
