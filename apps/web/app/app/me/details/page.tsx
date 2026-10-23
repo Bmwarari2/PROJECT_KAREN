@@ -59,8 +59,28 @@ export default function MyDetailsPage() {
   const [ask, setAsk] = React.useState<Record<string, string>>({});
   const [busy, setBusy] = React.useState(false);
 
-  if (profile.error) return <EmptyState title={profile.error.status === 404 ? t('ess.noEmployee') : t('common.error')} />;
-  if (!profile.data) return <Skeleton className="h-96 w-full" />;
+  // The back link and heading render while the profile loads (and when there is none), in the same
+  // elements as the loaded page: every state has a page heading, and React keeps them (no repaint).
+  const back = (
+    <Link href="/app/me" className="inline-flex w-fit items-center gap-1 text-callout">
+      <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
+      {t('ess.title')}
+    </Link>
+  );
+  const heading = (
+    <div className="mr-auto">
+      <h1 className="text-title-2">{t('ess.details.title')}</h1>
+      <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('ess.details.intro')}</p>
+    </div>
+  );
+  if (profile.error || !profile.data)
+    return (
+      <div className="flex flex-col gap-6">
+        {back}
+        <div className="flex flex-wrap items-start gap-3">{heading}</div>
+        {profile.error ? <EmptyState title={profile.error.status === 404 ? t('ess.noEmployee') : t('common.error')} /> : <Skeleton className="h-96 w-full" />}
+      </div>
+    );
   const e = profile.data.employee;
   const editable = SELF_EDITABLE.filter((f) => profile.data!.access[f] === 'write');
   const requestable = profile.data.requestable;
@@ -102,15 +122,9 @@ export default function MyDetailsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/app/me" className="inline-flex w-fit items-center gap-1 text-callout">
-        <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-        {t('ess.title')}
-      </Link>
+      {back}
       <div className="flex flex-wrap items-start gap-3">
-        <div className="mr-auto">
-          <h1 className="text-title-2">{t('ess.details.title')}</h1>
-          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('ess.details.intro')}</p>
-        </div>
+        {heading}
         {editable.length ? (
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
             <DialogTrigger asChild>

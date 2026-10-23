@@ -86,7 +86,7 @@ export default function SchedulesPage() {
   const [form, setForm] = React.useState(blank);
   const tzList = React.useMemo(zones, []);
 
-  if (schedules.error) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
+  if (schedules.error) return <EmptyState level={1} icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
   if (!schedules.data) return <Skeleton className="h-64 w-full" />;
 
   const when = (s: Pick<Schedule, 'frequency' | 'timeOfDay' | 'weekday' | 'dayOfMonth' | 'timeZone'>) => {

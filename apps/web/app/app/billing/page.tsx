@@ -125,7 +125,7 @@ export default function BillingPage() {
     }
   };
 
-  if (billing.error?.status === 403) return <EmptyState icon={<CreditCard aria-hidden />} title={t('billing.ownersOnly')} />;
+  if (billing.error?.status === 403) return <EmptyState level={1} icon={<CreditCard aria-hidden />} title={t('billing.ownersOnly')} />;
   if (!billing.data || !plans.data || !def) return <Skeleton className="h-64 w-full" />;
   const b = billing.data;
   const planName = (id: string) => t(`pricing.plans.${id}.name`);

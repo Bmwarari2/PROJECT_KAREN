@@ -57,9 +57,9 @@ export default function ReadyReportPage() {
     setValues({ ...base, ...Object.fromEntries(Object.entries(fromSaved).map(([k, v]) => [k, String(v)])) });
   }, [def, values, props, zone, saved.data]);
 
-  if (catalogue.error) return <EmptyState title={t('reports.noAccess')} />;
+  if (catalogue.error) return <EmptyState level={1} title={t('reports.noAccess')} />;
   if (!catalogue.data || !values) return <Skeleton className="h-96 w-full" />;
-  if (!def) return <EmptyState title={t('errors.notFound')} />;
+  if (!def) return <EmptyState level={1} title={t('errors.notFound')} />;
 
   const params = () => {
     const out: Record<string, unknown> = {};

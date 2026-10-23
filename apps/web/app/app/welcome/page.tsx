@@ -51,8 +51,8 @@ export default function WelcomePage() {
     setContact({ name: c?.name ?? '', relationship: c?.relationship ?? '', phone: c?.phone ?? '' });
   }, [data]);
 
-  if (session && !session.employeeId) return <EmptyState icon={<UserRound aria-hidden />} title={t('onboarding.notLinked')} />;
-  if (error) return <EmptyState icon={<UserRound aria-hidden />} title={error.status === 404 ? t('onboarding.notLinked') : t('common.error')} />;
+  if (session && !session.employeeId) return <EmptyState level={1} icon={<UserRound aria-hidden />} title={t('onboarding.notLinked')} />;
+  if (error) return <EmptyState level={1} icon={<UserRound aria-hidden />} title={error.status === 404 ? t('onboarding.notLinked') : t('common.error')} />;
   if (!data) return <Skeleton className="h-96 w-full" />;
 
   const e = data.employee;

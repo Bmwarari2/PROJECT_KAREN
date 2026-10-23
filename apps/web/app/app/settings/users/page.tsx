@@ -35,7 +35,7 @@ export default function UsersPage() {
   }, [load]);
 
   const names = new Map((roles.data ?? []).map((r) => [r.key, roleName(t, r)]));
-  if (error) return <EmptyState title={t('errors.forbidden')} />;
+  if (error) return <EmptyState level={1} title={t('errors.forbidden')} />;
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">

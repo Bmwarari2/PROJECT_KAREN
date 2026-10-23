@@ -13,7 +13,7 @@ export default function NewRolePage() {
   const session = useSession();
   const copy = useSearchParams().get('copy');
   const source = useApi<Role>(copy ? `/v1/roles/${encodeURIComponent(copy)}` : null);
-  if (!hasPermission(session, 'roles.manage')) return <EmptyState title={t('errors.forbidden')} />;
+  if (!hasPermission(session, 'roles.manage')) return <EmptyState level={1} title={t('errors.forbidden')} />;
   if (copy && !source.data && !source.error) return <Skeleton className="h-96 w-full" />;
   return <RoleEditor copyFrom={source.data} canManage />;
 }

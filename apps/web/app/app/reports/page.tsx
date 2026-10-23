@@ -118,6 +118,7 @@ export default function ReportsPage() {
   if (catalogue.error)
     return (
       <EmptyState
+        level={1}
         icon={<Lock aria-hidden />}
         title={t('reports.noAccess')}
         body={t('reports.noAccessBody')}

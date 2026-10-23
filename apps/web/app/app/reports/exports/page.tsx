@@ -378,7 +378,7 @@ export default function ExportsPage() {
   const [destOpen, setDestOpen] = React.useState(false);
   const [expOpen, setExpOpen] = React.useState(false);
 
-  if (dests.error || exports.error) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
+  if (dests.error || exports.error) return <EmptyState level={1} icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
   if (!dests.data || !exports.data || !catalogue.data) return <Skeleton className="h-96 w-full" />;
   const destName = (id: string) => dests.data!.data.find((d) => d.id === id)?.name ?? '—';
 

@@ -51,7 +51,7 @@ export default function EmployeePage() {
   const canInvite = session?.permissions.some((p) => p === '*' || p === 'users.*' || p === 'users.invite');
   const balances = useApi<LeaveBalance[]>(`/v1/leave/balances/${id}`);
 
-  if (error) return <EmptyState title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
+  if (error) return <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />;
   if (!data) return <Skeleton className="h-96 w-full" />;
   const e = data.employee;
   const writable = EDITABLE.filter((f) => data.access[f] === 'write');
