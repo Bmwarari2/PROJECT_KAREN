@@ -35,6 +35,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
 import { dayLong, thisWeek, viewerZone, weekDays, weekStartOf } from '@/lib/week';
 import { FindingList, type FindingDto } from '@/components/findings';
+import { PageIntro } from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 import { RotaGrid, shiftRange, type GridRowDto, type ShiftDto } from './rota-grid';
 
@@ -841,23 +842,22 @@ export default function RotaPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('rota.title')}</h1>
-        {week ? (
-          <WeekNav
-            week={week}
-            setWeek={(w) => setWeek(weekStartOf(w, startsOn))}
-            zone={zone}
-            startsOn={startsOn}
-          />
-        ) : null}
-      </div>
-      {/* Rendered with the heading, before the week loads: it is the page's largest text on a phone. */}
-      {canView ? (
-        <p className="-mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">
-          {t('rota.legend')}
-        </p>
-      ) : null}
+      {/* The legend renders before the week loads: it is the page's largest text on a phone. */}
+      <PageIntro
+        title={t('rota.title')}
+        titleIsTab
+        lead={canView ? t('rota.legend') : undefined}
+        actions={
+          week ? (
+            <WeekNav
+              week={week}
+              setWeek={(w) => setWeek(weekStartOf(w, startsOn))}
+              zone={zone}
+              startsOn={startsOn}
+            />
+          ) : undefined
+        }
+      />
       {!week ? (
         <Skeleton className="h-64 w-full" />
       ) : canView ? (

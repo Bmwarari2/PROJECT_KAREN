@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible } from './helpers';
 import { companyWithStaff, sql } from './time-helpers';
+import { expectModulePage } from './module-helpers';
 
 // UK English labels (the catalogue's en-US variant says "Schedule" and "Time clock").
 test.use({ locale: 'en-GB' });
@@ -11,7 +12,7 @@ test.describe('rota builder', () => {
   }) => {
     const co = await companyWithStaff(page, 2);
     await page.goto('/app/rota');
-    await expect(page.getByRole('heading', { name: 'Rota', level: 1 })).toBeVisible();
+    await expectModulePage(page, 'Time', 'Rota');
     const grid = page.getByRole('grid', { name: /Rota for the week of/ });
     await expect(grid.getByRole('rowheader', { name: /Ben Fictional/ })).toBeVisible();
     await expect(page.getByText('2 people')).toBeVisible();

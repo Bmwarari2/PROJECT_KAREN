@@ -21,6 +21,7 @@ import { formatDate, formatUnit } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface Balance {
@@ -250,13 +251,16 @@ export default function TimeOffPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('timeOff.title')}</h1>
-        <Button size="sm" variant="secondary" onClick={subscribe}>
-          <Link2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('timeOff.subscribe')}
-        </Button>
-      </div>
+      <PageIntro
+        title={t('timeOff.title')}
+        titleIsTab
+        actions={
+          <Button size="sm" variant="secondary" onClick={subscribe}>
+            <Link2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('timeOff.subscribe')}
+          </Button>
+        }
+      />
       {!employeeId ? (
         <EmptyState title={t('timeOff.noEmployee')} />
       ) : (

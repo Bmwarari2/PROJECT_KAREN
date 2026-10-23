@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { addDays, dayOfWeek, today } from '../../../packages/core/src/time';
 import { companyWithStaff } from './time-helpers';
 import { axeBoth } from './settings-helpers';
+import { expectModulePage } from './module-helpers';
 
 // UK English labels (the en-US catalogue says "Schedule" and "Time clock"); fictional data only.
 test.use({ locale: 'en-GB' });
@@ -79,7 +80,7 @@ test.describe('time and attendance settings', () => {
     await axeBoth(page);
 
     await page.getByRole('link', { name: 'Manage kiosks' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Clock in' })).toBeVisible();
+    await expectModulePage(page, 'Time', 'Clock in');
     await expect(page.getByTestId('geofence-notice')).toContainText(
       'Fictional Shops checks you are at the store',
     );
