@@ -12,6 +12,9 @@ beforeAll(async () => {
   tenant = await createTestTenant(router, uniqueSlug('audit'));
   owner = new pg.Client({ connectionString: ownerUrl(TEST_DBS.shared) });
   await owner.connect();
+  // RLS is forced, so a table owner that is not a superuser (a managed-Postgres migrator, ADR-0156) sees only the
+  // tenant in context; a superuser sees every row anyway. Either way the owner's writes below reach the tenant's rows.
+  await owner.query("SELECT set_config('app.tenant_id', $1, false)", [tenant]);
   await withTenant(router, tenant, async (tx) => {
     for (let i = 0; i < 5; i++) {
       await writeAudit(tx, {
