@@ -674,7 +674,29 @@
       "managerEmployeeNumber": "Manager (employee number)"
     },
     "invite": "Invite to sign in",
-    "invited": "Invitation sent."
+    "invited": "Invitation sent.",
+    "dir": {
+      "title": "Directory",
+      "tableLabel": "People directory",
+      "showing_one": "Showing {n} person",
+      "showing_other": "Showing {n} people",
+      "showingMore_one": "Showing the first {n} person",
+      "showingMore_other": "Showing the first {n} people",
+      "addFilter": "Add filter",
+      "filters": "Filters",
+      "applied": "({n} applied)",
+      "anyDepartment": "Any department",
+      "anyLocation": "Any location",
+      "anyEntity": "Any legal entity",
+      "clearFilters": "Clear filters",
+      "done": "Done",
+      "chip": "{field}: {value}",
+      "removeFilter": "Remove filter {field}: {value}",
+      "emptyBody": "Try another search or remove a filter.",
+      "kpiActiveHint": "Working here today",
+      "kpiPreStartHint": "Hired, not started yet",
+      "kpiLeaverHint": "No longer working here"
+    }
   },
   "org": {
     "title": "Org chart",
