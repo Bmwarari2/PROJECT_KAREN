@@ -21,6 +21,7 @@ import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { selectClass, SourceLink, StatusBadge } from '../ui';
 
 interface Row {
@@ -106,11 +107,9 @@ export default function RightToWorkPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-title-2">{t('compliance.rtw.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('compliance.rtw.intro')}
-      </p>
-      {rules.data ? <SourceLink source={rules.data.source} verifiedOn={rules.data.verifiedOn} /> : null}
+      <PageIntro title={t('compliance.rtw.title')} titleIsTab lead={t('compliance.rtw.intro')}>
+        {rules.data ? <SourceLink source={rules.data.source} verifiedOn={rules.data.verifiedOn} /> : null}
+      </PageIntro>
       {!rows.data ? (
         rows.error ? (
           <EmptyState title={t('compliance.noAccess')} />

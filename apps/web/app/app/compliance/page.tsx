@@ -15,6 +15,7 @@ import { Badge, Card, CardTitle, EmptyState, Skeleton } from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro, useInModule } from '@/components/module-page';
 
 interface Dashboard {
   asOf: string;
@@ -127,19 +128,25 @@ export default function ComplianceDashboard() {
   const cov = useApi<Coverage>('/v1/compliance/leave-coverage');
   const flsa = useApi<Flsa[]>('/v1/compliance/flsa');
   const period = (p: string | null) => (p ? t(`compliance.period.${p}`) : '');
+  const inModule = useInModule();
 
   if (d.error)
-    return <EmptyState level={1} icon={<ShieldCheck aria-hidden />} title={t('compliance.noAccess')} />;
+    return (
+      <EmptyState
+        level={inModule ? 2 : 1}
+        icon={<ShieldCheck aria-hidden />}
+        title={t('compliance.noAccess')}
+      />
+    );
   if (!d.data) return <Skeleton className="h-96 w-full" />;
   const x = d.data;
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-title-2">{t('compliance.title')}</h1>
-        <p className="text-callout text-text-secondary">
-          {t('compliance.asOf', { date: formatDate(x.asOf, locale) })}
-        </p>
-      </div>
+      <PageIntro
+        title={t('compliance.title')}
+        titleIsTab
+        lead={t('compliance.asOf', { date: formatDate(x.asOf, locale) })}
+      />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardTitle className="flex items-center gap-2">

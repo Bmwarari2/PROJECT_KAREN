@@ -18,6 +18,7 @@ import {
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro, useSectionLevel } from '@/components/module-page';
 import { SourceLink } from '../../ui';
 
 interface Eeo1 {
@@ -41,6 +42,7 @@ interface Eeo1 {
 
 export default function Eeo1Page() {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const [year, setYear] = React.useState(String(new Date().getFullYear()));
   const [query, setQuery] = React.useState(year);
@@ -56,10 +58,7 @@ export default function Eeo1Page() {
       : formatNumber(c?.count ?? 0, locale);
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-title-2">{t('compliance.eeo1.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('compliance.eeo1.intro')}
-      </p>
+      <PageIntro title={t('compliance.eeo1.title')} lead={t('compliance.eeo1.intro')} />
       <form
         className="grid gap-3 md:grid-cols-3 md:items-end"
         onSubmit={(e) => {
@@ -84,6 +83,7 @@ export default function Eeo1Page() {
       </form>
       {r.error ? (
         <EmptyState
+          level={sec.level}
           icon={<Scale aria-hidden />}
           title={r.error.status === 403 ? t('compliance.noAccess') : t('compliance.noRule')}
         />
@@ -92,7 +92,7 @@ export default function Eeo1Page() {
       ) : (
         <>
           <Card>
-            <CardTitle>
+            <CardTitle as={sec.heading}>
               {t('compliance.eeo1.window', {
                 from: formatDate(r.data.window.from, locale),
                 to: formatDate(r.data.window.to, locale),

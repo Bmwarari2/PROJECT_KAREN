@@ -6,6 +6,7 @@ import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { SourceLink } from '../ui';
 
 interface Item {
@@ -53,17 +54,15 @@ export default function LawChangesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-title-2">{t('compliance.law.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('compliance.law.intro')}
-      </p>
-      {feed.data ? (
-        <p className="text-footnote text-text-secondary">
-          {t('compliance.law.jurisdictions', {
-            codes: feed.data.jurisdictions.join(', ') || t('common.none'),
-          })}
-        </p>
-      ) : null}
+      <PageIntro title={t('compliance.law.title')} titleIsTab lead={t('compliance.law.intro')}>
+        {feed.data ? (
+          <p className="text-footnote text-text-secondary">
+            {t('compliance.law.jurisdictions', {
+              codes: feed.data.jurisdictions.join(', ') || t('common.none'),
+            })}
+          </p>
+        ) : null}
+      </PageIntro>
       <label className="flex items-center gap-3 text-callout">
         <input
           type="checkbox"

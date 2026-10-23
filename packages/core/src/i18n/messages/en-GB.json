@@ -2260,7 +2260,6 @@
   },
   "compliance": {
     "title": "Compliance centre",
-    "subnav": "Compliance sections",
     "nav": {
       "overview": "Overview",
       "rightToWork": "Right to work",

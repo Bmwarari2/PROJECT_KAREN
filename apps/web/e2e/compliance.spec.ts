@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import pg from 'pg';
 import { E2E_DB } from './env';
 import { expectAccessible, signUpAndEnrol, uniq } from './helpers';
+import { expectModulePage, moduleTabs, openModule } from './module-helpers';
 
 /**
  * Compliance centre (Phase 5): the dashboard renders for an admin and passes axe in light and dark,
@@ -101,10 +102,11 @@ test.describe('compliance centre', () => {
       flsaStatus: 'exempt',
     });
     expect(employee.id).toBeTruthy();
-    await page.getByRole('link', { name: 'Compliance', exact: true }).first().click();
+    await openModule(page, 'Compliance');
     await page.waitForURL(/\/app\/compliance$/);
-    await expect(page.getByRole('heading', { level: 1, name: /^Compliance cent(re|er)$/ })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Compliance sections' })).toBeVisible();
+    await expectModulePage(page, 'Compliance', 'Overview');
+    // the shell's tab bar is the only compliance navigation (no second sub-navigation)
+    await expect(page.getByRole('navigation', { name: 'Compliance sections' })).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'Right to work (UK)' })).toBeVisible();
     await expect(page.getByText(/^Licen[cs]es, certificates and training$/)).toBeVisible(); // en-GB or en-US spelling (browser locale)
     await expect(page.getByText('Statutory leave where you employ people')).toBeVisible();
@@ -112,14 +114,16 @@ test.describe('compliance centre', () => {
     await expect(page.getByText('Exempt and non-exempt (US)')).toBeVisible();
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
-      await expect(page.getByRole('heading', { level: 1, name: /^Compliance cent(re|er)$/ })).toBeVisible();
+      await expectModulePage(page, 'Compliance', 'Overview');
       await expectAccessible(page);
     }
     // the right-to-work and matrix pages list the new starter as missing a check / licence
-    await page.getByRole('link', { name: 'Right to work', exact: true }).click();
+    await moduleTabs(page, 'Compliance').getByRole('link', { name: 'Right to work', exact: true }).click();
+    await expectModulePage(page, 'Compliance', 'Right to work');
     await expect(page.getByRole('cell', { name: 'Fiona Fictional', exact: true })).toBeVisible();
     await expectAccessible(page);
-    await page.getByRole('link', { name: 'Matrix', exact: true }).click();
+    await moduleTabs(page, 'Compliance').getByRole('link', { name: 'Matrix', exact: true }).click();
+    await expectModulePage(page, 'Compliance', 'Matrix');
     await expect(page.getByRole('table').getByText('Fictional forklift licence')).toBeVisible();
     await expect(page.getByRole('table').getByText('Missing', { exact: true })).toBeVisible();
     await expectAccessible(page);
@@ -138,7 +142,7 @@ test.describe('compliance centre', () => {
     await publishLawChange('GB', title);
     await publishLawChange('FR', `Not relevant here (${uniq('fr')})`);
     await page.goto('/app/compliance/law-changes');
-    await expect(page.getByRole('heading', { level: 1, name: 'Law changes' })).toBeVisible();
+    await expectModulePage(page, 'Compliance', 'Law changes');
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await expect(page.getByText('Not relevant here')).toHaveCount(0);
     await expectAccessible(page);

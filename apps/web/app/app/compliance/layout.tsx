@@ -1,5 +1,4 @@
 import { Messages } from '@/lib/i18n-scope';
-import { ComplianceNav } from './ui';
 
 export default function ComplianceLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,7 +6,6 @@ export default function ComplianceLayout({ children }: { children: React.ReactNo
       ns={[
         'compliance.*',
         'compliance.nav',
-        'compliance.subnav',
         'compliance.status',
         'compliance.col',
         'compliance.dashboard',
@@ -18,10 +16,8 @@ export default function ComplianceLayout({ children }: { children: React.ReactNo
         'compliance.ptStatus',
       ]}
     >
-      <div className="flex flex-col gap-6">
-        <ComplianceNav />
-        {children}
-      </div>
+      {/* the module's tab bar (the shell) is the compliance navigation */}
+      <div className="flex flex-col gap-6">{children}</div>
     </Messages>
   );
 }
