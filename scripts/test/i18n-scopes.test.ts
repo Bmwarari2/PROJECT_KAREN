@@ -25,12 +25,13 @@ describe('per-route message scoping', () => {
       'apps/web/app/app/layout.tsx',
       'apps/web/app/app/assets/layout.tsx',
     ]);
-    // the page itself, the shell (via the /app layout) and the theme switch it renders
+    // the page itself, the shell (via the /app layout), the workspace map and the account menu it renders
     expect(assets.uses.map((u) => u.file)).toEqual(
       expect.arrayContaining([
         'apps/web/app/app/assets/page.tsx',
         'apps/web/app/app/shell.tsx',
-        'apps/web/components/client.tsx',
+        'apps/web/app/app/workspace.tsx',
+        'apps/web/components/workspace/user-menu.tsx',
       ]),
     );
     // a template literal needs its whole static prefix
