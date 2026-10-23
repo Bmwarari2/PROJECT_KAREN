@@ -46,21 +46,53 @@ export default function StaffSignIn() {
       <Logo label={t('common.appName')} />
       <div>
         <h1 className="text-title-2">{t('backoffice.signin.title')}</h1>
-        <p className="mt-1 text-callout text-text-secondary">{step === 'password' ? t('backoffice.signin.lead') : t('backoffice.signin.totpLead')}</p>
+        <p className="mt-1 text-callout text-text-secondary">
+          {step === 'password' ? t('backoffice.signin.lead') : t('backoffice.signin.totpLead')}
+        </p>
       </div>
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate={false}>
         {step === 'password' ? (
           <>
             <Field id="staff-email" label={t('backoffice.signin.email')}>
-              {(p) => <Input {...p} type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              )}
             </Field>
             <Field id="staff-password" label={t('backoffice.signin.password')}>
-              {(p) => <Input {...p} type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              )}
             </Field>
           </>
         ) : (
           <Field id="staff-code" label={t('backoffice.signin.code')} hint={t('backoffice.signin.codeHint')}>
-            {(p) => <Input {...p} ref={codeRef} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />}
+            {(p) => (
+              <Input
+                {...p}
+                ref={codeRef}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              />
+            )}
           </Field>
         )}
         {error ? (

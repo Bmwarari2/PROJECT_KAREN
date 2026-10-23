@@ -28,7 +28,11 @@ function tables(md: string): SubprocessorTable[] {
     const line = lines[i]!;
     if (line.startsWith('## ')) title = line.slice(3).trim();
     if (line.startsWith('|') && lines[i + 1]?.startsWith('| ---')) {
-      const cells = (l: string) => l.slice(1, -1).split('|').map((c) => c.trim().replace(/\*\*/g, ''));
+      const cells = (l: string) =>
+        l
+          .slice(1, -1)
+          .split('|')
+          .map((c) => c.trim().replace(/\*\*/g, ''));
       const columns = cells(line);
       const rows: string[][] = [];
       i += 2;
@@ -57,7 +61,8 @@ export function trustData() {
   for (const t of ['uk', 'eu', 'us']) {
     const body = read(`docs/legal/privacy-notice-${t}.md`);
     const version = /Template version (\d{4}-\d{2}-\d{2})/.exec(body)?.[1];
-    if (!version || !body.startsWith('# ') || !body.includes('DRAFT — for legal review')) throw new Error(`privacy-notice-${t}.md must have a title, the DRAFT banner and a template version`);
+    if (!version || !body.startsWith('# ') || !body.includes('DRAFT — for legal review'))
+      throw new Error(`privacy-notice-${t}.md must have a title, the DRAFT banner and a template version`);
     notices[t] = { title: body.split('\n')[0]!.slice(2), version, body, sha256: sha256(body) };
     const d = read(`docs/legal/dpa-${t}.md`);
     const dv = /Version (\d{4}-\d{2}-\d{2})/.exec(d)?.[1];

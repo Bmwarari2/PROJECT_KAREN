@@ -6,20 +6,58 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 
 const isWin = process.platform === 'win32';
 const steps = [
-  { id: 'deps', name: 'Local services (Postgres, Valkey, S3, SQS, mail)', cmd: 'docker compose up -d --wait' },
-  { id: 'lint', name: 'Lint (ESLint + i18n hard-coded string rule)', cmd: 'pnpm exec eslint . --max-warnings=0' },
-  { id: 'typecheck', name: 'Typecheck (tsc strict, all packages)', cmd: 'pnpm -r --workspace-concurrency=1 run typecheck' },
+  {
+    id: 'deps',
+    name: 'Local services (Postgres, Valkey, S3, SQS, mail)',
+    cmd: 'docker compose up -d --wait',
+  },
+  {
+    id: 'lint',
+    name: 'Lint (ESLint + i18n hard-coded string rule + Prettier)',
+    cmd: 'pnpm exec eslint . --max-warnings=0 && pnpm exec prettier --check .',
+  },
+  { id: 'hygiene', name: 'No merge-conflict markers', cmd: 'node scripts/conflict-markers.mjs' },
+  {
+    id: 'typecheck',
+    name: 'Typecheck (tsc strict, all packages)',
+    cmd: 'pnpm -r --workspace-concurrency=1 run typecheck',
+  },
   { id: 'unit', name: 'Unit tests', cmd: 'pnpm exec vitest run --project unit' },
-  { id: 'integration', name: 'Integration tests (real PostgreSQL)', cmd: 'pnpm exec vitest run --project integration' },
+  {
+    id: 'integration',
+    name: 'Integration tests (real PostgreSQL)',
+    cmd: 'pnpm exec vitest run --project integration',
+  },
   { id: 'contract', name: 'Contract tests (OpenAPI 3.1)', cmd: 'pnpm exec vitest run --project contract' },
   { id: 'isolation', name: 'Tenant isolation (RLS)', cmd: 'pnpm exec vitest run --project isolation' },
-  { id: 'residency', name: 'Data residency (every region pair)', cmd: 'pnpm exec vitest run --project residency' },
-  { id: 'build', name: 'Build (web, api, worker)', cmd: 'pnpm --filter @thapsus/web build && node scripts/bundle.mjs apps/api/src/main.ts apps/api/dist/main.mjs && node scripts/bundle.mjs apps/worker/src/main.ts apps/worker/dist/main.mjs' },
-  { id: 'e2e', name: 'End-to-end + axe (Playwright)', cmd: 'pnpm --filter @thapsus/web exec playwright test --project functional' },
+  {
+    id: 'residency',
+    name: 'Data residency (every region pair)',
+    cmd: 'pnpm exec vitest run --project residency',
+  },
+  {
+    id: 'build',
+    name: 'Build (web, api, worker)',
+    cmd: 'pnpm --filter @thapsus/web build && node scripts/bundle.mjs apps/api/src/main.ts apps/api/dist/main.mjs && node scripts/bundle.mjs apps/worker/src/main.ts apps/worker/dist/main.mjs',
+  },
+  {
+    id: 'e2e',
+    name: 'End-to-end + axe (Playwright)',
+    cmd: 'pnpm --filter @thapsus/web exec playwright test --project functional',
+  },
   { id: 'dev', name: 'Local dev (migrate, seed, pnpm dev, hot reload)', cmd: 'node scripts/dev-smoke.mjs' },
   { id: 'visual', name: 'Visual regression (light/dark × phone/desktop)', cmd: 'node scripts/visual.mjs' },
-  { id: 'lighthouse', name: 'Lighthouse (mobile: perf ≥90, a11y ≥95)', cmd: 'node --import tsx scripts/lighthouse.mjs' },
-  { id: 'security', name: 'Security scan (pnpm audit high + secret scan)', cmd: 'pnpm audit --audit-level high --prod && node scripts/secret-scan.mjs' },
+  {
+    id: 'lighthouse',
+    name: 'Lighthouse (mobile: perf ≥90, a11y ≥95)',
+    cmd: 'node --import tsx scripts/lighthouse.mjs',
+  },
+  // also writes the CycloneDX SBOM to .verify/sbom.cdx.json (kept as a CI artifact; ASVS V15.1.2)
+  {
+    id: 'security',
+    name: 'Security scan (pnpm audit high + secret scan + SBOM)',
+    cmd: 'pnpm audit --audit-level high && node scripts/secret-scan.mjs && node scripts/sbom.mjs',
+  },
   { id: 'synth', name: 'CDK synth (all environments × regions)', cmd: 'pnpm --filter @thapsus/infra synth' },
 ];
 
@@ -30,7 +68,11 @@ mkdirSync('.verify', { recursive: true });
 function run(cmd, id) {
   return new Promise((resolve) => {
     const started = Date.now();
-    const child = spawn(cmd, { shell: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, FORCE_COLOR: '0', CI: process.env.CI ?? '1' } });
+    const child = spawn(cmd, {
+      shell: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, FORCE_COLOR: '0', CI: process.env.CI ?? '1' },
+    });
     let out = '';
     child.stdout.on('data', (d) => {
       out += d;
@@ -42,7 +84,11 @@ function run(cmd, id) {
     });
     child.on('close', (code) => {
       writeFileSync(`.verify/${id}.log`, out);
-      resolve({ code, seconds: (Date.now() - started) / 1000, tail: out.trim().split('\n').slice(-3).join(' | ') });
+      resolve({
+        code,
+        seconds: (Date.now() - started) / 1000,
+        tail: out.trim().split('\n').slice(-3).join(' | '),
+      });
     });
   });
 }
@@ -68,7 +114,14 @@ const lines = [
 ];
 const failed = results.filter((r) => r.status === 'FAIL');
 const skipped = results.filter((r) => r.status === 'SKIPPED');
-lines.push('', failed.length ? `RESULT: FAIL (${failed.map((f) => f.id).join(', ')})` : skipped.length ? `RESULT: PASS with ${skipped.length} step(s) skipped (${skipped.map((s) => s.id).join(', ')})` : 'RESULT: PASS (all steps)');
+lines.push(
+  '',
+  failed.length
+    ? `RESULT: FAIL (${failed.map((f) => f.id).join(', ')})`
+    : skipped.length
+      ? `RESULT: PASS with ${skipped.length} step(s) skipped (${skipped.map((s) => s.id).join(', ')})`
+      : 'RESULT: PASS (all steps)',
+);
 const summary = lines.join('\n');
 console.log(summary);
 writeFileSync('.verify/summary.txt', summary + '\n');

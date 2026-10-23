@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { addSupportMinutes, loadBillingConfig, planById, slaDeadlines, slaState, supportHoursFor, worstSla } from '../src/billing';
+import {
+  addSupportMinutes,
+  loadBillingConfig,
+  planById,
+  slaDeadlines,
+  slaState,
+  supportHoursFor,
+  worstSla,
+} from '../src/billing';
 
 const cfg = loadBillingConfig('builtin:billing-config-v1');
 const uk = cfg.support.hours.uk;
@@ -38,15 +46,25 @@ describe('SLA deadlines and states per plan and priority', () => {
     const d = slaDeadlines(cfg, 'plus', 'urgent', 'uk', opened);
     const target = planById(cfg, 'plus')!.support.sla.urgent;
     expect(d.firstResponseDueAt).toBe(addSupportMinutes(opened, target.firstResponseMinutes, uk));
-    expect(d.firstResponseAtRiskAt).toBe(addSupportMinutes(opened, Math.floor((target.firstResponseMinutes * cfg.support.atRiskPercent) / 100), uk));
+    expect(d.firstResponseAtRiskAt).toBe(
+      addSupportMinutes(
+        opened,
+        Math.floor((target.firstResponseMinutes * cfg.support.atRiskPercent) / 100),
+        uk,
+      ),
+    );
     expect(d.resolutionDueAt).toBe(addSupportMinutes(opened, target.resolutionMinutes, uk));
     // urgent beats low; enterprise beats core
     const low = slaDeadlines(cfg, 'plus', 'low', 'uk', opened);
     expect(low.firstResponseDueAt > d.firstResponseDueAt).toBe(true);
     const ent = slaDeadlines(cfg, 'enterprise', 'urgent', 'us', opened);
-    expect(ent.firstResponseDueAt).toBe(addSupportMinutes(opened, planById(cfg, 'enterprise')!.support.sla.urgent.firstResponseMinutes, null));
+    expect(ent.firstResponseDueAt).toBe(
+      addSupportMinutes(opened, planById(cfg, 'enterprise')!.support.sla.urgent.firstResponseMinutes, null),
+    );
     // unknown plan ids fall back to the trial plan's targets
-    expect(slaDeadlines(cfg, 'retired-plan', 'urgent', 'uk', opened)).toEqual(slaDeadlines(cfg, cfg.trial.planId, 'urgent', 'uk', opened));
+    expect(slaDeadlines(cfg, 'retired-plan', 'urgent', 'uk', opened)).toEqual(
+      slaDeadlines(cfg, cfg.trial.planId, 'urgent', 'uk', opened),
+    );
   });
 
   it('flags on track → at risk → breached, and met on time or late', () => {

@@ -12,24 +12,72 @@ export interface SettingsSection {
   visible: (has: (permission: string) => boolean) => boolean;
 }
 
-export const SETTINGS_GROUPS: SettingsGroup[] = ['workspace', 'access', 'signIn', 'approvals', 'timeOff', 'time'];
+export const SETTINGS_GROUPS: SettingsGroup[] = [
+  'workspace',
+  'access',
+  'signIn',
+  'approvals',
+  'timeOff',
+  'time',
+];
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
-  { key: 'organisation', href: '/app/settings/organisation', group: 'workspace', visible: (has) => has('org.manage') },
+  {
+    key: 'organisation',
+    href: '/app/settings/organisation',
+    group: 'workspace',
+    visible: (has) => has('org.manage'),
+  },
   { key: 'roles', href: '/app/settings/roles', group: 'access', visible: (has) => has('roles.read') },
   { key: 'users', href: '/app/settings/users', group: 'access', visible: (has) => has('roles.read') },
   { key: 'sso', href: '/app/settings/sso', group: 'signIn', visible: (has) => has('settings.read') },
-  { key: 'signInPolicy', href: '/app/settings/sign-in-policy', group: 'signIn', visible: (has) => has('settings.read') },
+  {
+    key: 'signInPolicy',
+    href: '/app/settings/sign-in-policy',
+    group: 'signIn',
+    visible: (has) => has('settings.read'),
+  },
   { key: 'domains', href: '/app/settings/domains', group: 'signIn', visible: (has) => has('settings.read') },
   { key: 'scim', href: '/app/settings/scim', group: 'signIn', visible: (has) => has('settings.read') },
-  { key: 'supportAccess', href: '/app/settings/support-access', group: 'signIn', visible: (has) => has('settings.read') },
-  { key: 'approvalChains', href: '/app/settings/approval-chains', group: 'approvals', visible: (has) => has('approvals.manage') },
-  { key: 'workflows', href: '/app/settings/workflows', group: 'approvals', visible: (has) => has('workflows.read') },
+  {
+    key: 'supportAccess',
+    href: '/app/settings/support-access',
+    group: 'signIn',
+    visible: (has) => has('settings.read'),
+  },
+  {
+    key: 'approvalChains',
+    href: '/app/settings/approval-chains',
+    group: 'approvals',
+    visible: (has) => has('approvals.manage'),
+  },
+  {
+    key: 'workflows',
+    href: '/app/settings/workflows',
+    group: 'approvals',
+    visible: (has) => has('workflows.read'),
+  },
   // Anyone who approves things can hand their approvals to a colleague while they are away.
-  { key: 'delegations', href: '/app/settings/delegations', group: 'approvals', visible: (has) => has('approvals.act') || has('approvals.manage') || has('leave.approve') || has('time.approve') },
+  {
+    key: 'delegations',
+    href: '/app/settings/delegations',
+    group: 'approvals',
+    visible: (has) =>
+      has('approvals.act') || has('approvals.manage') || has('leave.approve') || has('time.approve'),
+  },
   { key: 'leave', href: '/app/settings/leave', group: 'timeOff', visible: (has) => has('leave.manage') },
-  { key: 'calendars', href: '/app/settings/calendars', group: 'timeOff', visible: (has) => has('leave.manage') },
-  { key: 'absence', href: '/app/settings/absence', group: 'timeOff', visible: (has) => has('absence.manage') || has('leave.manage') },
+  {
+    key: 'calendars',
+    href: '/app/settings/calendars',
+    group: 'timeOff',
+    visible: (has) => has('leave.manage'),
+  },
+  {
+    key: 'absence',
+    href: '/app/settings/absence',
+    group: 'timeOff',
+    visible: (has) => has('absence.manage') || has('leave.manage'),
+  },
   { key: 'time', href: '/app/settings/time', group: 'time', visible: (has) => has('time.manage') },
 ];
 

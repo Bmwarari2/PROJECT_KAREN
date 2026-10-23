@@ -1,4 +1,14 @@
-import { actionMatches, grantFieldAccess, scopeMatches, type FieldAccess, type Principal, type RoleGrant, type Scope, type ScopeType, type Target } from './permissions';
+import {
+  actionMatches,
+  grantFieldAccess,
+  scopeMatches,
+  type FieldAccess,
+  type Principal,
+  type RoleGrant,
+  type Scope,
+  type ScopeType,
+  type Target,
+} from './permissions';
 
 /**
  * Access catalogue and the privilege-escalation rules for role management (ADR-0120, ADR-0121).
@@ -26,23 +36,112 @@ const VAULT_CATEGORIES = ['health', 'sickness', 'disability', 'diversity', 'eeo'
 
 export const PERMISSION_CATALOGUE: PermissionArea[] = [
   { area: 'self', permissions: [p('self.read'), p('self.update_contact')] },
-  { area: 'employees', permissions: [p('employees.read'), p('employees.history'), p('employees.create', true), p('employees.update', true), p('employees.terminate', true)] },
+  {
+    area: 'employees',
+    permissions: [
+      p('employees.read'),
+      p('employees.history'),
+      p('employees.create', true),
+      p('employees.update', true),
+      p('employees.terminate', true),
+    ],
+  },
   { area: 'org', permissions: [p('org.reporting'), p('org.manage', true)] },
-  { area: 'documents', permissions: [p('documents.read_own'), p('documents.upload_own'), p('documents.sign'), p('documents.read'), p('documents.manage', true)] },
-  { area: 'workflows', permissions: [p('workflows.tasks'), p('workflows.read'), p('workflows.start'), p('workflows.manage', true)] },
+  {
+    area: 'documents',
+    permissions: [
+      p('documents.read_own'),
+      p('documents.upload_own'),
+      p('documents.sign'),
+      p('documents.read'),
+      p('documents.manage', true),
+    ],
+  },
+  {
+    area: 'workflows',
+    permissions: [
+      p('workflows.tasks'),
+      p('workflows.read'),
+      p('workflows.start'),
+      p('workflows.manage', true),
+    ],
+  },
   { area: 'approvals', permissions: [p('approvals.act'), p('approvals.manage', true)] },
   { area: 'automation', permissions: [p('automation.read'), p('automation.manage', true)] },
-  { area: 'leave', permissions: [p('leave.request'), p('leave.read'), p('leave.approve'), p('leave.record'), p('leave.adjust'), p('leave.manage', true)] },
+  {
+    area: 'leave',
+    permissions: [
+      p('leave.request'),
+      p('leave.read'),
+      p('leave.approve'),
+      p('leave.record'),
+      p('leave.adjust'),
+      p('leave.manage', true),
+    ],
+  },
   { area: 'absence', permissions: [p('absence.read'), p('absence.record'), p('absence.manage', true)] },
-  { area: 'rota', permissions: [p('rota.view_own'), p('rota.swap_request'), p('rota.availability'), p('rota.view'), p('rota.manage')] },
-  { area: 'time', permissions: [p('time.clock'), p('time.read'), p('time.approve'), p('time.correct'), p('time.export'), p('time.manage', true)] },
-  { area: 'payslips', permissions: [p('payslips.read_own'), p('payslips.read', true), p('payslips.manage', true)] },
-  { area: 'payroll', permissions: [p('payroll.read', true), p('payroll.export', true), p('payroll.manage', true)] },
-  { area: 'reports', permissions: [p('reports.read_team'), p('reports.read'), p('reports.run'), p('reports.schedule'), p('reports.manage', true)] },
+  {
+    area: 'rota',
+    permissions: [
+      p('rota.view_own'),
+      p('rota.swap_request'),
+      p('rota.availability'),
+      p('rota.view'),
+      p('rota.manage'),
+    ],
+  },
+  {
+    area: 'time',
+    permissions: [
+      p('time.clock'),
+      p('time.read'),
+      p('time.approve'),
+      p('time.correct'),
+      p('time.export'),
+      p('time.manage', true),
+    ],
+  },
+  {
+    area: 'payslips',
+    permissions: [p('payslips.read_own'), p('payslips.read', true), p('payslips.manage', true)],
+  },
+  {
+    area: 'payroll',
+    permissions: [p('payroll.read', true), p('payroll.export', true), p('payroll.manage', true)],
+  },
+  {
+    area: 'reports',
+    permissions: [
+      p('reports.read_team'),
+      p('reports.read'),
+      p('reports.run'),
+      p('reports.schedule'),
+      p('reports.manage', true),
+    ],
+  },
   { area: 'imports', permissions: [p('imports.run', true)] },
-  { area: 'exports', permissions: [p('exports.run', true), p('exports.schedule', true), p('exports.destinations', true)] },
-  { area: 'vault', permissions: [...VAULT_CATEGORIES.map((c) => p(`vault.read:${c}`, true)), ...VAULT_CATEGORIES.map((c) => p(`vault.write:${c}`, true))] },
-  { area: 'privacy', permissions: [p('privacy.read', true), p('privacy.dsr', true), p('privacy.erase', true), p('privacy.incidents', true), p('privacy.notices', true), p('privacy.retention', true)] },
+  {
+    area: 'exports',
+    permissions: [p('exports.run', true), p('exports.schedule', true), p('exports.destinations', true)],
+  },
+  {
+    area: 'vault',
+    permissions: [
+      ...VAULT_CATEGORIES.map((c) => p(`vault.read:${c}`, true)),
+      ...VAULT_CATEGORIES.map((c) => p(`vault.write:${c}`, true)),
+    ],
+  },
+  {
+    area: 'privacy',
+    permissions: [
+      p('privacy.read', true),
+      p('privacy.dsr', true),
+      p('privacy.erase', true),
+      p('privacy.incidents', true),
+      p('privacy.notices', true),
+      p('privacy.retention', true),
+    ],
+  },
   { area: 'audit', permissions: [p('audit.read', true), p('audit.export', true)] },
   { area: 'users', permissions: [p('users.invite', true)] },
   { area: 'roles', permissions: [p('roles.read', true), p('roles.manage', true), p('roles.assign', true)] },
@@ -52,20 +151,37 @@ export const PERMISSION_CATALOGUE: PermissionArea[] = [
   { area: 'ai', permissions: [p('ai.ask')] },
   {
     area: 'compliance',
-    permissions: [p('compliance.read'), p('compliance.record', true), p('compliance.reports', true), p('compliance.reports_exact', true), p('compliance.law_changes', true), p('compliance.manage', true)],
+    permissions: [
+      p('compliance.read'),
+      p('compliance.record', true),
+      p('compliance.reports', true),
+      p('compliance.reports_exact', true),
+      p('compliance.law_changes', true),
+      p('compliance.manage', true),
+    ],
   },
-  { area: 'assets', permissions: [p('assets.read_own'), p('assets.acknowledge'), p('assets.read'), p('assets.manage', true)] },
+  {
+    area: 'assets',
+    permissions: [p('assets.read_own'), p('assets.acknowledge'), p('assets.read'), p('assets.manage', true)],
+  },
   { area: 'integrations', permissions: [p('integrations.read', true), p('integrations.manage', true)] },
   { area: 'webhooks', permissions: [p('webhooks.manage', true)] },
   { area: 'billing', permissions: [p('billing.manage', true)] },
-  { area: 'account', permissions: [p('account.dpa', true), p('account.export', true), p('account.close', true)] },
+  {
+    area: 'account',
+    permissions: [p('account.dpa', true), p('account.export', true), p('account.close', true)],
+  },
 ];
 
 export const PERMISSION_KEYS: string[] = PERMISSION_CATALOGUE.flatMap((a) => a.permissions.map((x) => x.key));
 const AREAS = new Set(PERMISSION_CATALOGUE.map((a) => a.area));
 /** Category wildcards such as `vault.read:*` (a prefix shared by catalogue keys before a colon). */
-const CATEGORY_PREFIXES = new Set(PERMISSION_KEYS.filter((k) => k.includes(':')).map((k) => k.slice(0, k.indexOf(':'))));
-const ADMIN_KEYS = PERMISSION_CATALOGUE.flatMap((a) => a.permissions.filter((x) => x.admin).map((x) => x.key));
+const CATEGORY_PREFIXES = new Set(
+  PERMISSION_KEYS.filter((k) => k.includes(':')).map((k) => k.slice(0, k.indexOf(':'))),
+);
+const ADMIN_KEYS = PERMISSION_CATALOGUE.flatMap((a) =>
+  a.permissions.filter((x) => x.admin).map((x) => x.key),
+);
 
 export type PermissionProblem = 'unknownPermission' | 'ownerOnly';
 
@@ -98,9 +214,46 @@ export interface FieldCatalogueEntry {
 
 const f = (section: FieldSection, ...keys: string[]) => keys.map((key) => ({ key, section }));
 export const EMPLOYEE_FIELDS: FieldCatalogueEntry[] = [
-  ...f('core', 'id', 'displayName', 'status', 'employeeNumber', 'startDate', 'endDate', 'workEmail', 'workPhone', 'photoUrl', 'manager'),
-  ...f('personal', 'legalFirstName', 'legalLastName', 'preferredName', 'pronouns', 'dateOfBirth', 'personalEmail', 'personalPhone', 'address', 'nationality', 'emergencyContacts'),
-  ...f('job', 'jobTitle', 'position', 'department', 'location', 'entity', 'costCentre', 'employmentType', 'fte', 'weeklyHours', 'workPattern', 'flsaStatus'),
+  ...f(
+    'core',
+    'id',
+    'displayName',
+    'status',
+    'employeeNumber',
+    'startDate',
+    'endDate',
+    'workEmail',
+    'workPhone',
+    'photoUrl',
+    'manager',
+  ),
+  ...f(
+    'personal',
+    'legalFirstName',
+    'legalLastName',
+    'preferredName',
+    'pronouns',
+    'dateOfBirth',
+    'personalEmail',
+    'personalPhone',
+    'address',
+    'nationality',
+    'emergencyContacts',
+  ),
+  ...f(
+    'job',
+    'jobTitle',
+    'position',
+    'department',
+    'location',
+    'entity',
+    'costCentre',
+    'employmentType',
+    'fte',
+    'weeklyHours',
+    'workPattern',
+    'flsaStatus',
+  ),
   ...f('pay', 'pay.amount', 'pay.grade'),
   ...f('contract', 'contract.type', 'contract.noticePeriod', 'contract.probation'),
 ];
@@ -115,12 +268,17 @@ const FIELD_LEVELS: FieldAccess[] = ['none', 'read', 'write'];
 export type FieldProblem = 'unknownField' | 'ownerOnly' | 'invalidAccess';
 
 /** Why a field-access entry cannot be held by a custom role. `customKeys` are the tenant's custom field and object keys. */
-export function fieldAccessProblem(key: string, level: string, customKeys: Iterable<string> = []): FieldProblem | undefined {
+export function fieldAccessProblem(
+  key: string,
+  level: string,
+  customKeys: Iterable<string> = [],
+): FieldProblem | undefined {
   if (!FIELD_LEVELS.includes(level as FieldAccess)) return 'invalidAccess';
   if (key === '*') return 'ownerOnly';
   if (key === 'employee.*' || FIELD_KEYS.has(key)) return undefined;
   if (EMPLOYEE_FIELD_GROUPS.some((g) => key === `employee.${g}.*`)) return undefined;
-  if (key.startsWith('employee.custom.') && new Set(customKeys).has(key.slice('employee.custom.'.length))) return undefined;
+  if (key.startsWith('employee.custom.') && new Set(customKeys).has(key.slice('employee.custom.'.length)))
+    return undefined;
   return 'unknownField';
 }
 
@@ -133,7 +291,10 @@ export interface RoleDefinition {
 }
 
 /** Permissions in `perms` that no grant covers (a wildcard is covered only by an equal or wider wildcard). */
-export function uncoveredPermissions(grants: Array<Pick<RoleGrant, 'permissions'>>, perms: string[]): string[] {
+export function uncoveredPermissions(
+  grants: Array<Pick<RoleGrant, 'permissions'>>,
+  perms: string[],
+): string[] {
   return perms.filter((perm) => !grants.some((g) => g.permissions.some((c) => actionMatches(c, perm))));
 }
 
@@ -142,8 +303,16 @@ export function uncoveredPermissions(grants: Array<Pick<RoleGrant, 'permissions'
  * probed (plus `extraProbes`, e.g. every catalogue field), each resolved the way the engine resolves it
  * (exact key, then the most specific wildcard), so a wide wildcard cannot hide a narrower denial.
  */
-export function excessFieldAccess(grants: Array<Pick<RoleGrant, 'fieldAccess'>>, def: Record<string, FieldAccess>, extraProbes: string[] = []): string[] {
-  const probes = new Set([...Object.keys(def), ...grants.flatMap((g) => Object.keys(g.fieldAccess)), ...extraProbes]);
+export function excessFieldAccess(
+  grants: Array<Pick<RoleGrant, 'fieldAccess'>>,
+  def: Record<string, FieldAccess>,
+  extraProbes: string[] = [],
+): string[] {
+  const probes = new Set([
+    ...Object.keys(def),
+    ...grants.flatMap((g) => Object.keys(g.fieldAccess)),
+    ...extraProbes,
+  ]);
   const out: string[] = [];
   for (const key of probes) {
     const wanted = grantFieldAccess({ fieldAccess: def }, key) ?? 'none';
@@ -172,7 +341,12 @@ export interface Assignee {
  * no record the grant does not. Delegated authority never counts (a temporary delegate cannot hand out
  * lasting access).
  */
-export function scopeCovers(caller: Principal, held: Scope, requested: Scope, assignee: Assignee = {}): boolean {
+export function scopeCovers(
+  caller: Principal,
+  held: Scope,
+  requested: Scope,
+  assignee: Assignee = {},
+): boolean {
   if (held.type === 'all') return true;
   if (requested.type === 'all') return false;
   const own: Principal = { ...caller, delegatedFromEmployeeIds: [] };
@@ -182,12 +356,18 @@ export function scopeCovers(caller: Principal, held: Scope, requested: Scope, as
     case 'department':
     case 'location': {
       const values = requested.values ?? [];
-      return held.type === requested.type && values.length > 0 && values.every((v) => (held.values ?? []).includes(v));
+      return (
+        held.type === requested.type &&
+        values.length > 0 &&
+        values.every((v) => (held.values ?? []).includes(v))
+      );
     }
     case 'self':
       return !!assignee.target && scopeMatches(own, held, assignee.target);
     case 'own_team':
-      return held.type === 'own_team' && !!caller.employeeId && (!!assignee.isCaller || !!assignee.inCallersTeam);
+      return (
+        held.type === 'own_team' && !!caller.employeeId && (!!assignee.isCaller || !!assignee.inCallersTeam)
+      );
     default:
       return false;
   }
@@ -201,7 +381,13 @@ export interface AssignmentCheck {
 }
 
 /** Checks that the caller could hand out `def` at `scope` to the assignee without exceeding their own access. */
-export function checkAssignment(caller: Principal, def: RoleDefinition, scope: Scope, assignee: Assignee = {}, extraProbes: string[] = []): AssignmentCheck {
+export function checkAssignment(
+  caller: Principal,
+  def: RoleDefinition,
+  scope: Scope,
+  assignee: Assignee = {},
+  extraProbes: string[] = [],
+): AssignmentCheck {
   const covering = caller.grants.filter((g) => scopeCovers(caller, g.scope, scope, assignee));
   return {
     mayAssign: covering.some((g) => g.permissions.some((c) => actionMatches(c, 'roles.assign'))),
@@ -220,6 +406,14 @@ export function fieldProbes(customKeys: Iterable<string> = []): string[] {
   ];
 }
 
-export const SCOPE_TYPES: ScopeType[] = ['all', 'entity', 'country', 'department', 'location', 'own_team', 'self'];
+export const SCOPE_TYPES: ScopeType[] = [
+  'all',
+  'entity',
+  'country',
+  'department',
+  'location',
+  'own_team',
+  'self',
+];
 /** Scope types that name values (ids or country codes). */
 export const VALUED_SCOPES: ScopeType[] = ['entity', 'country', 'department', 'location'];

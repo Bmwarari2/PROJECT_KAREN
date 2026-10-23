@@ -29,7 +29,18 @@ export interface Destination {
   put(file: DeliveryFile): Promise<{ path: string; bytes: number }>;
 }
 
-export type DestinationErrorCode = 'invalidConfig' | 'regionNotAllowed' | 'bucketRegionMismatch' | 'assumeRoleFailed' | 'accessDenied' | 'hostNotAllowed' | 'hostKeyMismatch' | 'authFailed' | 'timeout' | 'connect' | 'transfer';
+export type DestinationErrorCode =
+  | 'invalidConfig'
+  | 'regionNotAllowed'
+  | 'bucketRegionMismatch'
+  | 'assumeRoleFailed'
+  | 'accessDenied'
+  | 'hostNotAllowed'
+  | 'hostKeyMismatch'
+  | 'authFailed'
+  | 'timeout'
+  | 'connect'
+  | 'transfer';
 /** Errors worth retrying (the job backs off); every other code needs the customer to fix the configuration. */
 export const TRANSIENT: DestinationErrorCode[] = ['timeout', 'connect', 'transfer'];
 
@@ -60,23 +71,44 @@ const BUCKET = /^(?!xn--)(?!.*\.\.)[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/;
 export const newExternalId = () => `thr-${randomBytes(16).toString('hex')}`;
 
 /** Refuses a bucket outside the tenant's home region and roles outside the allowed name prefix. */
-export function validateS3Config(cell: HomeRegion, c: Omit<S3Config, 'externalId'> & { externalId?: string }) {
+export function validateS3Config(
+  cell: HomeRegion,
+  c: Omit<S3Config, 'externalId'> & { externalId?: string },
+) {
   const home = REGIONS[cell].awsRegion;
-  if (c.region !== home) throw new DestinationError('regionNotAllowed', `The bucket must be in ${home}, this workspace's home region`);
+  if (c.region !== home)
+    throw new DestinationError(
+      'regionNotAllowed',
+      `The bucket must be in ${home}, this workspace's home region`,
+    );
   if (!BUCKET.test(c.bucket)) throw new DestinationError('invalidConfig', 'Invalid bucket name');
-  if (!ROLE_ARN.test(c.roleArn)) throw new DestinationError('invalidConfig', `The role name must start with ${EXPORT_ROLE_PREFIX}`);
-  if (c.prefix && (c.prefix.startsWith('/') || c.prefix.split('/').includes('..') || !/^[A-Za-z0-9!_.*'()/-]{0,200}$/.test(c.prefix))) throw new DestinationError('invalidConfig', 'Invalid key prefix');
-  if (c.externalId !== undefined && !/^thr-[0-9a-f]{32}$/.test(c.externalId)) throw new DestinationError('invalidConfig', 'Invalid external id');
+  if (!ROLE_ARN.test(c.roleArn))
+    throw new DestinationError('invalidConfig', `The role name must start with ${EXPORT_ROLE_PREFIX}`);
+  if (
+    c.prefix &&
+    (c.prefix.startsWith('/') ||
+      c.prefix.split('/').includes('..') ||
+      !/^[A-Za-z0-9!_.*'()/-]{0,200}$/.test(c.prefix))
+  )
+    throw new DestinationError('invalidConfig', 'Invalid key prefix');
+  if (c.externalId !== undefined && !/^thr-[0-9a-f]{32}$/.test(c.externalId))
+    throw new DestinationError('invalidConfig', 'Invalid external id');
 }
 
 type Sender = { send(cmd: unknown): Promise<unknown> };
 /** Client creation seam: production uses the residency-guarded factory; tests pass recording fakes. */
 export interface AwsClients {
   sts(region: string): Sender;
-  s3(region: string, credentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string }): Sender;
+  s3(
+    region: string,
+    credentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string },
+  ): Sender;
 }
 
-export function guardedAwsClients(cell: HomeRegion, endpoints: Partial<Record<string, string>> = {}): AwsClients {
+export function guardedAwsClients(
+  cell: HomeRegion,
+  endpoints: Partial<Record<string, string>> = {},
+): AwsClients {
   const create = createAwsClientFactory({ cell, endpoints });
   return {
     sts: (region) => create(STSClient, 'sts', { region }),
@@ -103,25 +135,51 @@ export class S3Destination implements Destination {
     const home = REGIONS[this.cell].awsRegion;
     let creds: { AccessKeyId?: string; SecretAccessKey?: string; SessionToken?: string } | undefined;
     try {
-      const out = (await this.clients.sts(home).send(new AssumeRoleCommand({ RoleArn: this.c.roleArn, RoleSessionName: `thapsus-hr-export-${this.tenantId.slice(0, 8)}`, ExternalId: this.c.externalId, DurationSeconds: 900 }))) as { Credentials?: typeof creds };
+      const out = (await this.clients.sts(home).send(
+        new AssumeRoleCommand({
+          RoleArn: this.c.roleArn,
+          RoleSessionName: `thapsus-hr-export-${this.tenantId.slice(0, 8)}`,
+          ExternalId: this.c.externalId,
+          DurationSeconds: 900,
+        }),
+      )) as { Credentials?: typeof creds };
       creds = out.Credentials;
     } catch (err) {
       if (err instanceof ResidencyViolationError) throw err;
-      throw new DestinationError('assumeRoleFailed', 'Could not assume the export role (check its trust policy and external id)');
+      throw new DestinationError(
+        'assumeRoleFailed',
+        'Could not assume the export role (check its trust policy and external id)',
+      );
     }
-    if (!creds?.AccessKeyId || !creds.SecretAccessKey) throw new DestinationError('assumeRoleFailed', 'The export role returned no credentials');
-    const s3 = this.clients.s3(this.c.region, { accessKeyId: creds.AccessKeyId, secretAccessKey: creds.SecretAccessKey, sessionToken: creds.SessionToken });
+    if (!creds?.AccessKeyId || !creds.SecretAccessKey)
+      throw new DestinationError('assumeRoleFailed', 'The export role returned no credentials');
+    const s3 = this.clients.s3(this.c.region, {
+      accessKeyId: creds.AccessKeyId,
+      secretAccessKey: creds.SecretAccessKey,
+      sessionToken: creds.SessionToken,
+    });
     // The bucket must really be in the home region: S3 reports its region on HeadBucket (or redirects).
     let bucketRegion: string | undefined;
     try {
-      bucketRegion = ((await s3.send(new HeadBucketCommand({ Bucket: this.c.bucket }))) as { BucketRegion?: string }).BucketRegion;
+      bucketRegion = (
+        (await s3.send(new HeadBucketCommand({ Bucket: this.c.bucket }))) as { BucketRegion?: string }
+      ).BucketRegion;
     } catch (err) {
-      const e = err as { name?: string; $metadata?: { httpStatusCode?: number }; $response?: { headers?: Record<string, string> } };
+      const e = err as {
+        name?: string;
+        $metadata?: { httpStatusCode?: number };
+        $response?: { headers?: Record<string, string> };
+      };
       const redirected = e.$response?.headers?.['x-amz-bucket-region'];
-      if (redirected || e.name === 'PermanentRedirect' || e.$metadata?.httpStatusCode === 301) throw new DestinationError('bucketRegionMismatch', `The bucket is not in ${home}`);
-      throw new DestinationError(e.$metadata?.httpStatusCode === 403 ? 'accessDenied' : 'connect', 'The bucket could not be reached with the export role');
+      if (redirected || e.name === 'PermanentRedirect' || e.$metadata?.httpStatusCode === 301)
+        throw new DestinationError('bucketRegionMismatch', `The bucket is not in ${home}`);
+      throw new DestinationError(
+        e.$metadata?.httpStatusCode === 403 ? 'accessDenied' : 'connect',
+        'The bucket could not be reached with the export role',
+      );
     }
-    if (bucketRegion && bucketRegion !== home) throw new DestinationError('bucketRegionMismatch', `The bucket is in ${bucketRegion}, not ${home}`);
+    if (bucketRegion && bucketRegion !== home)
+      throw new DestinationError('bucketRegionMismatch', `The bucket is in ${bucketRegion}, not ${home}`);
     return s3;
   }
 
@@ -132,18 +190,39 @@ export class S3Destination implements Destination {
   async test() {
     const s3 = await this.client();
     const key = this.key(`.thapsus-hr-connection-test-${randomBytes(4).toString('hex')}`);
-    await s3.send(new PutObjectCommand({ Bucket: this.c.bucket, Key: key, Body: Buffer.from('ok\n'), ContentType: 'text/plain' })).catch(() => {
-      throw new DestinationError('accessDenied', 'The export role cannot write to the bucket');
-    });
+    await s3
+      .send(
+        new PutObjectCommand({
+          Bucket: this.c.bucket,
+          Key: key,
+          Body: Buffer.from('ok\n'),
+          ContentType: 'text/plain',
+        }),
+      )
+      .catch(() => {
+        throw new DestinationError('accessDenied', 'The export role cannot write to the bucket');
+      });
     await s3.send(new DeleteObjectCommand({ Bucket: this.c.bucket, Key: key })).catch(() => undefined);
   }
 
   async put(file: DeliveryFile) {
     const s3 = await this.client();
     const key = this.key(file.name);
-    await s3.send(new PutObjectCommand({ Bucket: this.c.bucket, Key: key, Body: file.body, ContentType: file.contentType })).catch((err: { $metadata?: { httpStatusCode?: number } }) => {
-      throw new DestinationError(err.$metadata?.httpStatusCode === 403 ? 'accessDenied' : 'transfer', 'Upload to the bucket failed');
-    });
+    await s3
+      .send(
+        new PutObjectCommand({
+          Bucket: this.c.bucket,
+          Key: key,
+          Body: file.body,
+          ContentType: file.contentType,
+        }),
+      )
+      .catch((err: { $metadata?: { httpStatusCode?: number } }) => {
+        throw new DestinationError(
+          err.$metadata?.httpStatusCode === 403 ? 'accessDenied' : 'transfer',
+          'Upload to the bucket failed',
+        );
+      });
     return { path: `s3://${this.c.bucket}/${key}`, bytes: file.body.length };
   }
 }
@@ -165,13 +244,24 @@ export interface SftpSecrets {
 export const HOST_KEY = /^SHA256:[A-Za-z0-9+/]{43}$/;
 
 export function validateSftpConfig(c: SftpConfig) {
-  if (!/^[A-Za-z0-9.-]{1,253}$/.test(c.host)) throw new DestinationError('invalidConfig', 'Invalid host name');
-  if (!Number.isInteger(c.port) || c.port < 1 || c.port > 65535) throw new DestinationError('invalidConfig', 'Invalid port');
-  if (!HOST_KEY.test(c.hostKeySha256)) throw new DestinationError('invalidConfig', 'Pin the server host key (OpenSSH SHA256 fingerprint)');
-  if (c.directory && (c.directory.split('/').includes('..') || !/^[A-Za-z0-9._/-]{0,200}$/.test(c.directory))) throw new DestinationError('invalidConfig', 'Invalid directory');
+  if (!/^[A-Za-z0-9.-]{1,253}$/.test(c.host))
+    throw new DestinationError('invalidConfig', 'Invalid host name');
+  if (!Number.isInteger(c.port) || c.port < 1 || c.port > 65535)
+    throw new DestinationError('invalidConfig', 'Invalid port');
+  if (!HOST_KEY.test(c.hostKeySha256))
+    throw new DestinationError('invalidConfig', 'Pin the server host key (OpenSSH SHA256 fingerprint)');
+  if (c.directory && (c.directory.split('/').includes('..') || !/^[A-Za-z0-9._/-]{0,200}$/.test(c.directory)))
+    throw new DestinationError('invalidConfig', 'Invalid directory');
 }
 
-const SFTP_CODES: Record<SftpError['code'], DestinationErrorCode> = { hostNotAllowed: 'hostNotAllowed', hostKeyMismatch: 'hostKeyMismatch', authFailed: 'authFailed', timeout: 'timeout', transfer: 'transfer', connect: 'connect' };
+const SFTP_CODES: Record<SftpError['code'], DestinationErrorCode> = {
+  hostNotAllowed: 'hostNotAllowed',
+  hostKeyMismatch: 'hostKeyMismatch',
+  authFailed: 'authFailed',
+  timeout: 'timeout',
+  transfer: 'transfer',
+  connect: 'connect',
+};
 
 export class SftpDestination implements Destination {
   readonly kind = 'sftp' as const;
@@ -190,7 +280,19 @@ export class SftpDestination implements Destination {
   private async upload(name: string, body: Buffer) {
     const dir = posix.join(this.c.directory || '.', posix.dirname(name));
     try {
-      return await uploadSftp({ host: this.c.host, port: this.c.port, username: this.c.username, directory: dir, hostKeySha256: this.c.hostKeySha256 }, this.secrets, posix.basename(name), body, this.opts);
+      return await uploadSftp(
+        {
+          host: this.c.host,
+          port: this.c.port,
+          username: this.c.username,
+          directory: dir,
+          hostKeySha256: this.c.hostKeySha256,
+        },
+        this.secrets,
+        posix.basename(name),
+        body,
+        this.opts,
+      );
     } catch (err) {
       if (err instanceof SftpError) throw new DestinationError(SFTP_CODES[err.code], err.message);
       throw new DestinationError('transfer', 'SFTP upload failed');

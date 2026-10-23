@@ -1,11 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { articlesForContext, HELP_ARTICLES, helpArticle, searchHelp, stem, tokenize, validateHelpArticles } from '../src/help';
+import {
+  articlesForContext,
+  HELP_ARTICLES,
+  helpArticle,
+  searchHelp,
+  stem,
+  tokenize,
+  validateHelpArticles,
+} from '../src/help';
 
 describe('help centre content', () => {
   it('every article is versioned, linked from app pages and localised in en-GB and en-US', () => {
     expect(validateHelpArticles()).toEqual([]);
     expect(HELP_ARTICLES.length).toBeGreaterThanOrEqual(6);
-    expect(validateHelpArticles([{ ...HELP_ARTICLES[0]!, version: 0, locales: { 'en-GB': HELP_ARTICLES[0]!.locales['en-GB'] } as never }])).toEqual(
+    expect(
+      validateHelpArticles([
+        {
+          ...HELP_ARTICLES[0]!,
+          version: 0,
+          locales: { 'en-GB': HELP_ARTICLES[0]!.locales['en-GB'] } as never,
+        },
+      ]),
+    ).toEqual(
       expect.arrayContaining([expect.stringMatching(/version/), expect.stringMatching(/missing en-US/)]),
     );
   });
@@ -18,7 +34,9 @@ describe('help centre content', () => {
 
   it('links articles to the page they help with (closest parent path)', () => {
     expect(articlesForContext('/app/time-off', 'en-GB').map((a) => a.slug)).toContain('requesting-time-off');
-    expect(articlesForContext('/app/people/123?tab=job', 'en-GB').map((a) => a.slug)).toEqual(['adding-people']);
+    expect(articlesForContext('/app/people/123?tab=job', 'en-GB').map((a) => a.slug)).toEqual([
+      'adding-people',
+    ]);
     expect(articlesForContext('/app/unknown-page', 'en-GB').map((a) => a.slug)).toEqual(['getting-started']);
   });
 });

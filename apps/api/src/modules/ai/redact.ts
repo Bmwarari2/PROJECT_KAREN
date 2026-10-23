@@ -61,7 +61,8 @@ export function shouldRedactName(t: Token): boolean {
  */
 const NUMBER_TOKEN = /\b[\p{L}\p{N}][\p{L}\p{N}_/-]*\d[\p{L}\p{N}_/-]*\b/gu;
 const isNumberCandidate = (s: string) => (/\p{L}/u.test(s) && /\d/.test(s)) || /^\d{5,}$/.test(s);
-const numberCandidates = (text: string) => [...text.matchAll(NUMBER_TOKEN)].filter((m) => isNumberCandidate(m[0]));
+const numberCandidates = (text: string) =>
+  [...text.matchAll(NUMBER_TOKEN)].filter((m) => isNumberCandidate(m[0]));
 
 export interface RedactionResult {
   texts: string[];
@@ -69,16 +70,21 @@ export interface RedactionResult {
   questionMentionsColleague: boolean;
 }
 
-export async function redactPeople(tx: Tx, texts: string[], askerEmployeeId: string | null): Promise<RedactionResult> {
+export async function redactPeople(
+  tx: Tx,
+  texts: string[],
+  askerEmployeeId: string | null,
+): Promise<RedactionResult> {
   const scrubbed = texts.map((t) => scrubString(t));
   const tokens = scrubbed.map(wordTokens);
   const probe = new Set<string>();
   for (const list of tokens) for (const t of list) if (shouldRedactName(t)) probe.add(t.word);
   const numbers = new Set<string>();
-  for (const s of scrubbed) for (const m of numberCandidates(s)) {
-    numbers.add(m[0]);
-    numbers.add(m[0].toUpperCase());
-  }
+  for (const s of scrubbed)
+    for (const m of numberCandidates(s)) {
+      numbers.add(m[0]);
+      numbers.add(m[0].toUpperCase());
+    }
   const words = [...probe].slice(0, 2_000);
   const names = new Map<string, boolean>(); // word → matches someone other than the asker
   if (words.length) {
@@ -98,8 +104,15 @@ export async function redactPeople(tx: Tx, texts: string[], askerEmployeeId: str
   }
   const numberHits = new Map<string, boolean>();
   if (numbers.size) {
-    const rows = await tx.query<{ employee_number: string; id: string }>(`SELECT employee_number, id FROM app.employees WHERE employee_number = ANY($1::text[])`, [[...numbers]]);
-    for (const r of rows) numberHits.set(r.employee_number.toUpperCase(), (numberHits.get(r.employee_number.toUpperCase()) ?? false) || r.id !== askerEmployeeId);
+    const rows = await tx.query<{ employee_number: string; id: string }>(
+      `SELECT employee_number, id FROM app.employees WHERE employee_number = ANY($1::text[])`,
+      [[...numbers]],
+    );
+    for (const r of rows)
+      numberHits.set(
+        r.employee_number.toUpperCase(),
+        (numberHits.get(r.employee_number.toUpperCase()) ?? false) || r.id !== askerEmployeeId,
+      );
   }
   let mentionsColleague = false;
   const out = scrubbed.map((text, i) => {

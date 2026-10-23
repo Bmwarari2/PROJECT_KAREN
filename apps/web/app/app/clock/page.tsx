@@ -5,7 +5,16 @@ import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, use
 import { nowInstant } from '@thapsus/core/time';
 import { formatDateTime, formatInstantTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
-import { enqueue, newClientEventId, projectState, readQueue, syncQueue, type ClockKind, type ClockState, type QueuedPunch } from '@/lib/clock-queue';
+import {
+  enqueue,
+  newClientEventId,
+  projectState,
+  readQueue,
+  syncQueue,
+  type ClockKind,
+  type ClockState,
+  type QueuedPunch,
+} from '@/lib/clock-queue';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
@@ -16,7 +25,14 @@ interface Status {
   state: ClockState;
   zone: string | null;
   geofence: { enabled: boolean; notice: string | null };
-  today: Array<{ id: string; kind: string; occurredAt: string; source: string; withinGeofence: boolean | null; superseded: boolean }>;
+  today: Array<{
+    id: string;
+    kind: string;
+    occurredAt: string;
+    source: string;
+    withinGeofence: boolean | null;
+    superseded: boolean;
+  }>;
 }
 
 /** Location is requested only when the tenant enabled geofencing for this worker (and they were told). */
@@ -83,9 +99,21 @@ function ClockCard({ userId }: { userId: string }) {
     setBusy(true);
     try {
       const location = status?.geofence.enabled ? await currentPosition() : undefined;
-      const p: QueuedPunch = { clientEventId: newClientEventId(), kind, occurredAt: nowInstant(), zone, ...(location ? { location } : {}) };
+      const p: QueuedPunch = {
+        clientEventId: newClientEventId(),
+        kind,
+        occurredAt: nowInstant(),
+        zone,
+        ...(location ? { location } : {}),
+      };
       setQueue(enqueue(userId, p));
-      toast({ title: t('clock.recorded', { kind: t(`clock.kind.${kind}`), time: formatInstantTime(p.occurredAt, locale, zone) }), tone: 'success' });
+      toast({
+        title: t('clock.recorded', {
+          kind: t(`clock.kind.${kind}`),
+          time: formatInstantTime(p.occurredAt, locale, zone),
+        }),
+        tone: 'success',
+      });
       if (navigator.onLine) await sync();
     } finally {
       setBusy(false);
@@ -103,7 +131,11 @@ function ClockCard({ userId }: { userId: string }) {
           </p>
         ) : null}
         <p className="text-title-3" aria-live="polite" data-testid="clock-state">
-          {shown.state === 'out' ? t('clock.stateOut') : shown.state === 'in' ? t('clock.stateIn', { time: since }) : t('clock.stateBreak', { time: since })}
+          {shown.state === 'out'
+            ? t('clock.stateOut')
+            : shown.state === 'in'
+              ? t('clock.stateIn', { time: since })
+              : t('clock.stateBreak', { time: since })}
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           {shown.state === 'out' ? (
@@ -147,7 +179,10 @@ function ClockCard({ userId }: { userId: string }) {
           )}
         </div>
         {status?.geofence.enabled ? (
-          <div className="mt-5 flex items-start gap-2 rounded-md bg-surface p-3 text-callout" data-testid="geofence-notice">
+          <div
+            className="mt-5 flex items-start gap-2 rounded-md bg-surface p-3 text-callout"
+            data-testid="geofence-notice"
+          >
             <MapPin aria-hidden className="mt-0.5 h-4 w-4 shrink-0 stroke-[1.5]" />
             <div>
               <p className="font-semibold">{t('clock.geofenceTitle')}</p>
@@ -173,7 +208,10 @@ function ClockCard({ userId }: { userId: string }) {
               </li>
             ))}
             {[...status.today].reverse().map((e) => (
-              <li key={e.id} className={`flex items-center justify-between gap-2 text-callout ${e.superseded ? 'line-through text-text-secondary' : ''}`}>
+              <li
+                key={e.id}
+                className={`flex items-center justify-between gap-2 text-callout ${e.superseded ? 'line-through text-text-secondary' : ''}`}
+              >
                 <span>{t(`clock.kind.${e.kind}`)}</span>
                 <span className="flex items-center gap-2 tabular-nums">
                   {e.source !== 'pwa' ? <Badge>{t(`clock.source.${e.source}`)}</Badge> : null}
@@ -204,7 +242,10 @@ function PinCard({ employeeId }: { employeeId: string }) {
       setPin('');
       toast({ title: t('clock.pinSaved'), tone: 'success' });
     } catch (err) {
-      toast({ title: err instanceof ApiProblem && err.status === 422 ? t('clock.pinWeak') : t('common.error'), tone: 'danger' });
+      toast({
+        title: err instanceof ApiProblem && err.status === 422 ? t('clock.pinWeak') : t('common.error'),
+        tone: 'danger',
+      });
     } finally {
       setBusy(false);
     }
@@ -215,7 +256,21 @@ function PinCard({ employeeId }: { employeeId: string }) {
       <p className="mt-1 text-callout text-text-secondary">{t('clock.pinBody')}</p>
       <form onSubmit={save} className="mt-3 flex flex-wrap items-end gap-3">
         <Field id="kiosk-pin" label={t('clock.pinLabel')}>
-          {(p) => <Input {...p} type="password" inputMode="numeric" autoComplete="new-password" pattern="\d{4,8}" minLength={4} maxLength={8} required value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} className="w-40" />}
+          {(p) => (
+            <Input
+              {...p}
+              type="password"
+              inputMode="numeric"
+              autoComplete="new-password"
+              pattern="\d{4,8}"
+              minLength={4}
+              maxLength={8}
+              required
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+              className="w-40"
+            />
+          )}
         </Field>
         <Button type="submit" variant="secondary" loading={busy}>
           <KeyRound aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -232,14 +287,20 @@ function KiosksCard() {
   const toast = useToast();
   const session = useSession();
   const zone = viewerZone(session?.timeZone);
-  const kiosks = useApi<Array<{ id: string; name: string; lastUsedAt: string | null; revokedAt: string | null }>>('/v1/kiosks');
+  const kiosks =
+    useApi<Array<{ id: string; name: string; lastUsedAt: string | null; revokedAt: string | null }>>(
+      '/v1/kiosks',
+    );
   const locations = useApi<Array<{ id: string; name: string }>>('/v1/org/locations');
   const [name, setName] = React.useState('');
   const [locationId, setLocationId] = React.useState('');
   const [link, setLink] = React.useState<string | null>(null);
   async function create(e: React.FormEvent) {
     e.preventDefault();
-    const r = await api<{ token: string }>('/v1/kiosks', { method: 'POST', json: { name, locationId: locationId || null } });
+    const r = await api<{ token: string }>('/v1/kiosks', {
+      method: 'POST',
+      json: { name, locationId: locationId || null },
+    });
     setLink(`${window.location.origin}/kiosk#pair=${r.token}`);
     setName('');
     kiosks.reload();
@@ -248,10 +309,19 @@ function KiosksCard() {
     <Card className="lg:col-span-2">
       <CardTitle>{t('clock.kiosksTitle')}</CardTitle>
       <form onSubmit={create} className="mt-3 flex flex-wrap items-end gap-3">
-        <Field id="kiosk-name" label={t('clock.kioskName')}>{(p) => <Input {...p} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
+        <Field id="kiosk-name" label={t('clock.kioskName')}>
+          {(p) => (
+            <Input {...p} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+          )}
+        </Field>
         <Field id="kiosk-location" label={t('rota.location')}>
           {(p) => (
-            <select {...p} value={locationId} onChange={(e) => setLocationId(e.target.value)} className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
+            <select
+              {...p}
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+              className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+            >
               <option value="">{t('rota.allLocations')}</option>
               {(locations.data ?? []).map((l) => (
                 <option key={l.id} value={l.id}>
@@ -292,7 +362,8 @@ function KiosksCard() {
           <li key={k.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-callout">
             <span className="font-semibold">{k.name}</span>
             <span className="flex items-center gap-2 text-footnote text-text-secondary">
-              {t('clock.lastUsed')}: {k.lastUsedAt ? formatDateTime(k.lastUsedAt, locale, zone) : t('clock.never')}
+              {t('clock.lastUsed')}:{' '}
+              {k.lastUsedAt ? formatDateTime(k.lastUsedAt, locale, zone) : t('clock.never')}
               {k.revokedAt ? (
                 <Badge>{t('clock.revoked')}</Badge>
               ) : (
@@ -323,7 +394,11 @@ export default function ClockPage() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-title-2">{t('clock.title')}</h1>
-      {session.employeeId ? <ClockCard userId={session.userId} /> : <EmptyState title={t('clock.noEmployee')} />}
+      {session.employeeId ? (
+        <ClockCard userId={session.userId} />
+      ) : (
+        <EmptyState title={t('clock.noEmployee')} />
+      )}
       <div className="grid gap-4 lg:grid-cols-3">
         {session.employeeId ? <PinCard employeeId={session.employeeId} /> : null}
         {canManage ? <KiosksCard /> : null}

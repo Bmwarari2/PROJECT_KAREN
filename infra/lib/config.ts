@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME_REGIONS, type HomeRegion } from '@thapsus/core/regions';
 
-export const ENVS = ['dev', 'staging', 'prod'] as const;
+/** `loadtest` is a temporary environment created and torn down by `pnpm loadtest` (brief §8). */
+export const ENVS = ['dev', 'staging', 'prod', 'loadtest'] as const;
 export type EnvName = (typeof ENVS)[number];
 
 export interface ServiceSize {
@@ -61,9 +62,15 @@ export interface EnvConfig {
   backup: { dailyRetentionDays: number; continuousRetentionDays: number; copyRetentionDays: number };
   services: { api: ServiceSize; worker: ServiceSize; web: ServiceSize };
   wafRateLimitPer5Min: number;
-  global: { certificateArn: string | null; monthlyBudgetUsd: number; services: { api: ServiceSize; web: ServiceSize } };
+  global: {
+    certificateArn: string | null;
+    monthlyBudgetUsd: number;
+    services: { api: ServiceSize; web: ServiceSize };
+  };
   cells: Record<HomeRegion, CellSettings>;
   billingConfigLocation: string;
+  /** Only in the temporary load-test environment: relaxes per-IP throttles for a single load generator. */
+  loadTest?: { ipThrottleMultiplier: number };
   /** GitHub Actions OIDC: the only repository and GitHub environment allowed to assume the deploy roles. */
   ci: { githubRepository: string; githubEnvironment: string; oidcProviderArn: string | null };
 }
@@ -83,15 +90,21 @@ export function validateConfig(cfg: EnvConfig, env: EnvName) {
   if (!/^\d{12}$/.test(cfg.account)) fail('account must be a 12-digit AWS account id');
   for (const r of HOME_REGIONS) if (!cfg.cells[r]) fail(`cells.${r} is missing`);
   for (const [name, s] of Object.entries({ ...cfg.services, ...prefix('global.', cfg.global.services) })) {
-    if (s.minCapacity > s.maxCapacity || s.desiredCount < s.minCapacity || s.desiredCount > s.maxCapacity) fail(`services.${name} capacity is inconsistent`);
+    if (s.minCapacity > s.maxCapacity || s.desiredCount < s.minCapacity || s.desiredCount > s.maxCapacity)
+      fail(`services.${name} capacity is inconsistent`);
   }
-  if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.ci?.githubRepository ?? '')) fail('ci.githubRepository must be owner/repo');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.ci?.githubRepository ?? ''))
+    fail('ci.githubRepository must be owner/repo');
   if (!cfg.ci.githubEnvironment) fail('ci.githubEnvironment is required');
+  if (cfg.loadTest && env !== 'loadtest')
+    fail('loadTest settings are only allowed in the loadtest environment');
   validateDedicatedDatabases(cfg.dedicatedDatabases, fail);
   if (env === 'prod') {
-    if (cfg.ci.githubEnvironment !== 'production') fail('prod deploys must come from the "production" GitHub environment (manual approval gate)');
+    if (cfg.ci.githubEnvironment !== 'production')
+      fail('prod deploys must come from the "production" GitHub environment (manual approval gate)');
     if (cfg.natGateways < 3) fail('prod needs one NAT gateway per AZ (3)');
-    for (const [name, s] of Object.entries(cfg.services)) if (s.desiredCount < 2) fail(`prod services.${name}.desiredCount must be >= 2`);
+    for (const [name, s] of Object.entries(cfg.services))
+      if (s.desiredCount < 2) fail(`prod services.${name}.desiredCount must be >= 2`);
     if (!cfg.aurora.deletionProtection) fail('prod Aurora must have deletion protection');
   }
 }
@@ -103,31 +116,46 @@ function validateDedicatedDatabases(list: unknown, fail: (m: string) => never) {
   for (const [i, d] of (list as DedicatedDatabase[]).entries()) {
     const at = `dedicatedDatabases[${i}]`;
     if (!d || typeof d !== 'object') fail(`${at} must be an object`);
-    for (const k of Object.keys(d)) if (!DEDICATED_DATABASE_FIELDS.has(k)) fail(`${at}.${k} is not a known setting`);
-    if (typeof d.key !== 'string' || !DEDICATED_DATABASE_KEY.test(d.key) || d.key.length > DEDICATED_DATABASE_KEY_MAX) {
-      fail(`${at}.key must be lower-case letters, digits and single hyphens, start with a letter, at most ${DEDICATED_DATABASE_KEY_MAX} characters`);
+    for (const k of Object.keys(d))
+      if (!DEDICATED_DATABASE_FIELDS.has(k)) fail(`${at}.${k} is not a known setting`);
+    if (
+      typeof d.key !== 'string' ||
+      !DEDICATED_DATABASE_KEY.test(d.key) ||
+      d.key.length > DEDICATED_DATABASE_KEY_MAX
+    ) {
+      fail(
+        `${at}.key must be lower-case letters, digits and single hyphens, start with a letter, at most ${DEDICATED_DATABASE_KEY_MAX} characters`,
+      );
     }
     if (d.key === 'shared') fail(`${at}.key "shared" is the cell's shared database`);
     // Construct ids and stack outputs drop the hyphens, so "big-co" and "bigco" would collide.
     const id = d.key.replace(/-/g, '');
     if (seen.has(id)) fail(`${at}.key "${d.key}" is used twice (keys must differ ignoring hyphens)`);
     seen.add(id);
-    if (!(HOME_REGIONS as readonly string[]).includes(d.cell)) fail(`${at}.cell must be one of ${HOME_REGIONS.join(', ')}`);
+    if (!(HOME_REGIONS as readonly string[]).includes(d.cell))
+      fail(`${at}.cell must be one of ${HOME_REGIONS.join(', ')}`);
     for (const k of ['minAcu', 'maxAcu'] as const) {
       const v = d[k];
-      if (v !== undefined && (typeof v !== 'number' || v < 0.5 || v > 256 || (v * 2) % 1 !== 0)) fail(`${at}.${k} must be 0.5 to 256 in steps of 0.5`);
+      if (v !== undefined && (typeof v !== 'number' || v < 0.5 || v > 256 || (v * 2) % 1 !== 0))
+        fail(`${at}.${k} must be 0.5 to 256 in steps of 0.5`);
     }
     if ((d.minAcu ?? 0) > (d.maxAcu ?? Infinity)) fail(`${at}.minAcu must not exceed maxAcu`);
   }
 }
 
 /** PascalCase id of a dedicated database key, for construct ids and stack outputs ("big-co" → "BigCo"). */
-export const dedicatedDatabaseId = (key: string) => key.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+export const dedicatedDatabaseId = (key: string) =>
+  key
+    .split('-')
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join('');
 
 /** The dedicated databases of one cell. */
-export const dedicatedDatabasesFor = (cfg: EnvConfig, cell: HomeRegion) => (cfg.dedicatedDatabases ?? []).filter((d) => d.cell === cell);
+export const dedicatedDatabasesFor = (cfg: EnvConfig, cell: HomeRegion) =>
+  (cfg.dedicatedDatabases ?? []).filter((d) => d.cell === cell);
 
-const prefix = <T>(p: string, o: Record<string, T>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [p + k, v]));
+const prefix = <T>(p: string, o: Record<string, T>) =>
+  Object.fromEntries(Object.entries(o).map(([k, v]) => [p + k, v]));
 
 /** Deterministic, region-free names shared between stacks (no cross-stack references needed). */
 export const names = {
@@ -142,7 +170,11 @@ export const names = {
   /** Cell stack outputs for a dedicated database (read by scripts/deploy.mjs and the runbook). */
   dedicatedOutputs: (key: string) => {
     const id = dedicatedDatabaseId(key);
-    return { proxyEndpoint: `Dedicated${id}ProxyEndpoint`, writerEndpoint: `Dedicated${id}WriterEndpoint`, toolsTaskDefinitionArn: `Dedicated${id}ToolsTaskDefinitionArn` };
+    return {
+      proxyEndpoint: `Dedicated${id}ProxyEndpoint`,
+      writerEndpoint: `Dedicated${id}WriterEndpoint`,
+      toolsTaskDefinitionArn: `Dedicated${id}ToolsTaskDefinitionArn`,
+    };
   },
 };
 

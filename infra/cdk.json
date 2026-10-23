@@ -2,20 +2,14 @@
   "app": "npx tsx bin/app.ts",
   "requireApproval": "broadening",
   "watch": {
-    "include": [
-      "bin/**",
-      "lib/**",
-      "config/**"
-    ]
+    "include": ["bin/**", "lib/**", "config/**"]
   },
   "context": {
     "@aws-cdk/aws-signer:signingProfileNamePassedToCfn": true,
     "@aws-cdk/aws-ecs-patterns:secGroupsDisablesImplicitOpenListener": true,
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
-    "@aws-cdk/core:target-partitions": [
-      "aws"
-    ],
+    "@aws-cdk/core:target-partitions": ["aws"],
     "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": true,
     "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
     "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,

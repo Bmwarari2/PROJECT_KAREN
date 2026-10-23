@@ -61,9 +61,7 @@
         "day": 1
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -84,9 +82,7 @@
         "day": 3
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -107,9 +103,7 @@
         "day": 1
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -130,9 +124,7 @@
         "day": 6
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -153,9 +145,7 @@
         "day": 24
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -176,9 +166,7 @@
         "day": 6
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -199,9 +187,7 @@
         "day": 22
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -222,9 +208,7 @@
         "day": 24
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -245,9 +229,7 @@
         "day": 25
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -268,9 +250,7 @@
         "day": 26
       },
       "observance": "uk_substitute",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -291,9 +271,7 @@
         "calendar": "orthodox"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -314,9 +292,7 @@
         "calendar": "orthodox"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -337,9 +313,7 @@
         "calendar": "orthodox"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -360,9 +334,7 @@
         "calendar": "orthodox"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {

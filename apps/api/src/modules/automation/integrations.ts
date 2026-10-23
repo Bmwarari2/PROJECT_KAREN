@@ -50,12 +50,33 @@ export function isPublicHttpsUrl(raw: unknown): boolean {
   }
   if (url.protocol !== 'https:' || url.username || url.password) return false;
   const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  if (host === 'localhost' || /\.(localhost|local|internal|intranet|lan|home\.arpa)$/.test(host) || (!host.includes('.') && !isIP(host))) return false;
+  if (
+    host === 'localhost' ||
+    /\.(localhost|local|internal|intranet|lan|home\.arpa)$/.test(host) ||
+    (!host.includes('.') && !isIP(host))
+  )
+    return false;
   if (isIP(host) === 4) {
     const [a, b] = host.split('.').map(Number) as [number, number];
-    return !(a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224);
+    return !(
+      a === 10 ||
+      a === 127 ||
+      a === 0 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      a >= 224
+    );
   }
-  if (isIP(host) === 6) return !(host === '::1' || host === '::' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host) || host.startsWith('::ffff:'));
+  if (isIP(host) === 6)
+    return !(
+      host === '::1' ||
+      host === '::' ||
+      /^f[cd]/.test(host) ||
+      /^fe[89ab]/.test(host) ||
+      host.startsWith('::ffff:')
+    );
   return true;
 }
 
@@ -67,7 +88,8 @@ export function signBody(signingKey: string, tenantId: string, body: string): st
 
 // ---- built-in: log (records the request in the execution log; no external call) -----------------
 registerIntegration('log', {
-  validate: (operation) => (/^[a-z][a-z0-9_.-]{0,59}$/.test(operation) ? undefined : 'operation must be a short lowercase identifier'),
+  validate: (operation) =>
+    /^[a-z][a-z0-9_.-]{0,59}$/.test(operation) ? undefined : 'operation must be a short lowercase identifier',
   call: async (req) => ({ ok: true, detail: { logged: true, operation: req.operation } }),
 });
 
@@ -83,9 +105,25 @@ registerIntegration('http', {
     if (!isPublicHttpsUrl(url)) return { ok: false, detail: { reason: 'url_not_allowed' } };
     if (!ctx.signingKey) return { ok: false, detail: { reason: 'signing_key_not_configured' } };
     // Identifiers only: receivers fetch any details through the API with their own credentials.
-    const body = JSON.stringify({ integration: req.integration, operation: req.operation, rule: req.ruleId, event: req.eventKey, employeeId: req.employeeId, date: req.date });
+    const body = JSON.stringify({
+      integration: req.integration,
+      operation: req.operation,
+      rule: req.ruleId,
+      event: req.eventKey,
+      employeeId: req.employeeId,
+      date: req.date,
+    });
     const res = await ctx
-      .fetch(url, { method: 'POST', redirect: 'error', headers: { 'content-type': 'application/json', 'x-thapsus-signature': signBody(ctx.signingKey, req.tenantId, body) }, body, signal: AbortSignal.timeout(5000) })
+      .fetch(url, {
+        method: 'POST',
+        redirect: 'error',
+        headers: {
+          'content-type': 'application/json',
+          'x-thapsus-signature': signBody(ctx.signingKey, req.tenantId, body),
+        },
+        body,
+        signal: AbortSignal.timeout(5000),
+      })
       .catch((e: Error) => ({ ok: false, status: 0, statusText: e.name }));
     return { ok: res.ok, detail: { status: res.status } };
   },

@@ -64,7 +64,14 @@ export class ValkeyRateLimiter implements RateLimiter {
 
 export function rateLimiterFromEnv(env: NodeJS.ProcessEnv = process.env): RateLimiter {
   if (env.VALKEY_URL) {
-    return new ValkeyRateLimiter(new Redis(env.VALKEY_URL, { lazyConnect: false, maxRetriesPerRequest: 2, password: env.VALKEY_AUTH_TOKEN || undefined, tls: env.VALKEY_URL.startsWith('rediss') ? {} : undefined }));
+    return new ValkeyRateLimiter(
+      new Redis(env.VALKEY_URL, {
+        lazyConnect: false,
+        maxRetriesPerRequest: 2,
+        password: env.VALKEY_AUTH_TOKEN || undefined,
+        tls: env.VALKEY_URL.startsWith('rediss') ? {} : undefined,
+      }),
+    );
   }
   return new MemoryRateLimiter();
 }

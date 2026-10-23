@@ -3,7 +3,18 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Eye, Lock, Plus, Save, Trash2 } from 'lucide-react';
-import { Badge, Button, Dialog, DialogContent, DialogTrigger, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  useToast,
+} from '@thapsus/ui';
 import { today } from '@thapsus/core/time';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
@@ -34,7 +45,15 @@ interface Spec {
   population?: 'employed' | 'all';
   chart?: 'bar' | 'line' | 'none';
 }
-const RELATIVE = ['today', 'yesterday', 'previousWeek', 'previousMonth', 'monthToDate', 'yearToDate', 'previousYear'];
+const RELATIVE = [
+  'today',
+  'yesterday',
+  'previousWeek',
+  'previousMonth',
+  'monthToDate',
+  'yearToDate',
+  'previousYear',
+];
 const FNS: Fn[] = ['count', 'countDistinct', 'sum', 'avg', 'min', 'max'];
 const OPS_FOR: Record<string, Op[]> = {
   text: ['eq', 'neq', 'contains', 'isEmpty', 'isNotEmpty'],
@@ -49,8 +68,13 @@ const OPS_FOR: Record<string, Op[]> = {
 
 function initialSpec(d: DatasetDef, zone: string): Spec {
   const now = today(zone);
-  const defaults = d.fields.filter((f) => !f.vault && f.sensitivity !== 'special').slice(0, 6).map((f) => f.key);
-  return d.time === 'asOf' ? { dataset: d.key, columns: defaults, asOf: now, population: 'employed', chart: 'none' } : { dataset: d.key, columns: defaults, from: `${now.slice(0, 7)}-01`, to: now, chart: 'none' };
+  const defaults = d.fields
+    .filter((f) => !f.vault && f.sensitivity !== 'special')
+    .slice(0, 6)
+    .map((f) => f.key);
+  return d.time === 'asOf'
+    ? { dataset: d.key, columns: defaults, asOf: now, population: 'employed', chart: 'none' }
+    : { dataset: d.key, columns: defaults, from: `${now.slice(0, 7)}-01`, to: now, chart: 'none' };
 }
 
 /** Report builder: pick a dataset, fields, filters and grouping; preview on screen; export; save; share. */
@@ -61,7 +85,13 @@ export default function BuilderPage() {
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const savedId = useSearchParams().get('saved');
   const catalogue = useApi<Catalogue>('/v1/reports/catalogue');
-  const saved = useApi<{ id: string; name: string; mine: boolean; shared: boolean; spec: Spec & { relative?: string } }>(savedId ? `/v1/reports/saved/${savedId}` : null);
+  const saved = useApi<{
+    id: string;
+    name: string;
+    mine: boolean;
+    shared: boolean;
+    spec: Spec & { relative?: string };
+  }>(savedId ? `/v1/reports/saved/${savedId}` : null);
   const [spec, setSpec] = React.useState<Spec | null>(null);
   const [mode, setMode] = React.useState<'list' | 'summary'>('list');
   const [result, setResult] = React.useState<ReportResult | null>(null);
@@ -80,7 +110,15 @@ export default function BuilderPage() {
     } else setSpec(initialSpec(catalogue.data.datasets[0]!, zone));
   }, [catalogue.data, saved.data, saved.error, savedId, spec, zone]);
 
-  if (catalogue.error) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
+  if (catalogue.error)
+    return (
+      <EmptyState
+        level={1}
+        icon={<Lock aria-hidden />}
+        title={t('reports.noAccess')}
+        body={t('reports.noAccessBody')}
+      />
+    );
   // Same back link and heading as the loaded page, so React keeps these nodes when the form arrives
   // (they are the largest paint on a phone and must not be re-created later).
   if (!catalogue.data || !spec)
@@ -92,12 +130,15 @@ export default function BuilderPage() {
         </Link>
         <div>
           <h1 className="text-title-2">{t('reports.builder.title')}</h1>
-          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.builder.intro')}</p>
+          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+            {t('reports.builder.intro')}
+          </p>
         </div>
         <Skeleton className="h-96 w-full" />
       </div>
     );
-  if (!catalogue.data.datasets.length) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.builder.noDatasets')} />;
+  if (!catalogue.data.datasets.length)
+    return <EmptyState level={1} icon={<Lock aria-hidden />} title={t('reports.builder.noDatasets')} />;
   const ds = catalogue.data.datasets.find((d) => d.key === spec.dataset) ?? catalogue.data.datasets[0]!;
   const fieldOf = (k: string) => ds.fields.find((f) => f.key === k);
   const groupable = ds.fields.filter((f) => f.groupable);
@@ -126,7 +167,9 @@ export default function BuilderPage() {
     e?.preventDefault();
     setBusy(true);
     try {
-      setResult(await api<ReportResult>('/v1/reports/builder/preview', { method: 'POST', json: effective() }));
+      setResult(
+        await api<ReportResult>('/v1/reports/builder/preview', { method: 'POST', json: effective() }),
+      );
     } catch (err) {
       toast({ title: problemText(t, err), tone: 'danger' });
     } finally {
@@ -136,7 +179,13 @@ export default function BuilderPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    const body = { name: saveForm.name, kind: 'builder', spec: effective(), shared: saveForm.shared, ...(saveForm.relative ? { relative: saveForm.relative } : {}) };
+    const body = {
+      name: saveForm.name,
+      kind: 'builder',
+      spec: effective(),
+      shared: saveForm.shared,
+      ...(saveForm.relative ? { relative: saveForm.relative } : {}),
+    };
     try {
       if (saved.data?.mine) await api(`/v1/reports/saved/${saved.data.id}`, { method: 'PUT', json: body });
       else await api('/v1/reports/saved', { method: 'POST', json: body });
@@ -148,7 +197,8 @@ export default function BuilderPage() {
   }
 
   const fieldLabel = (f: FieldDef) => t(f.labelKey);
-  const setFilter = (i: number, patch: Partial<Filter>) => update({ filters: (spec.filters ?? []).map((f, j) => (j === i ? { ...f, ...patch } : f)) });
+  const setFilter = (i: number, patch: Partial<Filter>) =>
+    update({ filters: (spec.filters ?? []).map((f, j) => (j === i ? { ...f, ...patch } : f)) });
 
   const filterValue = (flt: Filter, i: number) => {
     const f = fieldOf(flt.field);
@@ -157,7 +207,13 @@ export default function BuilderPage() {
     const label = t('reports.builder.value');
     if (f.type === 'boolean')
       return (
-        <select id={id} aria-label={label} className={selectClass} value={String(flt.value ?? 'true')} onChange={(e) => setFilter(i, { value: e.target.value === 'true' })}>
+        <select
+          id={id}
+          aria-label={label}
+          className={selectClass}
+          value={String(flt.value ?? 'true')}
+          onChange={(e) => setFilter(i, { value: e.target.value === 'true' })}
+        >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
@@ -165,7 +221,16 @@ export default function BuilderPage() {
     if (f.type === 'enum' && f.enumValues) {
       if (flt.op === 'in')
         return (
-          <select id={id} aria-label={label} multiple className={`${selectClass} h-24`} value={Array.isArray(flt.value) ? flt.value : []} onChange={(e) => setFilter(i, { value: Array.from(e.target.selectedOptions).map((o) => o.value) })}>
+          <select
+            id={id}
+            aria-label={label}
+            multiple
+            className={`${selectClass} h-24`}
+            value={Array.isArray(flt.value) ? flt.value : []}
+            onChange={(e) =>
+              setFilter(i, { value: Array.from(e.target.selectedOptions).map((o) => o.value) })
+            }
+          >
             {f.enumValues.map((v) => (
               <option key={v} value={v}>
                 {t(`reports.enum.${f.key}.${v}`)}
@@ -174,7 +239,13 @@ export default function BuilderPage() {
           </select>
         );
       return (
-        <select id={id} aria-label={label} className={selectClass} value={String(flt.value ?? '')} onChange={(e) => setFilter(i, { value: e.target.value })}>
+        <select
+          id={id}
+          aria-label={label}
+          className={selectClass}
+          value={String(flt.value ?? '')}
+          onChange={(e) => setFilter(i, { value: e.target.value })}
+        >
           <option value="" />
           {f.enumValues.map((v) => (
             <option key={v} value={v}>
@@ -193,7 +264,9 @@ export default function BuilderPage() {
         inputMode={f.type === 'money' ? 'numeric' : undefined}
         step={f.type === 'decimal' ? 'any' : undefined}
         value={String(flt.value ?? '')}
-        onChange={(e) => setFilter(i, { value: numeric && e.target.value !== '' ? Number(e.target.value) : e.target.value })}
+        onChange={(e) =>
+          setFilter(i, { value: numeric && e.target.value !== '' ? Number(e.target.value) : e.target.value })
+        }
         aria-describedby={f.type === 'money' ? `${id}-hint` : undefined}
       />
     );
@@ -207,13 +280,31 @@ export default function BuilderPage() {
       </Link>
       <div>
         <h1 className="text-title-2">{saved.data?.name ?? t('reports.builder.title')}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.builder.intro')}</p>
+        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('reports.builder.intro')}
+        </p>
       </div>
-      <form onSubmit={preview} className="flex flex-col gap-5 rounded-lg bg-surface p-4" aria-label={t('reports.builder.title')}>
+      <form
+        onSubmit={preview}
+        className="flex flex-col gap-5 rounded-lg bg-surface p-4"
+        aria-label={t('reports.builder.title')}
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field id="b-dataset" label={t('reports.param.dataset')}>
             {(a) => (
-              <select {...a} className={selectClass} value={ds.key} onChange={(e) => update(initialSpec(catalogue.data!.datasets.find((d) => d.key === e.target.value)!, zone))}>
+              <select
+                {...a}
+                className={selectClass}
+                value={ds.key}
+                onChange={(e) =>
+                  update(
+                    initialSpec(
+                      catalogue.data!.datasets.find((d) => d.key === e.target.value)!,
+                      zone,
+                    ),
+                  )
+                }
+              >
                 {catalogue.data!.datasets.map((d) => (
                   <option key={d.key} value={d.key}>
                     {t(d.labelKey)}
@@ -225,11 +316,24 @@ export default function BuilderPage() {
           {ds.time === 'asOf' ? (
             <>
               <Field id="b-asof" label={t('reports.param.asOf')}>
-                {(a) => <Input {...a} type="date" required value={spec.asOf ?? ''} onChange={(e) => update({ asOf: e.target.value })} />}
+                {(a) => (
+                  <Input
+                    {...a}
+                    type="date"
+                    required
+                    value={spec.asOf ?? ''}
+                    onChange={(e) => update({ asOf: e.target.value })}
+                  />
+                )}
               </Field>
               <Field id="b-population" label={t('reports.builder.population')}>
                 {(a) => (
-                  <select {...a} className={selectClass} value={spec.population ?? 'employed'} onChange={(e) => update({ population: e.target.value as 'employed' | 'all' })}>
+                  <select
+                    {...a}
+                    className={selectClass}
+                    value={spec.population ?? 'employed'}
+                    onChange={(e) => update({ population: e.target.value as 'employed' | 'all' })}
+                  >
                     <option value="employed">{t('reports.builder.populationEmployed')}</option>
                     <option value="all">{t('reports.builder.populationAll')}</option>
                   </select>
@@ -239,16 +343,37 @@ export default function BuilderPage() {
           ) : (
             <>
               <Field id="b-from" label={t('reports.param.from')}>
-                {(a) => <Input {...a} type="date" required value={spec.from ?? ''} onChange={(e) => update({ from: e.target.value })} />}
+                {(a) => (
+                  <Input
+                    {...a}
+                    type="date"
+                    required
+                    value={spec.from ?? ''}
+                    onChange={(e) => update({ from: e.target.value })}
+                  />
+                )}
               </Field>
               <Field id="b-to" label={t('reports.param.to')}>
-                {(a) => <Input {...a} type="date" required value={spec.to ?? ''} onChange={(e) => update({ to: e.target.value })} />}
+                {(a) => (
+                  <Input
+                    {...a}
+                    type="date"
+                    required
+                    value={spec.to ?? ''}
+                    onChange={(e) => update({ to: e.target.value })}
+                  />
+                )}
               </Field>
             </>
           )}
           <Field id="b-chart" label={t('reports.builder.chart')}>
             {(a) => (
-              <select {...a} className={selectClass} value={spec.chart ?? 'none'} onChange={(e) => update({ chart: e.target.value as Spec['chart'] })}>
+              <select
+                {...a}
+                className={selectClass}
+                value={spec.chart ?? 'none'}
+                onChange={(e) => update({ chart: e.target.value as Spec['chart'] })}
+              >
                 {(['none', 'bar', 'line'] as const).map((c) => (
                   <option key={c} value={c}>
                     {t(`reports.builder.chartType.${c}`)}
@@ -263,7 +388,13 @@ export default function BuilderPage() {
           <legend className="mb-2 text-callout font-semibold">{t('reports.builder.mode')}</legend>
           {(['list', 'summary'] as const).map((m) => (
             <label key={m} className="flex items-center gap-2 text-callout">
-              <input type="radio" name="mode" className="h-5 w-5 accent-[var(--color-accent)]" checked={mode === m} onChange={() => (setMode(m), setResult(null))} />
+              <input
+                type="radio"
+                name="mode"
+                className="h-5 w-5 accent-[var(--color-accent)]"
+                checked={mode === m}
+                onChange={() => (setMode(m), setResult(null))}
+              />
               {t(`reports.builder.mode${m === 'list' ? 'List' : 'Summary'}`)}
             </label>
           ))}
@@ -279,7 +410,13 @@ export default function BuilderPage() {
                     type="checkbox"
                     className="h-5 w-5 accent-[var(--color-accent)]"
                     checked={spec.columns?.includes(f.key) ?? false}
-                    onChange={(e) => update({ columns: e.target.checked ? [...(spec.columns ?? []), f.key] : (spec.columns ?? []).filter((c) => c !== f.key) })}
+                    onChange={(e) =>
+                      update({
+                        columns: e.target.checked
+                          ? [...(spec.columns ?? []), f.key]
+                          : (spec.columns ?? []).filter((c) => c !== f.key),
+                      })
+                    }
                   />
                   <span>{fieldLabel(f)}</span>
                   {f.vault || f.sensitivity === 'special' ? (
@@ -326,7 +463,13 @@ export default function BuilderPage() {
                         aria-label={t('reports.builder.granularity')}
                         className={selectClass}
                         value={g?.granularity ?? 'month'}
-                        onChange={(e) => update({ groupBy: (spec.groupBy ?? []).map((x, j) => (j === i ? { ...x, granularity: e.target.value as 'month' | 'year' } : x)) })}
+                        onChange={(e) =>
+                          update({
+                            groupBy: (spec.groupBy ?? []).map((x, j) =>
+                              j === i ? { ...x, granularity: e.target.value as 'month' | 'year' } : x,
+                            ),
+                          })
+                        }
                       >
                         <option value="month">{t('reports.builder.byMonth')}</option>
                         <option value="year">{t('reports.builder.byYear')}</option>
@@ -348,7 +491,10 @@ export default function BuilderPage() {
                     value={m.fn}
                     onChange={(e) => {
                       const next = [...(spec.measures?.length ? spec.measures : [{ fn: 'count' as Fn }])];
-                      next[i] = { fn: e.target.value as Fn, ...(e.target.value === 'count' ? {} : { field: m.field }) };
+                      next[i] = {
+                        fn: e.target.value as Fn,
+                        ...(e.target.value === 'count' ? {} : { field: m.field }),
+                      };
                       update({ measures: next });
                     }}
                   >
@@ -359,13 +505,21 @@ export default function BuilderPage() {
                     ))}
                   </select>
                   {m.fn === 'count' ? (
-                    <span className="self-center text-callout text-text-secondary">{t('reports.builder.rows')}</span>
+                    <span className="self-center text-callout text-text-secondary">
+                      {t('reports.builder.rows')}
+                    </span>
                   ) : (
                     <select
                       aria-label={t('reports.builder.measureField', { n: i + 1 })}
                       className={selectClass}
                       value={m.field ?? ''}
-                      onChange={(e) => update({ measures: (spec.measures ?? [m]).map((x, j) => (j === i ? { ...x, field: e.target.value } : x)) })}
+                      onChange={(e) =>
+                        update({
+                          measures: (spec.measures ?? [m]).map((x, j) =>
+                            j === i ? { ...x, field: e.target.value } : x,
+                          ),
+                        })
+                      }
                     >
                       <option value="" />
                       {(m.fn === 'countDistinct' ? filterable : aggregatable).map((f) => (
@@ -375,12 +529,33 @@ export default function BuilderPage() {
                       ))}
                     </select>
                   )}
-                  <Button type="button" size="sm" variant="ghost" aria-label={t('reports.builder.removeMeasure', { n: i + 1 })} disabled={(spec.measures?.length ?? 1) <= 1} onClick={() => update({ measures: (spec.measures ?? []).filter((_, j) => j !== i) })}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('reports.builder.removeMeasure', { n: i + 1 })}
+                    disabled={(spec.measures?.length ?? 1) <= 1}
+                    onClick={() => update({ measures: (spec.measures ?? []).filter((_, j) => j !== i) })}
+                  >
                     <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   </Button>
                 </div>
               ))}
-              <Button type="button" size="sm" variant="secondary" className="w-fit" disabled={(spec.measures?.length ?? 1) >= 6} onClick={() => update({ measures: [...(spec.measures?.length ? spec.measures : [{ fn: 'count' as Fn }]), { fn: 'sum' }] })}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="w-fit"
+                disabled={(spec.measures?.length ?? 1) >= 6}
+                onClick={() =>
+                  update({
+                    measures: [
+                      ...(spec.measures?.length ? spec.measures : [{ fn: 'count' as Fn }]),
+                      { fn: 'sum' },
+                    ],
+                  })
+                }
+              >
                 <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
                 {t('reports.builder.addMeasure')}
               </Button>
@@ -395,7 +570,18 @@ export default function BuilderPage() {
             const ops = f ? (OPS_FOR[f.type] ?? ['eq']) : ['eq'];
             return (
               <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
-                <select aria-label={t('reports.builder.filterField', { n: i + 1 })} className={selectClass} value={flt.field} onChange={(e) => setFilter(i, { field: e.target.value, op: (OPS_FOR[fieldOf(e.target.value)?.type ?? 'text'] ?? ['eq'])[0] as Op, value: undefined })}>
+                <select
+                  aria-label={t('reports.builder.filterField', { n: i + 1 })}
+                  className={selectClass}
+                  value={flt.field}
+                  onChange={(e) =>
+                    setFilter(i, {
+                      field: e.target.value,
+                      op: (OPS_FOR[fieldOf(e.target.value)?.type ?? 'text'] ?? ['eq'])[0] as Op,
+                      value: undefined,
+                    })
+                  }
+                >
                   <option value="" />
                   {filterable.map((x) => (
                     <option key={x.key} value={x.key}>
@@ -403,7 +589,17 @@ export default function BuilderPage() {
                     </option>
                   ))}
                 </select>
-                <select aria-label={t('reports.builder.filterOp', { n: i + 1 })} className={selectClass} value={flt.op} onChange={(e) => setFilter(i, { op: e.target.value as Op, value: e.target.value === 'in' ? [] : undefined })}>
+                <select
+                  aria-label={t('reports.builder.filterOp', { n: i + 1 })}
+                  className={selectClass}
+                  value={flt.op}
+                  onChange={(e) =>
+                    setFilter(i, {
+                      op: e.target.value as Op,
+                      value: e.target.value === 'in' ? [] : undefined,
+                    })
+                  }
+                >
                   {ops.map((o) => (
                     <option key={o} value={o}>
                       {t(`reports.op.${o}`)}
@@ -418,13 +614,26 @@ export default function BuilderPage() {
                     </p>
                   ) : null}
                 </div>
-                <Button type="button" size="sm" variant="ghost" aria-label={t('reports.builder.removeFilter', { n: i + 1 })} onClick={() => update({ filters: (spec.filters ?? []).filter((_, j) => j !== i) })}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('reports.builder.removeFilter', { n: i + 1 })}
+                  onClick={() => update({ filters: (spec.filters ?? []).filter((_, j) => j !== i) })}
+                >
                   <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
                 </Button>
               </div>
             );
           })}
-          <Button type="button" size="sm" variant="secondary" className="w-fit" disabled={(spec.filters?.length ?? 0) >= 20} onClick={() => update({ filters: [...(spec.filters ?? []), { field: '', op: 'eq' }] })}>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="w-fit"
+            disabled={(spec.filters?.length ?? 0) >= 20}
+            onClick={() => update({ filters: [...(spec.filters ?? []), { field: '', op: 'eq' }] })}
+          >
             <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('reports.builder.addFilter')}
           </Button>
@@ -442,14 +651,35 @@ export default function BuilderPage() {
                 {t('reports.saved.save')}
               </Button>
             </DialogTrigger>
-            <DialogContent title={t('reports.saved.save')} description={t('reports.saved.saveBody')} closeLabel={t('common.close')}>
+            <DialogContent
+              title={t('reports.saved.save')}
+              description={t('reports.saved.saveBody')}
+              closeLabel={t('common.close')}
+            >
               <form onSubmit={save} className="flex flex-col gap-4">
                 <Field id="save-name" label={t('reports.saved.name')}>
-                  {(a) => <Input {...a} required maxLength={120} value={saveForm.name} onChange={(e) => setSaveForm({ ...saveForm, name: e.target.value })} />}
-                </Field>
-                <Field id="save-relative" label={t('reports.saved.relative')} hint={t('reports.saved.relativeHint')}>
                   {(a) => (
-                    <select {...a} className={selectClass} value={saveForm.relative} onChange={(e) => setSaveForm({ ...saveForm, relative: e.target.value })}>
+                    <Input
+                      {...a}
+                      required
+                      maxLength={120}
+                      value={saveForm.name}
+                      onChange={(e) => setSaveForm({ ...saveForm, name: e.target.value })}
+                    />
+                  )}
+                </Field>
+                <Field
+                  id="save-relative"
+                  label={t('reports.saved.relative')}
+                  hint={t('reports.saved.relativeHint')}
+                >
+                  {(a) => (
+                    <select
+                      {...a}
+                      className={selectClass}
+                      value={saveForm.relative}
+                      onChange={(e) => setSaveForm({ ...saveForm, relative: e.target.value })}
+                    >
                       <option value="">{t('reports.relative.fixed')}</option>
                       {RELATIVE.map((r) => (
                         <option key={r} value={r}>
@@ -460,7 +690,12 @@ export default function BuilderPage() {
                   )}
                 </Field>
                 <label className="flex items-center gap-2 text-callout">
-                  <input type="checkbox" className="h-5 w-5 accent-[var(--color-accent)]" checked={saveForm.shared} onChange={(e) => setSaveForm({ ...saveForm, shared: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 accent-[var(--color-accent)]"
+                    checked={saveForm.shared}
+                    onChange={(e) => setSaveForm({ ...saveForm, shared: e.target.checked })}
+                  />
                   {t('reports.saved.shareWithTeam')}
                 </label>
                 <Button type="submit">{t('common.save')}</Button>

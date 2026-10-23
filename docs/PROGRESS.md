@@ -8,21 +8,21 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Summary
 
-| Phase | Scope | Branch | Status |
-| --- | --- | --- | --- |
-| 0 | Foundations | `phase-0-foundations` | [h] |
-| 1 | Core HR and organisation model (6.1) | `phase-1-core-hr` | [x] |
-| 2 | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h] |
-| 3 | Time off and absence (6.2) | `phase-3-time-off` | [x] |
-| 4 | Rotas and time tracking (6.3) | `phase-4-rotas-time` | [x] |
-| 5 | Compliance centre content (rest of 6.4) | `phase-5-compliance` | [x] |
-| 6 | Payroll handoff and IT automation (6.5, 6.6) | `phase-6-payroll-it` | [x] |
-| 7 | Reports, analytics and self-service (6.7, 6.8) | `phase-7-reports-ess` | [x] |
-| 8 | Privacy and trust (6.9) | `phase-8-privacy` | [h] |
-| 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [x] |
-| 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-support-billing` | [h] |
-| 11 | AI assistant behind a feature flag (6.13) | `phase-11-ai-assistant` | [h] |
-| 12 | Scale and launch readiness | `phase-12-launch` | [ ] |
+| Phase | Scope                                                          | Branch                       | Status                                |
+| ----- | -------------------------------------------------------------- | ---------------------------- | ------------------------------------- |
+| 0     | Foundations                                                    | `phase-0-foundations`        | [h]                                   |
+| 1     | Core HR and organisation model (6.1)                           | `phase-1-core-hr`            | [x]                                   |
+| 2     | Jurisdiction pack framework + UK, US, EU packs (6.4 framework) | `phase-2-jurisdiction-packs` | [h]                                   |
+| 3     | Time off and absence (6.2)                                     | `phase-3-time-off`           | [x]                                   |
+| 4     | Rotas and time tracking (6.3)                                  | `phase-4-rotas-time`         | [x]                                   |
+| 5     | Compliance centre content (rest of 6.4)                        | `phase-5-compliance`         | [x]                                   |
+| 6     | Payroll handoff and IT automation (6.5, 6.6)                   | `phase-6-payroll-it`         | [x]                                   |
+| 7     | Reports, analytics and self-service (6.7, 6.8)                 | `phase-7-reports-ess`        | [x]                                   |
+| 8     | Privacy and trust (6.9)                                        | `phase-8-privacy`            | [h]                                   |
+| 9     | Enterprise platform (6.10)                                     | `phase-9-enterprise`         | [x]                                   |
+| 10    | Support, back office, pricing and billing (6.11, 6.12)         | `phase-10-support-billing`   | [h]                                   |
+| 11    | AI assistant behind a feature flag (6.13)                      | `phase-11-ai-assistant`      | [h]                                   |
+| 12    | Scale and launch readiness                                     | `phase-12-launch`            | [~] (AWS runs left: 12.1, 12.8, 12.9) |
 
 ---
 
@@ -165,6 +165,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
   - Actions: create task, send notification, start workflow, call webhook, call integration.
   - Rules evaluated from outbox events by idempotent worker jobs; dry-run preview; execution log.
   - _Evidence:_ `apps/api/test/corehr-flows.int.test.ts` ("automation rules" and "automation triggers, actions and integrations": record created/changed, date reached, document expiring and threshold triggers; task, notification, workflow, signed webhook and integration actions; idempotent outbox-driven jobs, dry run and the execution log).
+
 ---
 
 ## Phase 2 — Jurisdiction pack framework (6.4 framework)
@@ -185,6 +186,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [h] **2.4 EU pack (base data)**
   - EU baseline (minimum four weeks' paid annual leave, Working Time Directive limits) plus public holidays and statutory annual leave for all 27 member states, with official sources; deeper rules prioritised in COVERAGE.md.
   - _Evidence:_ the EU baseline (four weeks' leave, Working Time Directive limits, from eur-lex.europa.eu) statutory annual leave for all 27 member states, and public holidays for 24 of them, in `packages/rules/packs/eu/*.json` with vectors in `goldens/eu-a.json` and `eu-b.json`; deeper rules prioritised in `docs/COVERAGE.md`. _Human:_ Lithuanian, Romanian and Cypriot public holidays need a person, because their official portals block automated access (HUMAN_TODO 3.2, steps 1–6).
+
 ---
 
 ## Phase 3 — Time off and absence (6.2)
@@ -207,6 +209,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [x] **3.5 Absence analytics**
   - Bradford factor, configurable trigger alerts, team calendar, cover rules (minimum staffing) and per-user ICS feeds with revocable tokens and no sensitive detail.
   - _Evidence:_ `leave-engine.test.ts` ("absence analytics": Bradford factor); `leave.int.test.ts` (trigger alerts deduplicated, minimum-cover block, team calendar hiding sensitive types, token-scoped revocable ICS); `absence.int.test.ts` (masking per viewer, ICS tokens tenant-bound and own-only revocation, trigger windows and manager notification); `leave-policies.int.test.ts` (cover rule that warns).
+
 ---
 
 ## Phase 4 — Rotas and time tracking (6.3)
@@ -227,6 +230,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [x] **4.4 Timesheets**
   - Timesheets compared with the rota (variances highlighted), overtime calculation, approvals and payroll export feed.
   - _Evidence:_ `apps/api/test/timesheets.int.test.ts` (rota vs recorded time with variances and overtime; the employee submits and the manager approves; the payroll export feed is reproducible, audited and permission-checked); `apps/web/e2e/timesheets.spec.ts`.
+
 ---
 
 ## Phase 5 — Compliance centre content (rest of 6.4)
@@ -256,6 +260,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [x] **5.5 Law-changes feed**
   - Back-office-maintained feed entries (jurisdiction, effective date, summary, what to do, linked rule versions); customers see entries relevant to their jurisdictions with read/acknowledged state.
   - _Evidence:_ `compliance.int.test.ts` ("5.5 law-changes feed": back-office entries with staff MFA, relevance by the tenant's entities, locations and employees, read and acknowledged state per admin with audit, other tenants and managers see nothing, withdrawal, one notification per new relevant entry); `apps/web/e2e/compliance.spec.ts` (an admin acknowledges a relevant law change).
+
 ---
 
 ## Phase 6 — Payroll handoff and IT automation (6.5, 6.6)
@@ -376,44 +381,63 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 12 — Scale and launch readiness
 
-- [ ] **12.1 Load tests** — k6 scenarios meet brief §3 targets (200,000 employees / 50 entities; 5,000 concurrent users; 20,000 clock-ins in 10 minutes; p95 < 300 ms common reads, < 1 s paginated lists); results in `docs/PERFORMANCE.md`; load-test environment torn down afterwards.
-- [ ] **12.2 Threat model** — STRIDE threat model documented in `docs/SECURITY.md` with mitigations and owners.
-- [ ] **12.3 OWASP ASVS level 2 review** — checklist completed with evidence links; gaps fixed or recorded.
-- [ ] **12.4 Dependency and secret scanning** — clean results in CI; process documented.
-- [ ] **12.5 Accessibility audit** — WCAG 2.2 AA audit of key flows (automated + manual checklist) with fixes.
-- [ ] **12.6 Visual polish pass** — every screen checked against `docs/DESIGN.md` in light and dark mode on phone and desktop; visual regression baselines updated.
-- [ ] **12.7 Lighthouse targets** — mobile ≥90 performance and ≥95 accessibility on key marketing pages and app screens.
-- [ ] **12.8 Resilience drills** — backup restore drill (RPO ≤ 15 min, RTO ≤ 4 h demonstrated) and availability-zone failure drill, results recorded.
-- [ ] **12.9 Staging in all three regions** — staging deployed in UK, EU and US; `pnpm smoke:staging` passes in each (sign up, choose region, SSO login, add employee, request leave, clock in, export data).
-- [ ] **12.10 Production readiness** — production stacks defined and ready to deploy on approval; runbooks complete.
+- [~] **12.1 Load tests** — k6 scenarios meet brief §3 targets (200,000 employees / 50 entities; 5,000 concurrent users; 20,000 clock-ins in 10 minutes; p95 < 300 ms common reads, < 1 s paginated lists); results in `docs/PERFORMANCE.md`; load-test environment torn down afterwards.
+  - _Ready:_ `pnpm loadtest` (`scripts/loadtest.mjs`, scenarios in `loadtest/k6/thapsus.js`) with the §3 targets as k6 thresholds. `--provision` creates the temporary `loadtest` environment (global + UK cell), generates the 200,000-employee / 50-entity tenant in-region (`run-synth`), runs k6, records the results with `--record` and tears the environment down. The environment is defined and synthesized in verify (`infra/test/infra.test.ts`: stateful resources are deleted with the stack only for `loadtest`; `scripts/test/deploy-plan.test.ts`: synthetic data never in production). The `smoke` profile passed locally against a 3,000-employee synthetic tenant. Procedure: `docs/runbooks/load-test.md`.
+  - _Remaining (AWS phase, out of scope for this pass):_ the run itself, its results in `docs/PERFORMANCE.md` §3, and the teardown (`docs/HANDOVER.md`).
+- [x] **12.2 Threat model** — STRIDE threat model documented in `docs/SECURITY.md` with mitigations and owners.
+  - _Evidence:_ `docs/SECURITY.md` → "Threat model (STRIDE)": assets, trust boundaries, and a threat table where every row has a STRIDE category, mitigations, a test or check as evidence, an owner and a status. Partial mitigations are listed under "Accepted risks and follow-ups", each with an owner. `scripts/test/docs.test.ts` fails if the section disappears.
+- [x] **12.3 OWASP ASVS level 2 review** — checklist completed with evidence links; gaps fixed or recorded.
+  - _Evidence:_ `docs/ASVS.md` covers all 253 ASVS 5.0.0 level 1 and 2 requirements: 145 met, 6 met by the platform, 47 fixed in this review (tests in `apps/api/test/asvs.int.test.ts`, `asvs-units.test.ts`, `mass-assignment.contract.test.ts`, `apps/web/test/csp.test.ts`, `apps/web/e2e/security-asvs.spec.ts`, `packages/db/test/tls.test.ts`), 40 not applicable and 15 gaps. Each gap is recorded under SECURITY.md → "Accepted risks and follow-ups", in HUMAN_TODO 1.7 (malware scanning) or HUMAN_TODO 5.2 (penetration test). Decisions are ADR-0130 to ADR-0136. `scripts/test/asvs-doc.test.ts` fails if a row is missing or a cited file or test name no longer exists.
+- [x] **12.4 Dependency and secret scanning** — clean results in CI; process documented.
+  - _Evidence:_ the verify `security` step runs in CI on every pull request and push to `main`. It covers `pnpm audit --audit-level high` over the whole lockfile (ADR-0152), the secret scan, and the CycloneDX SBOM, which is kept as a CI artifact. `scripts/test/secret-scan.test.ts` plants fake credentials of each kind and checks that the scan fails and names the file. `scripts/test/sbom.test.ts` checks the SBOM. The process (what runs, and what to do when a scan fails) is in SECURITY.md → "Dependency and secret scanning" and "Dependency remediation". _Human:_ GitHub secret scanning, push protection, Dependabot and the `main` ruleset (HUMAN_TODO 5.3); Amazon Inspector needs cost approval (HUMAN_TODO 5.4).
+- [h] **12.5 Accessibility audit** — WCAG 2.2 AA audit of key flows (automated + manual checklist) with fixes.
+  - _Evidence:_ `docs/ACCESSIBILITY.md` records the scope, method, automated checks, audit results and a manual checklist per key flow. `apps/web/e2e/a11y-sweep.spec.ts` (functional e2e, in verify) opens every `page.tsx` route, covering the public site, all app routes with fictional data, the kiosk and the back office. On each route it runs axe (WCAG 2.2 AA) in light, dark and at 320 px, and checks Tab reachability, visible and unobscured focus, skip link first, reflow, text spacing, reduced motion, consistent help, heading order and that no script errors occur. It fails on a new route that has no area. The flow specs run axe at each important state, and `packages/ui/test/contrast.test.ts` checks every token pair in both modes. The fixes are in ACCESSIBILITY.md §4: the focus ring, `Button asChild`, heading levels on 57 screens, 320 px reflow, scrollable tables reachable by keyboard, target sizes and wording (ADR-0140). _Human:_ screen-reader, forced-colours, zoom and speech-input passes on real devices, the kiosk in place, and a reviewed accessibility statement (HUMAN_TODO §8).
+- [x] **12.6 Visual polish pass** — every screen checked against `docs/DESIGN.md` in light and dark mode on phone and desktop; visual regression baselines updated.
+  - _Evidence:_ `apps/web/e2e/visual.spec.ts` has 348 baselines: 87 screens × light/dark × phone/desktop, covering every `page.tsx` route. Two exceptions are recorded in the spec with reasons: a support ticket with live deadlines, and the staff screens that list every test workspace; the accessibility sweep covers both. The spec fails if a new route has neither a baseline nor a recorded reason. Runs are repeatable (fixed clock, stand-ins for volatile text, greyscale text rendering, ADR-0141) and pass in verify. The polish fixes include the sidebar and settings lists scrolling on their own, an opaque app top bar (ADR-0142), and ad-hoc values replaced with `docs/DESIGN.md` tokens.
+- [x] **12.7 Lighthouse targets** — mobile ≥90 performance and ≥95 accessibility on key marketing pages and app screens.
+  - _Evidence:_ the verify `lighthouse` step (`scripts/lighthouse.mjs`) audits 18 pages and fails below either threshold: home, pricing, trust, status, developers, sign in, sign up, and the app's home, Me, people, time off, rota, timesheets, reports, report builder, settings, notifications and security. Median of three mobile runs on 2026-10-23: performance 96–100, accessibility 100 on every page (PERFORMANCE.md §2.2, ADR-0143).
+- [~] **12.8 Resilience drills** — backup restore drill (RPO ≤ 15 min, RTO ≤ 4 h demonstrated) and availability-zone failure drill, results recorded.
+  - _Ready:_ drill procedures and pass criteria are in `docs/runbooks/backup-restore.md` §5 and `docs/runbooks/az-failure.md` §2. Results go in PERFORMANCE.md §4 "Resilience drills". The infrastructure the drills rely on is asserted in `infra/test/infra.test.ts`: Multi-AZ Aurora with automated backups (point-in-time restore within the retention period) and production deletion protection; Valkey Multi-AZ with automatic failover; at least two tasks per service in production; and backup copies only to the permitted region.
+  - _Remaining (AWS phase):_ run both drills on staging and record the results (`docs/HANDOVER.md`).
+- [~] **12.9 Staging in all three regions** — staging deployed in UK, EU and US; `pnpm smoke:staging` passes in each (sign up, choose region, SSO login, add employee, request leave, clock in, export data).
+  - _Ready:_ the staging stacks for eu-west-2, eu-central-1 and us-east-2, plus the global stack in eu-west-2, synthesize in verify. `scripts/deploy.mjs` deploys them in order (plan tested in `scripts/test/deploy-plan.test.ts`). `pnpm smoke:staging` (`scripts/smoke-staging.mjs`) covers sign-up with region choice, SSO through the staging mock IdP, add employee, request leave, clock in and export data, then schedules closure of the smoke tenant. It refuses production and passed end to end locally against the UK cell.
+  - _Remaining (AWS phase):_ deploy staging in the three regions and run `pnpm smoke:staging` in each (`docs/HANDOVER.md`, `docs/runbooks/deploy.md`).
+- [x] **12.10 Production readiness** — production stacks defined and ready to deploy on approval; runbooks complete.
+  - _Evidence:_
+    - **Stacks.** The `prod` global, cell, backup-copy and CI stacks synthesize in every verify run (`synth` step). `infra/test/infra.test.ts` asserts the production properties: deletion protection, at least two tasks per service, three NAT gateways, Multi-AZ, KMS-encrypted logs with retention, the regions in the allow-list only, and never a mock IdP.
+    - **Approval.** Deploys run through the GitHub `production` environment, which needs manual approval (`.github/workflows/deploy.yml`). `scripts/deploy-plan.ts` refuses `prod` without `productionApproved` ("production needs explicit approval…").
+    - **Runbooks.** deploy, rollback, backup restore, AZ failure, incident and breach response, moving a tenant to a dedicated database, and load test are in `docs/runbooks/`. `scripts/test/docs.test.ts` checks that they exist and that their links resolve.
+    - Deploying to production is not done here; it needs the owner's approval (CLAUDE.md).
 
 ---
 
 ## Documentation (brief §9)
 
-- [ ] README
-- [ ] ARCHITECTURE (with diagrams)
-- [ ] DESIGN
-- [ ] SECURITY
-- [ ] DECISIONS
-- [ ] COSTS (per environment and region)
-- [ ] PERFORMANCE
-- [ ] COVERAGE
-- [ ] SUBPROCESSORS
-- [ ] COMPLIANCE (SOC 2 and ISO 27001 mapping)
-- [ ] HUMAN_TODO
-- [ ] API docs
-- [ ] Runbook: deploy
-- [ ] Runbook: rollback
-- [ ] Runbook: backup restore
-- [ ] Runbook: incident and breach response
-- [ ] Runbook: moving a tenant to a dedicated database
-- [ ] DPIA template
-- [ ] Records of processing draft
-- [ ] DPA templates per jurisdiction ("for legal review")
-- [ ] Privacy notice templates per jurisdiction ("for legal review")
-- [ ] Admin guide
-- [ ] Employee guide
+- [x] README
+- [x] ARCHITECTURE (with diagrams)
+- [x] DESIGN
+- [x] SECURITY
+- [x] DECISIONS
+- [x] COSTS (per environment and region)
+- [x] PERFORMANCE
+- [x] COVERAGE
+- [x] SUBPROCESSORS
+- [x] COMPLIANCE (SOC 2 and ISO 27001 mapping)
+- [x] HUMAN_TODO
+- [x] API docs
+- [x] Runbook: deploy
+- [x] Runbook: rollback
+- [x] Runbook: backup restore
+- [x] Runbook: incident and breach response
+- [x] Runbook: moving a tenant to a dedicated database
+- [x] DPIA template
+- [x] Records of processing draft
+- [x] DPA templates per jurisdiction ("for legal review")
+- [x] Privacy notice templates per jurisdiction ("for legal review")
+- [x] Admin guide
+- [x] Employee guide
+
+_Evidence:_ `scripts/test/docs.test.ts` (unit, in verify) checks that every document above exists, has a title and content, and that its relative links resolve. It also checks that ARCHITECTURE has diagrams; that COSTS covers each environment (development, staging, production, load test) and each home region; that COMPLIANCE maps to SOC 2 and ISO 27001; that SECURITY holds the STRIDE threat model; and that the DPIA, RoPA, DPA and privacy notice templates are marked "for legal review". The API docs are `docs/api.md` together with the generated OpenAPI 3.1 document, which is contract-tested.
 
 ## Definition of done (brief §10)
 
@@ -421,6 +445,6 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 - [ ] `pnpm verify` passes.
 - [ ] Staging deployed in all three regions and `pnpm smoke:staging` passes in each.
 - [ ] `pnpm loadtest` meets the §3 targets, with results in `docs/PERFORMANCE.md`.
-- [ ] Production stacks defined and ready to deploy on approval.
-- [ ] All §9 documents exist.
-- [ ] Every remaining human-only step is listed in `docs/HUMAN_TODO.md`.
+- [x] Production stacks defined and ready to deploy on approval (12.10).
+- [x] All §9 documents exist (`scripts/test/docs.test.ts`).
+- [x] Every remaining human-only step is listed in `docs/HUMAN_TODO.md` (sections 1–8; the AWS runs left for the original agent are in `docs/HANDOVER.md`).

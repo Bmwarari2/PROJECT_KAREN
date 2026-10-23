@@ -136,7 +136,10 @@ export function tokensCss(): string {
   ].join('\n');
   const phone = Object.entries(typeScale)
     .filter(([, v]) => 'phoneSize' in v)
-    .map(([k, v]) => `    --text-${k}: ${(v as { phoneSize: number }).phoneSize}px;\n    --text-${k}--line-height: ${(v as { phoneLine: number }).phoneLine}px;`)
+    .map(
+      ([k, v]) =>
+        `    --text-${k}: ${(v as { phoneSize: number }).phoneSize}px;\n    --text-${k}--line-height: ${(v as { phoneLine: number }).phoneLine}px;`,
+    )
     .join('\n');
   return `/* GENERATED from packages/ui/src/tokens.ts — do not edit by hand. Tailwind v4 theme. */
 @theme {

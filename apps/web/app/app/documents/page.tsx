@@ -2,7 +2,19 @@
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { FileSignature, FileText } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -31,7 +43,9 @@ export default function DocumentsPage() {
   const session = useSession();
   const params = useSearchParams();
   const sigs = useApi<SigReq[]>('/v1/signature-requests');
-  const docs = useApi<Doc[]>(session?.employeeId ? `/v1/documents?employeeId=${session.employeeId}` : '/v1/documents');
+  const docs = useApi<Doc[]>(
+    session?.employeeId ? `/v1/documents?employeeId=${session.employeeId}` : '/v1/documents',
+  );
   const [signing, setSigning] = React.useState<SigReq | null>(null);
   const [name, setName] = React.useState('');
   const [consent, setConsent] = React.useState(false);
@@ -42,14 +56,22 @@ export default function DocumentsPage() {
     if (id && sigs.data) setSigning(sigs.data.find((s) => s.id === id && s.status === 'pending') ?? null);
   }, [params, sigs.data]);
 
-  const open = async (documentId: string) => window.open((await api<{ url: string }>(`/v1/documents/${documentId}/download`)).url, '_blank', 'noopener');
+  const open = async (documentId: string) =>
+    window.open(
+      (await api<{ url: string }>(`/v1/documents/${documentId}/download`)).url,
+      '_blank',
+      'noopener',
+    );
 
   async function sign(e: React.FormEvent) {
     e.preventDefault();
     if (!signing) return;
     setBusy(true);
     try {
-      await api(`/v1/signature-requests/${signing.id}/sign`, { method: 'POST', json: { consent: true, typedName: name } });
+      await api(`/v1/signature-requests/${signing.id}/sign`, {
+        method: 'POST',
+        json: { consent: true, typedName: name },
+      });
       toast({ title: t('documents.signed'), tone: 'success' });
       setSigning(null);
       sigs.reload();
@@ -96,24 +118,48 @@ export default function DocumentsPage() {
           {docs.data.map((d) => (
             <li key={d.id} className="flex items-center gap-3 rounded-md border border-border p-3">
               <FileText aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-              <button type="button" className="text-left text-callout text-accent hover:underline" onClick={() => open(d.id)}>
+              <button
+                type="button"
+                className="text-left text-callout text-accent hover:underline"
+                onClick={() => open(d.id)}
+              >
                 {d.title}
               </button>
               <Badge>{d.category}</Badge>
-              <span className="ml-auto text-footnote text-text-secondary">{formatDate(d.createdAt.slice(0, 10), locale)}</span>
+              <span className="ml-auto text-footnote text-text-secondary">
+                {formatDate(d.createdAt.slice(0, 10), locale)}
+              </span>
             </li>
           ))}
         </ul>
       )}
       <Dialog open={!!signing} onOpenChange={(o) => !o && setSigning(null)}>
         {signing ? (
-          <DialogContent title={t('documents.signTitle', { title: signing.title })} description={t('documents.signBody')} closeLabel={t('common.close')}>
+          <DialogContent
+            title={t('documents.signTitle', { title: signing.title })}
+            description={t('documents.signBody')}
+            closeLabel={t('common.close')}
+          >
             <form onSubmit={sign} className="flex flex-col gap-4">
               <Field id="typedName" label={t('documents.typedName')}>
-                {(p) => <Input {...p} required minLength={2} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    required
+                    minLength={2}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoComplete="name"
+                  />
+                )}
               </Field>
               <label className="flex items-start gap-3 text-callout">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 accent-[var(--color-accent)]" />
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1 accent-[var(--color-accent)]"
+                />
                 <span>{t('documents.consent')}</span>
               </label>
               <Button type="submit" disabled={!consent} loading={busy}>

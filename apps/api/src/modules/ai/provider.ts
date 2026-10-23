@@ -51,14 +51,14 @@ export class BedrockClaudeProvider implements AiProvider {
   ) {
     const model = opts.model ?? inRegionModel(cell);
     if (!model) throw new AiUnavailableError(cell);
-    if (isCrossRegionProfileId(model.modelId)) throw new Error(`Refusing cross-Region inference profile ${model.modelId}`);
+    if (isCrossRegionProfileId(model.modelId))
+      throw new Error(`Refusing cross-Region inference profile ${model.modelId}`);
     this.modelId = model.modelId;
     this.modelName = model.modelName;
-    this.client = createAwsClientFactory({ cell })(
-      BedrockRuntimeClient,
-      'bedrock-runtime',
-      { region: model.awsRegion, ...opts.client },
-    );
+    this.client = createAwsClientFactory({ cell })(BedrockRuntimeClient, 'bedrock-runtime', {
+      region: model.awsRegion,
+      ...opts.client,
+    });
   }
 
   async complete(req: AiCompletionRequest, opts: { signal?: AbortSignal } = {}): Promise<AiCompletion> {
@@ -71,10 +71,18 @@ export class BedrockClaudeProvider implements AiProvider {
       messages: [{ role: 'user', content: [{ type: 'text', text: req.user }] }],
     };
     const out = await this.client.send(
-      new InvokeModelCommand({ modelId: this.modelId, contentType: 'application/json', accept: 'application/json', body: JSON.stringify(body) }),
+      new InvokeModelCommand({
+        modelId: this.modelId,
+        contentType: 'application/json',
+        accept: 'application/json',
+        body: JSON.stringify(body),
+      }),
       { abortSignal: opts.signal },
     );
-    const parsed = JSON.parse(new TextDecoder().decode(out.body)) as { content?: Array<{ type: string; text?: string }>; stop_reason?: string };
+    const parsed = JSON.parse(new TextDecoder().decode(out.body)) as {
+      content?: Array<{ type: string; text?: string }>;
+      stop_reason?: string;
+    };
     const text = (parsed.content ?? [])
       .filter((b) => b.type === 'text' && typeof b.text === 'string')
       .map((b) => b.text)
@@ -93,14 +101,22 @@ export class FakeAiProvider implements AiProvider {
   async complete(req: AiCompletionRequest): Promise<AiCompletion> {
     const m = /<excerpt n="1"[^>]*>([\s\S]*?)<\/excerpt>/.exec(req.user);
     if (!m) return { text: 'NO_ANSWER', stopReason: 'end_turn' };
-    const sentence = m[1]!.replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s/)[0]!.slice(0, 300);
+    const sentence = m[1]!
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(/(?<=[.!?])\s/)[0]!
+      .slice(0, 300);
     return { text: `According to your company policy: ${sentence} [1]`, stopReason: 'end_turn' };
   }
 }
 
 /** Picks the provider for this cell: Bedrock in AWS, the fake locally (opt-in), or none when unavailable. */
-export function aiProviderFromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): AiProvider | undefined {
-  const choice = env.AI_PROVIDER ?? (env.APP_ENV === 'prod' || env.APP_ENV === 'staging' ? 'bedrock' : 'fake');
+export function aiProviderFromEnv(
+  cell: HomeRegion,
+  env: NodeJS.ProcessEnv = process.env,
+): AiProvider | undefined {
+  const choice =
+    env.AI_PROVIDER ?? (env.APP_ENV === 'prod' || env.APP_ENV === 'staging' ? 'bedrock' : 'fake');
   if (choice === 'fake') {
     if (env.APP_ENV === 'prod') throw new Error('The fake AI provider may never run in production');
     return new FakeAiProvider();

@@ -15,6 +15,10 @@ export default async function globalSetup() {
   await admin.end();
   await migrate({
     ownerUrl: `${OWNER}/${E2E_DB}`,
-    rolePasswords: { thapsus_app: E2E_APP_PASSWORD, thapsus_backoffice: E2E_APP_PASSWORD, thapsus_reporting: E2E_APP_PASSWORD },
+    rolePasswords: {
+      thapsus_app: E2E_APP_PASSWORD,
+      thapsus_backoffice: E2E_APP_PASSWORD,
+      thapsus_reporting: E2E_APP_PASSWORD,
+    },
   });
 }

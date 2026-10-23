@@ -2,7 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadBillingConfig, quote } from '@thapsus/core/billing';
 import { getPool, withTenant } from '@thapsus/db';
 import { DIRECTORY_FIELDS } from '../src/lib/directory';
-import { FakeBillingProvider, type CustomerInput, type SubscriptionInput } from '../src/modules/billing/provider';
+import {
+  FakeBillingProvider,
+  type CustomerInput,
+  type SubscriptionInput,
+} from '../src/modules/billing/provider';
 import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
 import { hire, injector, legalEntity, staffSession, WEBHOOK_SECRET } from './phase10-helpers';
 
@@ -33,8 +37,13 @@ beforeAll(async () => {
   owner = await ownerSession(ctx);
   entityA = await legalEntity(ctx, owner.cookie, 'Fictional Holdings Ltd');
   entityB = await legalEntity(ctx, owner.cookie, 'Fictional GmbH', 'DE', 'EUR', 'Europe/Berlin');
-  employeeId = await hire(ctx, owner.cookie, entityA, { legalFirstName: 'Gale', legalLastName: 'Fictitious', workEmail: 'gale.fictitious@holdings.example.test' });
-  for (let i = 0; i < 3; i++) await hire(ctx, owner.cookie, entityB, { legalFirstName: `Ulla${i}`, legalLastName: 'Beispiel' });
+  employeeId = await hire(ctx, owner.cookie, entityA, {
+    legalFirstName: 'Gale',
+    legalLastName: 'Fictitious',
+    workEmail: 'gale.fictitious@holdings.example.test',
+  });
+  for (let i = 0; i < 3; i++)
+    await hire(ctx, owner.cookie, entityB, { legalFirstName: `Ulla${i}`, legalLastName: 'Beispiel' });
   support = await staffSession(ctx, 'support');
   billingStaff = await staffSession(ctx, 'billing');
 });
@@ -50,7 +59,9 @@ describe('staff sign-in', () => {
     expect(r.statusCode).toBe(403);
     expect(r.json().code).toBe('mfaRequired');
     expect((await api('GET', '/v1/backoffice/tenants', undefined, half.cookie)).statusCode).toBe(403);
-    expect((await api('GET', '/v1/backoffice/auth/session', undefined, support.cookie)).json()).toMatchObject({ role: 'support', cell: 'uk' });
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, support.cookie)).json()).toMatchObject(
+      { role: 'support', cell: 'uk' },
+    );
     expect((await api('GET', '/v1/backoffice/tenants', undefined, owner.cookie)).statusCode).toBe(401);
     const out = await api('POST', '/v1/backoffice/auth/logout', undefined, half.cookie);
     expect(out.statusCode).toBe(204);
@@ -59,57 +70,135 @@ describe('staff sign-in', () => {
 
   it('enforces roles (support cannot manage contracts; only super admins read the staff trail)', async () => {
     expect((await api('GET', '/v1/backoffice/contracts', undefined, support.cookie)).statusCode).toBe(403);
-    expect((await api('GET', `/v1/backoffice/audit?from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z`, undefined, support.cookie)).statusCode).toBe(403);
-    expect((await api('GET', '/v1/backoffice/rules/catalogue', undefined, support.cookie)).statusCode).toBe(403);
+    expect(
+      (
+        await api(
+          'GET',
+          `/v1/backoffice/audit?from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z`,
+          undefined,
+          support.cookie,
+        )
+      ).statusCode,
+    ).toBe(403);
+    expect((await api('GET', '/v1/backoffice/rules/catalogue', undefined, support.cookie)).statusCode).toBe(
+      403,
+    );
   });
 });
 
 describe('tenants, regions and usage', () => {
   it("lists this cell's tenants with usage aggregates only (counts and bytes)", async () => {
-    const refresh = await api('POST', `/v1/backoffice/tenants/${owner.tenantId}/usage/refresh`, undefined, support.cookie);
+    const refresh = await api(
+      'POST',
+      `/v1/backoffice/tenants/${owner.tenantId}/usage/refresh`,
+      undefined,
+      support.cookie,
+    );
     expect(refresh.statusCode, refresh.body).toBe(200);
     expect(refresh.json()).toMatchObject({ headcount: 4, activeUsers: 1 });
-    const list = (await api('GET', `/v1/backoffice/tenants?q=${owner.slug}`, undefined, support.cookie)).json();
+    const list = (
+      await api('GET', `/v1/backoffice/tenants?q=${owner.slug}`, undefined, support.cookie)
+    ).json();
     expect(list).toHaveLength(1);
-    expect(list[0]).toMatchObject({ tenantId: owner.tenantId, slug: owner.slug, region: 'uk', usage: { headcount: 4 } });
+    expect(list[0]).toMatchObject({
+      tenantId: owner.tenantId,
+      slug: owner.slug,
+      region: 'uk',
+      usage: { headcount: 4 },
+    });
     expect(JSON.stringify(list)).not.toMatch(/Gale|Fictitious|Beispiel|@holdings/);
   });
 
   it('shows every region from the global directory only (ids, slugs, regions, plan, status)', async () => {
     const all = (await api('GET', '/v1/backoffice/tenants/all-regions', undefined, support.cookie)).json();
     const mine = all.find((e: { tenantId: string }) => e.tenantId === owner.tenantId);
-    expect(mine).toEqual({ tenantId: owner.tenantId, slug: owner.slug, region: 'uk', status: 'active', planRef: 'trial' });
-    for (const e of all) expect(Object.keys(e).sort()).toEqual(['planRef', 'region', 'slug', 'status', 'tenantId']);
+    expect(mine).toEqual({
+      tenantId: owner.tenantId,
+      slug: owner.slug,
+      region: 'uk',
+      status: 'active',
+      planRef: 'trial',
+    });
+    for (const e of all)
+      expect(Object.keys(e).sort()).toEqual(['planRef', 'region', 'slug', 'status', 'tenantId']);
     expect(DIRECTORY_FIELDS).not.toContain('name');
   });
 
   it('tenant detail shows the billing structure but never billing contacts or employee data', async () => {
     const acct = (await api('GET', '/v1/billing', undefined, owner.cookie)).json().accounts[0];
-    await api('PUT', `/v1/billing/accounts/${acct.id}/details`, { name: 'Fictional Holdings Ltd', address: { line1: '2 Example Road', city: 'Leeds', postalCode: 'LS1 1AA', country: 'GB' }, contacts: [{ name: 'Petra Payables', email: 'payables@holdings.example.test', isPrimary: true }] }, owner.cookie);
+    await api(
+      'PUT',
+      `/v1/billing/accounts/${acct.id}/details`,
+      {
+        name: 'Fictional Holdings Ltd',
+        address: { line1: '2 Example Road', city: 'Leeds', postalCode: 'LS1 1AA', country: 'GB' },
+        contacts: [{ name: 'Petra Payables', email: 'payables@holdings.example.test', isPrimary: true }],
+      },
+      owner.cookie,
+    );
     const d = await api('GET', `/v1/backoffice/tenants/${owner.tenantId}`, undefined, support.cookie);
     expect(d.statusCode, d.body).toBe(200);
-    expect(d.json()).toMatchObject({ name: `Fictional ${owner.slug} Ltd`, entities: expect.arrayContaining([expect.objectContaining({ name: 'Fictional GmbH', country: 'DE' })]), grant: null });
+    expect(d.json()).toMatchObject({
+      name: `Fictional ${owner.slug} Ltd`,
+      entities: expect.arrayContaining([expect.objectContaining({ name: 'Fictional GmbH', country: 'DE' })]),
+      grant: null,
+    });
     expect(d.json().billingAccounts[0]).toMatchObject({ isDefault: true, detailsComplete: true });
     expect(JSON.stringify(d.json())).not.toMatch(/Petra|payables@|Gale|gale\.fictitious/);
-    expect((await api('GET', `/v1/backoffice/tenants/00000000-0000-4000-8000-000000000000`, undefined, support.cookie)).statusCode).toBe(404);
+    expect(
+      (
+        await api(
+          'GET',
+          `/v1/backoffice/tenants/00000000-0000-4000-8000-000000000000`,
+          undefined,
+          support.cookie,
+        )
+      ).statusCode,
+    ).toBe(404);
   });
 });
 
 describe('personal data only through granted, logged support access', () => {
-  const view = () => api('GET', `/v1/backoffice/tenants/${owner.tenantId}/employees/${employeeId}`, undefined, support.cookie);
-  const fix = () => api('PATCH', `/v1/backoffice/tenants/${owner.tenantId}/employees/${employeeId}`, { workPhone: '+44 113 000 0000' }, support.cookie);
+  const view = () =>
+    api('GET', `/v1/backoffice/tenants/${owner.tenantId}/employees/${employeeId}`, undefined, support.cookie);
+  const fix = () =>
+    api(
+      'PATCH',
+      `/v1/backoffice/tenants/${owner.tenantId}/employees/${employeeId}`,
+      { workPhone: '+44 113 000 0000' },
+      support.cookie,
+    );
   const grant = async (accessLevel: 'read' | 'read_write') => {
-    const r = await api('POST', '/v1/settings/support-grants', { staffId: support.staffId, accessLevel, hours: 2, reason: 'Ticket T-0000FEED: export question' }, owner.cookie);
+    const r = await api(
+      'POST',
+      '/v1/settings/support-grants',
+      { staffId: support.staffId, accessLevel, hours: 2, reason: 'Ticket T-0000FEED: export question' },
+      owner.cookie,
+    );
     expect(r.statusCode, r.body).toBe(201);
     return r.json().id as string;
   };
-  const supportAudit = () => withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.query<{ action: string; actor_id: string }>(`SELECT action, actor_id FROM audit.events WHERE actor_type = 'support' AND action LIKE 'support.%' ORDER BY id`));
-  const staffTrail = async () => (await bo().query<{ action: string; subject_tenant_id: string }>(`SELECT action, subject_tenant_id FROM backoffice.staff_audit WHERE staff_id = $1 AND action LIKE 'support.%' ORDER BY id`, [support.staffId])).rows;
+  const supportAudit = () =>
+    withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.query<{ action: string; actor_id: string }>(
+        `SELECT action, actor_id FROM audit.events WHERE actor_type = 'support' AND action LIKE 'support.%' ORDER BY id`,
+      ),
+    );
+  const staffTrail = async () =>
+    (
+      await bo().query<{ action: string; subject_tenant_id: string }>(
+        `SELECT action, subject_tenant_id FROM backoffice.staff_audit WHERE staff_id = $1 AND action LIKE 'support.%' ORDER BY id`,
+        [support.staffId],
+      )
+    ).rows;
 
   it('no grant → 403 (and the denied attempt is in the staff trail)', async () => {
     expect((await view()).statusCode).toBe(403);
     expect((await fix()).statusCode).toBe(403);
-    expect((await staffTrail()).map((r) => r.action)).toEqual(['support.access_denied', 'support.access_denied']);
+    expect((await staffTrail()).map((r) => r.action)).toEqual([
+      'support.access_denied',
+      'support.access_denied',
+    ]);
   });
 
   it('with a read grant → the record, written to the customer audit log AND the staff trail; a read grant cannot write', async () => {
@@ -117,19 +206,35 @@ describe('personal data only through granted, logged support access', () => {
     const r = await view();
     expect(r.statusCode, r.body).toBe(200);
     expect(JSON.stringify(r.json())).toContain('Gale');
-    expect((await supportAudit()).filter((a) => a.action === 'support.view_employee')).toEqual([{ action: 'support.view_employee', actor_id: support.staffId }]);
-    expect((await staffTrail()).filter((a) => a.action === 'support.view_employee')).toEqual([{ action: 'support.view_employee', subject_tenant_id: owner.tenantId }]);
+    expect((await supportAudit()).filter((a) => a.action === 'support.view_employee')).toEqual([
+      { action: 'support.view_employee', actor_id: support.staffId },
+    ]);
+    expect((await staffTrail()).filter((a) => a.action === 'support.view_employee')).toEqual([
+      { action: 'support.view_employee', subject_tenant_id: owner.tenantId },
+    ]);
     expect((await fix()).statusCode).toBe(403);
-    expect((await api('GET', '/v1/backoffice/grants', undefined, support.cookie)).json().find((g: { id: string }) => g.id === id)).toMatchObject({ accessLevel: 'read', active: true });
-    expect((await api('GET', `/v1/backoffice/tenants/${owner.tenantId}`, undefined, support.cookie)).json().grant).toMatchObject({ id, accessLevel: 'read' });
+    expect(
+      (await api('GET', '/v1/backoffice/grants', undefined, support.cookie))
+        .json()
+        .find((g: { id: string }) => g.id === id),
+    ).toMatchObject({ accessLevel: 'read', active: true });
+    expect(
+      (await api('GET', `/v1/backoffice/tenants/${owner.tenantId}`, undefined, support.cookie)).json().grant,
+    ).toMatchObject({ id, accessLevel: 'read' });
     // revoked → 403
-    expect((await api('DELETE', `/v1/settings/support-grants/${id}`, undefined, owner.cookie)).statusCode).toBe(204);
+    expect(
+      (await api('DELETE', `/v1/settings/support-grants/${id}`, undefined, owner.cookie)).statusCode,
+    ).toBe(204);
     expect((await view()).statusCode).toBe(403);
   });
 
   it('expired grants → 403', async () => {
     await grant('read');
-    await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.exec(`UPDATE app.support_grants SET starts_at = now() - interval '3 hours', expires_at = now() - interval '1 hour' WHERE revoked_at IS NULL`));
+    await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.exec(
+        `UPDATE app.support_grants SET starts_at = now() - interval '3 hours', expires_at = now() - interval '1 hour' WHERE revoked_at IS NULL`,
+      ),
+    );
     expect((await view()).statusCode).toBe(403);
   });
 
@@ -137,11 +242,17 @@ describe('personal data only through granted, logged support access', () => {
     await grant('read_write');
     const r = await fix();
     expect(r.statusCode, r.body).toBe(204);
-    const phone = await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.one<{ work_phone: string }>('SELECT work_phone FROM app.employees WHERE id = $1', [employeeId]));
+    const phone = await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.one<{ work_phone: string }>('SELECT work_phone FROM app.employees WHERE id = $1', [employeeId]),
+    );
     expect(phone.work_phone).toBe('+44 113 000 0000');
     const actions = (await supportAudit()).map((a) => a.action);
     expect(actions).toContain('support.update_employee');
-    const all = await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.query<{ action: string }>(`SELECT action FROM audit.events WHERE action = 'employee.updated_by_support'`));
+    const all = await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.query<{ action: string }>(
+        `SELECT action FROM audit.events WHERE action = 'employee.updated_by_support'`,
+      ),
+    );
     expect(all).toHaveLength(1);
     expect((await staffTrail()).map((a) => a.action)).toContain('support.update_employee');
   });
@@ -152,59 +263,215 @@ describe('enterprise contracts and multi-entity billing (configured in the back 
   let secondAccount: string;
 
   it('groups legal entities into a separately invoiced billing account with its own currency and PO number', async () => {
-    const r = await api('POST', `/v1/backoffice/tenants/${owner.tenantId}/billing-accounts`, { name: 'Fictional GmbH (Germany)', currency: 'EUR', entityIds: [entityB], collection: 'send_invoice', paymentTermsDays: 30, poNumber: 'PO-DE-2027-001' }, billingStaff.cookie);
+    const r = await api(
+      'POST',
+      `/v1/backoffice/tenants/${owner.tenantId}/billing-accounts`,
+      {
+        name: 'Fictional GmbH (Germany)',
+        currency: 'EUR',
+        entityIds: [entityB],
+        collection: 'send_invoice',
+        paymentTermsDays: 30,
+        poNumber: 'PO-DE-2027-001',
+      },
+      billingStaff.cookie,
+    );
     expect(r.statusCode, r.body).toBe(201);
     secondAccount = r.json().id;
-    expect((await api('POST', `/v1/backoffice/tenants/${owner.tenantId}/billing-accounts`, { name: 'x', currency: 'EUR', entityIds: [], collection: 'send_invoice' }, billingStaff.cookie)).statusCode).toBe(400);
+    expect(
+      (
+        await api(
+          'POST',
+          `/v1/backoffice/tenants/${owner.tenantId}/billing-accounts`,
+          { name: 'x', currency: 'EUR', entityIds: [], collection: 'send_invoice' },
+          billingStaff.cookie,
+        )
+      ).statusCode,
+    ).toBe(400);
     const b = (await api('GET', '/v1/billing', undefined, owner.cookie)).json();
     expect(b.accounts.map((a: { headcount: number }) => a.headcount).sort()).toEqual([1, 3]);
-    const audit = await withTenant(ctx.deps.router, owner.tenantId, (tx) => tx.query<{ actor_type: string }>(`SELECT actor_type FROM audit.events WHERE action = 'billing.account_created'`));
+    const audit = await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.query<{ actor_type: string }>(
+        `SELECT actor_type FROM audit.events WHERE action = 'billing.account_created'`,
+      ),
+    );
     expect(audit).toEqual([{ actor_type: 'support' }]);
   });
 
   it('records a draft contract whose prices come from the contract record, never code (validated)', async () => {
-    const base = { tenantId: owner.tenantId, reference: `C-${owner.slug}`, planId: 'enterprise', currency: 'GBP', term: 'annual', startsOn: '2027-01-01', endsOn: '2027-12-31', renewal: 'manual', renewalNoticeDays: 90, collection: 'send_invoice', paymentTermsDays: 45 };
-    expect((await api('POST', '/v1/backoffice/contracts', { ...base, pricing: {} }, billingStaff.cookie)).statusCode).toBe(400);
-    expect((await api('POST', '/v1/backoffice/contracts', { ...base, pricing: { unitAmountMinor: 1, flatAmountMinor: 2 } }, billingStaff.cookie)).statusCode).toBe(400);
-    const r = await api('POST', '/v1/backoffice/contracts', { ...base, pricing: { unitAmountMinor: 7200, minimumEmployees: 1 }, notes: 'Fictional negotiated rate' }, billingStaff.cookie);
+    const base = {
+      tenantId: owner.tenantId,
+      reference: `C-${owner.slug}`,
+      planId: 'enterprise',
+      currency: 'GBP',
+      term: 'annual',
+      startsOn: '2027-01-01',
+      endsOn: '2027-12-31',
+      renewal: 'manual',
+      renewalNoticeDays: 90,
+      collection: 'send_invoice',
+      paymentTermsDays: 45,
+    };
+    expect(
+      (await api('POST', '/v1/backoffice/contracts', { ...base, pricing: {} }, billingStaff.cookie))
+        .statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await api(
+          'POST',
+          '/v1/backoffice/contracts',
+          { ...base, pricing: { unitAmountMinor: 1, flatAmountMinor: 2 } },
+          billingStaff.cookie,
+        )
+      ).statusCode,
+    ).toBe(400);
+    const r = await api(
+      'POST',
+      '/v1/backoffice/contracts',
+      {
+        ...base,
+        pricing: { unitAmountMinor: 7200, minimumEmployees: 1 },
+        notes: 'Fictional negotiated rate',
+      },
+      billingStaff.cookie,
+    );
     expect(r.statusCode, r.body).toBe(201);
     contractId = r.json().id;
     expect(r.json()).toMatchObject({ status: 'draft', pricing: { unitAmountMinor: 7200 } });
-    expect((await api('POST', '/v1/backoffice/contracts', { ...base, pricing: { unitAmountMinor: 1 } }, billingStaff.cookie)).statusCode).toBe(409);
-    const patched = await api('PATCH', `/v1/backoffice/contracts/${contractId}`, { paymentTermsDays: 30 }, billingStaff.cookie);
+    expect(
+      (
+        await api(
+          'POST',
+          '/v1/backoffice/contracts',
+          { ...base, pricing: { unitAmountMinor: 1 } },
+          billingStaff.cookie,
+        )
+      ).statusCode,
+    ).toBe(409);
+    const patched = await api(
+      'PATCH',
+      `/v1/backoffice/contracts/${contractId}`,
+      { paymentTermsDays: 30 },
+      billingStaff.cookie,
+    );
     expect(patched.json().paymentTermsDays).toBe(30);
   });
 
   it('activation bills each billing account by invoice with payment terms, custom pricing and PO numbers; accounts without details wait', async () => {
-    const r = await api('POST', `/v1/backoffice/contracts/${contractId}/activate`, undefined, billingStaff.cookie);
+    const r = await api(
+      'POST',
+      `/v1/backoffice/contracts/${contractId}/activate`,
+      undefined,
+      billingStaff.cookie,
+    );
     expect(r.statusCode, r.body).toBe(200);
-    const byAccount = Object.fromEntries(r.json().accounts.map((a: { accountId: string; status: string }) => [a.accountId, a.status]));
+    const byAccount = Object.fromEntries(
+      r.json().accounts.map((a: { accountId: string; status: string }) => [a.accountId, a.status]),
+    );
     expect(byAccount[secondAccount]).toBe('pending_details');
-    const created = fake.calls.filter((c) => c.op === 'createSubscription').map((c) => c.input as SubscriptionInput);
+    const created = fake.calls
+      .filter((c) => c.op === 'createSubscription')
+      .map((c) => c.input as SubscriptionInput);
     expect(created).toHaveLength(1);
-    const q = quote(cfg, { planId: 'enterprise', term: 'annual', currency: 'GBP', headcount: 1, contract: { planId: 'enterprise', currency: 'GBP', term: 'annual', unitAmountMinor: 7200, minimumEmployees: 1 } });
-    expect(created[0]).toMatchObject({ planId: 'enterprise', interval: 'year', currency: 'GBP', unitAmountMinor: 7200, quantity: q.quantity, collection: 'send_invoice', daysUntilDue: 30 });
+    const q = quote(cfg, {
+      planId: 'enterprise',
+      term: 'annual',
+      currency: 'GBP',
+      headcount: 1,
+      contract: {
+        planId: 'enterprise',
+        currency: 'GBP',
+        term: 'annual',
+        unitAmountMinor: 7200,
+        minimumEmployees: 1,
+      },
+    });
+    expect(created[0]).toMatchObject({
+      planId: 'enterprise',
+      interval: 'year',
+      currency: 'GBP',
+      unitAmountMinor: 7200,
+      quantity: q.quantity,
+      collection: 'send_invoice',
+      daysUntilDue: 30,
+    });
     // self-serve is replaced: no self-serve changes, and the customer sees the contract
     const b = (await api('GET', '/v1/billing', undefined, owner.cookie)).json();
     expect(b.selfServe).toBe(false);
-    expect(b.contract).toMatchObject({ reference: `C-${owner.slug}`, planId: 'enterprise', paymentTermsDays: 30, collection: 'send_invoice' });
-    expect((await api('POST', '/v1/billing/subscription/change', { planId: 'plus', term: 'monthly' }, owner.cookie)).statusCode).toBe(409);
+    expect(b.contract).toMatchObject({
+      reference: `C-${owner.slug}`,
+      planId: 'enterprise',
+      paymentTermsDays: 30,
+      collection: 'send_invoice',
+    });
+    expect(
+      (
+        await api(
+          'POST',
+          '/v1/billing/subscription/change',
+          { planId: 'plus', term: 'monthly' },
+          owner.cookie,
+        )
+      ).statusCode,
+    ).toBe(409);
     // the second account starts once the customer enters its billing contact; its PO number goes on its invoices
-    await api('PUT', `/v1/billing/accounts/${secondAccount}/details`, { name: 'Fictional GmbH', address: { line1: 'Beispielstraße 1', city: 'Berlin', postalCode: '10115', country: 'DE' }, contacts: [{ name: 'Rena Rechnung', email: 'rechnung@gmbh.example.test', isPrimary: true }] }, owner.cookie);
-    const de = fake.calls.filter((c) => c.op === 'createSubscription').map((c) => c.input as SubscriptionInput).find((s) => s.billingAccountId === secondAccount);
-    expect(de).toMatchObject({ currency: 'GBP', quantity: 3, unitAmountMinor: 7200, collection: 'send_invoice' });
-    const deCustomer = fake.calls.filter((c) => c.op === 'upsertCustomer').map((c) => c.input as CustomerInput).find((c) => c.billingAccountId === secondAccount);
+    await api(
+      'PUT',
+      `/v1/billing/accounts/${secondAccount}/details`,
+      {
+        name: 'Fictional GmbH',
+        address: { line1: 'Beispielstraße 1', city: 'Berlin', postalCode: '10115', country: 'DE' },
+        contacts: [{ name: 'Rena Rechnung', email: 'rechnung@gmbh.example.test', isPrimary: true }],
+      },
+      owner.cookie,
+    );
+    const de = fake.calls
+      .filter((c) => c.op === 'createSubscription')
+      .map((c) => c.input as SubscriptionInput)
+      .find((s) => s.billingAccountId === secondAccount);
+    expect(de).toMatchObject({
+      currency: 'GBP',
+      quantity: 3,
+      unitAmountMinor: 7200,
+      collection: 'send_invoice',
+    });
+    const deCustomer = fake.calls
+      .filter((c) => c.op === 'upsertCustomer')
+      .map((c) => c.input as CustomerInput)
+      .find((c) => c.billingAccountId === secondAccount);
     expect(deCustomer?.poNumber).toBe('PO-DE-2027-001');
     // changing the PO number refreshes the provider customer (next invoices carry it)
-    await api('PATCH', `/v1/backoffice/tenants/${owner.tenantId}/billing-accounts/${secondAccount}`, { poNumber: 'PO-DE-2027-002' }, billingStaff.cookie);
-    expect((fake.calls.filter((c) => c.op === 'upsertCustomer').at(-1)!.input as CustomerInput).poNumber).toBe('PO-DE-2027-002');
-    const trail = (await bo().query<{ action: string }>(`SELECT action FROM backoffice.staff_audit WHERE subject_tenant_id = $1 AND action LIKE 'contract.%' ORDER BY id`, [owner.tenantId])).rows.map((r) => r.action);
+    await api(
+      'PATCH',
+      `/v1/backoffice/tenants/${owner.tenantId}/billing-accounts/${secondAccount}`,
+      { poNumber: 'PO-DE-2027-002' },
+      billingStaff.cookie,
+    );
+    expect(
+      (fake.calls.filter((c) => c.op === 'upsertCustomer').at(-1)!.input as CustomerInput).poNumber,
+    ).toBe('PO-DE-2027-002');
+    const trail = (
+      await bo().query<{ action: string }>(
+        `SELECT action FROM backoffice.staff_audit WHERE subject_tenant_id = $1 AND action LIKE 'contract.%' ORDER BY id`,
+        [owner.tenantId],
+      )
+    ).rows.map((r) => r.action);
     expect(trail).toEqual(['contract.created', 'contract.updated', 'contract.activated']);
     expect(ctx.directory.entries.get(owner.tenantId)?.planRef).toBe('enterprise');
   });
 
   it('active contracts keep their commercial terms; renewal is flagged within the notice window; ending stops billing at the end date', async () => {
-    expect((await api('PATCH', `/v1/backoffice/contracts/${contractId}`, { pricing: { unitAmountMinor: 1 } }, billingStaff.cookie)).statusCode).toBe(409);
+    expect(
+      (
+        await api(
+          'PATCH',
+          `/v1/backoffice/contracts/${contractId}`,
+          { pricing: { unitAmountMinor: 1 } },
+          billingStaff.cookie,
+        )
+      ).statusCode,
+    ).toBe(409);
     const list = (await api('GET', '/v1/backoffice/contracts', undefined, billingStaff.cookie)).json();
     const c = list.find((x: { id: string }) => x.id === contractId);
     expect(c).toMatchObject({ status: 'active', slug: owner.slug });
@@ -213,23 +480,38 @@ describe('enterprise contracts and multi-entity billing (configured in the back 
       const at = async (iso: string) => {
         ctx.clock.now = new Date(iso);
         const s = await staffSession(ctx, 'billing'); // sessions are dated by the clock too
-        return (await api('GET', '/v1/backoffice/contracts', undefined, s.cookie)).json().find((x: { id: string }) => x.id === contractId).renewalDue;
+        return (await api('GET', '/v1/backoffice/contracts', undefined, s.cookie))
+          .json()
+          .find((x: { id: string }) => x.id === contractId).renewalDue;
       };
       expect(await at('2027-10-15T12:00:00Z')).toBe(true); // within 90 days of 2027-12-31
       expect(await at('2027-03-01T12:00:00Z')).toBe(false);
     } finally {
       ctx.clock.now = saved;
     }
-    const end = await api('POST', `/v1/backoffice/contracts/${contractId}/end`, undefined, billingStaff.cookie);
+    const end = await api(
+      'POST',
+      `/v1/backoffice/contracts/${contractId}/end`,
+      undefined,
+      billingStaff.cookie,
+    );
     expect(end.json().endsAt).toBe('2028-01-01T00:00:00Z');
-    expect(fake.calls.filter((x) => x.op === 'setCancelAt').every((x) => (x.input as { at: string }).at === '2028-01-01T00:00:00Z')).toBe(true);
+    expect(
+      fake.calls
+        .filter((x) => x.op === 'setCancelAt')
+        .every((x) => (x.input as { at: string }).at === '2028-01-01T00:00:00Z'),
+    ).toBe(true);
   });
 });
 
 describe('plans, rules catalogue and the staff audit trail', () => {
   it('plans come from the billing config location', async () => {
     const r = (await api('GET', '/v1/backoffice/plans', undefined, billingStaff.cookie)).json();
-    expect(r).toMatchObject({ location: 'builtin:billing-config-v1', version: cfg.version, trialDays: cfg.trial.days });
+    expect(r).toMatchObject({
+      location: 'builtin:billing-config-v1',
+      version: cfg.version,
+      trialDays: cfg.trial.days,
+    });
   });
 
   it('rules editors get the catalogue for the rule-editing screen', async () => {
@@ -243,13 +525,37 @@ describe('plans, rules catalogue and the staff audit trail', () => {
     const admin = await staffSession(ctx, 'super_admin');
     const from = new Date(ctx.clock.now.getTime() - 3_600_000).toISOString();
     const to = new Date(ctx.clock.now.getTime() + 3_600_000).toISOString();
-    const json = (await api('GET', `/v1/backoffice/audit?from=${from}&to=${to}`, undefined, admin.cookie)).json();
-    expect(json.map((r: { action: string }) => r.action)).toEqual(expect.arrayContaining(['staff.login', 'staff.mfa_verified', 'support.view_employee', 'contract.activated', 'tenant.viewed']));
-    const csv = await api('GET', `/v1/backoffice/audit?from=${from}&to=${to}&format=csv`, undefined, admin.cookie);
+    const json = (
+      await api('GET', `/v1/backoffice/audit?from=${from}&to=${to}`, undefined, admin.cookie)
+    ).json();
+    expect(json.map((r: { action: string }) => r.action)).toEqual(
+      expect.arrayContaining([
+        'staff.login',
+        'staff.mfa_verified',
+        'support.view_employee',
+        'contract.activated',
+        'tenant.viewed',
+      ]),
+    );
+    const csv = await api(
+      'GET',
+      `/v1/backoffice/audit?from=${from}&to=${to}&format=csv`,
+      undefined,
+      admin.cookie,
+    );
     expect(csv.headers['content-type']).toContain('text/csv');
-    expect(csv.body.split('\r\n')[0]).toBe('id,at,staffId,staffEmail,action,subjectTenantId,target,detail,ip,requestId');
-    const exported = (await bo().query(`SELECT 1 FROM backoffice.staff_audit WHERE staff_id = $1 AND action = 'staff_audit.exported'`, [admin.staffId])).rows;
+    expect(csv.body.split('\r\n')[0]).toBe(
+      'id,at,staffId,staffEmail,action,subjectTenantId,target,detail,ip,requestId',
+    );
+    const exported = (
+      await bo().query(
+        `SELECT 1 FROM backoffice.staff_audit WHERE staff_id = $1 AND action = 'staff_audit.exported'`,
+        [admin.staffId],
+      )
+    ).rows;
     expect(exported).toHaveLength(1);
-    await expect(getPool(ctx.deps.backofficeDbUrl!).query(`UPDATE backoffice.staff_audit SET action = 'x'`)).rejects.toThrow();
+    await expect(
+      getPool(ctx.deps.backofficeDbUrl!).query(`UPDATE backoffice.staff_audit SET action = 'x'`),
+    ).rejects.toThrow();
   });
 });

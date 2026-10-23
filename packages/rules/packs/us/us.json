@@ -212,10 +212,7 @@
           "effectiveTo": null,
           "value": {
             "deadline": "earlier_of_section1_authorization_expiry_or_section2_list_a_or_c_document_expiry",
-            "acceptableLists": [
-              "A",
-              "C"
-            ],
+            "acceptableLists": ["A", "C"],
             "employeeChoosesDocument": true,
             "recordedOn": "supplement_b",
             "doNotReverify": [
@@ -384,10 +381,7 @@
               "american_indian_or_alaska_native",
               "two_or_more_races"
             ],
-            "sexCategories": [
-              "male",
-              "female"
-            ],
+            "sexCategories": ["male", "female"],
             "workforceSnapshot": {
               "singlePayPeriod": true,
               "from": {
@@ -478,9 +472,7 @@
               {
                 "id": "highly_compensated",
                 "salaryTest": "hce",
-                "duties": [
-                  "customarily_and_regularly_performs_at_least_one_exempt_duty"
-                ]
+                "duties": ["customarily_and_regularly_performs_at_least_one_exempt_duty"]
               }
             ],
             "nondiscretionaryBonusMaxPercentOfStandardSalary": 10,
@@ -536,9 +528,7 @@
         "day": 1
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -559,9 +549,7 @@
         "n": 3
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -582,9 +570,7 @@
         "n": 3
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -605,9 +591,7 @@
         "n": -1
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -627,9 +611,7 @@
         "day": 19
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2021-06-17",
       "effectiveTo": null,
       "source": {
@@ -649,9 +631,7 @@
         "day": 4
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -672,9 +652,7 @@
         "n": 1
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -695,9 +673,7 @@
         "n": 2
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -717,9 +693,7 @@
         "day": 11
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -740,9 +714,7 @@
         "n": 4
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -762,9 +734,7 @@
         "day": 25
       },
       "observance": "us_federal",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {

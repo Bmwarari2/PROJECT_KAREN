@@ -3,6 +3,7 @@
 Use this for very large tenants, such as the 200,000-employee enterprise profile, or tenants contracted for an isolated database. No code change is needed. Routing is configuration: `registry.tenants.db_key` plus the cell's database map (`DEDICATED_DATABASE_HOSTS`, which the cell stack sets from `infra/config/<env>.json`). Decision records: ADR-0068 (infrastructure) and ADR-0099 (back-office requests).
 
 **Proven by:**
+
 - `apps/api/test/dedicated-db.int.test.ts`: the same API suite passes before and after the move, the source is purged, and neighbouring tenants are untouched.
 - `apps/api/test/tenant-platform.int.test.ts` ("moves a tenant through a tracked back-office request…"): the back-office request path, status tracking, a runner without the target's credentials leaving the request queued, and the tenant working afterwards.
 - `infra/test/infra.test.ts` ("dedicated databases …"): what a config entry creates (cluster, proxy, backups, tools task, `DEDICATED_*` settings), only in the cell's own region, and nothing for the committed configs.
@@ -26,9 +27,11 @@ Use this for very large tenants, such as the 200,000-employee enterprise profile
    - Optional `minAcu` and `maxAcu` (Aurora Serverless v2, 0.5 to 256) size it. They default to the environment's `aurora` settings. Backup retention and deletion protection always follow `aurora`.
    - `pnpm --filter @thapsus/infra synth` and `pnpm exec vitest run --project unit infra` validate the entry. A cell can never use a database in another region: the services' startup residency check and `TenantRouter.fromEnv` both refuse one.
 2. **Deploy the cell** (production only after approval, with `--approved`):
+
    ```bash
    node --import tsx scripts/deploy.mjs --env <env> --only cell-<cell>
    ```
+
    This adds to the cell stack:
    - the cluster `thapsus-hr-<env>-<cell>-<key>`: writer and reporting reader in two AZs, the cell's data KMS key, the cell's backup plan (with its permitted copy region), the cell VPC's isolated subnets and database security group, and its own owner secret `thapsus-hr/<env>/db/<key>/thapsus_owner`;
    - its RDS Proxy `thapsus-hr-<env>-<cell>-<key>-proxy` (TLS required);
@@ -38,6 +41,7 @@ Use this for very large tenants, such as the 200,000-employee enterprise profile
    The deploy then runs the shared migrator and the tools task of every dedicated database in the cell, and restarts the services. The tools task applies the migrations and sets the same `thapsus_app`, `thapsus_backoffice` and `thapsus_reporting` passwords as on the shared database. Nothing routes to the new database yet. Every later deploy of the cell migrates it again before the restart.
 
    The stack outputs, in `.deploy/ThapsusHr-<env>-cell-<cell>.json`, include `Dedicated<Key>ProxyEndpoint`, `Dedicated<Key>WriterEndpoint` and `Dedicated<Key>ToolsTaskDefinitionArn`. `<Key>` is the key in PascalCase (`big-co` → `BigCo`).
+
 3. **Request the move in the back office.** Sign in as a super admin (password + TOTP) and call:
    ```http
    POST /v1/backoffice/tenants/<tenantId>/database-moves
@@ -49,6 +53,7 @@ Use this for very large tenants, such as the 200,000-employee enterprise profile
    - `GET /v1/backoffice/database-moves/<id>` shows its status: `requested` → `running` → `succeeded` or `failed`, with progress lines and the per-table report.
    - `POST /v1/backoffice/database-moves/<id>/cancel` withdraws a request that has not started.
 4. **Run the move** with the dedicated database's tools task and the move-runner command. Take the values from the stack outputs:
+
    ```bash
    aws --region <cell region> ecs run-task --cluster <EcsClusterName> \
      --task-definition <Dedicated<Key>ToolsTaskDefinitionArn> --launch-type FARGATE \
@@ -69,6 +74,7 @@ Use this for very large tenants, such as the 200,000-employee enterprise profile
    - sets the tenant back to `active`.
 
    On any error it rolls back the target and restores `active` on the shared database.
+
 5. **Verify:** sign in as a test user in the tenant (with support access granted), check the people list, the audit log (`POST /v1/audit/verify` must return `intact: true`) and a write.
 6. **Purge the source** once verified, within the change window. Either:
    - request the move with `"purgeSource": true` (the runner purges right after the switch); or

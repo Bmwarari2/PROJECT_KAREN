@@ -1,4 +1,12 @@
-import { addDays, addMonths, addYears, compareDates, dayOfWeek, daysBetween, maxDate } from '@thapsus/core/time';
+import {
+  addDays,
+  addMonths,
+  addYears,
+  compareDates,
+  dayOfWeek,
+  daysBetween,
+  maxDate,
+} from '@thapsus/core/time';
 import { codeLineage, type RuleBook } from '@thapsus/rules';
 
 /**
@@ -21,8 +29,12 @@ export function addPeriod(date: string, period: string): string {
 const cmp = compareDates;
 
 // ---- UK right to work -------------------------------------------------------------------------
-export type RtwListType = 'list_a' | 'list_b_group_1' | 'list_b_group_2' | 'online_unlimited' | 'online_time_limited';
-type FollowUpSpec = null | { dueBy: 'permission_expiry_date' } | { excusePeriod: string; from: 'positive_verification_notice_date'; dueBy: 'before_excuse_expires' };
+export type RtwListType =
+  'list_a' | 'list_b_group_1' | 'list_b_group_2' | 'online_unlimited' | 'online_time_limited';
+type FollowUpSpec =
+  | null
+  | { dueBy: 'permission_expiry_date' }
+  | { excusePeriod: string; from: 'positive_verification_notice_date'; dueBy: 'before_excuse_expires' };
 export interface RtwDocumentRules {
   methods: Array<{ id: string }>;
   listTypes: RtwListType[];
@@ -38,41 +50,70 @@ export class RtwInputError extends Error {}
  * end date; Positive Verification Notice → excuse for the pack period from the PVN date, follow-up
  * before it expires (the day before the period ends).
  */
-export function rtwFollowUp(rule: RtwDocumentRules, i: { listType: RtwListType; checkedOn: string; permissionExpiresOn?: string | null; pvnDate?: string | null }) {
+export function rtwFollowUp(
+  rule: RtwDocumentRules,
+  i: {
+    listType: RtwListType;
+    checkedOn: string;
+    permissionExpiresOn?: string | null;
+    pvnDate?: string | null;
+  },
+) {
   if (!rule.listTypes.includes(i.listType)) throw new RtwInputError(`unknown list type ${i.listType}`);
   const spec = rule.followUp[i.listType];
-  if (spec === null || spec === undefined) return { excuse: 'continuous' as const, excuseEndsOn: null, followUpDueOn: null };
+  if (spec === null || spec === undefined)
+    return { excuse: 'continuous' as const, excuseEndsOn: null, followUpDueOn: null };
   if ('excusePeriod' in spec) {
     if (!i.pvnDate) throw new RtwInputError('pvnDate is required for this list');
     const ends = addPeriod(i.pvnDate, spec.excusePeriod);
     return { excuse: 'time_limited' as const, excuseEndsOn: ends, followUpDueOn: addDays(ends, -1) };
   }
   if (!i.permissionExpiresOn) throw new RtwInputError('permissionExpiresOn is required for this list');
-  return { excuse: 'time_limited' as const, excuseEndsOn: i.permissionExpiresOn, followUpDueOn: i.permissionExpiresOn };
+  return {
+    excuse: 'time_limited' as const,
+    excuseEndsOn: i.permissionExpiresOn,
+    followUpDueOn: i.permissionExpiresOn,
+  };
 }
 
 /** Right-to-work records are kept during employment and for the pack period after it ends. */
-export function rtwRetainUntil(rule: { retainAfterEmploymentEnds: string }, employmentEndedOn: string | null): string | null {
+export function rtwRetainUntil(
+  rule: { retainAfterEmploymentEnds: string },
+  employmentEndedOn: string | null,
+): string | null {
   return employmentEndedOn ? addPeriod(employmentEndedOn, rule.retainAfterEmploymentEnds) : null;
 }
 
 // ---- US Form I-9 ------------------------------------------------------------------------------
 export interface I9CompletionRule {
   section1: { dueBy: 'first_day_of_employment' };
-  section2: { businessDaysAfterFirstDay: number; ifEmploymentShorterThanBusinessDays: number; thenDueBy: 'first_day_of_employment' };
+  section2: {
+    businessDaysAfterFirstDay: number;
+    ifEmploymentShorterThanBusinessDays: number;
+    thenDueBy: 'first_day_of_employment';
+  };
 }
 
 /** Section 1 by the first day; Section 2 within N business days after it (or by the first day for short hires). */
-export function i9Deadlines(rule: I9CompletionRule, i: { firstDay: string; lastDay?: string | null; businessWeekdays: number[]; closedDates?: string[] }) {
+export function i9Deadlines(
+  rule: I9CompletionRule,
+  i: { firstDay: string; lastDay?: string | null; businessWeekdays: number[]; closedDates?: string[] },
+) {
   const closed = new Set(i.closedDates ?? []);
   const isBusinessDay = (d: string) => i.businessWeekdays.includes(dayOfWeek(d)) && !closed.has(d);
   if (i.lastDay) {
     let days = 0;
-    for (let d = i.firstDay; cmp(d, i.lastDay) <= 0 && days < rule.section2.ifEmploymentShorterThanBusinessDays; d = addDays(d, 1)) if (isBusinessDay(d)) days++;
-    if (days < rule.section2.ifEmploymentShorterThanBusinessDays) return { section1DueOn: i.firstDay, section2DueOn: i.firstDay };
+    for (
+      let d = i.firstDay;
+      cmp(d, i.lastDay) <= 0 && days < rule.section2.ifEmploymentShorterThanBusinessDays;
+      d = addDays(d, 1)
+    )
+      if (isBusinessDay(d)) days++;
+    if (days < rule.section2.ifEmploymentShorterThanBusinessDays)
+      return { section1DueOn: i.firstDay, section2DueOn: i.firstDay };
   }
   let d = i.firstDay;
-  for (let n = 0; n < rule.section2.businessDaysAfterFirstDay; ) {
+  for (let n = 0; n < rule.section2.businessDaysAfterFirstDay;) {
     d = addDays(d, 1);
     if (isBusinessDay(d)) n++;
   }
@@ -80,16 +121,30 @@ export function i9Deadlines(rule: I9CompletionRule, i: { firstDay: string; lastD
 }
 
 /** Retention: the later of N years after hire and M years after employment ends (null end = still employed). */
-export function i9RetainUntil(rule: { rule: 'later_of'; afterHireYears: number; afterEmploymentEndsYears: number }, i: { hireDate: string; terminationDate: string | null }) {
+export function i9RetainUntil(
+  rule: { rule: 'later_of'; afterHireYears: number; afterEmploymentEndsYears: number },
+  i: { hireDate: string; terminationDate: string | null },
+) {
   const fromHire = addYears(i.hireDate, rule.afterHireYears);
   if (!i.terminationDate) return { retainUntil: null, atLeastUntil: fromHire };
-  return { retainUntil: maxDate(fromHire, addYears(i.terminationDate, rule.afterEmploymentEndsYears)), atLeastUntil: fromHire };
+  return {
+    retainUntil: maxDate(fromHire, addYears(i.terminationDate, rule.afterEmploymentEndsYears)),
+    atLeastUntil: fromHire,
+  };
 }
 
 /** Reverification is due no later than the date employment authorization expires. */
-export function i9Reverification(rule: { suggestedAdvanceNoticeDays?: number }, workAuthorizationExpiresOn: string | null) {
+export function i9Reverification(
+  rule: { suggestedAdvanceNoticeDays?: number },
+  workAuthorizationExpiresOn: string | null,
+) {
   if (!workAuthorizationExpiresOn) return { dueOn: null, remindFrom: null };
-  return { dueOn: workAuthorizationExpiresOn, remindFrom: rule.suggestedAdvanceNoticeDays ? addDays(workAuthorizationExpiresOn, -rule.suggestedAdvanceNoticeDays) : null };
+  return {
+    dueOn: workAuthorizationExpiresOn,
+    remindFrom: rule.suggestedAdvanceNoticeDays
+      ? addDays(workAuthorizationExpiresOn, -rule.suggestedAdvanceNoticeDays)
+      : null,
+  };
 }
 
 // ---- service length (unfair dismissal qualifying period) ----------------------------------------
@@ -104,10 +159,24 @@ export const serviceCompletedOn = (start: string, period: string) => addDays(add
 export function unfairDismissalQualifyingDate(book: RuleBook, jurisdiction: string, startDate: string) {
   let at = startDate;
   for (let guard = 0; guard < 20; guard++) {
-    const r = book.tryResolve<{ qualifyingPeriod: string }>(jurisdiction, 'employment.unfair_dismissal_qualifying_period', at);
+    const r = book.tryResolve<{ qualifyingPeriod: string }>(
+      jurisdiction,
+      'employment.unfair_dismissal_qualifying_period',
+      at,
+    );
     if (!r) return null;
-    const candidate = maxDate(serviceCompletedOn(startDate, r.value.qualifyingPeriod), maxDate(at, r.effectiveFrom));
-    if (r.effectiveTo === null || cmp(candidate, r.effectiveTo) < 0) return { date: candidate, qualifyingPeriod: r.value.qualifyingPeriod, source: r.source, jurisdiction: r.jurisdiction, effectiveFrom: r.effectiveFrom };
+    const candidate = maxDate(
+      serviceCompletedOn(startDate, r.value.qualifyingPeriod),
+      maxDate(at, r.effectiveFrom),
+    );
+    if (r.effectiveTo === null || cmp(candidate, r.effectiveTo) < 0)
+      return {
+        date: candidate,
+        qualifyingPeriod: r.value.qualifyingPeriod,
+        source: r.source,
+        jurisdiction: r.jurisdiction,
+        effectiveFrom: r.effectiveFrom,
+      };
     at = r.effectiveTo;
   }
   return null;
@@ -122,7 +191,8 @@ export interface IrregularHoursRule {
 
 /** Holiday accrued in a pay period, in hours (exact integer arithmetic on minutes, rounded per the pack). */
 export function irregularHoursAccrual(rule: IrregularHoursRule, i: { minutesWorked: number }) {
-  if (!Number.isInteger(i.minutesWorked) || i.minutesWorked < 0) throw new RangeError('minutesWorked must be a non-negative integer');
+  if (!Number.isInteger(i.minutesWorked) || i.minutesWorked < 0)
+    throw new RangeError('minutesWorked must be a non-negative integer');
   const bp = BigInt(Math.round(rule.accrualPercentOfHoursWorked * 100)); // basis points of a percent: 12.07% → 1207
   const scaled = BigInt(i.minutesWorked) * bp; // accrued minutes × 10,000
   const perHour = 60n * 10_000n;
@@ -135,10 +205,15 @@ export function irregularHoursAccrual(rule: IrregularHoursRule, i: { minutesWork
 }
 
 /** Whether a leave policy meets reg. 15B for an irregular-hours / part-year worker. */
-export function irregularHoursPolicyCheck(rule: IrregularHoursRule, policy: { accrual: { method: string; percent?: number; days?: number } } | null) {
+export function irregularHoursPolicyCheck(
+  rule: IrregularHoursRule,
+  policy: { accrual: { method: string; percent?: number; days?: number } } | null,
+) {
   if (!policy) return { ok: false, issue: 'no_policy' as const };
-  if (policy.accrual.method !== 'per_hour_worked') return { ok: false, issue: 'not_accrued_per_hour_worked' as const };
-  if ((policy.accrual.percent ?? 0) < rule.accrualPercentOfHoursWorked) return { ok: false, issue: 'below_statutory_percent' as const };
+  if (policy.accrual.method !== 'per_hour_worked')
+    return { ok: false, issue: 'not_accrued_per_hour_worked' as const };
+  if ((policy.accrual.percent ?? 0) < rule.accrualPercentOfHoursWorked)
+    return { ok: false, issue: 'below_statutory_percent' as const };
   return { ok: true, issue: null };
 }
 
@@ -169,9 +244,25 @@ export interface GpgRule {
  * Hourly rate of pay (S.I. 2017/172 reg. 6): ordinary pay plus bonus attributed to the relevant pay
  * period, × 7 / days in the period (a month counts as the pack's days per month), ÷ weekly working hours.
  */
-export function gpgHourlyRate(rule: GpgRule, i: { ordinaryPayMinor: number; bonusInPeriodMinor?: number; period: 'weekly' | 'monthly' | 'annual' | { days: number }; weeklyHours: number }): number {
-  const days = i.period === 'weekly' ? 7 : i.period === 'monthly' ? rule.hourlyRate.daysPerMonth : i.period === 'annual' ? rule.hourlyRate.daysPerYear : i.period.days;
-  if (!(i.weeklyHours > 0) || !(days > 0)) throw new RangeError('weeklyHours and period days must be positive');
+export function gpgHourlyRate(
+  rule: GpgRule,
+  i: {
+    ordinaryPayMinor: number;
+    bonusInPeriodMinor?: number;
+    period: 'weekly' | 'monthly' | 'annual' | { days: number };
+    weeklyHours: number;
+  },
+): number {
+  const days =
+    i.period === 'weekly'
+      ? 7
+      : i.period === 'monthly'
+        ? rule.hourlyRate.daysPerMonth
+        : i.period === 'annual'
+          ? rule.hourlyRate.daysPerYear
+          : i.period.days;
+  if (!(i.weeklyHours > 0) || !(days > 0))
+    throw new RangeError('weeklyHours and period days must be positive');
   const pay = BigInt(i.ordinaryPayMinor + (i.bonusInPeriodMinor ?? 0));
   // rate × RATE_SCALE = pay × 7 × RATE_SCALE / (days × hours); days and hours carried to 2 decimal places
   const num = pay * 7n * BigInt(RATE_SCALE) * 100n * 100n;
@@ -191,7 +282,11 @@ export interface GpgEmployee {
 const BAND_ORDER = ['lower', 'lower_middle', 'upper_middle', 'upper'];
 
 /** Band sizes: equal so far as possible; the remainder goes to the bands the pack lists for it. */
-export function quartileSizes(n: number, remainderAllocation: Record<string, string[]> | null, bands = BAND_ORDER): number[] {
+export function quartileSizes(
+  n: number,
+  remainderAllocation: Record<string, string[]> | null,
+  bands = BAND_ORDER,
+): number[] {
   const q = Math.floor(n / bands.length);
   const r = n - q * bands.length;
   const extra = r === 0 ? [] : (remainderAllocation?.[String(r)] ?? bands.slice(0, r));
@@ -219,7 +314,11 @@ function apportion(total: number, weights: number[]): number[] {
  * on the same rate span bands, men and women on that rate are split across those bands in the same
  * proportion (S.I. 2017/172 reg. 13(2)).
  */
-export function quartileBands(rows: Array<{ sex: Sex; rate: number }>, remainderAllocation: Record<string, string[]> | null, bands = BAND_ORDER) {
+export function quartileBands(
+  rows: Array<{ sex: Sex; rate: number }>,
+  remainderAllocation: Record<string, string[]> | null,
+  bands = BAND_ORDER,
+) {
   const sorted = [...rows].sort((a, b) => a.rate - b.rate);
   const sizes = quartileSizes(sorted.length, remainderAllocation, bands);
   const bandOf: number[] = [];
@@ -227,7 +326,7 @@ export function quartileBands(rows: Array<{ sex: Sex; rate: number }>, remainder
     for (let k = 0; k < s; k++) bandOf.push(b);
   });
   const counts = bands.map(() => ({ male: 0, female: 0 }));
-  for (let i = 0; i < sorted.length; ) {
+  for (let i = 0; i < sorted.length;) {
     let j = i;
     while (j < sorted.length && sorted[j]!.rate === sorted[i]!.rate) j++;
     const group = sorted.slice(i, j);
@@ -244,16 +343,26 @@ export function quartileBands(rows: Array<{ sex: Sex; rate: number }>, remainder
   return bands.map((band, b) => {
     const total = sizes[b]!;
     const c = counts[b]!;
-    return { band, total, male: c.male, female: c.female, malePercent: total ? (c.male / total) * 100 : null, femalePercent: total ? (c.female / total) * 100 : null };
+    return {
+      band,
+      total,
+      male: c.male,
+      female: c.female,
+      malePercent: total ? (c.male / total) * 100 : null,
+      femalePercent: total ? (c.female / total) * 100 : null,
+    };
   });
 }
 
 /** The six UK gender pay gap figures (S.I. 2017/172 reg. 2(1)(a)–(f)). Percentages unrounded plus rounded to 1 dp. */
 export function genderPayGap(rule: GpgRule, employees: GpgEmployee[]) {
-  const included = employees.filter((e): e is GpgEmployee & { sex: Sex } => e.sex === 'male' || e.sex === 'female');
+  const included = employees.filter(
+    (e): e is GpgEmployee & { sex: Sex } => e.sex === 'male' || e.sex === 'female',
+  );
   const fullPay = included.filter((e) => e.fullPay);
   const rates = (s: Sex) => fullPay.filter((e) => e.sex === s).map((e) => e.hourlyRate);
-  const bonuses = (s: Sex) => included.filter((e) => e.sex === s && e.bonus12MonthsMinor > 0).map((e) => e.bonus12MonthsMinor);
+  const bonuses = (s: Sex) =>
+    included.filter((e) => e.sex === s && e.bonus12MonthsMinor > 0).map((e) => e.bonus12MonthsMinor);
   const relevant = (s: Sex) => included.filter((e) => e.sex === s).length;
   const meanHourly = gapPercent(mean(rates('male')), mean(rates('female')));
   const medianHourly = gapPercent(median(rates('male')), median(rates('female')));
@@ -266,7 +375,13 @@ export function genderPayGap(rule: GpgRule, employees: GpgEmployee[]) {
     rule.quartiles.bands,
   );
   return {
-    population: { relevantEmployees: included.length, fullPayRelevantEmployees: fullPay.length, excludedNoSexRecorded: employees.length - included.length, male: relevant('male'), female: relevant('female') },
+    population: {
+      relevantEmployees: included.length,
+      fullPayRelevantEmployees: fullPay.length,
+      excludedNoSexRecorded: employees.length - included.length,
+      male: relevant('male'),
+      female: relevant('female'),
+    },
     meanHourlyPayGap: meanHourly,
     medianHourlyPayGap: medianHourly,
     meanBonusGap: meanBonus,
@@ -279,22 +394,42 @@ export function genderPayGap(rule: GpgRule, employees: GpgEmployee[]) {
       meanBonusGap: round(meanBonus),
       medianBonusGap: round(medianBonus),
       bonusProportions: { male: round(prop('male')), female: round(prop('female')) },
-      quartiles: quartiles.map((q) => ({ band: q.band, malePercent: round(q.malePercent), femalePercent: round(q.femalePercent) })),
+      quartiles: quartiles.map((q) => ({
+        band: q.band,
+        malePercent: round(q.malePercent),
+        femalePercent: round(q.femalePercent),
+      })),
     },
   };
 }
 
 /** Snapshot date and reporting deadline for a year and sector from the pack (e.g. 5 April / 4 April next year). */
-export function gpgDates(rule: { snapshotDates: Record<string, { month: number; day: number }>; reportingDeadlines: Record<string, { month: number; day: number; yearOffset: number }> }, year: number, sector: string) {
+export function gpgDates(
+  rule: {
+    snapshotDates: Record<string, { month: number; day: number }>;
+    reportingDeadlines: Record<string, { month: number; day: number; yearOffset: number }>;
+  },
+  year: number,
+  sector: string,
+) {
   const s = rule.snapshotDates[sector];
   const d = rule.reportingDeadlines[sector];
   if (!s || !d) throw new RangeError(`unknown sector ${sector}`);
   const pad = (n: number) => String(n).padStart(2, '0');
-  return { snapshotDate: `${year}-${pad(s.month)}-${pad(s.day)}`, deadline: `${year + d.yearOffset}-${pad(d.month)}-${pad(d.day)}` };
+  return {
+    snapshotDate: `${year}-${pad(s.month)}-${pad(s.day)}`,
+    deadline: `${year + d.yearOffset}-${pad(d.month)}-${pad(d.day)}`,
+  };
 }
 
 export interface PayTransparencyRule {
-  gapReporting: Array<{ minWorkers: number; maxWorkers: number | null; firstReportBy: string; frequencyYears: number; reportsOn: string }>;
+  gapReporting: Array<{
+    minWorkers: number;
+    maxWorkers: number | null;
+    firstReportBy: string;
+    frequencyYears: number;
+    reportsOn: string;
+  }>;
   jointPayAssessment: { minDifferencePercent: number; notRemediedWithinMonthsOfReporting: number };
 }
 export interface PtWorker {
@@ -315,34 +450,92 @@ export function payTransparency(rule: PayTransparencyRule, workers: PtWorker[], 
   const total = (w: PtWorker) => w.annualBasicMinor + w.annualVariableMinor;
   const hourly = inc.every((w) => (w.annualHours ?? 0) > 0);
   const level = (w: PtWorker) => (hourly ? (total(w) * RATE_SCALE) / (w.annualHours as number) : total(w));
-  const by = (s: Sex, f: (w: PtWorker) => number, pred: (w: PtWorker) => boolean = () => true) => inc.filter((w) => w.sex === s && pred(w)).map(f);
+  const by = (s: Sex, f: (w: PtWorker) => number, pred: (w: PtWorker) => boolean = () => true) =>
+    inc.filter((w) => w.sex === s && pred(w)).map(f);
   const variable = (w: PtWorker) => w.annualVariableMinor > 0;
   const proportion = (s: Sex) => {
     const n = inc.filter((w) => w.sex === s).length;
     return n ? (by(s, () => 1, variable).length / n) * 100 : null;
   };
-  const categories = [...new Set(inc.map((w) => w.category ?? null))].filter((c): c is string => c !== null).sort();
+  const categories = [...new Set(inc.map((w) => w.category ?? null))]
+    .filter((c): c is string => c !== null)
+    .sort();
   const byCategory = categories.map((c) => {
     const inCat = (w: PtWorker) => w.category === c;
-    const basic = gapPercent(mean(by('male', (w) => w.annualBasicMinor, inCat)), mean(by('female', (w) => w.annualBasicMinor, inCat)));
-    const varGap = gapPercent(mean(by('male', (w) => w.annualVariableMinor, (w) => inCat(w) && variable(w))), mean(by('female', (w) => w.annualVariableMinor, (w) => inCat(w) && variable(w))));
+    const basic = gapPercent(
+      mean(by('male', (w) => w.annualBasicMinor, inCat)),
+      mean(by('female', (w) => w.annualBasicMinor, inCat)),
+    );
+    const varGap = gapPercent(
+      mean(
+        by(
+          'male',
+          (w) => w.annualVariableMinor,
+          (w) => inCat(w) && variable(w),
+        ),
+      ),
+      mean(
+        by(
+          'female',
+          (w) => w.annualVariableMinor,
+          (w) => inCat(w) && variable(w),
+        ),
+      ),
+    );
     const totalGap = gapPercent(mean(by('male', total, inCat)), mean(by('female', total, inCat)));
     const workersInCat = inc.filter(inCat).length;
-    return { category: c, workers: workersInCat, basicPayGap: basic, variablePayGap: varGap, totalPayGap: totalGap, jointPayAssessmentIndicated: totalGap !== null && Math.abs(totalGap) >= rule.jointPayAssessment.minDifferencePercent };
+    return {
+      category: c,
+      workers: workersInCat,
+      basicPayGap: basic,
+      variablePayGap: varGap,
+      totalPayGap: totalGap,
+      jointPayAssessmentIndicated:
+        totalGap !== null && Math.abs(totalGap) >= rule.jointPayAssessment.minDifferencePercent,
+    };
   });
   const count = workers.length;
-  const band = rule.gapReporting.find((b) => count >= b.minWorkers && (b.maxWorkers === null || count <= b.maxWorkers)) ?? null;
+  const band =
+    rule.gapReporting.find(
+      (b) => count >= b.minWorkers && (b.maxWorkers === null || count <= b.maxWorkers),
+    ) ?? null;
   return {
-    population: { workers: count, included: inc.length, excludedNoSexRecorded: count - inc.length, payLevelBasis: hourly ? 'hourly' : 'annual' },
-    obligation: band ? { reportingRequired: true, firstReportBy: band.firstReportBy, frequencyYears: band.frequencyYears, reportsOn: band.reportsOn, reportingYear: asOfYear - 1 } : { reportingRequired: false },
+    population: {
+      workers: count,
+      included: inc.length,
+      excludedNoSexRecorded: count - inc.length,
+      payLevelBasis: hourly ? 'hourly' : 'annual',
+    },
+    obligation: band
+      ? {
+          reportingRequired: true,
+          firstReportBy: band.firstReportBy,
+          frequencyYears: band.frequencyYears,
+          reportsOn: band.reportsOn,
+          reportingYear: asOfYear - 1,
+        }
+      : { reportingRequired: false },
     genderPayGap: gapPercent(mean(by('male', level)), mean(by('female', level))),
-    genderPayGapVariable: gapPercent(mean(by('male', (w) => w.annualVariableMinor, variable)), mean(by('female', (w) => w.annualVariableMinor, variable))),
+    genderPayGapVariable: gapPercent(
+      mean(by('male', (w) => w.annualVariableMinor, variable)),
+      mean(by('female', (w) => w.annualVariableMinor, variable)),
+    ),
     medianGenderPayGap: gapPercent(median(by('male', level)), median(by('female', level))),
-    medianGenderPayGapVariable: gapPercent(median(by('male', (w) => w.annualVariableMinor, variable)), median(by('female', (w) => w.annualVariableMinor, variable))),
+    medianGenderPayGapVariable: gapPercent(
+      median(by('male', (w) => w.annualVariableMinor, variable)),
+      median(by('female', (w) => w.annualVariableMinor, variable)),
+    ),
     proportionReceivingVariable: { male: proportion('male'), female: proportion('female') },
-    quartiles: quartileBands(inc.map((w) => ({ sex: w.sex, rate: level(w) })), null),
+    quartiles: quartileBands(
+      inc.map((w) => ({ sex: w.sex, rate: level(w) })),
+      null,
+    ),
     byCategory,
-    jointPayAssessment: { thresholdPercent: rule.jointPayAssessment.minDifferencePercent, categoriesIndicated: byCategory.filter((c) => c.jointPayAssessmentIndicated).map((c) => c.category), remedyWithinMonths: rule.jointPayAssessment.notRemediedWithinMonthsOfReporting },
+    jointPayAssessment: {
+      thresholdPercent: rule.jointPayAssessment.minDifferencePercent,
+      categoriesIndicated: byCategory.filter((c) => c.jointPayAssessmentIndicated).map((c) => c.category),
+      remedyWithinMonths: rule.jointPayAssessment.notRemediedWithinMonthsOfReporting,
+    },
   };
 }
 
@@ -360,25 +553,47 @@ type ThresholdValue = {
 /** Annualised salary-level threshold (minor units) for a jurisdiction: the higher of federal and state, with sources. */
 export function exemptThresholds(book: RuleBook, jurisdiction: string, date: string, employerSize: number) {
   const fed = book.tryResolve<ThresholdValue>('US', 'overtime.exempt_salary_threshold', date);
-  const out: { federalAnnualMinor: number | null; stateAnnualMinor: number | null; applicableAnnualMinor: number | null; hceAnnualMinor: number | null; sources: Array<{ jurisdiction: string; url: string; title: string }> } = { federalAnnualMinor: null, stateAnnualMinor: null, applicableAnnualMinor: null, hceAnnualMinor: null, sources: [] };
+  const out: {
+    federalAnnualMinor: number | null;
+    stateAnnualMinor: number | null;
+    applicableAnnualMinor: number | null;
+    hceAnnualMinor: number | null;
+    sources: Array<{ jurisdiction: string; url: string; title: string }>;
+  } = {
+    federalAnnualMinor: null,
+    stateAnnualMinor: null,
+    applicableAnnualMinor: null,
+    hceAnnualMinor: null,
+    sources: [],
+  };
   if (fed?.value.standardWeekly) {
     out.federalAnnualMinor = fed.value.standardWeekly.amountMinor * 52;
     out.hceAnnualMinor = fed.value.hceAnnualTotalCompensation?.amountMinor ?? null;
     out.sources.push({ jurisdiction: 'US', ...fed.source });
   }
-  const st = jurisdiction !== 'US' ? book.tryResolve<ThresholdValue>(jurisdiction, 'overtime.exempt_salary_threshold', date) : undefined;
+  const st =
+    jurisdiction !== 'US'
+      ? book.tryResolve<ThresholdValue>(jurisdiction, 'overtime.exempt_salary_threshold', date)
+      : undefined;
   if (st && st.jurisdiction !== 'US') {
     const v = st.value;
     let annual: number | null = null;
     if (v.annual) annual = v.annual.amountMinor;
     else if (v.weekly) annual = v.weekly.amountMinor * 52;
     else if (v.bands) {
-      const b = v.bands.find((x) => employerSize >= x.minEmployees && (x.maxEmployees === null || employerSize <= x.maxEmployees));
+      const b = v.bands.find(
+        (x) => employerSize >= x.minEmployees && (x.maxEmployees === null || employerSize <= x.maxEmployees),
+      );
       annual = b ? b.weekly.amountMinor * 52 : null;
     } else if (v.multipleOfMinimumWage && v.fullTimeHoursPerWeek) {
-      const mw = book.tryResolve<{ rates: Array<{ region: string; hourlyMinor: number }> }>(st.jurisdiction, 'minimum_wage.rates', date);
+      const mw = book.tryResolve<{ rates: Array<{ region: string; hourlyMinor: number }> }>(
+        st.jurisdiction,
+        'minimum_wage.rates',
+        date,
+      );
       const hourly = mw?.value.rates.find((r) => r.region === '*')?.hourlyMinor;
-      if (hourly !== undefined) annual = Math.round(v.multipleOfMinimumWage * hourly * v.fullTimeHoursPerWeek * 52);
+      if (hourly !== undefined)
+        annual = Math.round(v.multipleOfMinimumWage * hourly * v.fullTimeHoursPerWeek * 52);
     }
     out.stateAnnualMinor = annual;
     out.sources.push({ jurisdiction: st.jurisdiction, ...st.source });
@@ -389,11 +604,24 @@ export function exemptThresholds(book: RuleBook, jurisdiction: string, date: str
 }
 
 export interface DutiesRule {
-  categories: Array<{ id: string; salaryTest: 'standard' | 'standard_or_hourly' | 'none' | 'hce'; duties: string[]; hourlyAlternative?: { amountMinor: number } }>;
+  categories: Array<{
+    id: string;
+    salaryTest: 'standard' | 'standard_or_hourly' | 'none' | 'hce';
+    duties: string[];
+    hourlyAlternative?: { amountMinor: number };
+  }>;
 }
 export type PayFrequency = 'annual' | 'monthly' | 'weekly' | 'hourly' | 'daily';
 export const annualise = (amountMinor: number, frequency: PayFrequency, weeklyHours: number) =>
-  frequency === 'annual' ? amountMinor : frequency === 'monthly' ? amountMinor * 12 : frequency === 'weekly' ? amountMinor * 52 : frequency === 'daily' ? amountMinor * 5 * 52 : Math.round(amountMinor * weeklyHours * 52);
+  frequency === 'annual'
+    ? amountMinor
+    : frequency === 'monthly'
+      ? amountMinor * 12
+      : frequency === 'weekly'
+        ? amountMinor * 52
+        : frequency === 'daily'
+          ? amountMinor * 5 * 52
+          : Math.round(amountMinor * weeklyHours * 52);
 
 /**
  * Exempt / non-exempt check feeding overtime eligibility: an employee is overtime-eligible unless
@@ -403,10 +631,17 @@ export const annualise = (amountMinor: number, frequency: PayFrequency, weeklyHo
 export function classifyExemption(
   duties: DutiesRule,
   thresholds: { applicableAnnualMinor: number | null; hceAnnualMinor: number | null },
-  i: { flsaStatus: 'exempt' | 'non_exempt' | null; pay: { amountMinor: number; frequency: PayFrequency } | null; weeklyHours: number; attestation: { exemption: string; duties: string[] } | null },
+  i: {
+    flsaStatus: 'exempt' | 'non_exempt' | null;
+    pay: { amountMinor: number; frequency: PayFrequency } | null;
+    weeklyHours: number;
+    attestation: { exemption: string; duties: string[] } | null;
+  },
 ) {
-  if (i.flsaStatus === 'non_exempt') return { status: 'non_exempt' as const, overtimeEligible: true, issues: [] as string[] };
-  if (i.flsaStatus === null) return { status: 'unclassified' as const, overtimeEligible: true, issues: ['no_classification'] };
+  if (i.flsaStatus === 'non_exempt')
+    return { status: 'non_exempt' as const, overtimeEligible: true, issues: [] as string[] };
+  if (i.flsaStatus === null)
+    return { status: 'unclassified' as const, overtimeEligible: true, issues: ['no_classification'] };
   const issues: string[] = [];
   const cat = i.attestation ? duties.categories.find((c) => c.id === i.attestation!.exemption) : undefined;
   if (!i.attestation) issues.push('no_duties_attestation');
@@ -416,16 +651,22 @@ export function classifyExemption(
   if (test !== 'none') {
     if (!i.pay) issues.push('no_pay_record');
     else {
-      const salaried = i.pay.frequency === 'annual' || i.pay.frequency === 'monthly' || i.pay.frequency === 'weekly';
+      const salaried =
+        i.pay.frequency === 'annual' || i.pay.frequency === 'monthly' || i.pay.frequency === 'weekly';
       const annual = annualise(i.pay.amountMinor, i.pay.frequency, i.weeklyHours);
       if (test === 'standard_or_hourly' && i.pay.frequency === 'hourly') {
-        if (cat?.hourlyAlternative && i.pay.amountMinor < cat.hourlyAlternative.amountMinor) issues.push('below_computer_hourly_rate');
+        if (cat?.hourlyAlternative && i.pay.amountMinor < cat.hourlyAlternative.amountMinor)
+          issues.push('below_computer_hourly_rate');
       } else if (!salaried) issues.push('not_salary_basis');
-      else if (thresholds.applicableAnnualMinor !== null && annual < thresholds.applicableAnnualMinor) issues.push('below_salary_threshold');
-      if (test === 'hce' && thresholds.hceAnnualMinor !== null && annual < thresholds.hceAnnualMinor) issues.push('below_hce_compensation');
+      else if (thresholds.applicableAnnualMinor !== null && annual < thresholds.applicableAnnualMinor)
+        issues.push('below_salary_threshold');
+      if (test === 'hce' && thresholds.hceAnnualMinor !== null && annual < thresholds.hceAnnualMinor)
+        issues.push('below_hce_compensation');
     }
   }
-  return issues.length ? { status: 'exempt_at_risk' as const, overtimeEligible: true, issues } : { status: 'exempt' as const, overtimeEligible: false, issues };
+  return issues.length
+    ? { status: 'exempt_at_risk' as const, overtimeEligible: true, issues }
+    : { status: 'exempt' as const, overtimeEligible: false, issues };
 }
 
 // ---- EEO-1 aggregation with small-cell suppression -----------------------------------------------
@@ -442,7 +683,11 @@ export interface Eeo1Rule {
  * suppression threshold k are withheld (null), plus one complementary cell per job category when only
  * one cell would be withheld, so a withheld count cannot be recovered from the row total.
  */
-export function eeo1Aggregate(rule: Eeo1Rule, rows: Array<{ jobCategory: string | null; raceEthnicity: string | null; sex: string | null }>, opts: { k: number; exact?: boolean }) {
+export function eeo1Aggregate(
+  rule: Eeo1Rule,
+  rows: Array<{ jobCategory: string | null; raceEthnicity: string | null; sex: string | null }>,
+  opts: { k: number; exact?: boolean },
+) {
   const key = (j: string, r: string, s: string) => `${j}|${r}|${s}`;
   const counts = new Map<string, number>();
   let notReported = 0;
@@ -452,7 +697,12 @@ export function eeo1Aggregate(rule: Eeo1Rule, rows: Array<{ jobCategory: string 
       unmappedJobs++;
       continue;
     }
-    if (!row.raceEthnicity || !row.sex || !rule.raceEthnicityCategories.includes(row.raceEthnicity) || !rule.sexCategories.includes(row.sex)) {
+    if (
+      !row.raceEthnicity ||
+      !row.sex ||
+      !rule.raceEthnicityCategories.includes(row.raceEthnicity) ||
+      !rule.sexCategories.includes(row.sex)
+    ) {
       notReported++;
       continue;
     }
@@ -460,7 +710,14 @@ export function eeo1Aggregate(rule: Eeo1Rule, rows: Array<{ jobCategory: string 
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }
   const table = rule.jobCategories.map((j) => {
-    const cells = rule.raceEthnicityCategories.flatMap((r) => rule.sexCategories.map((s) => ({ raceEthnicity: r, sex: s, count: counts.get(key(j, r, s)) ?? 0, suppressed: false })));
+    const cells = rule.raceEthnicityCategories.flatMap((r) =>
+      rule.sexCategories.map((s) => ({
+        raceEthnicity: r,
+        sex: s,
+        count: counts.get(key(j, r, s)) ?? 0,
+        suppressed: false,
+      })),
+    );
     const total = cells.reduce((s, c) => s + c.count, 0);
     if (!opts.exact) {
       for (const c of cells) if (c.count > 0 && c.count < opts.k) c.suppressed = true;
@@ -470,16 +727,36 @@ export function eeo1Aggregate(rule: Eeo1Rule, rows: Array<{ jobCategory: string 
       }
     }
     const rowSuppressed = !opts.exact && total > 0 && total < opts.k;
-    return { jobCategory: j, total: rowSuppressed ? null : total, cells: cells.map((c) => ({ raceEthnicity: c.raceEthnicity, sex: c.sex, count: c.suppressed ? null : c.count, suppressed: c.suppressed })) };
+    return {
+      jobCategory: j,
+      total: rowSuppressed ? null : total,
+      cells: cells.map((c) => ({
+        raceEthnicity: c.raceEthnicity,
+        sex: c.sex,
+        count: c.suppressed ? null : c.count,
+        suppressed: c.suppressed,
+      })),
+    };
   });
   const totalEmployees = rows.length;
-  return { required: totalEmployees >= rule.privateEmployerMinEmployees, threshold: rule.privateEmployerMinEmployees, totalEmployees, notReported, unmappedJobs, suppressionThreshold: opts.exact ? null : opts.k, table };
+  return {
+    required: totalEmployees >= rule.privateEmployerMinEmployees,
+    threshold: rule.privateEmployerMinEmployees,
+    totalEmployees,
+    notReported,
+    unmappedJobs,
+    suppressionThreshold: opts.exact ? null : opts.k,
+    table,
+  };
 }
 
 /** The workforce snapshot window (one pay period inside it) for a reporting year. */
 export function eeo1SnapshotWindow(rule: Eeo1Rule, year: number) {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return { from: `${year}-${pad(rule.workforceSnapshot.from.month)}-${pad(rule.workforceSnapshot.from.day)}`, to: `${year}-${pad(rule.workforceSnapshot.to.month)}-${pad(rule.workforceSnapshot.to.day)}` };
+  return {
+    from: `${year}-${pad(rule.workforceSnapshot.from.month)}-${pad(rule.workforceSnapshot.from.day)}`,
+    to: `${year}-${pad(rule.workforceSnapshot.to.month)}-${pad(rule.workforceSnapshot.to.day)}`,
+  };
 }
 
 // ---- compliance matrix ----------------------------------------------------------------------------
@@ -493,18 +770,41 @@ export interface RequirementScope {
 }
 
 /** A requirement applies when every dimension it names matches the employee (any listed value). */
-export function requirementApplies(scope: RequirementScope, e: { jobTitle: string | null; locationId: string | null; entityId: string | null; departmentId: string | null; country: string | null }) {
-  const match = (list: string[] | undefined, v: string | null) => !list?.length || (v !== null && list.includes(v));
-  return match(scope.jobTitles, e.jobTitle) && match(scope.locationIds, e.locationId) && match(scope.entityIds, e.entityId) && match(scope.departmentIds, e.departmentId) && match(scope.countries, e.country);
+export function requirementApplies(
+  scope: RequirementScope,
+  e: {
+    jobTitle: string | null;
+    locationId: string | null;
+    entityId: string | null;
+    departmentId: string | null;
+    country: string | null;
+  },
+) {
+  const match = (list: string[] | undefined, v: string | null) =>
+    !list?.length || (v !== null && list.includes(v));
+  return (
+    match(scope.jobTitles, e.jobTitle) &&
+    match(scope.locationIds, e.locationId) &&
+    match(scope.entityIds, e.entityId) &&
+    match(scope.departmentIds, e.departmentId) &&
+    match(scope.countries, e.country)
+  );
 }
 
 /** Expiry is the last valid day: the recorded expiry date, or the day before issue + validity months. */
-export function recordExpiry(req: { validityMonths: number | null }, rec: { issuedOn: string; expiresOn: string | null }) {
+export function recordExpiry(
+  req: { validityMonths: number | null },
+  rec: { issuedOn: string; expiresOn: string | null },
+) {
   if (rec.expiresOn) return rec.expiresOn;
   return req.validityMonths ? addDays(addMonths(rec.issuedOn, req.validityMonths), -1) : null;
 }
 
-export function matrixStatus(req: { validityMonths: number | null; reminderDays: number[] }, rec: { issuedOn: string; expiresOn: string | null } | null, asOf: string): { status: MatrixStatus; expiresOn: string | null; daysLeft: number | null } {
+export function matrixStatus(
+  req: { validityMonths: number | null; reminderDays: number[] },
+  rec: { issuedOn: string; expiresOn: string | null } | null,
+  asOf: string,
+): { status: MatrixStatus; expiresOn: string | null; daysLeft: number | null } {
   if (!rec) return { status: 'missing', expiresOn: null, daysLeft: null };
   const expiresOn = recordExpiry(req, rec);
   if (!expiresOn) return { status: 'compliant', expiresOn: null, daysLeft: null };

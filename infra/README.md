@@ -2,15 +2,15 @@
 
 Stacks per environment (`dev`, `staging`, `prod`; settings in `config/<env>.json`):
 
-| Stack | Region | Contents |
-| --- | --- | --- |
-| `ThapsusHr-<env>-global` | eu-west-2 | Tenant directory (DynamoDB, no personal data), global sign-in API + marketing web on Fargate behind ALB + WAF, Route 53 zone (only when `domain` is set), Stripe/billing placeholders |
-| `ThapsusHr-<env>-cell-uk` | eu-west-2 | Regional cell (below) |
-| `ThapsusHr-<env>-cell-eu` | eu-central-1 | Regional cell |
-| `ThapsusHr-<env>-cell-us` | us-east-2 | Regional cell |
-| `ThapsusHr-<env>-backup-copy-eu` | eu-west-1 | Backup copy vault for the EU cell |
-| `ThapsusHr-<env>-backup-copy-us` | us-west-1 | Backup copy vault for the US cell |
-| `ThapsusHr-<env>-ci` | eu-west-2 (IAM is global) | GitHub OIDC provider + one deploy role per region (`thapsus-hr-<env>-deploy-<region>`), assumable only by this repository's matching GitHub environment |
+| Stack                            | Region                    | Contents                                                                                                                                                                              |
+| -------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ThapsusHr-<env>-global`         | eu-west-2                 | Tenant directory (DynamoDB, no personal data), global sign-in API + marketing web on Fargate behind ALB + WAF, Route 53 zone (only when `domain` is set), Stripe/billing placeholders |
+| `ThapsusHr-<env>-cell-uk`        | eu-west-2                 | Regional cell (below)                                                                                                                                                                 |
+| `ThapsusHr-<env>-cell-eu`        | eu-central-1              | Regional cell                                                                                                                                                                         |
+| `ThapsusHr-<env>-cell-us`        | us-east-2                 | Regional cell                                                                                                                                                                         |
+| `ThapsusHr-<env>-backup-copy-eu` | eu-west-1                 | Backup copy vault for the EU cell                                                                                                                                                     |
+| `ThapsusHr-<env>-backup-copy-us` | us-west-1                 | Backup copy vault for the US cell                                                                                                                                                     |
+| `ThapsusHr-<env>-ci`             | eu-west-2 (IAM is global) | GitHub OIDC provider + one deploy role per region (`thapsus-hr-<env>-deploy-<region>`), assumable only by this repository's matching GitHub environment                               |
 
 The UK cell has no backup copy (London only). No stack ever targets us-east-1 or us-west-2, and
 there is no CloudFront (ADR-0001). The region map comes from `packages/core/src/regions.ts`.
@@ -62,6 +62,7 @@ Targets in dependency order: `ci` → `backupcopy` (for the current AWS region: 
 Pass CloudFormation parameters with `--param Key=Value`, or with `DEPLOY_PARAMS=Key=Value,...` in CI. Add `--self-signed-tls` only for staging without a domain.
 
 **One-time setup** (HUMAN_TODO 1.5):
+
 1. Run `cdk bootstrap` in eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1 only.
 2. Deploy `ThapsusHr-<env>-ci` once from a workstation.
 3. Set the GitHub variables `AWS_ACCOUNT_<env>` and create the `staging` and `production` environments.
@@ -70,11 +71,11 @@ After that, `.github/workflows/deploy.yml` deploys staging from `main`, using OI
 
 ## Parameters (only while `domain` / certificates are not configured)
 
-| Parameter | Stack | Meaning |
-| --- | --- | --- |
-| `CertificateArn` | global, cells | ACM certificate for the HTTPS listener in that region (staging: imported self-signed). Omitted when `certificateArn` is set in config. |
-| `GlobalBaseUrl` | cells | Public URL of the global ALB (`https://<global AlbDnsName>`). |
-| `ApiUrlUK/EU/US`, `AppUrlUK/EU/US` | global | Public URLs of each cell ALB. |
+| Parameter                          | Stack         | Meaning                                                                                                                                |
+| ---------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `CertificateArn`                   | global, cells | ACM certificate for the HTTPS listener in that region (staging: imported self-signed). Omitted when `certificateArn` is set in config. |
+| `GlobalBaseUrl`                    | cells         | Public URL of the global ALB (`https://<global AlbDnsName>`).                                                                          |
+| `ApiUrlUK/EU/US`, `AppUrlUK/EU/US` | global        | Public URLs of each cell ALB.                                                                                                          |
 
 Once `domain` is set, the global stack creates the hosted zone; put its id in `hostedZoneId` and
 the cells add `app.<cell>.<domain>` / `api.<cell>.<domain>` records.

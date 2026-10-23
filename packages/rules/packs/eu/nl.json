@@ -128,9 +128,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -149,9 +147,7 @@
         "offset": -2
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -170,9 +166,7 @@
         "offset": 0
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -191,9 +185,7 @@
         "offset": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -213,9 +205,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": "2025-01-01",
       "source": {
@@ -235,9 +225,7 @@
         "date": "2025-04-26"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2025-01-01",
       "effectiveTo": "2026-01-01",
       "source": {
@@ -258,9 +246,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": "2031-01-01",
       "source": {
@@ -280,9 +266,7 @@
         "date": "2031-04-26"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2031-01-01",
       "effectiveTo": "2032-01-01",
       "source": {
@@ -303,9 +287,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2032-01-01",
       "effectiveTo": "2036-01-01",
       "source": {
@@ -325,9 +307,7 @@
         "date": "2036-04-26"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2036-01-01",
       "effectiveTo": "2037-01-01",
       "source": {
@@ -348,9 +328,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2037-01-01",
       "effectiveTo": "2042-01-01",
       "source": {
@@ -370,9 +348,7 @@
         "date": "2042-04-26"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2042-01-01",
       "effectiveTo": "2043-01-01",
       "source": {
@@ -393,9 +369,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2043-01-01",
       "effectiveTo": "2053-01-01",
       "source": {
@@ -415,9 +389,7 @@
         "date": "2053-04-26"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2053-01-01",
       "effectiveTo": "2054-01-01",
       "source": {
@@ -438,9 +410,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2054-01-01",
       "effectiveTo": "2059-01-01",
       "source": {
@@ -460,9 +430,7 @@
         "date": "2059-04-26"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2059-01-01",
       "effectiveTo": "2060-01-01",
       "source": {
@@ -483,9 +451,7 @@
         "day": 27
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2060-01-01",
       "effectiveTo": "2061-01-01",
       "source": {
@@ -506,9 +472,7 @@
         "day": 5
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -527,9 +491,7 @@
         "offset": 39
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -548,9 +510,7 @@
         "offset": 49
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -569,9 +529,7 @@
         "offset": 50
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -591,9 +549,7 @@
         "day": 25
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {
@@ -613,9 +569,7 @@
         "day": 26
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2020-01-01",
       "effectiveTo": null,
       "source": {

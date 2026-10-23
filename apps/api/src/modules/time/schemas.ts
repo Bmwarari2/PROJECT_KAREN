@@ -74,7 +74,8 @@ export const shiftOut = (s: ShiftDbRow) => ({
   publishedAt: s.published_at,
 });
 
-export const SHIFT_COLUMNS = 's.id, s.employee_id, s.shift_date, s.start_local, s.end_local, s.zone, s.starts_at, s.ends_at, s.break_minutes, s.status, s.location_id, s.department_id, s.role, s.notes, s.published_at';
+export const SHIFT_COLUMNS =
+  's.id, s.employee_id, s.shift_date, s.start_local, s.end_local, s.zone, s.starts_at, s.ends_at, s.break_minutes, s.status, s.location_id, s.department_id, s.role, s.notes, s.published_at';
 
 export const Slot = Type.Object({
   weekday: Type.Integer({ minimum: 1, maximum: 7 }),
@@ -86,7 +87,13 @@ export const Slot = Type.Object({
   employeeId: Type.Optional(Nullable(Uuid)),
 });
 
-export const Template = Type.Object({ id: Uuid, name: Type.String(), locationId: Nullable(Uuid), departmentId: Nullable(Uuid), slots: Type.Array(Slot) });
+export const Template = Type.Object({
+  id: Uuid,
+  name: Type.String(),
+  locationId: Nullable(Uuid),
+  departmentId: Nullable(Uuid),
+  slots: Type.Array(Slot),
+});
 
 export const Swap = Type.Object({
   id: Uuid,
@@ -107,22 +114,46 @@ export const Swap = Type.Object({
 
 export const ClockEventIn = Type.Object({
   clientEventId: Type.String({ minLength: 8, maxLength: 80, pattern: '^[A-Za-z0-9:_-]+$' }),
-  kind: Type.Union([Type.Literal('in'), Type.Literal('out'), Type.Literal('break_start'), Type.Literal('break_end')]),
+  kind: Type.Union([
+    Type.Literal('in'),
+    Type.Literal('out'),
+    Type.Literal('break_start'),
+    Type.Literal('break_end'),
+  ]),
   occurredAt: Type.String({ format: 'date-time' }),
   zone: Type.Optional(Zone),
-  location: Type.Optional(Type.Object({ lat: Type.Number({ minimum: -90, maximum: 90 }), lng: Type.Number({ minimum: -180, maximum: 180 }), accuracyMetres: Type.Optional(Type.Number({ minimum: 0 })) })),
+  location: Type.Optional(
+    Type.Object({
+      lat: Type.Number({ minimum: -90, maximum: 90 }),
+      lng: Type.Number({ minimum: -180, maximum: 180 }),
+      accuracyMetres: Type.Optional(Type.Number({ minimum: 0 })),
+    }),
+  ),
 });
 
 export const TimeSettingsSchema = Type.Object({
   enforcement: Type.Union([Type.Literal('warn'), Type.Literal('block')]),
   workweekStartsOn: Type.Integer({ minimum: 1, maximum: 7 }),
-  geofence: Type.Object({ countries: Type.Array(Country, { maxItems: 60 }), notice: Type.Record(Type.String(), Type.Record(Type.String(), Type.String({ maxLength: 2000 }))) }),
-  kiosk: Type.Object({ maxFailedAttempts: Type.Integer({ minimum: 3, maximum: 20 }), lockoutMinutes: Type.Integer({ minimum: 1, maximum: 1440 }), attemptsPerMinute: Type.Integer({ minimum: 5, maximum: 600 }) }),
+  geofence: Type.Object({
+    countries: Type.Array(Country, { maxItems: 60 }),
+    notice: Type.Record(Type.String(), Type.Record(Type.String(), Type.String({ maxLength: 2000 }))),
+  }),
+  kiosk: Type.Object({
+    maxFailedAttempts: Type.Integer({ minimum: 3, maximum: 20 }),
+    lockoutMinutes: Type.Integer({ minimum: 1, maximum: 1440 }),
+    attemptsPerMinute: Type.Integer({ minimum: 5, maximum: 600 }),
+  }),
   clock: Type.Object({ maxOfflineHours: Type.Integer({ minimum: 1, maximum: 720 }) }),
   timesheets: Type.Object({ varianceToleranceMinutes: Type.Integer({ minimum: 0, maximum: 240 }) }),
 });
 
-export const TimesheetDay = Type.Object({ date: Type.String(), workedMinutes: Type.Integer(), scheduledMinutes: Type.Integer(), varianceMinutes: Type.Integer(), flagged: Type.Boolean() });
+export const TimesheetDay = Type.Object({
+  date: Type.String(),
+  workedMinutes: Type.Integer(),
+  scheduledMinutes: Type.Integer(),
+  varianceMinutes: Type.Integer(),
+  flagged: Type.Boolean(),
+});
 
 export const TimesheetOut = Type.Object({
   id: Nullable(Uuid),

@@ -50,7 +50,11 @@ export function ComplianceNav() {
           const active = href === '/app/compliance' ? path === href : path.startsWith(href);
           return (
             <li key={href}>
-              <Link href={href} aria-current={active ? 'page' : undefined} className={`inline-flex h-11 items-center border-b-2 px-3 text-callout no-underline ${active ? 'border-accent font-semibold text-text' : 'border-transparent text-text-secondary hover:text-text'}`}>
+              <Link
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={`inline-flex h-11 items-center border-b-2 px-3 text-callout no-underline ${active ? 'border-accent font-semibold text-text' : 'border-transparent text-text-secondary hover:text-text'}`}
+              >
                 {t(`compliance.nav.${key}`)}
               </Link>
             </li>
@@ -61,12 +65,23 @@ export function ComplianceNav() {
   );
 }
 
-export function SourceLink({ source, verifiedOn }: { source: { url: string; title: string } | null | undefined; verifiedOn?: string | null }) {
+export function SourceLink({
+  source,
+  verifiedOn,
+}: {
+  source: { url: string; title: string } | null | undefined;
+  verifiedOn?: string | null;
+}) {
   const t = useT();
   if (!source) return null;
   return (
     <p className="text-footnote text-text-secondary">
-      <a href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent">
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-accent"
+      >
         {t('compliance.source', { title: source.title })}
         <ExternalLink aria-hidden className="h-3.5 w-3.5 stroke-[1.5]" />
         <span className="sr-only">{t('compliance.opensNewTab')}</span>
@@ -79,7 +94,14 @@ export function SourceLink({ source, verifiedOn }: { source: { url: string; titl
 export function usePct() {
   const locale = useLocale();
   const t = useT();
-  return React.useCallback((v: number | null | undefined) => (v === null || v === undefined ? t('compliance.notAvailable') : `${formatNumber(v, locale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`), [locale, t]);
+  return React.useCallback(
+    (v: number | null | undefined) =>
+      v === null || v === undefined
+        ? t('compliance.notAvailable')
+        : `${formatNumber(v, locale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`,
+    [locale, t],
+  );
 }
 
-export const selectClass = 'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
+export const selectClass =
+  'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';

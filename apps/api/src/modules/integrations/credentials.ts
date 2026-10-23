@@ -14,8 +14,18 @@ function context(tenantId: string, owner: CredentialOwner, ownerId: string) {
   return { tenant: tenantId, purpose: 'integration-credentials', owner: `${owner}:${ownerId}` };
 }
 
-export async function putCredentials(tx: Tx, keys: KeyProvider, tenantId: string, owner: CredentialOwner, ownerId: string, values: Record<string, string>, actor: string | null) {
-  const clean = Object.fromEntries(Object.entries(values).filter(([, v]) => typeof v === 'string' && v.length > 0));
+export async function putCredentials(
+  tx: Tx,
+  keys: KeyProvider,
+  tenantId: string,
+  owner: CredentialOwner,
+  ownerId: string,
+  values: Record<string, string>,
+  actor: string | null,
+) {
+  const clean = Object.fromEntries(
+    Object.entries(values).filter(([, v]) => typeof v === 'string' && v.length > 0),
+  );
   const envelope = await seal(keys, JSON.stringify(clean), context(tenantId, owner, ownerId));
   await tx.exec(
     `INSERT INTO app.integration_credentials (tenant_id, owner_type, owner_id, envelope, fields, updated_by)
@@ -27,30 +37,63 @@ export async function putCredentials(tx: Tx, keys: KeyProvider, tenantId: string
 }
 
 /** Merges new values into the stored secrets (e.g. a rotated OAuth refresh token). */
-export async function mergeCredentials(tx: Tx, keys: KeyProvider, tenantId: string, owner: CredentialOwner, ownerId: string, values: Record<string, string>, actor: string | null) {
+export async function mergeCredentials(
+  tx: Tx,
+  keys: KeyProvider,
+  tenantId: string,
+  owner: CredentialOwner,
+  ownerId: string,
+  values: Record<string, string>,
+  actor: string | null,
+) {
   const current = (await getCredentials(tx, keys, tenantId, owner, ownerId)) ?? {};
   return putCredentials(tx, keys, tenantId, owner, ownerId, { ...current, ...values }, actor);
 }
 
-export async function getCredentials(tx: Tx, keys: KeyProvider, tenantId: string, owner: CredentialOwner, ownerId: string): Promise<Record<string, string> | undefined> {
-  const row = await tx.maybe<{ envelope: Envelope }>('SELECT envelope FROM app.integration_credentials WHERE owner_type = $1 AND owner_id = $2', [owner, ownerId]);
+export async function getCredentials(
+  tx: Tx,
+  keys: KeyProvider,
+  tenantId: string,
+  owner: CredentialOwner,
+  ownerId: string,
+): Promise<Record<string, string> | undefined> {
+  const row = await tx.maybe<{ envelope: Envelope }>(
+    'SELECT envelope FROM app.integration_credentials WHERE owner_type = $1 AND owner_id = $2',
+    [owner, ownerId],
+  );
   if (!row) return undefined;
-  return JSON.parse(await open(keys, row.envelope, context(tenantId, owner, ownerId))) as Record<string, string>;
+  return JSON.parse(await open(keys, row.envelope, context(tenantId, owner, ownerId))) as Record<
+    string,
+    string
+  >;
 }
 
 export async function credentialFields(tx: Tx, owner: CredentialOwner, ownerId: string): Promise<string[]> {
-  const row = await tx.maybe<{ fields: string[] }>('SELECT fields FROM app.integration_credentials WHERE owner_type = $1 AND owner_id = $2', [owner, ownerId]);
+  const row = await tx.maybe<{ fields: string[] }>(
+    'SELECT fields FROM app.integration_credentials WHERE owner_type = $1 AND owner_id = $2',
+    [owner, ownerId],
+  );
   return row?.fields ?? [];
 }
 
 export async function deleteCredentials(tx: Tx, owner: CredentialOwner, ownerId: string) {
-  await tx.exec('DELETE FROM app.integration_credentials WHERE owner_type = $1 AND owner_id = $2', [owner, ownerId]);
+  await tx.exec('DELETE FROM app.integration_credentials WHERE owner_type = $1 AND owner_id = $2', [
+    owner,
+    ownerId,
+  ]);
 }
 
 // ---- OAuth state (single use, short-lived, stored hashed) -------------------------------------------------
 export const hashState = (state: string) => createHash('sha256').update(state).digest();
 
-export async function createOAuthState(tx: Tx, owner: CredentialOwner, ownerId: string, userId: string, now: Date, state: string) {
+export async function createOAuthState(
+  tx: Tx,
+  owner: CredentialOwner,
+  ownerId: string,
+  userId: string,
+  now: Date,
+  state: string,
+) {
   await tx.exec(
     `INSERT INTO app.integration_oauth_states (tenant_id, state_hash, owner_type, owner_id, created_by, expires_at) VALUES (app.current_tenant(), $1, $2, $3, $4, $5)`,
     [hashState(state), owner, ownerId, userId, new Date(now.getTime() + 15 * 60_000).toISOString()],

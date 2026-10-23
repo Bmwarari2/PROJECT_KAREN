@@ -113,7 +113,8 @@
     }
   },
   "notify": {
-    "rotaPublished": "Your schedule for {from} to {to} is published ({shifts} shifts)",
+    "rotaPublished_one": "Your schedule for {from} to {to} is published ({shifts} shift)",
+    "rotaPublished_other": "Your schedule for {from} to {to} is published ({shifts} shifts)",
     "shiftChanged": "Your shift on {date} has changed",
     "shiftCancelled": "Your shift on {date} was canceled",
     "swapOffered": "A colleague asked you to swap a shift on {date}",
@@ -188,6 +189,11 @@
       "support": "Support",
       "helpForPage": "Help for this page",
       "payslips": "Pay stubs"
+    },
+    "security": {
+      "sessions": {
+        "body": "These are the devices and browsers signed in to your account. Sign out of any you do not recognize as yours."
+      }
     }
   },
   "rota": {
@@ -239,7 +245,6 @@
     "regionNote": "Your billing details and invoices are stored in {region}.",
     "ownersOnly": "Only the company owner can manage billing.",
     "contractTitle": "Your contract",
-    "contractBody": "Billing follows contract {reference} for the {plan} plan, from {start} to {end}. Invoices are due within {days} days. Contact your account manager to make changes.",
     "subscriptionTitle": "Your subscription",
     "status": {
       "trialing": "Free trial",
@@ -266,11 +271,9 @@
     "cancelling": "Your subscription ends on {date}.",
     "reactivate": "Keep my subscription",
     "reactivated": "Your subscription will continue",
-    "invoiceCollection": "Paid by invoice, due within {days} days. PO number: {po}",
     "changeTitle": "Change plan",
     "chooseTitle": "Choose a plan",
     "changeRules": "Upgrades start now with a prorated charge. Downgrades and switching from annual to monthly start at the end of the period you have paid for.",
-    "chooseLead": "You keep any free trial days left; you are charged when the trial ends. Every workspace gets {days} days free.",
     "discountCode": "Discount code",
     "currencyLocked": "The currency is fixed once a paid subscription has started.",
     "quoteLine": "{unit} per billable employee × {quantity}.",
@@ -421,7 +424,6 @@
     },
     "title": "Fair prices, published for everyone",
     "lead": "Pay per active employee, with lower prices as you grow. Monthly plans roll with no lock-in; annual plans cost less.",
-    "trialBadge": "Free for {days} days, no card needed",
     "termLabel": "Billing term",
     "currencyLabel": "Currency",
     "plansLabel": "Plans",
@@ -436,7 +438,6 @@
     },
     "from": "From",
     "perEmployeeMonth": "per employee per month",
-    "minimum": "Minimum of {count} employees",
     "cta": "Start your {days}-day free trial",
     "custom": "Custom pricing",
     "enterpriseTerms": "Annual contracts, invoicing with payment terms and purchase orders",
@@ -484,16 +485,13 @@
     "terms": {
       "title": "How billing works",
       "trial": {
-        "title": "Free trial",
-        "body": "Every workspace starts with {days} days free. Choose a plan when you are ready."
+        "title": "Free trial"
       },
       "monthly": {
-        "title": "Monthly",
-        "body": "No lock-in. Cancel at any time with {days} days' notice; your plan ends at the end of the billing month after the notice period."
+        "title": "Monthly"
       },
       "annual": {
-        "title": "Annual",
-        "body": "Save {percent} by paying yearly. Give {days} days' notice before your renewal date to stop it renewing."
+        "title": "Annual"
       },
       "changes": {
         "title": "Upgrades and downgrades",
@@ -655,7 +653,6 @@
       "collection": "Payment",
       "invoice": "Invoice with payment terms",
       "card": "Card",
-      "byInvoice": "Invoice, {days} days",
       "byCard": "Card",
       "paymentTerms": "Payment terms (days)",
       "entities": "Legal entities",
@@ -682,10 +679,8 @@
     "plans": {
       "title": "Plans and contracts",
       "lead": "Plans and prices come from the billing configuration ({location}, version {version}, from {date}).",
-      "selfServe": "Self-serve, minimum {min} employees",
       "contractOnly": "By contract only",
-      "monthlyUnit": "Per employee per month",
-      "discounts": "Annual discount {annual}. Discount codes: {codes}. Free trial: {trial} days."
+      "monthlyUnit": "Per employee per month"
     },
     "contracts": {
       "title": "Enterprise contracts",
@@ -927,14 +922,15 @@
     "licenceSku": "License SKU ID",
     "rules": "Licenses and groups",
     "noRules": "No rules yet: new accounts get no licenses or groups.",
-    "ruleSummary": "{licences} licenses, {groups} groups",
     "intro": "Create, license and block accounts in Microsoft 365 or Google Workspace when people join and leave. Your administrator grants consent, you choose the licenses and groups, and every step can be previewed first.",
     "ops": {
       "assign_licence": "Assign licenses",
       "remove_licence": "Remove licenses"
     },
     "googleDelegation": "Authorize client ID {clientId} with the scopes listed above in the Admin console, then verify.",
-    "serviceAccountHint": "The client ID your super admin authorizes for domain-wide delegation"
+    "serviceAccountHint": "The client ID your super admin authorizes for domain-wide delegation",
+    "ruleLicences_one": "{count} license",
+    "ruleLicences_other": "{count} licenses"
   },
   "reports": {
     "note": {
@@ -967,8 +963,13 @@
     },
     "notifications": {
       "cat": {
-        "rota": "Schedules and swaps"
+        "rota": "Schedules and swaps",
+        "payslip": "Pay stubs"
       }
+    },
+    "payslips": {
+      "title": "Pay stubs",
+      "none": "No pay stubs yet."
     }
   },
   "onboarding": {
@@ -980,7 +981,8 @@
       "org": "Organization",
       "rota": "Schedules",
       "absence": "Sick leave and absence",
-      "help": "Help center"
+      "help": "Help center",
+      "payslips": "Pay stubs"
     },
     "perm": {
       "org": {
@@ -999,6 +1001,11 @@
       },
       "help": {
         "read": "Read the help center"
+      },
+      "payslips": {
+        "read_own": "View own pay stubs",
+        "read": "View people’s pay stubs",
+        "manage": "Upload and publish pay stubs"
       }
     },
     "field": {

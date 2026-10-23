@@ -26,11 +26,22 @@ export async function supportGrantRoutes(app: FastifyInstance) {
     revokedAt: r.revoked_at,
   });
 
-  app.get('/v1/settings/support-grants', { schema: { tags: ['settings'], response: { 200: Type.Array(Grant), 403: Problem } } }, async (req) => {
-    authorize(req, 'settings.read');
-    const rows = await app.tenantTx(req, (tx) => tx.query<Record<string, string | null>>('SELECT * FROM app.support_grants ORDER BY created_at DESC'), { readOnly: true });
-    return rows.map(map);
-  });
+  app.get(
+    '/v1/settings/support-grants',
+    { schema: { tags: ['settings'], response: { 200: Type.Array(Grant), 403: Problem } } },
+    async (req) => {
+      authorize(req, 'settings.read');
+      const rows = await app.tenantTx(
+        req,
+        (tx) =>
+          tx.query<Record<string, string | null>>(
+            'SELECT * FROM app.support_grants ORDER BY created_at DESC',
+          ),
+        { readOnly: true },
+      );
+      return rows.map(map);
+    },
+  );
 
   app.post(
     '/v1/settings/support-grants',
@@ -56,7 +67,12 @@ export async function supportGrantRoutes(app: FastifyInstance) {
            VALUES (app.current_tenant(), $1, $2, $3, $4, now() + make_interval(hours => $5)) RETURNING *`,
           [b.staffId, auth.userId, b.accessLevel, b.reason, b.hours],
         );
-        await app.audit(tx, req, { action: 'support.grant_created', targetType: 'support_grant', targetId: r.id!, diff: { staffId: b.staffId, accessLevel: b.accessLevel, hours: b.hours } });
+        await app.audit(tx, req, {
+          action: 'support.grant_created',
+          targetType: 'support_grant',
+          targetId: r.id!,
+          diff: { staffId: b.staffId, accessLevel: b.accessLevel, hours: b.hours },
+        });
         return r;
       });
       return reply.status(201).send(map(row));
@@ -65,14 +81,28 @@ export async function supportGrantRoutes(app: FastifyInstance) {
 
   app.delete(
     '/v1/settings/support-grants/:id',
-    { config: { selfAudited: true }, schema: { tags: ['settings'], params: Type.Object({ id: Type.String({ format: 'uuid' }) }), response: { 204: Type.Null(), 404: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['settings'],
+        params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
+        response: { 204: Type.Null(), 404: Problem },
+      },
+    },
     async (req, reply) => {
       authorize(req, 'settings.manage');
       const { id } = req.params as { id: string };
       await app.tenantTx(req, async (tx) => {
-        const n = await tx.exec('UPDATE app.support_grants SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [id]);
+        const n = await tx.exec(
+          'UPDATE app.support_grants SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL',
+          [id],
+        );
         if (!n) throw new ApiError('notFound');
-        await app.audit(tx, req, { action: 'support.grant_revoked', targetType: 'support_grant', targetId: id });
+        await app.audit(tx, req, {
+          action: 'support.grant_revoked',
+          targetType: 'support_grant',
+          targetId: id,
+        });
       });
       return reply.status(204).send(null);
     },

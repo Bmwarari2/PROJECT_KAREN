@@ -36,14 +36,20 @@ interface EndpointRow {
   updated_at: string;
 }
 
-const SecretMeta = Type.Object({ id: Type.String(), createdAt: Type.String(), expiresAt: Nullable(Type.String()) });
+const SecretMeta = Type.Object({
+  id: Type.String(),
+  createdAt: Type.String(),
+  expiresAt: Nullable(Type.String()),
+});
 export const WebhookEndpoint = Type.Object({
   id: Uuid,
   url: Type.String(),
   description: Nullable(Type.String()),
   eventTypes: Type.Array(Type.String()),
   status: Type.Union([Type.Literal('active'), Type.Literal('disabled')]),
-  secrets: Type.Array(SecretMeta, { description: 'Signing secrets (values are never shown again). Two are active during a rotation.' }),
+  secrets: Type.Array(SecretMeta, {
+    description: 'Signing secrets (values are never shown again). Two are active during a rotation.',
+  }),
   createdAt: Type.String(),
   updatedAt: Type.String(),
 });
@@ -62,7 +68,13 @@ export const WebhookDelivery = Type.Object({
   createdAt: Type.String(),
   deliveredAt: Nullable(Type.String()),
 });
-const Attempt = Type.Object({ attempt: Type.Integer(), at: Type.String(), responseStatus: Nullable(Type.Integer()), durationMs: Type.Integer(), error: Nullable(Type.String()) });
+const Attempt = Type.Object({
+  attempt: Type.Integer(),
+  at: Type.String(),
+  responseStatus: Nullable(Type.Integer()),
+  durationMs: Type.Integer(),
+  error: Nullable(Type.String()),
+});
 
 const endpointOut = (r: EndpointRow) => ({
   id: r.id,
@@ -105,13 +117,21 @@ const deliveryOut = (r: DeliveryRow) => ({
   deliveredAt: r.delivered_at,
 });
 
-const secretContext = (tenantId: string, endpointId: string, secretId: string) => ({ tenant: tenantId, purpose: 'webhook-secret', endpoint: endpointId, secret: secretId });
+const secretContext = (tenantId: string, endpointId: string, secretId: string) => ({
+  tenant: tenantId,
+  purpose: 'webhook-secret',
+  endpoint: endpointId,
+  secret: secretId,
+});
 
 async function newSecret(deps: Deps, tenantId: string, endpointId: string, now: Date) {
   const value = newSigningSecret();
   const id = crypto.randomUUID();
   const envelope = await seal(deps.keys, value, secretContext(tenantId, endpointId, id));
-  return { value, stored: { id, envelope, createdAt: now.toISOString(), expiresAt: null } satisfies StoredSecret };
+  return {
+    value,
+    stored: { id, envelope, createdAt: now.toISOString(), expiresAt: null } satisfies StoredSecret,
+  };
 }
 
 export function activeSecrets(secrets: StoredSecret[], now: Date): StoredSecret[] {
@@ -122,7 +142,8 @@ function validateUrl(deps: Deps, url: string) {
   try {
     assertSafeUrl(url, deps.outbound ?? STRICT_OUTBOUND);
   } catch (err) {
-    if (err instanceof OutboundBlockedError) throw new ApiError('unprocessable', 'unsafeUrl', { reason: err.reason });
+    if (err instanceof OutboundBlockedError)
+      throw new ApiError('unprocessable', 'unsafeUrl', { reason: err.reason });
     throw err;
   }
 }
@@ -145,9 +166,14 @@ function validateEventTypes(types: string[]) {
 subscribe('*', async (tx, ev) => {
   if (!(WEBHOOK_EVENT_TYPES as readonly string[]).includes(ev.topic)) return;
   if (!(await featureEnabled(tx, 'webhooks'))) return;
-  const endpoints = await tx.query<{ id: string; event_types: string[] }>(`SELECT id, event_types FROM app.webhook_endpoints WHERE status = 'active'`);
+  const endpoints = await tx.query<{ id: string; event_types: string[] }>(
+    `SELECT id, event_types FROM app.webhook_endpoints WHERE status = 'active'`,
+  );
   for (const ep of endpoints) {
-    const wanted = ev.topic === 'webhook.ping' ? ev.payload.endpointId === ep.id : subscriptionMatches(ep.event_types, ev.topic);
+    const wanted =
+      ev.topic === 'webhook.ping'
+        ? ev.payload.endpointId === ep.id
+        : subscriptionMatches(ep.event_types, ev.topic);
     if (!wanted) continue;
     const payload = { id: `evt_${ev.id}`, type: ev.topic, createdAt: ev.createdAt, data: ev.payload };
     const d = await tx.maybe<{ id: string }>(
@@ -165,21 +191,28 @@ registerJob('webhooks.deliver', async (ctx) => {
   const { deliveryId, attempt } = ctx.job.input as { deliveryId: string; attempt: number };
   const cfg = platformConfig.webhooks;
   const d = await ctx.tx((tx) =>
-    tx.maybe<DeliveryRow & { payload: unknown; url: string; secrets: StoredSecret[]; endpoint_status: string }>(
+    tx.maybe<
+      DeliveryRow & { payload: unknown; url: string; secrets: StoredSecret[]; endpoint_status: string }
+    >(
       `SELECT d.*, e.url, e.secrets, e.status AS endpoint_status FROM app.webhook_deliveries d
          JOIN app.webhook_endpoints e ON e.tenant_id = d.tenant_id AND e.id = d.endpoint_id WHERE d.id = $1`,
       [deliveryId],
     ),
   );
   if (!d) return { skipped: 'missing' };
-  if (d.status === 'succeeded' || d.status === 'failed' || d.attempts >= attempt) return { skipped: 'alreadyAttempted' };
+  if (d.status === 'succeeded' || d.status === 'failed' || d.attempts >= attempt)
+    return { skipped: 'alreadyAttempted' };
   const now = ctx.deps.now();
   let responseStatus: number | null = null;
   let durationMs = 0;
   let error: string | null = null;
   if (d.endpoint_status !== 'active') error = 'endpoint_disabled';
   else {
-    const secrets = await Promise.all(activeSecrets(d.secrets, now).map((s) => open(ctx.deps.keys, s.envelope, secretContext(ctx.tenantId, d.endpoint_id, s.id))));
+    const secrets = await Promise.all(
+      activeSecrets(d.secrets, now).map((s) =>
+        open(ctx.deps.keys, s.envelope, secretContext(ctx.tenantId, d.endpoint_id, s.id)),
+      ),
+    );
     const body = JSON.stringify(d.payload);
     const started = performance.now();
     try {
@@ -206,8 +239,13 @@ registerJob('webhooks.deliver', async (ctx) => {
     }
   }
   const ok = error === null;
-  const final = ok ? 'succeeded' : attempt >= cfg.maxAttempts || error === 'endpoint_disabled' ? 'failed' : 'retrying';
-  const next = final === 'retrying' ? new Date(now.getTime() + webhookRetryDelaySeconds(attempt, cfg) * 1000) : null;
+  const final = ok
+    ? 'succeeded'
+    : attempt >= cfg.maxAttempts || error === 'endpoint_disabled'
+      ? 'failed'
+      : 'retrying';
+  const next =
+    final === 'retrying' ? new Date(now.getTime() + webhookRetryDelaySeconds(attempt, cfg) * 1000) : null;
   await ctx.tx(async (tx) => {
     await tx.exec(
       `INSERT INTO app.webhook_attempts (tenant_id, delivery_id, attempt, at, response_status, duration_ms, error)
@@ -219,14 +257,22 @@ registerJob('webhooks.deliver', async (ctx) => {
          last_error = $7, delivered_at = CASE WHEN $2 = 'succeeded' THEN $8::timestamptz ELSE delivered_at END WHERE id = $1`,
       [d.id, final, attempt, next, responseStatus, durationMs, error, now],
     );
-    if (next) await enqueueJob(tx, 'webhooks.deliver', `${d.id}:${attempt + 1}`, { deliveryId: d.id, attempt: attempt + 1 }, { runAfter: next.toISOString() });
+    if (next)
+      await enqueueJob(
+        tx,
+        'webhooks.deliver',
+        `${d.id}:${attempt + 1}`,
+        { deliveryId: d.id, attempt: attempt + 1 },
+        { runAfter: next.toISOString() },
+      );
   });
   return { status: final, responseStatus };
 });
 
 export async function webhookRoutes(app: FastifyInstance) {
   const deps = app.deps;
-  const SELECT = 'SELECT id, url, description, event_types, status, secrets, created_at, updated_at FROM app.webhook_endpoints';
+  const SELECT =
+    'SELECT id, url, description, event_types, status, secrets, created_at, updated_at FROM app.webhook_endpoints';
 
   const guard = async (tx: Tx, req: Parameters<typeof authorize>[0]) => {
     const auth = authorize(req, 'webhooks.manage');
@@ -234,24 +280,50 @@ export async function webhookRoutes(app: FastifyInstance) {
     return auth;
   };
 
-  app.get('/v1/webhooks/event-types', { schema: { tags: ['webhooks'], summary: 'Event types an endpoint can subscribe to', response: { 200: Type.Array(Type.String()) } } }, async (req) => {
-    authorize(req, 'webhooks.manage');
-    return [...WEBHOOK_EVENT_TYPES];
-  });
+  app.get(
+    '/v1/webhooks/event-types',
+    {
+      schema: {
+        tags: ['webhooks'],
+        summary: 'Event types an endpoint can subscribe to',
+        response: { 200: Type.Array(Type.String()) },
+      },
+    },
+    async (req) => {
+      authorize(req, 'webhooks.manage');
+      return [...WEBHOOK_EVENT_TYPES];
+    },
+  );
 
   app.get(
     '/v1/webhooks',
-    { schema: { tags: ['webhooks'], summary: 'List webhook endpoints', querystring: Type.Object({ cursor: Type.Optional(Type.String({ maxLength: 500 })), limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })) }), response: { 200: Page(WebhookEndpoint), 403: Problem } } },
+    {
+      schema: {
+        tags: ['webhooks'],
+        summary: 'List webhook endpoints',
+        querystring: Type.Object({
+          cursor: Type.Optional(Type.String({ maxLength: 500 })),
+          limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+        }),
+        response: { 200: Page(WebhookEndpoint), 403: Problem },
+      },
+    },
     async (req) => {
       const q = req.query as { cursor?: string; limit?: number };
       const limit = q.limit ?? 50;
       const after = decodeCursor<[string, string]>(q.cursor);
       const rows = await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        return tx.query<EndpointRow>(`${SELECT} ${after ? 'WHERE (created_at, id) < ($1::timestamptz, $2::uuid)' : ''} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`, after ?? []);
+        return tx.query<EndpointRow>(
+          `${SELECT} ${after ? 'WHERE (created_at, id) < ($1::timestamptz, $2::uuid)' : ''} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
+          after ?? [],
+        );
       });
       const page = rows.slice(0, limit);
-      return { data: page.map(endpointOut), nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null };
+      return {
+        data: page.map(endpointOut),
+        nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null,
+      };
     },
   );
 
@@ -262,8 +334,27 @@ export async function webhookRoutes(app: FastifyInstance) {
       schema: {
         tags: ['webhooks'],
         summary: 'Create a webhook endpoint (https only); the signing secret is returned once',
-        body: Type.Object({ url: Type.String({ maxLength: 2048 }), eventTypes: Type.Array(Type.String({ maxLength: 100 }), { minItems: 1, maxItems: 50, uniqueItems: true }), description: Type.Optional(Type.String({ maxLength: 300 })) }, { additionalProperties: false }),
-        response: { 201: Type.Object({ ...WebhookEndpoint.properties, secret: Type.String({ description: 'whsec_… — store it now; it cannot be shown again' }) }), 400: Problem, 403: Problem, 422: Problem },
+        body: Type.Object(
+          {
+            url: Type.String({ maxLength: 2048 }),
+            eventTypes: Type.Array(Type.String({ maxLength: 100 }), {
+              minItems: 1,
+              maxItems: 50,
+              uniqueItems: true,
+            }),
+            description: Type.Optional(Type.String({ maxLength: 300 })),
+          },
+          { additionalProperties: false },
+        ),
+        response: {
+          201: Type.Object({
+            ...WebhookEndpoint.properties,
+            secret: Type.String({ description: 'whsec_… — store it now; it cannot be shown again' }),
+          }),
+          400: Problem,
+          403: Problem,
+          422: Problem,
+        },
       },
     },
     async (req, reply) => {
@@ -279,7 +370,12 @@ export async function webhookRoutes(app: FastifyInstance) {
            VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) RETURNING *`,
           [id, b.url, b.description ?? null, b.eventTypes, JSON.stringify([s.stored]), auth.userId],
         );
-        await app.audit(tx, req, { action: 'webhook.created', targetType: 'webhook_endpoint', targetId: id, diff: { destination: urlOrigin(b.url), eventTypes: b.eventTypes } });
+        await app.audit(tx, req, {
+          action: 'webhook.created',
+          targetType: 'webhook_endpoint',
+          targetId: id,
+          diff: { destination: urlOrigin(b.url), eventTypes: b.eventTypes },
+        });
         return { row, secret: s.value };
       });
       return reply.status(201).send({ ...endpointOut(out.row), secret: out.secret });
@@ -294,13 +390,28 @@ export async function webhookRoutes(app: FastifyInstance) {
         tags: ['webhooks'],
         summary: 'Update an endpoint (URL, event types, description, or disable/enable it)',
         params: Type.Object({ id: Uuid }),
-        body: Type.Object({ url: Type.Optional(Type.String({ maxLength: 2048 })), eventTypes: Type.Optional(Type.Array(Type.String({ maxLength: 100 }), { minItems: 1, maxItems: 50, uniqueItems: true })), description: Type.Optional(Nullable(Type.String({ maxLength: 300 }))), status: Type.Optional(Type.Union([Type.Literal('active'), Type.Literal('disabled')])) }, { additionalProperties: false }),
+        body: Type.Object(
+          {
+            url: Type.Optional(Type.String({ maxLength: 2048 })),
+            eventTypes: Type.Optional(
+              Type.Array(Type.String({ maxLength: 100 }), { minItems: 1, maxItems: 50, uniqueItems: true }),
+            ),
+            description: Type.Optional(Nullable(Type.String({ maxLength: 300 }))),
+            status: Type.Optional(Type.Union([Type.Literal('active'), Type.Literal('disabled')])),
+          },
+          { additionalProperties: false },
+        ),
         response: { 200: WebhookEndpoint, 400: Problem, 403: Problem, 404: Problem, 422: Problem },
       },
     },
     async (req) => {
       const { id } = req.params as { id: string };
-      const b = req.body as { url?: string; eventTypes?: string[]; description?: string | null; status?: string };
+      const b = req.body as {
+        url?: string;
+        eventTypes?: string[];
+        description?: string | null;
+        status?: string;
+      };
       if (b.url) validateUrl(deps, b.url);
       if (b.eventTypes) validateEventTypes(b.eventTypes);
       return app.tenantTx(req, async (tx) => {
@@ -308,10 +419,22 @@ export async function webhookRoutes(app: FastifyInstance) {
         const row = await tx.maybe<EndpointRow>(
           `UPDATE app.webhook_endpoints SET url = coalesce($2, url), event_types = coalesce($3, event_types),
              description = CASE WHEN $4::boolean THEN $5 ELSE description END, status = coalesce($6, status) WHERE id = $1 RETURNING *`,
-          [id, b.url ?? null, b.eventTypes ?? null, 'description' in b, b.description ?? null, b.status ?? null],
+          [
+            id,
+            b.url ?? null,
+            b.eventTypes ?? null,
+            'description' in b,
+            b.description ?? null,
+            b.status ?? null,
+          ],
         );
         if (!row) throw new ApiError('notFound');
-        await app.audit(tx, req, { action: 'webhook.updated', targetType: 'webhook_endpoint', targetId: id, diff: { ...b, url: b.url ? urlOrigin(b.url) : undefined } });
+        await app.audit(tx, req, {
+          action: 'webhook.updated',
+          targetType: 'webhook_endpoint',
+          targetId: id,
+          diff: { ...b, url: b.url ? urlOrigin(b.url) : undefined },
+        });
         return endpointOut(row);
       });
     },
@@ -319,12 +442,21 @@ export async function webhookRoutes(app: FastifyInstance) {
 
   app.delete(
     '/v1/webhooks/:id',
-    { config: { selfAudited: true }, schema: { tags: ['webhooks'], summary: 'Delete an endpoint and its delivery log', params: Type.Object({ id: Uuid }), response: { 204: Type.Null(), 403: Problem, 404: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['webhooks'],
+        summary: 'Delete an endpoint and its delivery log',
+        params: Type.Object({ id: Uuid }),
+        response: { 204: Type.Null(), 403: Problem, 404: Problem },
+      },
+    },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        if (!(await tx.exec('DELETE FROM app.webhook_endpoints WHERE id = $1', [id]))) throw new ApiError('notFound');
+        if (!(await tx.exec('DELETE FROM app.webhook_endpoints WHERE id = $1', [id])))
+          throw new ApiError('notFound');
         await app.audit(tx, req, { action: 'webhook.deleted', targetType: 'webhook_endpoint', targetId: id });
       });
       return reply.status(204).send(null);
@@ -340,12 +472,18 @@ export async function webhookRoutes(app: FastifyInstance) {
         summary: 'Rotate the signing secret; the old secret keeps signing (a second v1) for graceHours',
         params: Type.Object({ id: Uuid }),
         body: Type.Object({ graceHours: Type.Optional(Type.Integer({ minimum: 0, maximum: 168 })) }),
-        response: { 200: Type.Object({ ...WebhookEndpoint.properties, secret: Type.String() }), 403: Problem, 404: Problem },
+        response: {
+          200: Type.Object({ ...WebhookEndpoint.properties, secret: Type.String() }),
+          403: Problem,
+          404: Problem,
+        },
       },
     },
     async (req) => {
       const { id } = req.params as { id: string };
-      const grace = (req.body as { graceHours?: number } | undefined)?.graceHours ?? platformConfig.webhooks.secretGraceHours;
+      const grace =
+        (req.body as { graceHours?: number } | undefined)?.graceHours ??
+        platformConfig.webhooks.secretGraceHours;
       const now = deps.now();
       const out = await app.tenantTx(req, async (tx) => {
         const auth = await guard(tx, req);
@@ -358,8 +496,16 @@ export async function webhookRoutes(app: FastifyInstance) {
           .slice(0, grace > 0 ? 1 : 0)
           .map((s) => ({ ...s, expiresAt: s.expiresAt && s.expiresAt < until ? s.expiresAt : until }));
         const s = await newSecret(deps, auth.tenantId, id, now);
-        const row = await tx.one<EndpointRow>('UPDATE app.webhook_endpoints SET secrets = $2 WHERE id = $1 RETURNING *', [id, JSON.stringify([...kept, s.stored])]);
-        await app.audit(tx, req, { action: 'webhook.secret_rotated', targetType: 'webhook_endpoint', targetId: id, diff: { graceHours: grace } });
+        const row = await tx.one<EndpointRow>(
+          'UPDATE app.webhook_endpoints SET secrets = $2 WHERE id = $1 RETURNING *',
+          [id, JSON.stringify([...kept, s.stored])],
+        );
+        await app.audit(tx, req, {
+          action: 'webhook.secret_rotated',
+          targetType: 'webhook_endpoint',
+          targetId: id,
+          diff: { graceHours: grace },
+        });
         return { row, secret: s.value };
       });
       return { ...endpointOut(out.row), secret: out.secret };
@@ -368,12 +514,21 @@ export async function webhookRoutes(app: FastifyInstance) {
 
   app.post(
     '/v1/webhooks/:id/ping',
-    { config: { selfAudited: true }, schema: { tags: ['webhooks'], summary: 'Send a signed webhook.ping event to this endpoint', params: Type.Object({ id: Uuid }), response: { 202: Type.Object({ queued: Type.Boolean() }), 403: Problem, 404: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['webhooks'],
+        summary: 'Send a signed webhook.ping event to this endpoint',
+        params: Type.Object({ id: Uuid }),
+        response: { 202: Type.Object({ queued: Type.Boolean() }), 403: Problem, 404: Problem },
+      },
+    },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        if (!(await tx.maybe('SELECT 1 FROM app.webhook_endpoints WHERE id = $1', [id]))) throw new ApiError('notFound');
+        if (!(await tx.maybe('SELECT 1 FROM app.webhook_endpoints WHERE id = $1', [id])))
+          throw new ApiError('notFound');
         await emitEvent(tx, 'webhook.ping', { endpointId: id }, { type: 'webhook_endpoint', id });
         await app.audit(tx, req, { action: 'webhook.pinged', targetType: 'webhook_endpoint', targetId: id });
       });
@@ -388,7 +543,13 @@ export async function webhookRoutes(app: FastifyInstance) {
         tags: ['webhooks'],
         summary: 'Delivery log for an endpoint (newest first, cursor-paginated)',
         params: Type.Object({ id: Uuid }),
-        querystring: Type.Object({ status: Type.Optional(Type.Union(['pending', 'retrying', 'succeeded', 'failed'].map((s) => Type.Literal(s)))), cursor: Type.Optional(Type.String({ maxLength: 500 })), limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })) }),
+        querystring: Type.Object({
+          status: Type.Optional(
+            Type.Union(['pending', 'retrying', 'succeeded', 'failed'].map((s) => Type.Literal(s))),
+          ),
+          cursor: Type.Optional(Type.String({ maxLength: 500 })),
+          limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+        }),
         response: { 200: Page(WebhookDelivery), 403: Problem },
       },
     },
@@ -400,34 +561,90 @@ export async function webhookRoutes(app: FastifyInstance) {
       const where = ['endpoint_id = $1'];
       if (q.status) where.push(`status = $${params.push(q.status)}`);
       const after = decodeCursor<[string, string]>(q.cursor);
-      if (after) where.push(`(created_at, id) < ($${params.push(after[0])}::timestamptz, $${params.push(after[1])}::uuid)`);
+      if (after)
+        where.push(
+          `(created_at, id) < ($${params.push(after[0])}::timestamptz, $${params.push(after[1])}::uuid)`,
+        );
       const rows = await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        return tx.query<DeliveryRow>(`SELECT * FROM app.webhook_deliveries WHERE ${where.join(' AND ')} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`, params);
+        return tx.query<DeliveryRow>(
+          `SELECT * FROM app.webhook_deliveries WHERE ${where.join(' AND ')} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
+          params,
+        );
       });
       const page = rows.slice(0, limit);
-      return { data: page.map(deliveryOut), nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null };
+      return {
+        data: page.map(deliveryOut),
+        nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.created_at, page.at(-1)!.id]) : null,
+      };
     },
   );
 
   app.get(
     '/v1/webhooks/deliveries/:deliveryId',
-    { schema: { tags: ['webhooks'], summary: 'One delivery with every attempt (status code, duration, error class) and the signed payload', params: Type.Object({ deliveryId: Uuid }), response: { 200: Type.Object({ ...WebhookDelivery.properties, payload: Type.Any(), attemptLog: Type.Array(Attempt) }), 403: Problem, 404: Problem } } },
+    {
+      schema: {
+        tags: ['webhooks'],
+        summary:
+          'One delivery with every attempt (status code, duration, error class) and the signed payload',
+        params: Type.Object({ deliveryId: Uuid }),
+        response: {
+          200: Type.Object({
+            ...WebhookDelivery.properties,
+            payload: Type.Any(),
+            attemptLog: Type.Array(Attempt),
+          }),
+          403: Problem,
+          404: Problem,
+        },
+      },
+    },
     async (req) => {
       const { deliveryId } = req.params as { deliveryId: string };
       return app.tenantTx(req, async (tx) => {
         await guard(tx, req);
-        const d = await tx.maybe<DeliveryRow & { payload: unknown }>('SELECT * FROM app.webhook_deliveries WHERE id = $1', [deliveryId]);
+        const d = await tx.maybe<DeliveryRow & { payload: unknown }>(
+          'SELECT * FROM app.webhook_deliveries WHERE id = $1',
+          [deliveryId],
+        );
         if (!d) throw new ApiError('notFound');
-        const attempts = await tx.query<{ attempt: number; at: string; response_status: number | null; duration_ms: number; error: string | null }>('SELECT attempt, at, response_status, duration_ms, error FROM app.webhook_attempts WHERE delivery_id = $1 ORDER BY attempt', [deliveryId]);
-        return { ...deliveryOut(d), payload: d.payload, attemptLog: attempts.map((a) => ({ attempt: a.attempt, at: a.at, responseStatus: a.response_status, durationMs: a.duration_ms, error: a.error })) };
+        const attempts = await tx.query<{
+          attempt: number;
+          at: string;
+          response_status: number | null;
+          duration_ms: number;
+          error: string | null;
+        }>(
+          'SELECT attempt, at, response_status, duration_ms, error FROM app.webhook_attempts WHERE delivery_id = $1 ORDER BY attempt',
+          [deliveryId],
+        );
+        return {
+          ...deliveryOut(d),
+          payload: d.payload,
+          attemptLog: attempts.map((a) => ({
+            attempt: a.attempt,
+            at: a.at,
+            responseStatus: a.response_status,
+            durationMs: a.duration_ms,
+            error: a.error,
+          })),
+        };
       });
     },
   );
 
   app.post(
     '/v1/webhooks/deliveries/:deliveryId/replay',
-    { config: { selfAudited: true }, schema: { tags: ['webhooks'], summary: 'Replay a delivery (same event id and payload, new signature); receivers de-duplicate on Thapsus-Event-Id', params: Type.Object({ deliveryId: Uuid }), response: { 202: WebhookDelivery, 403: Problem, 404: Problem } } },
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['webhooks'],
+        summary:
+          'Replay a delivery (same event id and payload, new signature); receivers de-duplicate on Thapsus-Event-Id',
+        params: Type.Object({ deliveryId: Uuid }),
+        response: { 202: WebhookDelivery, 403: Problem, 404: Problem },
+      },
+    },
     async (req, reply) => {
       const { deliveryId } = req.params as { deliveryId: string };
       const row = await app.tenantTx(req, async (tx) => {
@@ -439,7 +656,12 @@ export async function webhookRoutes(app: FastifyInstance) {
         );
         if (!d) throw new ApiError('notFound');
         await enqueueJob(tx, 'webhooks.deliver', `${d.id}:1`, { deliveryId: d.id, attempt: 1 });
-        await app.audit(tx, req, { action: 'webhook.delivery_replayed', targetType: 'webhook_delivery', targetId: d.id, diff: { replayOf: deliveryId, eventId: d.event_id } });
+        await app.audit(tx, req, {
+          action: 'webhook.delivery_replayed',
+          targetType: 'webhook_delivery',
+          targetId: d.id,
+          diff: { replayOf: deliveryId, eventId: d.event_id },
+        });
         return d;
       });
       return reply.status(202).send(deliveryOut(row));

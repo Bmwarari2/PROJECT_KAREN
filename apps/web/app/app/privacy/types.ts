@@ -29,7 +29,17 @@ export interface Dsr {
   identityMethod: string | null;
   identityNote: string | null;
   details: string | null;
-  outcome: { export?: { generatedAt: string; summary: { tables: Record<string, number>; sensitiveValues: number; withheldCategories: string[] } }; erasure?: { erased: string[]; retained: Array<{ category: string; until: string | null; reason: string }> }; correction?: { effectiveDate: string; fields: string[] } } | null;
+  outcome: {
+    export?: {
+      generatedAt: string;
+      summary: { tables: Record<string, number>; sensitiveValues: number; withheldCategories: string[] };
+    };
+    erasure?: {
+      erased: string[];
+      retained: Array<{ category: string; until: string | null; reason: string }>;
+    };
+    correction?: { effectiveDate: string; fields: string[] };
+  } | null;
   exportReady: boolean;
 }
 export interface ErasurePlan {

@@ -7,9 +7,19 @@ import { useApi } from '@/lib/use-api';
 
 type Kind = 'legal-entities' | 'departments' | 'locations';
 const FIELDS: Record<Kind, Array<{ key: string; type?: string; placeholder?: string }>> = {
-  'legal-entities': [{ key: 'name' }, { key: 'country', placeholder: 'GB' }, { key: 'currency', placeholder: 'GBP' }, { key: 'timeZone', placeholder: 'Europe/London' }],
+  'legal-entities': [
+    { key: 'name' },
+    { key: 'country', placeholder: 'GB' },
+    { key: 'currency', placeholder: 'GBP' },
+    { key: 'timeZone', placeholder: 'Europe/London' },
+  ],
   departments: [{ key: 'name' }, { key: 'code' }],
-  locations: [{ key: 'name' }, { key: 'country', placeholder: 'GB' }, { key: 'regionCode', placeholder: 'GB-ENG' }, { key: 'timeZone', placeholder: 'Europe/London' }],
+  locations: [
+    { key: 'name' },
+    { key: 'country', placeholder: 'GB' },
+    { key: 'regionCode', placeholder: 'GB-ENG' },
+    { key: 'timeZone', placeholder: 'Europe/London' },
+  ],
 };
 
 function Section({ kind }: { kind: Kind }) {
@@ -20,7 +30,10 @@ function Section({ kind }: { kind: Kind }) {
   async function add(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await api(`/v1/org/${kind}`, { method: 'POST', json: Object.fromEntries(Object.entries(v).filter(([, x]) => x !== '')) });
+      await api(`/v1/org/${kind}`, {
+        method: 'POST',
+        json: Object.fromEntries(Object.entries(v).filter(([, x]) => x !== '')),
+      });
       setV({});
       reload();
     } catch (err) {
@@ -33,13 +46,23 @@ function Section({ kind }: { kind: Kind }) {
       <form onSubmit={add} className="grid gap-3 sm:grid-cols-5 sm:items-end">
         {FIELDS[kind].map((f) => (
           <Field key={f.key} id={`${kind}-${f.key}`} label={t(`orgSettings.field.${f.key}`)}>
-            {(p) => <Input {...p} required={f.key === 'name' || f.key === 'country' || f.key === 'currency' || f.key === 'timeZone'} placeholder={f.placeholder} value={v[f.key] ?? ''} onChange={(e) => setV((x) => ({ ...x, [f.key]: e.target.value }))} />}
+            {(p) => (
+              <Input
+                {...p}
+                required={
+                  f.key === 'name' || f.key === 'country' || f.key === 'currency' || f.key === 'timeZone'
+                }
+                placeholder={f.placeholder}
+                value={v[f.key] ?? ''}
+                onChange={(e) => setV((x) => ({ ...x, [f.key]: e.target.value }))}
+              />
+            )}
           </Field>
         ))}
         <Button type="submit">{t('common.add')}</Button>
       </form>
       {data?.length ? (
-        <Table dense>
+        <Table dense scrollLabel={t(`orgSettings.${kind}`)}>
           <THead>
             <tr>
               {FIELDS[kind].map((f) => (

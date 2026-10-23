@@ -14,7 +14,19 @@ import { createLogger } from '../src/logger';
 import { scrubSpanAttributes } from '../src/tracing';
 import * as time from '../src/time';
 import { money, add, multiplyRatio, allocate, parseDecimal, toDecimalString } from '../src/money';
-import { CATALOGUES, flatten, formatMoney, formatDate, formatHours, formatTimeOfDay, resolveLocale, t, formatDateTime, formatNumber, formatUnit } from '../src/i18n';
+import {
+  CATALOGUES,
+  flatten,
+  formatMoney,
+  formatDate,
+  formatHours,
+  formatTimeOfDay,
+  resolveLocale,
+  t,
+  formatDateTime,
+  formatNumber,
+  formatUnit,
+} from '../src/i18n';
 
 describe('residency map', () => {
   it('pins each home region to the brief', () => {
@@ -45,7 +57,9 @@ describe('residency-guarded AWS client factory', () => {
     });
     for (const other of HOME_REGIONS.filter((o) => o !== cell)) {
       it(`${cell}: refuses ${other}'s region for runtime and backup`, () => {
-        expect(() => create(FakeClient, 's3', { region: REGIONS[other].awsRegion })).toThrow(ResidencyViolationError);
+        expect(() => create(FakeClient, 's3', { region: REGIONS[other].awsRegion })).toThrow(
+          ResidencyViolationError,
+        );
         expect(() => create(FakeClient, 'backup', { region: REGIONS[other].awsRegion }, 'backup')).toThrow(
           ResidencyViolationError,
         );
@@ -57,7 +71,9 @@ describe('residency-guarded AWS client factory', () => {
     expect(eu(FakeClient, 'backup', { region: 'eu-west-1' }, 'backup').config.region).toBe('eu-west-1');
     expect(() => eu(FakeClient, 's3', { region: 'eu-west-1' })).toThrow(ResidencyViolationError);
     const uk = createAwsClientFactory({ cell: 'uk' });
-    expect(() => uk(FakeClient, 'backup', { region: 'eu-west-1' }, 'backup')).toThrow(ResidencyViolationError);
+    expect(() => uk(FakeClient, 'backup', { region: 'eu-west-1' }, 'backup')).toThrow(
+      ResidencyViolationError,
+    );
   });
   it('checks ARNs and endpoint URLs', () => {
     expect(() => assertResourceInRegion('uk', 'arn:aws:kms:eu-central-1:123456789012:key/abc')).toThrow();
@@ -79,8 +95,18 @@ describe('personal-data scrubbing', () => {
     expect(scrubString(input)).toContain(REDACTED);
   });
   it('redacts known personal fields by key', () => {
-    const out = scrub({ firstName: 'Ada', last_name: 'Lovelace', employeeId: 'e1', nested: { email: 'x@y.zz' } });
-    expect(out).toEqual({ firstName: REDACTED, last_name: REDACTED, employeeId: 'e1', nested: { email: REDACTED } });
+    const out = scrub({
+      firstName: 'Ada',
+      last_name: 'Lovelace',
+      employeeId: 'e1',
+      nested: { email: 'x@y.zz' },
+    });
+    expect(out).toEqual({
+      firstName: REDACTED,
+      last_name: REDACTED,
+      employeeId: 'e1',
+      nested: { email: REDACTED },
+    });
   });
   it('logger output never contains personal data', async () => {
     const chunks: string[] = [];
@@ -91,7 +117,10 @@ describe('personal-data scrubbing', () => {
       },
     });
     const log = createLogger({ name: 'test', destination: dest as never });
-    log.info({ email: 'pat@example.test', name: 'Pat Example', route: '/v1/employees' }, 'created for pat@example.test');
+    log.info(
+      { email: 'pat@example.test', name: 'Pat Example', route: '/v1/employees' },
+      'created for pat@example.test',
+    );
     await new Promise((r) => setTimeout(r, 10));
     const line = chunks.join('');
     expect(line).not.toContain('pat@example.test');
@@ -99,7 +128,11 @@ describe('personal-data scrubbing', () => {
     expect(line).toContain('/v1/employees');
   });
   it('tracer attributes are scrubbed', () => {
-    const out = scrubSpanAttributes({ 'user.email': 'a@b.cc', 'http.route': '/v1/x', 'http.request.body': '{}' });
+    const out = scrubSpanAttributes({
+      'user.email': 'a@b.cc',
+      'http.route': '/v1/x',
+      'http.request.body': '{}',
+    });
     expect(out['user.email']).toBe(REDACTED);
     expect(out['http.request.body']).toBe(REDACTED);
     expect(out['http.route']).toBe('/v1/x');
@@ -221,7 +254,7 @@ describe('i18n', () => {
     expect(formatNumber(1234567.891, 'en-US', { maximumFractionDigits: 2 })).toBe('1,234,567.89');
     expect(formatNumber(0.125, 'en-GB', { style: 'percent', maximumFractionDigits: 1 })).toBe('12.5%');
   });
-  it('formats instants in the viewer\'s IANA zone, across DST', () => {
+  it("formats instants in the viewer's IANA zone, across DST", () => {
     // 2026-03-29 01:30Z is 02:30 BST in London (after the spring change) and 21:30 EDT the day before in New York.
     const at = '2026-03-29T01:30:00Z';
     expect(formatDateTime(at, 'en-GB', 'Europe/London').replace(/\s/g, ' ')).toBe('29 Mar 2026, 02:30');

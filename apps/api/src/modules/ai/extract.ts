@@ -16,7 +16,10 @@ export interface Chunk {
 }
 
 /** Text per page (PDF) or a single page (text and Markdown). Returns null when the type cannot be read. */
-export async function extractPages(contentType: string, bytes: Buffer): Promise<{ pages: string[]; paged: boolean } | null> {
+export async function extractPages(
+  contentType: string,
+  bytes: Buffer,
+): Promise<{ pages: string[]; paged: boolean } | null> {
   if (contentType === 'text/plain' || contentType === 'text/markdown') {
     const text = bytes.toString('utf8').replace(/^\ufeff/, '');
     return { pages: [contentType === 'text/markdown' ? stripMarkdownInline(text) : text], paged: false };
@@ -61,7 +64,14 @@ function headingOf(line: string, paged: boolean): string | null {
   const md = /^#{1,6}\s+(.+?)\s*#*$/.exec(line);
   if (md) return md[1]!.trim();
   // PDFs lose Markdown: treat a short title-like line without closing punctuation as a heading.
-  if (paged && line.length <= 70 && /^[\p{Lu}0-9]/u.test(line) && !/[.,;:!?]$/.test(line) && line.split(/\s+/).length <= 9) return line.trim();
+  if (
+    paged &&
+    line.length <= 70 &&
+    /^[\p{Lu}0-9]/u.test(line) &&
+    !/[.,;:!?]$/.test(line) &&
+    line.split(/\s+/).length <= 9
+  )
+    return line.trim();
   return null;
 }
 
@@ -73,7 +83,12 @@ function splitLong(line: string): string[] {
   while (rest.length > CHUNK_TARGET_CHARS) {
     const window = rest.slice(0, CHUNK_TARGET_CHARS);
     const cut = Math.max(window.lastIndexOf('. '), window.lastIndexOf('? '), window.lastIndexOf('! '));
-    const at = cut > CHUNK_TARGET_CHARS / 3 ? cut + 1 : window.lastIndexOf(' ') > 0 ? window.lastIndexOf(' ') : CHUNK_TARGET_CHARS;
+    const at =
+      cut > CHUNK_TARGET_CHARS / 3
+        ? cut + 1
+        : window.lastIndexOf(' ') > 0
+          ? window.lastIndexOf(' ')
+          : CHUNK_TARGET_CHARS;
     out.push(rest.slice(0, at).trim());
     rest = rest.slice(at).trim();
   }
@@ -96,7 +111,13 @@ export function chunkText(pages: string[], paged: boolean): Chunk[] {
       const content = sanitiseExcerpt(raw);
       const sanitised = content !== raw.replace(MARKUP, ' ').replace(/\s+/g, ' ').trim();
       if (!content) return;
-      chunks.push({ ordinal: chunks.length, heading: heading ? sanitiseExcerpt(heading).slice(0, 200) || null : null, page, content, sanitised });
+      chunks.push({
+        ordinal: chunks.length,
+        heading: heading ? sanitiseExcerpt(heading).slice(0, 200) || null : null,
+        page,
+        content,
+        sanitised,
+      });
     };
     for (const rawLine of pages[p]!.replace(/\r\n?/g, '\n').split('\n')) {
       const line = rawLine.trim();

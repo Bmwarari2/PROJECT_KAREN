@@ -28,7 +28,8 @@ export class IntegrationHttpError extends Error {
 
 export function assertIntegrationUrl(url: string): URL {
   const u = new URL(url);
-  if (u.protocol !== 'https:' || !(u.hostname in INTEGRATION_HOSTS)) throw new IntegrationHttpError(0, 'hostNotAllowed', `Outbound host not allowed: ${u.hostname}`);
+  if (u.protocol !== 'https:' || !(u.hostname in INTEGRATION_HOSTS))
+    throw new IntegrationHttpError(0, 'hostNotAllowed', `Outbound host not allowed: ${u.hostname}`);
   return u;
 }
 
@@ -45,7 +46,13 @@ export async function integrationRequest<T = unknown>(
   fetchImpl: typeof fetch,
   method: string,
   url: string,
-  opts: { headers?: Record<string, string>; json?: unknown; form?: Record<string, string>; timeoutMs?: number; okStatuses?: number[] } = {},
+  opts: {
+    headers?: Record<string, string>;
+    json?: unknown;
+    form?: Record<string, string>;
+    timeoutMs?: number;
+    okStatuses?: number[];
+  } = {},
 ): Promise<JsonResponse<T>> {
   assertIntegrationUrl(url);
   const headers: Record<string, string> = { accept: 'application/json', ...opts.headers };
@@ -57,7 +64,13 @@ export async function integrationRequest<T = unknown>(
     headers['content-type'] = 'application/x-www-form-urlencoded';
     body = new URLSearchParams(opts.form).toString();
   }
-  const res = await fetchImpl(url, { method, headers, body, redirect: 'error', signal: AbortSignal.timeout(opts.timeoutMs ?? 20_000) });
+  const res = await fetchImpl(url, {
+    method,
+    headers,
+    body,
+    redirect: 'error',
+    signal: AbortSignal.timeout(opts.timeoutMs ?? 20_000),
+  });
   const text = await res.text();
   let parsed: unknown = undefined;
   if (text) {
@@ -68,7 +81,11 @@ export async function integrationRequest<T = unknown>(
     }
   }
   if (!res.ok && !(opts.okStatuses ?? []).includes(res.status)) {
-    throw new IntegrationHttpError(res.status, providerErrorCode(parsed), `${method} ${new URL(url).hostname} failed with ${res.status}`);
+    throw new IntegrationHttpError(
+      res.status,
+      providerErrorCode(parsed),
+      `${method} ${new URL(url).hostname} failed with ${res.status}`,
+    );
   }
   return { status: res.status, body: parsed as T };
 }

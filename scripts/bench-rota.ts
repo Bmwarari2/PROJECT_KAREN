@@ -29,12 +29,27 @@ await admin.connect();
 await admin.query(`DROP DATABASE IF EXISTS ${DB} WITH (FORCE)`);
 await admin.query(`CREATE DATABASE ${DB}`);
 await admin.end();
-await migrate({ ownerUrl: `${OWNER}/${DB}`, rolePasswords: { thapsus_app: APP_PW, thapsus_backoffice: APP_PW, thapsus_reporting: APP_PW } });
+await migrate({
+  ownerUrl: `${OWNER}/${DB}`,
+  rolePasswords: { thapsus_app: APP_PW, thapsus_backoffice: APP_PW, thapsus_reporting: APP_PW },
+});
 
 const now = { at: new Date() };
 const deps: Deps = {
-  config: { env: 'test', cell: 'uk', domain: 'thapsus-hr.test', appBaseUrl: 'http://localhost:3000', apiBaseUrl: 'http://localhost:4000', globalBaseUrl: 'http://localhost:3000' },
-  router: new TenantRouter({ cell: 'uk', databases: { shared: appUrl('thapsus_app') }, cacheTtlMs: 0, poolMax: 10 }),
+  config: {
+    env: 'test',
+    cell: 'uk',
+    domain: 'thapsus-hr.test',
+    appBaseUrl: 'http://localhost:3000',
+    apiBaseUrl: 'http://localhost:4000',
+    globalBaseUrl: 'http://localhost:3000',
+  },
+  router: new TenantRouter({
+    cell: 'uk',
+    databases: { shared: appUrl('thapsus_app') },
+    cacheTtlMs: 0,
+    poolMax: 10,
+  }),
   directory: new InMemoryDirectory(),
   mailer: new MemoryMailer('uk'),
   keys: new LocalKeyProvider('33'.repeat(32)),
@@ -53,22 +68,62 @@ const app = await buildApp(deps, { logger: false });
 await app.ready();
 
 // ---- fictional tenant with 10,000 shift workers and 50,000 draft shifts ---------------------------------
-const cookieOf = (r: { headers: Record<string, unknown> }) => String(([] as string[]).concat((r.headers['set-cookie'] as string[] | string) ?? [])[0] ?? '').split(';')[0]!;
-const signup = await app.inject({ method: 'POST', url: '/v1/signup', remoteAddress: '10.201.0.1', payload: { companyName: 'Fictional Bench Retail Ltd', slug: 'bench-rota', region: 'uk', ownerName: 'Olive Owner', ownerEmail: 'owner@bench-rota.example.test', password: PASSWORD, acceptDpa: true } });
+const cookieOf = (r: { headers: Record<string, unknown> }) =>
+  String(([] as string[]).concat((r.headers['set-cookie'] as string[] | string) ?? [])[0] ?? '').split(
+    ';',
+  )[0]!;
+const signup = await app.inject({
+  method: 'POST',
+  url: '/v1/signup',
+  remoteAddress: '10.201.0.1',
+  payload: {
+    companyName: 'Fictional Bench Retail Ltd',
+    slug: 'bench-rota',
+    region: 'uk',
+    ownerName: 'Olive Owner',
+    ownerEmail: 'owner@bench-rota.example.test',
+    password: PASSWORD,
+    acceptDpa: true,
+  },
+});
 if (signup.statusCode !== 201) throw new Error(`signup failed: ${signup.body}`);
 const tenantId = signup.json().tenantId as string;
 const cookie = cookieOf(signup);
 const enrol = await app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/enroll', headers: { cookie } });
 const code = totpCode(enrol.json().secret, now.at);
-await app.inject({ method: 'POST', url: '/v1/auth/mfa/totp/confirm', headers: { cookie }, payload: { code } });
+await app.inject({
+  method: 'POST',
+  url: '/v1/auth/mfa/totp/confirm',
+  headers: { cookie },
+  payload: { code },
+});
 const post = async (url: string, payload: unknown) => {
   const r = await app.inject({ method: 'POST', url, headers: { cookie }, payload: payload as object });
   if (r.statusCode >= 300) throw new Error(`${url} ${r.statusCode} ${r.body}`);
   return r.json();
 };
-const entity = (await post('/v1/org/legal-entities', { name: 'Fictional Bench Retail Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' })).id;
+const entity = (
+  await post('/v1/org/legal-entities', {
+    name: 'Fictional Bench Retail Ltd',
+    country: 'GB',
+    regionCode: 'GB-ENG',
+    currency: 'GBP',
+    timeZone: 'Europe/London',
+  })
+).id;
 const stores = [];
-for (let i = 0; i < 20; i++) stores.push((await post('/v1/org/locations', { name: `Fictional Store ${i + 1}`, country: 'GB', regionCode: 'GB-ENG', timeZone: 'Europe/London', entityId: entity })).id as string);
+for (let i = 0; i < 20; i++)
+  stores.push(
+    (
+      await post('/v1/org/locations', {
+        name: `Fictional Store ${i + 1}`,
+        country: 'GB',
+        regionCode: 'GB-ENG',
+        timeZone: 'Europe/London',
+        entityId: entity,
+      })
+    ).id as string,
+  );
 
 const seedStart = performance.now();
 await withTenant(deps.router, tenantId, async (tx) => {
@@ -90,7 +145,11 @@ await withTenant(deps.router, tenantId, async (tx) => {
 const ownerConn = new pg.Client({ connectionString: `${OWNER}/${DB}` });
 await ownerConn.connect();
 await ownerConn.query('ANALYZE');
-const counts = (await ownerConn.query<{ e: string; s: string }>(`SELECT (SELECT count(*) FROM app.employees) AS e, (SELECT count(*) FROM app.shifts) AS s`)).rows[0]!;
+const counts = (
+  await ownerConn.query<{ e: string; s: string }>(
+    `SELECT (SELECT count(*) FROM app.employees) AS e, (SELECT count(*) FROM app.shifts) AS s`,
+  )
+).rows[0]!;
 await ownerConn.end();
 const seedMs = Math.round(performance.now() - seedStart);
 console.log(`seeded ${counts.e} employees and ${counts.s} shifts in ${seedMs} ms`);
@@ -99,8 +158,17 @@ console.log(`seeded ${counts.e} employees and ${counts.s} shifts in ${seedMs} ms
 const stats = (name: string, times: number[], extra: Record<string, unknown> = {}) => {
   const t = [...times].sort((a, b) => a - b);
   const pct = (p: number) => t[Math.min(t.length - 1, Math.ceil((p / 100) * t.length) - 1)]!;
-  const out = { name, samples: t.length, p50: Math.round(pct(50)), p95: Math.round(pct(95)), max: Math.round(t.at(-1)!), ...extra };
-  console.log(`${name.padEnd(48)} n=${String(out.samples).padStart(3)}  p50 ${out.p50} ms  p95 ${out.p95} ms  max ${out.max} ms`);
+  const out = {
+    name,
+    samples: t.length,
+    p50: Math.round(pct(50)),
+    p95: Math.round(pct(95)),
+    max: Math.round(t.at(-1)!),
+    ...extra,
+  };
+  console.log(
+    `${name.padEnd(48)} n=${String(out.samples).padStart(3)}  p50 ${out.p50} ms  p95 ${out.p95} ms  max ${out.max} ms`,
+  );
   return out;
 };
 const get = async (url: string) => {
@@ -119,7 +187,11 @@ async function walkGrid(limit: number, filter = '') {
   let shifts = 0;
   let bytes = 0;
   do {
-    const r: { ms: number; body: { rows: Array<{ shifts: unknown[] }>; nextCursor: string | null }; bytes: number } = await get(`/v1/rota?weekStart=${WEEK}&limit=${limit}${filter}${cursor ? `&cursor=${cursor}` : ''}`);
+    const r: {
+      ms: number;
+      body: { rows: Array<{ shifts: unknown[] }>; nextCursor: string | null };
+      bytes: number;
+    } = await get(`/v1/rota?weekStart=${WEEK}&limit=${limit}${filter}${cursor ? `&cursor=${cursor}` : ''}`);
     times.push(r.ms);
     rows += r.body.rows.length;
     shifts += r.body.rows.reduce((a, x) => a + x.shifts.length, 0);
@@ -141,17 +213,30 @@ for (let i = 0; i < 20; i++) firsts.push((await get(`/v1/rota?weekStart=${WEEK}&
 results.push(stats('rota grid: first page (200 rows + total)', firsts));
 const walks = [];
 for (let i = 0; i < 3; i++) walks.push(await walkGrid(200));
-results.push(stats('rota grid: every keyset page (200 rows)', walks.flatMap((w) => w.times), { rows: walks[0]!.rows, shifts: walks[0]!.shifts, kbPerPage: Math.round(walks[0]!.bytes / walks[0]!.times.length / 1024) }));
+results.push(
+  stats(
+    'rota grid: every keyset page (200 rows)',
+    walks.flatMap((w) => w.times),
+    {
+      rows: walks[0]!.rows,
+      shifts: walks[0]!.shifts,
+      kbPerPage: Math.round(walks[0]!.bytes / walks[0]!.times.length / 1024),
+    },
+  ),
+);
 const store = await walkGrid(200, `&locationId=${stores[3]}`);
 results.push(stats('rota grid: one store (~500 people)', store.times, { rows: store.rows }));
 const search: number[] = [];
-for (let i = 0; i < 20; i++) search.push((await get(`/v1/rota?weekStart=${WEEK}&limit=200&q=${String(1000 + i * 37).slice(0, 4)}`)).ms);
+for (let i = 0; i < 20; i++)
+  search.push((await get(`/v1/rota?weekStart=${WEEK}&limit=200&q=${String(1000 + i * 37).slice(0, 4)}`)).ms);
 results.push(stats('rota grid: name search', search));
 const shiftPages: number[] = [];
 let sc: string | null = null;
 let shiftRows = 0;
 do {
-  const r: { ms: number; body: { data: unknown[]; nextCursor: string | null } } = await get(`/v1/shifts?from=${WEEK}&to=2030-01-13&limit=500${sc ? `&cursor=${sc}` : ''}`);
+  const r: { ms: number; body: { data: unknown[]; nextCursor: string | null } } = await get(
+    `/v1/shifts?from=${WEEK}&to=2030-01-13&limit=500${sc ? `&cursor=${sc}` : ''}`,
+  );
   shiftPages.push(r.ms);
   shiftRows += r.body.data.length;
   sc = r.body.nextCursor;
@@ -159,7 +244,14 @@ do {
 results.push(stats('shift list: every keyset page (500 shifts)', shiftPages, { shifts: shiftRows }));
 
 mkdirSync('.verify', { recursive: true });
-const report = { at: new Date().toISOString(), workers: Number(counts.e), shifts: Number(counts.s), seedMs, publish: { shifts: pub.published, ms: publishMs }, results };
+const report = {
+  at: new Date().toISOString(),
+  workers: Number(counts.e),
+  shifts: Number(counts.s),
+  seedMs,
+  publish: { shifts: pub.published, ms: publishMs },
+  results,
+};
 writeFileSync('.verify/bench-rota.json', JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report));
 await app.close();

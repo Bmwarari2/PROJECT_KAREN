@@ -44,7 +44,8 @@ export const AI_MODEL_AVAILABILITY: Readonly<Record<HomeRegion, AiModelAvailabil
     awsRegion: REGIONS.uk.awsRegion,
     modelId: 'anthropic.claude-opus-5-5',
     modelName: 'Claude Opus 5.5',
-    sourceUrl: 'https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html',
+    sourceUrl:
+      'https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html',
     verifiedOn: '2026-10-18',
   },
   eu: {
@@ -75,8 +76,22 @@ export function inRegionModel(cell: HomeRegion): InRegionModel | null {
 }
 
 /** Inference-profile prefixes that route outside a single region. Model ids starting with these are refused. */
-export const CROSS_REGION_PROFILE_PREFIXES = ['global.', 'us.', 'eu.', 'apac.', 'au.', 'jp.', 'in.', 'ca.', 'us-gov.'] as const;
+export const CROSS_REGION_PROFILE_PREFIXES = [
+  'global.',
+  'us.',
+  'eu.',
+  'apac.',
+  'au.',
+  'jp.',
+  'in.',
+  'ca.',
+  'us-gov.',
+] as const;
 
 export function isCrossRegionProfileId(modelId: string): boolean {
-  return CROSS_REGION_PROFILE_PREFIXES.some((p) => modelId.startsWith(p)) || /:inference-profile\//.test(modelId) || /:application-inference-profile\//.test(modelId);
+  return (
+    CROSS_REGION_PROFILE_PREFIXES.some((p) => modelId.startsWith(p)) ||
+    /:inference-profile\//.test(modelId) ||
+    /:application-inference-profile\//.test(modelId)
+  );
 }

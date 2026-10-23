@@ -23,7 +23,10 @@ export default tseslint.config(
   {
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
+      ],
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': 'off',
       eqeqeq: ['error', 'smart'],
@@ -34,6 +37,11 @@ export default tseslint.config(
     ignores: ['**/*.test.tsx', 'apps/web/e2e/**'],
     plugins: { thapsus: { rules: { 'no-hardcoded-ui-strings': noHardcodedUiStrings } } },
     rules: { 'thapsus/no-hardcoded-ui-strings': 'error' },
+  },
+  {
+    // k6 scripts run in k6's JavaScript runtime, not Node
+    files: ['loadtest/k6/**'],
+    languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly' } },
   },
   {
     files: ['**/test/**', '**/*.test.ts', 'apps/web/e2e/**', 'scripts/**', 'tools/**'],

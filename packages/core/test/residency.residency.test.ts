@@ -9,7 +9,13 @@ import { assertCellResidency, endpointViolations, regionOf, type ResourceKind } 
  * in infra/test (CDK) and the database router check in apps/api/test/residency.residency.test.ts.
  */
 const sample = (kind: ResourceKind, region: string): string => {
-  const short = { 'eu-west-2': 'euw2', 'eu-central-1': 'euc1', 'us-east-2': 'use2', 'eu-west-1': 'euw1', 'us-west-1': 'usw1' }[region]!;
+  const short = {
+    'eu-west-2': 'euw2',
+    'eu-central-1': 'euc1',
+    'us-east-2': 'use2',
+    'eu-west-1': 'euw1',
+    'us-west-1': 'usw1',
+  }[region]!;
   switch (kind) {
     case 'database':
       return `postgres://thapsus_app:x@thapsus-staging.proxy-abc123.${region}.rds.amazonaws.com:5432/thapsus`;
@@ -32,11 +38,22 @@ const sample = (kind: ResourceKind, region: string): string => {
   }
 };
 
-const KINDS: ResourceKind[] = ['database', 'objectStorage', 'cache', 'queue', 'email', 'logs', 'kms', 'backup', 'search'];
+const KINDS: ResourceKind[] = [
+  'database',
+  'objectStorage',
+  'cache',
+  'queue',
+  'email',
+  'logs',
+  'kms',
+  'backup',
+  'search',
+];
 
 describe('region extraction', () => {
   it.each(KINDS)('finds the region in a %s identifier', (kind) => {
-    for (const r of HOME_REGIONS) expect(regionOf(sample(kind, REGIONS[r].awsRegion))).toBe(REGIONS[r].awsRegion);
+    for (const r of HOME_REGIONS)
+      expect(regionOf(sample(kind, REGIONS[r].awsRegion))).toBe(REGIONS[r].awsRegion);
   });
 });
 
@@ -51,14 +68,31 @@ describe.each(regionPairs())('residency %s → %s', (home: HomeRegion, other: Ho
     class C {
       constructor(readonly c: unknown) {}
     }
-    for (const svc of ['s3', 'sqs', 'ses', 'kms', 'logs', 'events', 'scheduler', 'backup', 'secretsmanager', 'elasticache', 'rds']) {
+    for (const svc of [
+      's3',
+      'sqs',
+      'ses',
+      'kms',
+      'logs',
+      'events',
+      'scheduler',
+      'backup',
+      'secretsmanager',
+      'elasticache',
+      'rds',
+    ]) {
       expect(() => create(C, svc, { region: REGIONS[other].awsRegion })).toThrow(ResidencyViolationError);
-      expect(() => create(C, svc, { region: REGIONS[other].awsRegion }, 'backup')).toThrow(ResidencyViolationError);
+      expect(() => create(C, svc, { region: REGIONS[other].awsRegion }, 'backup')).toThrow(
+        ResidencyViolationError,
+      );
     }
   });
   it(`a ${home} cell refuses to start when any endpoint points at ${other}`, () => {
     const env = {
-      DATABASES: JSON.stringify({ shared: sample('database', REGIONS[home].awsRegion), big: sample('database', REGIONS[other].awsRegion) }),
+      DATABASES: JSON.stringify({
+        shared: sample('database', REGIONS[home].awsRegion),
+        big: sample('database', REGIONS[other].awsRegion),
+      }),
     };
     expect(() => assertCellResidency(home, env)).toThrow(/Residency violation/);
   });
@@ -66,19 +100,35 @@ describe.each(regionPairs())('residency %s → %s', (home: HomeRegion, other: Ho
 
 describe.each(HOME_REGIONS)('home-region resources are accepted (%s)', (home) => {
   it('accepts every kind in the home region', () => {
-    expect(endpointViolations(home, KINDS.map((kind) => ({ kind, resource: sample(kind, REGIONS[home].awsRegion) })))).toEqual([]);
+    expect(
+      endpointViolations(
+        home,
+        KINDS.map((kind) => ({ kind, resource: sample(kind, REGIONS[home].awsRegion) })),
+      ),
+    ).toEqual([]);
   });
   it('backups may go only to the permitted backup region', () => {
     const backupRegion = REGIONS[home].backupRegion;
     const all = ['eu-west-1', 'us-west-1', 'eu-west-2', 'eu-central-1', 'us-east-2'];
     for (const r of all) {
       const ok = r === REGIONS[home].awsRegion || r === backupRegion;
-      expect(endpointViolations(home, [{ kind: 'backup', resource: sample('backup', r) }]).length === 0).toBe(ok);
+      expect(endpointViolations(home, [{ kind: 'backup', resource: sample('backup', r) }]).length === 0).toBe(
+        ok,
+      );
       // non-backup resources never use the backup region
-      if (r !== REGIONS[home].awsRegion) expect(endpointViolations(home, [{ kind: 'database', resource: sample('database', r) }])).toHaveLength(1);
+      if (r !== REGIONS[home].awsRegion)
+        expect(
+          endpointViolations(home, [{ kind: 'database', resource: sample('database', r) }]),
+        ).toHaveLength(1);
     }
   });
   it('local emulator endpoints carry no region and are allowed', () => {
-    expect(() => assertCellResidency(home, { DATABASE_URL: 'postgres://u:p@localhost:5432/x', VALKEY_URL: 'redis://localhost:6379', S3_ENDPOINT: 'http://localhost:9090' })).not.toThrow();
+    expect(() =>
+      assertCellResidency(home, {
+        DATABASE_URL: 'postgres://u:p@localhost:5432/x',
+        VALKEY_URL: 'redis://localhost:6379',
+        S3_ENDPOINT: 'http://localhost:9090',
+      }),
+    ).not.toThrow();
   });
 });

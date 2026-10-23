@@ -8,17 +8,43 @@ test.use({ locale: 'en-GB' });
 
 async function companyWithAda(page: Page) {
   await signUpAndEnrol(page);
-  const entity = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', { name: 'Fictional Shops Ltd', country: 'GB', currency: 'GBP', timeZone: 'Europe/London' })).id;
-  const ada = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/employees', { startDate: '2025-01-06', legalFirstName: 'Ada', legalLastName: 'Fictional', jobTitle: 'Store associate', entityId: entity, weeklyHours: 37.5, payAmountMinor: 2_600_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' })).id;
+  const entity = (
+    await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', {
+      name: 'Fictional Shops Ltd',
+      country: 'GB',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    })
+  ).id;
+  const ada = (
+    await apiCall<{ id: string }>(page.request, 'POST', '/v1/employees', {
+      startDate: '2025-01-06',
+      legalFirstName: 'Ada',
+      legalLastName: 'Fictional',
+      jobTitle: 'Store associate',
+      entityId: entity,
+      weeklyHours: 37.5,
+      payAmountMinor: 2_600_000,
+      payCurrency: 'GBP',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+    })
+  ).id;
   return { entity, ada };
 }
 
 test.describe('time off and absence settings', () => {
-  test('create a leave policy, assign it to a fictional employee and see it applied to their balance', async ({ page }) => {
+  test('create a leave policy, assign it to a fictional employee and see it applied to their balance', async ({
+    page,
+  }) => {
     const { ada } = await companyWithAda(page);
     const year = today('Europe/London').slice(0, 4);
     await page.goto('/app/settings/leave');
-    await expect(page.getByRole('region', { name: 'Leave types', exact: true }).getByRole('row', { name: /Annual leave/ })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Leave types', exact: true })
+        .getByRole('row', { name: /Annual leave/ }),
+    ).toBeVisible();
 
     const form = page.getByRole('region', { name: 'Add a leave policy', exact: true });
     await form.getByLabel('Name', { exact: true }).fill('Fictional 30 days');
@@ -34,7 +60,10 @@ test.describe('time off and absence settings', () => {
     await form.getByRole('button', { name: 'Add policy' }).click();
     await expect(page.getByText('Leave policy added.', { exact: true })).toBeVisible();
 
-    const policy = page.getByRole('region', { name: 'Policies', exact: true }).getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Fictional 30 days' }) });
+    const policy = page
+      .getByRole('region', { name: 'Policies', exact: true })
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { name: 'Fictional 30 days' }) });
     await expect(policy).toContainText('30 days a year, given at the start of the year');
     await expect(policy).toContainText('Up to 5 days, used within 3 months');
     await expect(policy).toContainText('0 assigned');
@@ -53,11 +82,20 @@ test.describe('time off and absence settings', () => {
     await expect(row.getByRole('cell').nth(2)).toHaveText('30 days');
     await axeBoth(page);
     // the same balance from the API, and on Ada's profile
-    const balances = await apiCall<Array<{ leaveType: string; policy: string; entitlement: number }>>(page.request, 'GET', `/v1/leave/balances/${ada}`);
-    expect(balances.find((b) => b.leaveType === 'annual')).toMatchObject({ policy: 'Fictional 30 days', entitlement: 30 });
+    const balances = await apiCall<Array<{ leaveType: string; policy: string; entitlement: number }>>(
+      page.request,
+      'GET',
+      `/v1/leave/balances/${ada}`,
+    );
+    expect(balances.find((b) => b.leaveType === 'annual')).toMatchObject({
+      policy: 'Fictional 30 days',
+      entitlement: 30,
+    });
     await page.goto(`/app/people/${ada}`);
     await page.getByRole('tab', { name: 'Time off' }).click();
-    await expect(page.getByRole('tabpanel', { name: 'Time off' }).getByRole('row', { name: /Annual leave/ })).toContainText('Fictional 30 days');
+    await expect(
+      page.getByRole('tabpanel', { name: 'Time off' }).getByRole('row', { name: /Annual leave/ }),
+    ).toContainText('Fictional 30 days');
     // time off in lieu is earned through an adjustment on the profile
     const adjust = page.getByRole('form', { name: 'Adjust a balance' });
     await adjust.getByLabel('Type', { exact: true }).selectOption({ label: 'Time off in lieu' });
@@ -93,24 +131,34 @@ test.describe('time off and absence settings', () => {
     await triggers.getByLabel('Name', { exact: true }).fill('Bradford 250');
     // without a threshold the form explains what is missing
     await triggers.getByRole('button', { name: 'Add trigger alert' }).click();
-    await expect(triggers.getByRole('alert')).toHaveText('Set a Bradford score, a number of spells, or both.');
+    await expect(triggers.getByRole('alert')).toHaveText(
+      'Set a Bradford score, a number of spells, or both.',
+    );
     await triggers.getByLabel('Bradford score').fill('250');
     await triggers.getByRole('button', { name: 'Add trigger alert' }).click();
-    await expect(triggers.getByRole('row', { name: /Bradford 250/ })).toContainText('Bradford score is 250 or more');
-    await expect(triggers.getByRole('row', { name: /Bradford 250/ })).toContainText('HR admin and the manager');
+    await expect(triggers.getByRole('row', { name: /Bradford 250/ })).toContainText(
+      'Bradford score is 250 or more',
+    );
+    await expect(triggers.getByRole('row', { name: /Bradford 250/ })).toContainText(
+      'HR admin and the manager',
+    );
 
     const cover = page.getByRole('region', { name: 'Minimum cover', exact: true });
     await cover.getByLabel('Name', { exact: true }).fill('Two on the shop floor');
     await cover.getByLabel('Minimum on duty').fill('2');
     await cover.getByLabel('Refuse the request').check();
     await cover.getByRole('button', { name: 'Add cover rule' }).click();
-    await expect(cover.getByRole('row', { name: /Two on the shop floor/ })).toContainText('Refuse the request');
+    await expect(cover.getByRole('row', { name: /Two on the shop floor/ })).toContainText(
+      'Refuse the request',
+    );
 
     const policyCard = page.getByRole('region', { name: 'Absence policy', exact: true });
     await policyCard.getByLabel('Ask for a fit note after (calendar days)').fill('7');
     await policyCard.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Changes saved.', { exact: true })).toBeVisible();
-    expect(await (await page.request.get('/v1/settings/absence')).json()).toMatchObject({ fitNoteAfterCalendarDays: 7 });
+    expect(await (await page.request.get('/v1/settings/absence')).json()).toMatchObject({
+      fitNoteAfterCalendarDays: 7,
+    });
     await axeBoth(page);
   });
 });

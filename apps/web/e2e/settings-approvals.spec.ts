@@ -10,14 +10,36 @@ const magicLink = (text: string) => /(https?:\/\/\S+\/auth\/magic\?token=\S+)/.e
 
 async function company(page: Page) {
   const owner = await signUpAndEnrol(page);
-  const entity = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', { name: 'Fictional UK Ltd', country: 'GB', currency: 'GBP', timeZone: 'Europe/London' })).id;
+  const entity = (
+    await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', {
+      name: 'Fictional UK Ltd',
+      country: 'GB',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    })
+  ).id;
   const hire = async (first: string, values: Record<string, unknown> = {}) =>
-    (await apiCall<{ id: string }>(page.request, 'POST', '/v1/employees', { startDate: '2025-01-06', legalFirstName: first, legalLastName: 'Fictional', jobTitle: 'Analyst', entityId: entity, payAmountMinor: 3_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent', ...values })).id;
+    (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/employees', {
+        startDate: '2025-01-06',
+        legalFirstName: first,
+        legalLastName: 'Fictional',
+        jobTitle: 'Analyst',
+        entityId: entity,
+        payAmountMinor: 3_000_000,
+        payCurrency: 'GBP',
+        payFrequency: 'annual',
+        contractType: 'permanent',
+        ...values,
+      })
+    ).id;
   return { ...owner, entity, hire };
 }
 
 test.describe('approvals and workflows settings', () => {
-  test('create an approval chain with a condition, two steps and escalation, then edit it', async ({ page }) => {
+  test('create an approval chain with a condition, two steps and escalation, then edit it', async ({
+    page,
+  }) => {
     await company(page);
     await page.goto('/app/settings/approval-chains');
     await expect(page.getByText('No approval chains yet')).toBeVisible();
@@ -31,16 +53,33 @@ test.describe('approvals and workflows settings', () => {
     await editor.getByLabel('Test', { exact: true }).selectOption({ label: 'is at least' });
     await editor.getByLabel('Value', { exact: true }).fill('10');
 
-    const step = (n: number) => editor.getByRole('listitem').filter({ has: page.getByRole('heading', { name: `Step ${n}`, exact: true }) });
-    await step(1).getByRole('group', { name: 'Approver' }).getByLabel('Who').selectOption({ label: 'Their manager' });
+    const step = (n: number) =>
+      editor
+        .getByRole('listitem')
+        .filter({ has: page.getByRole('heading', { name: `Step ${n}`, exact: true }) });
+    await step(1)
+      .getByRole('group', { name: 'Approver' })
+      .getByLabel('Who')
+      .selectOption({ label: 'Their manager' });
     await step(1).getByLabel('Escalate after (hours)').fill('48');
-    await expect(step(1).getByRole('group', { name: 'Escalate to' }).getByLabel('Role')).toHaveValue('hr_admin');
+    await expect(step(1).getByRole('group', { name: 'Escalate to' }).getByLabel('Role')).toHaveValue(
+      'hr_admin',
+    );
     await editor.getByRole('button', { name: 'Add a step' }).click();
-    await step(2).getByRole('group', { name: 'Approver' }).getByLabel('Who').selectOption({ label: 'Anyone with a role' });
-    await step(2).getByRole('group', { name: 'Approver' }).getByLabel('Role').selectOption({ label: 'Company owner' });
+    await step(2)
+      .getByRole('group', { name: 'Approver' })
+      .getByLabel('Who')
+      .selectOption({ label: 'Anyone with a role' });
+    await step(2)
+      .getByRole('group', { name: 'Approver' })
+      .getByLabel('Role')
+      .selectOption({ label: 'Company owner' });
     // a person approver needs a person: the browser's required check stops the form and nothing is saved
     await editor.getByRole('button', { name: 'Add a step' }).click();
-    await step(3).getByRole('group', { name: 'Approver' }).getByLabel('Who').selectOption({ label: 'A specific person' });
+    await step(3)
+      .getByRole('group', { name: 'Approver' })
+      .getByLabel('Who')
+      .selectOption({ label: 'A specific person' });
     const person = step(3).getByLabel('Choose Person');
     await expect(person).toBeVisible();
     await editor.getByRole('button', { name: 'Save' }).click();
@@ -54,7 +93,9 @@ test.describe('approvals and workflows settings', () => {
     const card = page.getByRole('region', { name: 'Time off requests', exact: true });
     await expect(card).toContainText('Long time off');
     await expect(card).toContainText('Used when Days requested is at least 10.');
-    await expect(card).toContainText('Step 1: their manager · escalates after 48 hours to anyone who is HR admin');
+    await expect(card).toContainText(
+      'Step 1: their manager · escalates after 48 hours to anyone who is HR admin',
+    );
     await expect(card).toContainText('Step 2: anyone who is Company owner');
     await axeBoth(page);
 
@@ -66,11 +107,21 @@ test.describe('approvals and workflows settings', () => {
     await expect(card).toContainText('Long time off (two steps)');
     await expect(card.getByText('Off', { exact: true })).toBeVisible();
     const [policy] = await (await page.request.get('/v1/approval-policies')).json();
-    expect(policy).toMatchObject({ subject: 'leave.request', name: 'Long time off (two steps)', enabled: false, condition: { field: 'amountDays', op: 'gte', value: 10 } });
-    expect(policy.steps).toEqual([{ approver: { type: 'manager' }, timeoutHours: 48, escalateTo: { type: 'role', value: 'hr_admin' } }, { approver: { type: 'role', value: 'owner' } }]);
+    expect(policy).toMatchObject({
+      subject: 'leave.request',
+      name: 'Long time off (two steps)',
+      enabled: false,
+      condition: { field: 'amountDays', op: 'gte', value: 10 },
+    });
+    expect(policy.steps).toEqual([
+      { approver: { type: 'manager' }, timeoutHours: 48, escalateTo: { type: 'role', value: 'hr_admin' } },
+      { approver: { type: 'role', value: 'owner' } },
+    ]);
   });
 
-  test('create an offboarding template with tasks, assignees, relative due dates and reminders', async ({ page }) => {
+  test('create an offboarding template with tasks, assignees, relative due dates and reminders', async ({
+    page,
+  }) => {
     await company(page);
     await page.goto('/app/settings/workflows');
     await page.getByRole('button', { name: 'New template' }).click();
@@ -78,7 +129,10 @@ test.describe('approvals and workflows settings', () => {
     await editor.getByLabel('Name', { exact: true }).fill('Fictional leaver checklist');
     await editor.getByLabel('Type', { exact: true }).selectOption({ label: 'Offboarding' });
     await expect(editor.getByLabel('Start automatically')).toBeChecked();
-    const task = (n: number) => editor.getByRole('listitem').filter({ has: page.getByRole('heading', { name: `Task ${n}`, exact: true }) });
+    const task = (n: number) =>
+      editor
+        .getByRole('listitem')
+        .filter({ has: page.getByRole('heading', { name: `Task ${n}`, exact: true }) });
     await task(1).getByLabel('Task', { exact: true }).fill('Collect the laptop');
     await task(1).getByLabel('Who').selectOption({ label: 'Their manager' });
     await task(1).getByLabel('Due (days from the leaving date)').fill('-3');
@@ -94,18 +148,52 @@ test.describe('approvals and workflows settings', () => {
 
     const card = page.getByRole('region', { name: 'Fictional leaver checklist', exact: true });
     await expect(card).toContainText('Starts automatically');
-    await expect(card.getByRole('row', { name: /Collect the laptop/ })).toContainText('3 days before the leaving date');
-    await expect(card.getByRole('row', { name: /Collect the laptop/ })).toContainText('1 day before it is due');
-    await expect(card.getByRole('row', { name: /Close the payroll record/ })).toContainText('On the leaving date');
-    await expect(card.getByRole('row', { name: /Close the payroll record/ })).toContainText('Anyone who is Payroll admin');
+    await expect(card.getByRole('row', { name: /Collect the laptop/ })).toContainText(
+      '3 days before the leaving date',
+    );
+    await expect(card.getByRole('row', { name: /Collect the laptop/ })).toContainText(
+      '1 day before it is due',
+    );
+    await expect(card.getByRole('row', { name: /Close the payroll record/ })).toContainText(
+      'On the leaving date',
+    );
+    await expect(card.getByRole('row', { name: /Close the payroll record/ })).toContainText(
+      'Anyone who is Payroll admin',
+    );
     const [tpl] = await (await page.request.get('/v1/workflow-templates')).json();
-    expect(tpl).toMatchObject({ kind: 'offboarding', autoStart: true, tasks: [{ title: 'Collect the laptop', assignee: { type: 'manager' }, dueOffsetDays: -3, reminderDaysBefore: 1 }, { title: 'Close the payroll record', assignee: { type: 'role', value: 'payroll_admin' }, dueOffsetDays: 0 }] });
+    expect(tpl).toMatchObject({
+      kind: 'offboarding',
+      autoStart: true,
+      tasks: [
+        {
+          title: 'Collect the laptop',
+          assignee: { type: 'manager' },
+          dueOffsetDays: -3,
+          reminderDaysBefore: 1,
+        },
+        {
+          title: 'Close the payroll record',
+          assignee: { type: 'role', value: 'payroll_admin' },
+          dueOffsetDays: 0,
+        },
+      ],
+    });
     await axeBoth(page);
   });
 
-  test('start a leaver from a profile (their reports move to someone else) and transfer a colleague', async ({ page }) => {
+  test('start a leaver from a profile (their reports move to someone else) and transfer a colleague', async ({
+    page,
+  }) => {
     const co = await company(page);
-    const location = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/locations', { name: 'Fictional Store Leeds', country: 'GB', regionCode: 'GB-ENG', timeZone: 'Europe/London', entityId: co.entity })).id;
+    const location = (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/locations', {
+        name: 'Fictional Store Leeds',
+        country: 'GB',
+        regionCode: 'GB-ENG',
+        timeZone: 'Europe/London',
+        entityId: co.entity,
+      })
+    ).id;
     const morgan = await co.hire('Morgan', { jobTitle: 'Team lead' });
     await co.hire('Reese', { managerId: morgan });
     const pat = await co.hire('Pat');
@@ -117,10 +205,15 @@ test.describe('approvals and workflows settings', () => {
     await dialog.getByLabel('Reason').fill('Resigned (fictional)');
     await dialog.getByLabel('Move their direct reports to').selectOption({ label: 'Pat Fictional' });
     await dialog.getByRole('button', { name: 'Start leaver' }).click();
-    await expect(page.getByText('Leaver started for Morgan Fictional. Last working day: 18 Dec 2026.', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Leaver started for Morgan Fictional. Last working day: 18 Dec 2026.', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByTestId('leaving-on')).toHaveText('Leaving on 18 Dec 2026');
     await expect(page.getByRole('button', { name: 'Start leaver' })).toHaveCount(0);
-    expect((await apiCall<{ employee: { endDate: string } }>(page.request, 'GET', `/v1/employees/${morgan}`)).employee.endDate).toBe('2026-12-18');
+    expect(
+      (await apiCall<{ employee: { endDate: string } }>(page.request, 'GET', `/v1/employees/${morgan}`))
+        .employee.endDate,
+    ).toBe('2026-12-18');
     await axeBoth(page);
 
     await page.goto(`/app/people/${pat}`);
@@ -134,11 +227,18 @@ test.describe('approvals and workflows settings', () => {
     await expect(page.getByText(/^Pat Fictional transfers on /)).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: 'Pat Fictional' })).toBeVisible();
     await expect(page.getByText('Senior analyst').first()).toBeVisible();
-    const after = await apiCall<{ employee: { jobTitle: string; locationId: string } }>(page.request, 'GET', `/v1/employees/${pat}`);
+    const after = await apiCall<{ employee: { jobTitle: string; locationId: string } }>(
+      page.request,
+      'GET',
+      `/v1/employees/${pat}`,
+    );
     expect(after.employee).toMatchObject({ jobTitle: 'Senior analyst', locationId: location });
   });
 
-  test('a manager delegates their approvals to a colleague for a period and ends it', async ({ page, browser }) => {
+  test('a manager delegates their approvals to a colleague for a period and ends it', async ({
+    page,
+    browser,
+  }) => {
     const co = await company(page);
     const email = `mona.manager@${co.slug}.example.test`;
     const mona = await co.hire('Mona', { jobTitle: 'Store manager', workEmail: email });
@@ -163,15 +263,24 @@ test.describe('approvals and workflows settings', () => {
     await mp.getByLabel('Last day').fill(addDays(start, 6));
     await mp.getByRole('button', { name: 'Delegate approvals' }).click();
     await expect(mp.getByText('Approvals delegated.', { exact: true })).toBeVisible();
-    const row = mp.getByRole('region', { name: 'Delegated by you', exact: true }).getByRole('row', { name: /Olive Owner/ });
+    const row = mp
+      .getByRole('region', { name: 'Delegated by you', exact: true })
+      .getByRole('row', { name: /Olive Owner/ });
     await expect(row).toContainText('Active');
     await axeBoth(mp);
     // the owner sees it as received
     await page.goto('/app/settings/delegations');
-    await expect(page.getByRole('region', { name: 'Delegated to you', exact: true }).getByRole('row', { name: /Mona Fictional/ })).toContainText('Active');
+    await expect(
+      page
+        .getByRole('region', { name: 'Delegated to you', exact: true })
+        .getByRole('row', { name: /Mona Fictional/ }),
+    ).toContainText('Active');
 
     await row.getByRole('button', { name: 'End now: delegation to Olive Owner' }).click();
-    await mp.getByRole('dialog', { name: 'End the delegation to Olive Owner?' }).getByRole('button', { name: 'End now' }).click();
+    await mp
+      .getByRole('dialog', { name: 'End the delegation to Olive Owner?' })
+      .getByRole('button', { name: 'End now' })
+      .click();
     await expect(row).toContainText('Ended');
     await context.close();
   });

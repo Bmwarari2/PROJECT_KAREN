@@ -47,10 +47,19 @@ export default function TasksPage() {
             {data.map((task) => (
               <TR key={task.id}>
                 <TD>
-                  <span className="font-semibold">{task.title}</span> <Badge className="ml-2">{t(`tasks.source.${task.source}`)}</Badge>
+                  <span className="font-semibold">{task.title}</span>{' '}
+                  <Badge className="ml-2">{t(`tasks.source.${task.source}`)}</Badge>
                 </TD>
                 <TD>{task.subjectName ?? '—'}</TD>
-                <TD>{task.dueOn ? <span className={task.dueOn < today ? 'font-semibold text-danger' : ''}>{formatDate(task.dueOn, locale)}</span> : '—'}</TD>
+                <TD>
+                  {task.dueOn ? (
+                    <span className={task.dueOn < today ? 'font-semibold text-danger' : ''}>
+                      {formatDate(task.dueOn, locale)}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </TD>
                 <TD className="text-right">
                   <Button
                     size="sm"

@@ -2,7 +2,19 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { BellRing, CheckCheck, Inbox } from 'lucide-react';
-import { Button, Card, CardTitle, EmptyState, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -33,12 +45,16 @@ function NotificationList() {
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [cursor, setCursor] = React.useState<string | null>(null);
-  const page = useApi<{ data: Note[]; unread: number; nextCursor: string | null }>(`/v1/me/notifications${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
+  const page = useApi<{ data: Note[]; unread: number; nextCursor: string | null }>(
+    `/v1/me/notifications${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+  );
   const [items, setItems] = React.useState<Note[]>([]);
   const [unread, setUnread] = React.useState(0);
   React.useEffect(() => {
     if (!page.data) return;
-    setItems((cur) => (cursor ? [...cur, ...page.data!.data.filter((n) => !cur.some((c) => c.id === n.id))] : page.data!.data));
+    setItems((cur) =>
+      cursor ? [...cur, ...page.data!.data.filter((n) => !cur.some((c) => c.id === n.id))] : page.data!.data,
+    );
     setUnread(page.data.unread);
   }, [page.data, cursor]);
   async function mark(body: { ids?: string[]; all?: boolean }) {
@@ -72,7 +88,10 @@ function NotificationList() {
       {items.length ? (
         <ul className="flex flex-col gap-2">
           {items.map((n) => (
-            <li key={n.id} className={`flex flex-wrap items-center gap-3 rounded-md border p-3 ${n.read ? 'border-border' : 'border-accent'}`}>
+            <li
+              key={n.id}
+              className={`flex flex-wrap items-center gap-3 rounded-md border p-3 ${n.read ? 'border-border' : 'border-accent'}`}
+            >
               {!n.read ? <span className="sr-only">{t('ess.notifications.new')}</span> : null}
               <span className="mr-auto min-w-0 flex-1 text-callout">
                 {n.link ? (
@@ -83,9 +102,16 @@ function NotificationList() {
                   n.title
                 )}
               </span>
-              <span className="text-footnote text-text-secondary">{formatDateTime(n.createdAt, locale, zone)}</span>
+              <span className="text-footnote text-text-secondary">
+                {formatDateTime(n.createdAt, locale, zone)}
+              </span>
               {!n.read ? (
-                <Button size="sm" variant="ghost" onClick={() => mark({ ids: [n.id] })} aria-label={t('ess.notifications.markReadNamed', { title: n.title })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => mark({ ids: [n.id] })}
+                  aria-label={t('ess.notifications.markReadNamed', { title: n.title })}
+                >
                   {t('ess.notifications.markRead')}
                 </Button>
               ) : null}
@@ -109,16 +135,29 @@ function Preferences() {
   const t = useT();
   const toast = useToast();
   const prefs = useApi<Prefs>('/v1/me/notification-preferences');
-  async function save(body: { email?: boolean; push?: boolean; categories?: Record<string, { email?: boolean; push?: boolean }> }) {
+  async function save(body: {
+    email?: boolean;
+    push?: boolean;
+    categories?: Record<string, { email?: boolean; push?: boolean }>;
+  }) {
     // optimistic: the checkbox reflects the choice at once; the server's answer then replaces it
     prefs.setData((cur) => {
       if (!cur) return cur;
       const categories = { ...cur.categories };
-      for (const [c, v] of Object.entries(body.categories ?? {})) categories[c] = { ...(categories[c] ?? { email: true, push: true }), ...v };
-      return { ...cur, ...(body.email !== undefined ? { email: body.email } : {}), ...(body.push !== undefined ? { push: body.push } : {}), categories };
+      for (const [c, v] of Object.entries(body.categories ?? {}))
+        categories[c] = { ...(categories[c] ?? { email: true, push: true }), ...v };
+      return {
+        ...cur,
+        ...(body.email !== undefined ? { email: body.email } : {}),
+        ...(body.push !== undefined ? { push: body.push } : {}),
+        categories,
+      };
     });
     try {
-      const next = await api<Omit<Prefs, 'available' | 'pushConfigured'>>('/v1/me/notification-preferences', { method: 'PUT', json: body });
+      const next = await api<Omit<Prefs, 'available' | 'pushConfigured'>>('/v1/me/notification-preferences', {
+        method: 'PUT',
+        json: body,
+      });
       prefs.setData((cur) => (cur ? { ...cur, ...next } : cur));
       toast({ title: t('ess.notifications.prefsSaved'), tone: 'success' });
     } catch {
@@ -146,11 +185,22 @@ function Preferences() {
       <p className="text-callout text-text-secondary">{t('ess.notifications.prefsIntro')}</p>
       <div className="flex flex-wrap gap-6">
         <label className="flex min-h-11 items-center gap-2 text-callout">
-          <input type="checkbox" className={box} checked={p.email} onChange={(e) => save({ email: e.target.checked })} />
+          <input
+            type="checkbox"
+            className={box}
+            checked={p.email}
+            onChange={(e) => save({ email: e.target.checked })}
+          />
           {t('ess.notifications.allEmail')}
         </label>
         <label className="flex min-h-11 items-center gap-2 text-callout">
-          <input type="checkbox" className={box} checked={p.push} disabled={!p.pushConfigured} onChange={(e) => save({ push: e.target.checked })} />
+          <input
+            type="checkbox"
+            className={box}
+            checked={p.push}
+            disabled={!p.pushConfigured}
+            onChange={(e) => save({ push: e.target.checked })}
+          />
           {t('ess.notifications.allPush')}
         </label>
       </div>
@@ -171,10 +221,24 @@ function Preferences() {
               <TR key={c}>
                 <TD>{name}</TD>
                 <TD className="text-center">
-                  <input type="checkbox" className={box} aria-label={t('ess.notifications.emailFor', { category: name })} checked={p.email && v.email} disabled={!p.email} onChange={(e) => save({ categories: { [c]: { email: e.target.checked } } })} />
+                  <input
+                    type="checkbox"
+                    className={box}
+                    aria-label={t('ess.notifications.emailFor', { category: name })}
+                    checked={p.email && v.email}
+                    disabled={!p.email}
+                    onChange={(e) => save({ categories: { [c]: { email: e.target.checked } } })}
+                  />
                 </TD>
                 <TD className="text-center">
-                  <input type="checkbox" className={box} aria-label={t('ess.notifications.pushFor', { category: name })} checked={p.push && v.push} disabled={!p.push || !p.pushConfigured} onChange={(e) => save({ categories: { [c]: { push: e.target.checked } } })} />
+                  <input
+                    type="checkbox"
+                    className={box}
+                    aria-label={t('ess.notifications.pushFor', { category: name })}
+                    checked={p.push && v.push}
+                    disabled={!p.push || !p.pushConfigured}
+                    onChange={(e) => save({ categories: { [c]: { push: e.target.checked } } })}
+                  />
                 </TD>
               </TR>
             );
@@ -206,9 +270,15 @@ export default function NotificationsPage() {
     const { publicKey } = await api<{ publicKey: string | null }>('/v1/push/vapid-public-key');
     if (!publicKey) return setState('unsupported');
     const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) });
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: b64ToBytes(publicKey),
+    });
     const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-    await api('/v1/me/push-subscriptions', { method: 'POST', json: { endpoint: json.endpoint, keys: json.keys } });
+    await api('/v1/me/push-subscriptions', {
+      method: 'POST',
+      json: { endpoint: json.endpoint, keys: json.keys },
+    });
     setState('subscribed');
   }
 

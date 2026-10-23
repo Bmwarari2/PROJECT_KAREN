@@ -33,7 +33,11 @@ export interface AbsenceRow {
   hoursLost: string;
 }
 
-export function clippedAmount(f: AbsenceFact, from: string, to: string): { daysE4: bigint; hoursE2: bigint } | null {
+export function clippedAmount(
+  f: AbsenceFact,
+  from: string,
+  to: string,
+): { daysE4: bigint; hoursE2: bigint } | null {
   if (compareDates(f.end, from) < 0 || compareDates(f.start, to) > 0) return null;
   const start = maxDate(f.start, from);
   const end = minDate(f.end, to);
@@ -49,8 +53,16 @@ export function clippedAmount(f: AbsenceFact, from: string, to: string): { daysE
 }
 
 /** Days/hours lost per group (and leave type when `byType`). */
-export function computeAbsence(facts: AbsenceFact[], from: string, to: string, byType: boolean): AbsenceRow[] {
-  const acc = new Map<string, { key: string | null; type: string | null; spells: number; emps: Set<string>; d: bigint; h: bigint }>();
+export function computeAbsence(
+  facts: AbsenceFact[],
+  from: string,
+  to: string,
+  byType: boolean,
+): AbsenceRow[] {
+  const acc = new Map<
+    string,
+    { key: string | null; type: string | null; spells: number; emps: Set<string>; d: bigint; h: bigint }
+  >();
   for (const f of facts) {
     const amount = clippedAmount(f, from, to);
     if (!amount) continue;
@@ -64,8 +76,19 @@ export function computeAbsence(facts: AbsenceFact[], from: string, to: string, b
     acc.set(id, a);
   }
   return [...acc.values()]
-    .sort((x, y) => String(x.key ?? '\uffff').localeCompare(String(y.key ?? '\uffff')) || String(x.type).localeCompare(String(y.type)))
-    .map((a) => ({ key: a.key, leaveType: a.type, spells: a.spells, employees: a.emps.size, daysLost: formatScaled(a.d, 4, 2), hoursLost: formatScaled(a.h, 2, 2) }));
+    .sort(
+      (x, y) =>
+        String(x.key ?? '\uffff').localeCompare(String(y.key ?? '\uffff')) ||
+        String(x.type).localeCompare(String(y.type)),
+    )
+    .map((a) => ({
+      key: a.key,
+      leaveType: a.type,
+      spells: a.spells,
+      employees: a.emps.size,
+      daysLost: formatScaled(a.d, 4, 2),
+      hoursLost: formatScaled(a.h, 2, 2),
+    }));
 }
 
 export interface BradfordInput {
@@ -75,12 +98,23 @@ export interface BradfordInput {
 }
 
 /** Bradford factor per employee as of `asOf` (open spells run to `asOf`). */
-export function computeBradford(inputs: BradfordInput[], asOf: string): Map<string, { spells: number; days: string; score: string }> {
+export function computeBradford(
+  inputs: BradfordInput[],
+  asOf: string,
+): Map<string, { spells: number; days: string; score: string }> {
   const out = new Map<string, { spells: number; days: string; score: string }>();
   for (const i of inputs) {
-    const bf = bradfordFactor(i.spells.map((s) => ({ start: s.start, end: s.end ?? asOf })), asOf, i.pattern);
+    const bf = bradfordFactor(
+      i.spells.map((s) => ({ start: s.start, end: s.end ?? asOf })),
+      asOf,
+      i.pattern,
+    );
     // S² × D with D in ten-thousandths of a day, shown to 2 dp.
-    out.set(i.employeeId, { spells: bf.spells, days: formatScaled(e4(bf.days), 4, 2), score: formatScaled(BigInt(bf.spells * bf.spells) * e4(bf.days), 4, 2) });
+    out.set(i.employeeId, {
+      spells: bf.spells,
+      days: formatScaled(e4(bf.days), 4, 2),
+      score: formatScaled(BigInt(bf.spells * bf.spells) * e4(bf.days), 4, 2),
+    });
   }
   return out;
 }
@@ -116,7 +150,18 @@ export function computeOvertime(facts: TimesheetFact[], from: string, to: string
   const acc = new Map<string | null, OvertimeRow & { emps: Set<string> }>();
   for (const f of facts) {
     if (compareDates(f.weekStart, from) < 0 || compareDates(f.weekStart, to) > 0) continue;
-    const a = acc.get(f.group) ?? { key: f.group, timesheets: 0, employees: 0, workedMinutes: 0, regularMinutes: 0, overtimeMinutes: 0, doubleMinutes: 0, scheduledMinutes: 0, overtimeShare: null, emps: new Set<string>() };
+    const a = acc.get(f.group) ?? {
+      key: f.group,
+      timesheets: 0,
+      employees: 0,
+      workedMinutes: 0,
+      regularMinutes: 0,
+      overtimeMinutes: 0,
+      doubleMinutes: 0,
+      scheduledMinutes: 0,
+      overtimeShare: null,
+      emps: new Set<string>(),
+    };
     a.timesheets++;
     a.emps.add(f.employeeId);
     a.workedMinutes += f.workedMinutes;
@@ -128,6 +173,9 @@ export function computeOvertime(facts: TimesheetFact[], from: string, to: string
   }
   return [...acc.values()]
     .sort((x, y) => String(x.key ?? '\uffff').localeCompare(String(y.key ?? '\uffff')))
-    .map(({ emps, ...a }) => ({ ...a, employees: emps.size, overtimeShare: percent(BigInt(a.overtimeMinutes + a.doubleMinutes), BigInt(a.workedMinutes)) }));
+    .map(({ emps, ...a }) => ({
+      ...a,
+      employees: emps.size,
+      overtimeShare: percent(BigInt(a.overtimeMinutes + a.doubleMinutes), BigInt(a.workedMinutes)),
+    }));
 }
-

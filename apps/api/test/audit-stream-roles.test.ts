@@ -1,7 +1,11 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { describe, expect, it } from 'vitest';
-import { AUDIT_STREAM_ROLE_PREFIX, AwsCrossAccountS3, isAuditStreamRoleArn } from '../src/modules/platform/siem-s3';
+import {
+  AUDIT_STREAM_ROLE_PREFIX,
+  AwsCrossAccountS3,
+  isAuditStreamRoleArn,
+} from '../src/modules/platform/siem-s3';
 
 /**
  * Phase 9.3 (ADR-0069): the cell worker's task role may assume only customer roles named
@@ -12,7 +16,11 @@ import { AUDIT_STREAM_ROLE_PREFIX, AwsCrossAccountS3, isAuditStreamRoleArn } fro
 describe('S3 audit stream roles', () => {
   it('accept only roles named thapsus-hr-audit-* in the aws partition, without a path', () => {
     expect(AUDIT_STREAM_ROLE_PREFIX).toBe('thapsus-hr-audit-');
-    for (const ok of ['arn:aws:iam::123456789012:role/thapsus-hr-audit-siem', `arn:aws:iam::123456789012:role/thapsus-hr-audit-${'a'.repeat(47)}`, 'arn:aws:iam::123456789012:role/thapsus-hr-audit-Splunk_EU.1']) {
+    for (const ok of [
+      'arn:aws:iam::123456789012:role/thapsus-hr-audit-siem',
+      `arn:aws:iam::123456789012:role/thapsus-hr-audit-${'a'.repeat(47)}`,
+      'arn:aws:iam::123456789012:role/thapsus-hr-audit-Splunk_EU.1',
+    ]) {
       expect(isAuditStreamRoleArn(ok), ok).toBe(true);
     }
     for (const bad of [
@@ -40,9 +48,21 @@ describe('S3 audit stream roles', () => {
     const url = `http://127.0.0.1:${(mock.address() as AddressInfo).port}`;
     try {
       const writer = new AwsCrossAccountS3('uk', { s3: url, sts: url });
-      const put = { region: 'eu-west-2', externalId: 'thapsus-fictional', bucket: 'fictional-audit', key: 'k', body: '{}', contentType: 'application/x-ndjson', sessionName: 's' };
-      await expect(writer.put({ ...put, roleArn: 'arn:aws:iam::123456789012:role/ThapsusAudit' })).rejects.toThrow('role_not_allowed');
-      await expect(writer.put({ ...put, roleArn: 'arn:aws:iam::123456789012:role/audit/thapsus-hr-audit-siem' })).rejects.toThrow('role_not_allowed');
+      const put = {
+        region: 'eu-west-2',
+        externalId: 'thapsus-fictional',
+        bucket: 'fictional-audit',
+        key: 'k',
+        body: '{}',
+        contentType: 'application/x-ndjson',
+        sessionName: 's',
+      };
+      await expect(
+        writer.put({ ...put, roleArn: 'arn:aws:iam::123456789012:role/ThapsusAudit' }),
+      ).rejects.toThrow('role_not_allowed');
+      await expect(
+        writer.put({ ...put, roleArn: 'arn:aws:iam::123456789012:role/audit/thapsus-hr-audit-siem' }),
+      ).rejects.toThrow('role_not_allowed');
       expect(requests).toBe(0);
     } finally {
       mock.close();

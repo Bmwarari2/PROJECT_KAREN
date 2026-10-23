@@ -1,7 +1,22 @@
 'use client';
 import * as React from 'react';
 import { CalendarPlus, Link2, Stethoscope } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate, formatUnit } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -37,7 +52,12 @@ interface Req {
   status: string;
 }
 
-const statusTone = { approved: 'success', pending: 'warning', rejected: 'danger', cancelled: 'neutral' } as const;
+const statusTone = {
+  approved: 'success',
+  pending: 'warning',
+  rejected: 'danger',
+  cancelled: 'neutral',
+} as const;
 const rtwTone = { due: 'warning', completed: 'success', not_required: 'neutral' } as const;
 
 interface SicknessRecord {
@@ -53,7 +73,9 @@ function SicknessCard() {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
-  const people = useApi<{ data: Array<{ id: string; displayName?: string }> }>('/v1/employees?status=active&limit=200');
+  const people = useApi<{ data: Array<{ id: string; displayName?: string }> }>(
+    '/v1/employees?status=active&limit=200',
+  );
   const recent = useApi<SicknessRecord[]>('/v1/sickness');
   const [form, setForm] = React.useState({ employeeId: '', startDate: '', endDate: '' });
   const [busy, setBusy] = React.useState(false);
@@ -62,12 +84,25 @@ function SicknessCard() {
     e.preventDefault();
     setBusy(true);
     try {
-      const r = await api<{ fitNoteRequired: boolean }>('/v1/sickness', { method: 'POST', json: { employeeId: form.employeeId || people.data?.data[0]?.id, startDate: form.startDate, endDate: form.endDate || undefined } });
-      toast({ title: t(r.fitNoteRequired ? 'timeOff.sickness.fitNoteRequired' : 'timeOff.sickness.recorded'), tone: 'success' });
+      const r = await api<{ fitNoteRequired: boolean }>('/v1/sickness', {
+        method: 'POST',
+        json: {
+          employeeId: form.employeeId || people.data?.data[0]?.id,
+          startDate: form.startDate,
+          endDate: form.endDate || undefined,
+        },
+      });
+      toast({
+        title: t(r.fitNoteRequired ? 'timeOff.sickness.fitNoteRequired' : 'timeOff.sickness.recorded'),
+        tone: 'success',
+      });
       setForm({ ...form, startDate: '', endDate: '' });
       recent.reload();
     } catch (err) {
-      toast({ title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'), tone: 'danger' });
+      toast({
+        title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'),
+        tone: 'danger',
+      });
     } finally {
       setBusy(false);
     }
@@ -79,7 +114,13 @@ function SicknessCard() {
       <form onSubmit={submit} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
         <Field id="sick-employee" label={t('timeOff.sickness.employee')}>
           {(p) => (
-            <select {...p} required value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
+            <select
+              {...p}
+              required
+              value={form.employeeId}
+              onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
+              className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+            >
               {(people.data?.data ?? []).map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.displayName ?? x.id}
@@ -88,23 +129,46 @@ function SicknessCard() {
             </select>
           )}
         </Field>
-        <Field id="sick-start" label={t('timeOff.sickness.firstDay')}>{(p) => <Input {...p} type="date" required value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />}</Field>
-        <Field id="sick-end" label={t('timeOff.sickness.lastDay')}>{(p) => <Input {...p} type="date" min={form.startDate || undefined} value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />}</Field>
+        <Field id="sick-start" label={t('timeOff.sickness.firstDay')}>
+          {(p) => (
+            <Input
+              {...p}
+              type="date"
+              required
+              value={form.startDate}
+              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field id="sick-end" label={t('timeOff.sickness.lastDay')}>
+          {(p) => (
+            <Input
+              {...p}
+              type="date"
+              min={form.startDate || undefined}
+              value={form.endDate}
+              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+            />
+          )}
+        </Field>
         <Button type="submit" loading={busy} disabled={!people.data?.data.length}>
           <Stethoscope aria-hidden className="h-4 w-4 stroke-[1.5]" />
           {t('timeOff.sickness.submit')}
         </Button>
       </form>
-      <h4 className="mt-5 text-callout font-semibold">{t('timeOff.sickness.recent')}</h4>
+      <h3 className="mt-5 text-callout font-semibold">{t('timeOff.sickness.recent')}</h3>
       {recent.data?.length ? (
         <ul className="mt-2 flex flex-col gap-2">
           {recent.data.slice(0, 10).map((r) => (
             <li key={r.id} className="flex flex-wrap items-center gap-2 text-callout">
               <span className="font-semibold">{r.employeeName}</span>
               <span className="text-text-secondary">
-                {formatDate(r.startDate, locale)} – {r.endDate ? formatDate(r.endDate, locale) : t('timeOff.sickness.ongoing')}
+                {formatDate(r.startDate, locale)} –{' '}
+                {r.endDate ? formatDate(r.endDate, locale) : t('timeOff.sickness.ongoing')}
               </span>
-              <Badge tone={rtwTone[r.rtwStatus as keyof typeof rtwTone] ?? 'neutral'}>{t(`timeOff.sickness.rtw.${r.rtwStatus}`)}</Badge>
+              <Badge tone={rtwTone[r.rtwStatus as keyof typeof rtwTone] ?? 'neutral'}>
+                {t(`timeOff.sickness.rtw.${r.rtwStatus}`)}
+              </Badge>
             </li>
           ))}
         </ul>
@@ -121,13 +185,25 @@ export default function TimeOffPage() {
   const toast = useToast();
   const session = useSession();
   const employeeId = session?.employeeId;
-  const canRecordSickness = !!session?.permissions.some((p) => p === '*' || p === 'absence.*' || p === 'absence.record');
+  const canRecordSickness = !!session?.permissions.some(
+    (p) => p === '*' || p === 'absence.*' || p === 'absence.record',
+  );
   const balances = useApi<Balance[]>(employeeId ? `/v1/leave/balances/${employeeId}` : null);
   const types = useApi<LeaveType[]>('/v1/leave/types');
   const mine = useApi<Req[]>(employeeId ? `/v1/leave/requests?employeeId=${employeeId}` : null);
   const today = new Date().toISOString().slice(0, 10);
   const in30 = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
-  const team = useApi<{ entries: Array<{ employeeId: string; name: string; start: string; end: string; kind: string; status: string }>; holidays: Array<{ date: string; name: string }> }>(`/v1/leave/calendar?from=${today}&to=${in30}`);
+  const team = useApi<{
+    entries: Array<{
+      employeeId: string;
+      name: string;
+      start: string;
+      end: string;
+      kind: string;
+      status: string;
+    }>;
+    holidays: Array<{ date: string; name: string }>;
+  }>(`/v1/leave/calendar?from=${today}&to=${in30}`);
   const [form, setForm] = React.useState({ leaveTypeId: '', startDate: today, endDate: today, note: '' });
   const [busy, setBusy] = React.useState(false);
   const typeName = (key: string) => {
@@ -139,13 +215,28 @@ export default function TimeOffPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      const r = await api<{ status: string; amountDays: number }>('/v1/leave/requests', { method: 'POST', json: { ...form, leaveTypeId: form.leaveTypeId || types.data?.find((x) => x.key === 'annual')?.id, note: form.note || undefined } });
-      toast({ title: t(r.status === 'approved' ? 'timeOff.bookedToast' : 'timeOff.requested', { amount: formatUnit(r.amountDays, 'day', locale) }), tone: 'success' });
+      const r = await api<{ status: string; amountDays: number }>('/v1/leave/requests', {
+        method: 'POST',
+        json: {
+          ...form,
+          leaveTypeId: form.leaveTypeId || types.data?.find((x) => x.key === 'annual')?.id,
+          note: form.note || undefined,
+        },
+      });
+      toast({
+        title: t(r.status === 'approved' ? 'timeOff.bookedToast' : 'timeOff.requested', {
+          amount: formatUnit(r.amountDays, 'day', locale),
+        }),
+        tone: 'success',
+      });
       balances.reload();
       mine.reload();
       team.reload();
     } catch (err) {
-      toast({ title: err instanceof ApiProblem ? (err.body.detail as string) ?? err.title : t('common.error'), tone: 'danger' });
+      toast({
+        title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'),
+        tone: 'danger',
+      });
     } finally {
       setBusy(false);
     }
@@ -176,7 +267,9 @@ export default function TimeOffPage() {
                 <Card key={b.leaveType}>
                   <CardTitle>{typeName(b.leaveType)}</CardTitle>
                   <p className="mt-2 text-title-1 tabular-nums">{b.available}</p>
-                  <p className="text-footnote text-text-secondary">{t(b.unit === 'hours' ? 'timeOff.hoursAvailable' : 'timeOff.daysAvailable')}</p>
+                  <p className="text-footnote text-text-secondary">
+                    {t(b.unit === 'hours' ? 'timeOff.hoursAvailable' : 'timeOff.daysAvailable')}
+                  </p>
                   <dl className="mt-3 grid grid-cols-2 gap-1 text-footnote text-text-secondary">
                     <dt>{t('timeOff.entitlement')}</dt>
                     <dd className="text-right tabular-nums">{b.entitlement}</dd>
@@ -208,18 +301,60 @@ export default function TimeOffPage() {
             <form onSubmit={submit} className="mt-3 grid gap-3 md:grid-cols-5 md:items-end">
               <Field id="type" label={t('timeOff.type')}>
                 {(p) => (
-                  <select {...p} value={form.leaveTypeId} onChange={(e) => setForm({ ...form, leaveTypeId: e.target.value })} className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
-                    {(types.data ?? []).filter((x) => x.category !== 'sickness').map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {x.name[locale] ?? x.name['en-GB']}
-                      </option>
-                    ))}
+                  <select
+                    {...p}
+                    value={form.leaveTypeId}
+                    onChange={(e) => setForm({ ...form, leaveTypeId: e.target.value })}
+                    className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+                  >
+                    {(types.data ?? [])
+                      .filter((x) => x.category !== 'sickness')
+                      .map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.name[locale] ?? x.name['en-GB']}
+                        </option>
+                      ))}
                   </select>
                 )}
               </Field>
-              <Field id="start" label={t('timeOff.from')}>{(p) => <Input {...p} type="date" required value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value, endDate: e.target.value > form.endDate ? e.target.value : form.endDate })} />}</Field>
-              <Field id="end" label={t('timeOff.to')}>{(p) => <Input {...p} type="date" required min={form.startDate} value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />}</Field>
-              <Field id="note" label={t('timeOff.note')}>{(p) => <Input {...p} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />}</Field>
+              <Field id="start" label={t('timeOff.from')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="date"
+                    required
+                    value={form.startDate}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        startDate: e.target.value,
+                        endDate: e.target.value > form.endDate ? e.target.value : form.endDate,
+                      })
+                    }
+                  />
+                )}
+              </Field>
+              <Field id="end" label={t('timeOff.to')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="date"
+                    required
+                    min={form.startDate}
+                    value={form.endDate}
+                    onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field id="note" label={t('timeOff.note')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={form.note}
+                    onChange={(e) => setForm({ ...form, note: e.target.value })}
+                  />
+                )}
+              </Field>
               <Button type="submit" loading={busy}>
                 <CalendarPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
                 {t('timeOff.send')}
@@ -250,10 +385,13 @@ export default function TimeOffPage() {
                       </TD>
                       <TD className="text-right">{r.amountDays}</TD>
                       <TD>
-                        <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>{t(`timeOff.status.${r.status}`)}</Badge>
+                        <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
+                          {t(`timeOff.status.${r.status}`)}
+                        </Badge>
                       </TD>
                       <TD className="text-right">
-                        {(r.status === 'pending' || (r.status === 'approved' && r.startDate > today)) && r.leaveType !== 'sickness' ? (
+                        {(r.status === 'pending' || (r.status === 'approved' && r.startDate > today)) &&
+                        r.leaveType !== 'sickness' ? (
                           <Button
                             size="sm"
                             variant="ghost"
@@ -297,7 +435,8 @@ export default function TimeOffPage() {
         )}
         {team.data?.holidays.length ? (
           <p className="mt-3 text-footnote text-text-secondary">
-            {t('timeOff.upcomingHolidays')}: {team.data.holidays.map((h) => `${formatDate(h.date, locale, 'short')} ${h.name}`).join(' · ')}
+            {t('timeOff.upcomingHolidays')}:{' '}
+            {team.data.holidays.map((h) => `${formatDate(h.date, locale, 'short')} ${h.name}`).join(' · ')}
           </p>
         ) : null}
       </Card>

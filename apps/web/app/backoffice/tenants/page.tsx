@@ -31,17 +31,32 @@ export default function TenantsPage() {
   const [view, setView] = React.useState<'cell' | 'all'>('cell');
   const [q, setQ] = React.useState('');
   const dq = useDebounced(q);
-  const cell = useApi<CellTenant[]>(view === 'cell' ? `/v1/backoffice/tenants?q=${encodeURIComponent(dq)}` : null);
+  const cell = useApi<CellTenant[]>(
+    view === 'cell' ? `/v1/backoffice/tenants?q=${encodeURIComponent(dq)}` : null,
+  );
   const all = useApi<DirectoryRow[]>(view === 'all' ? '/v1/backoffice/tenants/all-regions' : null);
   const mb = (b: number) => formatNumber(b / 1_048_576, locale, { maximumFractionDigits: 1 });
   return (
     <div className="flex flex-col gap-5">
-      <PageTitle title={t('backoffice.tenants.title')} lead={view === 'cell' ? t('backoffice.tenants.cellLead') : t('backoffice.tenants.allLead')}>
+      <PageTitle
+        title={t('backoffice.tenants.title')}
+        lead={view === 'cell' ? t('backoffice.tenants.cellLead') : t('backoffice.tenants.allLead')}
+      >
         <div role="group" aria-label={t('backoffice.tenants.viewLabel')} className="flex gap-2">
-          <Button size="sm" variant={view === 'cell' ? 'primary' : 'secondary'} aria-pressed={view === 'cell'} onClick={() => setView('cell')}>
+          <Button
+            size="sm"
+            variant={view === 'cell' ? 'primary' : 'secondary'}
+            aria-pressed={view === 'cell'}
+            onClick={() => setView('cell')}
+          >
             {t('backoffice.tenants.thisCell')}
           </Button>
-          <Button size="sm" variant={view === 'all' ? 'primary' : 'secondary'} aria-pressed={view === 'all'} onClick={() => setView('all')}>
+          <Button
+            size="sm"
+            variant={view === 'all' ? 'primary' : 'secondary'}
+            aria-pressed={view === 'all'}
+            onClick={() => setView('all')}
+          >
             {t('backoffice.tenants.allRegions')}
           </Button>
         </div>
@@ -52,7 +67,13 @@ export default function TenantsPage() {
             <label htmlFor="tenant-q" className="sr-only">
               {t('backoffice.tenants.search')}
             </label>
-            <Input id="tenant-q" type="search" placeholder={t('backoffice.tenants.search')} value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              id="tenant-q"
+              type="search"
+              placeholder={t('backoffice.tenants.search')}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
           <Table>
             <caption className="sr-only">{t('backoffice.tenants.thisCell')}</caption>
@@ -76,7 +97,11 @@ export default function TenantsPage() {
                   <TD>
                     <Badge>{r.status}</Badge>
                   </TD>
-                  <TD>{r.planId ? `${t(`pricing.plans.${r.planId}.name`)}${r.billingStatus ? ` · ${t(`billing.status.${r.billingStatus}`)}` : ''}` : '—'}</TD>
+                  <TD>
+                    {r.planId
+                      ? `${t(`pricing.plans.${r.planId}.name`)}${r.billingStatus ? ` · ${t(`billing.status.${r.billingStatus}`)}` : ''}`
+                      : '—'}
+                  </TD>
                   <TD>{r.usage ? formatNumber(r.usage.headcount, locale) : '—'}</TD>
                   <TD>{r.usage ? formatNumber(r.usage.activeUsers, locale) : '—'}</TD>
                   <TD>{r.usage ? t('backoffice.tenants.mb', { value: mb(r.usage.storageBytes) }) : '—'}</TD>

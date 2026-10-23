@@ -7,11 +7,17 @@ test.use({ locale: 'en-GB' });
 
 /** Presses "Clock in" and waits for the kiosk API to answer (messages can repeat, so wait on the response). */
 const tap = async (kiosk: Page) => {
-  await Promise.all([kiosk.waitForResponse((r) => r.url().includes('/v1/kiosk/clock')), kiosk.getByRole('button', { name: 'Clock in' }).click()]);
+  await Promise.all([
+    kiosk.waitForResponse((r) => r.url().includes('/v1/kiosk/clock')),
+    kiosk.getByRole('button', { name: 'Clock in' }).click(),
+  ]);
 };
 
 test.describe('shared kiosk', () => {
-  test('pairs once, then clocks an employee with number + PIN; a wrong PIN is refused without saying why', async ({ page, browser }) => {
+  test('pairs once, then clocks an employee with number + PIN; a wrong PIN is refused without saying why', async ({
+    page,
+    browser,
+  }) => {
     const co = await companyWithStaff(page, 1);
     await page.goto('/app/clock');
     await page.getByLabel('New PIN (4 to 8 digits)').fill('4826');
@@ -44,9 +50,15 @@ test.describe('shared kiosk', () => {
     for (const d of '4826') await kiosk.getByRole('button', { name: `Digit ${d}` }).click();
     await tap(kiosk);
     await expect(kiosk.getByTestId('kiosk-message')).toHaveText('Clocked in. Thank you, Ada.');
-    const rows = await sql<{ source: string }>('SELECT source FROM app.clock_events WHERE employee_id = $1', [co.staff[0]]);
+    const rows = await sql<{ source: string }>('SELECT source FROM app.clock_events WHERE employee_id = $1', [
+      co.staff[0],
+    ]);
     expect(rows).toEqual([{ source: 'kiosk' }]);
-    const pin = (await sql<{ pin_hash: string }>('SELECT pin_hash FROM app.kiosk_pins WHERE employee_id = $1', [co.staff[0]]))[0]!;
+    const pin = (
+      await sql<{ pin_hash: string }>('SELECT pin_hash FROM app.kiosk_pins WHERE employee_id = $1', [
+        co.staff[0],
+      ])
+    )[0]!;
     expect(pin.pin_hash.startsWith('$argon2id$')).toBe(true);
 
     await kiosk.reload();

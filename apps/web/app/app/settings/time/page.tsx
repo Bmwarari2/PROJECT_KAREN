@@ -2,12 +2,38 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { MapPin, Monitor, Pencil } from 'lucide-react';
-import { Badge, Button, buttonVariants, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, Textarea } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  buttonVariants,
+  Dialog,
+  DialogContent,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  Textarea,
+} from '@thapsus/ui';
 import { dateTimeFormat, formatNumber, LOCALES } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { ConfirmAction, FormError, PageHeader, RadioGroup, selectClass, SettingsCard, useAction, useOrg, usePermission } from '../kit';
+import {
+  ConfirmAction,
+  FormError,
+  PageHeader,
+  RadioGroup,
+  selectClass,
+  SettingsCard,
+  useAction,
+  useOrg,
+  usePermission,
+} from '../kit';
 
 interface TimeSettings {
   enforcement: 'warn' | 'block';
@@ -24,7 +50,8 @@ interface Location {
   geofence: { lat: number; lng: number; radiusMetres: number } | null;
 }
 
-const put = (body: Partial<TimeSettings>) => api<TimeSettings>('/v1/settings/time', { method: 'PUT', json: body });
+const put = (body: Partial<TimeSettings>) =>
+  api<TimeSettings>('/v1/settings/time', { method: 'PUT', json: body });
 
 function WorkingTime({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   const t = useT();
@@ -33,13 +60,19 @@ function WorkingTime({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   const [enforcement, setEnforcement] = React.useState(s.enforcement);
   const [weekStart, setWeekStart] = React.useState(String(s.workweekStartsOn));
   // 1 January 2001 was a Monday, so day n of that week is ISO weekday n.
-  const weekday = (n: number) => dateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2001, 0, n)));
+  const weekday = (n: number) =>
+    dateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2001, 0, n)));
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (await action.run(() => put({ enforcement, workweekStartsOn: Number(weekStart) }), t('admin.saved'))) onSaved();
+    if (await action.run(() => put({ enforcement, workweekStartsOn: Number(weekStart) }), t('admin.saved')))
+      onSaved();
   }
   return (
-    <SettingsCard id="working-time" title={t('admin.time.rulesTitle')} description={t('admin.time.rulesBody')}>
+    <SettingsCard
+      id="working-time"
+      title={t('admin.time.rulesTitle')}
+      description={t('admin.time.rulesBody')}
+    >
       <form onSubmit={submit} className="flex flex-col gap-4">
         <RadioGroup
           name="enforcement"
@@ -51,9 +84,19 @@ function WorkingTime({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
             { value: 'block', label: t('admin.time.block'), hint: t('admin.time.blockHint') },
           ]}
         />
-        <Field id="week-start" label={t('admin.time.weekStart')} hint={t('admin.time.weekStartHint')} className="sm:w-1/2">
+        <Field
+          id="week-start"
+          label={t('admin.time.weekStart')}
+          hint={t('admin.time.weekStartHint')}
+          className="sm:w-1/2"
+        >
           {(p) => (
-            <select {...p} className={selectClass} value={weekStart} onChange={(e) => setWeekStart(e.target.value)}>
+            <select
+              {...p}
+              className={selectClass}
+              value={weekStart}
+              onChange={(e) => setWeekStart(e.target.value)}
+            >
               {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <option key={n} value={n}>
                   {weekday(n)}
@@ -82,13 +125,20 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const code = country.trim().toUpperCase();
-    const texts = Object.fromEntries(Object.entries(notice).map(([l, x]) => [l, x.trim()]).filter(([, x]) => x));
+    const texts = Object.fromEntries(
+      Object.entries(notice)
+        .map(([l, x]) => [l, x.trim()])
+        .filter(([, x]) => x),
+    );
     if (!Object.keys(texts).length) {
       action.setError(t('admin.time.noticeRequired'));
       return;
     }
     const countries = [...new Set([...s.geofence.countries, code])];
-    const ok = await action.run(() => put({ geofence: { countries, notice: { ...s.geofence.notice, [code]: texts } } }), t('admin.time.geofenceSaved', { country: code }));
+    const ok = await action.run(
+      () => put({ geofence: { countries, notice: { ...s.geofence.notice, [code]: texts } } }),
+      t('admin.time.geofenceSaved', { country: code }),
+    );
     if (ok) {
       setCountry('');
       setNotice({});
@@ -110,21 +160,43 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   };
 
   return (
-    <SettingsCard id="geofencing" title={t('admin.time.geofenceTitle')} description={t('admin.time.geofenceBody')}>
+    <SettingsCard
+      id="geofencing"
+      title={t('admin.time.geofenceTitle')}
+      description={t('admin.time.geofenceBody')}
+    >
       {s.geofence.countries.length === 0 ? (
         <p className="text-callout text-text-secondary">{t('admin.time.geofenceOff')}</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {s.geofence.countries.map((c) => (
-            <li key={c} className="flex flex-col gap-2 rounded-md border border-border p-4" data-testid={`geofence-${c}`}>
+            <li
+              key={c}
+              className="flex flex-col gap-2 rounded-md border border-border p-4"
+              data-testid={`geofence-${c}`}
+            >
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className="mr-auto text-callout font-semibold">{t('admin.time.countryN', { country: c })}</h4>
+                <h3 className="mr-auto text-callout font-semibold">
+                  {t('admin.time.countryN', { country: c })}
+                </h3>
                 <Badge tone="success">{t('admin.on')}</Badge>
-                <Button size="sm" variant="ghost" aria-label={t('admin.time.editNotice', { country: c })} onClick={() => edit(c)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('admin.time.editNotice', { country: c })}
+                  onClick={() => edit(c)}
+                >
                   <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   {t('common.edit')}
                 </Button>
-                <ConfirmAction label={t('admin.turnOff')} ariaLabel={t('admin.time.turnOffLabel', { country: c })} title={t('admin.time.turnOffTitle', { country: c })} body={t('admin.time.turnOffBody')} confirmLabel={t('admin.turnOff')} onConfirm={() => remove(c)} />
+                <ConfirmAction
+                  label={t('admin.turnOff')}
+                  ariaLabel={t('admin.time.turnOffLabel', { country: c })}
+                  title={t('admin.time.turnOffTitle', { country: c })}
+                  body={t('admin.time.turnOffBody')}
+                  confirmLabel={t('admin.turnOff')}
+                  onConfirm={() => remove(c)}
+                />
               </div>
               <dl className="grid gap-x-4 gap-y-1 text-footnote sm:grid-cols-[max-content_minmax(0,1fr)]">
                 {Object.entries(s.geofence.notice[c] ?? {}).map(([l, text]) => (
@@ -138,16 +210,50 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
           ))}
         </ul>
       )}
-      <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4" aria-labelledby="geofence-form-title">
-        <h4 id="geofence-form-title" ref={form} tabIndex={-1} className="text-callout font-semibold outline-none">
+      <form
+        onSubmit={submit}
+        className="flex flex-col gap-4 border-t border-border pt-4"
+        aria-labelledby="geofence-form-title"
+      >
+        <h3
+          id="geofence-form-title"
+          ref={form}
+          tabIndex={-1}
+          className="text-callout font-semibold outline-none"
+        >
           {editing ? t('admin.time.editNoticeTitle', { country }) : t('admin.time.addCountry')}
-        </h4>
+        </h3>
         <Field id="geo-country" label={t('admin.time.country')} hint={t('admin.time.countryHint')}>
-          {(p) => <Input {...p} required readOnly={editing} maxLength={2} pattern="[A-Za-z]{2}" autoCapitalize="characters" spellCheck={false} className="uppercase sm:w-24" value={country} onChange={(e) => setCountry(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())} />}
+          {(p) => (
+            <Input
+              {...p}
+              required
+              readOnly={editing}
+              maxLength={2}
+              pattern="[A-Za-z]{2}"
+              autoCapitalize="characters"
+              spellCheck={false}
+              className="uppercase sm:w-24"
+              value={country}
+              onChange={(e) => setCountry(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
+            />
+          )}
         </Field>
         {LOCALES.map((l) => (
-          <Field key={l} id={`geo-notice-${l}`} label={t('admin.time.noticeIn', { locale: t(`locales.${l}`) })} hint={t('admin.time.noticeHint')}>
-            {(p) => <Textarea {...p} maxLength={2000} value={notice[l] ?? ''} onChange={(e) => setNotice((n) => ({ ...n, [l]: e.target.value }))} />}
+          <Field
+            key={l}
+            id={`geo-notice-${l}`}
+            label={t('admin.time.noticeIn', { locale: t(`locales.${l}`) })}
+            hint={t('admin.time.noticeHint')}
+          >
+            {(p) => (
+              <Textarea
+                {...p}
+                maxLength={2000}
+                value={notice[l] ?? ''}
+                onChange={(e) => setNotice((n) => ({ ...n, [l]: e.target.value }))}
+              />
+            )}
           </Field>
         ))}
         <FormError message={action.error} />
@@ -177,25 +283,80 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
 function SiteDialog({ loc, onClose, onSaved }: { loc: Location; onClose: () => void; onSaved: () => void }) {
   const t = useT();
   const action = useAction();
-  const [v, setV] = React.useState({ lat: loc.geofence ? String(loc.geofence.lat) : '', lng: loc.geofence ? String(loc.geofence.lng) : '', radius: String(loc.geofence?.radiusMetres ?? 150) });
+  const [v, setV] = React.useState({
+    lat: loc.geofence ? String(loc.geofence.lat) : '',
+    lng: loc.geofence ? String(loc.geofence.lng) : '',
+    radius: String(loc.geofence?.radiusMetres ?? 150),
+  });
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (await action.run(() => api(`/v1/org/locations/${loc.id}`, { method: 'PATCH', json: { geofence: { lat: Number(v.lat), lng: Number(v.lng), radiusMetres: Number(v.radius) } } }), t('admin.saved'))) onSaved();
+    if (
+      await action.run(
+        () =>
+          api(`/v1/org/locations/${loc.id}`, {
+            method: 'PATCH',
+            json: { geofence: { lat: Number(v.lat), lng: Number(v.lng), radiusMetres: Number(v.radius) } },
+          }),
+        t('admin.saved'),
+      )
+    )
+      onSaved();
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={t('admin.time.siteTitle', { name: loc.name })} description={t('admin.time.siteBody')} closeLabel={t('common.close')}>
+      <DialogContent
+        title={t('admin.time.siteTitle', { name: loc.name })}
+        description={t('admin.time.siteBody')}
+        closeLabel={t('common.close')}
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="site-lat" label={t('admin.time.latitude')}>
-              {(p) => <Input {...p} type="number" inputMode="decimal" required min={-90} max={90} step="any" value={v.lat} onChange={(e) => setV({ ...v, lat: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="decimal"
+                  required
+                  min={-90}
+                  max={90}
+                  step="any"
+                  value={v.lat}
+                  onChange={(e) => setV({ ...v, lat: e.target.value })}
+                />
+              )}
             </Field>
             <Field id="site-lng" label={t('admin.time.longitude')}>
-              {(p) => <Input {...p} type="number" inputMode="decimal" required min={-180} max={180} step="any" value={v.lng} onChange={(e) => setV({ ...v, lng: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="decimal"
+                  required
+                  min={-180}
+                  max={180}
+                  step="any"
+                  value={v.lng}
+                  onChange={(e) => setV({ ...v, lng: e.target.value })}
+                />
+              )}
             </Field>
           </div>
           <Field id="site-radius" label={t('admin.time.radius')} hint={t('admin.time.radiusHint')}>
-            {(p) => <Input {...p} type="number" inputMode="numeric" required min={25} max={5000} step={1} className="sm:w-40" value={v.radius} onChange={(e) => setV({ ...v, radius: e.target.value })} />}
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                inputMode="numeric"
+                required
+                min={25}
+                max={5000}
+                step={1}
+                className="sm:w-40"
+                value={v.radius}
+                onChange={(e) => setV({ ...v, radius: e.target.value })}
+              />
+            )}
           </Field>
           <FormError message={action.error} />
           <div className="flex flex-wrap gap-2">
@@ -203,7 +364,16 @@ function SiteDialog({ loc, onClose, onSaved }: { loc: Location; onClose: () => v
               {t('common.save')}
             </Button>
             {loc.geofence ? (
-              <Button type="button" variant="secondary" onClick={async () => (await action.run(() => api(`/v1/org/locations/${loc.id}`, { method: 'PATCH', json: { geofence: null } }), t('admin.saved'))) && onSaved()}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={async () =>
+                  (await action.run(
+                    () => api(`/v1/org/locations/${loc.id}`, { method: 'PATCH', json: { geofence: null } }),
+                    t('admin.saved'),
+                  )) && onSaved()
+                }
+              >
                 {t('admin.time.clearSite')}
               </Button>
             ) : null}
@@ -243,11 +413,27 @@ function Sites({ countries }: { countries: string[] }) {
               <TR key={l.id}>
                 <TD className="font-semibold">{l.name}</TD>
                 <TD>
-                  {l.country} {countries.includes(l.country) ? <Badge tone="success">{t('admin.time.geofenced')}</Badge> : null}
+                  {l.country}{' '}
+                  {countries.includes(l.country) ? (
+                    <Badge tone="success">{t('admin.time.geofenced')}</Badge>
+                  ) : null}
                 </TD>
-                <TD>{l.geofence ? t('admin.time.siteAreaText', { lat: n(l.geofence.lat, 5), lng: n(l.geofence.lng, 5), radius: n(l.geofence.radiusMetres, 0) }) : t('admin.time.siteNotSet')}</TD>
+                <TD>
+                  {l.geofence
+                    ? t('admin.time.siteAreaText', {
+                        lat: n(l.geofence.lat, 5),
+                        lng: n(l.geofence.lng, 5),
+                        radius: n(l.geofence.radiusMetres, 0),
+                      })
+                    : t('admin.time.siteNotSet')}
+                </TD>
                 <TD className="text-right">
-                  <Button size="sm" variant="ghost" aria-label={t('admin.time.editSite', { name: l.name })} onClick={() => setEditing(l)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('admin.time.editSite', { name: l.name })}
+                    onClick={() => setEditing(l)}
+                  >
                     <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
                     {t('common.edit')}
                   </Button>
@@ -292,7 +478,15 @@ function Clocking({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const n = (k: keyof typeof LIMITS) => Number(v[k]);
-    const body = { kiosk: { maxFailedAttempts: n('maxFailedAttempts'), lockoutMinutes: n('lockoutMinutes'), attemptsPerMinute: n('attemptsPerMinute') }, clock: { maxOfflineHours: n('maxOfflineHours') }, timesheets: { varianceToleranceMinutes: n('varianceToleranceMinutes') } };
+    const body = {
+      kiosk: {
+        maxFailedAttempts: n('maxFailedAttempts'),
+        lockoutMinutes: n('lockoutMinutes'),
+        attemptsPerMinute: n('attemptsPerMinute'),
+      },
+      clock: { maxOfflineHours: n('maxOfflineHours') },
+      timesheets: { varianceToleranceMinutes: n('varianceToleranceMinutes') },
+    };
     if (await action.run(() => put(body), t('admin.saved'))) onSaved();
   }
   return (
@@ -301,7 +495,10 @@ function Clocking({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
       title={t('admin.time.clockingTitle')}
       description={t('admin.time.clockingBody')}
       actions={
-        <Link href="/app/clock" className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}>
+        <Link
+          href="/app/clock"
+          className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
+        >
           <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />
           {t('admin.time.manageKiosks')}
         </Link>
@@ -310,8 +507,25 @@ function Clocking({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
       <form onSubmit={submit} className="flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(Object.keys(LIMITS) as Array<keyof typeof LIMITS>).map((k) => (
-            <Field key={k} id={`clock-${k}`} label={t(`admin.time.${k}`)} hint={t('admin.policy.range', { min: LIMITS[k][0], max: LIMITS[k][1] })}>
-              {(p) => <Input {...p} type="number" inputMode="numeric" required min={LIMITS[k][0]} max={LIMITS[k][1]} step={1} value={v[k]} onChange={(e) => setV((x) => ({ ...x, [k]: e.target.value }))} />}
+            <Field
+              key={k}
+              id={`clock-${k}`}
+              label={t(`admin.time.${k}`)}
+              hint={t('admin.policy.range', { min: LIMITS[k][0], max: LIMITS[k][1] })}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="numeric"
+                  required
+                  min={LIMITS[k][0]}
+                  max={LIMITS[k][1]}
+                  step={1}
+                  value={v[k]}
+                  onChange={(e) => setV((x) => ({ ...x, [k]: e.target.value }))}
+                />
+              )}
             </Field>
           ))}
         </div>

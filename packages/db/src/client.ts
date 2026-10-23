@@ -20,6 +20,25 @@ export interface PoolOptions {
   applicationName?: string;
 }
 
+/**
+ * TLS for database connections (ASVS V12.3.1 to V12.3.4). AWS endpoints (RDS Proxy, Aurora) always
+ * use TLS with the server certificate verified against the trust store: RDS Proxy presents an ACM
+ * certificate (publicly trusted) and the Aurora endpoints the Amazon RDS CA bundle that the image
+ * adds through NODE_EXTRA_CA_CERTS. Local Docker Postgres has no TLS. A `sslmode` in the URL takes
+ * precedence in node-postgres; secretToUrl() writes `verify-full`.
+ */
+export function tlsFor(url: string): { rejectUnauthorized: true } | undefined {
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return undefined;
+  }
+  return /\.amazonaws\.com$/.test(host) || /[?&]sslmode=(require|verify-ca|verify-full)\b/.test(url)
+    ? { rejectUnauthorized: true }
+    : undefined;
+}
+
 export function getPool(url: string, opts: PoolOptions = {}): pg.Pool {
   const key = url;
   let pool = pools.get(key);
@@ -30,7 +49,7 @@ export function getPool(url: string, opts: PoolOptions = {}): pg.Pool {
       idleTimeoutMillis: 30_000,
       application_name: opts.applicationName ?? process.env.SERVICE_NAME ?? 'thapsus',
       statement_timeout: opts.statementTimeoutMs ?? 30_000,
-      ssl: /sslmode=require|amazonaws\.com/.test(url) ? { rejectUnauthorized: false } : undefined,
+      ssl: tlsFor(url),
     });
     pool.on('error', () => {
       /* idle client errors are surfaced on next checkout */
@@ -59,7 +78,10 @@ export class Tx {
     if (rows.length !== 1) throw new Error(`Expected exactly one row, got ${rows.length}`);
     return rows[0]!;
   }
-  async maybe<T extends QueryResultRow = QueryResultRow>(text: string, params: unknown[] = []): Promise<T | undefined> {
+  async maybe<T extends QueryResultRow = QueryResultRow>(
+    text: string,
+    params: unknown[] = [],
+  ): Promise<T | undefined> {
     const rows = await this.query<T>(text, params);
     return rows[0];
   }

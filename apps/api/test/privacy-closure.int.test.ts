@@ -36,7 +36,12 @@ async function seed(co: PrivacyCompany) {
   await co.putSensitive(emp, 'immigration', 'share_code', 'FICTIONAL-SHARE-CODE');
   const key = `${co.owner.tenantId}/documents/${crypto.randomUUID()}.pdf`;
   await store().put(key, Buffer.from('%PDF-1.7 fictional document'), 'application/pdf');
-  await co.tx((t) => t.exec(`INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, size_bytes, status) VALUES (app.current_tenant(), $1, 'Fictional letter', 'letter', $2, 'l.pdf', 'application/pdf', 27, 'ready')`, [emp, key]));
+  await co.tx((t) =>
+    t.exec(
+      `INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, size_bytes, status) VALUES (app.current_tenant(), $1, 'Fictional letter', 'letter', $2, 'l.pdf', 'application/pdf', 27, 'ready')`,
+      [emp, key],
+    ),
+  );
   return { emp, key };
 }
 
@@ -64,11 +69,17 @@ describe('company data export', () => {
     expect(strFromU8(files['tables/app.password_credentials.csv']!)).not.toMatch(/argon2|password_hash/);
     expect(strFromU8(files['sensitive/vault-records.jsonl']!)).toContain('FICTIONAL-SHARE-CODE');
     expect(strFromU8(files['tables/vault.records.csv']!)).not.toContain('"envelope"');
-    expect(strFromU8(files[`files/${key.slice(c.owner.tenantId.length + 1)}`]!)).toBe('%PDF-1.7 fictional document');
+    expect(strFromU8(files[`files/${key.slice(c.owner.tenantId.length + 1)}`]!)).toBe(
+      '%PDF-1.7 fictional document',
+    );
     expect(strFromU8(files['files/manifest.csv']!)).toContain(key);
     // The export never contains another tenant's data.
     expect(JSON.stringify(Object.keys(files))).not.toContain(other.owner.tenantId);
-    const audited = await c.tx((t) => t.query(`SELECT 1 FROM audit.events WHERE action = 'vault.read' AND diff->>'purpose' = 'company_export'`));
+    const audited = await c.tx((t) =>
+      t.query(
+        `SELECT 1 FROM audit.events WHERE action = 'vault.read' AND diff->>'purpose' = 'company_export'`,
+      ),
+    );
     expect(audited.length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -76,11 +87,16 @@ describe('company data export', () => {
 describe('account closure', () => {
   it('requires typing the workspace name, can be cancelled, and is owner-only', async () => {
     expect((await c.api('POST', '/v1/privacy/closure', { confirmWorkspace: 'not-it' })).statusCode).toBe(422);
-    const s = await c.api('POST', '/v1/privacy/closure', { confirmWorkspace: c.owner.slug, reason: 'Fictional test' });
+    const s = await c.api('POST', '/v1/privacy/closure', {
+      confirmWorkspace: c.owner.slug,
+      reason: 'Fictional test',
+    });
     expect(s.statusCode, s.body).toBe(201);
     expect(s.json().closure).toMatchObject({ status: 'scheduled', graceDays: 30 });
     expect(ctx.directory.entries.get(c.owner.tenantId)!.status).toBe('closing');
-    expect((await c.api('POST', '/v1/privacy/closure', { confirmWorkspace: c.owner.slug })).statusCode).toBe(409);
+    expect((await c.api('POST', '/v1/privacy/closure', { confirmWorkspace: c.owner.slug })).statusCode).toBe(
+      409,
+    );
     expect((await c.api('POST', '/v1/privacy/closure/cancel')).json().closure.status).toBe('cancelled');
     expect(ctx.directory.entries.get(c.owner.tenantId)!.status).toBe('active');
     const hr = await c.loginAs(null, 'hr_admin');
@@ -93,7 +109,12 @@ describe('account closure', () => {
     const theirs = await seed(other);
     const mine = await seed(c);
     // A lockout counter keyed by workspace and email (Valkey in AWS, in-memory here).
-    await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', payload: { tenant: c.owner.slug, email: c.owner.email, password: 'wrong-password-123' }, remoteAddress: '10.99.1.1' });
+    await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { tenant: c.owner.slug, email: c.owner.email, password: 'wrong-password-123' },
+      remoteAddress: '10.99.1.1',
+    });
     const limiter = ctx.deps.limiter as MemoryRateLimiter;
     expect(limiter.keys().some((k) => k.includes(c.owner.slug))).toBe(true);
 
@@ -101,7 +122,9 @@ describe('account closure', () => {
     const closureId = s.closure.id;
     const saved = ctx.clock.now;
     try {
-      expect(await c.runJob('privacy.closure_purge', { closureId })).toEqual({ skipped: 'grace period not over' });
+      expect(await c.runJob('privacy.closure_purge', { closureId })).toEqual({
+        skipped: 'grace period not over',
+      });
       ctx.clock.now = new Date(Date.parse(s.closure.purgeAfter) + 60_000);
       const result = await c.runJob('privacy.closure_purge', { closureId });
       expect(result).toMatchObject({ sha256: expect.stringMatching(/^[0-9a-f]{64}$/) });
@@ -110,9 +133,13 @@ describe('account closure', () => {
     }
 
     // Database: no row for the tenant in any tenant table (checked as the owner, bypassing RLS).
-    const { rows: tables } = await owner.query<{ t: string }>(`SELECT format('%I.%I', n.nspname, c.relname) AS t FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind = 'r' AND n.nspname IN ('app', 'vault', 'audit') AND EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid = c.oid AND a.attname = 'tenant_id')`);
+    const { rows: tables } = await owner.query<{ t: string }>(
+      `SELECT format('%I.%I', n.nspname, c.relname) AS t FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind = 'r' AND n.nspname IN ('app', 'vault', 'audit') AND EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid = c.oid AND a.attname = 'tenant_id')`,
+    );
     for (const { t } of tables) {
-      const n = await owner.query<{ n: number }>(`SELECT count(*)::int AS n FROM ${t} WHERE tenant_id = $1`, [c.owner.tenantId]);
+      const n = await owner.query<{ n: number }>(`SELECT count(*)::int AS n FROM ${t} WHERE tenant_id = $1`, [
+        c.owner.tenantId,
+      ]);
       expect(n.rows[0]!.n, t).toBe(0);
     }
     // Files and caches.
@@ -120,23 +147,45 @@ describe('account closure', () => {
     expect(store().objects.has(mine.key)).toBe(false);
     expect(limiter.keys().some((k) => k.includes(c.owner.slug))).toBe(false);
     // Registry, directory and certificate.
-    const reg = await owner.query(`SELECT status FROM registry.tenants WHERE tenant_id = $1`, [c.owner.tenantId]);
+    const reg = await owner.query(`SELECT status FROM registry.tenants WHERE tenant_id = $1`, [
+      c.owner.tenantId,
+    ]);
     expect(reg.rows[0].status).toBe('deleted');
-    const cert = await owner.query<{ certificate: Record<string, unknown>; certificate_sha256: string }>(`SELECT certificate, certificate_sha256 FROM registry.deletion_certificates WHERE tenant_id = $1`, [c.owner.tenantId]);
-    expect(cert.rows[0]!.certificate).toMatchObject({ tenantId: c.owner.tenantId, homeRegion: 'uk', awsRegion: 'eu-west-2', database: { verifiedEmpty: true }, files: { verifiedEmpty: true }, caches: { verifiedEmpty: true }, backups: { retentionDays: 7 } });
+    const cert = await owner.query<{ certificate: Record<string, unknown>; certificate_sha256: string }>(
+      `SELECT certificate, certificate_sha256 FROM registry.deletion_certificates WHERE tenant_id = $1`,
+      [c.owner.tenantId],
+    );
+    expect(cert.rows[0]!.certificate).toMatchObject({
+      tenantId: c.owner.tenantId,
+      homeRegion: 'uk',
+      awsRegion: 'eu-west-2',
+      database: { verifiedEmpty: true },
+      files: { verifiedEmpty: true },
+      caches: { verifiedEmpty: true },
+      backups: { retentionDays: 7 },
+    });
     const entry = ctx.directory.entries.get(c.owner.tenantId)!;
     expect(entry.status).toBe('deleted');
     expect(Object.keys(entry).every((k) => (DIRECTORY_FIELDS as readonly string[]).includes(k))).toBe(true);
     expect(JSON.stringify(entry)).not.toContain('@');
     expect(JSON.stringify(cert.rows[0]!.certificate)).not.toContain('@');
     // The requester received the certificate from the home region.
-    const mail = (ctx.mailer as MemoryMailer).sent.find((m) => m.to === c.owner.email && m.subject.includes(c.owner.slug));
+    const mail = (ctx.mailer as MemoryMailer).sent.find(
+      (m) => m.to === c.owner.email && m.subject.includes(c.owner.slug),
+    );
     expect(mail?.text).toContain(cert.rows[0]!.certificate_sha256);
     // Signing in is no longer possible; the other tenant is untouched.
-    const login = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', payload: { tenant: c.owner.slug, email: c.owner.email, password: PASSWORD }, remoteAddress: '10.99.1.2' });
+    const login = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { tenant: c.owner.slug, email: c.owner.email, password: PASSWORD },
+      remoteAddress: '10.99.1.2',
+    });
     expect(login.statusCode).toBeGreaterThanOrEqual(400);
     expect(store().objects.has(theirs.key)).toBe(true);
-    const theirRows = await other.tx((t) => t.one<{ n: number }>(`SELECT count(*)::int AS n FROM app.employees`));
+    const theirRows = await other.tx((t) =>
+      t.one<{ n: number }>(`SELECT count(*)::int AS n FROM app.employees`),
+    );
     expect(theirRows.n).toBeGreaterThan(0);
   });
 });

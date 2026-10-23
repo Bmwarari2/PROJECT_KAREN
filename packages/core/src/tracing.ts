@@ -1,6 +1,11 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { BatchSpanProcessor, type ReadableSpan, type SpanExporter, type SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import {
+  BatchSpanProcessor,
+  type ReadableSpan,
+  type SpanExporter,
+  type SpanProcessor,
+} from '@opentelemetry/sdk-trace-base';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import type { Context } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/sdk-trace-base';
@@ -11,7 +16,8 @@ export function scrubSpanAttributes(attrs: Record<string, unknown>): Record<stri
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(attrs)) {
     const leaf = k.split('.').pop() ?? k;
-    if (isPersonalKey(leaf) || /http\.request\.body|db\.statement\.params|url\.query/.test(k)) out[k] = REDACTED;
+    if (isPersonalKey(leaf) || /http\.request\.body|db\.statement\.params|url\.query/.test(k))
+      out[k] = REDACTED;
     else out[k] = typeof v === 'string' ? scrubString(v) : v;
   }
   return out;
@@ -38,7 +44,10 @@ class ScrubbingProcessor implements SpanProcessor {
 export function startTracing(serviceName: string, exporter?: SpanExporter) {
   if (process.env.OTEL_SDK_DISABLED === 'true') return undefined;
   const sdk = new NodeSDK({
-    resource: resourceFromAttributes({ 'service.name': serviceName, 'cloud.region': process.env.AWS_REGION ?? 'local' }),
+    resource: resourceFromAttributes({
+      'service.name': serviceName,
+      'cloud.region': process.env.AWS_REGION ?? 'local',
+    }),
     spanProcessors: [new ScrubbingProcessor(new BatchSpanProcessor(exporter ?? new OTLPTraceExporter()))],
   });
   sdk.start();

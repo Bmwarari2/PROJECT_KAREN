@@ -9,7 +9,8 @@ import type { ComplianceReportCtx } from '../compliance/reporting';
  * Values are never floating point: integers are JSON numbers, decimals and percentages are fixed-point
  * strings ("12.50"), money is integer minor units (string) + ISO 4217 code, durations are integer minutes.
  */
-export type ColumnType = 'text' | 'enum' | 'integer' | 'decimal' | 'percent' | 'money' | 'date' | 'minutes' | 'boolean';
+export type ColumnType =
+  'text' | 'enum' | 'integer' | 'decimal' | 'percent' | 'money' | 'date' | 'minutes' | 'boolean';
 
 export interface Column {
   key: string;
@@ -61,7 +62,12 @@ export interface ReportContext {
   tx: Tx;
   principal: Principal;
   book: RuleBook;
-  tenant: { homeRegion: string; defaultCurrency: string; timeZone: string; features: Record<string, unknown> };
+  tenant: {
+    homeRegion: string;
+    defaultCurrency: string;
+    timeZone: string;
+    features: Record<string, unknown>;
+  };
   /**
    * Statutory reports (phase 5 compliance centre) read vault aggregates and write per-decrypt audit
    * entries, so they run on the WRITER through this hook instead of the reporting reader.

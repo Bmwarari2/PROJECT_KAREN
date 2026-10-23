@@ -30,14 +30,31 @@ export async function withSupportAccess<T>(
   const grant = rows[0];
   await bo.query(
     `INSERT INTO backoffice.staff_audit (staff_id, action, subject_tenant_id, target, detail, ip, request_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [staffId, grant ? `support.${action}` : 'support.access_denied', tenantId, action, JSON.stringify({ grantId: grant?.id ?? null }), meta.ip ?? null, meta.requestId ?? null],
+    [
+      staffId,
+      grant ? `support.${action}` : 'support.access_denied',
+      tenantId,
+      action,
+      JSON.stringify({ grantId: grant?.id ?? null }),
+      meta.ip ?? null,
+      meta.requestId ?? null,
+    ],
   );
   if (!grant) throw new ApiError('forbidden', 'No active support grant');
-  if (meta.write && grant.access_level !== 'read_write') throw new ApiError('forbidden', 'Grant is read-only');
+  if (meta.write && grant.access_level !== 'read_write')
+    throw new ApiError('forbidden', 'Grant is read-only');
   const readOnly = grant.access_level === 'read' || !meta.write;
   // Audit entry first, in its own transaction, so even read-only access is recorded.
   await withTenant(opts.router, tenantId, (tx) =>
-    writeAudit(tx, { actorType: 'support', actorId: staffId, action: `support.${action}`, targetType: 'support_grant', targetId: grant.id, ip: meta.ip, requestId: meta.requestId }),
+    writeAudit(tx, {
+      actorType: 'support',
+      actorId: staffId,
+      action: `support.${action}`,
+      targetType: 'support_grant',
+      targetId: grant.id,
+      ip: meta.ip,
+      requestId: meta.requestId,
+    }),
   );
   return withTenant(opts.router, tenantId, (tx) => fn(tx, grant), { actorId: staffId, readOnly });
 }

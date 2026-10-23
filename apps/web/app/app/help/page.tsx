@@ -5,7 +5,11 @@ import { buttonVariants, Card, EmptyState, Input } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
 
 /** In-app help centre: versioned, localised articles from the repo, searched with a local index (ADR-0108). */
-export default async function HelpPage({ searchParams }: { searchParams: Promise<{ q?: string; context?: string }> }) {
+export default async function HelpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; context?: string }>;
+}) {
   const { t, locale } = await serverContext();
   const { q = '', context } = await searchParams;
   const query = q.slice(0, 200);
@@ -15,7 +19,10 @@ export default async function HelpPage({ searchParams }: { searchParams: Promise
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title-2">{t('help.title')}</h1>
-        <Link href="/app/support" className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}>
+        <Link
+          href="/app/support"
+          className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
+        >
           {t('help.contactSupport')}
         </Link>
       </div>
@@ -23,7 +30,13 @@ export default async function HelpPage({ searchParams }: { searchParams: Promise
         <label htmlFor="help-q" className="sr-only">
           {t('help.searchLabel')}
         </label>
-        <Input id="help-q" name="q" type="search" defaultValue={query} placeholder={t('help.searchPlaceholder')} />
+        <Input
+          id="help-q"
+          name="q"
+          type="search"
+          defaultValue={query}
+          placeholder={t('help.searchPlaceholder')}
+        />
         <button type="submit" className={buttonVariants({ size: 'md' })}>
           <Search aria-hidden className="h-4 w-4 stroke-[1.5]" />
           {t('help.search')}
@@ -67,7 +80,11 @@ export default async function HelpPage({ searchParams }: { searchParams: Promise
           </ul>
         ) : (
           <div className="mt-3">
-            <EmptyState icon={<BookOpen aria-hidden />} title={t('help.noResults')} body={t('help.noResultsBody')} />
+            <EmptyState
+              icon={<BookOpen aria-hidden />}
+              title={t('help.noResults')}
+              body={t('help.noResultsBody')}
+            />
           </div>
         )}
       </section>

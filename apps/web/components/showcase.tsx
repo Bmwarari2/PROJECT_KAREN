@@ -6,7 +6,11 @@ import { cn } from '@thapsus/ui';
  * Sticky feature showcase: text panels scroll normally while a sticky visual swaps to the panel in view.
  * Uses IntersectionObserver only (no scroll handlers); fully static under reduced motion.
  */
-export function FeatureShowcase({ features }: { features: Array<{ key: string; title: string; body: string; icon: React.ReactNode }> }) {
+export function FeatureShowcase({
+  features,
+}: {
+  features: Array<{ key: string; title: string; body: string; icon: React.ReactNode }>;
+}) {
   const [active, setActive] = React.useState(0);
   const refs = React.useRef<Array<HTMLLIElement | null>>([]);
   React.useEffect(() => {
@@ -14,7 +18,8 @@ export function FeatureShowcase({ features }: { features: Array<{ key: string; t
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const io = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.index));
+        for (const e of entries)
+          if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.index));
       },
       { rootMargin: '-45% 0px -45% 0px' },
     );

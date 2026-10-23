@@ -94,23 +94,40 @@ try {
   const login = await fetch('http://127.0.0.1:3000/v1/auth/login', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ tenant: 'demo', email: 'manager@demo.example.test', password: process.env.SEED_PASSWORD ?? 'Demo-Password-2026' }),
+    body: JSON.stringify({
+      tenant: 'demo',
+      email: 'manager@demo.example.test',
+      password: process.env.SEED_PASSWORD ?? 'Demo-Password-2026',
+    }),
   });
   if (login.status !== 200) fail(`demo sign-in failed: ${login.status}`);
-  const cookie = login.headers.getSetCookie().map((c) => c.split(';')[0]).find((c) => c.startsWith('thr_sid='));
-  const session = await (await fetch('http://127.0.0.1:3000/v1/auth/session', { headers: { cookie } })).json();
+  const cookie = login.headers
+    .getSetCookie()
+    .map((c) => c.split(';')[0])
+    .find((c) => /^(__Host-)?thr_sid=/.test(c)); // __Host-thr_sid behind HTTPS
+  const session = await (
+    await fetch('http://127.0.0.1:3000/v1/auth/session', { headers: { cookie } })
+  ).json();
   if (!session.employeeId) fail('demo manager is not linked to an employee');
   console.log('✓ demo company sign-in through the web proxy');
 
   // mail goes to Mailpit
   const marker = `devsmoke-${Date.now()}`;
   await fetch(`${MAILPIT}/api/v1/messages`, { method: 'DELETE' }).catch(() => undefined);
-  const ml = await fetch('http://127.0.0.1:3000/v1/auth/magic-link', { method: 'POST', headers: { 'content-type': 'application/json', 'x-smoke': marker }, body: JSON.stringify({ tenant: 'demo', email: 'employee@demo.example.test' }) });
+  const ml = await fetch('http://127.0.0.1:3000/v1/auth/magic-link', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-smoke': marker },
+    body: JSON.stringify({ tenant: 'demo', email: 'employee@demo.example.test' }),
+  });
   if (ml.status >= 400) fail(`magic link request failed: ${ml.status}`);
-  await waitFor(async () => {
-    const r = await (await fetch(`${MAILPIT}/api/v1/messages`)).json();
-    return r.messages?.some((m) => m.To?.some((t) => t.Address === 'employee@demo.example.test'));
-  }, 'magic-link email in Mailpit', 60);
+  await waitFor(
+    async () => {
+      const r = await (await fetch(`${MAILPIT}/api/v1/messages`)).json();
+      return r.messages?.some((m) => m.To?.some((t) => t.Address === 'employee@demo.example.test'));
+    },
+    'magic-link email in Mailpit',
+    60,
+  );
   console.log('✓ email delivered to Mailpit');
 
   // hot reload: touching api and worker sources restarts them
@@ -118,11 +135,19 @@ try {
   const workerStarts = (output.match(/worker started/g) ?? []).length;
   utimesSync('apps/api/src/app.ts', now, now);
   utimesSync('apps/worker/src/main.ts', now, now);
-  await waitFor(async () => {
-    const h = await health('http://127.0.0.1:4000/health');
-    return h && h.bootId !== first.bootId;
-  }, 'api restart after a source change', 90);
-  await waitFor(async () => (output.match(/worker started/g) ?? []).length > workerStarts, 'worker restart after a source change', 90);
+  await waitFor(
+    async () => {
+      const h = await health('http://127.0.0.1:4000/health');
+      return h && h.bootId !== first.bootId;
+    },
+    'api restart after a source change',
+    90,
+  );
+  await waitFor(
+    async () => (output.match(/worker started/g) ?? []).length > workerStarts,
+    'worker restart after a source change',
+    90,
+  );
   console.log('✓ api and worker hot reload');
   console.log('dev smoke passed');
 } catch (err) {

@@ -1,4 +1,12 @@
-import { addDays, addYears, compareDates, dayOfWeek, daysBetween, maxDate, minDate } from '@thapsus/core/time';
+import {
+  addDays,
+  addYears,
+  compareDates,
+  dayOfWeek,
+  daysBetween,
+  maxDate,
+  minDate,
+} from '@thapsus/core/time';
 import { multiplyRatio, money } from '@thapsus/core/money';
 import { computeBalance, entitlementForYear, type BalanceInput, type WorkPattern } from '../../leave/engine';
 import { e4, formatScaled, roundDiv } from '../fixed';
@@ -23,7 +31,11 @@ import { e4, formatScaled, roundDiv } from '../fixed';
 export interface LiabilityInput extends Omit<BalanceInput, 'year'> {
   /** Leave year start (YYYY-MM-DD) containing asOf. */
   yearStart: string;
-  pay: { amountMinor: string; currency: string; frequency: 'annual' | 'monthly' | 'weekly' | 'daily' | 'hourly' } | null;
+  pay: {
+    amountMinor: string;
+    currency: string;
+    frequency: 'annual' | 'monthly' | 'weekly' | 'daily' | 'hourly';
+  } | null;
 }
 
 export interface LiabilityResult {
@@ -40,7 +52,8 @@ export interface LiabilityResult {
 }
 
 const workingDays = (p: WorkPattern) => Object.values(p).filter((h) => h > 0).length;
-const weeklyHoursE2 = (p: WorkPattern) => Object.values(p).reduce((s, h) => s + BigInt(Math.round(h * 100)), 0n);
+const weeklyHoursE2 = (p: WorkPattern) =>
+  Object.values(p).reduce((s, h) => s + BigInt(Math.round(h * 100)), 0n);
 
 export function computeLiability(i: LiabilityInput): LiabilityResult {
   const p = i.policy;
@@ -71,7 +84,12 @@ export function computeLiability(i: LiabilityInput): LiabilityResult {
   let phE4 = 0n;
   if (p.includesPublicHolidays) {
     for (const d of i.holidays) {
-      if (compareDates(d, maxDate(ys, i.employee.startDate)) < 0 || compareDates(d, i.asOf) > 0 || compareDates(d, ye) >= 0) continue;
+      if (
+        compareDates(d, maxDate(ys, i.employee.startDate)) < 0 ||
+        compareDates(d, i.asOf) > 0 ||
+        compareDates(d, ye) >= 0
+      )
+        continue;
       const h = i.pattern[dayOfWeek(d) as 1];
       if (h > 0) phE4 += p.unit === 'hours' ? BigInt(Math.round(h * 100)) * 100n : 10_000n;
     }

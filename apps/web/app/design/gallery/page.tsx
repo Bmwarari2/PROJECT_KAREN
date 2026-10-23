@@ -1,12 +1,32 @@
+import { notFound } from 'next/navigation';
 import { Inbox } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Section, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Section,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
 import { GalleryInteractive } from './interactive';
 
 export const metadata = { robots: { index: false } };
 
-/** Component gallery: every packages/ui component in one place, used for visual regression. */
+/**
+ * Component gallery: every packages/ui component in one place, used for visual regression. A
+ * development tool, so production does not serve it (ASVS V15.2.3).
+ */
 export default async function Gallery() {
+  if (process.env.APP_ENV === 'prod') notFound();
   const { t } = await serverContext();
   const g = (k: string) => t(`gallery.${k}`);
   return (
@@ -70,12 +90,17 @@ export default async function Gallery() {
             <Skeleton className="mt-3 h-4 w-full" />
             <Skeleton className="mt-2 h-4 w-4/5" />
           </Card>
-          <EmptyState icon={<Inbox aria-hidden />} title={g('emptyTitle')} body={g('emptyBody')} action={<Button size="sm">{g('primary')}</Button>} />
+          <EmptyState
+            icon={<Inbox aria-hidden />}
+            title={g('emptyTitle')}
+            body={g('emptyBody')}
+            action={<Button size="sm">{g('primary')}</Button>}
+          />
         </div>
 
         <h2 className="mt-12 text-title-3">{g('table')}</h2>
         <div className="mt-4">
-          <Table>
+          <Table scrollLabel={g('table')}>
             <THead>
               <tr>
                 <TH>{g('colName')}</TH>

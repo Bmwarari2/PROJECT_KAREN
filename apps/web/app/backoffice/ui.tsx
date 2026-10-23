@@ -11,16 +11,28 @@ export interface StaffSession {
 }
 export const StaffContext = React.createContext<StaffSession | null>(null);
 export const useStaff = () => React.useContext(StaffContext);
-export const staffCan = (s: StaffSession | null, ...roles: string[]) => !!s && (s.role === 'super_admin' || roles.includes(s.role));
+export const staffCan = (s: StaffSession | null, ...roles: string[]) =>
+  !!s && (s.role === 'super_admin' || roles.includes(s.role));
 
-export const selectClass = 'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
+export const selectClass =
+  'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
 
-export function PageTitle({ title, lead, children }: { title: string; lead?: string; children?: React.ReactNode }) {
+export function PageTitle({
+  title,
+  lead,
+  children,
+}: {
+  title: string;
+  lead?: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="text-title-2">{title}</h1>
-        {lead ? <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{lead}</p> : null}
+        {lead ? (
+          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{lead}</p>
+        ) : null}
       </div>
       {children}
     </div>
@@ -28,5 +40,11 @@ export function PageTitle({ title, lead, children }: { title: string; lead?: str
 }
 
 export function slaTone(flag: string): 'success' | 'warning' | 'danger' | 'neutral' {
-  return flag === 'breached' ? 'danger' : flag === 'at_risk' ? 'warning' : flag === 'met' ? 'success' : 'neutral';
+  return flag === 'breached'
+    ? 'danger'
+    : flag === 'at_risk'
+      ? 'warning'
+      : flag === 'met'
+        ? 'success'
+        : 'neutral';
 }

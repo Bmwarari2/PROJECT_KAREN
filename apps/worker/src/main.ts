@@ -7,7 +7,15 @@ import { publisherFromEnv } from './publisher';
 const tracing = startTracing('thapsus-worker');
 const log = createLogger({ name: 'worker' });
 const deps = await depsFromEnv();
-const engine = new Engine({ router: deps.router, deps, handlers: jobHandlers, subscribers: eventSubscribers, periodic, publisher: publisherFromEnv(deps.config.cell), log });
+const engine = new Engine({
+  router: deps.router,
+  deps,
+  handlers: jobHandlers,
+  subscribers: eventSubscribers,
+  periodic,
+  publisher: publisherFromEnv(deps.config.cell),
+  log,
+});
 
 const TICK_MS = Number(process.env.WORKER_TICK_MS ?? 1000);
 const SWEEP_MS = Number(process.env.WORKER_SWEEP_MS ?? 5 * 60_000);

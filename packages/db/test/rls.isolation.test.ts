@@ -11,12 +11,26 @@ const TENANT_SCHEMAS = ['app', 'vault', 'audit'];
 /** Schemas that hold no tenant personal data, with the reason. Every table in them must lack tenant_id. */
 const NON_TENANT_SCHEMAS: Record<string, string> = {
   registry: 'regional routing registry: tenant id, slug, region, db key, status only',
-  backoffice: 'Thapsus staff accounts and the staff action trail; tenants referenced only by subject_tenant_id',
+  backoffice:
+    'Thapsus staff accounts and the staff action trail; tenants referenced only by subject_tenant_id',
   public: 'schema_migrations bookkeeping only',
 };
 
 /** Registry tables are routing metadata; any new column must be added here deliberately (no personal data). */
-const REGISTRY_COLUMNS = new Set(['tenant_id', 'slug', 'home_region', 'db_key', 'status', 'created_at', 'updated_at', 'kind', 'signalled_at', 'issued_at', 'certificate', 'certificate_sha256']);
+const REGISTRY_COLUMNS = new Set([
+  'tenant_id',
+  'slug',
+  'home_region',
+  'db_key',
+  'status',
+  'created_at',
+  'updated_at',
+  'kind',
+  'signalled_at',
+  'issued_at',
+  'certificate',
+  'certificate_sha256',
+]);
 
 let owner: pg.Client;
 let router: TenantRouter;
@@ -34,7 +48,10 @@ beforeAll(async () => {
     [tenantB, 'b.person@b.example.test'],
   ] as const) {
     await withTenant(router, t, (tx) =>
-      tx.exec(`INSERT INTO app.users (tenant_id, email, display_name) VALUES ($1, $2, 'Fictional Person')`, [t, email]),
+      tx.exec(`INSERT INTO app.users (tenant_id, email, display_name) VALUES ($1, $2, 'Fictional Person')`, [
+        t,
+        email,
+      ]),
     );
   }
 });
@@ -85,9 +102,11 @@ describe('catalog-wide isolation checks', () => {
           `SELECT attname AS c FROM pg_attribute WHERE attrelid = $1::regclass AND attnum > 0 AND NOT attisdropped`,
           [name],
         );
-        for (const { c } of cols.rows) if (!REGISTRY_COLUMNS.has(c)) problems.push(`${name}.${c}: not on the registry allowlist`);
+        for (const { c } of cols.rows)
+          if (!REGISTRY_COLUMNS.has(c)) problems.push(`${name}.${c}: not on the registry allowlist`);
       } else if (t.schema in NON_TENANT_SCHEMAS) {
-        if (t.has_tenant) problems.push(`${name}: tenant_id column in a non-tenant schema — move it or add RLS`);
+        if (t.has_tenant)
+          problems.push(`${name}: tenant_id column in a non-tenant schema — move it or add RLS`);
       } else {
         problems.push(`${name}: table in unclassified schema ${t.schema}`);
       }
@@ -97,9 +116,13 @@ describe('catalog-wide isolation checks', () => {
   });
 
   it('the application role has no BYPASSRLS, is not superuser and owns no tables', async () => {
-    const role = await owner.query(`SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = 'thapsus_app'`);
+    const role = await owner.query(
+      `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = 'thapsus_app'`,
+    );
     expect(role.rows[0]).toEqual({ rolsuper: false, rolbypassrls: false });
-    const owned = await owner.query(`SELECT count(*)::int AS n FROM pg_class WHERE relowner = 'thapsus_app'::regrole`);
+    const owned = await owner.query(
+      `SELECT count(*)::int AS n FROM pg_class WHERE relowner = 'thapsus_app'::regrole`,
+    );
     expect(owned.rows[0].n).toBe(0);
     // extension operators resolve (USAGE on public), but nothing can be created there and the
     // migration bookkeeping table stays unreadable
@@ -115,7 +138,10 @@ describe('catalog-wide isolation checks', () => {
       SELECT n.nspname || '.' || c.relname || ':' || p.polname AS policy
       FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE p.polname <> 'tenant_isolation' ORDER BY 1`);
-    expect(rows.map((r) => r.policy)).toEqual(['app.support_grants:backoffice_grants_read', 'app.users:lookup_by_email']);
+    expect(rows.map((r) => r.policy)).toEqual([
+      'app.support_grants:backoffice_grants_read',
+      'app.users:lookup_by_email',
+    ]);
   });
 
   it('SECURITY DEFINER functions (which run with owner rights) are limited to the reviewed allowlist', async () => {
@@ -123,20 +149,38 @@ describe('catalog-wide isolation checks', () => {
       SELECT n.nspname || '.' || p.proname AS fn, has_function_privilege('public', p.oid, 'EXECUTE') AS public
       FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1`);
-    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'app.trgm_word_similarity', 'audit.purge_closed_tenant', 'audit.seal_pending']);
+    expect(rows.map((r) => r.fn)).toEqual([
+      'app.analyze_core_hr',
+      'app.tenants_for_email',
+      'app.trgm_word_similarity',
+      'audit.purge_closed_tenant',
+      'audit.seal_pending',
+    ]);
     // Ask HR retrieval (ADR-0111): a pure, pinned-search-path wrapper over pg_trgm's word_similarity(), for the application role only
     expect(rows.find((r) => r.fn === 'app.trgm_word_similarity')!.public).toBe(false);
-    const trgm = await owner.query<{ app: boolean; backoffice: boolean; volatility: string; config: string[] }>(
+    const trgm = await owner.query<{
+      app: boolean;
+      backoffice: boolean;
+      volatility: string;
+      config: string[];
+    }>(
       `SELECT has_function_privilege('thapsus_app', 'app.trgm_word_similarity(text, text)', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'app.trgm_word_similarity(text, text)', 'EXECUTE') AS backoffice, provolatile AS volatility, proconfig AS config FROM pg_proc WHERE oid = 'app.trgm_word_similarity(text, text)'::regprocedure`,
     );
-    expect(trgm.rows[0]).toEqual({ app: true, backoffice: false, volatility: 'i', config: ['search_path=pg_catalog, public'] });
+    expect(trgm.rows[0]).toEqual({
+      app: true,
+      backoffice: false,
+      volatility: 'i',
+      config: ['search_path=pg_catalog, public'],
+    });
     // verified deletion at account closure (ADR-0085): only the application role, and only for its own tenant once closing
     expect(rows.find((r) => r.fn === 'audit.purge_closed_tenant')!.public).toBe(false);
     const purge = await owner.query<{ app: boolean; backoffice: boolean; reporting: boolean }>(
       `SELECT has_function_privilege('thapsus_app', 'audit.purge_closed_tenant()', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'audit.purge_closed_tenant()', 'EXECUTE') AS backoffice, has_function_privilege('thapsus_reporting', 'audit.purge_closed_tenant()', 'EXECUTE') AS reporting`,
     );
     expect(purge.rows[0]).toEqual({ app: true, backoffice: false, reporting: false });
-    await expect(withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()'))).rejects.toThrow(/not being closed/);
+    await expect(
+      withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()')),
+    ).rejects.toThrow(/not being closed/);
     // statistics refresh after bulk imports: the application role only, nobody else
     expect(rows.find((r) => r.fn === 'app.analyze_core_hr')!.public).toBe(false);
     const roles = await owner.query<{ app: boolean; backoffice: boolean }>(
@@ -145,24 +189,33 @@ describe('catalog-wide isolation checks', () => {
     expect(roles.rows[0]).toEqual({ app: true, backoffice: false });
     await withTenant(router, tenantA, (tx) => tx.query('SELECT app.analyze_core_hr()'));
     // the role itself still cannot maintain (ANALYZE, VACUUM, REINDEX…) the shared tables
-    const maintain = await owner.query<{ m: boolean }>(`SELECT has_table_privilege('thapsus_app', 'app.employees', 'MAINTAIN') AS m`);
+    const maintain = await owner.query<{ m: boolean }>(
+      `SELECT has_table_privilege('thapsus_app', 'app.employees', 'MAINTAIN') AS m`,
+    );
     expect(maintain.rows[0]!.m).toBe(false);
   });
 });
 
 describe('cross-tenant access is impossible', () => {
   it('tenant A cannot select tenant B rows', async () => {
-    const rows = await withTenant(router, tenantA, (tx) => tx.query<{ tenant_id: string }>('SELECT tenant_id FROM app.users'));
+    const rows = await withTenant(router, tenantA, (tx) =>
+      tx.query<{ tenant_id: string }>('SELECT tenant_id FROM app.users'),
+    );
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((r) => r.tenant_id === tenantA)).toBe(true);
-    const direct = await withTenant(router, tenantA, (tx) => tx.query('SELECT * FROM app.users WHERE tenant_id = $1', [tenantB]));
+    const direct = await withTenant(router, tenantA, (tx) =>
+      tx.query('SELECT * FROM app.users WHERE tenant_id = $1', [tenantB]),
+    );
     expect(direct).toHaveLength(0);
   });
 
   it('tenant A cannot insert rows for tenant B', async () => {
     await expect(
       withTenant(router, tenantA, (tx) =>
-        tx.exec(`INSERT INTO app.users (tenant_id, email, display_name) VALUES ($1, 'x@b.example.test', 'X')`, [tenantB]),
+        tx.exec(
+          `INSERT INTO app.users (tenant_id, email, display_name) VALUES ($1, 'x@b.example.test', 'X')`,
+          [tenantB],
+        ),
       ),
     ).rejects.toThrow(/row-level security/);
   });
@@ -171,10 +224,14 @@ describe('cross-tenant access is impossible', () => {
     const updated = await withTenant(router, tenantA, (tx) =>
       tx.exec(`UPDATE app.users SET display_name = 'Hijacked' WHERE tenant_id = $1`, [tenantB]),
     );
-    const deleted = await withTenant(router, tenantA, (tx) => tx.exec(`DELETE FROM app.users WHERE tenant_id = $1`, [tenantB]));
+    const deleted = await withTenant(router, tenantA, (tx) =>
+      tx.exec(`DELETE FROM app.users WHERE tenant_id = $1`, [tenantB]),
+    );
     expect(updated).toBe(0);
     expect(deleted).toBe(0);
-    const stillThere = await withTenant(router, tenantB, (tx) => tx.query(`SELECT display_name FROM app.users`));
+    const stillThere = await withTenant(router, tenantB, (tx) =>
+      tx.query(`SELECT display_name FROM app.users`),
+    );
     expect(stillThere.map((r) => r.display_name)).toEqual(['Fictional Person']);
   });
 
@@ -190,7 +247,9 @@ describe('cross-tenant access is impossible', () => {
     const counts = await runInTransaction(pool, async (tx) => {
       const out: Record<string, number> = {};
       for (const t of tables) {
-        const r = await tx.one<{ n: number }>(`SELECT count(*)::int AS n FROM ${t.schema}.${t.table}`).catch(() => ({ n: -1 }));
+        const r = await tx
+          .one<{ n: number }>(`SELECT count(*)::int AS n FROM ${t.schema}.${t.table}`)
+          .catch(() => ({ n: -1 }));
         out[`${t.schema}.${t.table}`] = r.n;
       }
       return out;
@@ -209,7 +268,9 @@ describe('cross-tenant access is impossible', () => {
         expect((await tx.query('SELECT 1 FROM app.users')).length).toBeGreaterThan(0);
       });
       const after = await runInTransaction(pool, async (tx) => {
-        const setting = await tx.one<{ v: string | null }>("SELECT current_setting('app.tenant_id', true) AS v");
+        const setting = await tx.one<{ v: string | null }>(
+          "SELECT current_setting('app.tenant_id', true) AS v",
+        );
         const rows = await tx.query('SELECT 1 FROM app.users');
         return { setting: setting.v, rows: rows.length };
       });
@@ -222,10 +283,18 @@ describe('cross-tenant access is impossible', () => {
 
   it('the closed-tenant audit purge refuses active tenants and never touches another tenant', async () => {
     for (const t of [tenantA, tenantB]) {
-      await withTenant(router, t, (tx) => tx.exec(`INSERT INTO audit.events (tenant_id, actor_type, action) VALUES (app.current_tenant(), 'system', 'test.event')`));
+      await withTenant(router, t, (tx) =>
+        tx.exec(
+          `INSERT INTO audit.events (tenant_id, actor_type, action) VALUES (app.current_tenant(), 'system', 'test.event')`,
+        ),
+      );
     }
-    await expect(withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()'))).rejects.toThrow(/not being closed/);
-    await expect(withTenant(router, tenantA, (tx) => tx.exec('DELETE FROM audit.events'))).rejects.toThrow(/permission denied/);
+    await expect(
+      withTenant(router, tenantA, (tx) => tx.query('SELECT audit.purge_closed_tenant()')),
+    ).rejects.toThrow(/not being closed/);
+    await expect(withTenant(router, tenantA, (tx) => tx.exec('DELETE FROM audit.events'))).rejects.toThrow(
+      /permission denied/,
+    );
     // Even with the purge flag set by hand the app role has no DELETE privilege on the audit log.
     await expect(
       withTenant(router, tenantA, async (tx) => {
@@ -233,7 +302,9 @@ describe('cross-tenant access is impossible', () => {
         return tx.exec('DELETE FROM audit.events');
       }),
     ).rejects.toThrow(/permission denied/);
-    const b = await withTenant(router, tenantB, (tx) => tx.one<{ n: number }>(`SELECT count(*)::int AS n FROM audit.events WHERE action = 'test.event'`));
+    const b = await withTenant(router, tenantB, (tx) =>
+      tx.one<{ n: number }>(`SELECT count(*)::int AS n FROM audit.events WHERE action = 'test.event'`),
+    );
     expect(b.n).toBe(1);
   });
 

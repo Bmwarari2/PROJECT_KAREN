@@ -10,7 +10,10 @@ export class TenantNotFoundError extends Error {
   }
 }
 export class TenantUnavailableError extends Error {
-  constructor(readonly tenantId: string, readonly status: string) {
+  constructor(
+    readonly tenantId: string,
+    readonly status: string,
+  ) {
     super(`Tenant is ${status}`);
     this.name = 'TenantUnavailableError';
   }
@@ -51,7 +54,8 @@ export class TenantRouter {
 
   constructor(readonly config: RouterConfig) {
     this.registryKey = config.registryKey ?? 'shared';
-    if (!config.databases[this.registryKey]) throw new Error(`No database configured for key "${this.registryKey}"`);
+    if (!config.databases[this.registryKey])
+      throw new Error(`No database configured for key "${this.registryKey}"`);
   }
 
   static fromEnv(env: NodeJS.ProcessEnv = process.env): TenantRouter {
@@ -65,9 +69,15 @@ export class TenantRouter {
     // stack from infra/config/<env>.json → dedicatedDatabases. They reuse the app role secret (the migrator sets
     // the same role passwords on every database of the cell).
     if (env.DEDICATED_DATABASE_HOSTS) {
-      if (!env.DATABASE_SECRET) throw new Error('DEDICATED_DATABASE_HOSTS needs DATABASE_SECRET (the app role secret shared by every database of the cell)');
-      for (const [key, host] of Object.entries(hostMap('DEDICATED_DATABASE_HOSTS', env.DEDICATED_DATABASE_HOSTS))) {
-        if (key === 'shared') throw new Error('DEDICATED_DATABASE_HOSTS may not redefine the "shared" database');
+      if (!env.DATABASE_SECRET)
+        throw new Error(
+          'DEDICATED_DATABASE_HOSTS needs DATABASE_SECRET (the app role secret shared by every database of the cell)',
+        );
+      for (const [key, host] of Object.entries(
+        hostMap('DEDICATED_DATABASE_HOSTS', env.DEDICATED_DATABASE_HOSTS),
+      )) {
+        if (key === 'shared')
+          throw new Error('DEDICATED_DATABASE_HOSTS may not redefine the "shared" database');
         databases[key] = secretToUrl(env.DATABASE_SECRET, host);
       }
     }
@@ -76,10 +86,24 @@ export class TenantRouter {
     // reader of a cell must be in its home region; local hosts carry no region.
     const cell = env.CELL_REGION;
     if (cell && (HOME_REGIONS as readonly string[]).includes(cell)) {
-      const v = endpointViolations(cell as HomeRegion, [...Object.values(databases), ...Object.values(readers)].map((resource) => ({ kind: 'database' as const, resource })));
-      if (v.length) throw new Error(`Residency violation for ${cell} cell: ${v.map((x) => `database in ${x.region}`).join(', ')}`);
+      const v = endpointViolations(
+        cell as HomeRegion,
+        [...Object.values(databases), ...Object.values(readers)].map((resource) => ({
+          kind: 'database' as const,
+          resource,
+        })),
+      );
+      if (v.length)
+        throw new Error(
+          `Residency violation for ${cell} cell: ${v.map((x) => `database in ${x.region}`).join(', ')}`,
+        );
     }
-    return new TenantRouter({ databases, readers, poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined, cell });
+    return new TenantRouter({
+      databases,
+      readers,
+      poolMax: env.DB_POOL_MAX ? Number(env.DB_POOL_MAX) : undefined,
+      cell,
+    });
   }
 
   registryPool(): pg.Pool {
@@ -101,7 +125,13 @@ export class TenantRouter {
   readerPool(dbKey: string): { pool: pg.Pool; reader: boolean } {
     const url = this.config.readers?.[dbKey];
     if (!url) return { pool: this.pool(dbKey), reader: false };
-    return { pool: getPool(url, { max: this.config.poolMax, applicationName: `${process.env.SERVICE_NAME ?? 'thapsus'}-reader` }), reader: true };
+    return {
+      pool: getPool(url, {
+        max: this.config.poolMax,
+        applicationName: `${process.env.SERVICE_NAME ?? 'thapsus'}-reader`,
+      }),
+      reader: true,
+    };
   }
 
   async lookup(tenantId: string): Promise<RegistryEntry> {
@@ -113,7 +143,8 @@ export class TenantRouter {
       [tenantId],
     );
     const entry = res.rows[0];
-    if (!entry || (this.config.cell && entry.home_region !== this.config.cell)) throw new TenantNotFoundError(tenantId);
+    if (!entry || (this.config.cell && entry.home_region !== this.config.cell))
+      throw new TenantNotFoundError(tenantId);
     this.cache.set(tenantId, { entry, at: Date.now() });
     return entry;
   }
@@ -129,16 +160,23 @@ export class TenantRouter {
 
   async poolFor(tenantId: string, opts: { allowMoving?: boolean } = {}): Promise<pg.Pool> {
     const entry = await this.lookup(tenantId);
-    if (entry.status === 'deleted' || entry.status === 'suspended') throw new TenantUnavailableError(tenantId, entry.status);
-    if (entry.status === 'moving' && !opts.allowMoving) throw new TenantUnavailableError(tenantId, entry.status);
+    if (entry.status === 'deleted' || entry.status === 'suspended')
+      throw new TenantUnavailableError(tenantId, entry.status);
+    if (entry.status === 'moving' && !opts.allowMoving)
+      throw new TenantUnavailableError(tenantId, entry.status);
     return this.pool(entry.db_key);
   }
 
   /** Reader pool for the tenant's database (same status rules as poolFor; reads may continue while moving). */
-  async readerPoolFor(tenantId: string, opts: { allowMoving?: boolean } = {}): Promise<{ pool: pg.Pool; reader: boolean; dbKey: string }> {
+  async readerPoolFor(
+    tenantId: string,
+    opts: { allowMoving?: boolean } = {},
+  ): Promise<{ pool: pg.Pool; reader: boolean; dbKey: string }> {
     const entry = await this.lookup(tenantId);
-    if (entry.status === 'deleted' || entry.status === 'suspended') throw new TenantUnavailableError(tenantId, entry.status);
-    if (entry.status === 'moving' && !opts.allowMoving) throw new TenantUnavailableError(tenantId, entry.status);
+    if (entry.status === 'deleted' || entry.status === 'suspended')
+      throw new TenantUnavailableError(tenantId, entry.status);
+    if (entry.status === 'moving' && !opts.allowMoving)
+      throw new TenantUnavailableError(tenantId, entry.status);
     return { ...this.readerPool(entry.db_key), dbKey: entry.db_key };
   }
 
@@ -159,7 +197,8 @@ export function readersFromEnv(env: NodeJS.ProcessEnv = process.env): Record<str
   const readers: Record<string, string> = env.READER_DATABASES ? JSON.parse(env.READER_DATABASES) : {};
   if (!readers.shared) {
     if (env.REPORTING_DATABASE_URL) readers.shared = env.REPORTING_DATABASE_URL;
-    else if (env.REPORTING_DATABASE_SECRET && env.REPORTING_DATABASE_HOST) readers.shared = secretToUrl(env.REPORTING_DATABASE_SECRET, env.REPORTING_DATABASE_HOST);
+    else if (env.REPORTING_DATABASE_SECRET && env.REPORTING_DATABASE_HOST)
+      readers.shared = secretToUrl(env.REPORTING_DATABASE_SECRET, env.REPORTING_DATABASE_HOST);
   }
   if (env.DEDICATED_READER_HOSTS && env.REPORTING_DATABASE_SECRET) {
     for (const [key, host] of Object.entries(hostMap('DEDICATED_READER_HOSTS', env.DEDICATED_READER_HOSTS))) {
@@ -180,19 +219,28 @@ function hostMap(name: string, json: string): Record<string, string> {
   } catch {
     throw new Error(`${name} must be a JSON object of database key to host`);
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(`${name} must be a JSON object of database key to host`);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+    throw new Error(`${name} must be a JSON object of database key to host`);
   for (const [key, host] of Object.entries(parsed)) {
     if (!DB_KEY.test(key)) throw new Error(`${name}: invalid database key "${key.slice(0, 64)}"`);
-    if (typeof host !== 'string' || !host) throw new Error(`${name}: the host for "${key}" must be a non-empty string`);
+    if (typeof host !== 'string' || !host)
+      throw new Error(`${name}: the host for "${key}" must be a non-empty string`);
   }
   return parsed as Record<string, string>;
 }
 
 /** Builds a connection URL from a Secrets Manager database secret ({username, password, host, port, dbname}). */
 export function secretToUrl(secretJson: string, hostOverride?: string): string {
-  const s = JSON.parse(secretJson) as { username: string; password: string; host?: string; port?: number; dbname?: string };
+  const s = JSON.parse(secretJson) as {
+    username: string;
+    password: string;
+    host?: string;
+    port?: number;
+    dbname?: string;
+  };
   const host = hostOverride ?? s.host;
   if (!host) throw new Error('database secret has no host');
-  const sslmode = /amazonaws\.com$/.test(host) ? '?sslmode=require' : '';
+  // verify-full: TLS with certificate and host name checks (never the libpq "require" that skips them)
+  const sslmode = /amazonaws\.com$/.test(host) ? '?sslmode=verify-full' : '';
   return `postgres://${encodeURIComponent(s.username)}:${encodeURIComponent(s.password)}@${host}:${s.port ?? 5432}/${s.dbname ?? 'thapsus'}${sslmode}`;
 }

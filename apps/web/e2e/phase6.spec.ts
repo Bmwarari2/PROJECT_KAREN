@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { E2E_DB } from './env';
-import { expectAccessible, PASSWORD, signUpAndEnrol, totp } from './helpers';
+import { expectAccessible, PASSWORD, signUpAndEnrol } from './helpers';
 
 /**
  * Phase 6 flows in the browser (functional project, axe on every screen): a payroll admin exports a
@@ -12,8 +12,11 @@ import { expectAccessible, PASSWORD, signUpAndEnrol, totp } from './helpers';
  */
 const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 /** Argon2id hash of the shared fictional e2e PASSWORD (precomputed so the spec needs no native module). */
-const PASSWORD_HASH = '$argon2id$v=19$m=19456,t=2,p=1$LY2ACSeLwNUvhHDFBQyj/g$b4doX/i3NvlC83OTdo8OolsXpPNcDkj3PmDAndThna0';
-const PDF = Buffer.from('%PDF-1.4\n% fictional payslip for an e2e test\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
+const PASSWORD_HASH =
+  '$argon2id$v=19$m=19456,t=2,p=1$LY2ACSeLwNUvhHDFBQyj/g$b4doX/i3NvlC83OTdo8OolsXpPNcDkj3PmDAndThna0';
+const PDF = Buffer.from(
+  '%PDF-1.4\n% fictional payslip for an e2e test\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n',
+);
 
 test.describe.configure({ mode: 'serial' });
 // UK English (en-US spellings and terms such as “pay stubs” are covered by the catalogue tests)
@@ -22,26 +25,23 @@ test.use({ locale: 'en-GB' });
 let ws: { slug: string; secret: string; email: string };
 let tenantId: string;
 const person = { id: '', number: 'E2E-001', email: '' };
-let lastTotpStep = Math.floor(Date.now() / 30_000) + 1; // sign-up used the current step
+/**
+ * The admin's session from sign-up. Signing the admin in again needs a fresh TOTP code, and a code is
+ * accepted once per 30-second step, so each re-sign-in waited up to 30 s; the tests reuse this session
+ * instead (and never sign it out), and the employee signs in after the admin's cookies are cleared.
+ */
+let adminCookies: Awaited<ReturnType<BrowserContext['cookies']>>;
 
-async function signIn(page: Page, email: string, secret?: string) {
+async function asAdmin(page: Page) {
+  await page.context().addCookies(adminCookies);
+}
+async function signIn(page: Page, email: string) {
+  await page.context().clearCookies();
   await page.goto(`/signin?workspace=${ws.slug}`);
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  if (secret) {
-    // a TOTP code is accepted once: wait for a fresh time step if this one was already used
-    const step = () => Math.floor(Date.now() / 30_000) + 1;
-    while (step() <= lastTotpStep) await page.waitForTimeout(1000);
-    lastTotpStep = step();
-    await page.getByLabel('Six-digit code').fill(totp(secret, 1));
-    await page.getByRole('button', { name: 'Verify' }).click();
-  }
   await page.waitForURL(/\/app$/);
-}
-async function signOut(page: Page) {
-  await page.getByRole('button', { name: 'Sign out' }).click();
-  await page.waitForURL(/\/signin/);
 }
 
 /** Gives the fictional employee a self-service login (an invite flow is outside Phase 6). */
@@ -51,9 +51,18 @@ async function employeeLogin() {
   try {
     await db.query('BEGIN');
     await db.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
-    const u = await db.query<{ id: string }>(`INSERT INTO app.users (tenant_id, email, display_name, employee_id) VALUES ($1, $2, 'Emma Fictional', $3) RETURNING id`, [tenantId, person.email, person.id]);
-    await db.query('INSERT INTO app.password_credentials (tenant_id, user_id, password_hash) VALUES ($1, $2, $3)', [tenantId, u.rows[0]!.id, PASSWORD_HASH]);
-    await db.query(`INSERT INTO app.role_assignments (tenant_id, user_id, role_id, scope_type, scope_values) SELECT $1, $2, r.id, 'self', '{}' FROM app.roles r WHERE r.tenant_id = $1 AND r.key = 'employee'`, [tenantId, u.rows[0]!.id]);
+    const u = await db.query<{ id: string }>(
+      `INSERT INTO app.users (tenant_id, email, display_name, employee_id) VALUES ($1, $2, 'Emma Fictional', $3) RETURNING id`,
+      [tenantId, person.email, person.id],
+    );
+    await db.query(
+      'INSERT INTO app.password_credentials (tenant_id, user_id, password_hash) VALUES ($1, $2, $3)',
+      [tenantId, u.rows[0]!.id, PASSWORD_HASH],
+    );
+    await db.query(
+      `INSERT INTO app.role_assignments (tenant_id, user_id, role_id, scope_type, scope_values) SELECT $1, $2, r.id, 'self', '{}' FROM app.roles r WHERE r.tenant_id = $1 AND r.key = 'employee'`,
+      [tenantId, u.rows[0]!.id],
+    );
     await db.query('COMMIT');
   } finally {
     await db.end();
@@ -62,6 +71,7 @@ async function employeeLogin() {
 
 test('a payroll admin exports a pay period and downloads the file', async ({ page }) => {
   ws = await signUpAndEnrol(page);
+  adminCookies = await page.context().cookies();
   person.email = `emma@${ws.slug}.example.test`;
   const post = async (url: string, data: unknown) => {
     const r = await page.request.post(url, { data });
@@ -69,9 +79,35 @@ test('a payroll admin exports a pay period and downloads the file', async ({ pag
     return r.json();
   };
   tenantId = (await (await page.request.get('/v1/auth/session')).json()).tenantId;
-  const entity = (await post('/v1/org/legal-entities', { name: 'Fictional E2E Ltd', country: 'GB', regionCode: 'GB-ENG', currency: 'GBP', timeZone: 'Europe/London' })).id;
-  person.id = (await post('/v1/employees', { startDate: '2026-03-02', employeeNumber: person.number, legalFirstName: 'Emma', legalLastName: 'Fictional', jobTitle: 'Analyst', entityId: entity, payAmountMinor: 3_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' })).id;
-  await post('/v1/payroll/periods', { name: 'March 2026', frequency: 'monthly', startDate: '2026-03-01', endDate: '2026-03-31' });
+  const entity = (
+    await post('/v1/org/legal-entities', {
+      name: 'Fictional E2E Ltd',
+      country: 'GB',
+      regionCode: 'GB-ENG',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    })
+  ).id;
+  person.id = (
+    await post('/v1/employees', {
+      startDate: '2026-03-02',
+      employeeNumber: person.number,
+      legalFirstName: 'Emma',
+      legalLastName: 'Fictional',
+      jobTitle: 'Analyst',
+      entityId: entity,
+      payAmountMinor: 3_000_000,
+      payCurrency: 'GBP',
+      payFrequency: 'annual',
+      contractType: 'permanent',
+    })
+  ).id;
+  await post('/v1/payroll/periods', {
+    name: 'March 2026',
+    frequency: 'monthly',
+    startDate: '2026-03-01',
+    endDate: '2026-03-31',
+  });
 
   await page.goto('/app/payroll');
   await expect(page.getByRole('heading', { name: 'Payroll', level: 1 })).toBeVisible();
@@ -101,12 +137,16 @@ test('a payroll admin exports a pay period and downloads the file', async ({ pag
 });
 
 test('an employee sees and downloads only their own payslip', async ({ page }) => {
-  await signIn(page, ws.email, ws.secret);
+  await asAdmin(page);
   await page.goto('/app/payslips');
   await page.getByLabel('Label', { exact: true }).fill('March 2026');
   await page.getByLabel('Files', { exact: true }).setInputFiles([
     { name: `${person.number}_2026-03.pdf`, mimeType: 'application/pdf', buffer: PDF },
-    { name: 'someone-else_2026-03.pdf', mimeType: 'application/pdf', buffer: Buffer.concat([PDF, Buffer.from('% other\n')]) },
+    {
+      name: 'someone-else_2026-03.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.concat([PDF, Buffer.from('% other\n')]),
+    },
   ]);
   await page.getByRole('button', { name: 'Upload and match' }).click();
   await expect(page.getByText('1 of 2 matched')).toBeVisible();
@@ -114,7 +154,6 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
   await expectAccessible(page);
   await page.getByRole('button', { name: 'Publish matched' }).click();
   await expect(page.getByText('Documents published: 1. People notified: 0.', { exact: true })).toBeVisible(); // the employee has no login yet
-  await signOut(page);
 
   await employeeLogin();
   await signIn(page, person.email);
@@ -134,7 +173,7 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
 });
 
 test('an employee acknowledges the handover of an asset', async ({ page }) => {
-  await signIn(page, ws.email, ws.secret);
+  await asAdmin(page);
   await page.goto('/app/assets');
   await page.getByLabel('Asset tag').fill('LT-E2E-1');
   await page.getByLabel('Name', { exact: true }).fill('Fictional Laptop 13');
@@ -149,7 +188,6 @@ test('an employee acknowledges the handover of an asset', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'Issue' }).click();
   await expect(page.getByText('Awaiting confirmation')).toBeVisible();
   await expectAccessible(page);
-  await signOut(page);
 
   await signIn(page, person.email);
   await page.goto('/app/assets');
@@ -168,8 +206,10 @@ test('an employee acknowledges the handover of an asset', async ({ page }) => {
   expect(mine[0].acknowledgementStatement).toBe('assets.ackStatement.v1');
 });
 
-test('the integrations dry run shows the exact calls; every Phase 6 screen passes axe in light and dark', async ({ page }) => {
-  await signIn(page, ws.email, ws.secret);
+test('the integrations dry run shows the exact calls; every Phase 6 screen passes axe in light and dark', async ({
+  page,
+}) => {
+  await asAdmin(page);
   await page.goto('/app/integrations');
   const domain = page.locator('#microsoft365-domain'); // both provider cards have a "Domain for new accounts" field
   await domain.fill('fictional-e2e.example');

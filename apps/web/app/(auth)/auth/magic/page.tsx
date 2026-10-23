@@ -16,8 +16,15 @@ export default function MagicLinkPage() {
     const token = params.get('token') ?? '';
     // Remove the token from the address bar and history straight away.
     window.history.replaceState(null, '', '/auth/magic');
-    api<{ mfaEnrollmentRequired: boolean; mfaRequired: boolean }>('/v1/auth/magic-link/consume', { method: 'POST', json: { token } })
-      .then((r) => router.replace(r.mfaEnrollmentRequired ? '/app/security?setup=1' : r.mfaRequired ? '/signin?mfa=1' : '/app'))
+    api<{ mfaEnrollmentRequired: boolean; mfaRequired: boolean }>('/v1/auth/magic-link/consume', {
+      method: 'POST',
+      json: { token },
+    })
+      .then((r) =>
+        router.replace(
+          r.mfaEnrollmentRequired ? '/app/security?setup=1' : r.mfaRequired ? '/signin?mfa=1' : '/app',
+        ),
+      )
       .catch((err) => setError(err instanceof ApiProblem ? t('auth.magic.invalid') : t('common.error')));
   }, [params, router, t]);
   return (

@@ -5,7 +5,18 @@ import { Badge, Button, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { ConfirmAction, CopyValue, FormError, OnceSecret, PageHeader, ReadOnlyNote, SettingsCard, useAction, useFormat, usePermission } from '../kit';
+import {
+  ConfirmAction,
+  CopyValue,
+  FormError,
+  OnceSecret,
+  PageHeader,
+  ReadOnlyNote,
+  SettingsCard,
+  useAction,
+  useFormat,
+  usePermission,
+} from '../kit';
 
 interface ScimToken {
   id: string;
@@ -31,7 +42,10 @@ export default function ScimPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     await create.run(async () => {
-      const r = await api<{ id: string; token: string }>('/v1/settings/scim-tokens', { method: 'POST', json: { name: name.trim() } });
+      const r = await api<{ id: string; token: string }>('/v1/settings/scim-tokens', {
+        method: 'POST',
+        json: { name: name.trim() },
+      });
       setSecret(r.token);
       setName('');
       tokens.reload();
@@ -41,15 +55,46 @@ export default function ScimPage() {
   return (
     <>
       <PageHeader title={t('admin.section.scim.title')} lead={t('admin.scim.lead')} />
-      <SettingsCard id="scim-endpoint" title={t('admin.scim.endpointTitle')} description={t('admin.scim.endpointBody')}>
-        {baseUrl ? <CopyValue label={t('admin.scim.baseUrl')} value={baseUrl} testId="scim-base-url" /> : null}
+      <SettingsCard
+        id="scim-endpoint"
+        title={t('admin.scim.endpointTitle')}
+        description={t('admin.scim.endpointBody')}
+      >
+        {baseUrl ? (
+          <CopyValue label={t('admin.scim.baseUrl')} value={baseUrl} testId="scim-base-url" />
+        ) : null}
       </SettingsCard>
-      <SettingsCard id="scim-tokens" title={t('admin.scim.tokensTitle')} description={t('admin.scim.tokensBody')}>
-        {secret ? <OnceSecret title={t('admin.scim.created')} label={t('admin.scim.token')} value={secret} testId="scim-token" onDone={() => setSecret(null)} /> : null}
+      <SettingsCard
+        id="scim-tokens"
+        title={t('admin.scim.tokensTitle')}
+        description={t('admin.scim.tokensBody')}
+      >
+        {secret ? (
+          <OnceSecret
+            title={t('admin.scim.created')}
+            label={t('admin.scim.token')}
+            value={secret}
+            testId="scim-token"
+            onDone={() => setSecret(null)}
+          />
+        ) : null}
         {canManage && !secret ? (
           <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field id="scim-name" label={t('admin.scim.name')} hint={t('admin.scim.nameHint')} className="flex-1">
-              {(p) => <Input {...p} required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />}
+            <Field
+              id="scim-name"
+              label={t('admin.scim.name')}
+              hint={t('admin.scim.nameHint')}
+              className="flex-1"
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={80}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              )}
             </Field>
             <Button type="submit" loading={create.busy}>
               <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -82,7 +127,13 @@ export default function ScimPage() {
                   <TD className="font-semibold">{k.name}</TD>
                   <TD>{fmt.dateTime(k.createdAt)}</TD>
                   <TD>{k.lastUsedAt ? fmt.dateTime(k.lastUsedAt) : t('admin.never')}</TD>
-                  <TD>{k.revokedAt ? <Badge>{t('admin.revoked')}</Badge> : <Badge tone="success">{t('admin.active')}</Badge>}</TD>
+                  <TD>
+                    {k.revokedAt ? (
+                      <Badge>{t('admin.revoked')}</Badge>
+                    ) : (
+                      <Badge tone="success">{t('admin.active')}</Badge>
+                    )}
+                  </TD>
                   <TD className="text-right">
                     {canManage && !k.revokedAt ? (
                       <ConfirmAction

@@ -27,7 +27,9 @@ export default function DomainsPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const ok = await add.run(() => api('/v1/settings/domains', { method: 'POST', json: { domain: domain.trim().toLowerCase() } }));
+    const ok = await add.run(() =>
+      api('/v1/settings/domains', { method: 'POST', json: { domain: domain.trim().toLowerCase() } }),
+    );
     if (ok) {
       setDomain('');
       domains.reload();
@@ -40,8 +42,23 @@ export default function DomainsPage() {
       <SettingsCard id="domains" title={t('app.settings.domainsTitle')}>
         {canManage ? (
           <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field id="domain" label={t('app.settings.domainLabel')} hint={t('admin.domains.hint')} className="flex-1">
-              {(p) => <Input {...p} required inputMode="url" autoCapitalize="none" spellCheck={false} value={domain} onChange={(e) => setDomain(e.target.value)} />}
+            <Field
+              id="domain"
+              label={t('app.settings.domainLabel')}
+              hint={t('admin.domains.hint')}
+              className="flex-1"
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  inputMode="url"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                />
+              )}
             </Field>
             <Button type="submit" loading={add.busy}>
               {t('common.add')}
@@ -74,7 +91,13 @@ export default function DomainsPage() {
                   <TD className="break-all text-footnote text-text-secondary">
                     {d.txtName} → {d.txtValue}
                   </TD>
-                  <TD>{d.verifiedAt ? <Badge tone="success">{t('app.settings.verified')}</Badge> : <Badge tone="warning">{t('app.settings.pending')}</Badge>}</TD>
+                  <TD>
+                    {d.verifiedAt ? (
+                      <Badge tone="success">{t('app.settings.verified')}</Badge>
+                    ) : (
+                      <Badge tone="warning">{t('app.settings.pending')}</Badge>
+                    )}
+                  </TD>
                   <TD className="text-right">
                     {!d.verifiedAt && canManage ? (
                       <Button
@@ -82,7 +105,12 @@ export default function DomainsPage() {
                         variant="secondary"
                         loading={verify.busy}
                         aria-label={t('admin.domains.verifyLabel', { domain: d.domain })}
-                        onClick={async () => (await verify.run(() => api(`/v1/settings/domains/${d.id}/verify`, { method: 'POST' }), t('app.settings.domainVerified'))) && domains.reload()}
+                        onClick={async () =>
+                          (await verify.run(
+                            () => api(`/v1/settings/domains/${d.id}/verify`, { method: 'POST' }),
+                            t('app.settings.domainVerified'),
+                          )) && domains.reload()
+                        }
                       >
                         {t('app.settings.verify')}
                       </Button>

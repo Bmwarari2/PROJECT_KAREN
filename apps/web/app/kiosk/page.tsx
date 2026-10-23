@@ -32,21 +32,26 @@ export default function KioskPage() {
   const [busy, setBusy] = React.useState(false);
   const numberRef = React.useRef<HTMLInputElement>(null);
 
-  const verify = React.useCallback(async (tok: string) => {
-    try {
-      const s = await api<{ name: string }>('/v1/kiosk/session', { headers: { authorization: `Kiosk ${tok}` } });
-      localStorage.setItem(TOKEN_KEY, tok);
-      setToken(tok);
-      setName(s.name);
-    } catch {
-      localStorage.removeItem(TOKEN_KEY);
-      setToken(null);
-      setName(null);
-      if (tok) setMessage({ text: t('kiosk.notPaired'), tone: 'danger' });
-    } finally {
-      setChecked(true);
-    }
-  }, [t]);
+  const verify = React.useCallback(
+    async (tok: string) => {
+      try {
+        const s = await api<{ name: string }>('/v1/kiosk/session', {
+          headers: { authorization: `Kiosk ${tok}` },
+        });
+        localStorage.setItem(TOKEN_KEY, tok);
+        setToken(tok);
+        setName(s.name);
+      } catch {
+        localStorage.removeItem(TOKEN_KEY);
+        setToken(null);
+        setName(null);
+        if (tok) setMessage({ text: t('kiosk.notPaired'), tone: 'danger' });
+      } finally {
+        setChecked(true);
+      }
+    },
+    [t],
+  );
 
   React.useEffect(() => {
     const m = /pair=([^&]+)/.exec(window.location.hash);
@@ -73,13 +78,34 @@ export default function KioskPage() {
     }
     setBusy(true);
     try {
-      const r = await api<{ status: string; name: string }>('/v1/kiosk/clock', { method: 'POST', headers: { authorization: `Kiosk ${token}` }, json: { employeeNumber: number.trim(), pin, kind, clientEventId: `kiosk-${crypto.randomUUID()}` } });
-      setMessage({ text: t(r.status === 'duplicate' ? 'kiosk.duplicate' : 'kiosk.done', { kind: t(`clock.kind.${kind}`), name: r.name }), tone: 'success' });
+      const r = await api<{ status: string; name: string }>('/v1/kiosk/clock', {
+        method: 'POST',
+        headers: { authorization: `Kiosk ${token}` },
+        json: { employeeNumber: number.trim(), pin, kind, clientEventId: `kiosk-${crypto.randomUUID()}` },
+      });
+      setMessage({
+        text: t(r.status === 'duplicate' ? 'kiosk.duplicate' : 'kiosk.done', {
+          kind: t(`clock.kind.${kind}`),
+          name: r.name,
+        }),
+        tone: 'success',
+      });
       setNumber('');
       numberRef.current?.focus();
     } catch (err) {
       const code = err instanceof ApiProblem ? err.status : 0;
-      const key = code === 423 ? 'kiosk.locked' : code === 429 ? 'kiosk.rateLimited' : code === 401 && err instanceof ApiProblem && err.code === 'unauthorised' ? 'kiosk.notPaired' : code === 401 ? 'kiosk.invalid' : code === 0 ? 'kiosk.offline' : 'common.error';
+      const key =
+        code === 423
+          ? 'kiosk.locked'
+          : code === 429
+            ? 'kiosk.rateLimited'
+            : code === 401 && err instanceof ApiProblem && err.code === 'unauthorised'
+              ? 'kiosk.notPaired'
+              : code === 401
+                ? 'kiosk.invalid'
+                : code === 0
+                  ? 'kiosk.offline'
+                  : 'common.error';
       setMessage({ text: t(key), tone: 'danger' });
     } finally {
       setPin('');
@@ -89,12 +115,20 @@ export default function KioskPage() {
 
   const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
   return (
-    <main id="main" className="mx-auto flex min-h-dvh w-full max-w-[var(--content-width)] flex-col gap-6 px-4 py-8">
+    <main
+      id="main"
+      className="mx-auto flex min-h-dvh w-full max-w-[var(--content-width)] flex-col gap-6 px-4 py-8"
+    >
       <div className="flex items-center gap-3">
         <Monitor aria-hidden className="h-6 w-6 stroke-[1.5] text-accent" />
         <h1 className="text-title-2">{name ? t('kiosk.paired', { name }) : t('kiosk.title')}</h1>
       </div>
-      <p aria-live="assertive" role="status" data-testid="kiosk-message" className={`min-h-8 text-title-3 ${message?.tone === 'danger' ? 'text-danger' : 'text-success'}`}>
+      <p
+        aria-live="assertive"
+        role="status"
+        data-testid="kiosk-message"
+        className={`min-h-8 text-title-3 ${message?.tone === 'danger' ? 'text-danger' : 'text-success'}`}
+      >
         {message?.text ?? ''}
       </p>
       {!checked ? null : !token ? (
@@ -110,7 +144,15 @@ export default function KioskPage() {
             }}
           >
             <Field id="pair-code" label={t('kiosk.pairLabel')} className="w-full sm:max-w-md">
-              {(p) => <Input {...p} required autoComplete="off" value={code} onChange={(e) => setCode(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  autoComplete="off"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+              )}
             </Field>
             <Button type="submit">{t('kiosk.pair')}</Button>
           </form>
@@ -119,25 +161,75 @@ export default function KioskPage() {
         <Card className="flex flex-col gap-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="kiosk-number" label={t('kiosk.number')}>
-              {(p) => <Input {...p} ref={numberRef} autoComplete="off" autoCapitalize="characters" required value={number} onChange={(e) => setNumber(e.target.value)} className="h-12 text-title-3" />}
+              {(p) => (
+                <Input
+                  {...p}
+                  ref={numberRef}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  required
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  className="h-12 text-title-3"
+                />
+              )}
             </Field>
             <Field id="kiosk-pin" label={t('kiosk.pin')}>
-              {(p) => <Input {...p} type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} className="h-12 text-title-3 tracking-widest" />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={8}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  className="h-12 text-title-3 tracking-widest"
+                />
+              )}
             </Field>
           </div>
-          <div role="group" aria-label={t('kiosk.pad')} className="grid max-w-sm grid-cols-3 gap-3 self-center sm:self-start">
+          <div
+            role="group"
+            aria-label={t('kiosk.pad')}
+            className="grid max-w-sm grid-cols-3 gap-3 self-center sm:self-start"
+          >
             {digits.map((d) => (
-              <Button key={d} type="button" variant="secondary" size="lg" className="h-16 text-title-3" disabled={busy} aria-label={t('kiosk.digit', { digit: d })} onClick={() => setPin((p) => (p + d).slice(0, 8))}>
+              <Button
+                key={d}
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="h-16 text-title-3"
+                disabled={busy}
+                aria-label={t('kiosk.digit', { digit: d })}
+                onClick={() => setPin((p) => (p + d).slice(0, 8))}
+              >
                 {d}
               </Button>
             ))}
             <Button type="button" variant="ghost" size="lg" className="h-16" onClick={() => setPin('')}>
               {t('kiosk.clear')}
             </Button>
-            <Button type="button" variant="secondary" size="lg" className="h-16 text-title-3" disabled={busy} aria-label={t('kiosk.digit', { digit: '0' })} onClick={() => setPin((p) => (p + '0').slice(0, 8))}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className="h-16 text-title-3"
+              disabled={busy}
+              aria-label={t('kiosk.digit', { digit: '0' })}
+              onClick={() => setPin((p) => (p + '0').slice(0, 8))}
+            >
               0
             </Button>
-            <Button type="button" variant="ghost" size="lg" className="h-16" aria-label={t('kiosk.backspace')} onClick={() => setPin((p) => p.slice(0, -1))}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              className="h-16"
+              aria-label={t('kiosk.backspace')}
+              onClick={() => setPin((p) => p.slice(0, -1))}
+            >
               <Delete aria-hidden className="h-6 w-6 stroke-[1.5]" />
             </Button>
           </div>
@@ -150,11 +242,23 @@ export default function KioskPage() {
               <LogOut aria-hidden className="h-5 w-5 stroke-[1.5]" />
               {t('clock.out')}
             </Button>
-            <Button size="lg" variant="secondary" className="h-16" onClick={() => clock('break_start')} disabled={busy}>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-16"
+              onClick={() => clock('break_start')}
+              disabled={busy}
+            >
               <Coffee aria-hidden className="h-5 w-5 stroke-[1.5]" />
               {t('clock.breakStart')}
             </Button>
-            <Button size="lg" variant="secondary" className="h-16" onClick={() => clock('break_end')} disabled={busy}>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-16"
+              onClick={() => clock('break_end')}
+              disabled={busy}
+            >
               <Coffee aria-hidden className="h-5 w-5 stroke-[1.5]" />
               {t('clock.breakEnd')}
             </Button>

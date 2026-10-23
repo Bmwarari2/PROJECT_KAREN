@@ -12,7 +12,11 @@ export function ThemeSwitch({ initial }: { initial: ThemeChoice }) {
   const t = useT();
   const [choice, setChoice] = React.useState<ThemeChoice>(initial);
   const options: Array<{ v: ThemeChoice; icon: React.ReactNode; label: string }> = [
-    { v: 'system', icon: <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />, label: t('common.themeSystem') },
+    {
+      v: 'system',
+      icon: <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />,
+      label: t('common.themeSystem'),
+    },
     { v: 'light', icon: <Sun aria-hidden className="h-4 w-4 stroke-[1.5]" />, label: t('common.themeLight') },
     { v: 'dark', icon: <Moon aria-hidden className="h-4 w-4 stroke-[1.5]" />, label: t('common.themeDark') },
   ];
@@ -23,7 +27,11 @@ export function ThemeSwitch({ initial }: { initial: ThemeChoice }) {
     else document.documentElement.setAttribute('data-theme', v);
   };
   return (
-    <div role="radiogroup" aria-label={t('common.theme')} className="inline-flex rounded-pill bg-surface p-0.5">
+    <div
+      role="radiogroup"
+      aria-label={t('common.theme')}
+      className="inline-flex rounded-pill bg-surface p-0.5"
+    >
       {options.map((o) => (
         <button
           key={o.v}
@@ -64,11 +72,26 @@ export function LocaleSwitch() {
 }
 
 /** Scroll-triggered reveal. Content is visible without JS and under reduced motion. */
-export function Reveal({ children, as: Tag = 'div', className, delay = 0 }: { children: React.ReactNode; as?: 'div' | 'li' | 'section'; className?: string; delay?: number }) {
+export function Reveal({
+  children,
+  as: Tag = 'div',
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  as?: 'div' | 'li' | 'section';
+  className?: string;
+  delay?: number;
+}) {
   const ref = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => {
     const el = ref.current;
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    if (
+      !el ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      !('IntersectionObserver' in window)
+    )
+      return;
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight) return; // already on screen: never hide it
     el.dataset.reveal = 'pending';

@@ -25,7 +25,13 @@ interface Run {
   finishedAt: string | null;
   expiresAt: string | null;
 }
-const tone = { succeeded: 'success', failed: 'danger', expired: 'neutral', queued: 'neutral', running: 'accent' } as const;
+const tone = {
+  succeeded: 'success',
+  failed: 'danger',
+  expired: 'neutral',
+  queued: 'neutral',
+  running: 'accent',
+} as const;
 
 /** One report run (the link in a scheduled-delivery email lands here, behind sign-in). */
 export default function RunPage() {
@@ -57,7 +63,7 @@ export default function RunPage() {
     };
   }, [id, poll]);
 
-  if (missing) return <EmptyState icon={<FileClock aria-hidden />} title={t('errors.notFound')} />;
+  if (missing) return <EmptyState level={1} icon={<FileClock aria-hidden />} title={t('errors.notFound')} />;
   if (!run) return <Skeleton className="h-48 w-full" />;
   const when = (v: string | null) => (v ? formatDateTime(v, locale, zone) : '—');
   return (
@@ -68,7 +74,9 @@ export default function RunPage() {
       </Link>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto text-title-2">{run.title}</h1>
-        <Badge tone={tone[run.status as keyof typeof tone] ?? 'neutral'}>{t(`reports.runStatus.${run.status}`)}</Badge>
+        <Badge tone={tone[run.status as keyof typeof tone] ?? 'neutral'}>
+          {t(`reports.runStatus.${run.status}`)}
+        </Badge>
       </div>
       <Card className="flex flex-col gap-4">
         {run.status === 'queued' || run.status === 'running' ? <RunProgress run={bg.run ?? run} /> : null}
@@ -101,9 +109,16 @@ export default function RunPage() {
           ) : null}
         </dl>
         {run.status === 'failed' && run.errorCode ? <RunProgress run={run} /> : null}
-        {run.status === 'expired' ? <p className="text-callout text-text-secondary">{t('reports.runs.expiredBody')}</p> : null}
+        {run.status === 'expired' ? (
+          <p className="text-callout text-text-secondary">{t('reports.runs.expiredBody')}</p>
+        ) : null}
         {run.status === 'succeeded' && run.format !== 'json' ? (
-          <Button className="w-fit" onClick={() => downloadRun(run.id).catch((err) => toast({ title: problemText(t, err), tone: 'danger' }))}>
+          <Button
+            className="w-fit"
+            onClick={() =>
+              downloadRun(run.id).catch((err) => toast({ title: problemText(t, err), tone: 'danger' }))
+            }
+          >
             <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('reports.runs.downloadNamed', { name: run.fileName ?? run.title })}
           </Button>

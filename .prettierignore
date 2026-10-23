@@ -2,4 +2,20 @@ pnpm-lock.yaml
 **/dist
 **/.next
 **/cdk.out
+# The owner's brief and binding instructions stay as written
 docs/BUILD_BRIEF.md
+CLAUDE.md
+# Generated: tests compare these byte for byte with the generator output
+packages/sdk/openapi.json
+packages/sdk/src/generated/
+packages/core/src/trust/generated.json
+packages/ui/src/theme.css
+docs/COVERAGE.md
+# Written by Next.js on every build
+apps/web/next-env.d.ts
+# Written by a repository script (packages/rules/scripts/manifest.ts)
+packages/rules/pack-manifest.json
+# Parsed row by row by scripts/test/asvs-doc.test.ts
+docs/ASVS.md
+# Served verbatim to customers with a content hash (packages/core trust data)
+docs/legal/

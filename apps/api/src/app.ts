@@ -3,15 +3,15 @@ import { BlockList, isIP } from 'node:net';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
-import formbody from '@fastify/formbody';
 import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { TypeBoxValidatorCompiler } from '@fastify/type-provider-typebox';
 import { createLogger } from '@thapsus/core/logger';
 import { API_SCOPE_KEYS, API_SCOPES } from '@thapsus/core/api-scopes';
 import type { Deps } from './deps';
 import { contextPlugin } from './http/context';
 import { errorHandler } from './http/errors';
+import { charsetOnSend, contentDisposition, SESSION_COOKIE_SECURE } from './http/security';
+import { recordRouteBodies, validatorCompiler } from './http/validation';
 import { Problem } from './http/schemas';
 import { authRoutes } from './modules/auth/routes';
 import { passkeyRoutes } from './modules/auth/passkeys';
@@ -29,9 +29,14 @@ import { MemoryObjectStore } from './lib/object-store';
 export const API_VERSION = '1.0.0';
 
 /** Trust function for Fastify: only the immediate peer (hop 0), only if it is inside the trusted ranges. */
-export function trustOneProxyHop(cidrs = '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,::1/128,fc00::/7'): (addr: string, hop: number) => boolean {
+export function trustOneProxyHop(
+  cidrs = '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,::1/128,fc00::/7',
+): (addr: string, hop: number) => boolean {
   const list = new BlockList();
-  for (const c of cidrs.split(',').map((x) => x.trim()).filter(Boolean)) {
+  for (const c of cidrs
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)) {
     const [net, bits] = c.split('/');
     const v6 = net!.includes(':');
     list.addSubnet(net!, Number(bits ?? (v6 ? 128 : 32)), v6 ? 'ipv6' : 'ipv4');
@@ -48,7 +53,8 @@ const BOOT_ID = crypto.randomUUID();
 
 export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({
-    loggerInstance: opts.logger === false ? undefined : (createLogger({ name: `api-${deps.serviceRole}` }) as never),
+    loggerInstance:
+      opts.logger === false ? undefined : (createLogger({ name: `api-${deps.serviceRole}` }) as never),
     logger: opts.logger === false ? false : undefined,
     // Trust exactly one hop — the ALB in AWS, the Next.js proxy locally — and only when that peer is
     // on a private network, so a client-supplied X-Forwarded-For cannot change req.ip (per-IP
@@ -57,13 +63,29 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     bodyLimit: 2 * 1024 * 1024,
     genReqId: () => crypto.randomUUID(),
     requestIdHeader: false,
-    ajv: { customOptions: { removeAdditional: false, coerceTypes: 'array', useDefaults: true, allErrors: true } },
+    ajv: {
+      customOptions: { removeAdditional: false, coerceTypes: 'array', useDefaults: true, allErrors: true },
+    },
   }).withTypeProvider<TypeBoxTypeProvider>();
 
-  app.setValidatorCompiler(TypeBoxValidatorCompiler);
+  // TypeBox validation; request bodies are also cleaned of undeclared fields (mass assignment, ASVS V15.3.3).
+  app.setValidatorCompiler(validatorCompiler);
+  recordRouteBodies(app);
   app.setErrorHandler(errorHandler);
+  // Request bodies are JSON (or multipart on upload routes). The CORS-safelisted text/plain and
+  // urlencoded types are not parsed, so a cross-site form cannot reach a route (ASVS V3.5.2); only the
+  // SAML ACS and the OAuth token endpoint register a urlencoded parser in their own scope.
+  app.removeContentTypeParser(['text/plain']);
+  // text/* and XML responses always declare their charset (ASVS V4.1.1).
+  app.addHook('onSend', charsetOnSend);
   app.setNotFoundHandler((req, reply) =>
-    reply.status(404).type('application/problem+json').send({ type: 'about:blank#notFound', title: 'Not found', status: 404, code: 'notFound', requestId: req.id }),
+    reply.status(404).type('application/problem+json').send({
+      type: 'about:blank#notFound',
+      title: 'Not found',
+      status: 404,
+      code: 'notFound',
+      requestId: req.id,
+    }),
   );
 
   await app.register(swagger, {
@@ -72,17 +94,36 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
       info: {
         title: 'Thapsus-HR API',
         version: API_VERSION,
-        description: 'Versioned public REST API. All responses are served from the tenant\'s home region and are never cached at the edge.',
+        description:
+          "Versioned public REST API. All responses are served from the tenant's home region and are never cached at the edge.",
       },
       servers: [{ url: deps.config.apiBaseUrl }],
       components: {
         securitySchemes: {
-          session: { type: 'apiKey', in: 'cookie', name: 'thr_sid' },
-          bearer: { type: 'http', scheme: 'bearer', description: 'Scoped API key (thr_sk_…) or OAuth 2.0 access token (thr_at_…). See docs/api.md.' },
+          session: {
+            type: 'apiKey',
+            in: 'cookie',
+            name: SESSION_COOKIE_SECURE,
+            description:
+              'Browser session (HttpOnly, Secure, SameSite=Lax). Plain-HTTP local development uses the name thr_sid.',
+          },
+          bearer: {
+            type: 'http',
+            scheme: 'bearer',
+            description: 'Scoped API key (thr_sk_…) or OAuth 2.0 access token (thr_at_…). See docs/api.md.',
+          },
           oauth2: {
             type: 'oauth2',
-            description: 'OAuth 2.0 client credentials (RFC 6749 §4.4). Effective permissions = the client role ∩ the granted scopes.',
-            flows: { clientCredentials: { tokenUrl: '/v1/oauth/token', scopes: Object.fromEntries(API_SCOPE_KEYS.map((s) => [s, `Allows: ${API_SCOPES[s].join(', ')}`])) } },
+            description:
+              'OAuth 2.0 client credentials (RFC 6749 §4.4). Effective permissions = the client role ∩ the granted scopes.',
+            flows: {
+              clientCredentials: {
+                tokenUrl: '/v1/oauth/token',
+                scopes: Object.fromEntries(
+                  API_SCOPE_KEYS.map((s) => [s, `Allows: ${API_SCOPES[s].join(', ')}`]),
+                ),
+              },
+            },
           },
         },
       },
@@ -102,13 +143,17 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
   await app.register(cookie);
-  await app.register(formbody);
   await app.register(contextPlugin, { deps });
   // Public API: per-tenant rate limits, Idempotency-Key replay and deprecation headers (Phase 9).
   await app.register(platformHttpPlugin, { deps });
 
   for (const path of ['/health', '/health/api']) {
-    app.get(path, { config: { auth: 'public' }, schema: { hide: true } }, async () => ({ ok: true, region: deps.config.cell, role: deps.serviceRole, bootId: BOOT_ID }));
+    app.get(path, { config: { auth: 'public' }, schema: { hide: true } }, async () => ({
+      ok: true,
+      region: deps.config.cell,
+      role: deps.serviceRole,
+      bootId: BOOT_ID,
+    }));
   }
 
   if (deps.serviceRole === 'global') {
@@ -126,13 +171,30 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     if (deps.config.env !== 'prod') await app.register(globalRoutes); // single-process local dev
     // Dev/test only: signed download links for the in-memory object store (production uses S3 presigned URLs).
     const store = deps.objects;
-    if (store instanceof MemoryObjectStore && store.serve && (deps.config.env === 'dev' || deps.config.env === 'test')) {
-      app.get('/v1/dev/objects', { config: { auth: 'public' }, schema: { hide: true } }, async (req, reply) => {
-        const q = req.query as { key?: string; exp?: string; name?: string; sig?: string };
-        const o = q.key && q.exp && q.name && q.sig ? store.verify({ key: q.key, exp: q.exp, name: q.name, sig: q.sig }) : undefined;
-        if (!o) return reply.status(404).send({ type: 'about:blank#notFound', title: 'Not found', status: 404, code: 'notFound' });
-        return reply.header('content-type', o.contentType).header('content-disposition', `attachment; filename="${q.name!.replace(/["\\\r\n]/g, '')}"`).send(o.body);
-      });
+    if (
+      store instanceof MemoryObjectStore &&
+      store.serve &&
+      (deps.config.env === 'dev' || deps.config.env === 'test')
+    ) {
+      app.get(
+        '/v1/dev/objects',
+        { config: { auth: 'public' }, schema: { hide: true } },
+        async (req, reply) => {
+          const q = req.query as { key?: string; exp?: string; name?: string; sig?: string };
+          const o =
+            q.key && q.exp && q.name && q.sig
+              ? store.verify({ key: q.key, exp: q.exp, name: q.name, sig: q.sig })
+              : undefined;
+          if (!o)
+            return reply
+              .status(404)
+              .send({ type: 'about:blank#notFound', title: 'Not found', status: 404, code: 'notFound' });
+          return reply
+            .header('content-type', o.contentType)
+            .header('content-disposition', contentDisposition(q.name!))
+            .send(o.body);
+        },
+      );
     }
   }
   if (deps.mockIdp) {

@@ -24,13 +24,21 @@ test.describe('public pages', () => {
   });
 
   test('locale switch changes spelling (en-GB → en-US)', async ({ page, context }) => {
-    await context.addCookies([{ name: 'thr_locale', value: 'en-US', url: page.url() === 'about:blank' ? 'http://127.0.0.1:3100' : page.url() }]);
+    await context.addCookies([
+      {
+        name: 'thr_locale',
+        value: 'en-US',
+        url: page.url() === 'about:blank' ? 'http://127.0.0.1:3100' : page.url(),
+      },
+    ]);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'People and organization' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en-US');
   });
 
-  test('theme switch: light and dark apply immediately and persist; system follows the OS setting', async ({ page }) => {
+  test('theme switch: light and dark apply immediately and persist; system follows the OS setting', async ({
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
     const group = page.getByRole('radiogroup', { name: 'Theme' });
@@ -59,7 +67,9 @@ test.describe('public pages', () => {
     await expect(page.getByRole('heading', { name: 'People and organization' })).toBeVisible();
   });
 
-  test('scroll reveals: content starts hidden and fades in on scroll, but is never hidden under reduced motion', async ({ page }) => {
+  test('scroll reveals: content starts hidden and fades in on scroll, but is never hidden under reduced motion', async ({
+    page,
+  }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
     const pending = page.locator('[data-reveal="pending"]');
@@ -112,6 +122,13 @@ test.describe('sign-up, MFA and the app shell', () => {
     expect(res.headers()['cache-control']).toBe('private, no-store');
     const html = await page.request.get('/app');
     expect(html.headers()['cache-control']).toContain('no-store');
+    // security headers on every page (threat model T13)
+    const h = html.headers();
+    expect(h['content-security-policy']).toMatch(/frame-ancestors 'none'/);
+    expect(h['content-security-policy']).toMatch(/object-src 'none'/);
+    expect(h['x-content-type-options']).toBe('nosniff');
+    expect(h['x-frame-options']).toBe('DENY');
+    expect(h['strict-transport-security']).toMatch(/max-age=\d+/);
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await page.waitForURL(/\/signin/);

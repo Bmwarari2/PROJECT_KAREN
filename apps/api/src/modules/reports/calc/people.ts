@@ -43,7 +43,9 @@ export function employedOn(e: Pick<EmployeeFact, 'startDate' | 'endDate'>, date:
 }
 
 export function jobOn(e: EmployeeFact, date: string): JobFact | undefined {
-  return e.jobs.find((j) => compareDates(j.validFrom, date) <= 0 && (j.validTo === null || compareDates(j.validTo, date) > 0));
+  return e.jobs.find(
+    (j) => compareDates(j.validFrom, date) <= 0 && (j.validTo === null || compareDates(j.validTo, date) > 0),
+  );
 }
 
 export function groupKey(e: EmployeeFact, date: string, groupBy: GroupBy): string | null {
@@ -71,7 +73,9 @@ export interface HeadcountRow {
 }
 
 const sortRows = <T extends { key: string | null }>(rows: T[]) =>
-  rows.sort((a, b) => (a.key === b.key ? 0 : a.key === null ? 1 : b.key === null ? -1 : a.key < b.key ? -1 : 1));
+  rows.sort((a, b) =>
+    a.key === b.key ? 0 : a.key === null ? 1 : b.key === null ? -1 : a.key < b.key ? -1 : 1,
+  );
 
 /** Headcount and FTE on `asOf`, grouped. */
 export function computeHeadcount(emps: EmployeeFact[], asOf: string, groupBy: GroupBy): HeadcountRow[] {
@@ -84,7 +88,9 @@ export function computeHeadcount(emps: EmployeeFact[], asOf: string, groupBy: Gr
     a.fte += parseScaled(jobOn(e, asOf)?.fte ?? '0', 4);
     acc.set(key, a);
   }
-  return sortRows([...acc.entries()].map(([key, a]) => ({ key, headcount: a.n, fte: formatScaled(a.fte, 4, 2) })));
+  return sortRows(
+    [...acc.entries()].map(([key, a]) => ({ key, headcount: a.n, fte: formatScaled(a.fte, 4, 2) })),
+  );
 }
 
 /** Month-end dates from the month of `from` to `to` (the last point is `to` itself). */
@@ -112,8 +118,15 @@ export interface HeadcountPoint extends HeadcountRow {
 }
 
 /** Effective-dated headcount history: headcount per group at each month end in [from, to]. */
-export function computeHeadcountHistory(emps: EmployeeFact[], from: string, to: string, groupBy: GroupBy): HeadcountPoint[] {
-  return monthEnds(from, to).flatMap((date) => computeHeadcount(emps, date, groupBy).map((r) => ({ date, ...r })));
+export function computeHeadcountHistory(
+  emps: EmployeeFact[],
+  from: string,
+  to: string,
+  groupBy: GroupBy,
+): HeadcountPoint[] {
+  return monthEnds(from, to).flatMap((date) =>
+    computeHeadcount(emps, date, groupBy).map((r) => ({ date, ...r })),
+  );
 }
 
 export interface TurnoverRow {
@@ -131,10 +144,16 @@ export interface TurnoverRow {
   voluntaryRate: string | null;
 }
 
-export function computeTurnover(emps: EmployeeFact[], from: string, to: string, groupBy: GroupBy): TurnoverRow[] {
+export function computeTurnover(
+  emps: EmployeeFact[],
+  from: string,
+  to: string,
+  groupBy: GroupBy,
+): TurnoverRow[] {
   if (compareDates(from, to) > 0) throw new RangeError('from must not be after to');
   const acc = new Map<string | null, { s: number; e: number; l: number; v: number; i: number; o: number }>();
-  const get = (k: string | null) => acc.get(k) ?? (acc.set(k, { s: 0, e: 0, l: 0, v: 0, i: 0, o: 0 }), acc.get(k)!);
+  const get = (k: string | null) =>
+    acc.get(k) ?? (acc.set(k, { s: 0, e: 0, l: 0, v: 0, i: 0, o: 0 }), acc.get(k)!);
   for (const e of emps) {
     if (employedOn(e, from)) get(groupKey(e, from, groupBy)).s++;
     if (employedOn(e, to)) get(groupKey(e, to, groupBy)).e++;

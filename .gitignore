@@ -18,3 +18,4 @@ apps/web/e2e/.results/
 apps/web/playwright-report/
 .verify/
 .deploy/
+.loadtest/

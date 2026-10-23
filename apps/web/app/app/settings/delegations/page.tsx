@@ -2,7 +2,15 @@
 import * as React from 'react';
 import { UserRoundCheck } from 'lucide-react';
 import { Badge, Button, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
-import { addDays, addMinutes, compareDates, instantToDate, nowInstant, startOfDayInstant, today } from '@thapsus/core/time';
+import {
+  addDays,
+  addMinutes,
+  compareDates,
+  instantToDate,
+  nowInstant,
+  startOfDayInstant,
+  today,
+} from '@thapsus/core/time';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -34,7 +42,8 @@ export default function DelegationsPage() {
   const create = useAction();
   const now = Date.now();
   // Whole days in the viewer's time zone: from the start of the first day to the end of the last.
-  const period = (d: Delegation) => `${fmt.date(instantToDate(d.startsAt, fmt.zone))} – ${fmt.date(instantToDate(addMinutes(d.endsAt, -1), fmt.zone))}`;
+  const period = (d: Delegation) =>
+    `${fmt.date(instantToDate(d.startsAt, fmt.zone))} – ${fmt.date(instantToDate(addMinutes(d.endsAt, -1), fmt.zone))}`;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +53,12 @@ export default function DelegationsPage() {
     }
     const startsAt = from === start ? nowInstant() : startOfDayInstant(from, fmt.zone);
     const endsAt = startOfDayInstant(addDays(until, 1), fmt.zone);
-    if (await create.run(() => api('/v1/delegations', { method: 'POST', json: { toUserId, startsAt, endsAt } }), t('admin.delegations.created'))) {
+    if (
+      await create.run(
+        () => api('/v1/delegations', { method: 'POST', json: { toUserId, startsAt, endsAt } }),
+        t('admin.delegations.created'),
+      )
+    ) {
       setTo('');
       list.reload();
     }
@@ -53,7 +67,12 @@ export default function DelegationsPage() {
   const given = (list.data ?? []).filter((d) => d.direction === 'given');
   const received = (list.data ?? []).filter((d) => d.direction === 'received');
   const table = (rows: Delegation[], who: 'toName' | 'fromName', canEnd: boolean) => (
-    <Table dense scrollLabel={t('admin.tableScroll', { name: t(who === 'toName' ? 'admin.delegations.givenTitle' : 'admin.delegations.receivedTitle') })}>
+    <Table
+      dense
+      scrollLabel={t('admin.tableScroll', {
+        name: t(who === 'toName' ? 'admin.delegations.givenTitle' : 'admin.delegations.receivedTitle'),
+      })}
+    >
       <THead>
         <tr>
           <TH>{t(who === 'toName' ? 'admin.delegations.to' : 'admin.delegations.from')}</TH>
@@ -74,17 +93,26 @@ export default function DelegationsPage() {
               <TD className="font-semibold">{d[who]}</TD>
               <TD>{period(d)}</TD>
               <TD>
-                <Badge tone={status === 'active' ? 'success' : status === 'scheduled' ? 'accent' : 'neutral'}>{t(`admin.delegations.status.${status}`)}</Badge>
+                <Badge tone={status === 'active' ? 'success' : status === 'scheduled' ? 'accent' : 'neutral'}>
+                  {t(`admin.delegations.status.${status}`)}
+                </Badge>
               </TD>
               {canEnd ? (
                 <TD className="text-right">
                   {status !== 'ended' ? (
                     <ConfirmAction
                       label={status === 'active' ? t('admin.delegations.endNow') : t('common.cancel')}
-                      ariaLabel={t('admin.delegations.endLabel', { action: status === 'active' ? t('admin.delegations.endNow') : t('common.cancel'), name: d.toName })}
+                      ariaLabel={t('admin.delegations.endLabel', {
+                        action: status === 'active' ? t('admin.delegations.endNow') : t('common.cancel'),
+                        name: d.toName,
+                      })}
                       title={t('admin.delegations.endTitle', { name: d.toName })}
                       body={t('admin.delegations.endBody')}
-                      confirmLabel={status === 'active' ? t('admin.delegations.endNow') : t('admin.delegations.cancelDelegation')}
+                      confirmLabel={
+                        status === 'active'
+                          ? t('admin.delegations.endNow')
+                          : t('admin.delegations.cancelDelegation')
+                      }
                       onConfirm={async () => {
                         await api(`/v1/delegations/${d.id}`, { method: 'DELETE' });
                         list.reload();
@@ -103,15 +131,43 @@ export default function DelegationsPage() {
   return (
     <>
       <PageHeader title={t('admin.section.delegations.title')} lead={t('admin.delegations.lead')} />
-      <SettingsCard id="delegation-new" title={t('admin.delegations.newTitle')} description={t('admin.delegations.newBody')}>
+      <SettingsCard
+        id="delegation-new"
+        title={t('admin.delegations.newTitle')}
+        description={t('admin.delegations.newBody')}
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
-          <UserPicker id="delegate" label={t('admin.delegations.delegate')} required value={toUserId} onChange={setTo} />
+          <UserPicker
+            id="delegate"
+            label={t('admin.delegations.delegate')}
+            required
+            value={toUserId}
+            onChange={setTo}
+          />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="delegation-from" label={t('admin.delegations.firstDay')}>
-              {(p) => <Input {...p} type="date" required min={start} value={from} onChange={(e) => setFrom(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="date"
+                  required
+                  min={start}
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                />
+              )}
             </Field>
             <Field id="delegation-until" label={t('admin.delegations.lastDay')}>
-              {(p) => <Input {...p} type="date" required min={from} value={until} onChange={(e) => setUntil(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="date"
+                  required
+                  min={from}
+                  value={until}
+                  onChange={(e) => setUntil(e.target.value)}
+                />
+              )}
             </Field>
           </div>
           <FormError message={create.error} />
@@ -122,10 +178,26 @@ export default function DelegationsPage() {
         </form>
       </SettingsCard>
       <SettingsCard id="delegations-given" title={t('admin.delegations.givenTitle')}>
-        {!list.data ? <Skeleton className="h-20" /> : given.length ? table(given, 'toName', true) : <EmptyState icon={<UserRoundCheck aria-hidden />} title={t('admin.delegations.noneGiven')} />}
+        {!list.data ? (
+          <Skeleton className="h-20" />
+        ) : given.length ? (
+          table(given, 'toName', true)
+        ) : (
+          <EmptyState icon={<UserRoundCheck aria-hidden />} title={t('admin.delegations.noneGiven')} />
+        )}
       </SettingsCard>
-      <SettingsCard id="delegations-received" title={t('admin.delegations.receivedTitle')} description={t('admin.delegations.receivedBody')}>
-        {!list.data ? <Skeleton className="h-20" /> : received.length ? table(received, 'fromName', false) : <p className="text-callout text-text-secondary">{t('admin.delegations.noneReceived')}</p>}
+      <SettingsCard
+        id="delegations-received"
+        title={t('admin.delegations.receivedTitle')}
+        description={t('admin.delegations.receivedBody')}
+      >
+        {!list.data ? (
+          <Skeleton className="h-20" />
+        ) : received.length ? (
+          table(received, 'fromName', false)
+        ) : (
+          <p className="text-callout text-text-secondary">{t('admin.delegations.noneReceived')}</p>
+        )}
       </SettingsCard>
     </>
   );

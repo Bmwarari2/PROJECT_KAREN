@@ -3,7 +3,8 @@ import { migrate } from './migrate';
 import { TenantRouter } from './router';
 import { withRegistry } from './context';
 
-export const TEST_OWNER_BASE = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
+export const TEST_OWNER_BASE =
+  process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 // Roles are cluster-wide, so dev, tests, e2e and Lighthouse share one local-only password (Docker Postgres only).
 export const TEST_APP_PASSWORD = 'local_dev_only_password';
 export const TEST_DBS = { shared: 'thapsus_test', dedicated: 'thapsus_test_dedicated' } as const;
@@ -26,7 +27,11 @@ export async function resetDatabase(db: string): Promise<void> {
   }
   await migrate({
     ownerUrl: ownerUrl(db),
-    rolePasswords: { thapsus_app: TEST_APP_PASSWORD, thapsus_backoffice: TEST_APP_PASSWORD, thapsus_reporting: TEST_APP_PASSWORD },
+    rolePasswords: {
+      thapsus_app: TEST_APP_PASSWORD,
+      thapsus_backoffice: TEST_APP_PASSWORD,
+      thapsus_reporting: TEST_APP_PASSWORD,
+    },
   });
 }
 
@@ -50,7 +55,11 @@ export async function createTestTenant(
 ): Promise<string> {
   const id = crypto.randomUUID();
   await withRegistry(router, async (tx) => {
-    await tx.exec(`INSERT INTO registry.tenants (tenant_id, slug, home_region) VALUES ($1, $2, $3)`, [id, slug, region]);
+    await tx.exec(`INSERT INTO registry.tenants (tenant_id, slug, home_region) VALUES ($1, $2, $3)`, [
+      id,
+      slug,
+      region,
+    ]);
     await tx.query("SELECT set_config('app.tenant_id', $1, true)", [id]);
     await tx.exec(`INSERT INTO app.tenants (tenant_id, slug, name, home_region) VALUES ($1, $2, $3, $4)`, [
       id,

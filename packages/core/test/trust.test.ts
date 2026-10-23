@@ -30,14 +30,33 @@ describe('trust data', () => {
       expect(TRUST.notices[t].body).toContain('DRAFT — for legal review');
       expect(TRUST.dpa[t].version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
-    for (const f of ['dpia-template', 'records-of-processing', 'dpa-uk', 'dpa-eu', 'dpa-us', 'privacy-notice-uk', 'privacy-notice-eu', 'privacy-notice-us']) {
-      expect(readFileSync(join(ROOT, 'docs', 'legal', `${f}.md`), 'utf8').split('\n').slice(0, 4).join('\n'), f).toContain('DRAFT — for legal review');
+    for (const f of [
+      'dpia-template',
+      'records-of-processing',
+      'dpa-uk',
+      'dpa-eu',
+      'dpa-us',
+      'privacy-notice-uk',
+      'privacy-notice-eu',
+      'privacy-notice-us',
+    ]) {
+      expect(
+        readFileSync(join(ROOT, 'docs', 'legal', `${f}.md`), 'utf8')
+          .split('\n')
+          .slice(0, 4)
+          .join('\n'),
+        f,
+      ).toContain('DRAFT — for legal review');
     }
   });
 
   it('the backup expiry stated to customers matches the longest backup retention in the infrastructure config', () => {
     for (const env of ['dev', 'staging', 'prod'] as const) {
-      const cfg = JSON.parse(readFileSync(join(ROOT, 'infra', 'config', `${env}.json`), 'utf8')) as { aurora: { backupRetentionDays: number }; backup: Record<string, number>; logRetentionDays: number };
+      const cfg = JSON.parse(readFileSync(join(ROOT, 'infra', 'config', `${env}.json`), 'utf8')) as {
+        aurora: { backupRetentionDays: number };
+        backup: Record<string, number>;
+        logRetentionDays: number;
+      };
       const longest = Math.max(cfg.aurora.backupRetentionDays, ...Object.values(cfg.backup));
       expect(LEGAL.backupRetentionDays[env], env).toBe(longest);
       expect(LEGAL.logRetentionDays[env], env).toBe(cfg.logRetentionDays);

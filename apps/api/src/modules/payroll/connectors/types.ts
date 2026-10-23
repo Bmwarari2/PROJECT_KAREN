@@ -2,7 +2,16 @@ import type { HomeRegion } from '@thapsus/core';
 import type { FieldMapping } from '../mapping';
 import type { PayrollInputs } from '../inputs';
 
-export const CONNECTOR_KINDS = ['csv', 'excel', 'xero_uk', 'adp', 'workday', 'ukg', 'gusto', 'datev'] as const;
+export const CONNECTOR_KINDS = [
+  'csv',
+  'excel',
+  'xero_uk',
+  'adp',
+  'workday',
+  'ukg',
+  'gusto',
+  'datev',
+] as const;
 export type ConnectorKind = (typeof CONNECTOR_KINDS)[number];
 export type DeliveryMethod = 'download' | 'sftp' | 'api';
 

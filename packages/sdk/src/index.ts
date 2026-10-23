@@ -20,7 +20,11 @@ export function createThapsusClient(opts: ThapsusClientOptions) {
   const auth: Middleware = {
     onRequest({ request }) {
       if (opts.token) request.headers.set('Authorization', `Bearer ${opts.token}`);
-      if (opts.idempotencyKey && (request.method === 'POST' || request.method === 'PATCH') && !request.headers.has('Idempotency-Key')) {
+      if (
+        opts.idempotencyKey &&
+        (request.method === 'POST' || request.method === 'PATCH') &&
+        !request.headers.has('Idempotency-Key')
+      ) {
         request.headers.set('Idempotency-Key', opts.idempotencyKey());
       }
       return request;
@@ -38,13 +42,25 @@ export interface AccessToken {
 }
 
 /** OAuth 2.0 client credentials grant (RFC 6749 §4.4) against POST /v1/oauth/token. */
-export async function getClientCredentialsToken(o: { baseUrl: string; clientId: string; clientSecret: string; scope?: string[]; fetch?: typeof fetch }): Promise<AccessToken> {
+export async function getClientCredentialsToken(o: {
+  baseUrl: string;
+  clientId: string;
+  clientSecret: string;
+  scope?: string[];
+  fetch?: typeof fetch;
+}): Promise<AccessToken> {
   const body = new URLSearchParams({ grant_type: 'client_credentials' });
   if (o.scope?.length) body.set('scope', o.scope.join(' '));
-  const basic = Buffer.from(`${encodeURIComponent(o.clientId)}:${encodeURIComponent(o.clientSecret)}`).toString('base64');
+  const basic = Buffer.from(
+    `${encodeURIComponent(o.clientId)}:${encodeURIComponent(o.clientSecret)}`,
+  ).toString('base64');
   const res = await (o.fetch ?? fetch)(`${o.baseUrl}/v1/oauth/token`, {
     method: 'POST',
-    headers: { authorization: `Basic ${basic}`, 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+    headers: {
+      authorization: `Basic ${basic}`,
+      'content-type': 'application/x-www-form-urlencoded',
+      accept: 'application/json',
+    },
     body,
   });
   const json = (await res.json()) as AccessToken & { error?: string };
@@ -53,7 +69,9 @@ export async function getClientCredentialsToken(o: { baseUrl: string; clientId: 
 }
 
 /** Iterates every item of a cursor-paginated list endpoint ({ data, nextCursor }). */
-export async function* paginate<T>(fetchPage: (cursor: string | undefined) => Promise<{ data?: { data: T[]; nextCursor: string | null } }>): AsyncGenerator<T> {
+export async function* paginate<T>(
+  fetchPage: (cursor: string | undefined) => Promise<{ data?: { data: T[]; nextCursor: string | null } }>,
+): AsyncGenerator<T> {
   let cursor: string | undefined;
   do {
     const { data } = await fetchPage(cursor);

@@ -10,5 +10,7 @@ if (!email || !name || !roles.includes(role as StaffRole)) {
 }
 const deps = await depsFromEnv();
 const s = await createStaff({ deps } as never, email, name, role as StaffRole);
-console.log(`staff ${s.id} created for ${email} (${role})\none-time password: ${s.password}\nTOTP secret (add to an authenticator app): ${s.totpSecret}`);
+console.log(
+  `staff ${s.id} created for ${email} (${role})\none-time password: ${s.password}\nTOTP secret (add to an authenticator app): ${s.totpSecret}`,
+);
 process.exit(0);

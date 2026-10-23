@@ -13,8 +13,21 @@ import { slaTone, type TicketSummary } from '../ui';
 
 interface Thread {
   ticket: TicketSummary;
-  messages: Array<{ id: string; authorType: string; authorName: string | null; body: string; createdAt: string }>;
-  attachments: Array<{ id: string; messageId: string | null; fileName: string; contentType: string; sizeBytes: number; createdAt: string }>;
+  messages: Array<{
+    id: string;
+    authorType: string;
+    authorName: string | null;
+    body: string;
+    createdAt: string;
+  }>;
+  attachments: Array<{
+    id: string;
+    messageId: string | null;
+    fileName: string;
+    contentType: string;
+    sizeBytes: number;
+    createdAt: string;
+  }>;
 }
 
 export default function TicketPage() {
@@ -72,13 +85,15 @@ export default function TicketPage() {
           <div>
             <dt className="inline">{t('support.firstResponseDue')}: </dt>
             <dd className="inline">
-              {formatDateTime(tk.sla.firstResponse.dueAt, locale, tz)} ({t(`support.slaStates.${tk.sla.firstResponse.state}`)})
+              {formatDateTime(tk.sla.firstResponse.dueAt, locale, tz)} (
+              {t(`support.slaStates.${tk.sla.firstResponse.state}`)})
             </dd>
           </div>
           <div>
             <dt className="inline">{t('support.resolutionDue')}: </dt>
             <dd className="inline">
-              {formatDateTime(tk.sla.resolution.dueAt, locale, tz)} ({t(`support.slaStates.${tk.sla.resolution.state}`)})
+              {formatDateTime(tk.sla.resolution.dueAt, locale, tz)} (
+              {t(`support.slaStates.${tk.sla.resolution.state}`)})
             </dd>
           </div>
         </dl>
@@ -89,7 +104,8 @@ export default function TicketPage() {
           <li key={m.id}>
             <Card className={m.authorType === 'staff' ? 'border-l-4 border-accent' : ''}>
               <p className="text-footnote font-semibold text-text-secondary">
-                {m.authorType === 'staff' ? t('support.fromSupport') : (m.authorName ?? t('support.you'))} · {formatDateTime(m.createdAt, locale, tz)}
+                {m.authorType === 'staff' ? t('support.fromSupport') : (m.authorName ?? t('support.you'))} ·{' '}
+                {formatDateTime(m.createdAt, locale, tz)}
               </p>
               <p className="mt-2 whitespace-pre-wrap text-callout">{m.body}</p>
             </Card>
@@ -128,7 +144,15 @@ export default function TicketPage() {
             className="flex flex-col gap-3"
           >
             <Field id="reply" label={t('support.reply')}>
-              {(p) => <Textarea {...p} required maxLength={20000} value={reply} onChange={(e) => setReply(e.target.value)} />}
+              {(p) => (
+                <Textarea
+                  {...p}
+                  required
+                  maxLength={20000}
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                />
+              )}
             </Field>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" loading={busy}>
@@ -137,9 +161,23 @@ export default function TicketPage() {
               <label className="inline-flex cursor-pointer items-center gap-2 text-callout text-accent">
                 <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
                 {t('support.attachFile')}
-                <input type="file" className="sr-only" accept="image/png,image/jpeg,application/pdf,text/plain,text/csv" onChange={(e) => e.target.files?.[0] && attach(e.target.files[0])} />
+                <input
+                  type="file"
+                  className="sr-only"
+                  accept="image/png,image/jpeg,application/pdf,text/plain,text/csv"
+                  onChange={(e) => e.target.files?.[0] && attach(e.target.files[0])}
+                />
               </label>
-              <Button type="button" variant="secondary" onClick={() => run(() => api(`/v1/support/tickets/${id}/close`, { method: 'POST' }), t('support.closedToast'))}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  run(
+                    () => api(`/v1/support/tickets/${id}/close`, { method: 'POST' }),
+                    t('support.closedToast'),
+                  )
+                }
+              >
                 {t('support.close')}
               </Button>
             </div>

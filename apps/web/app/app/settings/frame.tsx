@@ -5,13 +5,16 @@ import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
+import { revealIn } from '@/lib/reveal';
 import { SETTINGS_GROUPS, visibleSections } from './sections';
 import { usePermission } from './kit';
 
 const linkClass = (active: boolean) =>
   cn(
     'flex min-h-9 items-center rounded-md px-3 text-callout no-underline transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-accent',
-    active ? 'bg-accent-subtle font-semibold text-text' : 'text-text-secondary hover:bg-surface hover:text-text',
+    active
+      ? 'bg-accent-subtle font-semibold text-text'
+      : 'text-text-secondary hover:bg-surface hover:text-text',
   );
 
 /**
@@ -26,10 +29,23 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
   const sections = visibleSections(has);
   const current = sections.find((s) => path.startsWith(s.href));
   React.useEffect(() => setOpen(false), [path]);
+  // The list scrolls on its own on large screens: bring the current section into view.
+  const navRef = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    revealIn(
+      navRef.current,
+      navRef.current?.querySelector<HTMLElement>('#settings-sections [aria-current="page"]') ?? null,
+    );
+  }, [path]);
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-      <nav aria-label={t('admin.nav.label')} className="lg:sticky lg:top-20 lg:w-60 lg:shrink-0">
+      {/* On large screens the list is sticky and scrolls on its own, so entries below the fold stay reachable (WCAG 2.4.11). */}
+      <nav
+        ref={navRef}
+        aria-label={t('admin.nav.label')}
+        className="lg:sticky lg:top-[calc(var(--topbar-height)_+_var(--space-6))] lg:-mx-1 lg:max-h-[calc(100dvh_-_var(--topbar-height)_-_2_*_var(--space-6))] lg:w-60 lg:shrink-0 lg:scroll-py-2 lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:py-1"
+      >
         <button
           type="button"
           className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface-raised px-3 text-callout font-semibold focus-visible:outline-2 focus-visible:outline-accent lg:hidden"
@@ -37,11 +53,26 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
           aria-controls="settings-sections"
           onClick={() => setOpen((o) => !o)}
         >
-          <span className="truncate">{current ? t(`admin.section.${current.key}.title`) : t('admin.nav.overview')}</span>
-          <ChevronDown aria-hidden className={cn('h-4 w-4 shrink-0 stroke-[1.5] transition-transform duration-[var(--duration-fast)]', open && 'rotate-180')} />
+          <span className="truncate">
+            {current ? t(`admin.section.${current.key}.title`) : t('admin.nav.overview')}
+          </span>
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              'h-4 w-4 shrink-0 stroke-[1.5] transition-transform duration-[var(--duration-fast)]',
+              open && 'rotate-180',
+            )}
+          />
         </button>
-        <div id="settings-sections" className={cn('mt-2 flex-col gap-4 lg:mt-0 lg:flex', open ? 'flex' : 'hidden')}>
-          <Link href="/app/settings" className={linkClass(path === '/app/settings')} aria-current={path === '/app/settings' ? 'page' : undefined}>
+        <div
+          id="settings-sections"
+          className={cn('mt-2 flex-col gap-4 lg:mt-0 lg:flex', open ? 'flex' : 'hidden')}
+        >
+          <Link
+            href="/app/settings"
+            className={linkClass(path === '/app/settings')}
+            aria-current={path === '/app/settings' ? 'page' : undefined}
+          >
             {t('admin.nav.overview')}
           </Link>
           {SETTINGS_GROUPS.map((g) => {
@@ -49,7 +80,10 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
             if (!items.length) return null;
             return (
               <div key={g} className="flex flex-col gap-0.5">
-                <p id={`settings-group-${g}`} className="px-3 pb-1 text-footnote font-semibold text-text-secondary">
+                <p
+                  id={`settings-group-${g}`}
+                  className="px-3 pb-1 text-footnote font-semibold text-text-secondary"
+                >
                   {t(`admin.group.${g}.title`)}
                 </p>
                 <ul aria-labelledby={`settings-group-${g}`} className="flex flex-col gap-0.5">
@@ -57,7 +91,11 @@ export function SettingsFrame({ children }: { children: React.ReactNode }) {
                     const active = path.startsWith(s.href);
                     return (
                       <li key={s.key}>
-                        <Link href={s.href} className={linkClass(active)} aria-current={active ? 'page' : undefined}>
+                        <Link
+                          href={s.href}
+                          className={linkClass(active)}
+                          aria-current={active ? 'page' : undefined}
+                        >
                           {t(`admin.section.${s.key}.title`)}
                         </Link>
                       </li>

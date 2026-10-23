@@ -25,12 +25,20 @@ export interface Excerpt {
   text: string;
 }
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export function buildUserTurn(question: string, excerpts: Excerpt[], locale: Locale): string {
   const body = excerpts
     .map((e) => {
-      const attrs = [`n="${e.n}"`, `document="${esc(e.title)}"`, e.heading ? `section="${esc(e.heading)}"` : '', e.page ? `page="${e.page}"` : ''].filter(Boolean).join(' ');
+      const attrs = [
+        `n="${e.n}"`,
+        `document="${esc(e.title)}"`,
+        e.heading ? `section="${esc(e.heading)}"` : '',
+        e.page ? `page="${e.page}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
       return `<excerpt ${attrs}>${esc(e.text)}</excerpt>`;
     })
     .join('\n');

@@ -40,7 +40,9 @@ export function lintMigration(m: Pick<MigrationFile, 'name' | 'sql'>): string[] 
   const contract = /^--\s*contract:\s*\S+/m.test(m.sql);
   if (contract) return [];
   const body = m.sql.replace(/--.*$/gm, '');
-  return DESTRUCTIVE.filter((re) => re.test(body)).map((re) => `${m.name}: destructive statement ${re} needs a "-- contract:" header`);
+  return DESTRUCTIVE.filter((re) => re.test(body)).map(
+    (re) => `${m.name}: destructive statement ${re} needs a "-- contract:" header`,
+  );
 }
 
 export interface MigrateOptions {
@@ -60,9 +62,11 @@ export async function migrate(opts: MigrateOptions): Promise<string[]> {
     await client.query(`CREATE TABLE IF NOT EXISTS public.schema_migrations (
       name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`);
     const done = new Map(
-      (await client.query<{ name: string; checksum: string }>('SELECT name, checksum FROM public.schema_migrations')).rows.map(
-        (r) => [r.name, r.checksum],
-      ),
+      (
+        await client.query<{ name: string; checksum: string }>(
+          'SELECT name, checksum FROM public.schema_migrations',
+        )
+      ).rows.map((r) => [r.name, r.checksum]),
     );
     for (const m of loadMigrations(opts.dir)) {
       const prev = done.get(m.name);
@@ -74,7 +78,10 @@ export async function migrate(opts: MigrateOptions): Promise<string[]> {
       await client.query('BEGIN');
       try {
         await client.query(m.sql);
-        await client.query('INSERT INTO public.schema_migrations (name, checksum) VALUES ($1, $2)', [m.name, m.checksum]);
+        await client.query('INSERT INTO public.schema_migrations (name, checksum) VALUES ($1, $2)', [
+          m.name,
+          m.checksum,
+        ]);
         await client.query('COMMIT');
       } catch (err) {
         await client.query('ROLLBACK');
@@ -83,7 +90,8 @@ export async function migrate(opts: MigrateOptions): Promise<string[]> {
       applied.push(m.name);
     }
     for (const [role, password] of Object.entries(opts.rolePasswords ?? {})) {
-      if (password) await client.query(`ALTER ROLE ${role} WITH LOGIN PASSWORD ${pg.escapeLiteral(password)}`);
+      if (password)
+        await client.query(`ALTER ROLE ${role} WITH LOGIN PASSWORD ${pg.escapeLiteral(password)}`);
     }
   } finally {
     await client.query('SELECT pg_advisory_unlock(727274)').catch(() => undefined);

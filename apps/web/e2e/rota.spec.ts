@@ -6,7 +6,9 @@ import { companyWithStaff, sql } from './time-helpers';
 test.use({ locale: 'en-GB' });
 
 test.describe('rota builder', () => {
-  test('manager builds a week, publishes it, the employee is notified once and sees the shift (axe on both views)', async ({ page }) => {
+  test('manager builds a week, publishes it, the employee is notified once and sees the shift (axe on both views)', async ({
+    page,
+  }) => {
     const co = await companyWithStaff(page, 2);
     await page.goto('/app/rota');
     await expect(page.getByRole('heading', { name: 'Rota', level: 1 })).toBeVisible();
@@ -14,7 +16,10 @@ test.describe('rota builder', () => {
     await expect(grid.getByRole('rowheader', { name: /Ben Fictional/ })).toBeVisible();
     await expect(page.getByText('2 people')).toBeVisible();
 
-    await grid.getByRole('button', { name: /Add shift for Ada Fictional on/ }).first().click();
+    await grid
+      .getByRole('button', { name: /Add shift for Ada Fictional on/ })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: 'Add shift' });
     await dialog.getByLabel('Start').fill('09:00');
     await dialog.getByLabel('Finish').fill('17:00');
@@ -23,11 +28,19 @@ test.describe('rota builder', () => {
     await expectAccessible(page);
 
     await page.getByRole('button', { name: 'Publish week' }).click();
-    await expect(page.getByText('1 shifts published. 1 people notified.', { exact: true })).toBeVisible();
+    await expect(page.getByText('1 shift published. 1 person notified.', { exact: true })).toBeVisible();
     await expect(grid.getByRole('button', { name: /^Published shift for Ada Fictional/ })).toBeVisible();
-    const notified = () => sql(`SELECT n.id FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE lower(u.email) = lower($1) AND n.kind = 'rota.published'`, [co.email]);
+    const notified = () =>
+      sql(
+        `SELECT n.id FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE lower(u.email) = lower($1) AND n.kind = 'rota.published'`,
+        [co.email],
+      );
     expect(await notified()).toHaveLength(1);
-    expect(await sql(`SELECT 1 FROM app.jobs WHERE kind = 'notifications.deliver' AND idempotency_key = $1`, [(await notified())[0]!.id])).toHaveLength(1);
+    expect(
+      await sql(`SELECT 1 FROM app.jobs WHERE kind = 'notifications.deliver' AND idempotency_key = $1`, [
+        (await notified())[0]!.id,
+      ]),
+    ).toHaveLength(1);
     // publishing again changes nothing and notifies nobody
     await page.getByRole('button', { name: 'Publish week' }).click();
     await expect(page.getByText('0 shifts published. 0 people notified.', { exact: true })).toBeVisible();

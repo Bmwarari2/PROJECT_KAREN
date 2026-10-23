@@ -33,7 +33,16 @@ export function isPrivateAddress(ip: string): boolean {
   const v = isIP(ip);
   if (v === 4) {
     const [a, b] = ip.split('.').map(Number) as [number, number];
-    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+    return (
+      a === 10 ||
+      a === 127 ||
+      a === 0 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      a >= 224
+    );
   }
   if (v === 6) {
     const s = ip.toLowerCase();
@@ -45,19 +54,25 @@ export function isPrivateAddress(ip: string): boolean {
 }
 
 export async function resolveSftpHost(host: string, allowPrivate: boolean): Promise<string> {
-  if (/^localhost$/i.test(host) && !allowPrivate) throw new SftpError('hostNotAllowed', 'SFTP host not allowed');
-  const addresses = isIP(host) ? [{ address: host }] : await lookup(host, { all: true, verbatim: true }).catch(() => {
-    throw new SftpError('connect', 'SFTP host could not be resolved');
-  });
+  if (/^localhost$/i.test(host) && !allowPrivate)
+    throw new SftpError('hostNotAllowed', 'SFTP host not allowed');
+  const addresses = isIP(host)
+    ? [{ address: host }]
+    : await lookup(host, { all: true, verbatim: true }).catch(() => {
+        throw new SftpError('connect', 'SFTP host could not be resolved');
+      });
   if (!addresses.length) throw new SftpError('connect', 'SFTP host could not be resolved');
-  if (!allowPrivate && addresses.some((a) => isPrivateAddress(a.address))) throw new SftpError('hostNotAllowed', 'SFTP host resolves to a private address');
+  if (!allowPrivate && addresses.some((a) => isPrivateAddress(a.address)))
+    throw new SftpError('hostNotAllowed', 'SFTP host resolves to a private address');
   return addresses[0]!.address;
 }
 
 const promisify =
   <A extends unknown[]>(fn: (...args: [...A, (err?: Error | null) => void]) => void) =>
   (...args: A) =>
-    new Promise<void>((resolve, reject) => fn(...args, (err?: Error | null) => (err ? reject(err) : resolve())));
+    new Promise<void>((resolve, reject) =>
+      fn(...args, (err?: Error | null) => (err ? reject(err) : resolve())),
+    );
 
 export async function uploadSftp(
   dest: SftpDestination,
@@ -66,7 +81,8 @@ export async function uploadSftp(
   body: Buffer,
   opts: { allowPrivateHosts: boolean; timeoutMs?: number },
 ): Promise<{ path: string; bytes: number }> {
-  if (!creds.password && !creds.privateKey) throw new SftpError('authFailed', 'No SFTP password or key is stored for this connector');
+  if (!creds.password && !creds.privateKey)
+    throw new SftpError('authFailed', 'No SFTP password or key is stored for this connector');
   const address = await resolveSftpHost(dest.host, opts.allowPrivateHosts);
   const safeName = posix.basename(fileName);
   const final = posix.join(dest.directory || '.', safeName);
@@ -84,10 +100,19 @@ export async function uploadSftp(
       if (err) reject(err);
       else resolve(value!);
     };
-    const timer = setTimeout(() => done(new SftpError('timeout', 'SFTP delivery timed out')), opts.timeoutMs ?? 30_000);
+    const timer = setTimeout(
+      () => done(new SftpError('timeout', 'SFTP delivery timed out')),
+      opts.timeoutMs ?? 30_000,
+    );
     client.on('error', (err: Error & { level?: string }) => {
-      if (hostChecked && !hostKeyOk) return done(new SftpError('hostKeyMismatch', 'SFTP host key does not match the pinned fingerprint'));
-      done(new SftpError(err.level === 'client-authentication' ? 'authFailed' : 'connect', err.level === 'client-authentication' ? 'SFTP authentication failed' : 'SFTP connection failed'));
+      if (hostChecked && !hostKeyOk)
+        return done(new SftpError('hostKeyMismatch', 'SFTP host key does not match the pinned fingerprint'));
+      done(
+        new SftpError(
+          err.level === 'client-authentication' ? 'authFailed' : 'connect',
+          err.level === 'client-authentication' ? 'SFTP authentication failed' : 'SFTP connection failed',
+        ),
+      );
     });
     client.on('ready', () => {
       client.sftp(async (err: Error | undefined, sftp: SFTPWrapper) => {

@@ -29,16 +29,24 @@ export default function StaffAudit() {
   return (
     <div className="flex flex-col gap-5">
       <PageTitle title={t('backoffice.audit.title')} lead={t('backoffice.audit.lead')}>
-        <a href={`/v1/backoffice/audit?${qs}&format=csv`} className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`} download>
+        <a
+          href={`/v1/backoffice/audit?${qs}&format=csv`}
+          className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
+          download
+        >
           <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
           {t('backoffice.audit.export')}
         </a>
       </PageTitle>
       <div className="flex flex-wrap gap-4">
-        <Field id="a-from" label={t('backoffice.audit.from')}>{(p) => <Input {...p} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</Field>
-        <Field id="a-to" label={t('backoffice.audit.to')}>{(p) => <Input {...p} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</Field>
+        <Field id="a-from" label={t('backoffice.audit.from')}>
+          {(p) => <Input {...p} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}
+        </Field>
+        <Field id="a-to" label={t('backoffice.audit.to')}>
+          {(p) => <Input {...p} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}
+        </Field>
       </div>
-      <Table dense>
+      <Table dense scrollLabel={t('backoffice.audit.title')}>
         <caption className="sr-only">{t('backoffice.audit.title')}</caption>
         <THead>
           <tr>
@@ -50,15 +58,18 @@ export default function StaffAudit() {
           </tr>
         </THead>
         <tbody>
-          {(rows.data ?? []).slice(-500).reverse().map((r) => (
-            <TR key={r.id}>
-              <TD className="text-footnote">{formatDateTime(r.at, locale, 'UTC')}</TD>
-              <TD className="text-footnote">{r.staffEmail ?? '—'}</TD>
-              <TD>{r.action}</TD>
-              <TD className="text-footnote">{r.subjectTenantId ?? '—'}</TD>
-              <TD className="text-footnote">{r.target ?? '—'}</TD>
-            </TR>
-          ))}
+          {(rows.data ?? [])
+            .slice(-500)
+            .reverse()
+            .map((r) => (
+              <TR key={r.id}>
+                <TD className="text-footnote">{formatDateTime(r.at, locale, 'UTC')}</TD>
+                <TD className="text-footnote">{r.staffEmail ?? '—'}</TD>
+                <TD>{r.action}</TD>
+                <TD className="text-footnote">{r.subjectTenantId ?? '—'}</TD>
+                <TD className="text-footnote">{r.target ?? '—'}</TD>
+              </TR>
+            ))}
         </tbody>
       </Table>
     </div>

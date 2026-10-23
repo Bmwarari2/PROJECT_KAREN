@@ -25,7 +25,9 @@ describe('a job that deletes its own tenant', () => {
       handlers: {
         'test.purge': async (ctx) => {
           await ctx.tx((tx) => tx.exec('DELETE FROM app.jobs'));
-          await withRegistry(router, (tx) => tx.exec(`UPDATE registry.tenants SET status = 'deleted' WHERE tenant_id = $1`, [ctx.tenantId]));
+          await withRegistry(router, (tx) =>
+            tx.exec(`UPDATE registry.tenants SET status = 'deleted' WHERE tenant_id = $1`, [ctx.tenantId]),
+          );
           return { purged: true };
         },
         'test.other': async () => {
@@ -35,7 +37,13 @@ describe('a job that deletes its own tenant', () => {
     });
     await withTenant(router, closing, async (tx) => {
       await enqueueJob(tx, 'test.purge', 'purge-1', {});
-      await enqueueJob(tx, 'test.other', 'after-purge', {}, { runAfter: new Date(Date.now() + 1000).toISOString() });
+      await enqueueJob(
+        tx,
+        'test.other',
+        'after-purge',
+        {},
+        { runAfter: new Date(Date.now() + 1000).toISOString() },
+      );
     });
     await withTenant(router, other, (tx) => enqueueJob(tx, 'test.other', 'other-1', {}));
     await engine.tick();

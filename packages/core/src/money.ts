@@ -7,9 +7,35 @@ export interface Money {
 }
 
 /** Minor-unit exponent per currency (ISO 4217). Currencies not listed default to 2. */
-const EXPONENTS: Record<string, number> = { JPY: 0, KRW: 0, ISK: 0, HUF: 2, CLP: 0, BHD: 3, KWD: 3, OMR: 3, TND: 3 };
+const EXPONENTS: Record<string, number> = {
+  JPY: 0,
+  KRW: 0,
+  ISK: 0,
+  HUF: 2,
+  CLP: 0,
+  BHD: 3,
+  KWD: 3,
+  OMR: 3,
+  TND: 3,
+};
 
-export const SUPPORTED_CURRENCIES = ['GBP', 'EUR', 'USD', 'SEK', 'PLN', 'DKK', 'CHF', 'CZK', 'HUF', 'RON', 'NOK', 'BGN', 'CAD', 'AUD', 'JPY'] as const;
+export const SUPPORTED_CURRENCIES = [
+  'GBP',
+  'EUR',
+  'USD',
+  'SEK',
+  'PLN',
+  'DKK',
+  'CHF',
+  'CZK',
+  'HUF',
+  'RON',
+  'NOK',
+  'BGN',
+  'CAD',
+  'AUD',
+  'JPY',
+] as const;
 
 export function currencyExponent(currency: string): number {
   return EXPONENTS[currency.toUpperCase()] ?? 2;
@@ -31,8 +57,14 @@ function same(a: Money, b: Money) {
   if (a.currency !== b.currency) throw new RangeError(`Currency mismatch: ${a.currency} vs ${b.currency}`);
 }
 
-export const add = (a: Money, b: Money): Money => (same(a, b), { amountMinor: a.amountMinor + b.amountMinor, currency: a.currency });
-export const subtract = (a: Money, b: Money): Money => (same(a, b), { amountMinor: a.amountMinor - b.amountMinor, currency: a.currency });
+export const add = (a: Money, b: Money): Money => (
+  same(a, b),
+  { amountMinor: a.amountMinor + b.amountMinor, currency: a.currency }
+);
+export const subtract = (a: Money, b: Money): Money => (
+  same(a, b),
+  { amountMinor: a.amountMinor - b.amountMinor, currency: a.currency }
+);
 
 /** Banker's-free half-up rounding of a rational multiply: amount * num / den. */
 export function multiplyRatio(a: Money, num: bigint | number, den: bigint | number = 1n): Money {

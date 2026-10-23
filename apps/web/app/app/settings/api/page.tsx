@@ -2,12 +2,32 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { KeyRound } from 'lucide-react';
-import { Button, Card, CardTitle, EmptyState, Field, Input, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { API_SCOPE_KEYS } from '@thapsus/core/api-scopes';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { errorText, FeatureOff, PageHeader, SecretOnce, StatusBadge, useDateTime } from '@/components/platform';
+import {
+  errorText,
+  FeatureOff,
+  PageHeader,
+  SecretOnce,
+  StatusBadge,
+  useDateTime,
+} from '@/components/platform';
 import { useFeature } from '../../shell';
 
 interface Credential {
@@ -49,22 +69,46 @@ export default function ApiAccessPage() {
   const [name, setName] = React.useState('');
   const [roleKey, setRoleKey] = React.useState('hr_admin');
   const [scopes, setScopes] = React.useState<string[]>(['employees:read']);
-  const [secret, setSecret] = React.useState<{ title: string; items: Array<{ label: string; value: string }> } | null>(null);
+  const [secret, setSecret] = React.useState<{
+    title: string;
+    items: Array<{ label: string; value: string }>;
+  } | null>(null);
   const [busy, setBusy] = React.useState(false);
 
-  if (!enabled) return <div className="flex flex-col gap-6"><PageHeader title={t('platform.api.title')} /><FeatureOff /></div>;
+  if (!enabled)
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader title={t('platform.api.title')} />
+        <FeatureOff />
+      </div>
+    );
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
       if (kind === 'key') {
-        const r = await api<ApiKey & { key: string }>('/v1/settings/api-keys', { method: 'POST', json: { name, scopes, roleKey } });
-        setSecret({ title: t('platform.api.keyCreated'), items: [{ label: t('platform.api.apiKey'), value: r.key }] });
+        const r = await api<ApiKey & { key: string }>('/v1/settings/api-keys', {
+          method: 'POST',
+          json: { name, scopes, roleKey },
+        });
+        setSecret({
+          title: t('platform.api.keyCreated'),
+          items: [{ label: t('platform.api.apiKey'), value: r.key }],
+        });
         keys.reload();
       } else {
-        const r = await api<OAuthClient & { clientSecret: string }>('/v1/settings/oauth-clients', { method: 'POST', json: { name, scopes, roleKey } });
-        setSecret({ title: t('platform.api.clientCreated'), items: [{ label: t('platform.api.clientId'), value: r.clientId }, { label: t('platform.api.clientSecret'), value: r.clientSecret }] });
+        const r = await api<OAuthClient & { clientSecret: string }>('/v1/settings/oauth-clients', {
+          method: 'POST',
+          json: { name, scopes, roleKey },
+        });
+        setSecret({
+          title: t('platform.api.clientCreated'),
+          items: [
+            { label: t('platform.api.clientId'), value: r.clientId },
+            { label: t('platform.api.clientSecret'), value: r.clientSecret },
+          ],
+        });
         clients.reload();
       }
       setName('');
@@ -87,8 +131,14 @@ export default function ApiAccessPage() {
 
   async function rotate(c: OAuthClient) {
     try {
-      const r = await api<OAuthClient & { clientSecret: string }>(`/v1/settings/oauth-clients/${c.id}/rotate-secret`, { method: 'POST', json: { graceHours: 24 } });
-      setSecret({ title: t('platform.api.secretRotated'), items: [{ label: t('platform.api.clientSecret'), value: r.clientSecret }] });
+      const r = await api<OAuthClient & { clientSecret: string }>(
+        `/v1/settings/oauth-clients/${c.id}/rotate-secret`,
+        { method: 'POST', json: { graceHours: 24 } },
+      );
+      setSecret({
+        title: t('platform.api.secretRotated'),
+        items: [{ label: t('platform.api.clientSecret'), value: r.clientSecret }],
+      });
       clients.reload();
     } catch (err) {
       toast({ title: errorText(t, err), tone: 'danger' });
@@ -102,7 +152,9 @@ export default function ApiAccessPage() {
         <Link href="/developers">{t('platform.api.docsLink')}</Link>
       </p>
 
-      {secret ? <SecretOnce title={secret.title} items={secret.items} onDone={() => setSecret(null)} /> : null}
+      {secret ? (
+        <SecretOnce title={secret.title} items={secret.items} onDone={() => setSecret(null)} />
+      ) : null}
 
       <Card>
         <CardTitle>{t('platform.api.createTitle')}</CardTitle>
@@ -111,19 +163,43 @@ export default function ApiAccessPage() {
             <legend className="mb-2 text-callout font-semibold">{t('platform.api.kind')}</legend>
             {(['key', 'oauth'] as const).map((k) => (
               <label key={k} className="flex items-center gap-2 text-callout">
-                <input type="radio" name="kind" value={k} checked={kind === k} onChange={() => setKind(k)} className="h-5 w-5 accent-[var(--color-accent)]" />
+                <input
+                  type="radio"
+                  name="kind"
+                  value={k}
+                  checked={kind === k}
+                  onChange={() => setKind(k)}
+                  className="h-5 w-5 accent-[var(--color-accent)]"
+                />
                 {t(`platform.api.kind_${k}`)}
               </label>
             ))}
           </fieldset>
           <div className="grid gap-4 md:grid-cols-2">
             <Field id="cred-name" label={t('platform.api.name')} hint={t('platform.api.nameHint')}>
-              {(p) => <Input {...p} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={120}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              )}
             </Field>
             <Field id="cred-role" label={t('platform.api.role')} hint={t('platform.api.roleHint')}>
               {(p) => (
-                <select {...p} value={roleKey} onChange={(e) => setRoleKey(e.target.value)} className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout">
-                  {(roles.data ?? [{ id: 'hr_admin', key: 'hr_admin', name: t('roles.hr_admin'), builtIn: true }]).map((r) => (
+                <select
+                  {...p}
+                  value={roleKey}
+                  onChange={(e) => setRoleKey(e.target.value)}
+                  className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+                >
+                  {(
+                    roles.data ?? [
+                      { id: 'hr_admin', key: 'hr_admin', name: t('roles.hr_admin'), builtIn: true },
+                    ]
+                  ).map((r) => (
                     <option key={r.id} value={r.key}>
                       {r.builtIn ? t(`roles.${r.key}`) : r.name}
                     </option>
@@ -142,7 +218,9 @@ export default function ApiAccessPage() {
                     type="checkbox"
                     className="mt-0.5 h-5 w-5 accent-[var(--color-accent)]"
                     checked={scopes.includes(s)}
-                    onChange={(e) => setScopes(e.target.checked ? [...scopes, s] : scopes.filter((x) => x !== s))}
+                    onChange={(e) =>
+                      setScopes(e.target.checked ? [...scopes, s] : scopes.filter((x) => x !== s))
+                    }
                   />
                   <span>
                     <code className="text-footnote">{s}</code> {t(scopeLabel(s))}
@@ -192,7 +270,12 @@ export default function ApiAccessPage() {
                     </TD>
                     <TD>
                       {!k.revokedAt ? (
-                        <Button size="sm" variant="danger" onClick={() => revoke(`/v1/settings/api-keys/${k.id}/revoke`, keys.reload)} aria-label={t('platform.api.revokeNamed', { name: k.name })}>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => revoke(`/v1/settings/api-keys/${k.id}/revoke`, keys.reload)}
+                          aria-label={t('platform.api.revokeNamed', { name: k.name })}
+                        >
                           {t('platform.api.revoke')}
                         </Button>
                       ) : null}
@@ -240,10 +323,22 @@ export default function ApiAccessPage() {
                     <TD className="flex flex-wrap gap-2">
                       {!c.revokedAt ? (
                         <>
-                          <Button size="sm" variant="secondary" onClick={() => rotate(c)} aria-label={t('platform.api.rotateNamed', { name: c.name })}>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => rotate(c)}
+                            aria-label={t('platform.api.rotateNamed', { name: c.name })}
+                          >
                             {t('platform.api.rotate')}
                           </Button>
-                          <Button size="sm" variant="danger" onClick={() => revoke(`/v1/settings/oauth-clients/${c.id}/revoke`, clients.reload)} aria-label={t('platform.api.revokeNamed', { name: c.name })}>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() =>
+                              revoke(`/v1/settings/oauth-clients/${c.id}/revoke`, clients.reload)
+                            }
+                            aria-label={t('platform.api.revokeNamed', { name: c.name })}
+                          >
                             {t('platform.api.revoke')}
                           </Button>
                         </>

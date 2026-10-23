@@ -691,10 +691,7 @@
       "key": "i9.reverification",
       "date": "2026-10-18",
       "expectPath": {
-        "acceptableLists": [
-          "A",
-          "C"
-        ],
+        "acceptableLists": ["A", "C"],
         "recordedOn": "supplement_b"
       },
       "source": "https://www.uscis.gov/i-9-central/form-i-9-resources/handbook-for-employers-m-274/60-completing-supplement-b-reverification-and-rehire-of-form-i-9/61-reverifying-employment-authorization-for-current-employees",

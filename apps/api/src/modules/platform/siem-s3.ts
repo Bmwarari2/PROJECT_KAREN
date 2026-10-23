@@ -17,7 +17,9 @@ import { createAwsClientFactory } from '@thapsus/core/aws';
  * path: IAM matches the prefix against the whole path-and-name. Role names are at most 64 characters.
  */
 export const AUDIT_STREAM_ROLE_PREFIX = 'thapsus-hr-audit-';
-const AUDIT_STREAM_ROLE_ARN = new RegExp(`^arn:aws:iam::\\d{12}:role/${AUDIT_STREAM_ROLE_PREFIX}[A-Za-z0-9+=,.@_-]{1,${64 - AUDIT_STREAM_ROLE_PREFIX.length}}$`);
+const AUDIT_STREAM_ROLE_ARN = new RegExp(
+  `^arn:aws:iam::\\d{12}:role/${AUDIT_STREAM_ROLE_PREFIX}[A-Za-z0-9+=,.@_-]{1,${64 - AUDIT_STREAM_ROLE_PREFIX.length}}$`,
+);
 export const isAuditStreamRoleArn = (arn: string) => AUDIT_STREAM_ROLE_ARN.test(arn);
 export interface CrossAccountPut {
   region: string;
@@ -45,16 +47,35 @@ export class AwsCrossAccountS3 implements CrossAccountS3 {
     if (!isAuditStreamRoleArn(o.roleArn)) throw new Error('role_not_allowed');
     const create = createAwsClientFactory({ cell: this.cell, endpoints: this.endpoints });
     const sts = create(STSClient, 'sts', { region: o.region });
-    const assumed = await sts.send(new AssumeRoleCommand({ RoleArn: o.roleArn, ExternalId: o.externalId, RoleSessionName: o.sessionName, DurationSeconds: 900 }));
+    const assumed = await sts.send(
+      new AssumeRoleCommand({
+        RoleArn: o.roleArn,
+        ExternalId: o.externalId,
+        RoleSessionName: o.sessionName,
+        DurationSeconds: 900,
+      }),
+    );
     const c = assumed.Credentials;
     if (!c?.AccessKeyId || !c.SecretAccessKey) throw new Error('assume_role_failed');
     const s3 = create(S3Client, 's3', {
       region: o.region,
-      credentials: { accessKeyId: c.AccessKeyId, secretAccessKey: c.SecretAccessKey, sessionToken: c.SessionToken },
+      credentials: {
+        accessKeyId: c.AccessKeyId,
+        secretAccessKey: c.SecretAccessKey,
+        sessionToken: c.SessionToken,
+      },
       requestChecksumCalculation: 'WHEN_REQUIRED',
     });
     try {
-      await s3.send(new PutObjectCommand({ Bucket: o.bucket, Key: o.key, Body: o.body, ContentType: o.contentType, ServerSideEncryption: 'aws:kms' }));
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: o.bucket,
+          Key: o.key,
+          Body: o.body,
+          ContentType: o.contentType,
+          ServerSideEncryption: 'aws:kms',
+        }),
+      );
     } finally {
       s3.destroy();
       sts.destroy();
@@ -66,6 +87,9 @@ export function homeAwsRegion(cell: HomeRegion): string {
   return REGIONS[cell].awsRegion;
 }
 
-export function crossAccountS3FromEnv(cell: HomeRegion, env: NodeJS.ProcessEnv = process.env): CrossAccountS3 {
+export function crossAccountS3FromEnv(
+  cell: HomeRegion,
+  env: NodeJS.ProcessEnv = process.env,
+): CrossAccountS3 {
   return new AwsCrossAccountS3(cell, { s3: env.SIEM_S3_ENDPOINT, sts: env.STS_ENDPOINT });
 }

@@ -27,6 +27,11 @@ Things only a person with the right accounts or authority can do. The build runs
   5. When the first manual staging deploy has worked, set the repository variable `AUTO_DEPLOY_STAGING=true`. From then on every green CI run on `main` deploys staging. Until then the Deploy workflow only runs when started by hand (`workflow_dispatch`).
 - [ ] 1.6 **Separate AWS accounts per environment (recommended).** Create `hr-dev` and `hr-prod` accounts in the organisation, apply the same SCP region allow-list, add SSO access, and put their account ids in `infra/config/dev.json` and `infra/config/prod.json` (currently both use the staging account id as a placeholder).
 
+- [ ] 1.7 **Malware scanning of uploaded files (ASVS V5.4.3; recurring cost, so it needs your approval).** Uploads are size-limited, type-checked by magic bytes, stored privately in the home-region bucket and downloaded only as attachments, but they are not scanned for known malware. Amazon GuardDuty Malware Protection for S3 scans new objects in the same region and tags them; it is billed per GB scanned and per object evaluated (check https://aws.amazon.com/guardduty/pricing/ and add the line to `docs/COSTS.md`). If approved:
+  1. In each cell account and region (eu-west-2, eu-central-1, us-east-2): GuardDuty → Malware Protection for S3 → Enable for the bucket `thapsus-hr-<env>-<region>-files-<account>`, with tagging on, using the service role GuardDuty proposes. Scan results stay in the same region.
+  2. Ask engineering to (a) add the protection plan to `infra/lib/cell-stack.ts` (`AWS::GuardDuty::MalwareProtectionPlan`) so it is under CDK, (b) make downloads refuse objects whose `GuardDutyMalwareScanStatus` tag is not `NO_THREATS_FOUND`, and (c) mark V5.4.3 as met in `docs/ASVS.md`.
+  3. Add GuardDuty (malware scanning, same region, file contents) to `docs/SUBPROCESSORS.md` if your legal review treats it as a processing activity of AWS beyond storage.
+
 ## 2. Domain, TLS and email
 
 - [ ] 2.1 **Choose and register the product domain.** Set `THAPSUS_HR_DOMAIN` (infra config `domain`) and add the Route 53 hosted zone id to `infra/config/<env>.json`. Until then staging uses the load balancer DNS names with an imported self-signed certificate. Browsers will warn; the smoke test accepts it explicitly.
@@ -47,8 +52,9 @@ Things only a person with the right accounts or authority can do. The build runs
   - Colorado 2026 exempt salary ($57,784): the adopted 2026 PAY CALC Order says "effective February 1, 2026" while the pack applies it from 1 January 2026 (CDLE INFO #1) — decide which date applies;
   - the UK nation extents (ADR-0022): each GB rule's `regions`, and the new Northern Ireland pack `packages/rules/packs/gb/gb-nir.json`;
   - the New York City Protected Time Off rule (`packages/rules/packs/us/localities/us-ny-nyc.json`), which is modelled from 22 February 2026 only.
-  
+
   Replace the reviewer field via a back-office rule version when confirmed.
+
 - [ ] 3.2 Fill the coverage gaps listed in `docs/COVERAGE.md` (for example German state holidays, Italian sick pay). Their official portals block automated fetching, so a person must check them manually. These were re-tried on 2026-10-18 and still need a person:
   1. **Lithuania holidays.** Open the Labour Code (Darbo kodeksas) consolidated text on https://www.e-tar.lt (the agent got HTTP 403) or https://e-seimas.lrs.lt (JavaScript only). Copy the list in art. 123(1) and the date of the current wording, then add them as holiday definitions in `packages/rules/packs/eu/lt.json` with that URL, plus a holiday vector in `packages/rules/goldens/eu-b.json`. Check in particular whether 2 November (All Souls' Day) is still listed; the EURES page has two lists that disagree.
   2. **Lithuania annual leave.** In the same text check art. 126(1): the pack uses the EURES summary (20 working days on a 5-day week, 24 on a 6-day week). If it matches, add a back-office rule version with the e-tar.lt URL and the date that wording took effect.
@@ -74,6 +80,7 @@ Things only a person with the right accounts or authority can do. The build runs
   8. **FMLA:** the payroll-method headcount interpretation (whole workweeks), treating all US employees of a tenant as one employer, and the combined 26-week caregiver period.
 
   Record each confirmation as a back-office rule version or an ADR update.
+
 - [ ] 3.5 **Italy: notice and sick pay (phase 5).** `packages/rules/packs/eu/it.json` takes notice from EURES (normattiva.it reset the connection) and sick pay from the INPS information page:
   1. Open Civil Code art. 2118 on https://www.normattiva.it (search "codice civile art. 2118") and confirm that notice is set by collective agreements with no statutory minimum. If so, add a back-office rule version with the normattiva URL and the in-force date; if not, correct the value.
   2. On https://www.inps.it check the INPS indemnity bands (50% days 4-20, 66.66% days 21-180, 180 days a year) and the fixed-term and sector exceptions; confirm `effectiveFrom` (set to the verification date 2026-10-18).
@@ -92,8 +99,9 @@ Things only a person with the right accounts or authority can do. The build runs
   - Germany `working_time.time_recording` (BAG 13 September 2022, 1 ABR 22/21). Re-read § 3 ArbSchG on gesetze-im-internet.de, which returned HTTP 503 during research, and check whether an ArbZG amendment on recording has since come into force.
   - Whether other member states should keep resolving to the EU baseline (CJEU C-55/18) until national rules are researched.
   - The GB opt-out notice cap (WTR reg. 5(3)).
-  
+
   Confirm by adding a back-office rule version with your name as reviewer.
+
 - [ ] 3.14 Review the default geofence notice wording guidance and add a DPIA section for location at clock-in and out (ADR-0037). Each customer writes their own notice per country before they can enable geofencing. Check against the ICO monitoring-workers guidance and the works-council co-determination rights of EU employees (e.g. § 87(1) no. 6 BetrVG in Germany).
 - [ ] 3.15 **Holiday liability method (ADR-0073).** Ask finance and an employment lawyer to confirm the valuation used by the Holiday liability report (accrued-to-date leave less leave taken, at contractual basic pay ÷ (52 × working days per week), rounded once per person, negative when over-taken, no employer on-costs or variable pay) is acceptable for each market's accounting practice, and whether variable pay should be included for UK workers (holiday pay rules). Record the outcome in ADR-0073.
 - [ ] 3.16 **Privacy rule values in the jurisdiction packs** (`privacy.dsr_deadline`, `privacy.breach_notification`, `retention.*`; reviewer `research-agent (pending legal review)`):
@@ -160,6 +168,16 @@ Things only a person with the right accounts or authority can do. The build runs
 ## 5. Accounts and access for staff
 
 - [ ] 5.1 Create the first Thapsus back-office super admin in each cell: `pnpm --filter @thapsus/api exec tsx src/cli/create-staff.ts <email> "<name>" super_admin`. Store the printed one-time password and TOTP secret in a password manager.
+- [ ] 5.2 **Independent penetration test before production (ASVS review follow-up).** `docs/ASVS.md` is a self-assessment against OWASP ASVS 5.0 level 2. Before the first production customer:
+  1. Commission a CREST- or equivalent-accredited tester for the staging stacks (all three regions), scoped to the app, API, SCIM, SSO, public API (API keys and OAuth) and back office, with fictional data only.
+  2. Share `docs/ASVS.md`, `docs/SECURITY.md` and the OpenAPI document (`/openapi.json`) with them.
+  3. File every finding as an issue; fix or record each one in `docs/SECURITY.md` → "Accepted risks and follow-ups" and update `docs/ASVS.md`.
+- [ ] 5.3 **Repository security settings on GitHub (Phase 12.4).** `pnpm verify` already runs the dependency audit, secret scan and SBOM on every pull request; these settings add GitHub's own checks as a second line. In the repository's Settings:
+  1. **Code security → Secret Protection:** turn on secret scanning and push protection.
+  2. **Code security → Dependabot:** turn on Dependabot alerts and Dependabot security updates. Version updates are optional; every Dependabot pull request still has to pass `pnpm verify`.
+  3. **Branches → add a branch ruleset for `main`:** require a pull request, require the `verify` status check to pass, and block force pushes and deletion.
+  4. **Environments → `production`:** check that required reviewers are set (deploys to production wait for approval; `docs/runbooks/deploy.md`).
+- [ ] 5.4 **Vulnerability scanning of deployed infrastructure (COMPLIANCE.md gap G4; recurring cost, so it needs your approval).** Amazon Inspector scans the ECR images and Lambda functions in each cell for known CVEs. It is billed per image scanned and per re-scan (check https://aws.amazon.com/inspector/pricing/ and add the line to `docs/COSTS.md`). If approved, enable Inspector in eu-west-2, eu-central-1 and us-east-2 only, with ECR enhanced scanning on the `thapsus-hr-*` repositories, and route findings of high or critical severity to the security alarm topic. Fix findings within the timeframes in `docs/SECURITY.md` → "Dependency remediation".
 
 ## 6. Enterprise platform (Phase 9)
 
@@ -205,3 +223,17 @@ Ask HR is off by default and can only be enabled in the UK cell (ADR-0110). It c
   3. Update SUBPROCESSORS.md and give customers 30 days' notice.
 - [ ] 7.6 **Entitle a workspace** (after 7.1–7.4): the back office, `PUT /v1/backoffice/tenants/{tenantId}/features/aiAssistant` with `{ "enabled": true }` as a super admin. The customer's owner then turns Ask HR on in Settings → Ask HR and chooses the policy folders.
 
+## 8. Accessibility checks that need people and real assistive technology (Phase 12)
+
+The automated sweep (`apps/web/e2e/a11y-sweep.spec.ts`) and the flow specs cover what tools can prove (`docs/ACCESSIBILITY.md` §3). These items need a person, ideally including disabled users, before launch and after major UI changes. Use a staging workspace with fictional data only.
+
+- [ ] 8.1 **Screen-reader pass of each key flow in `docs/ACCESSIBILITY.md` §5** (sign up and MFA, sign in, add employee, request and approve leave, rota and shift swap, clock in and kiosk, timesheets, documents and signing, payslips, reports, settings, privacy requests):
+  1. NVDA (latest) with Chrome on Windows, and JAWS with Edge.
+  2. VoiceOver with Safari on macOS, and on an iPhone with the installed PWA.
+  3. TalkBack with Chrome on a low-cost Android phone (2 GB RAM class).
+  4. For each step, record whether names, roles, states, errors and toasts are announced, and whether focus lands where expected after dialogs close and pages change. File each problem as an issue labelled `a11y`.
+- [ ] 8.2 **Windows high contrast (forced colours)**: walk the same flows with a Windows contrast theme on; check that focus rings, selected tabs, badges, toggles and the rota grid stay visible.
+- [ ] 8.3 **Zoom and reflow on real devices**: browser zoom to 200% and 400% on a 1280px laptop, and the largest system text size on iOS and Android; nothing may be cut off or need sideways scrolling (tables excepted).
+- [ ] 8.4 **Speech input**: complete sign-in, a leave request and a rota change with Voice Control (macOS or iOS) and Dragon (Windows), using the visible labels only.
+- [ ] 8.5 **Kiosk in place**: on the tablet model customers will mount, check the keypad and Clock in buttons at arm's length, with gloves if the site uses them, and with the screen reader on.
+- [ ] 8.6 **Accessibility statement**: have legal review an accessibility statement (WCAG 2.2 AA, known limitations from 8.1–8.5, contact route) for the trust centre; publish it in both catalogues.

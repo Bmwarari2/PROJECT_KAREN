@@ -1,7 +1,21 @@
 'use client';
 import * as React from 'react';
 import { Lock, Play, ScanSearch } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -10,8 +24,27 @@ import { SELECT_CLASS, type RuleRef } from '../types';
 
 interface RetentionView {
   jurisdictions: string[];
-  categories: Array<{ category: string; rules: Array<{ jurisdiction: string; key: string; period: string; from: string; statutoryMinimum: boolean; legalReview: string; afterEmploymentEnds: string | null; rule: RuleRef }> }>;
-  policies: Array<{ category: string; jurisdiction: string; period: string | null; anchor: string; action: string; enabled: boolean }>;
+  categories: Array<{
+    category: string;
+    rules: Array<{
+      jurisdiction: string;
+      key: string;
+      period: string;
+      from: string;
+      statutoryMinimum: boolean;
+      legalReview: string;
+      afterEmploymentEnds: string | null;
+      rule: RuleRef;
+    }>;
+  }>;
+  policies: Array<{
+    category: string;
+    jurisdiction: string;
+    period: string | null;
+    anchor: string;
+    action: string;
+    enabled: boolean;
+  }>;
 }
 interface RunLine {
   category: string;
@@ -66,10 +99,19 @@ export default function RetentionPage() {
   const log = useApi<LogRow[]>('/v1/privacy/retention/runs');
   const holds = useApi<Hold[]>('/v1/privacy/legal-holds');
   const [dry, setDry] = React.useState<RunLine[] | null>(null);
-  const [form, setForm] = React.useState({ category: 'time_records', jurisdiction: '*', years: '', enabled: false });
+  const [form, setForm] = React.useState({
+    category: 'time_records',
+    jurisdiction: '*',
+    years: '',
+    enabled: false,
+  });
   const [hold, setHold] = React.useState({ category: '', reason: '' });
   const [busy, setBusy] = React.useState<string | null>(null);
-  const fail = (err: unknown) => toast({ title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'), tone: 'danger' });
+  const fail = (err: unknown) =>
+    toast({
+      title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'),
+      tone: 'danger',
+    });
 
   async function run<T>(name: string, fn: () => Promise<T>, ok?: string) {
     setBusy(name);
@@ -78,7 +120,11 @@ export default function RetentionPage() {
       if (ok) toast({ title: ok, tone: 'success' });
       return r;
     } catch (err) {
-      if (err instanceof ApiProblem && err.status === 422 && Array.isArray(err.body.minimums)) toast({ title: t('privacy.ui.retention.belowMinimum', { list: (err.body.minimums as string[]).join(', ') }), tone: 'danger' });
+      if (err instanceof ApiProblem && err.status === 422 && Array.isArray(err.body.minimums))
+        toast({
+          title: t('privacy.ui.retention.belowMinimum', { list: (err.body.minimums as string[]).join(', ') }),
+          tone: 'danger',
+        });
       else fail(err);
     } finally {
       setBusy(null);
@@ -87,12 +133,14 @@ export default function RetentionPage() {
 
   if (!view.data) return <Skeleton className="h-64" />;
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardTitle>{t('privacy.ui.retention.rulesTitle')}</CardTitle>
-        <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.retention.rulesLead')}</p>
-        <div className="mt-3 overflow-x-auto">
-          <Table dense>
+        <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">
+          {t('privacy.ui.retention.rulesLead')}
+        </p>
+        <div className="mt-3">
+          <Table dense scrollLabel={t('privacy.ui.retention.rulesTitle')}>
             <THead>
               <tr>
                 <TH>{t('privacy.ui.retention.category')}</TH>
@@ -147,18 +195,38 @@ export default function RetentionPage() {
 
       <Card>
         <CardTitle>{t('privacy.ui.retention.policiesTitle')}</CardTitle>
-        <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">{t('privacy.ui.retention.policiesLead')}</p>
+        <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">
+          {t('privacy.ui.retention.policiesLead')}
+        </p>
         <form
-          className="mt-4 grid gap-3 md:grid-cols-5 md:items-end"
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5 md:items-end"
           onSubmit={async (e) => {
             e.preventDefault();
-            await run('policy', () => api('/v1/privacy/retention/policies', { method: 'PUT', json: { category: form.category, jurisdiction: form.jurisdiction, period: form.years ? `P${form.years}Y` : null, enabled: form.enabled } }), t('privacy.ui.retention.saved'));
+            await run(
+              'policy',
+              () =>
+                api('/v1/privacy/retention/policies', {
+                  method: 'PUT',
+                  json: {
+                    category: form.category,
+                    jurisdiction: form.jurisdiction,
+                    period: form.years ? `P${form.years}Y` : null,
+                    enabled: form.enabled,
+                  },
+                }),
+              t('privacy.ui.retention.saved'),
+            );
             view.reload();
           }}
         >
           <Field id="pol-category" label={t('privacy.ui.retention.category')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+              <select
+                {...p}
+                className={`${SELECT_CLASS} w-full`}
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              >
                 {view.data!.categories.map((c) => (
                   <option key={c.category} value={c.category}>
                     {t(`privacy.ui.category.${c.category}`)}
@@ -169,7 +237,12 @@ export default function RetentionPage() {
           </Field>
           <Field id="pol-jurisdiction" label={t('privacy.ui.retention.jurisdiction')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={form.jurisdiction} onChange={(e) => setForm({ ...form, jurisdiction: e.target.value })}>
+              <select
+                {...p}
+                className={`${SELECT_CLASS} w-full`}
+                value={form.jurisdiction}
+                onChange={(e) => setForm({ ...form, jurisdiction: e.target.value })}
+              >
                 <option value="*">{t('privacy.ui.retention.everywhere')}</option>
                 {view.data!.jurisdictions.map((j) => (
                   <option key={j} value={j}>
@@ -179,11 +252,30 @@ export default function RetentionPage() {
               </select>
             )}
           </Field>
-          <Field id="pol-years" label={t('privacy.ui.retention.years')} hint={t('privacy.ui.retention.yearsHint')}>
-            {(p) => <Input {...p} type="number" min={1} max={100} inputMode="numeric" value={form.years} onChange={(e) => setForm({ ...form, years: e.target.value })} />}
+          <Field
+            id="pol-years"
+            label={t('privacy.ui.retention.years')}
+            hint={t('privacy.ui.retention.yearsHint')}
+          >
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                min={1}
+                max={100}
+                inputMode="numeric"
+                value={form.years}
+                onChange={(e) => setForm({ ...form, years: e.target.value })}
+              />
+            )}
           </Field>
           <label className="flex h-10 items-center gap-2 text-callout">
-            <input type="checkbox" className="h-5 w-5 accent-[var(--color-accent)]" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[var(--color-accent)]"
+              checked={form.enabled}
+              onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+            />
             {t('privacy.ui.retention.enableAuto')}
           </label>
           <Button type="submit" loading={busy === 'policy'}>
@@ -194,17 +286,43 @@ export default function RetentionPage() {
           <ul className="mt-4 grid gap-1 text-callout">
             {view.data.policies.map((p) => (
               <li key={`${p.category}-${p.jurisdiction}`}>
-                {t('privacy.ui.retention.policyLine', { category: t(`privacy.ui.category.${p.category}`), jurisdiction: p.jurisdiction === '*' ? t('privacy.ui.retention.everywhere') : p.jurisdiction, period: period(p.period), state: t(p.enabled ? 'privacy.ui.retention.on' : 'privacy.ui.retention.off') })}
+                {t('privacy.ui.retention.policyLine', {
+                  category: t(`privacy.ui.category.${p.category}`),
+                  jurisdiction:
+                    p.jurisdiction === '*' ? t('privacy.ui.retention.everywhere') : p.jurisdiction,
+                  period: period(p.period),
+                  state: t(p.enabled ? 'privacy.ui.retention.on' : 'privacy.ui.retention.off'),
+                })}
               </li>
             ))}
           </ul>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="secondary" loading={busy === 'dry'} onClick={async () => setDry((await run('dry', () => api<RunLine[]>('/v1/privacy/retention/dry-run', { method: 'POST', json: {} }))) ?? null)}>
+          <Button
+            variant="secondary"
+            loading={busy === 'dry'}
+            onClick={async () =>
+              setDry(
+                (await run('dry', () =>
+                  api<RunLine[]>('/v1/privacy/retention/dry-run', { method: 'POST', json: {} }),
+                )) ?? null,
+              )
+            }
+          >
             <ScanSearch aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('privacy.ui.retention.dryRun')}
           </Button>
-          <Button variant="secondary" loading={busy === 'run'} onClick={() => run('run', () => api('/v1/privacy/retention/run', { method: 'POST' }), t('privacy.ui.retention.runQueued'))}>
+          <Button
+            variant="secondary"
+            loading={busy === 'run'}
+            onClick={() =>
+              run(
+                'run',
+                () => api('/v1/privacy/retention/run', { method: 'POST' }),
+                t('privacy.ui.retention.runQueued'),
+              )
+            }
+          >
             <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('privacy.ui.retention.runNow')}
           </Button>
@@ -217,7 +335,15 @@ export default function RetentionPage() {
                 {dry
                   .filter((l) => l.rows > 0)
                   .map((l) => (
-                    <li key={`${l.category}-${l.jurisdiction}`}>{t('privacy.ui.retention.dryLine', { category: t(`privacy.ui.category.${l.category}`), jurisdiction: l.jurisdiction, rows: formatNumber(l.rows, locale), action: t(`privacy.ui.action.${l.action}`) })}</li>
+                    <li key={`${l.category}-${l.jurisdiction}`}>
+                      {t('privacy.ui.retention.dryLine', {
+                        category: t(`privacy.ui.category.${l.category}`),
+                        jurisdiction: l.jurisdiction,
+                        rows: formatNumber(l.rows, locale),
+                        count: l.rows,
+                        action: t(`privacy.ui.action.${l.action}`),
+                      })}
+                    </li>
                   ))}
               </ul>
             ) : (
@@ -231,17 +357,30 @@ export default function RetentionPage() {
         <CardTitle>{t('privacy.ui.holds.title')}</CardTitle>
         <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.holds.lead')}</p>
         <form
-          className="mt-4 grid gap-3 md:grid-cols-[1fr_2fr_auto] md:items-end"
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_2fr_auto] md:items-end"
           onSubmit={async (e) => {
             e.preventDefault();
-            await run('hold', () => api('/v1/privacy/legal-holds', { method: 'POST', json: { category: hold.category || null, reason: hold.reason } }), t('privacy.ui.holds.created'));
+            await run(
+              'hold',
+              () =>
+                api('/v1/privacy/legal-holds', {
+                  method: 'POST',
+                  json: { category: hold.category || null, reason: hold.reason },
+                }),
+              t('privacy.ui.holds.created'),
+            );
             setHold({ category: '', reason: '' });
             holds.reload();
           }}
         >
           <Field id="hold-category" label={t('privacy.ui.retention.category')}>
             {(p) => (
-              <select {...p} className={SELECT_CLASS} value={hold.category} onChange={(e) => setHold({ ...hold, category: e.target.value })}>
+              <select
+                {...p}
+                className={`${SELECT_CLASS} w-full`}
+                value={hold.category}
+                onChange={(e) => setHold({ ...hold, category: e.target.value })}
+              >
                 <option value="">{t('privacy.ui.holds.allCategories')}</option>
                 {view.data!.categories.map((c) => (
                   <option key={c.category} value={c.category}>
@@ -252,7 +391,15 @@ export default function RetentionPage() {
             )}
           </Field>
           <Field id="hold-reason" label={t('privacy.ui.holds.reason')}>
-            {(p) => <Input {...p} required minLength={3} value={hold.reason} onChange={(e) => setHold({ ...hold, reason: e.target.value })} />}
+            {(p) => (
+              <Input
+                {...p}
+                required
+                minLength={3}
+                value={hold.reason}
+                onChange={(e) => setHold({ ...hold, reason: e.target.value })}
+              />
+            )}
           </Field>
           <Button type="submit" variant="secondary" loading={busy === 'hold'}>
             {t('privacy.ui.holds.add')}
@@ -262,12 +409,29 @@ export default function RetentionPage() {
           {(holds.data ?? []).map((h) => (
             <li key={h.id} className="flex flex-wrap items-center gap-2">
               <span>
-                {t('privacy.ui.holds.line', { who: h.employeeName ?? t('privacy.ui.holds.everyone'), category: h.category ? t(`privacy.ui.category.${h.category}`) : t('privacy.ui.holds.allCategories'), reason: h.reason })}
+                {t('privacy.ui.holds.line', {
+                  who: h.employeeName ?? t('privacy.ui.holds.everyone'),
+                  category: h.category
+                    ? t(`privacy.ui.category.${h.category}`)
+                    : t('privacy.ui.holds.allCategories'),
+                  reason: h.reason,
+                })}
               </span>
               {h.releasedAt ? (
                 <Badge>{t('privacy.ui.holds.released')}</Badge>
               ) : (
-                <Button size="sm" variant="ghost" onClick={async () => (await run('release', () => api(`/v1/privacy/legal-holds/${h.id}/release`, { method: 'POST' }), t('privacy.ui.holds.releasedToast')), holds.reload())}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => (
+                    await run(
+                      'release',
+                      () => api(`/v1/privacy/legal-holds/${h.id}/release`, { method: 'POST' }),
+                      t('privacy.ui.holds.releasedToast'),
+                    ),
+                    holds.reload()
+                  )}
+                >
                   {t('privacy.ui.holds.release')}
                 </Button>
               )}
@@ -280,8 +444,8 @@ export default function RetentionPage() {
         <CardTitle>{t('privacy.ui.retention.logTitle')}</CardTitle>
         <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.retention.logLead')}</p>
         {log.data?.length ? (
-          <div className="mt-3 overflow-x-auto">
-            <Table dense>
+          <div className="mt-3">
+            <Table dense scrollLabel={t('privacy.ui.retention.logTitle')}>
               <THead>
                 <tr>
                   <TH>{t('privacy.ui.retention.when')}</TH>

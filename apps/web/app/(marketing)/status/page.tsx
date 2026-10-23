@@ -37,7 +37,9 @@ interface RegionStatus {
 
 /** The cell API serving each region: API_URL_<REGION>, or this web app's own cell through the local proxy. */
 function statusUrl(region: HomeRegion): string | undefined {
-  const base = process.env[`API_URL_${region.toUpperCase()}`] ?? (region === (process.env.CELL_REGION ?? 'uk') ? process.env.API_PROXY_URL : undefined);
+  const base =
+    process.env[`API_URL_${region.toUpperCase()}`] ??
+    (region === (process.env.CELL_REGION ?? 'uk') ? process.env.API_PROXY_URL : undefined);
   return base ? `${base.replace(/\/$/, '')}/v1/status` : undefined;
 }
 
@@ -45,7 +47,11 @@ async function load(region: HomeRegion): Promise<RegionStatus | null> {
   const url = statusUrl(region);
   if (!url) return null;
   try {
-    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(3000), headers: { accept: 'application/json' } });
+    const res = await fetch(url, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(3000),
+      headers: { accept: 'application/json' },
+    });
     if (!res.ok) return null;
     const body = (await res.json()) as RegionStatus;
     return body.region === region ? body : null; // never show one region's status as another's
@@ -65,12 +71,18 @@ const ICON: Record<State, React.ReactNode> = {
   outage: <XCircle aria-hidden className="h-5 w-5 stroke-[1.5] text-danger" />,
   maintenance: <Wrench aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />,
 };
-const TONE: Record<State, 'success' | 'warning' | 'danger' | 'accent'> = { operational: 'success', degraded: 'warning', outage: 'danger', maintenance: 'accent' };
+const TONE: Record<State, 'success' | 'warning' | 'danger' | 'accent'> = {
+  operational: 'success',
+  degraded: 'warning',
+  outage: 'danger',
+  maintenance: 'accent',
+};
 
 export default async function StatusPage() {
   const { t, locale } = await serverContext();
   const results = await Promise.all(HOME_REGIONS.map(async (r) => [r, await load(r)] as const));
-  const when = (iso: string, region: HomeRegion) => formatDateTime(iso, locale, REGIONS[region].defaultTimeZone);
+  const when = (iso: string, region: HomeRegion) =>
+    formatDateTime(iso, locale, REGIONS[region].defaultTimeZone);
 
   const PostList = ({ posts, region, empty }: { posts: Post[]; region: HomeRegion; empty?: string }) =>
     posts.length ? (
@@ -79,8 +91,11 @@ export default async function StatusPage() {
           <li key={p.id} className="rounded-md bg-surface p-4">
             <p className="text-callout font-semibold">{p.title}</p>
             <p className="mt-1 text-footnote text-text-secondary">
-              {t(`statusPage.postStatus.${p.status}`)} · {p.components.map((c) => t(`statusPage.components.${c}`)).join(', ')}
-              {p.kind === 'maintenance' && p.scheduledStart && p.scheduledEnd ? ` · ${when(p.scheduledStart, region)} – ${when(p.scheduledEnd, region)}` : ` · ${when(p.startedAt, region)}`}
+              {t(`statusPage.postStatus.${p.status}`)} ·{' '}
+              {p.components.map((c) => t(`statusPage.components.${c}`)).join(', ')}
+              {p.kind === 'maintenance' && p.scheduledStart && p.scheduledEnd
+                ? ` · ${when(p.scheduledStart, region)} – ${when(p.scheduledEnd, region)}`
+                : ` · ${when(p.startedAt, region)}`}
             </p>
             <ol className="mt-2 flex flex-col gap-1">
               {p.updates.map((u, i) => (
@@ -105,7 +120,9 @@ export default async function StatusPage() {
           {t('statusPage.title')}
         </h1>
       </div>
-      <p className="mt-4 max-w-[var(--prose-width)] text-body-lg text-text-secondary">{t('statusPage.lead')}</p>
+      <p className="mt-4 max-w-[var(--prose-width)] text-body-lg text-text-secondary">
+        {t('statusPage.lead')}
+      </p>
       <div className="mt-10 grid gap-6 lg:grid-cols-3">
         {results.map(([region, s]) => (
           <section key={region} aria-labelledby={`status-${region}`}>
@@ -119,7 +136,10 @@ export default async function StatusPage() {
                     {ICON[s.overall]}
                     <Badge tone={TONE[s.overall]}>{t(`statusPage.overall.${s.overall}`)}</Badge>
                   </p>
-                  <ul className="mt-5 flex flex-col divide-y divide-border" aria-label={t('statusPage.componentsLabel')}>
+                  <ul
+                    className="mt-5 flex flex-col divide-y divide-border"
+                    aria-label={t('statusPage.componentsLabel')}
+                  >
                     {s.components.map((c) => (
                       <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 text-callout">
                         <span>{t(`statusPage.components.${c.id}`)}</span>
@@ -139,7 +159,9 @@ export default async function StatusPage() {
                     </>
                   ) : null}
                   <details className="mt-6">
-                    <summary className="cursor-pointer text-callout font-semibold text-accent">{t('statusPage.historyTitle', { count: s.history.length })}</summary>
+                    <summary className="cursor-pointer text-callout font-semibold text-accent">
+                      {t('statusPage.historyTitle', { count: s.history.length })}
+                    </summary>
                     <PostList posts={s.history} region={region} empty={t('statusPage.noHistory')} />
                   </details>
                   <p className="mt-6 text-footnote text-text-secondary" data-volatile>
@@ -147,7 +169,10 @@ export default async function StatusPage() {
                   </p>
                 </>
               ) : (
-                <p className="mt-3 flex items-center gap-2 text-callout text-text-secondary" data-testid={`unavailable-${region}`}>
+                <p
+                  className="mt-3 flex items-center gap-2 text-callout text-text-secondary"
+                  data-testid={`unavailable-${region}`}
+                >
                   {ICON.degraded}
                   {t('statusPage.unavailable')}
                 </p>

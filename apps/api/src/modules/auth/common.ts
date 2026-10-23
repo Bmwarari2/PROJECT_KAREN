@@ -2,13 +2,18 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
-import { createSession, loadSecurity, SESSION_COOKIE, type AuthMethod } from './sessions';
+import { sessionCookie } from '../../http/security';
+import { createSession, loadSecurity, SESSION_PREFIX, type AuthMethod } from './sessions';
+import { hashToken, parseToken } from './tokens';
 
 /**
  * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
  * (`…:ip:…`) scale with the cell's ipThrottleMultiplier (1 outside the load-test environment).
  */
-export async function throttle(deps: Deps, rules: Array<[key: string, limit: number, windowSeconds: number]>) {
+export async function throttle(
+  deps: Deps,
+  rules: Array<[key: string, limit: number, windowSeconds: number]>,
+) {
   const ipFactor = deps.config.ipThrottleMultiplier ?? 1;
   for (const [key, base, windowSeconds] of rules) {
     const limit = key.includes(':ip:') ? base * ipFactor : base;
@@ -29,20 +34,33 @@ export async function resolveTenantSlug(deps: Deps, slug: string): Promise<strin
   }
   const remote = await deps.directory.bySlug(slug.toLowerCase());
   if (remote && remote.homeRegion !== deps.config.cell) {
-    throw new ApiError('wrongRegion', undefined, { region: remote.homeRegion, appUrl: deps.regionalAppUrls[remote.homeRegion] });
+    throw new ApiError('wrongRegion', undefined, {
+      region: remote.homeRegion,
+      appUrl: deps.regionalAppUrls[remote.homeRegion],
+    });
   }
   throw new ApiError('notFound');
 }
 
+/**
+ * The session cookie: `__Host-thr_sid` over HTTPS (Secure, Path=/, no Domain), HttpOnly, SameSite=Lax
+ * so top-level navigations from an identity provider or an emailed link keep working (cross-site
+ * requests are refused by the origin check in http/context.ts). ASVS V3.3.1 to V3.3.4.
+ */
 export function setSessionCookie(deps: Deps, reply: FastifyReply, token: string) {
-  const secure = deps.config.apiBaseUrl.startsWith('https');
-  reply.setCookie(SESSION_COOKIE, token, {
+  const c = sessionCookie(deps.config);
+  reply.setCookie(c.name, token, {
     httpOnly: true,
-    secure,
+    secure: c.secure,
     sameSite: 'lax',
-    path: '/',
+    path: c.path,
     // Absolute session lifetime is enforced server-side; the cookie itself is a browser-session cookie.
   });
+}
+
+export function clearSessionCookie(deps: Deps, reply: FastifyReply) {
+  const c = sessionCookie(deps.config);
+  reply.clearCookie(c.name, { path: c.path, secure: c.secure, httpOnly: true, sameSite: 'lax' });
 }
 
 export async function startSession(
@@ -52,7 +70,22 @@ export async function startSession(
   tx: Tx,
   opts: { tenantId: string; userId: string; method: AuthMethod; mfaVerified: boolean },
 ) {
-  const token = await createSession(tx, { ...opts, ip: req.ctx.ip, userAgent: req.ctx.userAgent, now: deps.now() });
+  // A sign-in always gets a new token, and the session this browser held before ends (ASVS V7.2.4).
+  const previous = parseToken(SESSION_PREFIX, req.cookies?.[sessionCookie(deps.config).name]);
+  if (previous) {
+    const end = (t: Tx) =>
+      t.exec('UPDATE app.sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL', [
+        hashToken(previous.secret),
+      ]);
+    if (previous.tenantId === opts.tenantId) await end(tx);
+    else await withTenant(deps.router, previous.tenantId, end).catch(() => undefined);
+  }
+  const token = await createSession(tx, {
+    ...opts,
+    ip: req.ctx.ip,
+    userAgent: req.ctx.userAgent,
+    now: deps.now(),
+  });
   await writeAudit(tx, {
     actorType: 'user',
     actorId: opts.userId,
@@ -75,7 +108,13 @@ export async function assertPasswordlessAllowed(tx: Tx) {
   return security;
 }
 
-export async function recordFailure(deps: Deps, req: FastifyRequest, tenantId: string, userId: string | undefined, reason: string) {
+export async function recordFailure(
+  deps: Deps,
+  req: FastifyRequest,
+  tenantId: string,
+  userId: string | undefined,
+  reason: string,
+) {
   await withTenant(deps.router, tenantId, async (tx) => {
     if (userId) {
       const security = await loadSecurity(tx);
@@ -83,7 +122,11 @@ export async function recordFailure(deps: Deps, req: FastifyRequest, tenantId: s
         `UPDATE app.users SET failed_attempts = failed_attempts + 1,
            locked_until = CASE WHEN failed_attempts + 1 >= $2 THEN $3::timestamptz ELSE locked_until END
          WHERE id = $1`,
-        [userId, security.lockoutThreshold, new Date(deps.now().getTime() + security.lockoutMinutes * 60_000)],
+        [
+          userId,
+          security.lockoutThreshold,
+          new Date(deps.now().getTime() + security.lockoutMinutes * 60_000),
+        ],
       );
     }
     await writeAudit(tx, {

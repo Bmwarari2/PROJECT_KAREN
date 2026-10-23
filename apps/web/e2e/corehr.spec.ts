@@ -7,21 +7,50 @@ import { apiCall, expectAccessible, lastMailTo, signUpAndEnrol } from './helpers
 const magicLink = (text: string) => /(https?:\/\/\S+\/auth\/magic\?token=\S+)/.exec(text)![1]!;
 
 async function seedEntity(page: Page) {
-  return (await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', { name: 'Fictional UK Ltd', country: 'GB', currency: 'GBP', timeZone: 'Europe/London' })).id;
+  return (
+    await apiCall<{ id: string }>(page.request, 'POST', '/v1/org/legal-entities', {
+      name: 'Fictional UK Ltd',
+      country: 'GB',
+      currency: 'GBP',
+      timeZone: 'Europe/London',
+    })
+  ).id;
 }
 
 async function hire(page: Page, entityId: string, values: Record<string, unknown>) {
-  const base = { startDate: '2026-01-05', entityId, jobTitle: 'Analyst', payAmountMinor: 4_000_000, payCurrency: 'GBP', payFrequency: 'annual', contractType: 'permanent' };
+  const base = {
+    startDate: '2026-01-05',
+    entityId,
+    jobTitle: 'Analyst',
+    payAmountMinor: 4_000_000,
+    payCurrency: 'GBP',
+    payFrequency: 'annual',
+    contractType: 'permanent',
+  };
   return (await apiCall<{ id: string }>(page.request, 'POST', '/v1/employees', { ...base, ...values })).id;
 }
 
 test.describe('field-level permissions in the UI', () => {
-  test('a manager opening a report’s profile sees the same fields the API allows: no pay, no date of birth', async ({ page, browser }) => {
+  test('a manager opening a report’s profile sees the same fields the API allows: no pay, no date of birth', async ({
+    page,
+    browser,
+  }) => {
     const { slug } = await signUpAndEnrol(page);
     const entity = await seedEntity(page);
     const managerEmail = `morgan.manager@${slug}.example.test`;
-    const manager = await hire(page, entity, { legalFirstName: 'Morgan', legalLastName: 'Manager', jobTitle: 'Team lead', workEmail: managerEmail, payAmountMinor: 6_500_000 });
-    const report = await hire(page, entity, { legalFirstName: 'Reese', legalLastName: 'Report', managerId: manager, dateOfBirth: '1990-02-03' });
+    const manager = await hire(page, entity, {
+      legalFirstName: 'Morgan',
+      legalLastName: 'Manager',
+      jobTitle: 'Team lead',
+      workEmail: managerEmail,
+      payAmountMinor: 6_500_000,
+    });
+    const report = await hire(page, entity, {
+      legalFirstName: 'Reese',
+      legalLastName: 'Report',
+      managerId: manager,
+      dateOfBirth: '1990-02-03',
+    });
     await apiCall(page.request, 'POST', `/v1/employees/${manager}/invite`, { roles: ['manager'] });
 
     // the owner sees pay and personal details
@@ -35,7 +64,9 @@ test.describe('field-level permissions in the UI', () => {
     const download = page.waitForEvent('download');
     await page.getByRole('link', { name: 'Export CSV' }).click();
     const csv = readFileSync((await (await download).path())!, 'utf8');
-    expect(csv.split('\r\n')[0]).toBe('employeeNumber,displayName,jobTitle,department,location,country,status,startDate,workEmail');
+    expect(csv.split('\r\n')[0]).toBe(
+      'employeeNumber,displayName,jobTitle,department,location,country,status,startDate,workEmail',
+    );
     expect(csv).toContain('"Reese Report"');
 
     // the manager signs in from their invitation email
@@ -66,13 +97,29 @@ test.describe('field-level permissions in the UI', () => {
 });
 
 test.describe('org chart', () => {
-  test('renders the first level and expands a node within the time budget, with search and focus', async ({ page }) => {
+  test('renders the first level and expands a node within the time budget, with search and focus', async ({
+    page,
+  }) => {
     await signUpAndEnrol(page);
     const entity = await seedEntity(page);
-    const root = await hire(page, entity, { legalFirstName: 'Rowan', legalLastName: 'Root', jobTitle: 'Managing director' });
+    const root = await hire(page, entity, {
+      legalFirstName: 'Rowan',
+      legalLastName: 'Root',
+      jobTitle: 'Managing director',
+    });
     for (let i = 1; i <= 8; i++) {
-      const lead = await hire(page, entity, { legalFirstName: `Lead${i}`, legalLastName: 'Fictional', jobTitle: 'Head of team', managerId: root });
-      for (let j = 1; j <= 3; j++) await hire(page, entity, { legalFirstName: `Member${i}x${j}`, legalLastName: 'Fictional', managerId: lead });
+      const lead = await hire(page, entity, {
+        legalFirstName: `Lead${i}`,
+        legalLastName: 'Fictional',
+        jobTitle: 'Head of team',
+        managerId: root,
+      });
+      for (let j = 1; j <= 3; j++)
+        await hire(page, entity, {
+          legalFirstName: `Member${i}x${j}`,
+          legalLastName: 'Fictional',
+          managerId: lead,
+        });
     }
     // warm-up load (compiles nothing in production, but primes the connection pool)
     await page.goto('/app/org-chart');
@@ -87,11 +134,18 @@ test.describe('org chart', () => {
           const waitFor = (pred: () => boolean) =>
             new Promise<void>((resolve, reject) => {
               const started = performance.now();
-              const tick = () => (pred() ? resolve() : performance.now() - started > 10_000 ? reject(new Error('timeout')) : requestAnimationFrame(tick));
+              const tick = () =>
+                pred()
+                  ? resolve()
+                  : performance.now() - started > 10_000
+                    ? reject(new Error('timeout'))
+                    : requestAnimationFrame(tick);
               tick();
             });
           // in-app navigation to the org chart until the first level is on screen
-          const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="/app/org-chart"]')].find((a) => a.offsetParent !== null)!;
+          const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="/app/org-chart"]')].find(
+            (a) => a.offsetParent !== null,
+          )!;
           const t0 = performance.now();
           link.click();
           await waitFor(() => !!document.querySelector('[role="tree"] [role="treeitem"]'));
@@ -106,7 +160,13 @@ test.describe('org chart', () => {
       );
     }
     const median = (k: 'firstRenderMs' | 'expandMs') => runs.map((r) => r[k]).sort((a, b) => a - b)[1]!;
-    const result = { at: new Date().toISOString(), people: 33, runs, medianFirstRenderMs: Math.round(median('firstRenderMs')), medianExpandMs: Math.round(median('expandMs')) };
+    const result = {
+      at: new Date().toISOString(),
+      people: 33,
+      runs,
+      medianFirstRenderMs: Math.round(median('firstRenderMs')),
+      medianExpandMs: Math.round(median('expandMs')),
+    };
     console.log(`org chart client timing: ${JSON.stringify(result)}`);
     // kept with the other benchmark results (git-ignored); Playwright clears its own output folder per run
     mkdirSync('../../.verify', { recursive: true });
@@ -119,13 +179,18 @@ test.describe('org chart', () => {
     // search and focus: the chain to the person is expanded and the person is selected
     await page.getByRole('searchbox', { name: 'Find a person' }).fill('Member5x2');
     await page.getByRole('button', { name: /Member5x2 Fictional/ }).click();
-    await expect(page.locator('[role="treeitem"][aria-selected="true"]')).toContainText('Member5x2 Fictional');
+    await expect(page.locator('[role="treeitem"][aria-selected="true"]')).toContainText(
+      'Member5x2 Fictional',
+    );
     await expect(page.locator('[role="treeitem"][aria-selected="true"]')).toHaveAttribute('aria-level', '3');
   });
 });
 
 test.describe('pre-start portal', () => {
-  test('a new joiner signs in before their start date to sign documents, complete forms and work through their checklist', async ({ page, browser }) => {
+  test('a new joiner signs in before their start date to sign documents, complete forms and work through their checklist', async ({
+    page,
+    browser,
+  }) => {
     const { slug } = await signUpAndEnrol(page);
     const entity = await seedEntity(page);
     const template = await apiCall<{ id: string }>(page.request, 'POST', '/v1/workflow-templates', {
@@ -134,17 +199,45 @@ test.describe('pre-start portal', () => {
       autoStart: false,
       tasks: [
         { key: 'photo', title: 'Upload a profile photo', assignee: { type: 'employee' }, dueOffsetDays: -7 },
-        { key: 'handbook', title: 'Read the staff handbook', assignee: { type: 'employee' }, dueOffsetDays: -2 },
+        {
+          key: 'handbook',
+          title: 'Read the staff handbook',
+          assignee: { type: 'employee' },
+          dueOffsetDays: -2,
+        },
       ],
     });
     const start = new Date(Date.now() + 21 * 86_400_000).toISOString().slice(0, 10);
     const joinerEmail = `nova.joiner@${slug}.example.test`;
-    const joiner = await hire(page, entity, { startDate: start, legalFirstName: 'Nova', legalLastName: 'Joiner', jobTitle: 'Designer', personalEmail: joinerEmail });
-    const tpl = (await apiCall<{ id: string }>(page.request, 'POST', '/v1/document-templates', { name: 'Contract of employment', body: 'Dear {{employee.firstName}}, welcome to {{company.name}}.' })).id;
-    await apiCall(page.request, 'POST', `/v1/document-templates/${tpl}/generate`, { employeeId: joiner, requireSignature: true });
+    const joiner = await hire(page, entity, {
+      startDate: start,
+      legalFirstName: 'Nova',
+      legalLastName: 'Joiner',
+      jobTitle: 'Designer',
+      personalEmail: joinerEmail,
+    });
+    const tpl = (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/document-templates', {
+        name: 'Contract of employment',
+        body: 'Dear {{employee.firstName}}, welcome to {{company.name}}.',
+      })
+    ).id;
+    await apiCall(page.request, 'POST', `/v1/document-templates/${tpl}/generate`, {
+      employeeId: joiner,
+      requireSignature: true,
+    });
     // (auto-start runs in the background worker, which the e2e stack does not run: start it explicitly)
-    await apiCall(page.request, 'POST', '/v1/workflows', { templateId: template.id, employeeId: joiner, anchorDate: start });
-    const invited = await apiCall<{ tasksAssigned: number }>(page.request, 'POST', `/v1/employees/${joiner}/invite`, {});
+    await apiCall(page.request, 'POST', '/v1/workflows', {
+      templateId: template.id,
+      employeeId: joiner,
+      anchorDate: start,
+    });
+    const invited = await apiCall<{ tasksAssigned: number }>(
+      page.request,
+      'POST',
+      `/v1/employees/${joiner}/invite`,
+      {},
+    );
     expect(invited.tasksAssigned).toBe(2);
 
     const context = await browser.newContext();
@@ -153,7 +246,9 @@ test.describe('pre-start portal', () => {
     await jp.waitForURL(/\/app$/);
     await jp.getByRole('link', { name: 'Open your onboarding' }).click();
     await jp.waitForURL(/\/app\/welcome$/);
-    await expect(jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` })).toBeVisible();
+    await expect(
+      jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
+    ).toBeVisible();
     await expect(jp.getByText(/Days until you start: 2[01]\b/)).toBeVisible();
     await expect(jp.getByText('0 of 5 steps complete')).toBeVisible();
     await expectAccessible(jp);
@@ -164,12 +259,20 @@ test.describe('pre-start portal', () => {
     await jp.getByLabel(/^(Town or city|City)$/).fill('Leeds'); // en-GB / en-US wording
     await jp.getByLabel(/^(Postcode|ZIP code)$/).fill('LS1 1AA');
     await jp.getByLabel('Country code').fill('GB');
-    await jp.locator('form').filter({ has: jp.getByLabel('Personal phone') }).getByRole('button', { name: 'Save' }).click();
+    await jp
+      .locator('form')
+      .filter({ has: jp.getByLabel('Personal phone') })
+      .getByRole('button', { name: 'Save' })
+      .click();
     await expect(jp.getByText('1 of 5 steps complete')).toBeVisible();
     await jp.getByLabel('Full name').fill('Orion Joiner');
     await jp.getByLabel('Relationship').fill('Parent');
     await jp.getByLabel('Phone number').fill('+44 7700 900456');
-    await jp.locator('form').filter({ has: jp.getByLabel('Full name') }).getByRole('button', { name: 'Save' }).click();
+    await jp
+      .locator('form')
+      .filter({ has: jp.getByLabel('Full name') })
+      .getByRole('button', { name: 'Save' })
+      .click();
     await expect(jp.getByText('2 of 5 steps complete')).toBeVisible();
 
     // checklist
@@ -188,7 +291,11 @@ test.describe('pre-start portal', () => {
     await expectAccessible(jp);
 
     // HR sees the joiner's details from their start date
-    const hr = await apiCall<{ employee: { personalPhone: string } }>(page.request, 'GET', `/v1/employees/${joiner}?asOf=${start}`);
+    const hr = await apiCall<{ employee: { personalPhone: string } }>(
+      page.request,
+      'GET',
+      `/v1/employees/${joiner}?asOf=${start}`,
+    );
     expect(hr.employee.personalPhone).toBe('+44 7700 900123');
     await context.close();
   });

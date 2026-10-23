@@ -57,14 +57,17 @@ export function roleName(t: T, r: { key: string; name: string; builtIn: boolean 
 /** Localised label for a permission string (area wildcards and `*` included). */
 export function permissionLabel(t: T, perm: string) {
   if (perm === '*') return t('access.roles.allPermissions');
-  if (perm.endsWith('.*')) return t('access.editor.allInArea', { area: t(`access.area.${perm.slice(0, -2)}`) });
+  if (perm.endsWith('.*'))
+    return t('access.editor.allInArea', { area: t(`access.area.${perm.slice(0, -2)}`) });
   const label = t(`access.perm.${perm}`);
   return label === `access.perm.${perm}` ? perm : label;
 }
 
 export function scopeSummary(t: T, a: Pick<Assignment, 'scope' | 'scopeLabels'>) {
   const type = t(`access.scope.${a.scope.type}`);
-  return a.scopeLabels.length ? t('access.users.scopeSummary', { type, values: a.scopeLabels.join(', ') }) : type;
+  return a.scopeLabels.length
+    ? t('access.users.scopeSummary', { type, values: a.scopeLabels.join(', ') })
+    : type;
 }
 
 /** A readable message for a refused change (reason codes from the API), including what was not held. */
@@ -73,7 +76,10 @@ export function problemMessage(t: T, err: unknown) {
   const reason = typeof err.body.reason === 'string' ? err.body.reason : undefined;
   if (!reason) return err.title;
   const base = t(`access.errors.${reason}`, { count: Number(err.body.assignments ?? 0) });
-  const missing = [...((err.body.permissions as string[] | undefined) ?? []).map((p) => permissionLabel(t, p)), ...((err.body.fields as string[] | undefined) ?? []).map((f) => fieldLabel(t, f))];
+  const missing = [
+    ...((err.body.permissions as string[] | undefined) ?? []).map((p) => permissionLabel(t, p)),
+    ...((err.body.fields as string[] | undefined) ?? []).map((f) => fieldLabel(t, f)),
+  ];
   return missing.length ? `${base} ${t('access.errors.notHeld', { list: missing.join(', ') })}` : base;
 }
 
@@ -88,7 +94,8 @@ export function adminGrade(cat: Catalogue | undefined, perms: Iterable<string>) 
 export function fieldLabel(t: T, key: string, custom: Catalogue['customFields'] = [], locale = 'en-GB') {
   if (key === 'employee.*') return t('access.editor.allFields');
   const k = key.replace(/^employee\./, '');
-  if (k.endsWith('.*')) return t('access.editor.allInGroup', { group: t(`access.section.${k.slice(0, -2)}`) });
+  if (k.endsWith('.*'))
+    return t('access.editor.allInGroup', { group: t(`access.section.${k.slice(0, -2)}`) });
   if (k.startsWith('custom.')) {
     const def = custom.find((c) => c.key === k.slice(7));
     return def ? (def.label[locale] ?? def.label['en-GB'] ?? Object.values(def.label)[0] ?? def.key) : k;

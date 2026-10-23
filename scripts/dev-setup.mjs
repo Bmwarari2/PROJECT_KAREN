@@ -46,7 +46,12 @@ if (!existsSync('.env')) {
     OTEL_SDK_DISABLED: 'true',
     LOG_LEVEL: 'info',
   };
-  writeFileSync('.env', Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
+  writeFileSync(
+    '.env',
+    Object.entries(env)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n') + '\n',
+  );
   console.log('wrote .env (git-ignored, local-only secrets)');
 }
 writeFileSync('apps/web/.env.local', 'API_PROXY_URL=http://127.0.0.1:4000\n');

@@ -24,10 +24,15 @@ export default async function HelpArticlePage({ params }: { params: Promise<{ sl
           {p}
         </p>
       ))}
-      <p className="text-footnote text-text-secondary">{t('help.updated', { date: formatDate(a.updatedOn, locale), version: a.version })}</p>
+      <p className="text-footnote text-text-secondary">
+        {t('help.updated', { date: formatDate(a.updatedOn, locale), version: a.version })}
+      </p>
       <div className="mt-4 rounded-lg bg-surface p-5">
         <p className="text-callout">{t('help.stillStuck')}</p>
-        <Link href={`/app/support?new=1&context=${encodeURIComponent(a.contexts[0] ?? '/app')}`} className={`${buttonVariants({ size: 'sm' })} mt-3 no-underline`}>
+        <Link
+          href={`/app/support?new=1&context=${encodeURIComponent(a.contexts[0] ?? '/app')}`}
+          className={`${buttonVariants({ size: 'sm' })} mt-3 no-underline`}
+        >
           {t('help.raiseTicket')}
         </Link>
       </div>

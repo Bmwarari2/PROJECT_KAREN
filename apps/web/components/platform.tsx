@@ -24,7 +24,15 @@ export function PageHeader({ title, lead }: { title: string; lead?: string }) {
 }
 
 /** A secret shown exactly once, with copy buttons. The parent drops it from memory on "Done". */
-export function SecretOnce({ title, items, onDone }: { title: string; items: Array<{ label: string; value: string }>; onDone: () => void }) {
+export function SecretOnce({
+  title,
+  items,
+  onDone,
+}: {
+  title: string;
+  items: Array<{ label: string; value: string }>;
+  onDone: () => void;
+}) {
   const t = useT();
   const [copied, setCopied] = React.useState<string | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -43,7 +51,10 @@ export function SecretOnce({ title, items, onDone }: { title: string; items: Arr
           <div key={i.label} className="flex flex-col gap-1">
             <span className="text-footnote font-semibold">{i.label}</span>
             <div className="flex flex-wrap items-center gap-2">
-              <code data-testid="secret-value" className="break-all rounded-sm bg-surface px-2 py-1 text-footnote">
+              <code
+                data-testid="secret-value"
+                className="break-all rounded-sm bg-surface px-2 py-1 text-footnote"
+              >
                 {i.value}
               </code>
               <Button
@@ -55,7 +66,11 @@ export function SecretOnce({ title, items, onDone }: { title: string; items: Arr
                 }}
                 aria-label={t('platform.secretOnce.copy', { label: i.label })}
               >
-                {copied === i.label ? <Check aria-hidden className="h-4 w-4 stroke-[1.5]" /> : <Copy aria-hidden className="h-4 w-4 stroke-[1.5]" />}
+                {copied === i.label ? (
+                  <Check aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                ) : (
+                  <Copy aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                )}
                 {copied === i.label ? t('platform.secretOnce.copied') : t('platform.secretOnce.copyShort')}
               </Button>
             </div>
@@ -71,7 +86,14 @@ export function SecretOnce({ title, items, onDone }: { title: string; items: Arr
 
 export function FeatureOff() {
   const t = useT();
-  return <EmptyState icon={<PowerOff aria-hidden />} title={t('platform.featureOff.title')} body={t('platform.featureOff.body')} action={<Link href="/app/settings/features">{t('platform.featureOff.action')}</Link>} />;
+  return (
+    <EmptyState
+      icon={<PowerOff aria-hidden />}
+      title={t('platform.featureOff.title')}
+      body={t('platform.featureOff.body')}
+      action={<Link href="/app/settings/features">{t('platform.featureOff.action')}</Link>}
+    />
+  );
 }
 
 const TONES: Record<string, 'success' | 'warning' | 'danger' | 'neutral' | 'accent'> = {
@@ -96,10 +118,16 @@ export function useDateTime() {
   const locale = useLocale();
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return React.useCallback((iso: string | null | undefined) => (iso ? formatDateTime(iso, locale, zone) : '—'), [locale, zone]);
+  return React.useCallback(
+    (iso: string | null | undefined) => (iso ? formatDateTime(iso, locale, zone) : '—'),
+    [locale, zone],
+  );
 }
 
-export function errorText(t: (k: string, v?: Record<string, string | number>) => string, err: unknown): string {
+export function errorText(
+  t: (k: string, v?: Record<string, string | number>) => string,
+  err: unknown,
+): string {
   const e = err as { body?: { detail?: string }; title?: string };
   const detail = e?.body?.detail;
   if (detail) {

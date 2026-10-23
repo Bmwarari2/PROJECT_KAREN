@@ -16,11 +16,21 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40);
 
-export function SignUpForm({ initialRegion, initialCompany, initialSlug }: { initialRegion?: string; initialCompany?: string; initialSlug?: string }) {
+export function SignUpForm({
+  initialRegion,
+  initialCompany,
+  initialSlug,
+}: {
+  initialRegion?: string;
+  initialCompany?: string;
+  initialSlug?: string;
+}) {
   const t = useT();
   const locale = useLocale();
   const router = useRouter();
-  const [region, setRegion] = React.useState<Region | null>(REGIONS.includes(initialRegion as Region) ? (initialRegion as Region) : null);
+  const [region, setRegion] = React.useState<Region | null>(
+    REGIONS.includes(initialRegion as Region) ? (initialRegion as Region) : null,
+  );
   const [company, setCompany] = React.useState(initialCompany ?? '');
   const [slug, setSlug] = React.useState(initialSlug ?? '');
   const [slugTouched, setSlugTouched] = React.useState(!!initialSlug);
@@ -41,7 +51,19 @@ export function SignUpForm({ initialRegion, initialCompany, initialSlug }: { ini
     setBusy(true);
     setError(null);
     try {
-      await api('/v1/signup', { method: 'POST', json: { companyName: company, slug, region, ownerName: name, ownerEmail: email, password, locale, acceptDpa: true } });
+      await api('/v1/signup', {
+        method: 'POST',
+        json: {
+          companyName: company,
+          slug,
+          region,
+          ownerName: name,
+          ownerEmail: email,
+          password,
+          locale,
+          acceptDpa: true,
+        },
+      });
       router.push('/app/security?setup=1');
     } catch (err) {
       if (err instanceof ApiProblem && err.code === 'wrongRegion' && typeof err.body.appUrl === 'string') {
@@ -49,7 +71,13 @@ export function SignUpForm({ initialRegion, initialCompany, initialSlug }: { ini
         window.location.assign(`${err.body.appUrl}/signup?${q}`);
         return;
       }
-      setError(err instanceof ApiProblem ? (err.code === 'conflict' ? t('auth.signUp.slugTaken') : err.title) : t('common.error'));
+      setError(
+        err instanceof ApiProblem
+          ? err.code === 'conflict'
+            ? t('auth.signUp.slugTaken')
+            : err.title
+          : t('common.error'),
+      );
     } finally {
       setBusy(false);
     }
@@ -77,10 +105,20 @@ export function SignUpForm({ initialRegion, initialCompany, initialSlug }: { ini
                   region === r ? 'border-accent bg-accent-subtle' : 'border-border hover:bg-surface',
                 )}
               >
-                <input type="radio" name="region" value={r} checked={region === r} onChange={() => setRegion(r)} className="mt-1 accent-[var(--color-accent)]" required />
+                <input
+                  type="radio"
+                  name="region"
+                  value={r}
+                  checked={region === r}
+                  onChange={() => setRegion(r)}
+                  className="mt-1 accent-[var(--color-accent)]"
+                  required
+                />
                 <span>
                   <span className="block text-callout font-semibold">{t(`regions.${r}`)}</span>
-                  <span className="block text-footnote text-text-secondary">{t(`auth.signUp.regionDetail.${r}`)}</span>
+                  <span className="block text-footnote text-text-secondary">
+                    {t(`auth.signUp.regionDetail.${r}`)}
+                  </span>
                 </span>
               </label>
             ))}
@@ -116,16 +154,48 @@ export function SignUpForm({ initialRegion, initialCompany, initialSlug }: { ini
           )}
         </Field>
         <Field id="name" label={t('auth.fields.yourName')}>
-          {(p) => <Input {...p} required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />}
+          {(p) => (
+            <Input
+              {...p}
+              required
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          )}
         </Field>
         <Field id="email" label={t('auth.fields.workEmail')}>
-          {(p) => <Input {...p} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
+          {(p) => (
+            <Input
+              {...p}
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          )}
         </Field>
         <Field id="password" label={t('auth.fields.password')} hint={t('auth.signUp.passwordHint')}>
-          {(p) => <Input {...p} type="password" required minLength={12} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />}
+          {(p) => (
+            <Input
+              {...p}
+              type="password"
+              required
+              minLength={12}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          )}
         </Field>
         <label className="flex items-start gap-3 text-footnote text-text-secondary">
-          <input type="checkbox" checked={dpa} onChange={(e) => setDpa(e.target.checked)} className="mt-0.5 accent-[var(--color-accent)]" />
+          <input
+            type="checkbox"
+            checked={dpa}
+            onChange={(e) => setDpa(e.target.checked)}
+            className="mt-0.5 accent-[var(--color-accent)]"
+          />
           <span>{t('auth.signUp.dpa')}</span>
         </label>
         <Button type="submit" loading={busy} disabled={!region}>

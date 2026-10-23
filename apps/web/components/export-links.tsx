@@ -8,7 +8,13 @@ import { useSession } from '@/app/app/shell';
  * CSV and Excel download links for a list view (`/v1/exports/<list>`). The export holds exactly the
  * rows the list shows the caller, with field-level permissions applied; shown only with exports.run.
  */
-export function ExportLinks({ list, params = {} }: { list: 'employees' | 'tasks' | 'approvals' | 'documents'; params?: Record<string, string | undefined> }) {
+export function ExportLinks({
+  list,
+  params = {},
+}: {
+  list: 'employees' | 'tasks' | 'approvals' | 'documents';
+  params?: Record<string, string | undefined>;
+}) {
   const t = useT();
   const session = useSession();
   const allowed = session?.permissions.some((p) => p === '*' || p === 'exports.*' || p === 'exports.run');
@@ -21,7 +27,12 @@ export function ExportLinks({ list, params = {} }: { list: 'employees' | 'tasks'
   return (
     <>
       {(['csv', 'xlsx'] as const).map((format) => (
-        <a key={format} href={href(format)} download className={buttonVariants({ variant: 'secondary', size: 'sm' }) + ' no-underline'}>
+        <a
+          key={format}
+          href={href(format)}
+          download
+          className={buttonVariants({ variant: 'secondary', size: 'sm' }) + ' no-underline'}
+        >
           <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
           {format === 'csv' ? t('common.exportCsv') : t('common.exportExcel')}
         </a>

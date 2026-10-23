@@ -1,7 +1,20 @@
 'use client';
 import * as React from 'react';
 import { Scale } from 'lucide-react';
-import { Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -17,7 +30,11 @@ interface Eeo1 {
   notReported: number;
   unmappedJobs: number;
   suppressionThreshold: number | null;
-  table: Array<{ jobCategory: string; total: number | null; cells: Array<{ raceEthnicity: string; sex: string; count: number | null; suppressed: boolean }> }>;
+  table: Array<{
+    jobCategory: string;
+    total: number | null;
+    cells: Array<{ raceEthnicity: string; sex: string; count: number | null; suppressed: boolean }>;
+  }>;
   source: { url: string; title: string };
   verifiedOn: string;
 }
@@ -28,13 +45,21 @@ export default function Eeo1Page() {
   const [year, setYear] = React.useState(String(new Date().getFullYear()));
   const [query, setQuery] = React.useState(year);
   const r = useApi<Eeo1>(`/v1/compliance/reports/eeo-1?year=${query}`);
-  const races = r.data?.table[0]?.cells.filter((c) => c.sex === r.data!.table[0]!.cells[0]!.sex).map((c) => c.raceEthnicity) ?? [];
+  const races =
+    r.data?.table[0]?.cells
+      .filter((c) => c.sex === r.data!.table[0]!.cells[0]!.sex)
+      .map((c) => c.raceEthnicity) ?? [];
   const sexes = [...new Set(r.data?.table[0]?.cells.map((c) => c.sex) ?? [])];
-  const cell = (c: { count: number | null; suppressed: boolean } | undefined) => (c?.suppressed ? t('compliance.eeo1.suppressed', { k: r.data?.suppressionThreshold ?? 0 }) : formatNumber(c?.count ?? 0, locale));
+  const cell = (c: { count: number | null; suppressed: boolean } | undefined) =>
+    c?.suppressed
+      ? t('compliance.eeo1.suppressed', { k: r.data?.suppressionThreshold ?? 0 })
+      : formatNumber(c?.count ?? 0, locale);
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-title-2">{t('compliance.eeo1.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('compliance.eeo1.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
+        {t('compliance.eeo1.intro')}
+      </p>
       <form
         className="grid gap-3 md:grid-cols-3 md:items-end"
         onSubmit={(e) => {
@@ -42,26 +67,64 @@ export default function Eeo1Page() {
           setQuery(year);
         }}
       >
-        <Field id="eeo-year" label={t('compliance.eeo1.year')}>{(p) => <Input {...p} type="number" min={2020} max={2100} inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} />}</Field>
+        <Field id="eeo-year" label={t('compliance.eeo1.year')}>
+          {(p) => (
+            <Input
+              {...p}
+              type="number"
+              min={2020}
+              max={2100}
+              inputMode="numeric"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            />
+          )}
+        </Field>
         <Button type="submit">{t('compliance.showFigures')}</Button>
       </form>
       {r.error ? (
-        <EmptyState icon={<Scale aria-hidden />} title={r.error.status === 403 ? t('compliance.noAccess') : t('compliance.noRule')} />
+        <EmptyState
+          icon={<Scale aria-hidden />}
+          title={r.error.status === 403 ? t('compliance.noAccess') : t('compliance.noRule')}
+        />
       ) : !r.data ? (
         <Skeleton className="h-64 w-full" />
       ) : (
         <>
           <Card>
-            <CardTitle>{t('compliance.eeo1.window', { from: formatDate(r.data.window.from, locale), to: formatDate(r.data.window.to, locale), date: formatDate(r.data.snapshotDate, locale) })}</CardTitle>
-            <p className="mt-2 text-callout">{r.data.required ? t('compliance.eeo1.required', { count: r.data.totalEmployees, threshold: r.data.threshold }) : t('compliance.eeo1.notRequired', { count: r.data.totalEmployees, threshold: r.data.threshold })}</p>
-            {r.data.notReported ? <p className="text-footnote text-text-secondary">{t('compliance.eeo1.notReported', { count: r.data.notReported })}</p> : null}
-            {r.data.unmappedJobs ? <p className="text-footnote text-text-secondary">{t('compliance.eeo1.unmapped', { count: r.data.unmappedJobs })}</p> : null}
+            <CardTitle>
+              {t('compliance.eeo1.window', {
+                from: formatDate(r.data.window.from, locale),
+                to: formatDate(r.data.window.to, locale),
+                date: formatDate(r.data.snapshotDate, locale),
+              })}
+            </CardTitle>
+            <p className="mt-2 text-callout">
+              {r.data.required
+                ? t('compliance.eeo1.required', { count: r.data.totalEmployees, threshold: r.data.threshold })
+                : t('compliance.eeo1.notRequired', {
+                    count: r.data.totalEmployees,
+                    threshold: r.data.threshold,
+                  })}
+            </p>
+            {r.data.notReported ? (
+              <p className="text-footnote text-text-secondary">
+                {t('compliance.eeo1.notReported', { count: r.data.notReported })}
+              </p>
+            ) : null}
+            {r.data.unmappedJobs ? (
+              <p className="text-footnote text-text-secondary">
+                {t('compliance.eeo1.unmapped', { count: r.data.unmappedJobs })}
+              </p>
+            ) : null}
             <p className="text-footnote text-text-secondary">{t('compliance.eeo1.privacy')}</p>
             <SourceLink source={r.data.source} verifiedOn={r.data.verifiedOn} />
           </Card>
           <Card className="p-0">
-            <Table dense>
-              <caption className="px-4 py-3 text-left text-callout font-semibold">{t('compliance.eeo1.tableCaption')}</caption>
+            <Table dense scrollLabel={t('compliance.eeo1.tableCaption')}>
+              <caption className="px-4 py-3 text-left text-callout font-semibold">
+                {t('compliance.eeo1.tableCaption')}
+              </caption>
               <THead>
                 <tr>
                   <TH>{t('compliance.eeo1.jobCategory')}</TH>
@@ -79,8 +142,18 @@ export default function Eeo1Page() {
                 {r.data.table.map((row) => (
                   <TR key={row.jobCategory}>
                     <TD className="font-semibold">{t(`compliance.job.${row.jobCategory}`)}</TD>
-                    {races.flatMap((race) => sexes.map((sex) => <TD key={`${race}:${sex}`} className="text-right">{cell(row.cells.find((c) => c.raceEthnicity === race && c.sex === sex))}</TD>))}
-                    <TD className="text-right">{row.total === null ? t('compliance.eeo1.suppressed', { k: r.data!.suppressionThreshold ?? 0 }) : formatNumber(row.total, locale)}</TD>
+                    {races.flatMap((race) =>
+                      sexes.map((sex) => (
+                        <TD key={`${race}:${sex}`} className="text-right">
+                          {cell(row.cells.find((c) => c.raceEthnicity === race && c.sex === sex))}
+                        </TD>
+                      )),
+                    )}
+                    <TD className="text-right">
+                      {row.total === null
+                        ? t('compliance.eeo1.suppressed', { k: r.data!.suppressionThreshold ?? 0 })
+                        : formatNumber(row.total, locale)}
+                    </TD>
                   </TR>
                 ))}
               </tbody>

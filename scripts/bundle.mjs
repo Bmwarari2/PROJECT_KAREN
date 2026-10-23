@@ -18,7 +18,9 @@ await build({
   format: 'esm',
   sourcemap: true,
   legalComments: 'none',
-  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  banner: {
+    js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);",
+  },
   plugins: [
     {
       name: 'externalise-npm',

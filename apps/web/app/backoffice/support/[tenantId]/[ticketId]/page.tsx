@@ -11,8 +11,30 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { PageTitle, selectClass, slaTone } from '../../../ui';
 
 interface Thread {
-  ticket: { id: string; reference: string; subject: string; category: string; priority: string; status: string; planId: string; requesterName: string | null; contextPath: string | null; sla: { firstResponse: { dueAt: string; state: string }; resolution: { dueAt: string; state: string }; flag: string }; createdAt: string };
-  messages: Array<{ id: string; authorType: string; authorName: string | null; body: string; createdAt: string }>;
+  ticket: {
+    id: string;
+    reference: string;
+    subject: string;
+    category: string;
+    priority: string;
+    status: string;
+    planId: string;
+    requesterName: string | null;
+    contextPath: string | null;
+    sla: {
+      firstResponse: { dueAt: string; state: string };
+      resolution: { dueAt: string; state: string };
+      flag: string;
+    };
+    createdAt: string;
+  };
+  messages: Array<{
+    id: string;
+    authorType: string;
+    authorName: string | null;
+    body: string;
+    createdAt: string;
+  }>;
   attachments: Array<{ id: string; fileName: string; sizeBytes: number }>;
 }
 
@@ -48,7 +70,14 @@ export default function StaffTicket() {
         <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
         {t('backoffice.support.title')}
       </Link>
-      <PageTitle title={tk.subject} lead={t('backoffice.support.ticketLead', { reference: tk.reference, plan: t(`pricing.plans.${tk.planId}.name`), page: tk.contextPath ?? '—' })}>
+      <PageTitle
+        title={tk.subject}
+        lead={t('backoffice.support.ticketLead', {
+          reference: tk.reference,
+          plan: t(`pricing.plans.${tk.planId}.name`),
+          page: tk.contextPath ?? '—',
+        })}
+      >
         <div className="flex flex-wrap gap-2">
           <Badge>{t(`support.statuses.${tk.status}`)}</Badge>
           <Badge tone={slaTone(tk.sla.flag)}>{t(`support.slaStates.${tk.sla.flag}`)}</Badge>
@@ -58,7 +87,17 @@ export default function StaffTicket() {
       <div className="flex flex-wrap items-end gap-3">
         <Field id="prio" label={t('support.priority')}>
           {(p) => (
-            <select {...p} className={`${selectClass} w-auto`} value={tk.priority} onChange={(e) => run(() => api(base, { method: 'PATCH', json: { priority: e.target.value } }), t('backoffice.support.updated'))}>
+            <select
+              {...p}
+              className={`${selectClass} w-auto`}
+              value={tk.priority}
+              onChange={(e) =>
+                run(
+                  () => api(base, { method: 'PATCH', json: { priority: e.target.value } }),
+                  t('backoffice.support.updated'),
+                )
+              }
+            >
               {['urgent', 'high', 'normal', 'low'].map((x) => (
                 <option key={x} value={x}>
                   {t(`support.priorities.${x}`)}
@@ -68,7 +107,8 @@ export default function StaffTicket() {
           )}
         </Field>
         <p className="text-footnote text-text-secondary">
-          {t('support.firstResponseDue')}: {when(tk.sla.firstResponse.dueAt)} · {t('support.resolutionDue')}: {when(tk.sla.resolution.dueAt)}
+          {t('support.firstResponseDue')}: {when(tk.sla.firstResponse.dueAt)} · {t('support.resolutionDue')}:{' '}
+          {when(tk.sla.resolution.dueAt)}
         </p>
       </div>
       <ol className="flex flex-col gap-3" aria-label={t('support.conversation')}>
@@ -76,7 +116,10 @@ export default function StaffTicket() {
           <li key={m.id}>
             <Card className={m.authorType === 'staff' ? 'border-l-4 border-accent' : ''}>
               <p className="text-footnote font-semibold text-text-secondary">
-                {m.authorType === 'staff' ? t('backoffice.support.thapsus') : (m.authorName ?? t('backoffice.support.customer'))} · {when(m.createdAt)}
+                {m.authorType === 'staff'
+                  ? t('backoffice.support.thapsus')
+                  : (m.authorName ?? t('backoffice.support.customer'))}{' '}
+                · {when(m.createdAt)}
               </p>
               <p className="mt-2 whitespace-pre-wrap text-callout">{m.body}</p>
             </Card>
@@ -87,7 +130,20 @@ export default function StaffTicket() {
         <ul className="flex flex-col gap-1">
           {th.data.attachments.map((a) => (
             <li key={a.id}>
-              <Button variant="link" onClick={() => run(async () => window.open((await api<{ url: string }>(`${base}/attachments/${a.id}`)).url, '_blank', 'noopener'), t('backoffice.support.opened'))}>
+              <Button
+                variant="link"
+                onClick={() =>
+                  run(
+                    async () =>
+                      window.open(
+                        (await api<{ url: string }>(`${base}/attachments/${a.id}`)).url,
+                        '_blank',
+                        'noopener',
+                      ),
+                    t('backoffice.support.opened'),
+                  )
+                }
+              >
                 <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
                 {a.fileName}
               </Button>
@@ -112,7 +168,12 @@ export default function StaffTicket() {
             </Field>
             <Field id="staff-status" label={t('backoffice.support.thenSet')}>
               {(p) => (
-                <select {...p} className={`${selectClass} w-auto`} value={status} onChange={(e) => setStatus(e.target.value)}>
+                <select
+                  {...p}
+                  className={`${selectClass} w-auto`}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
                   {['awaiting_customer', 'open', 'resolved'].map((x) => (
                     <option key={x} value={x}>
                       {t(`support.statuses.${x}`)}

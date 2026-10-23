@@ -175,15 +175,19 @@ export const TABLE_CLASSES: Readonly<Record<string, TableClass>> = Object.freeze
 } as Record<string, TableClass>);
 
 /** Columns and JSON keys that point at a person; removed from copied configuration. */
-const PERSON_REF = /^(employee_?ids?|user_?ids?|manager_?ids?|approver_?user_?ids?|(created|updated|requested|started|recorded|completed|decided)_?by)$/i;
+const PERSON_REF =
+  /^(employee_?ids?|user_?ids?|manager_?ids?|approver_?user_?ids?|(created|updated|requested|started|recorded|completed|decided)_?by)$/i;
 
 /** Removes person references from copied configuration (approvers/assignees become the HR admin role). */
 export function scrubPersonRefs(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(scrubPersonRefs);
   if (value && typeof value === 'object') {
     const o = value as Record<string, unknown>;
-    if ((o.type === 'user' || o.type === 'employee_id') && typeof o.value === 'string') return { ...o, type: 'role', value: 'hr_admin' };
-    return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, PERSON_REF.test(k) ? null : scrubPersonRefs(v)]));
+    if ((o.type === 'user' || o.type === 'employee_id') && typeof o.value === 'string')
+      return { ...o, type: 'role', value: 'hr_admin' };
+    return Object.fromEntries(
+      Object.entries(o).map(([k, v]) => [k, PERSON_REF.test(k) ? null : scrubPersonRefs(v)]),
+    );
   }
   return value;
 }

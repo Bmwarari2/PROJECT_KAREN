@@ -27,11 +27,19 @@ export function signatureHeader(secrets: string[], body: string | Buffer, timest
 }
 
 /** Reference verification (the SDK ships the same algorithm as verifyWebhookSignature). */
-export function verifySignature(header: string | undefined, body: string | Buffer, secret: string, nowSeconds: number, toleranceSeconds = DEFAULT_TOLERANCE_SECONDS): boolean {
+export function verifySignature(
+  header: string | undefined,
+  body: string | Buffer,
+  secret: string,
+  nowSeconds: number,
+  toleranceSeconds = DEFAULT_TOLERANCE_SECONDS,
+): boolean {
   if (!header) return false;
   const parts = header.split(',').map((p) => p.trim().split('=', 2) as [string, string]);
   const t = Number(parts.find(([k]) => k === 't')?.[1]);
   if (!Number.isInteger(t) || Math.abs(nowSeconds - t) > toleranceSeconds) return false;
   const expected = Buffer.from(hmac(secret, t, body), 'hex');
-  return parts.some(([k, v]) => k === 'v1' && /^[0-9a-f]{64}$/.test(v) && timingSafeEqual(Buffer.from(v, 'hex'), expected));
+  return parts.some(
+    ([k, v]) => k === 'v1' && /^[0-9a-f]{64}$/.test(v) && timingSafeEqual(Buffer.from(v, 'hex'), expected),
+  );
 }

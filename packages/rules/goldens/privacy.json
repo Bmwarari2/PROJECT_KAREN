@@ -1,35 +1,260 @@
 {
   "rules": [
-    { "jurisdiction": "GB", "key": "privacy.dsr_deadline", "date": "2026-02-04", "expectPath": { "period": "P1M", "clockStartsAt": ["request_received"], "extension.period": "P2M", "clockStopForClarification": null }, "source": "https://www.legislation.gov.uk/eur/2016/679/article/12/2026-02-04" },
-    { "jurisdiction": "GB", "key": "privacy.dsr_deadline", "date": "2026-02-05", "expectPath": { "period": "P1M", "clockStartsAt": ["request_received", "information_received", "fee_paid"], "extension.period": "P2M", "clockStopForClarification.appliesTo": ["access"] }, "source": "https://www.legislation.gov.uk/eur/2016/679/article/12A." },
-    { "jurisdiction": "GB-SCT", "key": "privacy.dsr_deadline", "date": "2026-06-01", "expectPath": { "period": "P1M" }, "source": "UK GDPR applies UK-wide" },
-    { "jurisdiction": "GB", "key": "privacy.breach_notification", "date": "2026-09-29", "expectPath": { "regulator.body": "Information Commissioner", "regulator.deadlineHours": 72, "regulator.from": "awareness" }, "source": "https://www.legislation.gov.uk/eur/2016/679/article/33/2026-09-29" },
-    { "jurisdiction": "GB", "key": "privacy.breach_notification", "date": "2026-09-30", "expectPath": { "regulator.body": "Information Commission", "regulator.deadlineHours": 72 }, "source": "https://www.legislation.gov.uk/eur/2016/679/article/33" },
-    { "jurisdiction": "GB", "key": "retention.time_records", "date": "2026-06-01", "expectPath": { "period": "P2Y", "from": "record_date", "statutoryMinimum": true }, "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/9" },
-    { "jurisdiction": "GB", "key": "retention.payroll_records", "date": "2026-06-01", "expectPath": { "period": "P3Y", "from": "end_of_tax_year", "taxYearEnd": "04-05" }, "source": "https://www.legislation.gov.uk/uksi/2003/2682/regulation/97" },
-    { "jurisdiction": "GB", "key": "retention.minimum_wage_records", "date": "2026-06-01", "expectPath": { "period": "P6Y", "from": "end_of_following_pay_reference_period" }, "source": "https://www.legislation.gov.uk/uksi/2015/621/regulation/59" },
-    { "jurisdiction": "GB", "key": "retention.personnel_records", "date": "2026-06-01", "expectPath": { "period": "P6Y", "from": "employment_end", "statutoryMinimum": false, "legalReview": "pending" }, "source": "https://www.legislation.gov.uk/ukpga/1980/58/section/5" },
-    { "jurisdiction": "EU", "key": "privacy.dsr_deadline", "date": "2018-05-24", "expect": null, "source": "GDPR applies from 25 May 2018 (Art. 99(2))" },
-    { "jurisdiction": "DE", "key": "privacy.dsr_deadline", "date": "2026-06-01", "expectPath": { "period": "P1M", "extension.period": "P2M" }, "source": "https://eur-lex.europa.eu/eli/reg/2016/679/oj" },
-    { "jurisdiction": "FR", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "regulator.deadlineHours": 72, "processorToController.standard": "without undue delay after becoming aware of a personal data breach" }, "source": "https://eur-lex.europa.eu/eli/reg/2016/679/oj" },
-    { "jurisdiction": "US", "key": "privacy.dsr_deadline", "date": "2026-06-01", "expect": null, "source": "No federal employee data-subject-request law" },
-    { "jurisdiction": "US-TX", "key": "privacy.dsr_deadline", "date": "2026-06-01", "expect": null, "source": "No Texas law gives employees DSR rights against employers (not modelled)" },
-    { "jurisdiction": "US-CA", "key": "privacy.dsr_deadline", "date": "2022-12-31", "expect": null, "source": "Employee-data exemption, Civ. Code 1798.145(m)(4): inoperative on 1 January 2023" },
-    { "jurisdiction": "US-CA", "key": "privacy.dsr_deadline", "date": "2023-01-01", "expectPath": { "period": "P45D", "extension.period": "P45D", "maxTotal": "P90D" }, "source": "https://cppa.ca.gov/regulations/pdf/ccpa_statute.pdf" },
-    { "jurisdiction": "US-CA", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "regulator.minAffected": 501, "individuals.deadlineDays": null }, "source": "https://oag.ca.gov/privacy/databreach/reporting" },
-    { "jurisdiction": "US-NY", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": 30, "consumerReportingAgencies.minAffected": 5001 }, "source": "https://www.nysenate.gov/legislation/laws/GBS/899-AA" },
-    { "jurisdiction": "US-TX", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": 60, "regulator.deadlineDays": 30, "regulator.minAffected": 250, "consumerReportingAgencies.minAffected": 10001 }, "source": "https://tcss.legis.texas.gov/resources/BC/htm/BC.521.htm" },
-    { "jurisdiction": "US-WA", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": 30, "regulator.deadlineDays": 30, "regulator.minAffected": 501 }, "source": "https://app.leg.wa.gov/RCW/default.aspx?cite=19.255.010" },
-    { "jurisdiction": "US-WA", "key": "privacy.breach_notification", "date": "2020-02-29", "expect": null, "source": "2019 c 241 took effect 1 March 2020 (earlier text not modelled)" },
-    { "jurisdiction": "US-FL", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": 30, "regulator.minAffected": 500, "processorToController.deadlineDays": 10 }, "source": "https://www.flsenate.gov/Laws/Statutes/2025/501.171" },
-    { "jurisdiction": "US-IL", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": null, "regulator": null }, "source": "https://www.illinoisattorneygeneral.gov/consumer-protection/for-businesses/data-breach" },
-    { "jurisdiction": "US-MA", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.standard": "as soon as practicable and without unreasonable delay" }, "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3" },
-    { "jurisdiction": "US-CO", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": 30, "regulator.minAffected": 500 }, "source": "https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf" },
-    { "jurisdiction": "US-OR", "key": "privacy.breach_notification", "date": "2026-06-01", "expectPath": { "individuals.deadlineDays": 45, "regulator.minAffected": 251, "processorToController.deadlineDays": 10 }, "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646a.html" },
-    { "jurisdiction": "US-GA", "key": "privacy.breach_notification", "date": "2026-06-01", "expect": null, "source": "Not modelled: official Georgia Code host is not allow-listed (coverage to-do)" },
-    { "jurisdiction": "US", "key": "retention.payroll_records", "date": "2026-06-01", "expectPath": { "period": "P3Y", "from": "record_date" }, "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.5" },
-    { "jurisdiction": "US-CA", "key": "retention.time_records", "date": "2026-06-01", "expectPath": { "period": "P2Y" }, "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.6" },
-    { "jurisdiction": "US", "key": "retention.leave_records", "date": "2026-06-01", "expectPath": { "period": "P3Y" }, "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/part-825/subpart-E/section-825.500" },
-    { "jurisdiction": "US", "key": "retention.personnel_records", "date": "2026-06-01", "expectPath": { "period": "P1Y", "afterEmploymentEnds": "P1Y", "statutoryMinimum": true }, "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1602/subpart-C/section-1602.14" }
+    {
+      "jurisdiction": "GB",
+      "key": "privacy.dsr_deadline",
+      "date": "2026-02-04",
+      "expectPath": {
+        "period": "P1M",
+        "clockStartsAt": ["request_received"],
+        "extension.period": "P2M",
+        "clockStopForClarification": null
+      },
+      "source": "https://www.legislation.gov.uk/eur/2016/679/article/12/2026-02-04"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "privacy.dsr_deadline",
+      "date": "2026-02-05",
+      "expectPath": {
+        "period": "P1M",
+        "clockStartsAt": ["request_received", "information_received", "fee_paid"],
+        "extension.period": "P2M",
+        "clockStopForClarification.appliesTo": ["access"]
+      },
+      "source": "https://www.legislation.gov.uk/eur/2016/679/article/12A."
+    },
+    {
+      "jurisdiction": "GB-SCT",
+      "key": "privacy.dsr_deadline",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P1M" },
+      "source": "UK GDPR applies UK-wide"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "privacy.breach_notification",
+      "date": "2026-09-29",
+      "expectPath": {
+        "regulator.body": "Information Commissioner",
+        "regulator.deadlineHours": 72,
+        "regulator.from": "awareness"
+      },
+      "source": "https://www.legislation.gov.uk/eur/2016/679/article/33/2026-09-29"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "privacy.breach_notification",
+      "date": "2026-09-30",
+      "expectPath": { "regulator.body": "Information Commission", "regulator.deadlineHours": 72 },
+      "source": "https://www.legislation.gov.uk/eur/2016/679/article/33"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "retention.time_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P2Y", "from": "record_date", "statutoryMinimum": true },
+      "source": "https://www.legislation.gov.uk/uksi/1998/1833/regulation/9"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "retention.payroll_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P3Y", "from": "end_of_tax_year", "taxYearEnd": "04-05" },
+      "source": "https://www.legislation.gov.uk/uksi/2003/2682/regulation/97"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "retention.minimum_wage_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P6Y", "from": "end_of_following_pay_reference_period" },
+      "source": "https://www.legislation.gov.uk/uksi/2015/621/regulation/59"
+    },
+    {
+      "jurisdiction": "GB",
+      "key": "retention.personnel_records",
+      "date": "2026-06-01",
+      "expectPath": {
+        "period": "P6Y",
+        "from": "employment_end",
+        "statutoryMinimum": false,
+        "legalReview": "pending"
+      },
+      "source": "https://www.legislation.gov.uk/ukpga/1980/58/section/5"
+    },
+    {
+      "jurisdiction": "EU",
+      "key": "privacy.dsr_deadline",
+      "date": "2018-05-24",
+      "expect": null,
+      "source": "GDPR applies from 25 May 2018 (Art. 99(2))"
+    },
+    {
+      "jurisdiction": "DE",
+      "key": "privacy.dsr_deadline",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P1M", "extension.period": "P2M" },
+      "source": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+    },
+    {
+      "jurisdiction": "FR",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": {
+        "regulator.deadlineHours": 72,
+        "processorToController.standard": "without undue delay after becoming aware of a personal data breach"
+      },
+      "source": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+    },
+    {
+      "jurisdiction": "US",
+      "key": "privacy.dsr_deadline",
+      "date": "2026-06-01",
+      "expect": null,
+      "source": "No federal employee data-subject-request law"
+    },
+    {
+      "jurisdiction": "US-TX",
+      "key": "privacy.dsr_deadline",
+      "date": "2026-06-01",
+      "expect": null,
+      "source": "No Texas law gives employees DSR rights against employers (not modelled)"
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "privacy.dsr_deadline",
+      "date": "2022-12-31",
+      "expect": null,
+      "source": "Employee-data exemption, Civ. Code 1798.145(m)(4): inoperative on 1 January 2023"
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "privacy.dsr_deadline",
+      "date": "2023-01-01",
+      "expectPath": { "period": "P45D", "extension.period": "P45D", "maxTotal": "P90D" },
+      "source": "https://cppa.ca.gov/regulations/pdf/ccpa_statute.pdf"
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": { "regulator.minAffected": 501, "individuals.deadlineDays": null },
+      "source": "https://oag.ca.gov/privacy/databreach/reporting"
+    },
+    {
+      "jurisdiction": "US-NY",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": { "individuals.deadlineDays": 30, "consumerReportingAgencies.minAffected": 5001 },
+      "source": "https://www.nysenate.gov/legislation/laws/GBS/899-AA"
+    },
+    {
+      "jurisdiction": "US-TX",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": {
+        "individuals.deadlineDays": 60,
+        "regulator.deadlineDays": 30,
+        "regulator.minAffected": 250,
+        "consumerReportingAgencies.minAffected": 10001
+      },
+      "source": "https://tcss.legis.texas.gov/resources/BC/htm/BC.521.htm"
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": {
+        "individuals.deadlineDays": 30,
+        "regulator.deadlineDays": 30,
+        "regulator.minAffected": 501
+      },
+      "source": "https://app.leg.wa.gov/RCW/default.aspx?cite=19.255.010"
+    },
+    {
+      "jurisdiction": "US-WA",
+      "key": "privacy.breach_notification",
+      "date": "2020-02-29",
+      "expect": null,
+      "source": "2019 c 241 took effect 1 March 2020 (earlier text not modelled)"
+    },
+    {
+      "jurisdiction": "US-FL",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": {
+        "individuals.deadlineDays": 30,
+        "regulator.minAffected": 500,
+        "processorToController.deadlineDays": 10
+      },
+      "source": "https://www.flsenate.gov/Laws/Statutes/2025/501.171"
+    },
+    {
+      "jurisdiction": "US-IL",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": { "individuals.deadlineDays": null, "regulator": null },
+      "source": "https://www.illinoisattorneygeneral.gov/consumer-protection/for-businesses/data-breach"
+    },
+    {
+      "jurisdiction": "US-MA",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": { "individuals.standard": "as soon as practicable and without unreasonable delay" },
+      "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3"
+    },
+    {
+      "jurisdiction": "US-CO",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": { "individuals.deadlineDays": 30, "regulator.minAffected": 500 },
+      "source": "https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf"
+    },
+    {
+      "jurisdiction": "US-OR",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expectPath": {
+        "individuals.deadlineDays": 45,
+        "regulator.minAffected": 251,
+        "processorToController.deadlineDays": 10
+      },
+      "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646a.html"
+    },
+    {
+      "jurisdiction": "US-GA",
+      "key": "privacy.breach_notification",
+      "date": "2026-06-01",
+      "expect": null,
+      "source": "Not modelled: official Georgia Code host is not allow-listed (coverage to-do)"
+    },
+    {
+      "jurisdiction": "US",
+      "key": "retention.payroll_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P3Y", "from": "record_date" },
+      "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.5"
+    },
+    {
+      "jurisdiction": "US-CA",
+      "key": "retention.time_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P2Y" },
+      "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/subchapter-B/part-516/subpart-A/section-516.6"
+    },
+    {
+      "jurisdiction": "US",
+      "key": "retention.leave_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P3Y" },
+      "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-V/part-825/subpart-E/section-825.500"
+    },
+    {
+      "jurisdiction": "US",
+      "key": "retention.personnel_records",
+      "date": "2026-06-01",
+      "expectPath": { "period": "P1Y", "afterEmploymentEnds": "P1Y", "statutoryMinimum": true },
+      "source": "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1602/subpart-C/section-1602.14"
+    }
   ]
 }

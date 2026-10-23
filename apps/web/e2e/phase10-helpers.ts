@@ -8,7 +8,11 @@ import { totp } from './helpers';
 export function createStaff(role: 'support' | 'billing' | 'rules_editor' | 'super_admin') {
   const email = `${role}.${Math.random().toString(36).slice(2, 7)}@thapsus.example.test`;
   const api = join(import.meta.dirname, '..', '..', 'api');
-  const out = execFileSync('npx', ['tsx', 'src/cli/create-staff.ts', email, 'Fictional Staff Member', role], { cwd: api, env: { ...process.env, ...e2eEnv() }, encoding: 'utf8' });
+  const out = execFileSync('npx', ['tsx', 'src/cli/create-staff.ts', email, 'Fictional Staff Member', role], {
+    cwd: api,
+    env: { ...process.env, ...e2eEnv() },
+    encoding: 'utf8',
+  });
   const password = /one-time password: (\S+)/.exec(out)![1]!;
   const secret = /TOTP secret[^:]*: (\S+)/.exec(out)![1]!;
   return { email, password, secret };

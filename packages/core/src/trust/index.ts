@@ -21,7 +21,10 @@ export interface SubprocessorChange {
 }
 
 export interface TrustData {
-  subprocessors: { sections: Array<{ title: string; columns: string[]; rows: string[][] }>; changes: SubprocessorChange[] };
+  subprocessors: {
+    sections: Array<{ title: string; columns: string[]; rows: string[][] }>;
+    changes: SubprocessorChange[];
+  };
   notices: Record<LegalTemplate, { title: string; version: string; body: string; sha256: string }>;
   dpa: Record<LegalTemplate, { version: string; sha256: string; path: string }>;
 }

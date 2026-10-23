@@ -34,7 +34,14 @@ export const LICENSING = 'https://licensing.googleapis.com/apps/licensing/v1';
 
 /** Least-privilege scopes requested from the customer (shown on the integrations page and in the docs). */
 export const SCOPES: Record<Provider, string[]> = {
-  microsoft365: ['User.Create', 'User.Read.All', 'User.EnableDisableAccount.All', 'User.RevokeSessions.All', 'LicenseAssignment.ReadWrite.All', 'GroupMember.ReadWrite.All'],
+  microsoft365: [
+    'User.Create',
+    'User.Read.All',
+    'User.EnableDisableAccount.All',
+    'User.RevokeSessions.All',
+    'LicenseAssignment.ReadWrite.All',
+    'GroupMember.ReadWrite.All',
+  ],
   google_workspace: [
     'https://www.googleapis.com/auth/admin.directory.user',
     'https://www.googleapis.com/auth/admin.directory.user.security',
@@ -93,7 +100,15 @@ export interface PlanAccount {
 }
 export interface PlannedOp {
   seq: number;
-  op: 'create_user' | 'assign_licence' | 'add_group' | 'block_sign_in' | 'revoke_sessions' | 'remove_licence' | 'suspend_user' | 'sign_out';
+  op:
+    | 'create_user'
+    | 'assign_licence'
+    | 'add_group'
+    | 'block_sign_in'
+    | 'revoke_sessions'
+    | 'remove_licence'
+    | 'suspend_user'
+    | 'sign_out';
   method: 'POST' | 'PATCH' | 'DELETE';
   url: string;
   body?: Record<string, unknown>;
@@ -114,7 +129,8 @@ export function ruleMatches(r: PlanRule, e: PlanEmployee): boolean {
   if (m.entityId && m.entityId !== e.entityId) return false;
   if (m.departmentId && m.departmentId !== e.departmentId) return false;
   if (m.locationId && m.locationId !== e.locationId) return false;
-  if (m.jobTitleContains && !(e.jobTitle ?? '').toLowerCase().includes(m.jobTitleContains.toLowerCase())) return false;
+  if (m.jobTitleContains && !(e.jobTitle ?? '').toLowerCase().includes(m.jobTitleContains.toLowerCase()))
+    return false;
   return true;
 }
 
@@ -127,7 +143,8 @@ const ascii = (s: string) =>
 
 /** Work email in the connection's domain, else the username format (ASCII-folded, lower case). */
 export function principalNameFor(e: PlanEmployee, domain: string, format = '{first}.{last}'): string {
-  if (e.workEmail && e.workEmail.toLowerCase().endsWith(`@${domain.toLowerCase()}`)) return e.workEmail.toLowerCase();
+  if (e.workEmail && e.workEmail.toLowerCase().endsWith(`@${domain.toLowerCase()}`))
+    return e.workEmail.toLowerCase();
   const first = ascii(e.preferredName || e.firstName) || 'user';
   const last = ascii(e.lastName) || ascii(e.employeeNumber);
   const local = format
@@ -144,18 +161,42 @@ export function principalNameFor(e: PlanEmployee, domain: string, format = '{fir
 const enc = encodeURIComponent;
 const uniqBy = <T>(xs: T[], key: (x: T) => string) => [...new Map(xs.map((x) => [key(x), x])).values()];
 
-export function buildPlan(provider: Provider, conn: { domain: string; settings: ItSettings }, rules: PlanRule[], e: PlanEmployee, lifecycle: Lifecycle, account?: PlanAccount): Plan {
-  const matched = [...rules].sort((a, b) => a.priority - b.priority || (a.name < b.name ? -1 : 1)).filter((r) => ruleMatches(r, e));
-  const licences = uniqBy(matched.flatMap((r) => r.licences), (l) => `${l.productId ?? ''}/${l.skuId}`);
+export function buildPlan(
+  provider: Provider,
+  conn: { domain: string; settings: ItSettings },
+  rules: PlanRule[],
+  e: PlanEmployee,
+  lifecycle: Lifecycle,
+  account?: PlanAccount,
+): Plan {
+  const matched = [...rules]
+    .sort((a, b) => a.priority - b.priority || (a.name < b.name ? -1 : 1))
+    .filter((r) => ruleMatches(r, e));
+  const licences = uniqBy(
+    matched.flatMap((r) => r.licences),
+    (l) => `${l.productId ?? ''}/${l.skuId}`,
+  );
   const groups = [...new Set(matched.flatMap((r) => r.groups))];
-  const orgUnit = matched.find((r) => r.org_unit_path)?.org_unit_path ?? conn.settings.defaultOrgUnitPath ?? '/';
+  const orgUnit =
+    matched.find((r) => r.org_unit_path)?.org_unit_path ?? conn.settings.defaultOrgUnitPath ?? '/';
   const upn = account?.principalName ?? principalNameFor(e, conn.domain, conn.settings.usernameFormat);
   // A leaver is only processed for an account Thapsus-HR created, or one that matches their work email —
   // never for a generated name that might belong to someone else.
   const knownEmail = !!e.workEmail && e.workEmail.toLowerCase().endsWith(`@${conn.domain.toLowerCase()}`);
-  if (lifecycle === 'leaver' && !account && !knownEmail) return { provider, lifecycle, principalName: upn, matchedRules: matched.map((r) => r.id), operations: [], skipped: 'noKnownAccount' };
+  if (lifecycle === 'leaver' && !account && !knownEmail)
+    return {
+      provider,
+      lifecycle,
+      principalName: upn,
+      matchedRules: matched.map((r) => r.id),
+      operations: [],
+      skipped: 'noKnownAccount',
+    };
   const ops: Array<Omit<PlannedOp, 'seq'>> = [];
-  const nickname = upn.split('@')[0]!.replace(/[^A-Za-z0-9._-]/g, '').slice(0, 64);
+  const nickname = upn
+    .split('@')[0]!
+    .replace(/[^A-Za-z0-9._-]/g, '')
+    .slice(0, 64);
 
   if (provider === 'microsoft365') {
     if (lifecycle === 'joiner') {
@@ -178,13 +219,48 @@ export function buildPlan(provider: Provider, conn: { domain: string; settings: 
           passwordProfile: { forceChangePasswordNextSignIn: true, password: PASSWORD_PLACEHOLDER },
         },
       });
-      if (licences.length) ops.push({ op: 'assign_licence', method: 'POST', url: `${GRAPH}/users/${enc(upn)}/assignLicense`, target: licences.map((l) => l.skuId).join(','), body: { addLicenses: licences.map((l) => ({ skuId: l.skuId, disabledPlans: [] })), removeLicenses: [] } });
-      for (const g of groups) ops.push({ op: 'add_group', method: 'POST', url: `${GRAPH}/groups/${enc(g)}/members/$ref`, target: g, body: { '@odata.id': `${GRAPH}/directoryObjects/${USER_ID_PLACEHOLDER}` } });
+      if (licences.length)
+        ops.push({
+          op: 'assign_licence',
+          method: 'POST',
+          url: `${GRAPH}/users/${enc(upn)}/assignLicense`,
+          target: licences.map((l) => l.skuId).join(','),
+          body: {
+            addLicenses: licences.map((l) => ({ skuId: l.skuId, disabledPlans: [] })),
+            removeLicenses: [],
+          },
+        });
+      for (const g of groups)
+        ops.push({
+          op: 'add_group',
+          method: 'POST',
+          url: `${GRAPH}/groups/${enc(g)}/members/$ref`,
+          target: g,
+          body: { '@odata.id': `${GRAPH}/directoryObjects/${USER_ID_PLACEHOLDER}` },
+        });
     } else {
-      ops.push({ op: 'block_sign_in', method: 'PATCH', url: `${GRAPH}/users/${enc(upn)}`, target: upn, body: { accountEnabled: false } });
-      ops.push({ op: 'revoke_sessions', method: 'POST', url: `${GRAPH}/users/${enc(upn)}/revokeSignInSessions`, target: upn });
+      ops.push({
+        op: 'block_sign_in',
+        method: 'PATCH',
+        url: `${GRAPH}/users/${enc(upn)}`,
+        target: upn,
+        body: { accountEnabled: false },
+      });
+      ops.push({
+        op: 'revoke_sessions',
+        method: 'POST',
+        url: `${GRAPH}/users/${enc(upn)}/revokeSignInSessions`,
+        target: upn,
+      });
       const remove = uniqBy([...(account?.licences ?? []), ...licences], (l) => l.skuId);
-      if (remove.length) ops.push({ op: 'remove_licence', method: 'POST', url: `${GRAPH}/users/${enc(upn)}/assignLicense`, target: remove.map((l) => l.skuId).join(','), body: { addLicenses: [], removeLicenses: remove.map((l) => l.skuId) } });
+      if (remove.length)
+        ops.push({
+          op: 'remove_licence',
+          method: 'POST',
+          url: `${GRAPH}/users/${enc(upn)}/assignLicense`,
+          target: remove.map((l) => l.skuId).join(','),
+          body: { addLicenses: [], removeLicenses: remove.map((l) => l.skuId) },
+        });
     }
   } else {
     if (lifecycle === 'joiner') {
@@ -200,17 +276,67 @@ export function buildPlan(provider: Provider, conn: { domain: string; settings: 
           changePasswordAtNextLogin: true,
           orgUnitPath: orgUnit,
           externalIds: [{ type: 'organization', value: e.employeeNumber }],
-          ...(e.jobTitle || e.department ? { organizations: [{ primary: true, ...(e.jobTitle ? { title: e.jobTitle } : {}), ...(e.department ? { department: e.department } : {}) }] } : {}),
+          ...(e.jobTitle || e.department
+            ? {
+                organizations: [
+                  {
+                    primary: true,
+                    ...(e.jobTitle ? { title: e.jobTitle } : {}),
+                    ...(e.department ? { department: e.department } : {}),
+                  },
+                ],
+              }
+            : {}),
         },
       });
-      for (const l of licences) ops.push({ op: 'assign_licence', method: 'POST', url: `${LICENSING}/product/${enc(l.productId ?? 'Google-Apps')}/sku/${enc(l.skuId)}/user`, target: `${l.productId ?? 'Google-Apps'}/${l.skuId}`, body: { userId: upn } });
-      for (const g of groups) ops.push({ op: 'add_group', method: 'POST', url: `${DIRECTORY}/groups/${enc(g)}/members`, target: g, body: { email: upn, role: 'MEMBER' } });
+      for (const l of licences)
+        ops.push({
+          op: 'assign_licence',
+          method: 'POST',
+          url: `${LICENSING}/product/${enc(l.productId ?? 'Google-Apps')}/sku/${enc(l.skuId)}/user`,
+          target: `${l.productId ?? 'Google-Apps'}/${l.skuId}`,
+          body: { userId: upn },
+        });
+      for (const g of groups)
+        ops.push({
+          op: 'add_group',
+          method: 'POST',
+          url: `${DIRECTORY}/groups/${enc(g)}/members`,
+          target: g,
+          body: { email: upn, role: 'MEMBER' },
+        });
     } else {
-      ops.push({ op: 'suspend_user', method: 'PATCH', url: `${DIRECTORY}/users/${enc(upn)}`, target: upn, body: { suspended: true } });
-      ops.push({ op: 'sign_out', method: 'POST', url: `${DIRECTORY}/users/${enc(upn)}/signOut`, target: upn });
-      const remove = uniqBy([...(account?.licences ?? []), ...licences], (l) => `${l.productId ?? 'Google-Apps'}/${l.skuId}`);
-      for (const l of remove) ops.push({ op: 'remove_licence', method: 'DELETE', url: `${LICENSING}/product/${enc(l.productId ?? 'Google-Apps')}/sku/${enc(l.skuId)}/user/${enc(upn)}`, target: `${l.productId ?? 'Google-Apps'}/${l.skuId}` });
+      ops.push({
+        op: 'suspend_user',
+        method: 'PATCH',
+        url: `${DIRECTORY}/users/${enc(upn)}`,
+        target: upn,
+        body: { suspended: true },
+      });
+      ops.push({
+        op: 'sign_out',
+        method: 'POST',
+        url: `${DIRECTORY}/users/${enc(upn)}/signOut`,
+        target: upn,
+      });
+      const remove = uniqBy(
+        [...(account?.licences ?? []), ...licences],
+        (l) => `${l.productId ?? 'Google-Apps'}/${l.skuId}`,
+      );
+      for (const l of remove)
+        ops.push({
+          op: 'remove_licence',
+          method: 'DELETE',
+          url: `${LICENSING}/product/${enc(l.productId ?? 'Google-Apps')}/sku/${enc(l.skuId)}/user/${enc(upn)}`,
+          target: `${l.productId ?? 'Google-Apps'}/${l.skuId}`,
+        });
     }
   }
-  return { provider, lifecycle, principalName: upn, matchedRules: matched.map((r) => r.id), operations: ops.map((o, i) => ({ seq: i + 1, ...o })) };
+  return {
+    provider,
+    lifecycle,
+    principalName: upn,
+    matchedRules: matched.map((r) => r.id),
+    operations: ops.map((o, i) => ({ seq: i + 1, ...o })),
+  };
 }

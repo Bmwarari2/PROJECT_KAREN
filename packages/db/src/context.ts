@@ -78,7 +78,10 @@ export async function withTenantReader<T>(
     pool,
     (tx) => fn(tx, { reader, dbKey }),
     async (tx) => {
-      await tx.query("SELECT set_config('app.tenant_id', $1, true), set_config('app.actor_id', $2, true)", [tenantId, opts.actorId ?? '']);
+      await tx.query("SELECT set_config('app.tenant_id', $1, true), set_config('app.actor_id', $2, true)", [
+        tenantId,
+        opts.actorId ?? '',
+      ]);
     },
     true,
   );

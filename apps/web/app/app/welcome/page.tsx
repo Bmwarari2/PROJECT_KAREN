@@ -2,7 +2,18 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Circle, FileSignature, ListChecks, UserRound } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, buttonVariants, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  buttonVariants,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -10,12 +21,35 @@ import { useApi } from '@/lib/use-api';
 import { useSession } from '../shell';
 
 interface Onboarding {
-  employee: { id: string; displayName: string; jobTitle: string | null; department: string | null; location: string | null; manager: string | null; company: string; startDate: string; status: string; daysUntilStart: number };
+  employee: {
+    id: string;
+    displayName: string;
+    jobTitle: string | null;
+    department: string | null;
+    location: string | null;
+    manager: string | null;
+    company: string;
+    startDate: string;
+    status: string;
+    daysUntilStart: number;
+  };
   formsEffectiveDate: string;
-  documents: Array<{ id: string; documentId: string; title: string; status: string; signedAt: string | null }>;
+  documents: Array<{
+    id: string;
+    documentId: string;
+    title: string;
+    status: string;
+    signedAt: string | null;
+  }>;
   forms: {
-    personalDetails: { complete: boolean; values: Record<string, unknown> & { address?: Record<string, string> | null } };
-    emergencyContacts: { complete: boolean; contacts: Array<{ name: string; relationship: string | null; phone: string | null }> };
+    personalDetails: {
+      complete: boolean;
+      values: Record<string, unknown> & { address?: Record<string, string> | null };
+    };
+    emergencyContacts: {
+      complete: boolean;
+      contacts: Array<{ name: string; relationship: string | null; phone: string | null }>;
+    };
   };
   tasks: Array<{ id: string; title: string; dueOn: string | null; status: string }>;
   progress: { done: number; total: number };
@@ -23,11 +57,20 @@ interface Onboarding {
 
 const PERSONAL = ['preferredName', 'pronouns', 'personalEmail', 'personalPhone'] as const;
 const ADDRESS = ['line1', 'city', 'postcode', 'country'] as const;
-const ADDRESS_LABEL: Record<(typeof ADDRESS)[number], string> = { line1: 'onboarding.addressLine1', city: 'onboarding.addressCity', postcode: 'onboarding.addressPostcode', country: 'onboarding.addressCountry' };
+const ADDRESS_LABEL: Record<(typeof ADDRESS)[number], string> = {
+  line1: 'onboarding.addressLine1',
+  city: 'onboarding.addressCity',
+  postcode: 'onboarding.addressPostcode',
+  country: 'onboarding.addressCountry',
+};
 
 function StatusBadge({ complete }: { complete: boolean }) {
   const t = useT();
-  return <Badge tone={complete ? 'success' : 'neutral'}>{complete ? t('onboarding.complete') : t('onboarding.toDo')}</Badge>;
+  return (
+    <Badge tone={complete ? 'success' : 'neutral'}>
+      {complete ? t('onboarding.complete') : t('onboarding.toDo')}
+    </Badge>
+  );
 }
 
 /** Pre-start portal: what a new joiner can do before (and in the first days after) their start date. */
@@ -45,14 +88,24 @@ export default function WelcomePage() {
   React.useEffect(() => {
     if (!data) return;
     const v = data.forms.personalDetails.values;
-    setPersonal(Object.fromEntries(PERSONAL.map((f) => [f, typeof v[f] === 'string' ? (v[f] as string) : ''])));
+    setPersonal(
+      Object.fromEntries(PERSONAL.map((f) => [f, typeof v[f] === 'string' ? (v[f] as string) : ''])),
+    );
     setAddress(Object.fromEntries(ADDRESS.map((f) => [f, v.address?.[f] ?? ''])));
     const c = data.forms.emergencyContacts.contacts[0];
     setContact({ name: c?.name ?? '', relationship: c?.relationship ?? '', phone: c?.phone ?? '' });
   }, [data]);
 
-  if (session && !session.employeeId) return <EmptyState icon={<UserRound aria-hidden />} title={t('onboarding.notLinked')} />;
-  if (error) return <EmptyState icon={<UserRound aria-hidden />} title={error.status === 404 ? t('onboarding.notLinked') : t('common.error')} />;
+  if (session && !session.employeeId)
+    return <EmptyState level={1} icon={<UserRound aria-hidden />} title={t('onboarding.notLinked')} />;
+  if (error)
+    return (
+      <EmptyState
+        level={1}
+        icon={<UserRound aria-hidden />}
+        title={error.status === 404 ? t('onboarding.notLinked') : t('common.error')}
+      />
+    );
   if (!data) return <Skeleton className="h-96 w-full" />;
 
   const e = data.employee;
@@ -76,13 +129,23 @@ export default function WelcomePage() {
     ev.preventDefault();
     const body: Record<string, unknown> = { effectiveDate: data.formsEffectiveDate };
     for (const f of PERSONAL) if (personal[f]) body[f] = personal[f];
-    if (ADDRESS.some((f) => address[f])) body.address = Object.fromEntries(ADDRESS.filter((f) => address[f]).map((f) => [f, address[f]]));
+    if (ADDRESS.some((f) => address[f]))
+      body.address = Object.fromEntries(ADDRESS.filter((f) => address[f]).map((f) => [f, address[f]]));
     void run('personal', () => api(`/v1/employees/${e.id}/changes`, { method: 'POST', json: body }));
   };
   const saveContact = (ev: React.FormEvent) => {
     ev.preventDefault();
-    const c = { name: contact.name, relationship: contact.relationship || null, phone: contact.phone || null };
-    void run('contact', () => api(`/v1/employees/${e.id}/emergency-contacts?effectiveDate=${data.formsEffectiveDate}`, { method: 'PUT', json: [c] }));
+    const c = {
+      name: contact.name,
+      relationship: contact.relationship || null,
+      phone: contact.phone || null,
+    };
+    void run('contact', () =>
+      api(`/v1/employees/${e.id}/emergency-contacts?effectiveDate=${data.formsEffectiveDate}`, {
+        method: 'PUT',
+        json: [c],
+      }),
+    );
   };
 
   return (
@@ -90,7 +153,9 @@ export default function WelcomePage() {
       <header className="flex flex-col gap-3">
         <h1 className="text-title-2">{t('onboarding.heading', { company: e.company, name: firstName })}</h1>
         <p className="text-body text-text-secondary">
-          {pre ? t('onboarding.startsOn', { date: formatDate(e.startDate, locale, 'long') }) : t('onboarding.started', { date: formatDate(e.startDate, locale, 'long') })}{' '}
+          {pre
+            ? t('onboarding.startsOn', { date: formatDate(e.startDate, locale, 'long') })
+            : t('onboarding.started', { date: formatDate(e.startDate, locale, 'long') })}{' '}
           {pre ? t('onboarding.daysToGo', { days: e.daysUntilStart }) : null}
         </p>
         <dl className="grid max-w-xl grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-callout">
@@ -111,9 +176,15 @@ export default function WelcomePage() {
           <label htmlFor="onboarding-progress" className="text-callout font-semibold">
             {t('onboarding.progressLabel')}
           </label>
-          <progress id="onboarding-progress" max={data.progress.total || 1} value={data.progress.done} className="h-2 w-full accent-[var(--color-accent)]" aria-valuetext={t('onboarding.progress', data.progress)} />
+          <progress
+            id="onboarding-progress"
+            max={data.progress.total || 1}
+            value={data.progress.done}
+            className="h-2 w-full accent-[var(--color-accent)]"
+            aria-valuetext={t('onboarding.progress', { ...data.progress, count: data.progress.total })}
+          />
           <p className="text-footnote text-text-secondary" role="status">
-            {t('onboarding.progress', data.progress)}
+            {t('onboarding.progress', { ...data.progress, count: data.progress.total })}
           </p>
         </div>
       </header>
@@ -127,9 +198,15 @@ export default function WelcomePage() {
                 <FileSignature aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
                 <span className="flex-1 text-callout">{d.title}</span>
                 {d.status === 'signed' ? (
-                  <Badge tone="success">{t('onboarding.signedOn', { date: formatDate((d.signedAt ?? '').slice(0, 10), locale) })}</Badge>
+                  <Badge tone="success">
+                    {t('onboarding.signedOn', { date: formatDate((d.signedAt ?? '').slice(0, 10), locale) })}
+                  </Badge>
                 ) : (
-                  <Link href={`/app/documents?sign=${d.id}`} className={buttonVariants({ size: 'sm' }) + ' no-underline'} aria-label={t('documents.signTitle', { title: d.title })}>
+                  <Link
+                    href={`/app/documents?sign=${d.id}`}
+                    className={buttonVariants({ size: 'sm' }) + ' no-underline'}
+                    aria-label={t('documents.signTitle', { title: d.title })}
+                  >
                     {t('documents.sign')}
                   </Link>
                 )}
@@ -151,12 +228,36 @@ export default function WelcomePage() {
           <form onSubmit={savePersonal} className="mt-4 flex flex-col gap-4">
             {PERSONAL.map((f) => (
               <Field key={f} id={`pd-${f}`} label={t(`people.field.${f}`)}>
-                {(p) => <Input {...p} type={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'text'} autoComplete={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'off'} value={personal[f] ?? ''} onChange={(ev) => setPersonal((v) => ({ ...v, [f]: ev.target.value }))} />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    type={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'text'}
+                    autoComplete={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'off'}
+                    value={personal[f] ?? ''}
+                    onChange={(ev) => setPersonal((v) => ({ ...v, [f]: ev.target.value }))}
+                  />
+                )}
               </Field>
             ))}
             {ADDRESS.map((f) => (
               <Field key={f} id={`pd-address-${f}`} label={t(ADDRESS_LABEL[f])}>
-                {(p) => <Input {...p} autoComplete={f === 'line1' ? 'address-line1' : f === 'city' ? 'address-level2' : f === 'postcode' ? 'postal-code' : 'country'} maxLength={f === 'country' ? 2 : 120} value={address[f] ?? ''} onChange={(ev) => setAddress((v) => ({ ...v, [f]: ev.target.value }))} />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    autoComplete={
+                      f === 'line1'
+                        ? 'address-line1'
+                        : f === 'city'
+                          ? 'address-level2'
+                          : f === 'postcode'
+                            ? 'postal-code'
+                            : 'country'
+                    }
+                    maxLength={f === 'country' ? 2 : 120}
+                    value={address[f] ?? ''}
+                    onChange={(ev) => setAddress((v) => ({ ...v, [f]: ev.target.value }))}
+                  />
+                )}
               </Field>
             ))}
             <Button type="submit" className="self-start" loading={busy === 'personal'}>
@@ -173,13 +274,36 @@ export default function WelcomePage() {
           <p className="mt-1 text-callout text-text-secondary">{t('onboarding.contactsBody')}</p>
           <form onSubmit={saveContact} className="mt-4 flex flex-col gap-4">
             <Field id="ec-name" label={t('onboarding.contactName')}>
-              {(p) => <Input {...p} required autoComplete="off" value={contact.name ?? ''} onChange={(ev) => setContact((v) => ({ ...v, name: ev.target.value }))} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  autoComplete="off"
+                  value={contact.name ?? ''}
+                  onChange={(ev) => setContact((v) => ({ ...v, name: ev.target.value }))}
+                />
+              )}
             </Field>
             <Field id="ec-relationship" label={t('onboarding.contactRelationship')}>
-              {(p) => <Input {...p} autoComplete="off" value={contact.relationship ?? ''} onChange={(ev) => setContact((v) => ({ ...v, relationship: ev.target.value }))} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  autoComplete="off"
+                  value={contact.relationship ?? ''}
+                  onChange={(ev) => setContact((v) => ({ ...v, relationship: ev.target.value }))}
+                />
+              )}
             </Field>
             <Field id="ec-phone" label={t('onboarding.contactPhone')}>
-              {(p) => <Input {...p} type="tel" autoComplete="off" value={contact.phone ?? ''} onChange={(ev) => setContact((v) => ({ ...v, phone: ev.target.value }))} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="tel"
+                  autoComplete="off"
+                  value={contact.phone ?? ''}
+                  onChange={(ev) => setContact((v) => ({ ...v, phone: ev.target.value }))}
+                />
+              )}
             </Field>
             <Button type="submit" className="self-start" loading={busy === 'contact'}>
               {t('common.save')}
@@ -193,14 +317,33 @@ export default function WelcomePage() {
         {data.tasks.length ? (
           <ul className="mt-3 flex flex-col gap-2">
             {data.tasks.map((k) => (
-              <li key={k.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
-                {k.status === 'done' ? <CheckCircle2 aria-hidden className="h-5 w-5 stroke-[1.5] text-success" /> : <Circle aria-hidden className="h-5 w-5 stroke-[1.5] text-text-secondary" />}
+              <li
+                key={k.id}
+                className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3"
+              >
+                {k.status === 'done' ? (
+                  <CheckCircle2 aria-hidden className="h-5 w-5 stroke-[1.5] text-success" />
+                ) : (
+                  <Circle aria-hidden className="h-5 w-5 stroke-[1.5] text-text-secondary" />
+                )}
                 <span className="flex-1 text-callout">{k.title}</span>
-                {k.dueOn ? <span className="text-footnote text-text-secondary">{t('onboarding.due', { date: formatDate(k.dueOn, locale) })}</span> : null}
+                {k.dueOn ? (
+                  <span className="text-footnote text-text-secondary">
+                    {t('onboarding.due', { date: formatDate(k.dueOn, locale) })}
+                  </span>
+                ) : null}
                 {k.status === 'done' ? (
                   <Badge tone="success">{t('onboarding.done')}</Badge>
                 ) : (
-                  <Button size="sm" variant="secondary" loading={busy === k.id} aria-label={t('onboarding.markDone', { title: k.title })} onClick={() => void run(k.id, () => api(`/v1/tasks/${k.id}/complete`, { method: 'POST' }))}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={busy === k.id}
+                    aria-label={t('onboarding.markDone', { title: k.title })}
+                    onClick={() =>
+                      void run(k.id, () => api(`/v1/tasks/${k.id}/complete`, { method: 'POST' }))
+                    }
+                  >
                     {t('onboarding.markDoneShort')}
                   </Button>
                 )}

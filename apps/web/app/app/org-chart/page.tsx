@@ -24,20 +24,46 @@ function NodeRow({ node, depth, expandTo }: { node: OrgNode; depth: number; expa
     if (open && !children) void api<OrgNode[]>(`/v1/org-chart/${node.id}/children`).then(setChildren);
   }, [open, children, node.id]);
   return (
-    <li role="treeitem" aria-expanded={node.directReports ? open : undefined} aria-level={depth + 1} aria-selected={expandTo.at(-1) === node.id}>
-      <div className="flex items-center gap-2 rounded-md py-1.5 pr-2 hover:bg-surface" style={{ paddingLeft: `${depth * 20 + 4}px` }}>
+    <li
+      role="treeitem"
+      aria-expanded={node.directReports ? open : undefined}
+      aria-level={depth + 1}
+      aria-selected={expandTo.at(-1) === node.id}
+    >
+      <div
+        className="flex items-center gap-2 rounded-md py-1.5 pr-2 hover:bg-surface"
+        style={{ paddingLeft: `${depth * 20 + 4}px` }}
+      >
         {node.directReports ? (
-          <button type="button" onClick={() => setOpen(!open)} aria-label={open ? t('org.collapse') : t('org.expand')} className="rounded-sm p-1 text-text-secondary hover:text-text">
-            {open ? <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" /> : <ChevronRight aria-hidden className="h-4 w-4 stroke-[1.5]" />}
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? t('org.collapse') : t('org.expand')}
+            className="rounded-sm p-1 text-text-secondary hover:text-text"
+          >
+            {open ? (
+              <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            ) : (
+              <ChevronRight aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            )}
           </button>
         ) : (
           <span className="w-6" />
         )}
-        <Link href={`/app/people/${node.id}`} className={`text-callout no-underline ${expandTo.at(-1) === node.id ? 'font-semibold text-accent' : 'text-text'}`}>
+        <Link
+          href={`/app/people/${node.id}`}
+          className={`text-callout no-underline ${expandTo.at(-1) === node.id ? 'font-semibold text-accent' : 'text-text'}`}
+        >
           {node.displayName}
         </Link>
-        <span className="truncate text-footnote text-text-secondary">{[node.jobTitle, node.department].filter(Boolean).join(' · ')}</span>
-        {node.directReports ? <span className="ml-auto text-footnote text-text-secondary">{t('org.reports', { count: node.directReports })}</span> : null}
+        <span className="truncate text-footnote text-text-secondary">
+          {[node.jobTitle, node.department].filter(Boolean).join(' · ')}
+        </span>
+        {node.directReports ? (
+          <span className="ml-auto text-footnote text-text-secondary">
+            {t('org.reports', { count: node.directReports })}
+          </span>
+        ) : null}
       </div>
       {open && children ? (
         <ul role="group">
@@ -78,14 +104,27 @@ export default function OrgChartPage() {
       <div className="relative max-w-md">
         <label>
           <span className="sr-only">{t('org.search')}</span>
-          <Search aria-hidden className="pointer-events-none absolute left-3 top-3 h-4 w-4 stroke-[1.5] text-text-secondary" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('org.search')} className="pl-9" type="search" />
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-3 h-4 w-4 stroke-[1.5] text-text-secondary"
+          />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('org.search')}
+            className="pl-9"
+            type="search"
+          />
         </label>
         {results.length ? (
           <ul className="absolute z-10 mt-1 w-full rounded-md bg-surface-raised p-1 shadow-md">
             {results.map((r) => (
               <li key={r.id}>
-                <button type="button" className="w-full rounded-sm px-3 py-2 text-left text-callout hover:bg-accent-subtle" onClick={() => focusOn(r.id)}>
+                <button
+                  type="button"
+                  className="w-full rounded-sm px-3 py-2 text-left text-callout hover:bg-accent-subtle"
+                  onClick={() => focusOn(r.id)}
+                >
                   {r.displayName} <span className="text-text-secondary">{r.jobTitle}</span>
                 </button>
               </li>
@@ -94,7 +133,12 @@ export default function OrgChartPage() {
         ) : null}
       </div>
       {roots ? (
-        <ul role="tree" aria-label={t('org.title')} key={focus.join()} className="rounded-lg border border-border p-2">
+        <ul
+          role="tree"
+          aria-label={t('org.title')}
+          key={focus.join()}
+          className="rounded-lg border border-border p-2"
+        >
           {roots.map((r) => (
             <NodeRow key={r.id} node={r} depth={0} expandTo={focus} />
           ))}

@@ -12,9 +12,9 @@ The Thapsus-HR REST API is versioned (`/v1`), described by an OpenAPI 3.1 docume
 
 Machine clients use one of two credentials. Both are created by a company admin in **Settings → API access** (`/v1/settings/api-keys`, `/v1/settings/oauth-clients`). Secrets are shown once and stored only as SHA-256 hashes.
 
-| Credential | Format | How to use |
-| --- | --- | --- |
-| Scoped API key | `thr_sk_<workspace id>.<secret>` | `Authorization: Bearer thr_sk_…`. Revocable. It can have an expiry date, and its last-used time is recorded. |
+| Credential       | Format                                  | How to use                                                                                                                                           |
+| ---------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scoped API key   | `thr_sk_<workspace id>.<secret>`        | `Authorization: Bearer thr_sk_…`. Revocable. It can have an expiry date, and its last-used time is recorded.                                         |
 | OAuth 2.0 client | client id `thr_ci_…`, secret `thr_cs_…` | Exchange it for a short-lived access token (`thr_at_…`, 1 hour by default) with the client credentials grant, then `Authorization: Bearer thr_at_…`. |
 
 **Token request** (RFC 6749 §4.4). Authenticate with HTTP Basic (`client_secret_basic`, preferred) or with form fields (`client_secret_post`):
@@ -39,16 +39,16 @@ grant_type=client_credentials&scope=employees%3Aread%20org%3Aread
 
 Every credential has a **role** (built-in or custom) and one or more **scopes**. Its effective permissions are the **intersection** of the two. A scope never adds permissions the role lacks, and the role never adds permissions outside the scopes. Admins cannot create a credential with permissions they do not hold themselves (`403 exceedsYourPermissions`). A credential can also be limited to entities, countries, departments or locations (`scopeType`, `scopeValues`).
 
-| Scope | Allows |
-| --- | --- |
-| `employees:read` | `employees.read`, `employees.history` |
-| `employees:write` | the above plus `employees.create`, `employees.update`, `employees.terminate` |
-| `org:read` / `org:write` | organisation reference data (`org.read`, `employees.read`) / `org.manage`, `org.reporting` |
-| `leave:read` / `leave:write` | time off and absence (read) / record, manage and adjust |
-| `time:read` / `time:write` | rotas, clock events, timesheets, export / rota and timesheet management |
-| `documents:read` / `documents:write` | documents (read) / manage |
-| `audit:read` | read and export the audit log |
-| `webhooks:manage` | manage webhook endpoints (`/v1/webhooks`) |
+| Scope                                | Allows                                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `employees:read`                     | `employees.read`, `employees.history`                                                      |
+| `employees:write`                    | the above plus `employees.create`, `employees.update`, `employees.terminate`               |
+| `org:read` / `org:write`             | organisation reference data (`org.read`, `employees.read`) / `org.manage`, `org.reporting` |
+| `leave:read` / `leave:write`         | time off and absence (read) / record, manage and adjust                                    |
+| `time:read` / `time:write`           | rotas, clock events, timesheets, export / rota and timesheet management                    |
+| `documents:read` / `documents:write` | documents (read) / manage                                                                  |
+| `audit:read`                         | read and export the audit log                                                              |
+| `webhooks:manage`                    | manage webhook endpoints (`/v1/webhooks`)                                                  |
 
 The source of this table is `packages/core/src/api-scopes.ts`.
 
@@ -107,17 +107,21 @@ Admins add endpoints in **Settings → Webhooks** or with `POST /v1/webhooks` (s
 **Events.** Subscribe to `employee.created`, `employee.changed`, `employee.transferred`, `employee.terminated`, `integration.requested`, a family wildcard such as `employee.*`, or `*`. `POST /v1/webhooks/{id}/ping` sends a `webhook.ping` event. Payloads carry identifiers and the names of changed fields only, never field values:
 
 ```json
-{ "id": "evt_1234", "type": "employee.changed", "createdAt": "2026-10-18T09:00:00.000Z",
-  "data": { "employeeId": "0b7f…", "effectiveDate": "2026-11-01", "fields": ["jobTitle"] } }
+{
+  "id": "evt_1234",
+  "type": "employee.changed",
+  "createdAt": "2026-10-18T09:00:00.000Z",
+  "data": { "employeeId": "0b7f…", "effectiveDate": "2026-11-01", "fields": ["jobTitle"] }
+}
 ```
 
 **Headers:**
 
-| Header | Value |
-| --- | --- |
-| `Thapsus-Signature` | `t=<unix seconds>,v1=<signature>[,v1=<signature>]` |
-| `Thapsus-Event-Id` | Stable per event, including across retries and replays. Use it to de-duplicate. |
-| `Thapsus-Event-Type`, `Thapsus-Delivery-Id`, `Thapsus-Delivery-Attempt` | Event type, delivery id and attempt number |
+| Header                                                                  | Value                                                                           |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `Thapsus-Signature`                                                     | `t=<unix seconds>,v1=<signature>[,v1=<signature>]`                              |
+| `Thapsus-Event-Id`                                                      | Stable per event, including across retries and replays. Use it to de-duplicate. |
+| `Thapsus-Event-Type`, `Thapsus-Delivery-Id`, `Thapsus-Delivery-Attempt` | Event type, delivery id and attempt number                                      |
 
 ### Verifying signatures
 
@@ -130,7 +134,11 @@ Admins add endpoints in **Settings → Webhooks** or with `POST /v1/webhooks` (s
 
 ```ts
 import { verifyWebhookSignature } from '@thapsus/sdk';
-const ok = verifyWebhookSignature({ payload: rawBody, header: req.headers['thapsus-signature'], secrets: [process.env.THAPSUS_WEBHOOK_SECRET!] });
+const ok = verifyWebhookSignature({
+  payload: rawBody,
+  header: req.headers['thapsus-signature'],
+  secrets: [process.env.THAPSUS_WEBHOOK_SECRET!],
+});
 ```
 
 **Secret rotation:** `POST /v1/webhooks/{id}/rotate-secret` with `{ "graceHours": 24 }` returns the new secret once.
@@ -153,10 +161,10 @@ const ok = verifyWebhookSignature({ payload: rawBody, header: req.headers['thaps
 
 **Settings → Audit log streaming** (`/v1/settings/audit-streams`) sends your sealed, hash-chained audit log to your SIEM. Each event includes its `seq` and chain `hash`. You can filter by action prefix, sensitive-only and actor type. Events about sensitive data are streamed without their diff.
 
-| Destination | How it works |
-| --- | --- |
-| HTTPS | `POST` of `{ streamId, batchId, fromSeq, toSeq, count, events: [...] }`, signed exactly like webhooks. `Idempotency-Key` and `Thapsus-Batch-Id` are both the batch id. |
-| Amazon S3 | Your bucket, **in your workspace's home region**. Thapsus assumes an IAM role in your account whose **name starts with `thapsus-hr-audit-`** (`sts:AssumeRole` with the external id shown when you create the stream) and writes NDJSON objects to `<prefix>YYYY/MM/DD/<fromSeq>-<toSeq>.ndjson`. |
+| Destination | How it works                                                                                                                                                                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTPS       | `POST` of `{ streamId, batchId, fromSeq, toSeq, count, events: [...] }`, signed exactly like webhooks. `Idempotency-Key` and `Thapsus-Batch-Id` are both the batch id.                                                                                                                            |
+| Amazon S3   | Your bucket, **in your workspace's home region**. Thapsus assumes an IAM role in your account whose **name starts with `thapsus-hr-audit-`** (`sts:AssumeRole` with the external id shown when you create the stream) and writes NDJSON objects to `<prefix>YYYY/MM/DD/<fromSeq>-<toSeq>.ndjson`. |
 
 **Setting up an S3 stream:**
 

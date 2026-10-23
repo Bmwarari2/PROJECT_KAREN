@@ -11,15 +11,22 @@ async function entitle(slug: string) {
   await c.connect();
   try {
     await c.query('BEGIN');
-    await c.query(`SELECT set_config('app.tenant_id', (SELECT tenant_id::text FROM registry.tenants WHERE slug = $1), true)`, [slug]);
-    await c.query(`UPDATE app.tenants SET features = jsonb_set(features, '{flags}', coalesce(features->'flags', '{}'::jsonb) || '{"aiAssistant": true}'::jsonb)`);
+    await c.query(
+      `SELECT set_config('app.tenant_id', (SELECT tenant_id::text FROM registry.tenants WHERE slug = $1), true)`,
+      [slug],
+    );
+    await c.query(
+      `UPDATE app.tenants SET features = jsonb_set(features, '{flags}', coalesce(features->'flags', '{}'::jsonb) || '{"aiAssistant": true}'::jsonb)`,
+    );
     await c.query('COMMIT');
   } finally {
     await c.end();
   }
 }
 
-test('Ask HR: off by default, set up by the owner, answers with an AI disclosure and cited sources', async ({ page }) => {
+test('Ask HR: off by default, set up by the owner, answers with an AI disclosure and cited sources', async ({
+  page,
+}) => {
   const { slug } = await signUpAndEnrol(page);
   const nav = page.getByRole('navigation');
 
@@ -37,7 +44,11 @@ test('Ask HR: off by default, set up by the owner, answers with an AI disclosure
   await page.getByRole('button', { name: 'Create folder' }).click();
   await expect(page.getByRole('checkbox', { name: 'Company policies' })).toBeChecked();
   await page.getByLabel('Title').fill('Annual leave policy');
-  await page.getByLabel('Policy text').fill('# Annual leave\nFull-time employees receive 25 days of annual leave each year plus bank holidays.');
+  await page
+    .getByLabel('Policy text')
+    .fill(
+      '# Annual leave\nFull-time employees receive 25 days of annual leave each year plus bank holidays.',
+    );
   await page.getByRole('button', { name: 'Add policy' }).click();
   await expect(page.getByRole('cell', { name: 'Annual leave policy' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Indexed' })).toBeVisible();
@@ -66,6 +77,8 @@ test('Ask HR: off by default, set up by the owner, answers with an AI disclosure
   await page.getByLabel('Your question').fill('Should I fire my colleague for being late?');
   await page.getByRole('button', { name: 'Ask', exact: true }).click();
   const refusal = page.getByTestId('ai-exchange').first();
-  await expect(refusal.getByTestId('ai-message')).toContainText("I can't make or recommend decisions about people");
+  await expect(refusal.getByTestId('ai-message')).toContainText(
+    "I can't make or recommend decisions about people",
+  );
   await expect(refusal).toContainText('You are talking to an AI assistant');
 });

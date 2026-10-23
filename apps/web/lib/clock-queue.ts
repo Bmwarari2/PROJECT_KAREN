@@ -62,7 +62,10 @@ export function syncQueue(userId: string): Promise<SyncResult | null> {
       const batch = q.slice(0, 200);
       const r = await api<SyncResult>('/v1/clock/events', { method: 'POST', json: { events: batch } });
       const answered = new Set(r.results.map((x) => x.clientEventId));
-      writeQueue(userId, readQueue(userId).filter((x) => !answered.has(x.clientEventId)));
+      writeQueue(
+        userId,
+        readQueue(userId).filter((x) => !answered.has(x.clientEventId)),
+      );
       return r;
     } catch (err) {
       // offline or server unreachable: keep everything queued; an auth error also keeps it for the next sign-in

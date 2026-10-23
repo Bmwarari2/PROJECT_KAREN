@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { colors } from '@thapsus/ui/tokens';
 import { serverContext } from '@/lib/server';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
@@ -11,8 +12,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     start_url: '/app',
     scope: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#0b6b63',
+    background_color: colors.bg.light,
+    theme_color: colors.accent.light,
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

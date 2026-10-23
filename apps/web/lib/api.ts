@@ -10,12 +10,19 @@ export class ApiProblem extends Error {
   }
 }
 
-export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+export async function api<T = unknown>(
+  path: string,
+  init: RequestInit & { json?: unknown } = {},
+): Promise<T> {
   const { json, headers, ...rest } = init;
   const res = await fetch(path, {
     credentials: 'same-origin',
     ...rest,
-    headers: { accept: 'application/json', ...(json !== undefined ? { 'content-type': 'application/json' } : {}), ...headers },
+    headers: {
+      accept: 'application/json',
+      ...(json !== undefined ? { 'content-type': 'application/json' } : {}),
+      ...headers,
+    },
     body: json !== undefined ? JSON.stringify(json) : rest.body,
   });
   if (res.status === 204) return undefined as T;
@@ -38,6 +45,7 @@ export interface SessionInfo {
   method: string;
   mfaVerified: boolean;
   hasMfaFactor: boolean;
+  hasPassword: boolean;
   isAdmin: boolean;
   roles: string[];
   permissions: string[];

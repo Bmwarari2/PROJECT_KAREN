@@ -38,42 +38,103 @@ export function shiftRange(s: Pick<ShiftDto, 'start' | 'end'>, locale: Locale) {
   return `${formatTimeOfDay(s.start, locale)}–${formatTimeOfDay(s.end, locale)}`;
 }
 
-function ShiftChip({ shift, onOpen, label }: { shift: ShiftDto; onOpen?: (s: ShiftDto) => void; label: string }) {
+function ShiftChip({
+  shift,
+  onOpen,
+  label,
+}: {
+  shift: ShiftDto;
+  onOpen?: (s: ShiftDto) => void;
+  label: string;
+}) {
   const locale = useLocale();
   const cls = cn(
     'inline-flex h-7 max-w-full items-center truncate rounded-sm px-2 text-footnote font-semibold tabular-nums',
-    shift.status === 'draft' ? 'border border-dashed border-border-strong bg-surface text-text' : 'bg-accent-subtle text-text',
+    shift.status === 'draft'
+      ? 'border border-dashed border-border-strong bg-surface text-text'
+      : 'bg-accent-subtle text-text',
   );
   if (!onOpen) return <span className={cls}>{shiftRange(shift, locale)}</span>;
   return (
-    <button type="button" className={cn(cls, 'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent')} aria-label={label} onClick={() => onOpen(shift)}>
+    <button
+      type="button"
+      className={cn(
+        cls,
+        'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
+      )}
+      aria-label={label}
+      onClick={() => onOpen(shift)}
+    >
       {shiftRange(shift, locale)}
     </button>
   );
 }
 
 /** One employee row; memoised so scrolling renders only rows entering the window. */
-const RowView = React.memo(function RowView({ index, row: r, days, canEdit, onAdd, onOpen, chipLabel }: { index: number; row: GridRowDto | undefined; days: string[]; canEdit: boolean; onAdd?: (employeeId: string | null, date: string, name?: string) => void; onOpen?: (s: ShiftDto) => void; chipLabel: (s: ShiftDto, who: string) => string }) {
+const RowView = React.memo(function RowView({
+  index,
+  row: r,
+  days,
+  canEdit,
+  onAdd,
+  onOpen,
+  chipLabel,
+}: {
+  index: number;
+  row: GridRowDto | undefined;
+  days: string[];
+  canEdit: boolean;
+  onAdd?: (employeeId: string | null, date: string, name?: string) => void;
+  onOpen?: (s: ShiftDto) => void;
+  chipLabel: (s: ShiftDto, who: string) => string;
+}) {
   const t = useT();
   const locale = useLocale();
   return (
-    <div role="row" aria-rowindex={index + 3} data-row={index} className={cn('absolute inset-x-0 grid border-b border-border', COLS)} style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}>
+    <div
+      role="row"
+      aria-rowindex={index + 3}
+      data-row={index}
+      className={cn('absolute inset-x-0 grid border-b border-border', COLS)}
+      style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}
+    >
       {r ? (
         <>
-          <div role="rowheader" className="sticky left-0 z-10 flex min-w-0 flex-col justify-center bg-surface-raised px-3">
+          <div
+            role="rowheader"
+            className="sticky left-0 z-10 flex min-w-0 flex-col justify-center bg-surface-raised px-3"
+          >
             <span className="truncate text-callout font-semibold">{r.name}</span>
-            {r.jobTitle ? <span className="truncate text-footnote text-text-secondary">{r.jobTitle}</span> : null}
+            {r.jobTitle ? (
+              <span className="truncate text-footnote text-text-secondary">{r.jobTitle}</span>
+            ) : null}
           </div>
           {days.map((d) => {
             const here = r.shifts.filter((s) => s.date === d);
             return (
-              <div key={d} role="gridcell" className="group flex min-w-0 items-center gap-1 border-l border-border px-1.5">
+              <div
+                key={d}
+                role="gridcell"
+                className="group flex min-w-0 items-center gap-1 border-l border-border px-1.5"
+              >
                 {here.slice(0, 1).map((s) => (
-                  <ShiftChip key={s.id} shift={s} onOpen={canEdit ? onOpen : undefined} label={chipLabel(s, r.name)} />
+                  <ShiftChip
+                    key={s.id}
+                    shift={s}
+                    onOpen={canEdit ? onOpen : undefined}
+                    label={chipLabel(s, r.name)}
+                  />
                 ))}
-                {here.length > 1 ? <span className="text-footnote text-text-secondary">+{here.length - 1}</span> : null}
+                {here.length > 1 ? (
+                  <span className="text-footnote text-text-secondary">+{here.length - 1}</span>
+                ) : null}
                 {canEdit && !here.length ? (
-                  <button type="button" onClick={() => onAdd?.(r.employeeId, d, r.name)} aria-label={t('rota.addShiftFor', { name: r.name, day: dayLong(d, locale) })} className="ml-auto flex h-7 w-7 items-center justify-center rounded-sm text-text-secondary opacity-0 hover:bg-surface focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => onAdd?.(r.employeeId, d, r.name)}
+                    aria-label={t('rota.addShiftFor', { name: r.name, day: dayLong(d, locale) })}
+                    className="ml-auto flex h-7 w-7 items-center justify-center rounded-sm text-text-secondary opacity-0 hover:bg-surface focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent group-hover:opacity-100"
+                  >
                     <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   </button>
                 ) : null}
@@ -110,42 +171,106 @@ export function RotaGrid(props: {
   React.useLayoutEffect(() => {
     if (headRef.current) setHeadH(headRef.current.offsetHeight);
   }, [openShifts, days]);
-  const { start, end, totalHeight } = useVirtualRows({ count: rows.length, rowHeight: ROW_HEIGHT, scrollRef, headerHeight: headH });
+  const { start, end, totalHeight } = useVirtualRows({
+    count: rows.length,
+    rowHeight: ROW_HEIGHT,
+    scrollRef,
+    headerHeight: headH,
+  });
   React.useEffect(() => onRangeEnd?.(end), [end, onRangeEnd]);
 
-  const chipLabel = React.useCallback((s: ShiftDto, who: string) => t('rota.shiftAria', { status: t(`rota.status.${s.status}`), name: who, day: dayLong(s.date, locale), range: shiftRange(s, locale) }), [t, locale]);
+  const chipLabel = React.useCallback(
+    (s: ShiftDto, who: string) =>
+      t('rota.shiftAria', {
+        status: t(`rota.status.${s.status}`),
+        name: who,
+        day: dayLong(s.date, locale),
+        range: shiftRange(s, locale),
+      }),
+    [t, locale],
+  );
 
   const visible = [];
-  for (let i = start; i < end; i++) visible.push(<RowView key={rows[i]?.employeeId ?? `p${i}`} index={i} row={rows[i]} days={days} canEdit={canEdit} onAdd={onAdd} onOpen={onOpen} chipLabel={chipLabel} />);
+  for (let i = start; i < end; i++)
+    visible.push(
+      <RowView
+        key={rows[i]?.employeeId ?? `p${i}`}
+        index={i}
+        row={rows[i]}
+        days={days}
+        canEdit={canEdit}
+        onAdd={onAdd}
+        onOpen={onOpen}
+        chipLabel={chipLabel}
+      />,
+    );
 
   return (
-    <div ref={scrollRef} role="grid" aria-label={label} aria-rowcount={rows.length + 2} aria-colcount={8} data-testid="rota-grid" className="relative max-h-[70vh] overflow-auto rounded-lg border border-border bg-surface-raised">
+    <div
+      ref={scrollRef}
+      role="grid"
+      aria-label={label}
+      aria-rowcount={rows.length + 2}
+      aria-colcount={8}
+      data-testid="rota-grid"
+      className="relative max-h-[70vh] overflow-auto rounded-lg border border-border bg-surface-raised"
+    >
       <div ref={headRef} role="rowgroup" className="sticky top-0 z-20 min-w-[59rem] bg-surface">
         <div role="row" aria-rowindex={1} className={cn('grid border-b border-border', COLS)}>
-          <div role="columnheader" className="sticky left-0 z-10 flex h-11 items-center bg-surface px-3 text-footnote font-semibold text-text-secondary">
+          <div
+            role="columnheader"
+            className="sticky left-0 z-10 flex h-11 items-center bg-surface px-3 text-footnote font-semibold text-text-secondary"
+          >
             {t('rota.people')}
           </div>
           {days.map((d) => (
-            <div key={d} role="columnheader" className="flex h-11 items-center border-l border-border px-2 text-footnote font-semibold text-text-secondary">
+            <div
+              key={d}
+              role="columnheader"
+              className="flex h-11 items-center border-l border-border px-2 text-footnote font-semibold text-text-secondary"
+            >
               <span aria-hidden>{dayLabel(d, locale)}</span>
               <span className="sr-only">{dayLong(d, locale)}</span>
             </div>
           ))}
         </div>
-        <div role="row" aria-rowindex={2} className={cn('grid border-b border-border bg-surface-raised', COLS)}>
-          <div role="rowheader" className="sticky left-0 z-10 flex items-center bg-surface-raised px-3 py-2 text-callout font-semibold">
+        <div
+          role="row"
+          aria-rowindex={2}
+          className={cn('grid border-b border-border bg-surface-raised', COLS)}
+        >
+          <div
+            role="rowheader"
+            className="sticky left-0 z-10 flex items-center bg-surface-raised px-3 py-2 text-callout font-semibold"
+          >
             {t('rota.openShifts')}
           </div>
           {days.map((d) => {
             const here = openShifts.filter((s) => s.date === d);
             return (
-              <div key={d} role="gridcell" className="group flex min-h-12 min-w-0 flex-wrap items-center gap-1 border-l border-border px-1.5 py-1.5">
+              <div
+                key={d}
+                role="gridcell"
+                className="group flex min-h-12 min-w-0 flex-wrap items-center gap-1 border-l border-border px-1.5 py-1.5"
+              >
                 {here.slice(0, 3).map((s) => (
-                  <ShiftChip key={s.id} shift={s} onOpen={canEdit ? onOpen : undefined} label={chipLabel(s, t('rota.openShift'))} />
+                  <ShiftChip
+                    key={s.id}
+                    shift={s}
+                    onOpen={canEdit ? onOpen : undefined}
+                    label={chipLabel(s, t('rota.openShift'))}
+                  />
                 ))}
-                {here.length > 3 ? <span className="text-footnote text-text-secondary">+{here.length - 3}</span> : null}
+                {here.length > 3 ? (
+                  <span className="text-footnote text-text-secondary">+{here.length - 3}</span>
+                ) : null}
                 {canEdit ? (
-                  <button type="button" onClick={() => onAdd?.(null, d)} aria-label={t('rota.addOpenShift', { day: dayLong(d, locale) })} className="ml-auto flex h-7 w-7 items-center justify-center rounded-sm text-text-secondary opacity-0 hover:bg-surface focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => onAdd?.(null, d)}
+                    aria-label={t('rota.addOpenShift', { day: dayLong(d, locale) })}
+                    className="ml-auto flex h-7 w-7 items-center justify-center rounded-sm text-text-secondary opacity-0 hover:bg-surface focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent group-hover:opacity-100"
+                  >
                     <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   </button>
                 ) : null}

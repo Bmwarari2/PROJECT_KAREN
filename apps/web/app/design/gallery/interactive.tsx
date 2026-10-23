@@ -1,6 +1,20 @@
 'use client';
 import * as React from 'react';
-import { Button, Dialog, DialogContent, DialogTrigger, Select, Sheet, SheetContent, SheetTrigger, Tabs, TabsContent, TabsList, TabsTrigger, useToast } from '@thapsus/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  Select,
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  useToast,
+} from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 
 export function GalleryInteractive() {
@@ -15,7 +29,11 @@ export function GalleryInteractive() {
           <DialogTrigger asChild>
             <Button variant="secondary">{g('openDialog')}</Button>
           </DialogTrigger>
-          <DialogContent title={g('dialogTitle')} description={g('sampleBody')} closeLabel={t('common.close')}>
+          <DialogContent
+            title={g('dialogTitle')}
+            description={g('sampleBody')}
+            closeLabel={t('common.close')}
+          >
             <Button>{t('common.confirm')}</Button>
           </DialogContent>
         </Dialog>
@@ -27,7 +45,10 @@ export function GalleryInteractive() {
             <p className="text-callout text-text-secondary">{g('sampleBody')}</p>
           </SheetContent>
         </Sheet>
-        <Button variant="secondary" onClick={() => toast({ title: g('toastTitle'), body: g('sampleBody'), tone: 'success' })}>
+        <Button
+          variant="secondary"
+          onClick={() => toast({ title: g('toastTitle'), body: g('sampleBody'), tone: 'success' })}
+        >
           {g('showToast')}
         </Button>
       </div>

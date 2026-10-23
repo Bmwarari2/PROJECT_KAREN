@@ -1,4 +1,4 @@
-import { CfnOutput, CfnParameter, Duration, RemovalPolicy, Stack, type StackProps } from 'aws-cdk-lib';
+import { CfnOutput, CfnParameter, Duration, Stack, type StackProps } from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cwActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
@@ -21,6 +21,7 @@ import {
   cellBudget,
   certificateArn,
   encryptedLogGroup,
+  keepUnlessEphemeral,
   logsBucket,
   publicAlb,
   regionalWaf,
@@ -56,13 +57,14 @@ export class GlobalStack extends Stack {
     const env = cfg.env;
     const prod = env === 'prod';
     const prefix = `thapsus-hr-${env}-global`;
-    if (this.region !== GLOBAL_REGION) throw new Error(`The global stack must be deployed to ${GLOBAL_REGION}`);
+    if (this.region !== GLOBAL_REGION)
+      throw new Error(`The global stack must be deployed to ${GLOBAL_REGION}`);
 
     const key = new kms.Key(this, 'GlobalKey', {
       alias: `alias/${prefix}`,
       description: `Thapsus-HR ${env} global layer: directory table, logs, secrets`,
       enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     allowLogsService(key);
     allowAlertingServices(key);
@@ -76,7 +78,7 @@ export class GlobalStack extends Stack {
       encryptionKey: key,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       deletionProtection: prod,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     table.addGlobalSecondaryIndex({
       indexName: 'byDomain',
@@ -96,7 +98,13 @@ export class GlobalStack extends Stack {
     vpc.addFlowLog('FlowLog', { destination: ec2.FlowLogDestination.toCloudWatchLogs(flowLogs) });
 
     const logs_ = logsBucket(this, `thapsus-hr-${env}-${GLOBAL_REGION}-global-logs-${this.account}`, cfg);
-    const { alb, https } = publicAlb(this, { vpc, logs: logs_, certificateArn: certificateArn(this, cfg.global.certificateArn), name: prefix });
+    const { alb, https } = publicAlb(this, {
+      vpc,
+      logs: logs_,
+      certificateArn: certificateArn(this, cfg.global.certificateArn),
+      name: prefix,
+      noRedirectPaths: ['/global/*', '/health/api'],
+    });
     regionalWaf(this, alb, `${prefix}-web-acl`, cfg.wafRateLimitPer5Min);
 
     // ---------------------------------------------------------------- Secrets + billing placeholders
@@ -109,7 +117,8 @@ export class GlobalStack extends Stack {
     });
     new secretsmanager.Secret(this, 'StripeSecret', {
       secretName: `thapsus-hr/${env}/stripe`,
-      description: 'Stripe API keys + webhook secret, to be filled by a human (HUMAN_TODO). No Stripe resources are created here.',
+      description:
+        'Stripe API keys + webhook secret, to be filled by a human (HUMAN_TODO). No Stripe resources are created here.',
       encryptionKey: key,
     });
     new ssm.StringParameter(this, 'BillingConfigLocation', {
@@ -119,7 +128,8 @@ export class GlobalStack extends Stack {
     });
 
     // ---------------------------------------------------------------- URLs
-    const baseUrl = cfg.globalBaseUrl ?? (cfg.domain ? `https://${cfg.domain}` : `https://${alb.loadBalancerDnsName}`);
+    const baseUrl =
+      cfg.globalBaseUrl ?? (cfg.domain ? `https://${cfg.domain}` : `https://${alb.loadBalancerDnsName}`);
     const regional: Record<string, string> = {};
     for (const kind of ['api', 'app'] as const) {
       for (const r of HOME_REGIONS) {
@@ -137,10 +147,26 @@ export class GlobalStack extends Stack {
     }
 
     const topic = alertTopic(this, key, cfg);
-    const cluster = new ecs.Cluster(this, 'Cluster', { vpc, clusterName: prefix, containerInsightsV2: ecs.ContainerInsights.ENABLED });
-    encryptedLogGroup(this, 'ContainerInsightsLogs', key, cfg, `/aws/ecs/containerinsights/${prefix}/performance`);
+    const cluster = new ecs.Cluster(this, 'Cluster', {
+      vpc,
+      clusterName: prefix,
+      containerInsightsV2: ecs.ContainerInsights.ENABLED,
+    });
+    encryptedLogGroup(
+      this,
+      'ContainerInsightsLogs',
+      key,
+      cfg,
+      `/aws/ecs/containerinsights/${prefix}/performance`,
+    );
 
-    const service = (name: 'api' | 'web', size: ServiceSize, port: number, environment: Record<string, string>, secrets: Record<string, ecs.Secret>) => {
+    const service = (
+      name: 'api' | 'web',
+      size: ServiceSize,
+      port: number,
+      environment: Record<string, string>,
+      secrets: Record<string, ecs.Secret>,
+    ) => {
       const logGroup = encryptedLogGroup(this, `${name}Logs`, key, cfg, `/thapsus-hr/${env}/global/${name}`);
       const sg = new ec2.SecurityGroup(this, `${name}Sg`, { vpc, description: `global ${name} tasks` });
       const task = new ecs.FargateTaskDefinition(this, `${name}Task`, {
@@ -170,7 +196,10 @@ export class GlobalStack extends Stack {
         maxHealthyPercent: 200,
         propagateTags: ecs.PropagatedTagSource.SERVICE,
       });
-      const scaling = svc.autoScaleTaskCount({ minCapacity: size.minCapacity, maxCapacity: size.maxCapacity });
+      const scaling = svc.autoScaleTaskCount({
+        minCapacity: size.minCapacity,
+        maxCapacity: size.maxCapacity,
+      });
       scaling.scaleOnCpuUtilization('Cpu', { targetUtilizationPercent: 60 });
       return { svc, task, scaling };
     };
@@ -201,7 +230,13 @@ export class GlobalStack extends Stack {
       { INTERNAL_TOKEN: ecs.Secret.fromSecretsManager(internalToken) },
     );
     table.grantReadWriteData(api.task.taskRole);
-    const web = service('web', cfg.global.services.web, 3000, { ...common, SERVICE_ROLE: 'global', SITE_MODE: 'marketing' }, {});
+    const web = service(
+      'web',
+      cfg.global.services.web,
+      3000,
+      { ...common, SERVICE_ROLE: 'global', SITE_MODE: 'marketing' },
+      {},
+    );
 
     const apiTg = https.addTargets('Api', {
       priority: 10,
@@ -228,12 +263,18 @@ export class GlobalStack extends Stack {
       const target = route53.RecordTarget.fromAlias(new route53Targets.LoadBalancerTarget(alb));
       new route53.ARecord(this, 'ApexRecord', { zone, target });
       new route53.ARecord(this, 'WwwRecord', { zone, recordName: 'www', target });
-      new CfnOutput(this, 'HostedZoneId', { value: zone.hostedZoneId, description: 'Copy into config.hostedZoneId for the cell stacks.' });
+      new CfnOutput(this, 'HostedZoneId', {
+        value: zone.hostedZoneId,
+        description: 'Copy into config.hostedZoneId for the cell stacks.',
+      });
     }
 
     new cloudwatch.Alarm(this, 'Alb5xxAlarm', {
       alarmDescription: `${prefix} ALB 5xx responses`,
-      metric: alb.metrics.httpCodeElb(elbv2.HttpCodeElb.ELB_5XX_COUNT, { period: Duration.minutes(5), statistic: 'Sum' }),
+      metric: alb.metrics.httpCodeElb(elbv2.HttpCodeElb.ELB_5XX_COUNT, {
+        period: Duration.minutes(5),
+        statistic: 'Sum',
+      }),
       threshold: 10,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,

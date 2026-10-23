@@ -2,7 +2,14 @@
  * Runtime reverse proxy to the API for local development and e2e (API_PROXY_URL). In AWS the ALB
  * routes these paths to the API service directly and this handler is never reached.
  */
-const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'host', 'content-length']);
+const HOP_BY_HOP = new Set([
+  'connection',
+  'keep-alive',
+  'transfer-encoding',
+  'upgrade',
+  'host',
+  'content-length',
+]);
 /** Client-supplied forwarding headers are dropped: the API trusts exactly one proxy hop (this one). */
 const SPOOFABLE = new Set(['x-forwarded-for', 'x-real-ip', 'forwarded']);
 
@@ -28,5 +35,8 @@ export async function proxyToApi(req: Request): Promise<Response> {
     if (!HOP_BY_HOP.has(k) && k !== 'set-cookie' && k !== 'content-encoding') out.set(k, v);
   });
   for (const c of res.headers.getSetCookie()) out.append('set-cookie', c);
-  return new Response(res.status === 204 || res.status === 304 ? null : await res.arrayBuffer(), { status: res.status, headers: out });
+  return new Response(res.status === 204 || res.status === 304 ? null : await res.arrayBuffer(), {
+    status: res.status,
+    headers: out,
+  });
 }

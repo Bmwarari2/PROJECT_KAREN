@@ -49,10 +49,7 @@
               "payer": "employer",
               "minServiceYears": 1,
               "waitingDays": 7,
-              "noWaitingDaysFor": [
-                "work_accident",
-                "occupational_disease"
-              ],
+              "noWaitingDaysFor": ["work_accident", "occupational_disease"],
               "medicalCertificateWithinHours": 48,
               "firstRatePercentOfGross": 90,
               "secondRatePercentOfGross": 66.66,
@@ -136,13 +133,7 @@
               }
             ],
             "serviceMeasuredAt": "date_dismissal_letter_sent",
-            "noNoticeFor": [
-              "faute_grave",
-              "faute_lourde",
-              "inaptitude",
-              "force_majeure",
-              "csp_acceptance"
-            ],
+            "noNoticeFor": ["faute_grave", "faute_lourde", "inaptitude", "force_majeure", "csp_acceptance"],
             "disabledWorker": {
               "doubled": true,
               "capMonths": 3
@@ -193,9 +184,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -216,9 +205,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -239,9 +226,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -262,9 +247,7 @@
         "day": 8
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -285,9 +268,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -308,9 +289,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -331,9 +310,7 @@
         "day": 14
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -354,9 +331,7 @@
         "day": 15
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -377,9 +352,7 @@
         "day": 1
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -400,9 +373,7 @@
         "day": 11
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -423,9 +394,7 @@
         "day": 25
       },
       "observance": "none",
-      "regions": [
-        "*"
-      ],
+      "regions": ["*"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -446,11 +415,7 @@
         "day": 26
       },
       "observance": "none",
-      "regions": [
-        "FR-57",
-        "FR-67",
-        "FR-68"
-      ],
+      "regions": ["FR-57", "FR-67", "FR-68"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {
@@ -471,11 +436,7 @@
         "calendar": "western"
       },
       "observance": "none",
-      "regions": [
-        "FR-57",
-        "FR-67",
-        "FR-68"
-      ],
+      "regions": ["FR-57", "FR-67", "FR-68"],
       "effectiveFrom": "2026-01-01",
       "effectiveTo": null,
       "source": {

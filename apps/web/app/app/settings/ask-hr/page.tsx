@@ -1,7 +1,24 @@
 'use client';
 import * as React from 'react';
 import { Bot, FolderPlus, RefreshCw } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Select, Skeleton, Table, TD, TH, THead, TR, Textarea, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Select,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  Textarea,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate, formatDateTime, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -24,8 +41,22 @@ interface Settings {
   policyDocumentIds: string[];
   folders: Array<{ id: string; name: string; visibility: string }>;
   candidateDocuments: Array<{ id: string; title: string; folderId: string | null }>;
-  documents: Array<{ id: string; title: string; status: string; chunks: number; sanitisedChunks: number; indexedAt: string | null }>;
-  stats: { questions: number; answered: number; refused: number; noAnswer: number; helpful: number; notHelpful: number };
+  documents: Array<{
+    id: string;
+    title: string;
+    status: string;
+    chunks: number;
+    sanitisedChunks: number;
+    indexedAt: string | null;
+  }>;
+  stats: {
+    questions: number;
+    answered: number;
+    refused: number;
+    noAnswer: number;
+    helpful: number;
+    notHelpful: number;
+  };
 }
 
 export default function AskHrSettingsPage() {
@@ -45,13 +76,20 @@ export default function AskHrSettingsPage() {
     if (!s) return;
     setFolders(s.policyFolderIds);
     setDocs(s.policyDocumentIds);
-    setPolicy((p) => ({ ...p, folderId: p.folderId && s.policyFolderIds.includes(p.folderId) ? p.folderId : (s.policyFolderIds[0] ?? '') }));
+    setPolicy((p) => ({
+      ...p,
+      folderId:
+        p.folderId && s.policyFolderIds.includes(p.folderId) ? p.folderId : (s.policyFolderIds[0] ?? ''),
+    }));
   }, [s]);
 
   const fail = (err: unknown) => {
     const detail = err instanceof ApiProblem ? (err.body.detail as string | undefined) : undefined;
     const key = `askHr.errors.${detail}`;
-    toast({ title: detail && t(key) !== key ? t(key) : err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
+    toast({
+      title: detail && t(key) !== key ? t(key) : err instanceof ApiProblem ? err.title : t('common.error'),
+      tone: 'danger',
+    });
   };
   async function run(name: string, fn: () => Promise<void>) {
     setBusy(name);
@@ -70,9 +108,10 @@ export default function AskHrSettingsPage() {
       toast({ title: t('askHr.settings.saved'), tone: 'success' });
     });
 
-  if (settings.error) return <EmptyState icon={<Bot aria-hidden />} title={settings.error.title} />;
+  if (settings.error) return <EmptyState level={1} icon={<Bot aria-hidden />} title={settings.error.title} />;
   if (!s) return <Skeleton className="h-96 w-full" />;
-  const toggle = (list: string[], id: string, on: boolean) => (on ? [...new Set([...list, id])] : list.filter((x) => x !== id));
+  const toggle = (list: string[], id: string, on: boolean) =>
+    on ? [...new Set([...list, id])] : list.filter((x) => x !== id);
   const canToggle = s.available && s.entitled && s.canManageFlag;
 
   return (
@@ -82,10 +121,16 @@ export default function AskHrSettingsPage() {
       <Card className="flex flex-col gap-3">
         <CardTitle>{t('askHr.settings.status')}</CardTitle>
         <p className="text-callout" data-testid="ai-region">
-          {s.available && s.model ? t('askHr.settings.regionAvailable', { awsRegion: s.awsRegion, model: s.model.name }) : t('askHr.settings.regionUnavailable', { awsRegion: s.awsRegion })}
+          {s.available && s.model
+            ? t('askHr.settings.regionAvailable', { awsRegion: s.awsRegion, model: s.model.name })
+            : t('askHr.settings.regionUnavailable', { awsRegion: s.awsRegion })}
         </p>
-        <p className="text-footnote text-text-secondary">{t('askHr.settings.verified', { date: formatDate(s.verifiedOn, locale) })}</p>
-        {s.available && !s.entitled ? <p className="text-callout text-text-secondary">{t('askHr.settings.notEntitled')}</p> : null}
+        <p className="text-footnote text-text-secondary">
+          {t('askHr.settings.verified', { date: formatDate(s.verifiedOn, locale) })}
+        </p>
+        {s.available && !s.entitled ? (
+          <p className="text-callout text-text-secondary">{t('askHr.settings.notEntitled')}</p>
+        ) : null}
         <div className="flex items-center gap-3">
           <input
             id="ai-enabled"
@@ -101,7 +146,9 @@ export default function AskHrSettingsPage() {
           <label htmlFor="ai-enabled" className="text-callout font-semibold">
             {t('askHr.settings.switchLabel')}
           </label>
-          <Badge tone={s.enabled ? 'success' : 'neutral'}>{s.enabled ? t('askHr.settings.on') : t('askHr.settings.off')}</Badge>
+          <Badge tone={s.enabled ? 'success' : 'neutral'}>
+            {s.enabled ? t('askHr.settings.on') : t('askHr.settings.off')}
+          </Badge>
         </div>
         {!s.canManageFlag ? (
           <p id="ai-enabled-hint" className="text-footnote text-text-secondary">
@@ -118,9 +165,17 @@ export default function AskHrSettingsPage() {
             <legend className="sr-only">{t('askHr.settings.folders')}</legend>
             {s.folders.map((f) => (
               <label key={f.id} className="flex items-center gap-3 text-callout">
-                <input type="checkbox" checked={folders.includes(f.id)} disabled={f.visibility !== 'everyone'} onChange={(e) => setFolders(toggle(folders, f.id, e.target.checked))} className="h-5 w-5 accent-[var(--color-accent)]" />
+                <input
+                  type="checkbox"
+                  checked={folders.includes(f.id)}
+                  disabled={f.visibility !== 'everyone'}
+                  onChange={(e) => setFolders(toggle(folders, f.id, e.target.checked))}
+                  className="h-5 w-5 accent-[var(--color-accent)]"
+                />
                 <span>{f.name}</span>
-                {f.visibility !== 'everyone' ? <Badge tone="neutral">{t('askHr.settings.notEveryone')}</Badge> : null}
+                {f.visibility !== 'everyone' ? (
+                  <Badge tone="neutral">{t('askHr.settings.notEveryone')}</Badge>
+                ) : null}
               </label>
             ))}
           </fieldset>
@@ -129,14 +184,30 @@ export default function AskHrSettingsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               void run('folder', async () => {
-                const { id } = await api<{ id: string }>('/v1/document-folders', { method: 'POST', json: { name: newFolder.trim(), visibility: 'everyone' } });
+                const { id } = await api<{ id: string }>('/v1/document-folders', {
+                  method: 'POST',
+                  json: { name: newFolder.trim(), visibility: 'everyone' },
+                });
                 setNewFolder('');
-                settings.setData(await api<Settings>('/v1/ai/settings', { method: 'PUT', json: { policyFolderIds: [...folders, id], policyDocumentIds: docs } }));
+                settings.setData(
+                  await api<Settings>('/v1/ai/settings', {
+                    method: 'PUT',
+                    json: { policyFolderIds: [...folders, id], policyDocumentIds: docs },
+                  }),
+                );
               });
             }}
           >
             <Field id="ai-new-folder" label={t('askHr.settings.newFolder')} className="flex-1">
-              {(p) => <Input {...p} required maxLength={120} value={newFolder} onChange={(e) => setNewFolder(e.target.value)} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={120}
+                  value={newFolder}
+                  onChange={(e) => setNewFolder(e.target.value)}
+                />
+              )}
             </Field>
             <Button type="submit" variant="secondary" loading={busy === 'folder'}>
               <FolderPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -151,14 +222,22 @@ export default function AskHrSettingsPage() {
                 .filter((d) => !d.folderId || !folders.includes(d.folderId))
                 .map((d) => (
                   <label key={d.id} className="flex items-center gap-3 text-callout">
-                    <input type="checkbox" checked={docs.includes(d.id)} onChange={(e) => setDocs(toggle(docs, d.id, e.target.checked))} className="h-5 w-5 accent-[var(--color-accent)]" />
+                    <input
+                      type="checkbox"
+                      checked={docs.includes(d.id)}
+                      onChange={(e) => setDocs(toggle(docs, d.id, e.target.checked))}
+                      className="h-5 w-5 accent-[var(--color-accent)]"
+                    />
                     <span>{d.title}</span>
                   </label>
                 ))}
             </fieldset>
           ) : null}
           <div>
-            <Button onClick={() => put({ policyFolderIds: folders, policyDocumentIds: docs })} loading={busy === 'save'}>
+            <Button
+              onClick={() => put({ policyFolderIds: folders, policyDocumentIds: docs })}
+              loading={busy === 'save'}
+            >
               {t('askHr.settings.saveSources')}
             </Button>
           </div>
@@ -182,7 +261,15 @@ export default function AskHrSettingsPage() {
             }}
           >
             <Field id="ai-policy-title" label={t('askHr.settings.policyTitle')}>
-              {(p) => <Input {...p} required maxLength={200} value={policy.title} onChange={(e) => setPolicy({ ...policy, title: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={200}
+                  value={policy.title}
+                  onChange={(e) => setPolicy({ ...policy, title: e.target.value })}
+                />
+              )}
             </Field>
             {s.policyFolderIds.length > 1 ? (
               <Field id="ai-policy-folder" label={t('askHr.settings.policyFolder')}>
@@ -192,13 +279,24 @@ export default function AskHrSettingsPage() {
                     aria-describedby={p['aria-describedby']}
                     value={policy.folderId}
                     onValueChange={(v) => setPolicy({ ...policy, folderId: v })}
-                    options={s.folders.filter((f) => s.policyFolderIds.includes(f.id)).map((f) => ({ value: f.id, label: f.name }))}
+                    options={s.folders
+                      .filter((f) => s.policyFolderIds.includes(f.id))
+                      .map((f) => ({ value: f.id, label: f.name }))}
                   />
                 )}
               </Field>
             ) : null}
             <Field id="ai-policy-body" label={t('askHr.settings.policyBody')}>
-              {(p) => <Textarea {...p} required rows={8} maxLength={200_000} value={policy.body} onChange={(e) => setPolicy({ ...policy, body: e.target.value })} />}
+              {(p) => (
+                <Textarea
+                  {...p}
+                  required
+                  rows={8}
+                  maxLength={200_000}
+                  value={policy.body}
+                  onChange={(e) => setPolicy({ ...policy, body: e.target.value })}
+                />
+              )}
             </Field>
             <div>
               <Button type="submit" loading={busy === 'policy'} disabled={!policy.folderId}>
@@ -247,11 +345,23 @@ export default function AskHrSettingsPage() {
                   <TR key={d.id}>
                     <TD>{d.title}</TD>
                     <TD>
-                      <Badge tone={d.status === 'indexed' ? 'success' : d.status === 'pending' ? 'neutral' : 'warning'}>{t(`askHr.settings.state.${d.status}`)}</Badge>
-                      {d.sanitisedChunks ? <span className="ml-2 text-footnote text-text-secondary">{t('askHr.settings.sanitised')}</span> : null}
+                      <Badge
+                        tone={
+                          d.status === 'indexed' ? 'success' : d.status === 'pending' ? 'neutral' : 'warning'
+                        }
+                      >
+                        {t(`askHr.settings.state.${d.status}`)}
+                      </Badge>
+                      {d.sanitisedChunks ? (
+                        <span className="ml-2 text-footnote text-text-secondary">
+                          {t('askHr.settings.sanitised')}
+                        </span>
+                      ) : null}
                     </TD>
                     <TD>{formatNumber(d.chunks, locale)}</TD>
-                    <TD>{d.indexedAt ? formatDateTime(d.indexedAt, locale, session?.timeZone ?? 'UTC') : '—'}</TD>
+                    <TD>
+                      {d.indexedAt ? formatDateTime(d.indexedAt, locale, session?.timeZone ?? 'UTC') : '—'}
+                    </TD>
                   </TR>
                 ))}
               </tbody>

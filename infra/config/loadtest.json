@@ -1,0 +1,93 @@
+{
+  "env": "loadtest",
+  "account": "247115937622",
+  "domain": null,
+  "hostedZoneId": null,
+  "alarmEmail": null,
+  "globalBaseUrl": null,
+  "regionalUrls": {},
+  "logRetentionDays": 7,
+  "natGateways": 1,
+  "aurora": {
+    "minAcu": 2,
+    "maxAcu": 64,
+    "backupRetentionDays": 1,
+    "deletionProtection": false
+  },
+  "valkey": {
+    "nodeType": "cache.r7g.large",
+    "replicas": 1
+  },
+  "backup": {
+    "dailyRetentionDays": 1,
+    "continuousRetentionDays": 1,
+    "copyRetentionDays": 1
+  },
+  "services": {
+    "api": {
+      "cpu": 1024,
+      "memoryMiB": 2048,
+      "desiredCount": 6,
+      "minCapacity": 6,
+      "maxCapacity": 40
+    },
+    "worker": {
+      "cpu": 1024,
+      "memoryMiB": 2048,
+      "desiredCount": 2,
+      "minCapacity": 2,
+      "maxCapacity": 10
+    },
+    "web": {
+      "cpu": 512,
+      "memoryMiB": 1024,
+      "desiredCount": 2,
+      "minCapacity": 2,
+      "maxCapacity": 6
+    }
+  },
+  "wafRateLimitPer5Min": 20000000,
+  "global": {
+    "certificateArn": null,
+    "monthlyBudgetUsd": 50,
+    "services": {
+      "api": {
+        "cpu": 256,
+        "memoryMiB": 512,
+        "desiredCount": 1,
+        "minCapacity": 1,
+        "maxCapacity": 2
+      },
+      "web": {
+        "cpu": 256,
+        "memoryMiB": 512,
+        "desiredCount": 1,
+        "minCapacity": 1,
+        "maxCapacity": 2
+      }
+    }
+  },
+  "cells": {
+    "uk": {
+      "certificateArn": null,
+      "monthlyBudgetUsd": 300
+    },
+    "eu": {
+      "certificateArn": null,
+      "monthlyBudgetUsd": 50
+    },
+    "us": {
+      "certificateArn": null,
+      "monthlyBudgetUsd": 50
+    }
+  },
+  "billingConfigLocation": "builtin:billing-config-v1",
+  "loadTest": {
+    "ipThrottleMultiplier": 1000
+  },
+  "ci": {
+    "githubRepository": "Bmwarari2/PROJECT_KAREN",
+    "githubEnvironment": "loadtest",
+    "oidcProviderArn": null
+  }
+}

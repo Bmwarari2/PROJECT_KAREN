@@ -9,8 +9,27 @@ import type { AiSources } from './flags';
  * employee: personal documents always carry employee_id).
  */
 export const PERSONAL_CATEGORIES = [
-  'payslip', 'contract', 'immigration', 'health', 'medical', 'fit_note', 'sick_note', 'rtw', 'right_to_work', 'i9', 'i-9',
-  'signed', 'letter', 'disability', 'diversity', 'eeo', 'disciplinary', 'grievance', 'performance', 'offer', 'personal',
+  'payslip',
+  'contract',
+  'immigration',
+  'health',
+  'medical',
+  'fit_note',
+  'sick_note',
+  'rtw',
+  'right_to_work',
+  'i9',
+  'i-9',
+  'signed',
+  'letter',
+  'disability',
+  'diversity',
+  'eeo',
+  'disciplinary',
+  'grievance',
+  'performance',
+  'offer',
+  'personal',
 ];
 
 export interface PolicyDoc {
@@ -38,18 +57,28 @@ export async function eligiblePolicyDocs(tx: Tx, src: AiSources): Promise<Policy
 /** Why a requested source is not acceptable, or null when every source is acceptable. */
 export async function invalidSources(tx: Tx, src: AiSources): Promise<string | null> {
   if (src.policyFolderIds.length) {
-    const folders = await tx.query<{ id: string; visibility: string }>(`SELECT id, visibility FROM app.document_folders WHERE id = ANY($1::uuid[])`, [src.policyFolderIds]);
+    const folders = await tx.query<{ id: string; visibility: string }>(
+      `SELECT id, visibility FROM app.document_folders WHERE id = ANY($1::uuid[])`,
+      [src.policyFolderIds],
+    );
     if (folders.length !== new Set(src.policyFolderIds).size) return 'policyFolderNotFound';
     if (folders.some((f) => f.visibility !== 'everyone')) return 'policyFolderMustBeVisibleToEveryone';
   }
   if (src.policyDocumentIds.length) {
-    const docs = await tx.query<{ id: string; employee_id: string | null; category: string; visibility: string | null; status: string }>(
+    const docs = await tx.query<{
+      id: string;
+      employee_id: string | null;
+      category: string;
+      visibility: string | null;
+      status: string;
+    }>(
       `SELECT d.id, d.employee_id, d.category, f.visibility, d.status FROM app.documents d
          LEFT JOIN app.document_folders f ON f.tenant_id = d.tenant_id AND f.id = d.folder_id WHERE d.id = ANY($1::uuid[])`,
       [src.policyDocumentIds],
     );
     if (docs.length !== new Set(src.policyDocumentIds).size) return 'policyDocumentNotFound';
-    if (docs.some((d) => d.employee_id !== null || PERSONAL_CATEGORIES.includes(d.category))) return 'personalDocumentNotAllowed';
+    if (docs.some((d) => d.employee_id !== null || PERSONAL_CATEGORIES.includes(d.category)))
+      return 'personalDocumentNotAllowed';
     if (docs.some((d) => d.visibility !== 'everyone')) return 'policyDocumentMustBeVisibleToEveryone';
   }
   return null;
@@ -62,7 +91,11 @@ export interface IndexResult {
 }
 
 /** Reads and chunks one document (outside any transaction: object storage and PDF parsing can be slow). */
-export async function buildChunks(deps: Pick<Deps, 'objects'>, doc: Pick<PolicyDoc, 'content_type' | 'file_key'>, bytes?: Buffer): Promise<IndexResult> {
+export async function buildChunks(
+  deps: Pick<Deps, 'objects'>,
+  doc: Pick<PolicyDoc, 'content_type' | 'file_key'>,
+  bytes?: Buffer,
+): Promise<IndexResult> {
   if (!INDEXABLE_TYPES.has(doc.content_type)) return { status: 'unsupported', chunks: [] };
   try {
     const data = bytes ?? (await deps.objects.get(doc.file_key));
@@ -71,19 +104,35 @@ export async function buildChunks(deps: Pick<Deps, 'objects'>, doc: Pick<PolicyD
     const chunks = chunkText(extracted.pages, extracted.paged);
     return chunks.length ? { status: 'indexed', chunks } : { status: 'empty', chunks: [] };
   } catch (err) {
-    return { status: 'failed', chunks: [], errorCode: err instanceof Error ? err.name.slice(0, 60) : 'Error' };
+    return {
+      status: 'failed',
+      chunks: [],
+      errorCode: err instanceof Error ? err.name.slice(0, 60) : 'Error',
+    };
   }
 }
 
 /** Replaces a document's chunks and records its index state (idempotent per document version). */
-export async function writeIndex(tx: Tx, doc: Pick<PolicyDoc, 'id' | 'sha256'>, res: IndexResult): Promise<void> {
+export async function writeIndex(
+  tx: Tx,
+  doc: Pick<PolicyDoc, 'id' | 'sha256'>,
+  res: IndexResult,
+): Promise<void> {
   await tx.exec(`DELETE FROM app.ai_policy_chunks WHERE document_id = $1`, [doc.id]);
   if (res.chunks.length) {
     await tx.exec(
       `INSERT INTO app.ai_policy_chunks (tenant_id, document_id, doc_sha256, ordinal, heading, page, content, sanitised)
        SELECT app.current_tenant(), $1, $2, x.o, x.h, x.p, x.c, x.s
          FROM unnest($3::int[], $4::text[], $5::int[], $6::text[], $7::bool[]) AS x(o, h, p, c, s)`,
-      [doc.id, doc.sha256, res.chunks.map((c) => c.ordinal), res.chunks.map((c) => c.heading), res.chunks.map((c) => c.page), res.chunks.map((c) => c.content.slice(0, 4000)), res.chunks.map((c) => c.sanitised)],
+      [
+        doc.id,
+        doc.sha256,
+        res.chunks.map((c) => c.ordinal),
+        res.chunks.map((c) => c.heading),
+        res.chunks.map((c) => c.page),
+        res.chunks.map((c) => c.content.slice(0, 4000)),
+        res.chunks.map((c) => c.sanitised),
+      ],
     );
   }
   await tx.exec(
@@ -91,13 +140,22 @@ export async function writeIndex(tx: Tx, doc: Pick<PolicyDoc, 'id' | 'sha256'>, 
      VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, now())
      ON CONFLICT (tenant_id, document_id) DO UPDATE SET sha256 = EXCLUDED.sha256, status = EXCLUDED.status, chunk_count = EXCLUDED.chunk_count,
        sanitised_chunks = EXCLUDED.sanitised_chunks, error_code = EXCLUDED.error_code, indexed_at = EXCLUDED.indexed_at`,
-    [doc.id, doc.sha256, res.status, res.chunks.length, res.chunks.filter((c) => c.sanitised).length, res.errorCode ?? null],
+    [
+      doc.id,
+      doc.sha256,
+      res.status,
+      res.chunks.length,
+      res.chunks.filter((c) => c.sanitised).length,
+      res.errorCode ?? null,
+    ],
   );
 }
 
 /** Drops chunks and index state of documents that are no longer policy sources. */
 export async function pruneIndex(tx: Tx, keepIds: string[]): Promise<number> {
-  const a = await tx.exec(`DELETE FROM app.ai_policy_chunks WHERE NOT (document_id = ANY($1::uuid[]))`, [keepIds]);
+  const a = await tx.exec(`DELETE FROM app.ai_policy_chunks WHERE NOT (document_id = ANY($1::uuid[]))`, [
+    keepIds,
+  ]);
   await tx.exec(`DELETE FROM app.ai_index_state WHERE NOT (document_id = ANY($1::uuid[]))`, [keepIds]);
   return a;
 }
@@ -114,7 +172,11 @@ export interface RetrievedChunk {
 
 export const MAX_EXCERPTS = 5;
 const FUZZY_THRESHOLD = 0.5;
-const STOPWORDS = new Set('a about all am an and any are as at be can could do does for from get got have how i if in is it its me my of on or our should so that the their there they this to us was we what when where which who why will with would you your'.split(' '));
+const STOPWORDS = new Set(
+  'a about all am an and any are as at be can could do does for from get got have how i if in is it its me my of on or our should so that the their there they this to us was we what when where which who why will with would you your'.split(
+    ' ',
+  ),
+);
 
 /** The question without stop words and placeholders, for the trigram fallback (null when nothing is left). */
 export function significantWords(question: string): string | null {

@@ -1,6 +1,12 @@
 import type { Tx } from '@thapsus/db';
 import { emitEvent } from '@thapsus/db';
-import { actionMatches, fieldAccess, type Principal, type RoleGrant, type Target } from '@thapsus/core/permissions';
+import {
+  actionMatches,
+  fieldAccess,
+  type Principal,
+  type RoleGrant,
+  type Target,
+} from '@thapsus/core/permissions';
 import { ApiError } from '../../http/errors';
 import { FIELDS, REQUIRED, SECTION_TABLE, permKeyFor, sectionsOf, type Section } from './model';
 
@@ -10,7 +16,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Target attributes used by scope checks: entity, country, department, location and manager chain. */
 export async function loadTarget(tx: Tx, employeeId: string): Promise<Target & { employeeId: string }> {
-  const row = await tx.maybe<{ entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; chain: string[] | null }>(
+  const row = await tx.maybe<{
+    entity_id: string | null;
+    country: string | null;
+    department_id: string | null;
+    location_id: string | null;
+    chain: string[] | null;
+  }>(
     `WITH RECURSIVE up AS (
        SELECT id, manager_id, 0 AS depth FROM app.employees WHERE id = $1
        UNION ALL
@@ -106,7 +118,12 @@ export interface EmployeeListFilter {
 }
 
 /** WHERE clauses (alias `e`) shared by the people list and its export: scope for `action`, then filters. */
-export function employeeListWhere(p: Principal, action: string, f: EmployeeListFilter, params: unknown[]): string[] {
+export function employeeListWhere(
+  p: Principal,
+  action: string,
+  f: EmployeeListFilter,
+  params: unknown[],
+): string[] {
   const where: string[] = [scopePredicate(p, action, params)];
   const add = (v: unknown) => (params.push(v), `$${params.length}`);
   if (!f.status || f.status !== 'all') where.push(`e.status = ${add(f.status ?? 'active')}`);
@@ -120,7 +137,9 @@ export function employeeListWhere(p: Principal, action: string, f: EmployeeListF
     // Full-text (words, number, email, title), substring, and trigram word similarity so a misspelt
     // name still matches (`<%` uses the gin_trgm_ops index on display_name).
     const t = add(term);
-    where.push(`(e.search @@ plainto_tsquery('simple', ${t}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${t} OR ${t} <% e.display_name)`);
+    where.push(
+      `(e.search @@ plainto_tsquery('simple', ${t}) OR e.display_name ILIKE ${add(`%${term.replace(/[%_\\]/g, '\\$&')}%`)} OR e.employee_number = ${t} OR ${t} <% e.display_name)`,
+    );
   }
   return where;
 }
@@ -141,8 +160,22 @@ export function managerChainSql(p: Principal): string {
 }
 
 /** Field-level target for a list row selected with managerChainSql AS chain. */
-export function rowTarget(r: { id: string; entity_id: string | null; country: string | null; department_id: string | null; location_id: string | null; chain: Array<string | null> | null }): Target & { employeeId: string } {
-  return { employeeId: r.id, entityId: r.entity_id, country: r.country, departmentId: r.department_id, locationId: r.location_id, managerChain: (r.chain ?? []).filter((m): m is string => !!m) };
+export function rowTarget(r: {
+  id: string;
+  entity_id: string | null;
+  country: string | null;
+  department_id: string | null;
+  location_id: string | null;
+  chain: Array<string | null> | null;
+}): Target & { employeeId: string } {
+  return {
+    employeeId: r.id,
+    entityId: r.entity_id,
+    country: r.country,
+    departmentId: r.department_id,
+    locationId: r.location_id,
+    managerChain: (r.chain ?? []).filter((m): m is string => !!m),
+  };
 }
 
 // ---- Reading -------------------------------------------------------------------------------
@@ -185,12 +218,19 @@ export async function employeeAsOf(tx: Tx, id: string, asOf: string): Promise<Em
   const view: EmployeeView = {
     id,
     employeeNumber: e.employee_number,
-    status: e.end_date && (e.end_date as string) < asOf ? 'leaver' : (e.start_date as string) > asOf ? 'pre_start' : 'active',
+    status:
+      e.end_date && (e.end_date as string) < asOf
+        ? 'leaver'
+        : (e.start_date as string) > asOf
+          ? 'pre_start'
+          : 'active',
     startDate: e.start_date,
     endDate: e.end_date,
     workEmail: e.work_email,
     workPhone: e.work_phone,
-    displayName: personal ? `${(personal.preferred_name as string) || personal.legal_first_name} ${personal.legal_last_name}` : e.display_name,
+    displayName: personal
+      ? `${(personal.preferred_name as string) || personal.legal_first_name} ${personal.legal_last_name}`
+      : e.display_name,
     managerId: manager?.manager_id ?? null,
     manager: manager ? { id: manager.manager_id, displayName: manager.display_name } : null,
     department: job?.department_name ?? null,
@@ -216,7 +256,12 @@ export async function employeeAsOf(tx: Tx, id: string, asOf: string): Promise<Em
 }
 
 /** Removes fields the principal may not read (identically enforced for API and UI). */
-export function filterFields(p: Principal, view: EmployeeView, target: Target, extraAlways: string[] = []): EmployeeView {
+export function filterFields(
+  p: Principal,
+  view: EmployeeView,
+  target: Target,
+  extraAlways: string[] = [],
+): EmployeeView {
   const out: EmployeeView = { id: view.id };
   for (const [k, v] of Object.entries(view)) {
     if (k === 'id' || extraAlways.includes(k)) {
@@ -225,7 +270,8 @@ export function filterFields(p: Principal, view: EmployeeView, target: Target, e
     }
     if (k === 'custom' && v && typeof v === 'object') {
       const allowed: Record<string, unknown> = {};
-      for (const [ck, cv] of Object.entries(v)) if (fieldAccess(p, 'employee', `custom.${ck}`, target) !== 'none') allowed[ck] = cv;
+      for (const [ck, cv] of Object.entries(v))
+        if (fieldAccess(p, 'employee', `custom.${ck}`, target) !== 'none') allowed[ck] = cv;
       if (Object.keys(allowed).length) out.custom = allowed;
       continue;
     }
@@ -276,18 +322,44 @@ export async function contactsAsOf(tx: Tx, employeeId: string, date: string) {
  * Replaces the contact list in force from `date`: contacts covering `date` are closed on it (or
  * replaced when they start on it), the new list runs until the next future-dated list, if any.
  */
-export async function replaceContacts(tx: Tx, employeeId: string, date: string, contacts: ContactInput[], actor: string | null) {
+export async function replaceContacts(
+  tx: Tx,
+  employeeId: string,
+  date: string,
+  contacts: ContactInput[],
+  actor: string | null,
+) {
   const rows = contacts.map((c, i) => ({ ...c, priority: c.priority ?? i + 1 }));
   const priorities = rows.map((r) => r.priority);
-  if (new Set(priorities).size !== priorities.length) throw new ApiError('validation', 'Each contact needs a different priority');
-  const next = await tx.maybe<{ valid_from: string | null }>(`SELECT min(valid_from)::text AS valid_from FROM app.emergency_contacts WHERE employee_id = $1 AND valid_from > $2`, [employeeId, date]);
-  await tx.exec(`DELETE FROM app.emergency_contacts WHERE employee_id = $1 AND valid_from = $2`, [employeeId, date]);
-  await tx.exec(`UPDATE app.emergency_contacts SET valid_to = $2 WHERE employee_id = $1 AND valid_from < $2 AND (valid_to IS NULL OR valid_to > $2)`, [employeeId, date]);
+  if (new Set(priorities).size !== priorities.length)
+    throw new ApiError('validation', 'Each contact needs a different priority');
+  const next = await tx.maybe<{ valid_from: string | null }>(
+    `SELECT min(valid_from)::text AS valid_from FROM app.emergency_contacts WHERE employee_id = $1 AND valid_from > $2`,
+    [employeeId, date],
+  );
+  await tx.exec(`DELETE FROM app.emergency_contacts WHERE employee_id = $1 AND valid_from = $2`, [
+    employeeId,
+    date,
+  ]);
+  await tx.exec(
+    `UPDATE app.emergency_contacts SET valid_to = $2 WHERE employee_id = $1 AND valid_from < $2 AND (valid_to IS NULL OR valid_to > $2)`,
+    [employeeId, date],
+  );
   for (const c of rows) {
     await tx.exec(
       `INSERT INTO app.emergency_contacts (tenant_id, employee_id, name, relationship, phone, email, priority, valid_from, valid_to, created_by)
        VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [employeeId, c.name, c.relationship ?? null, c.phone ?? null, c.email ?? null, c.priority, date, next?.valid_from ?? null, actor],
+      [
+        employeeId,
+        c.name,
+        c.relationship ?? null,
+        c.phone ?? null,
+        c.email ?? null,
+        c.priority,
+        date,
+        next?.valid_from ?? null,
+        actor,
+      ],
     );
   }
 }
@@ -300,8 +372,10 @@ function toColumns(values: Record<string, unknown>) {
   for (const [k, v] of Object.entries(values)) {
     const def = FIELDS[k];
     if (!def) continue;
-    if (def.enum && v !== null && !def.enum.includes(String(v))) throw new ApiError('validation', `Invalid ${k}`);
-    if (def.type === 'uuid' && v !== null && !UUID.test(String(v))) throw new ApiError('validation', `Invalid ${k}`);
+    if (def.enum && v !== null && !def.enum.includes(String(v)))
+      throw new ApiError('validation', `Invalid ${k}`);
+    if (def.type === 'uuid' && v !== null && !UUID.test(String(v)))
+      throw new ApiError('validation', `Invalid ${k}`);
     cols.push(def.column);
     vals.push(def.type === 'json' && v !== null ? JSON.stringify(v) : v);
   }
@@ -313,7 +387,14 @@ function toColumns(values: Record<string, unknown>) {
  * the new record inherits unchanged values and runs until the old record's end, so later future-dated
  * records are preserved. A change on the record's own start date is a correction (update in place).
  */
-export async function applySectionChange(tx: Tx, employeeId: string, section: Exclude<Section, 'core'>, date: string, values: Record<string, unknown>, actor: string | null) {
+export async function applySectionChange(
+  tx: Tx,
+  employeeId: string,
+  section: Exclude<Section, 'core'>,
+  date: string,
+  values: Record<string, unknown>,
+  actor: string | null,
+) {
   const table = SECTION_TABLE[section];
   const current = await tx.maybe<Record<string, unknown>>(
     `SELECT * FROM ${table} WHERE employee_id = $1 AND valid_from <= $2 AND (valid_to IS NULL OR valid_to > $2) FOR UPDATE`,
@@ -326,7 +407,10 @@ export async function applySectionChange(tx: Tx, employeeId: string, section: Ex
     await tx.exec(`UPDATE ${table} SET ${sets} WHERE id = $1`, [current.id, ...vals]);
     return;
   }
-  const next = await tx.maybe<{ valid_from: string }>(`SELECT min(valid_from)::text AS valid_from FROM ${table} WHERE employee_id = $1 AND valid_from > $2`, [employeeId, date]);
+  const next = await tx.maybe<{ valid_from: string }>(
+    `SELECT min(valid_from)::text AS valid_from FROM ${table} WHERE employee_id = $1 AND valid_from > $2`,
+    [employeeId, date],
+  );
   let base: Record<string, unknown> = {};
   let validTo: string | null = next?.valid_from ?? null;
   if (current) {
@@ -335,7 +419,10 @@ export async function applySectionChange(tx: Tx, employeeId: string, section: Ex
     base = Object.fromEntries(
       Object.entries(FIELDS)
         .filter(([, d]) => d.section === section)
-        .map(([k, d]) => [k, d.type === 'json' && current[d.column] !== null ? current[d.column] : current[d.column]]),
+        .map(([k, d]) => [
+          k,
+          d.type === 'json' && current[d.column] !== null ? current[d.column] : current[d.column],
+        ]),
     );
   } else {
     const missing = REQUIRED[section].filter((f) => values[f] === undefined || values[f] === null);
@@ -348,7 +435,10 @@ export async function applySectionChange(tx: Tx, employeeId: string, section: Ex
       const def = FIELDS[field];
       if (!def || def.section !== section) continue;
       const v = def.type === 'json' && value !== null ? JSON.stringify(value) : value;
-      const old = def.type === 'json' && base[field] !== null && base[field] !== undefined ? JSON.stringify(base[field]) : base[field];
+      const old =
+        def.type === 'json' && base[field] !== null && base[field] !== undefined
+          ? JSON.stringify(base[field])
+          : base[field];
       await tx.exec(
         `UPDATE ${table} SET ${def.column} = $3 WHERE employee_id = $1 AND valid_from > $2 AND ${def.column} IS NOT DISTINCT FROM $4${def.type === 'json' ? '::jsonb' : ''}`,
         [employeeId, date, v, old ?? null],
@@ -377,7 +467,14 @@ export async function assertNoCycle(tx: Tx, employeeId: string, managerId: strin
   if (cycle) throw new ApiError('unprocessable', 'This would create a reporting cycle');
 }
 
-export async function setManager(tx: Tx, employeeId: string, managerId: string | null, date: string, kind: 'solid' | 'dotted' | 'matrix', actor: string | null) {
+export async function setManager(
+  tx: Tx,
+  employeeId: string,
+  managerId: string | null,
+  date: string,
+  kind: 'solid' | 'dotted' | 'matrix',
+  actor: string | null,
+) {
   if (managerId) {
     const exists = await tx.maybe('SELECT 1 FROM app.employees WHERE id = $1', [managerId]);
     if (!exists) throw new ApiError('validation', 'Unknown manager');
@@ -388,7 +485,10 @@ export async function setManager(tx: Tx, employeeId: string, managerId: string |
       `SELECT id, valid_from::text, valid_to::text FROM app.reporting_lines WHERE employee_id = $1 AND kind = 'solid' AND valid_from <= $2 AND (valid_to IS NULL OR valid_to > $2) FOR UPDATE`,
       [employeeId, date],
     );
-    const next = await tx.maybe<{ valid_from: string | null }>(`SELECT min(valid_from)::text AS valid_from FROM app.reporting_lines WHERE employee_id = $1 AND kind = 'solid' AND valid_from > $2`, [employeeId, date]);
+    const next = await tx.maybe<{ valid_from: string | null }>(
+      `SELECT min(valid_from)::text AS valid_from FROM app.reporting_lines WHERE employee_id = $1 AND kind = 'solid' AND valid_from > $2`,
+      [employeeId, date],
+    );
     if (cur) {
       if (cur.valid_from === date) await tx.exec('DELETE FROM app.reporting_lines WHERE id = $1', [cur.id]);
       else await tx.exec('UPDATE app.reporting_lines SET valid_to = $2 WHERE id = $1', [cur.id, date]);
@@ -407,9 +507,22 @@ export async function setManager(tx: Tx, employeeId: string, managerId: string |
   }
 }
 
-export async function setCustomFields(tx: Tx, employeeId: string, values: Record<string, unknown>, date: string, actor: string | null) {
+export async function setCustomFields(
+  tx: Tx,
+  employeeId: string,
+  values: Record<string, unknown>,
+  date: string,
+  actor: string | null,
+) {
   for (const [key, value] of Object.entries(values)) {
-    const def = await tx.maybe<{ id: string; field_type: string; options: Array<{ value: string }>; required: boolean; validation: { min?: number; max?: number; pattern?: string }; effective_dated: boolean }>(
+    const def = await tx.maybe<{
+      id: string;
+      field_type: string;
+      options: Array<{ value: string }>;
+      required: boolean;
+      validation: { min?: number; max?: number; pattern?: string };
+      effective_dated: boolean;
+    }>(
       `SELECT id, field_type, options, required, validation, effective_dated FROM app.custom_field_definitions WHERE entity_type = 'employee' AND key = $1 AND NOT archived`,
       [key],
     );
@@ -417,28 +530,39 @@ export async function setCustomFields(tx: Tx, employeeId: string, values: Record
     validateCustomValue(def, value, key);
     if (def.field_type === 'file' && value) {
       // A file field points at an uploaded document about this person (or a company-wide document).
-      const doc = await tx.maybe(`SELECT 1 FROM app.documents WHERE id = $1 AND status = 'ready' AND (employee_id = $2 OR employee_id IS NULL)`, [(value as { documentId: string }).documentId, employeeId]);
+      const doc = await tx.maybe(
+        `SELECT 1 FROM app.documents WHERE id = $1 AND status = 'ready' AND (employee_id = $2 OR employee_id IS NULL)`,
+        [(value as { documentId: string }).documentId, employeeId],
+      );
       if (!doc) throw new ApiError('validation', `Invalid value for ${key}`);
     }
     const from = def.effective_dated ? date : '-infinity';
-    await tx.exec(`DELETE FROM app.custom_field_values WHERE field_id = $1 AND record_id = $2 AND valid_from = $3::date`, [def.id, employeeId, from]);
+    await tx.exec(
+      `DELETE FROM app.custom_field_values WHERE field_id = $1 AND record_id = $2 AND valid_from = $3::date`,
+      [def.id, employeeId, from],
+    );
     if (def.effective_dated) {
-      await tx.exec(`UPDATE app.custom_field_values SET valid_to = $3 WHERE field_id = $1 AND record_id = $2 AND valid_from < $3 AND (valid_to IS NULL OR valid_to > $3)`, [def.id, employeeId, date]);
+      await tx.exec(
+        `UPDATE app.custom_field_values SET valid_to = $3 WHERE field_id = $1 AND record_id = $2 AND valid_from < $3 AND (valid_to IS NULL OR valid_to > $3)`,
+        [def.id, employeeId, date],
+      );
     }
     if (value !== null && value !== undefined) {
-      await tx.exec(`INSERT INTO app.custom_field_values (tenant_id, field_id, record_id, value, valid_from, created_by) VALUES (app.current_tenant(), $1, $2, $3, $4::date, $5)`, [
-        def.id,
-        employeeId,
-        JSON.stringify(value),
-        from,
-        actor,
-      ]);
+      await tx.exec(
+        `INSERT INTO app.custom_field_values (tenant_id, field_id, record_id, value, valid_from, created_by) VALUES (app.current_tenant(), $1, $2, $3, $4::date, $5)`,
+        [def.id, employeeId, JSON.stringify(value), from, actor],
+      );
     }
   }
 }
 
 export function validateCustomValue(
-  def: { field_type: string; options: Array<{ value: string }>; required: boolean; validation: { min?: number; max?: number; pattern?: string } },
+  def: {
+    field_type: string;
+    options: Array<{ value: string }>;
+    required: boolean;
+    validation: { min?: number; max?: number; pattern?: string };
+  },
   value: unknown,
   key: string,
 ) {
@@ -449,10 +573,19 @@ export function validateCustomValue(
   const opts = (def.options ?? []).map((o) => o.value);
   switch (def.field_type) {
     case 'text':
-      if (typeof value !== 'string' || (def.validation.pattern && !new RegExp(def.validation.pattern).test(value))) bad();
+      if (
+        typeof value !== 'string' ||
+        (def.validation.pattern && !new RegExp(def.validation.pattern).test(value))
+      )
+        bad();
       break;
     case 'number':
-      if (typeof value !== 'number' || (def.validation.min !== undefined && value < def.validation.min) || (def.validation.max !== undefined && value > def.validation.max)) bad();
+      if (
+        typeof value !== 'number' ||
+        (def.validation.min !== undefined && value < def.validation.min) ||
+        (def.validation.max !== undefined && value > def.validation.max)
+      )
+        bad();
       break;
     case 'date':
       if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) bad();
@@ -468,18 +601,30 @@ export function validateCustomValue(
       break;
     case 'currency': {
       const m = value as { amountMinor?: unknown; currency?: unknown };
-      if (typeof m !== 'object' || !Number.isInteger(m.amountMinor) || typeof m.currency !== 'string' || !/^[A-Z]{3}$/.test(m.currency)) bad();
+      if (
+        typeof m !== 'object' ||
+        !Number.isInteger(m.amountMinor) ||
+        typeof m.currency !== 'string' ||
+        !/^[A-Z]{3}$/.test(m.currency)
+      )
+        bad();
       break;
     }
     case 'file':
-      if (typeof value !== 'object' || !UUID.test(String((value as { documentId?: unknown }).documentId ?? ''))) bad();
+      if (
+        typeof value !== 'object' ||
+        !UUID.test(String((value as { documentId?: unknown }).documentId ?? ''))
+      )
+        bad();
       break;
   }
 }
 
 /** Every field the caller wants to write must be writable for this target (deny by default). */
 export function assertWritable(p: Principal, fields: string[], target: Target) {
-  const denied = fields.filter((f) => fieldAccess(p, 'employee', f.startsWith('custom.') ? f : permKeyFor(f), target) !== 'write');
+  const denied = fields.filter(
+    (f) => fieldAccess(p, 'employee', f.startsWith('custom.') ? f : permKeyFor(f), target) !== 'write',
+  );
   if (denied.length) throw new ApiError('forbidden', `Not allowed to change: ${denied.join(', ')}`);
 }
 
@@ -493,10 +638,17 @@ export interface ChangeInput {
 }
 
 /** Applies an employee change (permissions already checked) and returns the before/after diff. */
-export async function applyEmployeeChange(tx: Tx, id: string, b: ChangeInput, actor: string | null, topic = 'employee.changed') {
+export async function applyEmployeeChange(
+  tx: Tx,
+  id: string,
+  b: ChangeInput,
+  actor: string | null,
+  topic = 'employee.changed',
+) {
   const fields = Object.keys(b).filter((k) => k in FIELDS);
   const before = await employeeAsOf(tx, id, b.effectiveDate);
-  for (const f of fields.filter((x) => FIELDS[x]!.section === 'core')) await tx.exec(`UPDATE app.employees SET ${FIELDS[f]!.column} = $2 WHERE id = $1`, [id, b[f]]);
+  for (const f of fields.filter((x) => FIELDS[x]!.section === 'core'))
+    await tx.exec(`UPDATE app.employees SET ${FIELDS[f]!.column} = $2 WHERE id = $1`, [id, b[f]]);
   const sections = sectionsOf(b);
   for (const s of ['personal', 'job', 'pay', 'contract'] as const) {
     if (sections[s]) await applySectionChange(tx, id, s, b.effectiveDate, sections[s]!, actor);
@@ -504,17 +656,22 @@ export async function applyEmployeeChange(tx: Tx, id: string, b: ChangeInput, ac
   if (b.managerId !== undefined) await setManager(tx, id, b.managerId, b.effectiveDate, 'solid', actor);
   if (b.custom) await setCustomFields(tx, id, b.custom, b.effectiveDate, actor);
   if (b.reassignReportsTo) {
-    const reports = await tx.query<{ id: string }>('SELECT id FROM app.employees WHERE manager_id = $1', [id]);
+    const reports = await tx.query<{ id: string }>('SELECT id FROM app.employees WHERE manager_id = $1', [
+      id,
+    ]);
     for (const r of reports) await setManager(tx, r.id, b.reassignReportsTo, b.effectiveDate, 'solid', actor);
   }
   await refreshCurrent(tx, id);
   const after = await employeeAsOf(tx, id, b.effectiveDate);
   const diff: Record<string, { from: unknown; to: unknown }> = {};
-  for (const k of [...fields, 'managerId']) if (JSON.stringify(before[k]) !== JSON.stringify(after[k])) diff[k] = { from: before[k] ?? null, to: after[k] ?? null };
+  for (const k of [...fields, 'managerId'])
+    if (JSON.stringify(before[k]) !== JSON.stringify(after[k]))
+      diff[k] = { from: before[k] ?? null, to: after[k] ?? null };
   const customBefore = (before.custom ?? {}) as Record<string, unknown>;
   const customAfter = (after.custom ?? {}) as Record<string, unknown>;
   for (const k of Object.keys(b.custom ?? {})) {
-    if (JSON.stringify(customBefore[k]) !== JSON.stringify(customAfter[k])) diff[`custom.${k}`] = { from: customBefore[k] ?? null, to: customAfter[k] ?? null };
+    if (JSON.stringify(customBefore[k]) !== JSON.stringify(customAfter[k]))
+      diff[`custom.${k}`] = { from: customBefore[k] ?? null, to: customAfter[k] ?? null };
   }
   await recordChangeEvent(tx, id, topic, { effectiveDate: b.effectiveDate, fields: Object.keys(diff) });
   return diff;
@@ -529,7 +686,12 @@ export async function refreshCurrentMany(tx: Tx, employeeIds: string[]) {
   if (employeeIds.length) await tx.query('SELECT app.refresh_employees_current($1::uuid[])', [employeeIds]);
 }
 
-export async function recordChangeEvent(tx: Tx, employeeId: string, topic: string, payload: Record<string, unknown>) {
+export async function recordChangeEvent(
+  tx: Tx,
+  employeeId: string,
+  topic: string,
+  payload: Record<string, unknown>,
+) {
   await emitEvent(tx, topic, { employeeId, ...payload }, { type: 'employee', id: employeeId });
 }
 

@@ -1,5 +1,11 @@
 import type { Tx } from '@thapsus/db';
-import { canSome, fieldAccess, grantFieldAccess, type Principal, type Target } from '@thapsus/core/permissions';
+import {
+  canSome,
+  fieldAccess,
+  grantFieldAccess,
+  type Principal,
+  type Target,
+} from '@thapsus/core/permissions';
 import { ApiError } from '../../http/errors';
 import { grantScopeSql, scopePredicate } from '../employees/service';
 
@@ -65,12 +71,23 @@ export class FieldGate {
       const params: unknown[] = [];
       const g = p.grants.find((x) => x.scope.type === 'own_team')!;
       const sql = grantScopeSql(p, g, paramAdder(params));
-      if (sql !== 'false') for (const r of await tx.query<{ id: string }>(`SELECT e.id FROM app.employees e WHERE ${sql}`, params)) team.add(r.id);
+      if (sql !== 'false')
+        for (const r of await tx.query<{ id: string }>(
+          `SELECT e.id FROM app.employees e WHERE ${sql}`,
+          params,
+        ))
+          team.add(r.id);
     }
     return new FieldGate(p, team);
   }
 
-  target(r: { id: string; entity_id?: string | null; country?: string | null; department_id?: string | null; location_id?: string | null }): Target {
+  target(r: {
+    id: string;
+    entity_id?: string | null;
+    country?: string | null;
+    department_id?: string | null;
+    location_id?: string | null;
+  }): Target {
     const root = this.p.employeeId ?? this.p.delegatedFromEmployeeIds?.[0];
     return {
       employeeId: r.id,

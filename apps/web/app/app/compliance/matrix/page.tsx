@@ -1,7 +1,24 @@
 'use client';
 import * as React from 'react';
 import { ListChecks, Plus } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -51,15 +68,26 @@ export default function MatrixPage() {
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
-  const canManage = !!session?.permissions.some((p) => p === '*' || p === 'compliance.*' || p === 'compliance.manage');
+  const canManage = !!session?.permissions.some(
+    (p) => p === '*' || p === 'compliance.*' || p === 'compliance.manage',
+  );
   const [status, setStatus] = React.useState('');
   const [kind, setKind] = React.useState('');
   const [requirementId, setRequirementId] = React.useState('');
-  const query = new URLSearchParams(Object.entries({ status, kind, requirementId }).filter(([, v]) => v)).toString();
+  const query = new URLSearchParams(
+    Object.entries({ status, kind, requirementId }).filter(([, v]) => v),
+  ).toString();
   const matrix = useApi<Matrix>(`/v1/compliance/matrix${query ? `?${query}` : ''}`);
   const reqs = useApi<Requirement[]>('/v1/compliance/requirements');
   const [adding, setAdding] = React.useState(false);
-  const [reqForm, setReqForm] = React.useState({ kind: 'licence', name: '', jobTitles: '', validityMonths: '', reminderDays: '', evidenceRequired: false });
+  const [reqForm, setReqForm] = React.useState({
+    kind: 'licence',
+    name: '',
+    jobTitles: '',
+    validityMonths: '',
+    reminderDays: '',
+    evidenceRequired: false,
+  });
   const [recording, setRecording] = React.useState<MatrixRow | null>(null);
   const [recForm, setRecForm] = React.useState({ issuedOn: '', expiresOn: '', reference: '' });
   const [busy, setBusy] = React.useState(false);
@@ -73,7 +101,10 @@ export default function MatrixPage() {
       reqs.reload();
       return true;
     } catch (err) {
-      toast({ title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'), tone: 'danger' });
+      toast({
+        title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'),
+        tone: 'danger',
+      });
       return false;
     } finally {
       setBusy(false);
@@ -81,14 +112,43 @@ export default function MatrixPage() {
   }
   async function addRequirement(e: React.FormEvent) {
     e.preventDefault();
-    const days = list(reqForm.reminderDays).map(Number).filter((n) => Number.isInteger(n) && n >= 0);
-    const ok = await run(() => api('/v1/compliance/requirements', { method: 'POST', json: { kind: reqForm.kind, name: reqForm.name, appliesTo: list(reqForm.jobTitles).length ? { jobTitles: list(reqForm.jobTitles) } : {}, validityMonths: reqForm.validityMonths ? Number(reqForm.validityMonths) : null, reminderDays: days, evidenceRequired: reqForm.evidenceRequired } }), t('compliance.matrix.added'));
+    const days = list(reqForm.reminderDays)
+      .map(Number)
+      .filter((n) => Number.isInteger(n) && n >= 0);
+    const ok = await run(
+      () =>
+        api('/v1/compliance/requirements', {
+          method: 'POST',
+          json: {
+            kind: reqForm.kind,
+            name: reqForm.name,
+            appliesTo: list(reqForm.jobTitles).length ? { jobTitles: list(reqForm.jobTitles) } : {},
+            validityMonths: reqForm.validityMonths ? Number(reqForm.validityMonths) : null,
+            reminderDays: days,
+            evidenceRequired: reqForm.evidenceRequired,
+          },
+        }),
+      t('compliance.matrix.added'),
+    );
     if (ok) setAdding(false);
   }
   async function record(e: React.FormEvent) {
     e.preventDefault();
     if (!recording) return;
-    const ok = await run(() => api('/v1/compliance/records', { method: 'POST', json: { requirementId: recording.requirementId, employeeId: recording.employeeId, issuedOn: recForm.issuedOn, expiresOn: recForm.expiresOn || undefined, reference: recForm.reference || undefined } }), t('compliance.matrix.recorded'));
+    const ok = await run(
+      () =>
+        api('/v1/compliance/records', {
+          method: 'POST',
+          json: {
+            requirementId: recording.requirementId,
+            employeeId: recording.employeeId,
+            issuedOn: recForm.issuedOn,
+            expiresOn: recForm.expiresOn || undefined,
+            reference: recForm.reference || undefined,
+          },
+        }),
+      t('compliance.matrix.recorded'),
+    );
     if (ok) setRecording(null);
   }
 
@@ -103,7 +163,9 @@ export default function MatrixPage() {
           </Button>
         ) : null}
       </div>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('compliance.matrix.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
+        {t('compliance.matrix.intro')}
+      </p>
       {matrix.data ? (
         <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {STATUSES.map((s) => (
@@ -141,7 +203,12 @@ export default function MatrixPage() {
         </Field>
         <Field id="f-req" label={t('compliance.matrix.filterRequirement')}>
           {(p) => (
-            <select {...p} className={selectClass} value={requirementId} onChange={(e) => setRequirementId(e.target.value)}>
+            <select
+              {...p}
+              className={selectClass}
+              value={requirementId}
+              onChange={(e) => setRequirementId(e.target.value)}
+            >
               <option value="">{t('compliance.all')}</option>
               {(reqs.data ?? []).map((r) => (
                 <option key={r.id} value={r.id}>
@@ -153,9 +220,17 @@ export default function MatrixPage() {
         </Field>
       </div>
       {!matrix.data ? (
-        matrix.error ? <EmptyState title={t('compliance.noAccess')} /> : <Skeleton className="h-40 w-full" />
+        matrix.error ? (
+          <EmptyState title={t('compliance.noAccess')} />
+        ) : (
+          <Skeleton className="h-40 w-full" />
+        )
       ) : !reqs.data?.length ? (
-        <EmptyState icon={<ListChecks aria-hidden />} title={t('compliance.matrix.empty')} body={t('compliance.matrix.emptyBody')} />
+        <EmptyState
+          icon={<ListChecks aria-hidden />}
+          title={t('compliance.matrix.empty')}
+          body={t('compliance.matrix.emptyBody')}
+        />
       ) : matrix.data.rows.length === 0 ? (
         <p className="text-callout text-text-secondary">{t('compliance.matrix.noRows')}</p>
       ) : (
@@ -177,7 +252,9 @@ export default function MatrixPage() {
                 <TR key={`${r.employeeId}:${r.requirementId}`}>
                   <TD>
                     <span className="font-semibold">{r.employeeName}</span>
-                    {r.jobTitle ? <span className="block text-footnote text-text-secondary">{r.jobTitle}</span> : null}
+                    {r.jobTitle ? (
+                      <span className="block text-footnote text-text-secondary">{r.jobTitle}</span>
+                    ) : null}
                   </TD>
                   <TD>
                     {r.requirementName} <Badge className="ml-1">{t(`compliance.kind.${r.kind}`)}</Badge>
@@ -185,9 +262,24 @@ export default function MatrixPage() {
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>{r.expiresOn ? `${formatDate(r.expiresOn, locale)}${r.daysLeft !== null && r.daysLeft >= 0 ? ` · ${t('compliance.matrix.daysLeft', { days: r.daysLeft })}` : ''}` : '—'}</TD>
+                  <TD>
+                    {r.expiresOn
+                      ? `${formatDate(r.expiresOn, locale)}${r.daysLeft !== null && r.daysLeft >= 0 ? ` · ${t('compliance.matrix.daysLeft', { days: r.daysLeft, count: r.daysLeft })}` : ''}`
+                      : '—'}
+                  </TD>
                   <TD className="text-right">
-                    <Button size="sm" variant="secondary" onClick={() => { setRecForm({ issuedOn: '', expiresOn: '', reference: '' }); setRecording(r); }} aria-label={t('compliance.matrix.recordFor', { requirement: r.requirementName, name: r.employeeName })}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setRecForm({ issuedOn: '', expiresOn: '', reference: '' });
+                        setRecording(r);
+                      }}
+                      aria-label={t('compliance.matrix.recordFor', {
+                        requirement: r.requirementName,
+                        name: r.employeeName,
+                      })}
+                    >
                       {t('compliance.matrix.record')}
                     </Button>
                   </TD>
@@ -205,8 +297,16 @@ export default function MatrixPage() {
               <li key={r.id} className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{r.name}</span>
                 <Badge>{t(`compliance.kind.${r.kind}`)}</Badge>
-                <span className="text-text-secondary">{r.appliesTo.jobTitles?.length ? r.appliesTo.jobTitles.join(', ') : t('compliance.matrix.everyone')}</span>
-                {r.validityMonths ? <span className="text-text-secondary">{t('compliance.matrix.validFor', { months: r.validityMonths })}</span> : null}
+                <span className="text-text-secondary">
+                  {r.appliesTo.jobTitles?.length
+                    ? r.appliesTo.jobTitles.join(', ')
+                    : t('compliance.matrix.everyone')}
+                </span>
+                {r.validityMonths ? (
+                  <span className="text-text-secondary">
+                    {t('compliance.matrix.validFor', { months: r.validityMonths, count: r.validityMonths })}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -217,7 +317,12 @@ export default function MatrixPage() {
           <form onSubmit={addRequirement} className="flex flex-col gap-3">
             <Field id="r-kind" label={t('compliance.matrix.kind')}>
               {(p) => (
-                <select {...p} className={selectClass} value={reqForm.kind} onChange={(e) => setReqForm({ ...reqForm, kind: e.target.value })}>
+                <select
+                  {...p}
+                  className={selectClass}
+                  value={reqForm.kind}
+                  onChange={(e) => setReqForm({ ...reqForm, kind: e.target.value })}
+                >
                   {KINDS.map((k) => (
                     <option key={k} value={k}>
                       {t(`compliance.kind.${k}`)}
@@ -226,12 +331,62 @@ export default function MatrixPage() {
                 </select>
               )}
             </Field>
-            <Field id="r-name" label={t('compliance.matrix.name')}>{(p) => <Input {...p} required value={reqForm.name} onChange={(e) => setReqForm({ ...reqForm, name: e.target.value })} />}</Field>
-            <Field id="r-jobs" label={t('compliance.matrix.jobTitles')} hint={t('compliance.matrix.jobTitlesHint')}>{(p) => <Input {...p} value={reqForm.jobTitles} onChange={(e) => setReqForm({ ...reqForm, jobTitles: e.target.value })} />}</Field>
-            <Field id="r-valid" label={t('compliance.matrix.validity')}>{(p) => <Input {...p} type="number" min={1} inputMode="numeric" value={reqForm.validityMonths} onChange={(e) => setReqForm({ ...reqForm, validityMonths: e.target.value })} />}</Field>
-            <Field id="r-rem" label={t('compliance.matrix.reminders')} hint={t('compliance.matrix.remindersHint')}>{(p) => <Input {...p} inputMode="numeric" value={reqForm.reminderDays} onChange={(e) => setReqForm({ ...reqForm, reminderDays: e.target.value })} />}</Field>
+            <Field id="r-name" label={t('compliance.matrix.name')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  value={reqForm.name}
+                  onChange={(e) => setReqForm({ ...reqForm, name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="r-jobs"
+              label={t('compliance.matrix.jobTitles')}
+              hint={t('compliance.matrix.jobTitlesHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  value={reqForm.jobTitles}
+                  onChange={(e) => setReqForm({ ...reqForm, jobTitles: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="r-valid" label={t('compliance.matrix.validity')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={reqForm.validityMonths}
+                  onChange={(e) => setReqForm({ ...reqForm, validityMonths: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="r-rem"
+              label={t('compliance.matrix.reminders')}
+              hint={t('compliance.matrix.remindersHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  inputMode="numeric"
+                  value={reqForm.reminderDays}
+                  onChange={(e) => setReqForm({ ...reqForm, reminderDays: e.target.value })}
+                />
+              )}
+            </Field>
             <label className="flex items-center gap-3 text-callout">
-              <input type="checkbox" checked={reqForm.evidenceRequired} onChange={(e) => setReqForm({ ...reqForm, evidenceRequired: e.target.checked })} className="accent-[var(--color-accent)]" />
+              <input
+                type="checkbox"
+                checked={reqForm.evidenceRequired}
+                onChange={(e) => setReqForm({ ...reqForm, evidenceRequired: e.target.checked })}
+                className="accent-[var(--color-accent)]"
+              />
               {t('compliance.matrix.evidence')}
             </label>
             <Button type="submit" loading={busy}>
@@ -242,11 +397,48 @@ export default function MatrixPage() {
       </Dialog>
       <Dialog open={!!recording} onOpenChange={(o) => !o && setRecording(null)}>
         {recording ? (
-          <DialogContent title={t('compliance.matrix.recordTitle', { requirement: recording.requirementName, name: recording.employeeName })} closeLabel={t('common.close')}>
+          <DialogContent
+            title={t('compliance.matrix.recordTitle', {
+              requirement: recording.requirementName,
+              name: recording.employeeName,
+            })}
+            closeLabel={t('common.close')}
+          >
             <form onSubmit={record} className="flex flex-col gap-3">
-              <Field id="c-issued" label={t('compliance.matrix.issuedOn')}>{(p) => <Input {...p} type="date" required value={recForm.issuedOn} onChange={(e) => setRecForm({ ...recForm, issuedOn: e.target.value })} />}</Field>
-              <Field id="c-exp" label={t('compliance.matrix.expiresOn')} hint={t('compliance.matrix.expiresHint')}>{(p) => <Input {...p} type="date" value={recForm.expiresOn} onChange={(e) => setRecForm({ ...recForm, expiresOn: e.target.value })} />}</Field>
-              <Field id="c-ref" label={t('compliance.matrix.reference')}>{(p) => <Input {...p} value={recForm.reference} onChange={(e) => setRecForm({ ...recForm, reference: e.target.value })} />}</Field>
+              <Field id="c-issued" label={t('compliance.matrix.issuedOn')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="date"
+                    required
+                    value={recForm.issuedOn}
+                    onChange={(e) => setRecForm({ ...recForm, issuedOn: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field
+                id="c-exp"
+                label={t('compliance.matrix.expiresOn')}
+                hint={t('compliance.matrix.expiresHint')}
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="date"
+                    value={recForm.expiresOn}
+                    onChange={(e) => setRecForm({ ...recForm, expiresOn: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field id="c-ref" label={t('compliance.matrix.reference')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={recForm.reference}
+                    onChange={(e) => setRecForm({ ...recForm, reference: e.target.value })}
+                  />
+                )}
+              </Field>
               <Button type="submit" loading={busy}>
                 {t('common.save')}
               </Button>

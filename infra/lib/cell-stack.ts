@@ -1,4 +1,13 @@
-import { CfnOutput, CfnParameter, Duration, Fn, RemovalPolicy, SecretValue, Stack, type StackProps } from 'aws-cdk-lib';
+import {
+  CfnOutput,
+  CfnParameter,
+  Duration,
+  Fn,
+  RemovalPolicy,
+  SecretValue,
+  Stack,
+  type StackProps,
+} from 'aws-cdk-lib';
 import * as backup from 'aws-cdk-lib/aws-backup';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cwActions from 'aws-cdk-lib/aws-cloudwatch-actions';
@@ -21,7 +30,14 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 import { HOME_REGIONS, REGIONS, type HomeRegion } from '@thapsus/core/regions';
 import { inRegionModel } from '@thapsus/core/ai-models';
-import { dedicatedDatabaseId, dedicatedDatabasesFor, GLOBAL_REGION, names, type EnvConfig, type ServiceSize } from './config';
+import {
+  dedicatedDatabaseId,
+  dedicatedDatabasesFor,
+  GLOBAL_REGION,
+  names,
+  type EnvConfig,
+  type ServiceSize,
+} from './config';
 import {
   addOtelSidecar,
   alertTopic,
@@ -31,12 +47,12 @@ import {
   cellBudget,
   certificateArn,
   encryptedLogGroup,
+  keepUnlessEphemeral,
   logsBucket,
   publicAlb,
   regionalWaf,
   RUNTIME_PLATFORM,
 } from './shared';
-
 
 /** Customer-owned roles the api/worker may assume for data exports (documented in docs/guides/data-export.md). */
 export const EXPORT_ROLE_ARN_PATTERN = 'arn:aws:iam::*:role/thapsus-hr-export-*';
@@ -68,14 +84,15 @@ export class CellStack extends Stack {
     const env = cfg.env;
     const prod = env === 'prod';
     const prefix = `thapsus-hr-${env}-${cell}`;
-    if (this.region !== spec.awsRegion) throw new Error(`Cell ${cell} must be deployed to ${spec.awsRegion}, not ${this.region}`);
+    if (this.region !== spec.awsRegion)
+      throw new Error(`Cell ${cell} must be deployed to ${spec.awsRegion}, not ${this.region}`);
 
     // ---------------------------------------------------------------- KMS (per region, rotation on)
     const dataKey = new kms.Key(this, 'DataKey', {
       alias: `alias/${prefix}-data`,
       description: `Thapsus-HR ${env} ${cell}: Aurora, S3, Valkey, SQS, logs, backups`,
       enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     allowLogsService(dataKey);
     allowAlertingServices(dataKey);
@@ -83,7 +100,7 @@ export class CellStack extends Stack {
       alias: `alias/${prefix}-vault`,
       description: `Thapsus-HR ${env} ${cell}: field-level envelope encryption of sensitive data`,
       enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
 
     // ---------------------------------------------------------------- Network
@@ -99,7 +116,10 @@ export class CellStack extends Stack {
       restrictDefaultSecurityGroup: true,
     });
     const flowLogGroup = encryptedLogGroup(this, 'FlowLogs', dataKey, cfg);
-    vpc.addFlowLog('FlowLog', { destination: ec2.FlowLogDestination.toCloudWatchLogs(flowLogGroup), trafficType: ec2.FlowLogTrafficType.ALL });
+    vpc.addFlowLog('FlowLog', {
+      destination: ec2.FlowLogDestination.toCloudWatchLogs(flowLogGroup),
+      trafficType: ec2.FlowLogTrafficType.ALL,
+    });
     // Keep S3 and DynamoDB traffic on the AWS network.
     vpc.addGatewayEndpoint('S3Endpoint', { service: ec2.GatewayVpcEndpointAwsService.S3 });
 
@@ -108,6 +128,7 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- Load balancer + WAF
     const { alb, https } = publicAlb(this, {
+      noRedirectPaths: API_PATHS,
       vpc,
       logs: logs_,
       certificateArn: certificateArn(this, cfg.cells[cell].certificateArn),
@@ -117,7 +138,8 @@ export class CellStack extends Stack {
     regionalWaf(this, alb, `${prefix}-web-acl`, cfg.wafRateLimitPer5Min);
 
     // Public URLs. With no product domain yet, the cell is reached on its ALB DNS name.
-    const host = (kind: 'app' | 'api', r: HomeRegion) => (cfg.domain ? `${kind}.${r}.${cfg.domain}` : undefined);
+    const host = (kind: 'app' | 'api', r: HomeRegion) =>
+      cfg.domain ? `${kind}.${r}.${cfg.domain}` : undefined;
     const appHost = host('app', cell) ?? alb.loadBalancerDnsName;
     const apiHost = host('api', cell) ?? alb.loadBalancerDnsName;
     const appBaseUrl = `https://${appHost}`;
@@ -129,12 +151,15 @@ export class CellStack extends Stack {
         : new CfnParameter(this, 'GlobalBaseUrl', {
             type: 'String',
             default: '',
-            description: 'Public URL of the global sign-in service (the global ALB) while no domain is configured.',
+            description:
+              'Public URL of the global sign-in service (the global ALB) while no domain is configured.',
           }).valueAsString);
 
     // Browser uploads via presigned URLs. Without a domain the app is on its ALB name; a token here would
     // create a cycle (bucket → ALB → logs-bucket policy → bucket), so match this region's ELB names instead.
-    const corsOrigin = cfg.domain ? `https://app.${cell}.${cfg.domain}` : `https://*.${spec.awsRegion}.elb.amazonaws.com`;
+    const corsOrigin = cfg.domain
+      ? `https://app.${cell}.${cfg.domain}`
+      : `https://*.${spec.awsRegion}.elb.amazonaws.com`;
     const filesBucket = new s3.Bucket(this, 'FilesBucket', {
       bucketName: `thapsus-hr-${env}-${spec.awsRegion}-files-${this.account}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -148,25 +173,51 @@ export class CellStack extends Stack {
       serverAccessLogsBucket: logs_,
       serverAccessLogsPrefix: 's3/files/',
       lifecycleRules: [
-        { id: 'noncurrent-versions', noncurrentVersionExpiration: Duration.days(prod ? 90 : 30), noncurrentVersionsToRetain: 3 },
+        {
+          id: 'noncurrent-versions',
+          noncurrentVersionExpiration: Duration.days(prod ? 90 : 30),
+          noncurrentVersionsToRetain: 3,
+        },
         { id: 'abort-multipart', abortIncompleteMultipartUploadAfter: Duration.days(7) },
       ],
-      cors: [{ allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT], allowedOrigins: [corsOrigin], allowedHeaders: ['*'], maxAge: 3000 }],
-      removalPolicy: RemovalPolicy.RETAIN,
+      cors: [
+        {
+          allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
+          allowedOrigins: [corsOrigin],
+          allowedHeaders: ['*'],
+          maxAge: 3000,
+        },
+      ],
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
 
     // ---------------------------------------------------------------- Security groups
     const apiSg = new ec2.SecurityGroup(this, 'ApiSg', { vpc, description: 'api tasks' });
     const workerSg = new ec2.SecurityGroup(this, 'WorkerSg', { vpc, description: 'worker tasks' });
     const webSg = new ec2.SecurityGroup(this, 'WebSg', { vpc, description: 'web tasks' });
-    const migratorSg = new ec2.SecurityGroup(this, 'MigratorSg', { vpc, description: 'one-off migrator task' });
+    const migratorSg = new ec2.SecurityGroup(this, 'MigratorSg', {
+      vpc,
+      description: 'one-off migrator task',
+    });
     const dbSg = new ec2.SecurityGroup(this, 'DbSg', { vpc, description: 'Aurora + RDS Proxy' });
-    const cacheSg = new ec2.SecurityGroup(this, 'CacheSg', { vpc, description: 'Valkey', allowAllOutbound: false });
-    for (const [sg, label] of [[apiSg, 'api'], [workerSg, 'worker'], [migratorSg, 'migrator']] as const) {
+    const cacheSg = new ec2.SecurityGroup(this, 'CacheSg', {
+      vpc,
+      description: 'Valkey',
+      allowAllOutbound: false,
+    });
+    for (const [sg, label] of [
+      [apiSg, 'api'],
+      [workerSg, 'worker'],
+      [migratorSg, 'migrator'],
+    ] as const) {
       dbSg.addIngressRule(sg, ec2.Port.tcp(5432), `${label} to Postgres`);
     }
     dbSg.addIngressRule(dbSg, ec2.Port.tcp(5432), 'RDS Proxy to Aurora');
-    for (const [sg, label] of [[apiSg, 'api'], [workerSg, 'worker']] as const) cacheSg.addIngressRule(sg, ec2.Port.tcp(6379), `${label} to Valkey`);
+    for (const [sg, label] of [
+      [apiSg, 'api'],
+      [workerSg, 'worker'],
+    ] as const)
+      cacheSg.addIngressRule(sg, ec2.Port.tcp(6379), `${label} to Valkey`);
 
     // ---------------------------------------------------------------- Aurora PostgreSQL 17 (Serverless v2)
     const roleSecret = (id: string, username: string) =>
@@ -177,10 +228,23 @@ export class CellStack extends Stack {
         excludeCharacters: DB_PASSWORD_EXCLUDE,
       });
     /** One Aurora cluster (writer + reporting reader in another AZ) with its RDS Proxy; shared and dedicated databases alike. */
-    const auroraCluster = (scope: Construct, identifier: string, ownerSecretName: string, acu: { min: number; max: number }) => {
-      const auroraLogs = encryptedLogGroup(scope, 'AuroraLogs', dataKey, cfg, `/aws/rds/cluster/${identifier}/postgresql`);
+    const auroraCluster = (
+      scope: Construct,
+      identifier: string,
+      ownerSecretName: string,
+      acu: { min: number; max: number },
+    ) => {
+      const auroraLogs = encryptedLogGroup(
+        scope,
+        'AuroraLogs',
+        dataKey,
+        cfg,
+        `/aws/rds/cluster/${identifier}/postgresql`,
+      );
       const db = new rds.DatabaseCluster(scope, 'Aurora', {
-        engine: rds.DatabaseClusterEngine.auroraPostgres({ version: rds.AuroraPostgresEngineVersion.VER_17_7 }),
+        engine: rds.DatabaseClusterEngine.auroraPostgres({
+          version: rds.AuroraPostgresEngineVersion.VER_17_7,
+        }),
         clusterIdentifier: identifier,
         defaultDatabaseName: 'thapsus',
         credentials: rds.Credentials.fromGeneratedSecret('thapsus_owner', {
@@ -217,7 +281,11 @@ export class CellStack extends Stack {
         iamAuthentication: true,
         cloudwatchLogsExports: ['postgresql'],
         copyTagsToSnapshot: true,
-        removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.SNAPSHOT,
+        removalPolicy: prod
+          ? RemovalPolicy.RETAIN
+          : cfg.env === 'loadtest'
+            ? RemovalPolicy.DESTROY
+            : RemovalPolicy.SNAPSHOT,
       });
       // Only the DB cluster resource waits for its log group (a construct-level dependency would cycle via the proxy role).
       db.node.defaultChild!.node.addDependency(auroraLogs.node.defaultChild!);
@@ -240,17 +308,25 @@ export class CellStack extends Stack {
     const appDbSecret = roleSecret('AppDbSecret', 'thapsus_app');
     const backofficeDbSecret = roleSecret('BackofficeDbSecret', 'thapsus_backoffice');
     const reportingDbSecret = roleSecret('ReportingDbSecret', 'thapsus_reporting');
-    const shared = auroraCluster(this, prefix, `thapsus-hr/${env}/db/thapsus_owner`, { min: cfg.aurora.minAcu, max: cfg.aurora.maxAcu });
+    const shared = auroraCluster(this, prefix, `thapsus-hr/${env}/db/thapsus_owner`, {
+      min: cfg.aurora.minAcu,
+      max: cfg.aurora.maxAcu,
+    });
     const { cluster, proxy, ownerSecret } = shared;
 
     // Dedicated databases (optional, ADR-0068): one cluster + proxy per `dedicatedDatabases` entry of THIS cell,
     // in this cell's region, built exactly like the shared one but with its own owner secret. None by default.
     const dedicated = dedicatedDatabasesFor(cfg, cell).map((d) => ({
       ...d,
-      ...auroraCluster(new Construct(this, `Dedicated${dedicatedDatabaseId(d.key)}`), `${prefix}-${d.key}`, `thapsus-hr/${env}/db/${d.key}/thapsus_owner`, {
-        min: d.minAcu ?? cfg.aurora.minAcu,
-        max: d.maxAcu ?? cfg.aurora.maxAcu,
-      }),
+      ...auroraCluster(
+        new Construct(this, `Dedicated${dedicatedDatabaseId(d.key)}`),
+        `${prefix}-${d.key}`,
+        `thapsus-hr/${env}/db/${d.key}/thapsus_owner`,
+        {
+          min: d.minAcu ?? cfg.aurora.minAcu,
+          max: d.maxAcu ?? cfg.aurora.maxAcu,
+        },
+      ),
     }));
 
     // ---------------------------------------------------------------- Valkey (Multi-AZ, TLS, KMS)
@@ -310,7 +386,9 @@ export class CellStack extends Stack {
     // schedule drops a message on the jobs queue (no compute is invoked by the scheduler itself).
     const scheduleGroup = new scheduler.CfnScheduleGroup(this, 'ScheduleGroup', { name: prefix });
     const schedulerRole = new iam.Role(this, 'SchedulerRole', {
-      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com', { conditions: { StringEquals: { 'aws:SourceAccount': this.account } } }),
+      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com', {
+        conditions: { StringEquals: { 'aws:SourceAccount': this.account } },
+      }),
       description: 'EventBridge Scheduler to jobs queue',
     });
     jobsQueue.grantSendMessages(schedulerRole);
@@ -326,7 +404,7 @@ export class CellStack extends Stack {
     const backupVault = new backup.BackupVault(this, 'BackupVault', {
       backupVaultName: prefix,
       encryptionKey: dataKey,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: keepUnlessEphemeral(cfg),
     });
     const plan = new backup.BackupPlan(this, 'BackupPlan', { backupPlanName: prefix, backupVault });
     // Continuous backup (point-in-time restore, RPO ≤ 15 minutes) for Aurora and S3.
@@ -396,7 +474,10 @@ export class CellStack extends Stack {
       secretName: `thapsus-hr/${env}/vapid`,
       description: 'Web push VAPID key pair, filled by a script (empty values disable web push).',
       encryptionKey: dataKey,
-      secretObjectValue: { VAPID_PUBLIC_KEY: SecretValue.unsafePlainText(''), VAPID_PRIVATE_KEY: SecretValue.unsafePlainText('') },
+      secretObjectValue: {
+        VAPID_PUBLIC_KEY: SecretValue.unsafePlainText(''),
+        VAPID_PRIVATE_KEY: SecretValue.unsafePlainText(''),
+      },
     });
     // Billing lives in the home cell (ADR-0103): this region's own Stripe account, TEST MODE until the
     // product owner approves live mode. Values are filled by a human (HUMAN_TODO 4.1), never committed;
@@ -405,28 +486,45 @@ export class CellStack extends Stack {
       secretName: names.stripeSecret(env, cell),
       description: `Stripe test-mode secret key and webhook signing secret of the ${cell} region's Stripe account (HUMAN_TODO 4.1).`,
       encryptionKey: dataKey,
-      secretObjectValue: { STRIPE_SECRET_KEY: SecretValue.unsafePlainText(''), STRIPE_WEBHOOK_SECRET: SecretValue.unsafePlainText('') },
+      secretObjectValue: {
+        STRIPE_SECRET_KEY: SecretValue.unsafePlainText(''),
+        STRIPE_WEBHOOK_SECRET: SecretValue.unsafePlainText(''),
+      },
     });
     const mockIdpAllowed = env === 'dev' || env === 'staging';
     const mockIdp = mockIdpAllowed
       ? new secretsmanager.Secret(this, 'MockIdpKeys', {
           secretName: `thapsus-hr/${env}/mock-idp`,
-          description: 'Mock IdP signing key/cert for staging smoke tests, filled by a script. Never exists in prod.',
+          description:
+            'Mock IdP signing key/cert for staging smoke tests, filled by a script. Never exists in prod.',
           encryptionKey: dataKey,
-          secretObjectValue: { MOCK_IDP_KEY_PEM: SecretValue.unsafePlainText(''), MOCK_IDP_CERT_PEM: SecretValue.unsafePlainText('') },
+          secretObjectValue: {
+            MOCK_IDP_KEY_PEM: SecretValue.unsafePlainText(''),
+            MOCK_IDP_CERT_PEM: SecretValue.unsafePlainText(''),
+          },
         })
       : undefined;
 
     // ---------------------------------------------------------------- ECS cluster
     const clusterName = prefix;
-    encryptedLogGroup(this, 'ContainerInsightsLogs', dataKey, cfg, `/aws/ecs/containerinsights/${clusterName}/performance`);
+    encryptedLogGroup(
+      this,
+      'ContainerInsightsLogs',
+      dataKey,
+      cfg,
+      `/aws/ecs/containerinsights/${clusterName}/performance`,
+    );
     // A private HTTP namespace for ECS Service Connect: the web server reads the session from the api
     // inside the VPC (server-rendered app pages), never through the public load balancer.
     const ecsCluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
       clusterName,
       containerInsightsV2: ecs.ContainerInsights.ENABLED,
-      defaultCloudMapNamespace: { name: `${prefix}.internal`, type: servicediscovery.NamespaceType.HTTP, useForServiceConnect: true },
+      defaultCloudMapNamespace: {
+        name: `${prefix}.internal`,
+        type: servicediscovery.NamespaceType.HTTP,
+        useForServiceConnect: true,
+      },
     });
 
     const directoryTableArn = `arn:aws:dynamodb:${GLOBAL_REGION}:${this.account}:table/${names.directoryTable(env)}`;
@@ -434,7 +532,14 @@ export class CellStack extends Stack {
       const out: Record<string, string> = {};
       for (const r of HOME_REGIONS) {
         const url =
-          cfg.regionalUrls[kind]?.[r] ?? (host(kind, r) ? `https://${host(kind, r)}` : r === cell ? (kind === 'api' ? apiBaseUrl : appBaseUrl) : undefined);
+          cfg.regionalUrls[kind]?.[r] ??
+          (host(kind, r)
+            ? `https://${host(kind, r)}`
+            : r === cell
+              ? kind === 'api'
+                ? apiBaseUrl
+                : appBaseUrl
+              : undefined);
         if (url) out[`${kind.toUpperCase()}_URL_${r.toUpperCase()}`] = url;
       }
       return out;
@@ -474,12 +579,19 @@ export class CellStack extends Stack {
       SCHEDULE_GROUP_NAME: scheduleGroup.name!,
       SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
       ...(mockIdpAllowed ? { MOCK_IDP_ENABLED: 'true' } : {}),
+      // Until a domain and a trusted certificate exist the API reaches its own mock IdP in-task.
+      ...(mockIdpAllowed && !cfg.domain ? { MOCK_IDP_ISSUER_URL: 'http://127.0.0.1:4000/__mock-idp' } : {}),
+      ...(cfg.loadTest ? { IP_THROTTLE_MULTIPLIER: String(cfg.loadTest.ipThrottleMultiplier) } : {}),
       // Dedicated databases (ADR-0068), in the JSON form TenantRouter.fromEnv reads: router key → RDS Proxy
       // endpoint (app role, DATABASE_SECRET) and → reader endpoint (reporting role, REPORTING_DATABASE_SECRET).
       ...(dedicated.length
         ? {
-            DEDICATED_DATABASE_HOSTS: this.toJsonString(Object.fromEntries(dedicated.map((d) => [d.key, d.proxy.endpoint]))),
-            DEDICATED_READER_HOSTS: this.toJsonString(Object.fromEntries(dedicated.map((d) => [d.key, d.cluster.clusterReadEndpoint.hostname]))),
+            DEDICATED_DATABASE_HOSTS: this.toJsonString(
+              Object.fromEntries(dedicated.map((d) => [d.key, d.proxy.endpoint])),
+            ),
+            DEDICATED_READER_HOSTS: this.toJsonString(
+              Object.fromEntries(dedicated.map((d) => [d.key, d.cluster.clusterReadEndpoint.hostname])),
+            ),
           }
         : {}),
     };
@@ -504,9 +616,23 @@ export class CellStack extends Stack {
 
     const service = (
       name: 'api' | 'worker' | 'web',
-      opts: { size: ServiceSize; sg: ec2.SecurityGroup; port?: number; environment: Record<string, string>; secrets: Record<string, ecs.Secret>; otel: boolean; serviceConnect?: 'server' | 'client' },
+      opts: {
+        size: ServiceSize;
+        sg: ec2.SecurityGroup;
+        port?: number;
+        environment: Record<string, string>;
+        secrets: Record<string, ecs.Secret>;
+        otel: boolean;
+        serviceConnect?: 'server' | 'client';
+      },
     ) => {
-      const logGroup = encryptedLogGroup(this, `${name}Logs`, dataKey, cfg, `/thapsus-hr/${env}/${cell}/${name}`);
+      const logGroup = encryptedLogGroup(
+        this,
+        `${name}Logs`,
+        dataKey,
+        cfg,
+        `/thapsus-hr/${env}/${cell}/${name}`,
+      );
       const task = new ecs.FargateTaskDefinition(this, `${name}Task`, {
         family: `${prefix}-${name}`,
         cpu: opts.size.cpu,
@@ -516,7 +642,11 @@ export class CellStack extends Stack {
       task.addContainer('app', {
         image: appImage(name),
         essential: true,
-        environment: { ...opts.environment, SERVICE_NAME: `thapsus-${name}`, ...(opts.port ? { PORT: String(opts.port) } : {}) },
+        environment: {
+          ...opts.environment,
+          SERVICE_NAME: `thapsus-${name}`,
+          ...(opts.port ? { PORT: String(opts.port) } : {}),
+        },
         secrets: opts.secrets,
         portMappings: opts.port ? [{ containerPort: opts.port, name: 'http' }] : [],
         logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: name }),
@@ -539,14 +669,24 @@ export class CellStack extends Stack {
           ? {
               serviceConnectConfiguration: {
                 namespace: ecsCluster.defaultCloudMapNamespace!.namespaceArn,
-                services: opts.serviceConnect === 'server' && opts.port ? [{ portMappingName: 'http', dnsName: name, port: opts.port }] : undefined,
+                services:
+                  opts.serviceConnect === 'server' && opts.port
+                    ? [{ portMappingName: 'http', dnsName: name, port: opts.port }]
+                    : undefined,
                 logDriver: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: `${name}-service-connect` }),
               },
             }
           : {}),
       });
-      const scaling = svc.autoScaleTaskCount({ minCapacity: opts.size.minCapacity, maxCapacity: opts.size.maxCapacity });
-      scaling.scaleOnCpuUtilization('Cpu', { targetUtilizationPercent: 60, scaleOutCooldown: Duration.seconds(60), scaleInCooldown: Duration.seconds(180) });
+      const scaling = svc.autoScaleTaskCount({
+        minCapacity: opts.size.minCapacity,
+        maxCapacity: opts.size.maxCapacity,
+      });
+      scaling.scaleOnCpuUtilization('Cpu', {
+        targetUtilizationPercent: 60,
+        scaleOutCooldown: Duration.seconds(60),
+        scaleInCooldown: Duration.seconds(180),
+      });
       new cloudwatch.Alarm(this, `${name}CpuAlarm`, {
         alarmDescription: `${prefix} ${name} CPU high`,
         metric: svc.metricCpuUtilization({ period: Duration.minutes(5) }),
@@ -559,8 +699,22 @@ export class CellStack extends Stack {
 
     const topic = alertTopic(this, dataKey, cfg);
 
-    const api = service('api', { size: cfg.services.api, sg: apiSg, port: 4000, environment: backendEnv, secrets: backendSecrets, otel: true, serviceConnect: 'server' });
-    const worker = service('worker', { size: cfg.services.worker, sg: workerSg, environment: backendEnv, secrets: backendSecrets, otel: true });
+    const api = service('api', {
+      size: cfg.services.api,
+      sg: apiSg,
+      port: 4000,
+      environment: backendEnv,
+      secrets: backendSecrets,
+      otel: true,
+      serviceConnect: 'server',
+    });
+    const worker = service('worker', {
+      size: cfg.services.worker,
+      sg: workerSg,
+      environment: backendEnv,
+      secrets: backendSecrets,
+      otel: true,
+    });
     const web = service('web', {
       size: cfg.services.web,
       sg: webSg,
@@ -603,7 +757,13 @@ export class CellStack extends Stack {
         new iam.PolicyStatement({
           sid: 'TenantDirectory',
           // Scan: the back-office cross-region tenant list (ids, slugs, regions, plan, status only).
-          actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Query', 'dynamodb:Scan'],
+          actions: [
+            'dynamodb:GetItem',
+            'dynamodb:PutItem',
+            'dynamodb:UpdateItem',
+            'dynamodb:Query',
+            'dynamodb:Scan',
+          ],
           resources: [directoryTableArn, `${directoryTableArn}/index/*`],
         }),
       );
@@ -639,7 +799,12 @@ export class CellStack extends Stack {
     worker.task.taskRole.addToPrincipalPolicy(
       new iam.PolicyStatement({
         sid: 'ManageTenantSchedules',
-        actions: ['scheduler:CreateSchedule', 'scheduler:UpdateSchedule', 'scheduler:DeleteSchedule', 'scheduler:GetSchedule'],
+        actions: [
+          'scheduler:CreateSchedule',
+          'scheduler:UpdateSchedule',
+          'scheduler:DeleteSchedule',
+          'scheduler:GetSchedule',
+        ],
         resources: [`arn:aws:scheduler:${this.region}:${this.account}:schedule/${scheduleGroup.name}/*`],
       }),
     );
@@ -660,7 +825,11 @@ export class CellStack extends Stack {
     const aiModel = inRegionModel(cell);
     if (aiModel) {
       api.task.taskRole.addToPrincipalPolicy(
-        new iam.PolicyStatement({ sid: 'AskHrInRegionModel', actions: ['bedrock:InvokeModel'], resources: [`arn:aws:bedrock:${this.region}::foundation-model/${aiModel.modelId}`] }),
+        new iam.PolicyStatement({
+          sid: 'AskHrInRegionModel',
+          actions: ['bedrock:InvokeModel'],
+          resources: [`arn:aws:bedrock:${this.region}::foundation-model/${aiModel.modelId}`],
+        }),
       );
     }
 
@@ -690,7 +859,13 @@ export class CellStack extends Stack {
     web.scaling.scaleOnRequestCount('Requests', { requestsPerTarget: 1000, targetGroup: webTg });
 
     // ---------------------------------------------------------------- Migrator (one-off task)
-    const migratorLogs = encryptedLogGroup(this, 'migratorLogs', dataKey, cfg, `/thapsus-hr/${env}/${cell}/migrator`);
+    const migratorLogs = encryptedLogGroup(
+      this,
+      'migratorLogs',
+      dataKey,
+      cfg,
+      `/thapsus-hr/${env}/${cell}/migrator`,
+    );
     const migrator = new ecs.FargateTaskDefinition(this, 'MigratorTask', {
       family: `${prefix}-migrator`,
       cpu: 512,
@@ -700,7 +875,12 @@ export class CellStack extends Stack {
     migrator.addContainer('migrator', {
       image: appImage('api'),
       command: ['node', 'dist/migrate.mjs'],
-      environment: { APP_ENV: env, CELL_REGION: cell, DATABASE_HOST: cluster.clusterEndpoint.hostname, LOG_LEVEL: 'info' },
+      environment: {
+        APP_ENV: env,
+        CELL_REGION: cell,
+        DATABASE_HOST: cluster.clusterEndpoint.hostname,
+        LOG_LEVEL: 'info',
+      },
       secrets: {
         OWNER_DATABASE_SECRET: ecs.Secret.fromSecretsManager(ownerSecret),
         APP_DATABASE_SECRET: ecs.Secret.fromSecretsManager(appDbSecret),
@@ -745,7 +925,10 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- DNS (only once a domain + zone exist)
     if (cfg.domain && cfg.hostedZoneId) {
-      const zone = route53.HostedZone.fromHostedZoneAttributes(this, 'Zone', { hostedZoneId: cfg.hostedZoneId, zoneName: cfg.domain });
+      const zone = route53.HostedZone.fromHostedZoneAttributes(this, 'Zone', {
+        hostedZoneId: cfg.hostedZoneId,
+        zoneName: cfg.domain,
+      });
       for (const kind of ['app', 'api'] as const) {
         new route53.ARecord(this, `${kind}Record`, {
           zone,
@@ -757,18 +940,25 @@ export class CellStack extends Stack {
 
     // ---------------------------------------------------------------- Alarms + budget
     const alarm = (id: string, props: cloudwatch.AlarmProps) =>
-      new cloudwatch.Alarm(this, id, { treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING, ...props }).addAlarmAction(
-        new cwActions.SnsAction(topic),
-      );
+      new cloudwatch.Alarm(this, id, {
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        ...props,
+      }).addAlarmAction(new cwActions.SnsAction(topic));
     alarm('Alb5xxAlarm', {
       alarmDescription: `${prefix} ALB 5xx responses`,
-      metric: alb.metrics.httpCodeElb(elbv2.HttpCodeElb.ELB_5XX_COUNT, { period: Duration.minutes(5), statistic: 'Sum' }),
+      metric: alb.metrics.httpCodeElb(elbv2.HttpCodeElb.ELB_5XX_COUNT, {
+        period: Duration.minutes(5),
+        statistic: 'Sum',
+      }),
       threshold: 10,
       evaluationPeriods: 1,
     });
     alarm('Target5xxAlarm', {
       alarmDescription: `${prefix} target 5xx responses`,
-      metric: alb.metrics.httpCodeTarget(elbv2.HttpCodeTarget.TARGET_5XX_COUNT, { period: Duration.minutes(5), statistic: 'Sum' }),
+      metric: alb.metrics.httpCodeTarget(elbv2.HttpCodeTarget.TARGET_5XX_COUNT, {
+        period: Duration.minutes(5),
+        statistic: 'Sum',
+      }),
       threshold: 25,
       evaluationPeriods: 1,
     });
@@ -795,12 +985,23 @@ export class CellStack extends Stack {
     cellBudget(this, cfg, cell, cfg.cells[cell].monthlyBudgetUsd, topic);
 
     // ---------------------------------------------------------------- Outputs for deploy scripts
-    const out = (id: string, value: string, description?: string) => new CfnOutput(this, id, { value, description });
+    const out = (id: string, value: string, description?: string) =>
+      new CfnOutput(this, id, { value, description });
     out('AlbDnsName', alb.loadBalancerDnsName);
     out('AppBaseUrl', appBaseUrl);
     out('EcsClusterName', ecsCluster.clusterName);
-    out('MigratorTaskDefinitionArn', migrator.taskDefinitionArn, 'aws ecs run-task --task-definition <this> --launch-type FARGATE');
-    out('MigratorSubnetIds', Fn.join(',', vpc.privateSubnets.map((s) => s.subnetId)));
+    out(
+      'MigratorTaskDefinitionArn',
+      migrator.taskDefinitionArn,
+      'aws ecs run-task --task-definition <this> --launch-type FARGATE',
+    );
+    out(
+      'MigratorSubnetIds',
+      Fn.join(
+        ',',
+        vpc.privateSubnets.map((s) => s.subnetId),
+      ),
+    );
     out('MigratorSecurityGroupId', migratorSg.securityGroupId);
     out('DatabaseProxyEndpoint', proxy.endpoint);
     out('VaultKeyArn', vaultKey.keyArn);
@@ -811,9 +1012,21 @@ export class CellStack extends Stack {
     if (mockIdp) out('MockIdpSecretArn', mockIdp.secretArn);
     for (const d of dedicatedTools) {
       const o = names.dedicatedOutputs(d.key);
-      out(o.proxyEndpoint, d.proxy.endpoint, `Dedicated database ${d.key}: RDS Proxy (DEDICATED_DATABASE_HOSTS)`);
-      out(o.writerEndpoint, d.cluster.clusterEndpoint.hostname, `Dedicated database ${d.key}: writer (owner URL for the move runner)`);
-      out(o.toolsTaskDefinitionArn, d.task.taskDefinitionArn, `Dedicated database ${d.key}: migrate (default) or move runner (command override)`);
+      out(
+        o.proxyEndpoint,
+        d.proxy.endpoint,
+        `Dedicated database ${d.key}: RDS Proxy (DEDICATED_DATABASE_HOSTS)`,
+      );
+      out(
+        o.writerEndpoint,
+        d.cluster.clusterEndpoint.hostname,
+        `Dedicated database ${d.key}: writer (owner URL for the move runner)`,
+      );
+      out(
+        o.toolsTaskDefinitionArn,
+        d.task.taskDefinitionArn,
+        `Dedicated database ${d.key}: migrate (default) or move runner (command override)`,
+      );
     }
   }
 }

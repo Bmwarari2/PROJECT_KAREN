@@ -25,7 +25,10 @@ export default async function MarketingLayout({ children }: { children: React.Re
           <Link href="/signin" className="text-text no-underline hover:text-accent">
             {t('marketing.nav.signIn')}
           </Link>
-          <Link href="/signup" className="rounded-pill bg-accent px-3 py-1 font-semibold text-on-accent no-underline hover:bg-accent-hover">
+          <Link
+            href="/signup"
+            className="rounded-pill bg-accent px-3 py-1 font-semibold text-on-accent no-underline hover:bg-accent-hover"
+          >
             {t('marketing.nav.getStarted')}
           </Link>
         </nav>
@@ -35,9 +38,15 @@ export default async function MarketingLayout({ children }: { children: React.Re
         <div className="mx-auto flex max-w-[var(--content-width)] flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <p>{t('marketing.footer.copyright', { year: new Date().getUTCFullYear() })}</p>
           <nav aria-label={t('marketing.footer.label')} className="flex flex-wrap gap-4">
-            <Link href="/trust" className="text-text-secondary">{t('marketing.footer.trust')}</Link>
-            <Link href="/trust/subprocessors" className="text-text-secondary">{t('marketing.footer.subprocessors')}</Link>
-            <Link href="/status" className="text-text-secondary">{t('marketing.footer.status')}</Link>
+            <Link href="/trust" className="text-text-secondary">
+              {t('marketing.footer.trust')}
+            </Link>
+            <Link href="/trust/subprocessors" className="text-text-secondary">
+              {t('marketing.footer.subprocessors')}
+            </Link>
+            <Link href="/status" className="text-text-secondary">
+              {t('marketing.footer.status')}
+            </Link>
           </nav>
           <div className="flex items-center gap-3">
             <LocaleSwitch />

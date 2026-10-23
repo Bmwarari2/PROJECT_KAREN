@@ -1,7 +1,22 @@
 'use client';
 import * as React from 'react';
 import { Download, FileSpreadsheet, Lock, Plus, Send } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatDate, formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -50,14 +65,23 @@ interface Catalogue {
 }
 
 const select = 'h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout';
-const statusTone = { succeeded: 'success', queued: 'neutral', running: 'neutral', partial: 'warning', failed: 'danger' } as const;
+const statusTone = {
+  succeeded: 'success',
+  queued: 'neutral',
+  running: 'neutral',
+  partial: 'warning',
+  failed: 'danger',
+} as const;
 
 export default function PayrollPage() {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
-  const has = (p: string) => !!session?.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
+  const has = (p: string) =>
+    !!session?.permissions.some(
+      (g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))),
+    );
   const canManage = has('payroll.manage');
   const canExport = has('payroll.export');
   const periods = useApi<Period[]>('/v1/payroll/periods');
@@ -65,7 +89,13 @@ export default function PayrollPage() {
   const exports = useApi<ExportRow[]>('/v1/payroll/exports');
   const deliveries = useApi<Delivery[]>('/v1/payroll/deliveries');
   const catalogue = useApi<Catalogue>('/v1/payroll/catalogue');
-  const [period, setPeriod] = React.useState({ name: '', frequency: 'monthly', startDate: '', endDate: '', payDate: '' });
+  const [period, setPeriod] = React.useState({
+    name: '',
+    frequency: 'monthly',
+    startDate: '',
+    endDate: '',
+    payDate: '',
+  });
   const [connector, setConnector] = React.useState({ name: '', kind: 'csv' });
   const [chosen, setChosen] = React.useState<Record<string, string>>({});
   const [busy, setBusy] = React.useState<string | null>(null);
@@ -73,7 +103,11 @@ export default function PayrollPage() {
   const usable = (connectors.data ?? []).filter((c) => c.enabled && c.availability === 'available');
   const connectorName = (id: string) => connectors.data?.find((c) => c.id === id)?.name ?? '';
 
-  const fail = (err: unknown) => toast({ title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'), tone: 'danger' });
+  const fail = (err: unknown) =>
+    toast({
+      title: err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : t('common.error'),
+      tone: 'danger',
+    });
   async function run(key: string, fn: () => Promise<void>) {
     setBusy(key);
     try {
@@ -88,7 +122,10 @@ export default function PayrollPage() {
   const createPeriod = (e: React.FormEvent) => {
     e.preventDefault();
     void run('period', async () => {
-      await api('/v1/payroll/periods', { method: 'POST', json: { ...period, payDate: period.payDate || null } });
+      await api('/v1/payroll/periods', {
+        method: 'POST',
+        json: { ...period, payDate: period.payDate || null },
+      });
       setPeriod({ name: '', frequency: 'monthly', startDate: '', endDate: '', payDate: '' });
       toast({ title: t('payroll.periodCreated'), tone: 'success' });
       periods.reload();
@@ -134,7 +171,9 @@ export default function PayrollPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-title-2">{t('payroll.title')}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{t('payroll.intro')}</p>
+        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('payroll.intro')}
+        </p>
       </div>
 
       <Card>
@@ -173,21 +212,38 @@ export default function PayrollPage() {
                           <label className="sr-only" htmlFor={`connector-${p.id}`}>
                             {t('payroll.connectorFor', { name: p.name })}
                           </label>
-                          <select id={`connector-${p.id}`} className={`${select} h-8`} value={chosen[p.id] ?? usable[0]!.id} onChange={(e) => setChosen({ ...chosen, [p.id]: e.target.value })}>
+                          <select
+                            id={`connector-${p.id}`}
+                            className={`${select} h-8`}
+                            value={chosen[p.id] ?? usable[0]!.id}
+                            onChange={(e) => setChosen({ ...chosen, [p.id]: e.target.value })}
+                          >
                             {usable.map((c) => (
                               <option key={c.id} value={c.id}>
                                 {c.name}
                               </option>
                             ))}
                           </select>
-                          <Button size="sm" variant="secondary" loading={busy === `export:${p.id}`} onClick={() => exportPeriod(p)} aria-label={t('payroll.exportPeriod', { name: p.name })}>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={busy === `export:${p.id}`}
+                            onClick={() => exportPeriod(p)}
+                            aria-label={t('payroll.exportPeriod', { name: p.name })}
+                          >
                             <FileSpreadsheet aria-hidden className="h-4 w-4 stroke-[1.5]" />
                             {t('payroll.export')}
                           </Button>
                         </>
                       ) : null}
                       {canManage && p.status === 'open' ? (
-                        <Button size="sm" variant="ghost" loading={busy === `close:${p.id}`} onClick={() => close(p)} aria-label={t('payroll.closePeriod', { name: p.name })}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={busy === `close:${p.id}`}
+                          onClick={() => close(p)}
+                          aria-label={t('payroll.closePeriod', { name: p.name })}
+                        >
                           {t('payroll.close')}
                         </Button>
                       ) : null}
@@ -203,11 +259,24 @@ export default function PayrollPage() {
         {canManage ? (
           <form onSubmit={createPeriod} className="mt-4 grid gap-3 md:grid-cols-6 md:items-end">
             <Field id="period-name" label={t('payroll.periodName')} className="md:col-span-2">
-              {(p) => <Input {...p} required maxLength={120} value={period.name} onChange={(e) => setPeriod({ ...period, name: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={120}
+                  value={period.name}
+                  onChange={(e) => setPeriod({ ...period, name: e.target.value })}
+                />
+              )}
             </Field>
             <Field id="period-frequency" label={t('payroll.frequency')}>
               {(p) => (
-                <select {...p} className={select} value={period.frequency} onChange={(e) => setPeriod({ ...period, frequency: e.target.value })}>
+                <select
+                  {...p}
+                  className={select}
+                  value={period.frequency}
+                  onChange={(e) => setPeriod({ ...period, frequency: e.target.value })}
+                >
                   {['weekly', 'fortnightly', 'four_weekly', 'semi_monthly', 'monthly'].map((f) => (
                     <option key={f} value={f}>
                       {t(`payroll.frequencies.${f}`)}
@@ -217,10 +286,27 @@ export default function PayrollPage() {
               )}
             </Field>
             <Field id="period-start" label={t('payroll.start')}>
-              {(p) => <Input {...p} type="date" required value={period.startDate} onChange={(e) => setPeriod({ ...period, startDate: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="date"
+                  required
+                  value={period.startDate}
+                  onChange={(e) => setPeriod({ ...period, startDate: e.target.value })}
+                />
+              )}
             </Field>
             <Field id="period-end" label={t('payroll.end')}>
-              {(p) => <Input {...p} type="date" required min={period.startDate} value={period.endDate} onChange={(e) => setPeriod({ ...period, endDate: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  type="date"
+                  required
+                  min={period.startDate}
+                  value={period.endDate}
+                  onChange={(e) => setPeriod({ ...period, endDate: e.target.value })}
+                />
+              )}
             </Field>
             <Button type="submit" loading={busy === 'period'}>
               <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -239,7 +325,15 @@ export default function PayrollPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{c.name}</span>
                   <Badge>{t(`payroll.kinds.${c.kind}`)}</Badge>
-                  <Badge tone={c.availability === 'stub' ? 'warning' : c.enabled ? 'success' : 'neutral'}>{t(c.availability === 'stub' ? 'payroll.comingSoon' : c.enabled ? 'payroll.enabled' : 'payroll.disabled')}</Badge>
+                  <Badge tone={c.availability === 'stub' ? 'warning' : c.enabled ? 'success' : 'neutral'}>
+                    {t(
+                      c.availability === 'stub'
+                        ? 'payroll.comingSoon'
+                        : c.enabled
+                          ? 'payroll.enabled'
+                          : 'payroll.disabled',
+                    )}
+                  </Badge>
                 </div>
                 <p className="mt-1 text-footnote text-text-secondary">
                   {t(`payroll.delivery.${c.delivery.method}`)} ·{' '}
@@ -257,11 +351,24 @@ export default function PayrollPage() {
         {canManage ? (
           <form onSubmit={createConnector} className="mt-4 grid gap-3 md:grid-cols-4 md:items-end">
             <Field id="connector-name" label={t('payroll.connectorName')} className="md:col-span-2">
-              {(p) => <Input {...p} required maxLength={120} value={connector.name} onChange={(e) => setConnector({ ...connector, name: e.target.value })} />}
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={120}
+                  value={connector.name}
+                  onChange={(e) => setConnector({ ...connector, name: e.target.value })}
+                />
+              )}
             </Field>
             <Field id="connector-kind" label={t('payroll.kind')}>
               {(p) => (
-                <select {...p} className={select} value={connector.kind} onChange={(e) => setConnector({ ...connector, kind: e.target.value })}>
+                <select
+                  {...p}
+                  className={select}
+                  value={connector.kind}
+                  onChange={(e) => setConnector({ ...connector, kind: e.target.value })}
+                >
                   {(catalogue.data?.connectors ?? []).map((k) => (
                     <option key={k.kind} value={k.kind}>
                       {t(`payroll.kinds.${k.kind}`)}
@@ -307,17 +414,38 @@ export default function PayrollPage() {
                     </TD>
                     <TD>{connectorName(x.connectorId)}</TD>
                     <TD>{formatDateTime(x.createdAt, locale, tz)}</TD>
-                    <TD>{x.reproducible ? <Badge tone="accent">{t('payroll.fromSnapshot')}</Badge> : <Badge>{t('payroll.livePreview')}</Badge>}</TD>
+                    <TD>
+                      {x.reproducible ? (
+                        <Badge tone="accent">{t('payroll.fromSnapshot')}</Badge>
+                      ) : (
+                        <Badge>{t('payroll.livePreview')}</Badge>
+                      )}
+                    </TD>
                     <TD>
                       <div className="flex justify-end gap-2">
                         {canExport ? (
-                          <Button size="sm" variant="secondary" loading={busy === `download:${x.id}`} onClick={() => download(x)} aria-label={t('payroll.downloadFile', { file: x.fileName })}>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={busy === `download:${x.id}`}
+                            onClick={() => download(x)}
+                            aria-label={t('payroll.downloadFile', { file: x.fileName })}
+                          >
                             <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
                             {t('payroll.download')}
                           </Button>
                         ) : null}
                         {canExport && conn && conn.delivery.method !== 'download' ? (
-                          <Button size="sm" variant="ghost" loading={busy === `deliver:${x.id}`} onClick={() => deliver(x)} aria-label={t('payroll.deliverFile', { action: t(`payroll.deliverBy.${conn.delivery.method}`), file: x.fileName })}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            loading={busy === `deliver:${x.id}`}
+                            onClick={() => deliver(x)}
+                            aria-label={t('payroll.deliverFile', {
+                              action: t(`payroll.deliverBy.${conn.delivery.method}`),
+                              file: x.fileName,
+                            })}
+                          >
                             <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
                             {t(`payroll.deliverBy.${conn.delivery.method}`)}
                           </Button>
@@ -330,7 +458,11 @@ export default function PayrollPage() {
             </tbody>
           </Table>
         ) : (
-          <EmptyState icon={<FileSpreadsheet aria-hidden />} title={t('payroll.noExports')} body={t('payroll.noExportsBody')} />
+          <EmptyState
+            icon={<FileSpreadsheet aria-hidden />}
+            title={t('payroll.noExports')}
+            body={t('payroll.noExportsBody')}
+          />
         )}
       </Card>
 
@@ -355,7 +487,9 @@ export default function PayrollPage() {
                     {d.destination ?? ''}
                   </TD>
                   <TD>
-                    <Badge tone={statusTone[d.status as keyof typeof statusTone] ?? 'neutral'}>{t(`payroll.deliveryStatus.${d.status}`)}</Badge>
+                    <Badge tone={statusTone[d.status as keyof typeof statusTone] ?? 'neutral'}>
+                      {t(`payroll.deliveryStatus.${d.status}`)}
+                    </Badge>
                   </TD>
                 </TR>
               ))}

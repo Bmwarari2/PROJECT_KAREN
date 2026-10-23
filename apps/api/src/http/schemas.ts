@@ -8,7 +8,9 @@ export const Problem = Type.Object(
     code: Type.String(),
     detail: Type.Optional(Type.String()),
     requestId: Type.Optional(Type.String()),
-    errors: Type.Optional(Type.Array(Type.Object({ path: Type.Optional(Type.String()), message: Type.Optional(Type.String()) }))),
+    errors: Type.Optional(
+      Type.Array(Type.Object({ path: Type.Optional(Type.String()), message: Type.Optional(Type.String()) })),
+    ),
     region: Type.Optional(Type.String()),
     appUrl: Type.Optional(Type.String()),
     retryAfter: Type.Optional(Type.Integer()),

@@ -2,7 +2,23 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CalendarClock, Lock, Plus, Trash2, X } from 'lucide-react';
-import { Badge, Button, Dialog, DialogContent, DialogTrigger, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
 import { formatTimeOfDay } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -43,14 +59,24 @@ function RecipientPicker({ value, onChange }: { value: Person[]; onChange: (v: P
   const options = (found.data ?? []).filter((p) => !value.some((v) => v.id === p.id));
   return (
     <div className="flex flex-col gap-2">
-      <Field id="rcpt-q" label={t('reports.schedules.recipients')} hint={t('reports.schedules.recipientsHint')}>
+      <Field
+        id="rcpt-q"
+        label={t('reports.schedules.recipients')}
+        hint={t('reports.schedules.recipientsHint')}
+      >
         {(a) => <Input {...a} type="search" value={q} onChange={(e) => setQ(e.target.value)} />}
       </Field>
       {value.length ? (
         <ul className="flex flex-wrap gap-2" aria-label={t('reports.schedules.selected')}>
           {value.map((p) => (
             <li key={p.id}>
-              <Button type="button" size="sm" variant="secondary" onClick={() => onChange(value.filter((v) => v.id !== p.id))} aria-label={t('reports.schedules.removeRecipient', { name: p.displayName })}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => onChange(value.filter((v) => v.id !== p.id))}
+                aria-label={t('reports.schedules.removeRecipient', { name: p.displayName })}
+              >
                 {p.displayName}
                 <X aria-hidden className="h-4 w-4 stroke-[1.5]" />
               </Button>
@@ -58,16 +84,25 @@ function RecipientPicker({ value, onChange }: { value: Person[]; onChange: (v: P
           ))}
         </ul>
       ) : null}
-      <ul className="flex max-h-40 flex-col overflow-auto rounded-sm border border-border" aria-label={t('reports.schedules.matches')}>
+      <ul
+        className="flex max-h-40 flex-col overflow-auto rounded-sm border border-border"
+        aria-label={t('reports.schedules.matches')}
+      >
         {options.map((p) => (
           <li key={p.id}>
-            <button type="button" className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-callout hover:bg-surface" onClick={() => onChange([...value, p])}>
+            <button
+              type="button"
+              className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-callout hover:bg-surface"
+              onClick={() => onChange([...value, p])}
+            >
               <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
               {p.displayName}
             </button>
           </li>
         ))}
-        {!options.length ? <li className="px-3 py-2 text-footnote text-text-secondary">{t('reports.schedules.noMatches')}</li> : null}
+        {!options.length ? (
+          <li className="px-3 py-2 text-footnote text-text-secondary">{t('reports.schedules.noMatches')}</li>
+        ) : null}
       </ul>
     </div>
   );
@@ -82,17 +117,39 @@ export default function SchedulesPage() {
   const schedules = useApi<Schedule[]>('/v1/reports/schedules');
   const saved = useApi<Saved[]>('/v1/reports/saved');
   const [open, setOpen] = React.useState(false);
-  const blank = { savedReportId: '', frequency: 'weekly' as Schedule['frequency'], timeOfDay: '07:00', weekday: 1, dayOfMonth: 1, timeZone: zone, format: 'pdf', recipients: [] as Person[] };
+  const blank = {
+    savedReportId: '',
+    frequency: 'weekly' as Schedule['frequency'],
+    timeOfDay: '07:00',
+    weekday: 1,
+    dayOfMonth: 1,
+    timeZone: zone,
+    format: 'pdf',
+    recipients: [] as Person[],
+  };
   const [form, setForm] = React.useState(blank);
   const tzList = React.useMemo(zones, []);
 
-  if (schedules.error) return <EmptyState icon={<Lock aria-hidden />} title={t('reports.noAccess')} body={t('reports.noAccessBody')} />;
+  if (schedules.error)
+    return (
+      <EmptyState
+        level={1}
+        icon={<Lock aria-hidden />}
+        title={t('reports.noAccess')}
+        body={t('reports.noAccessBody')}
+      />
+    );
   if (!schedules.data) return <Skeleton className="h-64 w-full" />;
 
   const when = (s: Pick<Schedule, 'frequency' | 'timeOfDay' | 'weekday' | 'dayOfMonth' | 'timeZone'>) => {
     const time = formatTimeOfDay(s.timeOfDay, locale);
     if (s.frequency === 'daily') return t('reports.schedules.whenDaily', { time, zone: s.timeZone });
-    if (s.frequency === 'weekly') return t('reports.schedules.whenWeekly', { day: weekdayName(locale, s.weekday ?? 1), time, zone: s.timeZone });
+    if (s.frequency === 'weekly')
+      return t('reports.schedules.whenWeekly', {
+        day: weekdayName(locale, s.weekday ?? 1),
+        time,
+        zone: s.timeZone,
+      });
     return t('reports.schedules.whenMonthly', { day: s.dayOfMonth ?? 1, time, zone: s.timeZone });
   };
 
@@ -153,11 +210,21 @@ export default function SchedulesPage() {
               {t('reports.schedules.new')}
             </Button>
           </DialogTrigger>
-          <DialogContent title={t('reports.schedules.new')} description={t('reports.schedules.newBody')} closeLabel={t('common.close')}>
+          <DialogContent
+            title={t('reports.schedules.new')}
+            description={t('reports.schedules.newBody')}
+            closeLabel={t('common.close')}
+          >
             <form onSubmit={create} className="flex flex-col gap-4">
               <Field id="s-report" label={t('reports.schedules.report')}>
                 {(a) => (
-                  <select {...a} required className={selectClass} value={form.savedReportId} onChange={(e) => setForm({ ...form, savedReportId: e.target.value })}>
+                  <select
+                    {...a}
+                    required
+                    className={selectClass}
+                    value={form.savedReportId}
+                    onChange={(e) => setForm({ ...form, savedReportId: e.target.value })}
+                  >
                     <option value="" />
                     {(saved.data ?? []).map((r) => (
                       <option key={r.id} value={r.id}>
@@ -170,7 +237,14 @@ export default function SchedulesPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="s-frequency" label={t('reports.schedules.frequency')}>
                   {(a) => (
-                    <select {...a} className={selectClass} value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value as Schedule['frequency'] })}>
+                    <select
+                      {...a}
+                      className={selectClass}
+                      value={form.frequency}
+                      onChange={(e) =>
+                        setForm({ ...form, frequency: e.target.value as Schedule['frequency'] })
+                      }
+                    >
                       {(['daily', 'weekly', 'monthly'] as const).map((f) => (
                         <option key={f} value={f}>
                           {t(`reports.schedules.freq.${f}`)}
@@ -182,7 +256,12 @@ export default function SchedulesPage() {
                 {form.frequency === 'weekly' ? (
                   <Field id="s-weekday" label={t('reports.schedules.weekday')}>
                     {(a) => (
-                      <select {...a} className={selectClass} value={form.weekday} onChange={(e) => setForm({ ...form, weekday: Number(e.target.value) })}>
+                      <select
+                        {...a}
+                        className={selectClass}
+                        value={form.weekday}
+                        onChange={(e) => setForm({ ...form, weekday: Number(e.target.value) })}
+                      >
                         {[1, 2, 3, 4, 5, 6, 7].map((w) => (
                           <option key={w} value={w}>
                             {weekdayName(locale, w)}
@@ -192,19 +271,47 @@ export default function SchedulesPage() {
                     )}
                   </Field>
                 ) : form.frequency === 'monthly' ? (
-                  <Field id="s-dom" label={t('reports.schedules.dayOfMonth')} hint={t('reports.schedules.dayOfMonthHint')}>
-                    {(a) => <Input {...a} type="number" inputMode="numeric" min={1} max={28} value={form.dayOfMonth} onChange={(e) => setForm({ ...form, dayOfMonth: Number(e.target.value) })} />}
+                  <Field
+                    id="s-dom"
+                    label={t('reports.schedules.dayOfMonth')}
+                    hint={t('reports.schedules.dayOfMonthHint')}
+                  >
+                    {(a) => (
+                      <Input
+                        {...a}
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={28}
+                        value={form.dayOfMonth}
+                        onChange={(e) => setForm({ ...form, dayOfMonth: Number(e.target.value) })}
+                      />
+                    )}
                   </Field>
                 ) : (
                   <span />
                 )}
                 <Field id="s-time" label={t('reports.schedules.time')}>
-                  {(a) => <Input {...a} type="time" required value={form.timeOfDay} onChange={(e) => setForm({ ...form, timeOfDay: e.target.value })} />}
+                  {(a) => (
+                    <Input
+                      {...a}
+                      type="time"
+                      required
+                      value={form.timeOfDay}
+                      onChange={(e) => setForm({ ...form, timeOfDay: e.target.value })}
+                    />
+                  )}
                 </Field>
                 <Field id="s-zone" label={t('reports.schedules.timeZone')}>
                   {(a) => (
                     <>
-                      <Input {...a} required list="s-zones" value={form.timeZone} onChange={(e) => setForm({ ...form, timeZone: e.target.value })} />
+                      <Input
+                        {...a}
+                        required
+                        list="s-zones"
+                        value={form.timeZone}
+                        onChange={(e) => setForm({ ...form, timeZone: e.target.value })}
+                      />
                       <datalist id="s-zones">
                         {tzList.map((z) => (
                           <option key={z} value={z} />
@@ -215,7 +322,12 @@ export default function SchedulesPage() {
                 </Field>
                 <Field id="s-format" label={t('reports.schedules.format')}>
                   {(a) => (
-                    <select {...a} className={selectClass} value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value })}>
+                    <select
+                      {...a}
+                      className={selectClass}
+                      value={form.format}
+                      onChange={(e) => setForm({ ...form, format: e.target.value })}
+                    >
                       {['pdf', 'xlsx', 'csv'].map((f) => (
                         <option key={f} value={f}>
                           {t(`reports.format.${f}`)}
@@ -225,7 +337,10 @@ export default function SchedulesPage() {
                   )}
                 </Field>
               </div>
-              <RecipientPicker value={form.recipients} onChange={(recipients) => setForm({ ...form, recipients })} />
+              <RecipientPicker
+                value={form.recipients}
+                onChange={(recipients) => setForm({ ...form, recipients })}
+              />
               <p className="text-footnote text-text-secondary">{t('reports.schedules.privacy')}</p>
               <Button type="submit" disabled={!form.recipients.length || !form.savedReportId}>
                 {t('common.save')}
@@ -234,7 +349,9 @@ export default function SchedulesPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{t('reports.schedules.intro')}</p>
+      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
+        {t('reports.schedules.intro')}
+      </p>
       {schedules.data.length ? (
         <Table>
           <caption className="sr-only">{t('reports.schedules.title')}</caption>
@@ -258,13 +375,20 @@ export default function SchedulesPage() {
                 <TD className="uppercase">{s.format}</TD>
                 <TD className="text-right tabular-nums">{s.recipientUserIds.length}</TD>
                 <TD>
-                  <Badge tone={s.enabled ? 'success' : 'neutral'}>{t(s.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}</Badge>
+                  <Badge tone={s.enabled ? 'success' : 'neutral'}>
+                    {t(s.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}
+                  </Badge>
                 </TD>
                 <TD className="whitespace-nowrap text-right">
                   <Button size="sm" variant="ghost" onClick={() => toggle(s)}>
                     {t(s.enabled ? 'reports.schedules.pause' : 'reports.schedules.resume')}
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(s)} aria-label={t('reports.schedules.deleteNamed', { name: s.savedReportName })}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => remove(s)}
+                    aria-label={t('reports.schedules.deleteNamed', { name: s.savedReportName })}
+                  >
                     <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   </Button>
                 </TD>
@@ -273,7 +397,11 @@ export default function SchedulesPage() {
           </tbody>
         </Table>
       ) : (
-        <EmptyState icon={<CalendarClock aria-hidden />} title={t('reports.schedules.empty')} body={t(saved.data?.length ? 'reports.schedules.emptyBody' : 'reports.schedules.needSaved')} />
+        <EmptyState
+          icon={<CalendarClock aria-hidden />}
+          title={t('reports.schedules.empty')}
+          body={t(saved.data?.length ? 'reports.schedules.emptyBody' : 'reports.schedules.needSaved')}
+        />
       )}
     </div>
   );

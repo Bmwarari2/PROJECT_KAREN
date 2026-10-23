@@ -1,5 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { closeAllPools, emitEvent, enqueueJob, withTenant, type JobHandler, type TenantRouter } from '@thapsus/db';
+import {
+  closeAllPools,
+  emitEvent,
+  enqueueJob,
+  withTenant,
+  type JobHandler,
+  type TenantRouter,
+} from '@thapsus/db';
 import { createTestTenant, testRouter, uniqueSlug } from '@thapsus/db/testing';
 import { Engine, MemoryPublisher } from '../src/engine';
 
@@ -33,19 +40,45 @@ describe('jobs', () => {
     expect(ids[1]!.created).toBe(false);
     await e.tick();
     expect(runs).toBe(1);
-    const job = await withTenant(router, tenant, (tx) => tx.one('SELECT status, result, progress_done, progress_total FROM app.jobs WHERE id = $1', [ids[0]!.id]));
-    expect(job).toMatchObject({ status: 'succeeded', result: { ok: true, n: 1 }, progress_done: '4', progress_total: '4' });
+    const job = await withTenant(router, tenant, (tx) =>
+      tx.one('SELECT status, result, progress_done, progress_total FROM app.jobs WHERE id = $1', [
+        ids[0]!.id,
+      ]),
+    );
+    expect(job).toMatchObject({
+      status: 'succeeded',
+      result: { ok: true, n: 1 },
+      progress_done: '4',
+      progress_total: '4',
+    });
   });
 
   it('retries with backoff and fails permanently after max attempts', async () => {
     let now = new Date(Date.now() + 5_000);
-    const e = new Engine({ router, deps: {}, handlers: { 'test.flaky': async () => { throw new Error('boom'); } }, subscribers: {}, publisher: new MemoryPublisher(), maxAttempts: 3, now: () => now });
+    const e = new Engine({
+      router,
+      deps: {},
+      handlers: {
+        'test.flaky': async () => {
+          throw new Error('boom');
+        },
+      },
+      subscribers: {},
+      publisher: new MemoryPublisher(),
+      maxAttempts: 3,
+      now: () => now,
+    });
     const { id } = await withTenant(router, tenant, (tx) => enqueueJob(tx, 'test.flaky', 'flaky-1', {}));
     for (let i = 0; i < 3; i++) {
       await e.runDueJobs(tenant);
       now = new Date(now.getTime() + 60 * 60_000);
     }
-    const job = await withTenant(router, tenant, (tx) => tx.one<{ status: string; attempts: number; error: string }>('SELECT status, attempts, error FROM app.jobs WHERE id = $1', [id]));
+    const job = await withTenant(router, tenant, (tx) =>
+      tx.one<{ status: string; attempts: number; error: string }>(
+        'SELECT status, attempts, error FROM app.jobs WHERE id = $1',
+        [id],
+      ),
+    );
     expect(job).toMatchObject({ status: 'failed', attempts: 3, error: 'boom' });
   });
 });
@@ -53,13 +86,26 @@ describe('jobs', () => {
 describe('outbox', () => {
   it('delivers each event exactly once even with concurrent workers, and runs subscribers in-transaction', async () => {
     const seen: string[] = [];
-    const subscribers = { 'thing.*': [async (_tx: unknown, ev: { topic: string }) => void seen.push(ev.topic)] };
+    const subscribers = {
+      'thing.*': [async (_tx: unknown, ev: { topic: string }) => void seen.push(ev.topic)],
+    };
     const a = engine({}, new MemoryPublisher(), subscribers);
     const b = engine({}, new MemoryPublisher(), subscribers);
     await withTenant(router, tenant, async (tx) => {
-      for (let i = 0; i < 50; i++) await emitEvent(tx, i % 2 ? 'thing.created' : 'thing.changed', { i }, { type: 'thing', id: String(i) });
+      for (let i = 0; i < 50; i++)
+        await emitEvent(
+          tx,
+          i % 2 ? 'thing.created' : 'thing.changed',
+          { i },
+          { type: 'thing', id: String(i) },
+        );
     });
-    await Promise.all([a.e.dispatchOutbox(tenant, 10), b.e.dispatchOutbox(tenant, 10), a.e.tick(), b.e.tick()]);
+    await Promise.all([
+      a.e.dispatchOutbox(tenant, 10),
+      b.e.dispatchOutbox(tenant, 10),
+      a.e.tick(),
+      b.e.tick(),
+    ]);
     await a.e.processTenant(tenant);
     const all = [...a.publisher.published, ...b.publisher.published];
     expect(all).toHaveLength(50);
@@ -70,9 +116,15 @@ describe('outbox', () => {
 
   it('seals the audit chain as part of processing', async () => {
     const { e } = engine({});
-    await withTenant(router, tenant, (tx) => tx.exec(`INSERT INTO audit.events (tenant_id, actor_type, action) VALUES (app.current_tenant(), 'system', 'x')`));
+    await withTenant(router, tenant, (tx) =>
+      tx.exec(
+        `INSERT INTO audit.events (tenant_id, actor_type, action) VALUES (app.current_tenant(), 'system', 'x')`,
+      ),
+    );
     await e.processTenant(tenant);
-    const unsealed = await withTenant(router, tenant, (tx) => tx.one<{ n: number }>('SELECT count(*)::int AS n FROM audit.events WHERE hash IS NULL'));
+    const unsealed = await withTenant(router, tenant, (tx) =>
+      tx.one<{ n: number }>('SELECT count(*)::int AS n FROM audit.events WHERE hash IS NULL'),
+    );
     expect(unsealed.n).toBe(0);
   });
 });

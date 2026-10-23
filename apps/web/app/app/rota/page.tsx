@@ -1,7 +1,33 @@
 'use client';
 import * as React from 'react';
-import { CalendarClock, ChevronLeft, ChevronRight, Hand, LayoutTemplate, Plus, Repeat, Save, Send } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, Dialog, DialogContent, EmptyState, Field, Input, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, useToast } from '@thapsus/ui';
+import {
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Hand,
+  LayoutTemplate,
+  Plus,
+  Repeat,
+  Save,
+  Send,
+} from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  useToast,
+} from '@thapsus/ui';
 import { addDays, dayOfWeek } from '@thapsus/core/time';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -13,25 +39,46 @@ import { hasPermission, useSession } from '../shell';
 import { RotaGrid, shiftRange, type GridRowDto, type ShiftDto } from './rota-grid';
 
 const PAGE = 200;
-const fieldSelect = 'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
+const fieldSelect =
+  'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
 
 function errorText(err: unknown, fallback: string) {
   return err instanceof ApiProblem ? ((err.body.detail as string) ?? err.title) : fallback;
 }
 
 /** Week navigation shared by both views. */
-function WeekNav({ week, setWeek, zone, startsOn }: { week: string; setWeek: (w: string) => void; zone: string; startsOn: number }) {
+function WeekNav({
+  week,
+  setWeek,
+  zone,
+  startsOn,
+}: {
+  week: string;
+  setWeek: (w: string) => void;
+  zone: string;
+  startsOn: number;
+}) {
   const t = useT();
   const locale = useLocale();
   return (
     <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('rota.weekNav')}>
-      <Button size="icon" variant="ghost" aria-label={t('rota.prevWeek')} onClick={() => setWeek(addDays(week, -7))}>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={t('rota.prevWeek')}
+        onClick={() => setWeek(addDays(week, -7))}
+      >
         <ChevronLeft aria-hidden className="h-5 w-5 stroke-[1.5]" />
       </Button>
       <span className="min-w-[12ch] text-callout font-semibold" aria-live="polite">
         {t('rota.weekOf', { date: formatDate(week, locale) })}
       </span>
-      <Button size="icon" variant="ghost" aria-label={t('rota.nextWeek')} onClick={() => setWeek(addDays(week, 7))}>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={t('rota.nextWeek')}
+        onClick={() => setWeek(addDays(week, 7))}
+      >
         <ChevronRight aria-hidden className="h-5 w-5 stroke-[1.5]" />
       </Button>
       <Button size="sm" variant="secondary" onClick={() => setWeek(thisWeek(zone, startsOn))}>
@@ -52,7 +99,19 @@ interface Draft {
   notes: string;
 }
 
-function ShiftDialog({ draft, onClose, onSaved, locationId, zone }: { draft: Draft | null; onClose: () => void; onSaved: () => void; locationId: string; zone: string }) {
+function ShiftDialog({
+  draft,
+  onClose,
+  onSaved,
+  locationId,
+  zone,
+}: {
+  draft: Draft | null;
+  onClose: () => void;
+  onSaved: () => void;
+  locationId: string;
+  zone: string;
+}) {
   const t = useT();
   const toast = useToast();
   const [form, setForm] = React.useState<Draft | null>(draft);
@@ -71,15 +130,33 @@ function ShiftDialog({ draft, onClose, onSaved, locationId, zone }: { draft: Dra
     setBusy(true);
     setBlocked([]);
     try {
-      const body = { date: form.date, start: form.start, end: form.end, breakMinutes: form.breakMinutes, notes: form.notes || null };
+      const body = {
+        date: form.date,
+        start: form.start,
+        end: form.end,
+        breakMinutes: form.breakMinutes,
+        notes: form.notes || null,
+      };
       const r = form.id
         ? await api<{ warnings: FindingDto[] }>(`/v1/shifts/${form.id}`, { method: 'PATCH', json: body })
-        : await api<{ warnings: FindingDto[] }>('/v1/shifts', { method: 'POST', json: { ...body, employeeId: form.employeeId, ...(form.employeeId ? {} : locationId ? { locationId } : { zone }) } });
-      toast({ title: t('rota.saved'), body: r.warnings.length ? r.warnings.map((w) => t(`time.rule.${w.rule}`)).join(' · ') : undefined, tone: r.warnings.length ? 'neutral' : 'success' });
+        : await api<{ warnings: FindingDto[] }>('/v1/shifts', {
+            method: 'POST',
+            json: {
+              ...body,
+              employeeId: form.employeeId,
+              ...(form.employeeId ? {} : locationId ? { locationId } : { zone }),
+            },
+          });
+      toast({
+        title: t('rota.saved'),
+        body: r.warnings.length ? r.warnings.map((w) => t(`time.rule.${w.rule}`)).join(' · ') : undefined,
+        tone: r.warnings.length ? 'neutral' : 'success',
+      });
       onSaved();
       onClose();
     } catch (err) {
-      if (err instanceof ApiProblem && err.status === 422 && Array.isArray(err.body.violations)) setBlocked(err.body.violations as FindingDto[]);
+      if (err instanceof ApiProblem && err.status === 422 && Array.isArray(err.body.violations))
+        setBlocked(err.body.violations as FindingDto[]);
       else toast({ title: errorText(err, t('common.error')), tone: 'danger' });
     } finally {
       setBusy(false);
@@ -101,13 +178,68 @@ function ShiftDialog({ draft, onClose, onSaved, locationId, zone }: { draft: Dra
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={form.id ? t('rota.editShift') : t('rota.addShift')} description={form.employeeId ? form.name : t('rota.openShift')} closeLabel={t('common.close')}>
+      <DialogContent
+        title={form.id ? t('rota.editShift') : t('rota.addShift')}
+        description={form.employeeId ? form.name : t('rota.openShift')}
+        closeLabel={t('common.close')}
+      >
         <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
-          <Field id="shift-date" label={t('rota.date')}>{(p) => <Input {...p} type="date" required value={form.date} onChange={(e) => set({ date: e.target.value })} />}</Field>
-          <Field id="shift-break" label={t('rota.break')}>{(p) => <Input {...p} type="number" min={0} max={480} inputMode="numeric" value={form.breakMinutes} onChange={(e) => set({ breakMinutes: Number(e.target.value) })} />}</Field>
-          <Field id="shift-start" label={t('rota.start')}>{(p) => <Input {...p} type="time" required value={form.start} onChange={(e) => set({ start: e.target.value })} />}</Field>
-          <Field id="shift-end" label={t('rota.end')} hint={t('rota.overnightHint')}>{(p) => <Input {...p} type="time" required value={form.end} onChange={(e) => set({ end: e.target.value })} />}</Field>
-          <Field id="shift-notes" label={t('rota.notes')} className="sm:col-span-2">{(p) => <Input {...p} maxLength={500} value={form.notes} onChange={(e) => set({ notes: e.target.value })} />}</Field>
+          <Field id="shift-date" label={t('rota.date')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="date"
+                required
+                value={form.date}
+                onChange={(e) => set({ date: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field id="shift-break" label={t('rota.break')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                min={0}
+                max={480}
+                inputMode="numeric"
+                value={form.breakMinutes}
+                onChange={(e) => set({ breakMinutes: Number(e.target.value) })}
+              />
+            )}
+          </Field>
+          <Field id="shift-start" label={t('rota.start')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="time"
+                required
+                value={form.start}
+                onChange={(e) => set({ start: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field id="shift-end" label={t('rota.end')} hint={t('rota.overnightHint')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="time"
+                required
+                value={form.end}
+                onChange={(e) => set({ end: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field id="shift-notes" label={t('rota.notes')} className="sm:col-span-2">
+            {(p) => (
+              <Input
+                {...p}
+                maxLength={500}
+                value={form.notes}
+                onChange={(e) => set({ notes: e.target.value })}
+              />
+            )}
+          </Field>
           {blocked.length ? (
             <div role="alert" className="rounded-md bg-surface p-3 sm:col-span-2">
               <p className="mb-2 text-callout font-semibold text-danger">{t('rota.blocked')}</p>
@@ -154,7 +286,13 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
   const [draft, setDraft] = React.useState<Draft | null>(null);
   const [templateOpen, setTemplateOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
-  const state = React.useRef({ gen: 0, cursor: null as string | null, loaded: 0, loading: false, done: false });
+  const state = React.useRef({
+    gen: 0,
+    cursor: null as string | null,
+    loaded: 0,
+    loading: false,
+    done: false,
+  });
   /** Last row index in view; pages keep loading (keyset, in order) until the window is covered. */
   const wanted = React.useRef(0);
   const loadRef = React.useRef<() => Promise<void>>(async () => undefined);
@@ -166,7 +304,13 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
     s.loading = true;
     const gen = s.gen;
     try {
-      const page = await api<{ days: string[]; total: number | null; rows: GridRowDto[]; openShifts: ShiftDto[]; nextCursor: string | null }>(`/v1/rota?${filters}&limit=${PAGE}${s.cursor ? `&cursor=${s.cursor}` : ''}`);
+      const page = await api<{
+        days: string[];
+        total: number | null;
+        rows: GridRowDto[];
+        openShifts: ShiftDto[];
+        nextCursor: string | null;
+      }>(`/v1/rota?${filters}&limit=${PAGE}${s.cursor ? `&cursor=${s.cursor}` : ''}`);
       if (gen !== state.current.gen) return;
       if (page.total !== null) {
         setTotal(page.total);
@@ -175,7 +319,9 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
       }
       const offset = s.loaded;
       setRows((prev) => {
-        const next = prev.length ? [...prev] : new Array<GridRowDto | undefined>(page.total ?? page.rows.length);
+        const next = prev.length
+          ? [...prev]
+          : new Array<GridRowDto | undefined>(page.total ?? page.rows.length);
         page.rows.forEach((r, i) => (next[offset + i] = r));
         return next;
       });
@@ -211,14 +357,40 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
     [loadPage],
   );
 
-  const onAdd = React.useCallback((employeeId: string | null, date: string, name?: string) => setDraft({ employeeId, name, date, start: '09:00', end: '17:00', breakMinutes: 30, notes: '' }), []);
-  const onOpen = React.useCallback((s: ShiftDto) => setDraft({ id: s.id, employeeId: s.employeeId, name: s.employeeName ?? undefined, date: s.date, start: s.start, end: s.end, breakMinutes: s.breakMinutes, notes: s.notes ?? '' }), []);
+  const onAdd = React.useCallback(
+    (employeeId: string | null, date: string, name?: string) =>
+      setDraft({ employeeId, name, date, start: '09:00', end: '17:00', breakMinutes: 30, notes: '' }),
+    [],
+  );
+  const onOpen = React.useCallback(
+    (s: ShiftDto) =>
+      setDraft({
+        id: s.id,
+        employeeId: s.employeeId,
+        name: s.employeeName ?? undefined,
+        date: s.date,
+        start: s.start,
+        end: s.end,
+        breakMinutes: s.breakMinutes,
+        notes: s.notes ?? '',
+      }),
+    [],
+  );
 
   async function publish() {
     setBusy(true);
     try {
-      const r = await api<{ published: number; notified: number }>('/v1/rota/publish', { method: 'POST', json: { from: days[0], to: days[6], ...(locationId ? { locationId } : {}) } });
-      toast({ title: t('rota.publishedToast', { count: r.published, notified: r.notified }), tone: 'success' });
+      const r = await api<{ published: number; notified: number }>('/v1/rota/publish', {
+        method: 'POST',
+        json: { from: days[0], to: days[6], ...(locationId ? { locationId } : {}) },
+      });
+      toast({
+        title: t('rota.publishedToast', {
+          shifts: t('rota.shiftsPublished', { count: r.published }),
+          people: t('rota.peopleNotified', { count: r.notified }),
+        }),
+        tone: 'success',
+      });
       reset();
     } catch (err) {
       toast({ title: errorText(err, t('common.error')), tone: 'danger' });
@@ -228,8 +400,15 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
   }
   async function applyTemplate(id: string) {
     try {
-      const r = await api<{ created: number; openedInstead: unknown[] }>(`/v1/rota/templates/${id}/apply`, { method: 'POST', json: { weekStart: days[0] } });
-      toast({ title: t('rota.appliedToast', { count: r.created }), body: r.openedInstead.length ? t('rota.openedInstead', { count: r.openedInstead.length }) : undefined, tone: 'success' });
+      const r = await api<{ created: number; openedInstead: unknown[] }>(`/v1/rota/templates/${id}/apply`, {
+        method: 'POST',
+        json: { weekStart: days[0] },
+      });
+      toast({
+        title: t('rota.appliedToast', { count: r.created }),
+        body: r.openedInstead.length ? t('rota.openedInstead', { count: r.openedInstead.length }) : undefined,
+        tone: 'success',
+      });
       setTemplateOpen(false);
       reset();
     } catch (err) {
@@ -239,15 +418,35 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
   async function saveAsTemplate() {
     const loaded = rows.filter((r): r is GridRowDto => !!r);
     const slots = [
-      ...loaded.flatMap((r) => r.shifts.map((s) => ({ weekday: dayOfWeek(s.date), start: s.start, end: s.end, breakMinutes: s.breakMinutes, employeeId: r.employeeId }))),
-      ...open.map((s) => ({ weekday: dayOfWeek(s.date), start: s.start, end: s.end, breakMinutes: s.breakMinutes })),
+      ...loaded.flatMap((r) =>
+        r.shifts.map((s) => ({
+          weekday: dayOfWeek(s.date),
+          start: s.start,
+          end: s.end,
+          breakMinutes: s.breakMinutes,
+          employeeId: r.employeeId,
+        })),
+      ),
+      ...open.map((s) => ({
+        weekday: dayOfWeek(s.date),
+        start: s.start,
+        end: s.end,
+        breakMinutes: s.breakMinutes,
+      })),
     ];
     if (!slots.length) {
       toast({ title: t('rota.nothingToSave') });
       return;
     }
     try {
-      await api('/v1/rota/templates', { method: 'POST', json: { name: t('rota.templateName', { date: formatDate(days[0]!, locale) }), locationId: locationId || null, slots: slots.slice(0, 500) } });
+      await api('/v1/rota/templates', {
+        method: 'POST',
+        json: {
+          name: t('rota.templateName', { date: formatDate(days[0]!, locale) }),
+          locationId: locationId || null,
+          slots: slots.slice(0, 500),
+        },
+      });
       toast({ title: t('rota.templateSaved'), tone: 'success' });
       templates.reload();
     } catch (err) {
@@ -260,7 +459,12 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
       <div className="flex flex-wrap items-end gap-3">
         <Field id="rota-location" label={t('rota.location')} className="w-full sm:w-56">
           {(p) => (
-            <select {...p} className={fieldSelect} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+            <select
+              {...p}
+              className={fieldSelect}
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+            >
               <option value="">{t('rota.allLocations')}</option>
               {(locations.data ?? []).map((l) => (
                 <option key={l.id} value={l.id}>
@@ -274,11 +478,26 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
           {(p) => <Input {...p} type="search" value={q} onChange={(e) => setQ(e.target.value)} />}
         </Field>
         <span className="text-footnote text-text-secondary sm:mr-auto" aria-live="polite">
-          {total === null ? t('common.loading') : t('rota.peopleCount', { count: formatNumber(total, locale) })}
+          {total === null
+            ? t('common.loading')
+            : t('rota.peopleCount', { n: formatNumber(total, locale), count: total })}
         </span>
         {canEdit ? (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setDraft({ employeeId: null, date: days[0]!, start: '09:00', end: '17:00', breakMinutes: 30, notes: '' })}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                setDraft({
+                  employeeId: null,
+                  date: days[0]!,
+                  start: '09:00',
+                  end: '17:00',
+                  breakMinutes: 30,
+                  notes: '',
+                })
+              }
+            >
               <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
               {t('rota.addOpen')}
             </Button>
@@ -311,16 +530,28 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
           onOpen={onOpen}
         />
       )}
-      <p className="text-footnote text-text-secondary">{t('rota.legend')}</p>
-      <ShiftDialog draft={draft} onClose={() => setDraft(null)} onSaved={reset} locationId={locationId} zone={zone} />
+      <ShiftDialog
+        draft={draft}
+        onClose={() => setDraft(null)}
+        onSaved={reset}
+        locationId={locationId}
+        zone={zone}
+      />
       <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
-        <DialogContent title={t('rota.applyTemplate')} description={t('rota.applyTemplateBody', { date: formatDate(days[0]!, locale) })} closeLabel={t('common.close')}>
+        <DialogContent
+          title={t('rota.applyTemplate')}
+          description={t('rota.applyTemplateBody', { date: formatDate(days[0]!, locale) })}
+          closeLabel={t('common.close')}
+        >
           {templates.data?.length ? (
             <ul className="flex flex-col gap-2">
               {templates.data.map((tp) => (
                 <li key={tp.id} className="flex items-center justify-between gap-3">
                   <span className="text-callout">
-                    {tp.name} <span className="text-text-secondary">· {t('rota.slots', { count: tp.slots.length })}</span>
+                    {tp.name}{' '}
+                    <span className="text-text-secondary">
+                      · {t('rota.slots', { count: tp.slots.length })}
+                    </span>
                   </span>
                   <Button size="sm" onClick={() => applyTemplate(tp.id)}>
                     {t('rota.apply')}
@@ -349,14 +580,24 @@ interface Swap {
   shift: ShiftDto;
 }
 
-function SwapDialog({ shift, onClose, onDone }: { shift: ShiftDto | null; onClose: () => void; onDone: () => void }) {
+function SwapDialog({
+  shift,
+  onClose,
+  onDone,
+}: {
+  shift: ShiftDto | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
   const [q, setQ] = React.useState('');
   const query = useDebounced(q, 250);
-  const people = useApi<{ data: Array<{ id: string; displayName: string; jobTitle: string | null }> }>(shift && query.length >= 2 ? `/v1/directory?q=${encodeURIComponent(query)}&limit=10` : null);
+  const people = useApi<{ data: Array<{ id: string; displayName: string; jobTitle: string | null }> }>(
+    shift && query.length >= 2 ? `/v1/directory?q=${encodeURIComponent(query)}&limit=10` : null,
+  );
   if (!shift) return null;
   async function offer(toEmployeeId: string) {
     try {
@@ -370,9 +611,15 @@ function SwapDialog({ shift, onClose, onDone }: { shift: ShiftDto | null; onClos
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={t('rota.swapTitle')} description={`${dayLong(shift.date, locale)} · ${shiftRange(shift, locale)}`} closeLabel={t('common.close')}>
+      <DialogContent
+        title={t('rota.swapTitle')}
+        description={`${dayLong(shift.date, locale)} · ${shiftRange(shift, locale)}`}
+        closeLabel={t('common.close')}
+      >
         <Field id="swap-search" label={t('rota.colleague')} hint={t('rota.searchHint')}>
-          {(p) => <Input {...p} type="search" autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />}
+          {(p) => (
+            <Input {...p} type="search" autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />
+          )}
         </Field>
         <ul className="mt-3 flex flex-col gap-2" aria-live="polite">
           {(people.data?.data ?? [])
@@ -401,7 +648,9 @@ function MyRota({ week }: { week: string }) {
   const session = useSession();
   const to = addDays(week, 6);
   const mine = useApi<ShiftDto[]>(session?.employeeId ? `/v1/me/shifts?from=${week}&to=${to}` : null);
-  const open = useApi<Array<ShiftDto & { claimedByMe: boolean }>>(session?.employeeId ? `/v1/shifts/open?from=${week}&to=${to}` : null);
+  const open = useApi<Array<ShiftDto & { claimedByMe: boolean }>>(
+    session?.employeeId ? `/v1/shifts/open?from=${week}&to=${to}` : null,
+  );
   const swaps = useApi<Swap[]>('/v1/shift-swaps');
   const [swapFor, setSwapFor] = React.useState<ShiftDto | null>(null);
   const canSwap = hasPermission(session, 'rota.swap_request');
@@ -417,7 +666,12 @@ function MyRota({ week }: { week: string }) {
     swaps.reload();
   };
   if (!session?.employeeId) return <EmptyState title={t('rota.noEmployee')} />;
-  const swapTone = { pending: 'warning', approved: 'success', rejected: 'danger', cancelled: 'neutral' } as const;
+  const swapTone = {
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+    cancelled: 'neutral',
+  } as const;
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -434,7 +688,12 @@ function MyRota({ week }: { week: string }) {
                   <span className="text-text-secondary"> · {shiftRange(s, locale)}</span>
                 </span>
                 {canSwap ? (
-                  <Button size="sm" variant="ghost" onClick={() => setSwapFor(s)} aria-label={t('rota.swapFor', { day: dayLong(s.date, locale) })}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSwapFor(s)}
+                    aria-label={t('rota.swapFor', { day: dayLong(s.date, locale) })}
+                  >
                     <Repeat aria-hidden className="h-4 w-4 stroke-[1.5]" />
                     {t('rota.swap')}
                   </Button>
@@ -461,7 +720,17 @@ function MyRota({ week }: { week: string }) {
                 {s.claimedByMe ? (
                   <Badge tone="warning">{t('rota.requested')}</Badge>
                 ) : canSwap ? (
-                  <Button size="sm" variant="secondary" onClick={() => run(() => api(`/v1/shifts/${s.id}/claim`, { method: 'POST', json: {} }), t('rota.claimSent'))} aria-label={t('rota.claimFor', { day: dayLong(s.date, locale) })}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      run(
+                        () => api(`/v1/shifts/${s.id}/claim`, { method: 'POST', json: {} }),
+                        t('rota.claimSent'),
+                      )
+                    }
+                    aria-label={t('rota.claimFor', { day: dayLong(s.date, locale) })}
+                  >
                     <Hand aria-hidden className="h-4 w-4 stroke-[1.5]" />
                     {t('rota.claim')}
                   </Button>
@@ -483,25 +752,64 @@ function MyRota({ week }: { week: string }) {
                 w.kind === 'claim_open'
                   ? t('rota.claimLine', { date: dayLong(w.shift.date, locale) })
                   : incoming
-                    ? t('rota.swapFrom', { name: w.fromEmployeeName ?? '', date: dayLong(w.shift.date, locale) })
+                    ? t('rota.swapFrom', {
+                        name: w.fromEmployeeName ?? '',
+                        date: dayLong(w.shift.date, locale),
+                      })
                     : t('rota.swapTo', { name: w.toEmployeeName ?? '', date: dayLong(w.shift.date, locale) });
               return (
                 <li key={w.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
                   <span className="text-callout">{label}</span>
                   <span className="flex items-center gap-2">
-                    <Badge tone={swapTone[w.status as keyof typeof swapTone] ?? 'neutral'}>{t(`rota.swapStatus.${w.status}`)}</Badge>
+                    <Badge tone={swapTone[w.status as keyof typeof swapTone] ?? 'neutral'}>
+                      {t(`rota.swapStatus.${w.status}`)}
+                    </Badge>
                     {incoming && w.status === 'pending' && !w.acceptedAt ? (
                       <>
-                        <Button size="sm" onClick={() => run(() => api(`/v1/shift-swaps/${w.id}/respond`, { method: 'POST', json: { accept: true } }), t('rota.swapAccepted'))}>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            run(
+                              () =>
+                                api(`/v1/shift-swaps/${w.id}/respond`, {
+                                  method: 'POST',
+                                  json: { accept: true },
+                                }),
+                              t('rota.swapAccepted'),
+                            )
+                          }
+                        >
                           {t('rota.accept')}
                         </Button>
-                        <Button size="sm" variant="secondary" onClick={() => run(() => api(`/v1/shift-swaps/${w.id}/respond`, { method: 'POST', json: { accept: false } }), t('rota.swapDeclinedToast'))}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() =>
+                            run(
+                              () =>
+                                api(`/v1/shift-swaps/${w.id}/respond`, {
+                                  method: 'POST',
+                                  json: { accept: false },
+                                }),
+                              t('rota.swapDeclinedToast'),
+                            )
+                          }
+                        >
                           {t('rota.decline')}
                         </Button>
                       </>
                     ) : null}
                     {!incoming && w.status === 'pending' && w.fromEmployeeId === session.employeeId ? (
-                      <Button size="sm" variant="ghost" onClick={() => run(() => api(`/v1/shift-swaps/${w.id}/cancel`, { method: 'POST' }), t('rota.requestCancelled'))}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          run(
+                            () => api(`/v1/shift-swaps/${w.id}/cancel`, { method: 'POST' }),
+                            t('rota.requestCancelled'),
+                          )
+                        }
+                      >
                         {t('common.cancel')}
                       </Button>
                     ) : null}
@@ -535,8 +843,21 @@ export default function RotaPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto text-title-2">{t('rota.title')}</h1>
-        {week ? <WeekNav week={week} setWeek={(w) => setWeek(weekStartOf(w, startsOn))} zone={zone} startsOn={startsOn} /> : null}
+        {week ? (
+          <WeekNav
+            week={week}
+            setWeek={(w) => setWeek(weekStartOf(w, startsOn))}
+            zone={zone}
+            startsOn={startsOn}
+          />
+        ) : null}
       </div>
+      {/* Rendered with the heading, before the week loads: it is the page's largest text on a phone. */}
+      {canView ? (
+        <p className="-mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('rota.legend')}
+        </p>
+      ) : null}
       {!week ? (
         <Skeleton className="h-64 w-full" />
       ) : canView ? (

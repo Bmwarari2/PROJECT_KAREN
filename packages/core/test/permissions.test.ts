@@ -1,13 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { can, canSome, fieldAccess, filterReadable, isAdmin, unwritableFields, type Principal, type RoleGrant } from '../src/permissions';
+import {
+  can,
+  canSome,
+  fieldAccess,
+  filterReadable,
+  isAdmin,
+  unwritableFields,
+  type Principal,
+  type RoleGrant,
+} from '../src/permissions';
 import { BUILT_IN_ROLES } from '../src/roles';
 
 const role = (key: string, scope: RoleGrant['scope']): RoleGrant => {
   const r = BUILT_IN_ROLES.find((x) => x.key === key)!;
-  return { roleKey: r.key, isAdmin: r.isAdmin, permissions: r.permissions, fieldAccess: r.fieldAccess, scope };
+  return {
+    roleKey: r.key,
+    isAdmin: r.isAdmin,
+    permissions: r.permissions,
+    fieldAccess: r.fieldAccess,
+    scope,
+  };
 };
 
-const alice: Principal = { userId: 'u-alice', employeeId: 'e-alice', grants: [role('employee', { type: 'self' })] };
+const alice: Principal = {
+  userId: 'u-alice',
+  employeeId: 'e-alice',
+  grants: [role('employee', { type: 'self' })],
+};
 const manager: Principal = {
   userId: 'u-mgr',
   employeeId: 'e-mgr',
@@ -23,7 +42,12 @@ const deHr: Principal = {
   grants: [role('entity_hr_admin', { type: 'country', values: ['DE'] })],
 };
 
-const aliceTarget = { employeeId: 'e-alice', entityId: 'ent-uk', country: 'GB', managerChain: ['e-mgr', 'e-director'] };
+const aliceTarget = {
+  employeeId: 'e-alice',
+  entityId: 'ent-uk',
+  country: 'GB',
+  managerChain: ['e-mgr', 'e-director'],
+};
 const bobTarget = { employeeId: 'e-bob', entityId: 'ent-de', country: 'DE', managerChain: ['e-other'] };
 
 describe('permission engine', () => {
@@ -37,7 +61,9 @@ describe('permission engine', () => {
     expect(can(alice, 'self.read', aliceTarget)).toBe(true);
     expect(can(alice, 'self.read', bobTarget)).toBe(false);
     expect(fieldAccess(alice, 'employee', 'pay.salary', aliceTarget)).toBe('read');
-    expect(unwritableFields(alice, 'employee', ['personalEmail', 'jobTitle'], aliceTarget)).toEqual(['jobTitle']);
+    expect(unwritableFields(alice, 'employee', ['personalEmail', 'jobTitle'], aliceTarget)).toEqual([
+      'jobTitle',
+    ]);
     expect(fieldAccess(alice, 'employee', 'personalEmail', bobTarget)).toBe('none');
   });
 
@@ -46,7 +72,14 @@ describe('permission engine', () => {
     expect(can(manager, 'leave.approve', bobTarget)).toBe(false);
     expect(fieldAccess(manager, 'employee', 'jobTitle', aliceTarget)).toBe('read');
     expect(fieldAccess(manager, 'employee', 'pay.salary', aliceTarget)).toBe('none');
-    expect(filterReadable(manager, 'employee', { id: '1', displayName: 'A', homeAddress: 'x', jobTitle: 'Dev' }, aliceTarget)).toEqual({
+    expect(
+      filterReadable(
+        manager,
+        'employee',
+        { id: '1', displayName: 'A', homeAddress: 'x', jobTitle: 'Dev' },
+        aliceTarget,
+      ),
+    ).toEqual({
       id: '1',
       displayName: 'A',
       jobTitle: 'Dev',
@@ -54,9 +87,15 @@ describe('permission engine', () => {
   });
 
   it('delegation extends team authority for its duration only', () => {
-    const delegate: Principal = { userId: 'u-d', employeeId: 'e-d', grants: [role('manager', { type: 'own_team' })] };
+    const delegate: Principal = {
+      userId: 'u-d',
+      employeeId: 'e-d',
+      grants: [role('manager', { type: 'own_team' })],
+    };
     expect(can(delegate, 'leave.approve', aliceTarget)).toBe(false);
-    expect(can({ ...delegate, delegatedFromEmployeeIds: ['e-mgr'] }, 'leave.approve', aliceTarget)).toBe(true);
+    expect(can({ ...delegate, delegatedFromEmployeeIds: ['e-mgr'] }, 'leave.approve', aliceTarget)).toBe(
+      true,
+    );
   });
 
   it('entity and country scopes are enforced', () => {
@@ -68,8 +107,14 @@ describe('permission engine', () => {
   });
 
   it('department and location scopes are enforced (deny when the target lacks the attribute)', () => {
-    const deptHr: Principal = { userId: 'u-dept', grants: [role('entity_hr_admin', { type: 'department', values: ['dep-eng'] })] };
-    const siteLead: Principal = { userId: 'u-site', grants: [role('entity_hr_admin', { type: 'location', values: ['loc-leeds'] })] };
+    const deptHr: Principal = {
+      userId: 'u-dept',
+      grants: [role('entity_hr_admin', { type: 'department', values: ['dep-eng'] })],
+    };
+    const siteLead: Principal = {
+      userId: 'u-site',
+      grants: [role('entity_hr_admin', { type: 'location', values: ['loc-leeds'] })],
+    };
     const eng = { employeeId: 'e-1', departmentId: 'dep-eng', locationId: 'loc-london' };
     const ops = { employeeId: 'e-2', departmentId: 'dep-ops', locationId: 'loc-leeds' };
     expect(can(deptHr, 'employees.update', eng)).toBe(true);

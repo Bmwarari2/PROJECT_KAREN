@@ -40,7 +40,13 @@ function parse(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 function toHex([r, g, b]: [number, number, number]) {
-  return `#${[r, g, b].map((c) => Math.round(Math.min(255, Math.max(0, c))).toString(16).padStart(2, '0')).join('')}`;
+  return `#${[r, g, b]
+    .map((c) =>
+      Math.round(Math.min(255, Math.max(0, c)))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
 }
 /** Linear mix in sRGB: t = 0 → a, t = 1 → b. */
 export function mix(a: string, b: string, t: number): string {
@@ -52,7 +58,12 @@ export function derivePalette(accent: string, mode: Mode): BrandPalette {
   const a = accent.toLowerCase();
   const accentHover = mode === 'light' ? mix(a, '#000000', 0.18) : mix(a, '#ffffff', 0.25);
   const candidates = ['#ffffff', colors['surface-inverse'].light, colors['on-accent'][mode]];
-  const onAccent = candidates.reduce((best, c) => (Math.min(contrast(c, a), contrast(c, accentHover)) > Math.min(contrast(best, a), contrast(best, accentHover)) ? c : best));
+  const onAccent = candidates.reduce((best, c) =>
+    Math.min(contrast(c, a), contrast(c, accentHover)) >
+    Math.min(contrast(best, a), contrast(best, accentHover))
+      ? c
+      : best,
+  );
   const accentSubtle = mix(colors.bg[mode], a, mode === 'light' ? 0.1 : 0.2);
   return { accent: a, accentHover, onAccent, accentSubtle };
 }
@@ -82,7 +93,8 @@ export function paletteChecks(p: BrandPalette, mode: Mode): ContrastCheck[] {
  * dark mode, otherwise it is lightened step by step until it does.
  */
 export function checkBrandAccent(input: { light: string; dark?: string | null }): BrandCheckResult {
-  if (!HEX_COLOUR.test(input.light) || (input.dark && !HEX_COLOUR.test(input.dark))) throw new Error('Colours must be #RRGGBB');
+  if (!HEX_COLOUR.test(input.light) || (input.dark && !HEX_COLOUR.test(input.dark)))
+    throw new Error('Colours must be #RRGGBB');
   const light = derivePalette(input.light, 'light');
   let dark: BrandPalette;
   let darkDerived = false;
@@ -90,7 +102,8 @@ export function checkBrandAccent(input: { light: string; dark?: string | null })
   else {
     darkDerived = true;
     dark = derivePalette(input.light, 'dark');
-    for (let t = 0.05; t < 1 && paletteChecks(dark, 'dark').some((x) => !x.pass); t += 0.05) dark = derivePalette(mix(input.light, '#ffffff', t), 'dark');
+    for (let t = 0.05; t < 1 && paletteChecks(dark, 'dark').some((x) => !x.pass); t += 0.05)
+      dark = derivePalette(mix(input.light, '#ffffff', t), 'dark');
   }
   const checks = [...paletteChecks(light, 'light'), ...paletteChecks(dark, 'dark')];
   const failures = checks.filter((x) => !x.pass);
@@ -99,8 +112,16 @@ export function checkBrandAccent(input: { light: string; dark?: string | null })
 
 /** CSS that overrides the accent tokens for both modes (values are validated hex only). */
 export function brandingCss(p: Record<Mode, BrandPalette>): string {
-  for (const m of ['light', 'dark'] as const) for (const v of Object.values(p[m])) if (!HEX_COLOUR.test(v)) throw new Error('invalid colour');
+  for (const m of ['light', 'dark'] as const)
+    for (const v of Object.values(p[m])) if (!HEX_COLOUR.test(v)) throw new Error('invalid colour');
   const vars = (x: BrandPalette, indent: string) =>
-    [`--color-accent: ${x.accent};`, `--color-accent-hover: ${x.accentHover};`, `--color-on-accent: ${x.onAccent};`, `--color-accent-subtle: ${x.accentSubtle};`].map((l) => `${indent}${l}`).join('\n');
+    [
+      `--color-accent: ${x.accent};`,
+      `--color-accent-hover: ${x.accentHover};`,
+      `--color-on-accent: ${x.onAccent};`,
+      `--color-accent-subtle: ${x.accentSubtle};`,
+    ]
+      .map((l) => `${indent}${l}`)
+      .join('\n');
   return `:root {\n${vars(p.light, '  ')}\n}\n:root[data-theme='dark'] {\n${vars(p.dark, '  ')}\n}\n@media (prefers-color-scheme: dark) {\n  :root:not([data-theme='light']) {\n${vars(p.dark, '    ')}\n  }\n}\n`;
 }

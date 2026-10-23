@@ -3,7 +3,14 @@ import { sectionCounts } from '../inputs';
 import { fileBaseName, renderCsvBundle, renderXlsx } from '../render';
 import type { PayrollConnector } from './types';
 
-const SHEETS: Record<string, string> = { hours: 'Hours', absences: 'Absences', sickPay: 'Sick pay', payChanges: 'Pay changes', starters: 'Starters', leavers: 'Leavers' };
+const SHEETS: Record<string, string> = {
+  hours: 'Hours',
+  absences: 'Absences',
+  sickPay: 'Sick pay',
+  payChanges: 'Pay changes',
+  starters: 'Starters',
+  leavers: 'Leavers',
+};
 
 /**
  * Generic CSV: one CSV per enabled section (a single section gives a plain .csv, several give a .zip of
@@ -19,7 +26,12 @@ export const csvConnector: PayrollConnector = {
   docs: 'docs/integrations.md#generic-csv-and-excel',
   async render(inputs, connector) {
     const tables = mapInputs(inputs, connector.mapping);
-    const out = await renderCsvBundle(tables, connector.mapping, fileBaseName(connector.name, inputs.period.startDate, inputs.period.endDate), inputs.period.endDate);
+    const out = await renderCsvBundle(
+      tables,
+      connector.mapping,
+      fileBaseName(connector.name, inputs.period.startDate, inputs.period.endDate),
+      inputs.period.endDate,
+    );
     return { ...out, counts: sectionCounts(inputs) };
   },
 };
@@ -34,7 +46,12 @@ export const excelConnector: PayrollConnector = {
   docs: 'docs/integrations.md#generic-csv-and-excel',
   async render(inputs, connector) {
     const tables = mapInputs(inputs, connector.mapping);
-    const out = await renderXlsx(tables, fileBaseName(connector.name, inputs.period.startDate, inputs.period.endDate), inputs.period.endDate, SHEETS);
+    const out = await renderXlsx(
+      tables,
+      fileBaseName(connector.name, inputs.period.startDate, inputs.period.endDate),
+      inputs.period.endDate,
+      SHEETS,
+    );
     return { ...out, counts: sectionCounts(inputs) };
   },
 };

@@ -1,8 +1,28 @@
 import type { Tx } from '@thapsus/db';
-import { addDays, compareDates, dateParts, dayOfWeek, daysBetween, eachDay, maxDate, minDate, today } from '@thapsus/core/time';
+import {
+  addDays,
+  compareDates,
+  dateParts,
+  dayOfWeek,
+  daysBetween,
+  eachDay,
+  maxDate,
+  minDate,
+  today,
+} from '@thapsus/core/time';
 import type { RuleBook } from '@thapsus/rules';
 import { ApiError } from '../../http/errors';
-import { computeBalance, dailyHours, fmlaLeaveYear, leaveYearFor, requestAmount, type FmlaRule, type LeavePolicy, type PolicyPeriod, type WorkPattern } from './engine';
+import {
+  computeBalance,
+  dailyHours,
+  fmlaLeaveYear,
+  leaveYearFor,
+  requestAmount,
+  type FmlaRule,
+  type LeavePolicy,
+  type PolicyPeriod,
+  type WorkPattern,
+} from './engine';
 
 export interface LeaveContext {
   employeeId: string;
@@ -18,7 +38,20 @@ export interface LeaveContext {
 }
 
 export async function leaveContext(tx: Tx, employeeId: string, date: string): Promise<LeaveContext> {
-  const e = await tx.maybe<{ start_date: string; end_date: string | null; country: string | null; region_code: string | null; entity_id: string | null; location_id: string | null; department_id: string | null; fte: string | null; weekly_hours: string | null; work_pattern: WorkPattern | null; job_entity: string | null; job_location: string | null }>(
+  const e = await tx.maybe<{
+    start_date: string;
+    end_date: string | null;
+    country: string | null;
+    region_code: string | null;
+    entity_id: string | null;
+    location_id: string | null;
+    department_id: string | null;
+    fte: string | null;
+    weekly_hours: string | null;
+    work_pattern: WorkPattern | null;
+    job_entity: string | null;
+    job_location: string | null;
+  }>(
     `SELECT e.start_date, e.end_date, e.country, e.region_code, e.entity_id, e.location_id, e.department_id, j.fte, j.weekly_hours, j.work_pattern, j.entity_id AS job_entity, j.location_id AS job_location
        FROM app.employees e LEFT JOIN app.employee_jobs j ON j.tenant_id = e.tenant_id AND j.employee_id = e.id AND j.valid_from <= $2 AND (j.valid_to IS NULL OR j.valid_to > $2)
       WHERE e.id = $1`,
@@ -28,7 +61,10 @@ export async function leaveContext(tx: Tx, employeeId: string, date: string): Pr
   let country = e.country;
   let region = e.region_code;
   if ((!country || !region) && e.job_entity) {
-    const ent = await tx.maybe<{ country: string; region_code: string | null }>('SELECT country, region_code FROM app.legal_entities WHERE id = $1', [e.job_entity]);
+    const ent = await tx.maybe<{ country: string; region_code: string | null }>(
+      'SELECT country, region_code FROM app.legal_entities WHERE id = $1',
+      [e.job_entity],
+    );
     country = country ?? ent?.country ?? null;
     region = region ?? ent?.region_code ?? null;
   }
@@ -48,10 +84,17 @@ export async function leaveContext(tx: Tx, employeeId: string, date: string): Pr
 }
 
 /** Public holidays (observed days off) plus company closure days for the employee, for a date range. */
-export async function holidaysFor(tx: Tx, book: RuleBook, ctx: LeaveContext, from: string, to: string): Promise<string[]> {
+export async function holidaysFor(
+  tx: Tx,
+  book: RuleBook,
+  ctx: LeaveContext,
+  from: string,
+  to: string,
+): Promise<string[]> {
   const out = new Set<string>();
   if (ctx.country) {
-    for (let y = dateParts(from).year; y <= dateParts(to).year; y++) for (const d of book.daysOff(ctx.country, y, ctx.region ?? undefined)) out.add(d);
+    for (let y = dateParts(from).year; y <= dateParts(to).year; y++)
+      for (const d of book.daysOff(ctx.country, y, ctx.region ?? undefined)) out.add(d);
   }
   const cals = await tx.query<{ days: Array<{ date: string }> }>(
     `SELECT days FROM app.company_calendars WHERE (entity_id IS NULL AND location_id IS NULL) OR entity_id = $1 OR location_id = $2`,
@@ -71,7 +114,12 @@ export interface PolicyRow {
 }
 
 /** Assigned policy, else the most specific default (entity → country → any) for the leave type. */
-export async function policyFor(tx: Tx, ctx: LeaveContext, leaveTypeId: string, date: string): Promise<PolicyRow | undefined> {
+export async function policyFor(
+  tx: Tx,
+  ctx: LeaveContext,
+  leaveTypeId: string,
+  date: string,
+): Promise<PolicyRow | undefined> {
   const assigned = await tx.maybe<PolicyRow>(
     `SELECT p.* FROM app.leave_policy_assignments a JOIN app.leave_policies p ON p.tenant_id = a.tenant_id AND p.id = a.policy_id
       WHERE a.employee_id = $1 AND a.leave_type_id = $2 AND a.valid_from <= $3 AND (a.valid_to IS NULL OR a.valid_to > $3)`,
@@ -90,16 +138,31 @@ export async function policyFor(tx: Tx, ctx: LeaveContext, leaveTypeId: string, 
  * The leave year split wherever the applicable policy (assignment or default) or the employee's FTE
  * changes, so entitlement is summed over each part (ADR-0029).
  */
-export async function policyPeriods(tx: Tx, ctx: LeaveContext, leaveTypeId: string, ys: string, ye: string): Promise<Array<{ from: string; to: string; row: PolicyRow; fte: number }>> {
+export async function policyPeriods(
+  tx: Tx,
+  ctx: LeaveContext,
+  leaveTypeId: string,
+  ys: string,
+  ye: string,
+): Promise<Array<{ from: string; to: string; row: PolicyRow; fte: number }>> {
   const cuts = new Set([ys, ye]);
   const add = (d: string | null) => {
     if (d && d > ys && d < ye) cuts.add(d);
   };
   const ranges = [
-    ...(await tx.query<{ f: string; t: string | null }>(`SELECT valid_from AS f, valid_to AS t FROM app.leave_policy_assignments WHERE employee_id = $1 AND leave_type_id = $2 AND valid_from < $4 AND (valid_to IS NULL OR valid_to > $3)`, [ctx.employeeId, leaveTypeId, ys, ye])),
-    ...(await tx.query<{ f: string; t: string | null }>(`SELECT effective_from AS f, effective_to AS t FROM app.leave_policies WHERE leave_type_id = $1 AND effective_from < $3 AND (effective_to IS NULL OR effective_to > $2)`, [leaveTypeId, ys, ye])),
+    ...(await tx.query<{ f: string; t: string | null }>(
+      `SELECT valid_from AS f, valid_to AS t FROM app.leave_policy_assignments WHERE employee_id = $1 AND leave_type_id = $2 AND valid_from < $4 AND (valid_to IS NULL OR valid_to > $3)`,
+      [ctx.employeeId, leaveTypeId, ys, ye],
+    )),
+    ...(await tx.query<{ f: string; t: string | null }>(
+      `SELECT effective_from AS f, effective_to AS t FROM app.leave_policies WHERE leave_type_id = $1 AND effective_from < $3 AND (effective_to IS NULL OR effective_to > $2)`,
+      [leaveTypeId, ys, ye],
+    )),
   ];
-  const jobs = await tx.query<{ f: string; t: string | null; fte: string }>(`SELECT valid_from AS f, valid_to AS t, fte FROM app.employee_jobs WHERE employee_id = $1 AND valid_from < $3 AND (valid_to IS NULL OR valid_to > $2) ORDER BY valid_from`, [ctx.employeeId, ys, ye]);
+  const jobs = await tx.query<{ f: string; t: string | null; fte: string }>(
+    `SELECT valid_from AS f, valid_to AS t, fte FROM app.employee_jobs WHERE employee_id = $1 AND valid_from < $3 AND (valid_to IS NULL OR valid_to > $2) ORDER BY valid_from`,
+    [ctx.employeeId, ys, ye],
+  );
   for (const r of [...ranges, ...jobs]) {
     add(r.f);
     add(r.t);
@@ -126,9 +189,17 @@ export type HoursSource = 'timesheets' | 'recorded' | 'estimated' | 'none';
  * weeks in the range; else hours recorded in app.worked_hours (pro-rated by days for partial overlaps);
  * else, only when `estimate` is given, the working pattern over the days employed; else none (ADR-0030).
  */
-export async function hoursWorked(tx: Tx, employeeId: string, from: string, to: string, estimate?: { pattern: WorkPattern; startDate: string; endDate: string | null }): Promise<{ hours: number; source: HoursSource }> {
+export async function hoursWorked(
+  tx: Tx,
+  employeeId: string,
+  from: string,
+  to: string,
+  estimate?: { pattern: WorkPattern; startDate: string; endDate: string | null },
+): Promise<{ hours: number; source: HoursSource }> {
   if (compareDates(from, to) >= 0) return { hours: 0, source: 'none' };
-  const hasTimesheets = (await tx.one<{ ok: boolean }>(`SELECT to_regclass('app.timesheets') IS NOT NULL AS ok`)).ok;
+  const hasTimesheets = (
+    await tx.one<{ ok: boolean }>(`SELECT to_regclass('app.timesheets') IS NOT NULL AS ok`)
+  ).ok;
   if (hasTimesheets) {
     const t = await tx.one<{ n: number; m: string | null }>(
       `SELECT count(*)::int AS n, sum(regular_minutes + overtime_minutes + double_minutes) AS m FROM app.timesheets WHERE employee_id = $1 AND status = 'approved' AND week_start >= $2 AND week_start < $3`,
@@ -136,7 +207,10 @@ export async function hoursWorked(tx: Tx, employeeId: string, from: string, to: 
     );
     if (t.n > 0) return { hours: Math.round(Number(t.m ?? 0) / 0.6) / 100, source: 'timesheets' };
   }
-  const rows = await tx.query<{ period_start: string; period_end: string; minutes: number }>(`SELECT period_start, period_end, minutes FROM app.worked_hours WHERE employee_id = $1 AND period_start < $3 AND period_end > $2`, [employeeId, from, to]);
+  const rows = await tx.query<{ period_start: string; period_end: string; minutes: number }>(
+    `SELECT period_start, period_end, minutes FROM app.worked_hours WHERE employee_id = $1 AND period_start < $3 AND period_end > $2`,
+    [employeeId, from, to],
+  );
   if (rows.length) {
     let minutes = 0;
     for (const r of rows) {
@@ -154,7 +228,14 @@ export async function hoursWorked(tx: Tx, employeeId: string, from: string, to: 
   return { hours: Math.round(hours * 100) / 100, source: 'estimated' };
 }
 
-export async function balanceFor(tx: Tx, book: RuleBook, employeeId: string, leaveTypeId: string, asOf: string, depth = 0): Promise<(ReturnType<typeof computeBalance> & { policy: string; year: [string, string] }) | undefined> {
+export async function balanceFor(
+  tx: Tx,
+  book: RuleBook,
+  employeeId: string,
+  leaveTypeId: string,
+  asOf: string,
+  depth = 0,
+): Promise<(ReturnType<typeof computeBalance> & { policy: string; year: [string, string] }) | undefined> {
   const ctx = await leaveContext(tx, employeeId, asOf);
   const policy = await policyFor(tx, ctx, leaveTypeId, asOf);
   if (!policy) return undefined;
@@ -164,11 +245,19 @@ export async function balanceFor(tx: Tx, book: RuleBook, employeeId: string, lea
   const periods: PolicyPeriod[] = [];
   for (const s of segments) {
     let worked: number | undefined;
-    if (s.row.config.accrual.method === 'per_hour_worked') worked = (await hoursWorked(tx, employeeId, s.from, minDate(s.to, addDays(asOf, 1)))).hours;
+    if (s.row.config.accrual.method === 'per_hour_worked')
+      worked = (await hoursWorked(tx, employeeId, s.from, minDate(s.to, addDays(asOf, 1)))).hours;
     periods.push({ from: s.from, to: s.to, policy: s.row.config, fte: s.fte, hoursWorked: worked });
   }
   const holidays = await holidaysFor(tx, book, ctx, ys, ye);
-  const requests = await tx.query<{ start_date: string; end_date: string; status: 'approved' | 'pending'; start_half: 'am' | 'pm' | null; end_half: 'am' | 'pm' | null; hours: string | null }>(
+  const requests = await tx.query<{
+    start_date: string;
+    end_date: string;
+    status: 'approved' | 'pending';
+    start_half: 'am' | 'pm' | null;
+    end_half: 'am' | 'pm' | null;
+    hours: string | null;
+  }>(
     `SELECT start_date, end_date, status, start_half, end_half, CASE WHEN start_date = end_date AND explicit_hours THEN amount_hours END AS hours
        FROM app.leave_requests WHERE employee_id = $1 AND leave_type_id = $2 AND status IN ('pending', 'approved') AND start_date < $4 AND end_date >= $3`,
     [employeeId, leaveTypeId, ys, ye],
@@ -191,27 +280,44 @@ export async function balanceFor(tx: Tx, book: RuleBook, employeeId: string, lea
     asOf,
     pattern: ctx.pattern,
     holidays,
-    requests: requests.map((r) => ({ start: r.start_date, end: r.end_date, status: r.status, startHalf: r.start_half ?? undefined, endHalf: r.end_half ?? undefined, hours: r.hours === null ? undefined : Number(r.hours) })),
+    requests: requests.map((r) => ({
+      start: r.start_date,
+      end: r.end_date,
+      status: r.status,
+      startHalf: r.start_half ?? undefined,
+      endHalf: r.end_half ?? undefined,
+      hours: r.hours === null ? undefined : Number(r.hours),
+    })),
     adjustments: adjustments.map((a) => ({ days: Number(a.amount), effectiveDate: a.effective_date })),
     carriedIn,
   });
   return { ...b, policy: policy.name, year: [ys, ye] };
 }
 
-export async function amountFor(tx: Tx, book: RuleBook, employeeId: string, start: string, end: string, startHalf?: 'am' | 'pm', endHalf?: 'am' | 'pm', hours?: number) {
+export async function amountFor(
+  tx: Tx,
+  book: RuleBook,
+  employeeId: string,
+  start: string,
+  end: string,
+  startHalf?: 'am' | 'pm',
+  endHalf?: 'am' | 'pm',
+  hours?: number,
+) {
   const ctx = await leaveContext(tx, employeeId, start);
   const holidays = await holidaysFor(tx, book, ctx, start, end);
   return requestAmount({ start, end, pattern: ctx.pattern, holidays, startHalf, endHalf, hours });
 }
 
-const DEFAULT_TYPES: Array<[key: string, name: string, category: string, paid: boolean, approval: boolean]> = [
-  ['annual', 'Annual leave', 'annual', true, true],
-  ['sickness', 'Sickness', 'sickness', true, false],
-  ['unpaid', 'Unpaid leave', 'unpaid', false, true],
-  ['family', 'Family leave', 'family', true, true],
-  ['toil', 'Time off in lieu', 'toil', true, true],
-  ['fmla', 'FMLA leave', 'fmla', false, true],
-];
+const DEFAULT_TYPES: Array<[key: string, name: string, category: string, paid: boolean, approval: boolean]> =
+  [
+    ['annual', 'Annual leave', 'annual', true, true],
+    ['sickness', 'Sickness', 'sickness', true, false],
+    ['unpaid', 'Unpaid leave', 'unpaid', false, true],
+    ['family', 'Family leave', 'family', true, true],
+    ['toil', 'Time off in lieu', 'toil', true, true],
+    ['fmla', 'FMLA leave', 'fmla', false, true],
+  ];
 
 /** Creates a built-in leave type if missing (e.g. FMLA for a non-US tenant with US employees). */
 export async function ensureLeaveType(tx: Tx, key: string): Promise<string> {
@@ -220,7 +326,14 @@ export async function ensureLeaveType(tx: Tx, key: string): Promise<string> {
   const [, name, category, paid, approval] = DEFAULT_TYPES.find((t) => t[0] === key)!;
   await tx.exec(
     `INSERT INTO app.leave_types (tenant_id, key, name, category, paid, requires_approval, deducts_balance) VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, key) DO NOTHING`,
-    [key, JSON.stringify({ 'en-GB': name, 'en-US': name === 'Annual leave' ? 'Vacation' : name }), category, paid, approval, key === 'annual' || key === 'toil'],
+    [
+      key,
+      JSON.stringify({ 'en-GB': name, 'en-US': name === 'Annual leave' ? 'Vacation' : name }),
+      category,
+      paid,
+      approval,
+      key === 'annual' || key === 'toil',
+    ],
   );
   return (await tx.one<{ id: string }>('SELECT id FROM app.leave_types WHERE key = $1', [key])).id;
 }
@@ -229,11 +342,14 @@ export async function ensureLeaveType(tx: Tx, key: string): Promise<string> {
 export async function ensureLeaveDefaults(tx: Tx, book: RuleBook) {
   if (await tx.maybe('SELECT 1 FROM app.leave_types LIMIT 1')) return;
   // First use: pages load balances and types in parallel, so serialise seeding per tenant.
-  await tx.exec(`SELECT pg_advisory_xact_lock(hashtextextended('thapsus:leave-defaults:' || app.current_tenant()::text, 0))`);
+  await tx.exec(
+    `SELECT pg_advisory_xact_lock(hashtextextended('thapsus:leave-defaults:' || app.current_tenant()::text, 0))`,
+  );
   if (await tx.maybe('SELECT 1 FROM app.leave_types LIMIT 1')) return;
   const t = await tx.one<{ home_region: string }>('SELECT home_region FROM app.tenants');
   const ids: Record<string, string> = {};
-  for (const [key] of DEFAULT_TYPES) if (key !== 'fmla' || t.home_region === 'us') ids[key] = await ensureLeaveType(tx, key);
+  for (const [key] of DEFAULT_TYPES)
+    if (key !== 'fmla' || t.home_region === 'us') ids[key] = await ensureLeaveType(tx, key);
   // Statutory minimums come from the jurisdiction packs, never from code.
   const now = today('UTC');
   let days: number;
@@ -250,32 +366,85 @@ export async function ensureLeaveDefaults(tx: Tx, book: RuleBook) {
   }
   await tx.exec(
     `INSERT INTO app.leave_policies (tenant_id, name, leave_type_id, config) VALUES (app.current_tenant(), $1, $2, $3)`,
-    [`Standard annual leave (${days} days)`, ids.annual, JSON.stringify({ accrual: { method: 'annual_upfront', days }, unit: 'days', yearStart: '01-01', proRata: true, includesPublicHolidays, waitingDays: 0, carryOver: { maxDays: 5, expiresAfterMonths: 3 }, allowNegativeDays: 0, rounding: 'up_half_day' } satisfies LeavePolicy)],
+    [
+      `Standard annual leave (${days} days)`,
+      ids.annual,
+      JSON.stringify({
+        accrual: { method: 'annual_upfront', days },
+        unit: 'days',
+        yearStart: '01-01',
+        proRata: true,
+        includesPublicHolidays,
+        waitingDays: 0,
+        carryOver: { maxDays: 5, expiresAfterMonths: 3 },
+        allowNegativeDays: 0,
+        rounding: 'up_half_day',
+      } satisfies LeavePolicy),
+    ],
   );
   await tx.exec(
     `INSERT INTO app.leave_policies (tenant_id, name, leave_type_id, config) VALUES (app.current_tenant(), 'Time off in lieu', $1, $2)`,
-    [ids.toil, JSON.stringify({ accrual: { method: 'annual_upfront', days: 0 }, unit: 'days', yearStart: '01-01', proRata: false, includesPublicHolidays: false, waitingDays: 0, allowNegativeDays: 0, rounding: 'none' } satisfies LeavePolicy)],
+    [
+      ids.toil,
+      JSON.stringify({
+        accrual: { method: 'annual_upfront', days: 0 },
+        unit: 'days',
+        yearStart: '01-01',
+        proRata: false,
+        includesPublicHolidays: false,
+        waitingDays: 0,
+        allowNegativeDays: 0,
+        rounding: 'none',
+      } satisfies LeavePolicy),
+    ],
   );
 }
 
 /** Cover check: for each day, would approving leave drop present staff below a rule's minimum? */
-export async function coverProblems(tx: Tx, ctx: LeaveContext, start: string, end: string, excludeRequestId?: string) {
-  const rules = await tx.query<{ id: string; name: string; min_present: number; enforcement: 'warn' | 'block'; department_id: string | null; location_id: string | null }>(
+export async function coverProblems(
+  tx: Tx,
+  ctx: LeaveContext,
+  start: string,
+  end: string,
+  excludeRequestId?: string,
+) {
+  const rules = await tx.query<{
+    id: string;
+    name: string;
+    min_present: number;
+    enforcement: 'warn' | 'block';
+    department_id: string | null;
+    location_id: string | null;
+  }>(
     `SELECT * FROM app.cover_rules WHERE (department_id IS NULL OR department_id = $1) AND (location_id IS NULL OR location_id = $2)`,
     [ctx.departmentId, ctx.locationId],
   );
-  const problems: Array<{ rule: string; date: string; present: number; min: number; enforcement: 'warn' | 'block' }> = [];
+  const problems: Array<{
+    rule: string;
+    date: string;
+    present: number;
+    min: number;
+    enforcement: 'warn' | 'block';
+  }> = [];
   for (const r of rules) {
-    const headcount = (await tx.one<{ n: number }>(`SELECT count(*)::int AS n FROM app.employees WHERE status = 'active' AND ($1::uuid IS NULL OR department_id = $1) AND ($2::uuid IS NULL OR location_id = $2)`, [r.department_id, r.location_id])).n;
+    const headcount = (
+      await tx.one<{ n: number }>(
+        `SELECT count(*)::int AS n FROM app.employees WHERE status = 'active' AND ($1::uuid IS NULL OR department_id = $1) AND ($2::uuid IS NULL OR location_id = $2)`,
+        [r.department_id, r.location_id],
+      )
+    ).n;
     for (const d of eachDay(start, end)) {
       if (!ctx.pattern[dayOfWeek(d) as 1]) continue;
-      const away = (await tx.one<{ n: number }>(
-        `SELECT count(DISTINCT l.employee_id)::int AS n FROM app.leave_requests l JOIN app.employees e ON e.tenant_id = l.tenant_id AND e.id = l.employee_id
+      const away = (
+        await tx.one<{ n: number }>(
+          `SELECT count(DISTINCT l.employee_id)::int AS n FROM app.leave_requests l JOIN app.employees e ON e.tenant_id = l.tenant_id AND e.id = l.employee_id
           WHERE l.status IN ('approved', 'pending') AND l.start_date <= $1 AND l.end_date >= $1 AND ($2::uuid IS NULL OR e.department_id = $2) AND ($3::uuid IS NULL OR e.location_id = $3) AND ($4::uuid IS NULL OR l.id <> $4)`,
-        [d, r.department_id, r.location_id, excludeRequestId ?? null],
-      )).n;
+          [d, r.department_id, r.location_id, excludeRequestId ?? null],
+        )
+      ).n;
       const present = headcount - away - 1;
-      if (present < r.min_present) problems.push({ rule: r.name, date: d, present, min: r.min_present, enforcement: r.enforcement });
+      if (present < r.min_present)
+        problems.push({ rule: r.name, date: d, present, min: r.min_present, enforcement: r.enforcement });
     }
   }
   return problems;
@@ -301,7 +470,13 @@ export interface AbsenceSettings {
 }
 
 export async function absenceSettings(tx: Tx): Promise<AbsenceSettings> {
-  return (await tx.one<{ absence: AbsenceSettings | null }>("SELECT features->'absence' AS absence FROM app.tenants")).absence ?? {};
+  return (
+    (
+      await tx.one<{ absence: AbsenceSettings | null }>(
+        "SELECT features->'absence' AS absence FROM app.tenants",
+      )
+    ).absence ?? {}
+  );
 }
 
 /** US headcount on the payroll for each whole ISO workweek from `from` to `to` (29 CFR 825.105). */
@@ -328,10 +503,18 @@ export interface FmlaCaseRow {
 }
 
 /** Hours of FMLA leave (approved, or the given statuses) in the 12-month period that applies on `asOf` for the case's method. */
-export async function fmlaStatus(tx: Tx, book: RuleBook, c: FmlaCaseRow, asOf: string, opts: { excludeRequestId?: string; statuses?: string[] } = {}) {
+export async function fmlaStatus(
+  tx: Tx,
+  book: RuleBook,
+  c: FmlaCaseRow,
+  asOf: string,
+  opts: { excludeRequestId?: string; statuses?: string[] } = {},
+) {
   const rule = book.resolve<FmlaRule>('US', 'family_leave.fmla', asOf).value;
   const settings = (await absenceSettings(tx)).fmla ?? {};
-  const emp = await tx.one<{ start_date: string }>('SELECT start_date FROM app.employees WHERE id = $1', [c.employee_id]);
+  const emp = await tx.one<{ start_date: string }>('SELECT start_date FROM app.employees WHERE id = $1', [
+    c.employee_id,
+  ]);
   // Usage counts across the employee's FMLA cases (the entitlement is per employee, not per case).
   const usage = await tx.query<{ id: string; start_date: string; amount_hours: string; reason: string }>(
     `SELECT l.id, l.start_date, l.amount_hours, f.reason FROM app.leave_requests l JOIN app.fmla_cases f ON f.tenant_id = l.tenant_id AND f.id = l.fmla_case_id
@@ -352,5 +535,11 @@ export async function fmlaStatus(tx: Tx, book: RuleBook, c: FmlaCaseRow, asOf: s
   const inWindow = relevant.filter((u) => u.start_date >= window[0] && u.start_date < window[1]);
   const usedHours = Math.round(inWindow.reduce((s, u) => s + Number(u.amount_hours), 0) * 100) / 100;
   const entitlement = Number(c.entitlement_hours);
-  return { leaveYear: window, usedHours, remainingHours: Math.max(0, Math.round((entitlement - usedHours) * 100) / 100), entitlementHours: entitlement, requests: inWindow.length };
+  return {
+    leaveYear: window,
+    usedHours,
+    remainingHours: Math.max(0, Math.round((entitlement - usedHours) * 100) / 100),
+    entitlementHours: entitlement,
+    requests: inWindow.length,
+  };
 }

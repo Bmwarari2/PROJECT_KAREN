@@ -70,10 +70,15 @@ export function validateDefinition(def: RoleDefinition, custom: string[]) {
 }
 
 /** Admin-grade permissions always make a role an admin role, so MFA cannot be avoided by unticking a box. */
-export const effectiveIsAdmin = (requested: boolean | undefined, permissions: string[]) => !!requested || isAdminGrade(permissions);
+export const effectiveIsAdmin = (requested: boolean | undefined, permissions: string[]) =>
+  !!requested || isAdminGrade(permissions);
 
 export function exceeds(permissions: string[], fields: string[]) {
-  return new ApiError('forbidden', 'The role grants more than you hold', { reason: 'exceedsYourAccess', permissions, fields });
+  return new ApiError('forbidden', 'The role grants more than you hold', {
+    reason: 'exceedsYourAccess',
+    permissions,
+    fields,
+  });
 }
 
 /** Subset rule for defining a role: everything it grants must be held by the caller (at some scope). */
@@ -87,7 +92,9 @@ export function assertWithinCaller(caller: Principal, def: RoleDefinition, custo
 export function additions(prev: RoleDefinition, next: RoleDefinition, custom: string[]) {
   return {
     permissions: new Set(uncoveredPermissions([{ permissions: prev.permissions }], next.permissions)),
-    fields: new Set(excessFieldAccess([{ fieldAccess: prev.fieldAccess }], next.fieldAccess, fieldProbes(custom))),
+    fields: new Set(
+      excessFieldAccess([{ fieldAccess: prev.fieldAccess }], next.fieldAccess, fieldProbes(custom)),
+    ),
   };
 }
 
@@ -115,32 +122,61 @@ export async function assigneeFacts(tx: Tx, caller: Principal, user: AssigneeRow
     );
     inCallersTeam = !!row;
   }
-  return { target, isCaller: user.id === caller.userId || user.employee_id === caller.employeeId, inCallersTeam };
+  return {
+    target,
+    isCaller: user.id === caller.userId || user.employee_id === caller.employeeId,
+    inCallersTeam,
+  };
 }
 
-const VALUE_TABLE: Partial<Record<ScopeType, string>> = { entity: 'app.legal_entities', department: 'app.departments', location: 'app.locations' };
+const VALUE_TABLE: Partial<Record<ScopeType, string>> = {
+  entity: 'app.legal_entities',
+  department: 'app.departments',
+  location: 'app.locations',
+};
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Scope values must name things that exist in this tenant; scopes without values must carry none. */
 export async function normaliseScope(tx: Tx, scope: Scope): Promise<Scope> {
   const values = [...new Set(scope.values ?? [])];
   if (!VALUED_SCOPES.includes(scope.type)) {
-    if (values.length) throw new ApiError('validation', undefined, { errors: [{ path: '/scope/values', message: 'scopeTakesNoValues' }] });
+    if (values.length)
+      throw new ApiError('validation', undefined, {
+        errors: [{ path: '/scope/values', message: 'scopeTakesNoValues' }],
+      });
     return { type: scope.type, values: [] };
   }
-  if (!values.length) throw new ApiError('validation', undefined, { errors: [{ path: '/scope/values', message: 'scopeNeedsValues' }] });
+  if (!values.length)
+    throw new ApiError('validation', undefined, {
+      errors: [{ path: '/scope/values', message: 'scopeNeedsValues' }],
+    });
   let known: Set<string>;
   if (scope.type === 'country') {
-    if (values.some((v) => !/^[A-Z]{2}$/.test(v))) throw new ApiError('validation', undefined, { errors: [{ path: '/scope/values', message: 'unknownScopeValue' }] });
-    const rows = await tx.query<{ country: string }>(`SELECT country FROM app.legal_entities WHERE country = ANY($1) UNION SELECT country FROM app.locations WHERE country = ANY($1)`, [values]);
+    if (values.some((v) => !/^[A-Z]{2}$/.test(v)))
+      throw new ApiError('validation', undefined, {
+        errors: [{ path: '/scope/values', message: 'unknownScopeValue' }],
+      });
+    const rows = await tx.query<{ country: string }>(
+      `SELECT country FROM app.legal_entities WHERE country = ANY($1) UNION SELECT country FROM app.locations WHERE country = ANY($1)`,
+      [values],
+    );
     known = new Set(rows.map((r) => r.country.trim()));
   } else {
-    if (values.some((v) => !UUID_RE.test(v))) throw new ApiError('validation', undefined, { errors: [{ path: '/scope/values', message: 'unknownScopeValue' }] });
-    const rows = await tx.query<{ id: string }>(`SELECT id FROM ${VALUE_TABLE[scope.type]} WHERE id = ANY($1::uuid[])`, [values]);
+    if (values.some((v) => !UUID_RE.test(v)))
+      throw new ApiError('validation', undefined, {
+        errors: [{ path: '/scope/values', message: 'unknownScopeValue' }],
+      });
+    const rows = await tx.query<{ id: string }>(
+      `SELECT id FROM ${VALUE_TABLE[scope.type]} WHERE id = ANY($1::uuid[])`,
+      [values],
+    );
     known = new Set(rows.map((r) => r.id));
   }
   const unknown = values.filter((v) => !known.has(v));
-  if (unknown.length) throw new ApiError('validation', undefined, { errors: unknown.map(() => ({ path: '/scope/values', message: 'unknownScopeValue' })) });
+  if (unknown.length)
+    throw new ApiError('validation', undefined, {
+      errors: unknown.map(() => ({ path: '/scope/values', message: 'unknownScopeValue' })),
+    });
   return { type: scope.type, values: values.sort() };
 }
 
@@ -149,13 +185,22 @@ export async function scopeLabels(tx: Tx, scope: Scope): Promise<string[]> {
   const values = scope.values ?? [];
   const table = VALUE_TABLE[scope.type];
   if (!values.length || !table) return values;
-  const rows = await tx.query<{ id: string; name: string }>(`SELECT id, name FROM ${table} WHERE id = ANY($1::uuid[])`, [values]);
+  const rows = await tx.query<{ id: string; name: string }>(
+    `SELECT id, name FROM ${table} WHERE id = ANY($1::uuid[])`,
+    [values],
+  );
   const names = new Map(rows.map((r) => [r.id, r.name]));
   return values.map((v) => names.get(v) ?? v);
 }
 
 /** Whether the caller could grant (and therefore may revoke) `def` at `scope` for this assignee. */
-export function mayHandOut(caller: Principal, def: RoleDefinition, scope: Scope, assignee: Assignee, custom: string[]) {
+export function mayHandOut(
+  caller: Principal,
+  def: RoleDefinition,
+  scope: Scope,
+  assignee: Assignee,
+  custom: string[],
+) {
   const check = checkAssignment(caller, def, scope, assignee, fieldProbes(custom));
   return { ...check, ok: check.mayAssign && !check.permissions.length && !check.fields.length };
 }
@@ -176,7 +221,14 @@ export async function activeOwnerAssignments(tx: Tx): Promise<string[]> {
 }
 
 /** Stable, redaction-safe audit snapshot of a role definition (field keys such as employee.bank.* stay visible). */
-export function roleSnapshot(r: { key: string; name: string; description: string | null; isAdmin: boolean; permissions: string[]; fieldAccess: Record<string, FieldAccess> }) {
+export function roleSnapshot(r: {
+  key: string;
+  name: string;
+  description: string | null;
+  isAdmin: boolean;
+  permissions: string[];
+  fieldAccess: Record<string, FieldAccess>;
+}) {
   return {
     key: r.key,
     name: r.name,

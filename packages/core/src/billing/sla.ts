@@ -1,5 +1,15 @@
 import type { HomeRegion } from '../regions';
-import { addDays, addMinutes, compareInstants, dayOfWeek, instantToDate, minutesBetween, startOfDayInstant, zonedToInstant, type Instant } from '../time';
+import {
+  addDays,
+  addMinutes,
+  compareInstants,
+  dayOfWeek,
+  instantToDate,
+  minutesBetween,
+  startOfDayInstant,
+  zonedToInstant,
+  type Instant,
+} from '../time';
 import { planById, type BillingConfig, type Priority, type SupportHours } from './config';
 
 /**
@@ -10,7 +20,8 @@ import { planById, type BillingConfig, type Priority, type SupportHours } from '
 
 /** Adds `minutes` of support time to `start`, skipping closed hours (DST-safe via the zone rules). */
 export function addSupportMinutes(start: Instant, minutes: number, hours: SupportHours | null): Instant {
-  if (!Number.isSafeInteger(minutes) || minutes < 0) throw new RangeError('minutes must be a non-negative integer');
+  if (!Number.isSafeInteger(minutes) || minutes < 0)
+    throw new RangeError('minutes must be a non-negative integer');
   if (!hours) return addMinutes(start, minutes);
   let cursor = start;
   let remaining = minutes;
@@ -44,7 +55,13 @@ export function supportHoursFor(cfg: BillingConfig, planId: string, region: Home
 }
 
 /** Deadlines for a ticket opened at `openedAt` on a plan and priority, in a region. */
-export function slaDeadlines(cfg: BillingConfig, planId: string, priority: Priority, region: HomeRegion, openedAt: Instant): SlaDeadlines {
+export function slaDeadlines(
+  cfg: BillingConfig,
+  planId: string,
+  priority: Priority,
+  region: HomeRegion,
+  openedAt: Instant,
+): SlaDeadlines {
   const plan = planById(cfg, planId) ?? planById(cfg, cfg.trial.planId)!;
   const target = plan.support.sla[priority];
   const hours = supportHoursFor(cfg, plan.id, region);
@@ -61,7 +78,10 @@ export function slaDeadlines(cfg: BillingConfig, planId: string, priority: Prior
 export type SlaState = 'on_track' | 'at_risk' | 'breached' | 'met' | 'met_late';
 
 /** State of one timer at `now`: met (on time or late) once `metAt` is set, otherwise by deadline. */
-export function slaState(t: { dueAt: Instant; atRiskAt: Instant; metAt: Instant | null }, now: Instant): SlaState {
+export function slaState(
+  t: { dueAt: Instant; atRiskAt: Instant; metAt: Instant | null },
+  now: Instant,
+): SlaState {
   if (t.metAt) return compareInstants(t.metAt, t.dueAt) <= 0 ? 'met' : 'met_late';
   if (compareInstants(now, t.dueAt) > 0) return 'breached';
   if (compareInstants(now, t.atRiskAt) >= 0) return 'at_risk';

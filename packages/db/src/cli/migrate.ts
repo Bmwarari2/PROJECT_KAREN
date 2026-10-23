@@ -10,7 +10,9 @@ import { secretToUrl } from '../router';
  * role secrets injected by ECS from Secrets Manager.
  */
 const env = process.env;
-const ownerUrl = env.MIGRATOR_DATABASE_URL ?? (env.OWNER_DATABASE_SECRET ? secretToUrl(env.OWNER_DATABASE_SECRET, env.DATABASE_HOST) : undefined);
+const ownerUrl =
+  env.MIGRATOR_DATABASE_URL ??
+  (env.OWNER_DATABASE_SECRET ? secretToUrl(env.OWNER_DATABASE_SECRET, env.DATABASE_HOST) : undefined);
 if (!ownerUrl) {
   console.error('MIGRATOR_DATABASE_URL or OWNER_DATABASE_SECRET is required');
   process.exit(2);

@@ -19,8 +19,12 @@ export const weekDays = (weekStart: string) => Array.from({ length: 7 }, (_, i) 
 
 /** "Mon 15" style column header (formatting only; the civil date never shifts). */
 export function dayLabel(date: string, locale: Locale): string {
-  return dateTimeFormat(locale, { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
+  return dateTimeFormat(locale, { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).format(
+    new Date(`${date}T00:00:00Z`),
+  );
 }
 export function dayLong(date: string, locale: Locale): string {
-  return dateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
+  return dateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(
+    new Date(`${date}T00:00:00Z`),
+  );
 }
