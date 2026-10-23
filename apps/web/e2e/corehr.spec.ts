@@ -55,7 +55,7 @@ test.describe('field-level permissions in the UI', () => {
 
     // the owner sees pay and personal details
     await page.goto(`/app/people/${report}`);
-    await expect(page.getByRole('heading', { level: 1, name: 'Reese Report' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Reese Report' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Pay', exact: true })).toBeVisible();
     await expect(page.getByText('£40,000.00')).toBeVisible();
     await expect(page.getByText('Date of birth')).toBeVisible();
@@ -79,7 +79,7 @@ test.describe('field-level permissions in the UI', () => {
     expect(viaApi.employee.payAmountMinor).toBeUndefined();
 
     await mp.goto(`/app/people/${report}`);
-    await expect(mp.getByRole('heading', { level: 1, name: 'Reese Report' })).toBeVisible();
+    await expect(mp.getByRole('heading', { level: 2, name: 'Reese Report' })).toBeVisible();
     await expect(mp.getByRole('heading', { name: 'Job', exact: true })).toBeVisible();
     await expect(mp.getByText('Analyst').first()).toBeVisible();
     await expect(mp.getByRole('heading', { name: 'Pay', exact: true })).toHaveCount(0);

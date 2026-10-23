@@ -696,6 +696,9 @@
       "kpiActiveHint": "Working here today",
       "kpiPreStartHint": "Hired, not started yet",
       "kpiLeaverHint": "No longer working here"
+    },
+    "profile": {
+      "noManager": "No manager"
     }
   },
   "org": {

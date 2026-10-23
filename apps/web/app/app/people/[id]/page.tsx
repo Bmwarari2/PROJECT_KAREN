@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { FileText, History, Pencil, Send } from 'lucide-react';
 import {
@@ -22,10 +23,13 @@ import {
 } from '@thapsus/ui';
 import { formatDate, formatMoney, numberFormat, type Locale } from '@thapsus/core/i18n';
 import { money, parseDecimal } from '@thapsus/core/money';
+import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { hasPermission, useSession } from '../../shell';
+import { viewerZone } from '@/lib/week';
+import { Avatar } from '@/components/dashboard/parts';
+import { PageTitle, hasPermission, useSession } from '../../shell';
 import type { LeaveBalance } from '@/components/leave-balances';
 import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
 
@@ -85,6 +89,7 @@ const EDITABLE = [
 
 const ENUM_FIELDS = new Set(['employmentType', 'contractType', 'payFrequency']);
 const NUMBER_FIELDS = new Set(['fte', 'weeklyHours', 'noticePeriodDays']);
+const statusTone = { active: 'success', pre_start: 'accent', leaver: 'neutral' } as const;
 
 /**
  * A field's value for reading. With `t`, coded values (employment type, contract type, pay frequency)
@@ -128,16 +133,17 @@ export default function EmployeePage() {
   );
   const [open, setOpen] = React.useState(false);
   const [values, setValues] = React.useState<Record<string, string>>({});
-  const [effectiveDate, setEffectiveDate] = React.useState(new Date().toISOString().slice(0, 10));
+  const session = useSession();
+  // a change takes effect from today in the viewer's zone unless they pick another date
+  const [effectiveDate, setEffectiveDate] = React.useState(() => today(viewerZone(session?.timeZone)));
   const [saving, setSaving] = React.useState(false);
   const [inviting, setInviting] = React.useState(false);
-  const session = useSession();
-  const canInvite = session?.permissions.some((p) => p === '*' || p === 'users.*' || p === 'users.invite');
+  const canInvite = hasPermission(session, 'users.invite');
   const balances = useApi<LeaveBalance[]>(`/v1/leave/balances/${id}`);
 
   if (error)
     return (
-      <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />
+      <EmptyState level={2} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />
     );
   if (!data) return <Skeleton className="h-96 w-full" />;
   const e = data.employee;
@@ -178,136 +184,172 @@ export default function EmployeePage() {
     }
   }
 
+  const manager =
+    e.manager && typeof e.manager === 'object' ? (e.manager as { id: string; displayName: string }) : null;
+  const meta: Array<{ key: string; label: string; value: React.ReactNode }> = [];
+  if ('manager' in e)
+    meta.push({
+      key: 'manager',
+      label: t('people.field.managerId'),
+      value: manager ? (
+        <Link href={`/app/people/${manager.id}`} className="text-text hover:text-accent">
+          {manager.displayName}
+        </Link>
+      ) : (
+        t('people.profile.noManager')
+      ),
+    });
+  for (const f of ['department', 'location', 'startDate', 'employeeNumber', 'workEmail'] as const)
+    if (f in e && (f !== 'workEmail' || e.workEmail))
+      meta.push({
+        key: f,
+        label: t(`people.field.${f}`),
+        value:
+          f === 'workEmail' && typeof e.workEmail === 'string' ? (
+            <a href={`mailto:${e.workEmail}`} className="break-all text-text hover:text-accent">
+              {e.workEmail}
+            </a>
+          ) : (
+            display(f, e[f], e, locale, t)
+          ),
+      });
+  const name = String(e.displayName ?? '');
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start gap-4">
-        <span
-          aria-hidden
-          className="flex h-14 w-14 items-center justify-center rounded-pill bg-accent-subtle text-title-3 text-accent"
-        >
-          {String(e.displayName ?? '?')
-            .split(' ')
-            .map((p) => p[0])
-            .slice(0, 2)
-            .join('')}
-        </span>
-        <div className="mr-auto">
-          <h1 className="text-title-2">{e.displayName}</h1>
-          <p className="text-callout text-text-secondary">
-            {[e.jobTitle, e.department, e.location].filter(Boolean).join(' · ')}
-          </p>
-          {e.status ? (
-            <Badge className="mt-2" tone={e.status === 'active' ? 'success' : 'neutral'}>
-              {t(`people.status.${e.status}`)}
-            </Badge>
-          ) : null}
-          {typeof e.endDate === 'string' && e.status !== 'leaver' ? (
-            <Badge className="ml-2 mt-2" tone="warning" data-testid="leaving-on">
-              {t('admin.leaver.leavingOn', { date: formatDate(e.endDate, locale) })}
-            </Badge>
-          ) : null}
-        </div>
-        {canInvite ? (
-          <Button
-            variant="secondary"
-            className="self-end"
-            loading={inviting}
-            onClick={async () => {
-              setInviting(true);
-              try {
-                await api(`/v1/employees/${id}/invite`, { method: 'POST', json: {} });
-                toast({ title: t('people.invited'), tone: 'success' });
-              } catch (err) {
-                toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
-              } finally {
-                setInviting(false);
-              }
-            }}
-          >
-            <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
-            {t('people.invite')}
-          </Button>
-        ) : null}
-        {hasPermission(session, 'employees.update') && e.status !== 'leaver' ? (
-          <TransferDialog
-            employeeId={id}
-            name={String(e.displayName ?? '')}
-            onDone={() => (reload(), history.reload())}
-          />
-        ) : null}
-        {hasPermission(session, 'employees.terminate') && e.status !== 'leaver' && !e.endDate ? (
-          <LeaverDialog employeeId={id} name={String(e.displayName ?? '')} onDone={reload} />
-        ) : null}
-        <label className="flex flex-col gap-1 text-footnote text-text-secondary">
-          {t('people.asOf')}
-          <Input
-            type="date"
-            value={asOf || data.asOf}
-            onChange={(ev) => setAsOf(ev.target.value)}
-            className="w-44"
-          />
-        </label>
-        {writable.length ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button variant="secondary" className="self-end">
-                <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('people.makeChange')}
+      <Card className="p-0" data-testid="profile-header">
+        <div className="flex flex-wrap items-start gap-x-5 gap-y-4 p-5 md:p-6">
+          <Avatar name={name} size="lg" />
+          <div className="min-w-0 flex-1 basis-56">
+            <PageTitle className="text-title-2 break-words">{e.displayName}</PageTitle>
+            {e.jobTitle ? <p className="text-body text-text-secondary">{String(e.jobTitle)}</p> : null}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {e.status ? (
+                <Badge tone={statusTone[e.status as keyof typeof statusTone] ?? 'neutral'}>
+                  {t(`people.status.${e.status}`)}
+                </Badge>
+              ) : null}
+              {typeof e.endDate === 'string' && e.status !== 'leaver' ? (
+                <Badge tone="warning" data-testid="leaving-on">
+                  {t('admin.leaver.leavingOn', { date: formatDate(e.endDate, locale) })}
+                </Badge>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {writable.length ? (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                    {t('people.makeChange')}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  title={t('people.makeChange')}
+                  description={t('people.makeChangeBody')}
+                  closeLabel={t('common.close')}
+                >
+                  <form onSubmit={save} className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1">
+                    <Field id="effectiveDate" label={t('people.effectiveDate')}>
+                      {(p) => (
+                        <Input
+                          {...p}
+                          type="date"
+                          required
+                          value={effectiveDate}
+                          onChange={(ev) => setEffectiveDate(ev.target.value)}
+                        />
+                      )}
+                    </Field>
+                    {writable.map((f) => (
+                      <Field key={f} id={`f-${f}`} label={t(`people.field.${f}`)}>
+                        {(p) => (
+                          <Input
+                            {...p}
+                            type={
+                              /Date$/.test(f)
+                                ? 'date'
+                                : ['weeklyHours', 'fte', 'noticePeriodDays', 'payAmountMinor'].includes(f)
+                                  ? 'number'
+                                  : 'text'
+                            }
+                            step="any"
+                            placeholder={display(f, e[f], e, locale)}
+                            value={values[f] ?? ''}
+                            onChange={(ev) => setValues((v) => ({ ...v, [f]: ev.target.value }))}
+                          />
+                        )}
+                      </Field>
+                    ))}
+                    <Button type="submit" loading={saving}>
+                      {t('common.save')}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            ) : null}
+            {hasPermission(session, 'employees.update') && e.status !== 'leaver' ? (
+              <TransferDialog employeeId={id} name={name} onDone={() => (reload(), history.reload())} />
+            ) : null}
+            {hasPermission(session, 'employees.terminate') && e.status !== 'leaver' && !e.endDate ? (
+              <LeaverDialog employeeId={id} name={name} onDone={reload} />
+            ) : null}
+            {canInvite ? (
+              <Button
+                variant="secondary"
+                loading={inviting}
+                onClick={async () => {
+                  setInviting(true);
+                  try {
+                    await api(`/v1/employees/${id}/invite`, { method: 'POST', json: {} });
+                    toast({ title: t('people.invited'), tone: 'success' });
+                  } catch (err) {
+                    toast({
+                      title: err instanceof ApiProblem ? err.title : t('common.error'),
+                      tone: 'danger',
+                    });
+                  } finally {
+                    setInviting(false);
+                  }
+                }}
+              >
+                <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('people.invite')}
               </Button>
-            </DialogTrigger>
-            <DialogContent
-              title={t('people.makeChange')}
-              description={t('people.makeChangeBody')}
-              closeLabel={t('common.close')}
-            >
-              <form onSubmit={save} className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1">
-                <Field id="effectiveDate" label={t('people.effectiveDate')}>
-                  {(p) => (
-                    <Input
-                      {...p}
-                      type="date"
-                      required
-                      value={effectiveDate}
-                      onChange={(ev) => setEffectiveDate(ev.target.value)}
-                    />
-                  )}
-                </Field>
-                {writable.map((f) => (
-                  <Field key={f} id={`f-${f}`} label={t(`people.field.${f}`)}>
-                    {(p) => (
-                      <Input
-                        {...p}
-                        type={
-                          /Date$/.test(f)
-                            ? 'date'
-                            : ['weeklyHours', 'fte', 'noticePeriodDays', 'payAmountMinor'].includes(f)
-                              ? 'number'
-                              : 'text'
-                        }
-                        step="any"
-                        placeholder={display(f, e[f], e, locale)}
-                        value={values[f] ?? ''}
-                        onChange={(ev) => setValues((v) => ({ ...v, [f]: ev.target.value }))}
-                      />
-                    )}
-                  </Field>
-                ))}
-                <Button type="submit" loading={saving}>
-                  {t('common.save')}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+            ) : null}
+          </div>
+        </div>
+        {meta.length ? (
+          <dl className="grid gap-x-6 gap-y-3 border-t border-border p-5 text-callout sm:grid-cols-2 md:px-6 lg:grid-cols-3 xl:grid-cols-6">
+            {meta.map((m) => (
+              <div key={m.key} className="flex min-w-0 flex-col gap-0.5">
+                <dt className="text-footnote text-text-secondary">{m.label}</dt>
+                <dd className="break-words font-semibold text-text">{m.value}</dd>
+              </div>
+            ))}
+          </dl>
         ) : null}
-      </div>
+      </Card>
 
       <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">{t('people.tab.overview')}</TabsTrigger>
-          {history.data ? <TabsTrigger value="history">{t('people.tab.history')}</TabsTrigger> : null}
-          <TabsTrigger value="documents">{t('people.tab.documents')}</TabsTrigger>
-          {balances.data ? <TabsTrigger value="time-off">{t('admin.balances.tab')}</TabsTrigger> : null}
-        </TabsList>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="overview">{t('people.tab.overview')}</TabsTrigger>
+            {history.data ? <TabsTrigger value="history">{t('people.tab.history')}</TabsTrigger> : null}
+            <TabsTrigger value="documents">{t('people.tab.documents')}</TabsTrigger>
+            {balances.data ? <TabsTrigger value="time-off">{t('admin.balances.tab')}</TabsTrigger> : null}
+          </TabsList>
+          <label className="flex items-center gap-2 text-footnote text-text-secondary">
+            {t('people.asOf')}
+            <Input
+              type="date"
+              value={asOf || data.asOf}
+              onChange={(ev) => setAsOf(ev.target.value)}
+              className="w-44"
+            />
+          </label>
+        </div>
         <TabsContent value="overview" className="pt-5">
           <div className="grid gap-4 md:grid-cols-2">
             {SECTIONS.map((s) => {
@@ -315,7 +357,7 @@ export default function EmployeePage() {
               if (!visible.length) return null;
               return (
                 <Card key={s.key}>
-                  <CardTitle>{t(`people.section.${s.key}`)}</CardTitle>
+                  <CardTitle as="h3">{t(`people.section.${s.key}`)}</CardTitle>
                   <dl className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-x-4 gap-y-2 text-callout">
                     {visible.map((f) => (
                       <React.Fragment key={f}>

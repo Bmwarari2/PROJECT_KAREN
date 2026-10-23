@@ -112,7 +112,7 @@ test.describe('roles and access', () => {
     expect((listed.data as Array<{ id: string }>).map((r) => r.id).sort()).toEqual([dana, eli].sort());
 
     await dp.getByRole('link', { name: 'Eli Engineer' }).click();
-    await expect(dp.getByRole('heading', { level: 1, name: 'Eli Engineer' })).toBeVisible();
+    await expect(dp.getByRole('heading', { level: 2, name: 'Eli Engineer' })).toBeVisible();
     await expect(dp.getByText('Platform engineer').first()).toBeVisible();
     await expect(dp.getByRole('heading', { name: 'Pay', exact: true })).toHaveCount(0);
     await expect(dp.getByText('£40,000.00')).toHaveCount(0);

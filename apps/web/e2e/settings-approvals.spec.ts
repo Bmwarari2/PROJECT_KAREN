@@ -225,7 +225,7 @@ test.describe('approvals and workflows settings', () => {
     await transfer.getByLabel('Job title').fill('Senior analyst');
     await transfer.getByRole('button', { name: 'Transfer' }).click();
     await expect(page.getByText(/^Pat Fictional transfers on /)).toBeVisible();
-    await expect(page.getByRole('heading', { level: 1, name: 'Pat Fictional' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Pat Fictional' })).toBeVisible();
     await expect(page.getByText('Senior analyst').first()).toBeVisible();
     const after = await apiCall<{ employee: { jobTitle: string; locationId: string } }>(
       page.request,
