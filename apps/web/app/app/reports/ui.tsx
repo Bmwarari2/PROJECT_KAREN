@@ -1,8 +1,29 @@
 'use client';
 import * as React from 'react';
-import { Download, FileSpreadsheet, FileText, Info, Lock } from 'lucide-react';
-import { Badge, Button, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
-import { dateTimeFormat, type Locale } from '@thapsus/core/i18n';
+import { ChevronDown, Download, FileSpreadsheet, FileText, Info, Lock } from 'lucide-react';
+import {
+  BarList,
+  Badge,
+  Button,
+  Card,
+  Dialog,
+  DialogContent,
+  EmptyState,
+  Field,
+  Input,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+  useToast,
+} from '@thapsus/ui';
+import { dateTimeFormat, formatMoney, numberFormat, type Locale } from '@thapsus/core/i18n';
+import { money } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import {
@@ -14,6 +35,7 @@ import {
   type ReportColumn,
   type ReportResult,
 } from '@/lib/report-format';
+import { ModuleFrameContext } from '../shell';
 
 /** IANA zones the browser knows (for a time-zone picker's suggestions). */
 export const zones = (): string[] =>
@@ -27,14 +49,48 @@ export const weekdayName = (locale: Locale, w: number) =>
 export const selectClass =
   'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
 
+/**
+ * "No access" for a reports page: the page's only h1 when the reports module is not shown to the viewer,
+ * a section under the module header otherwise.
+ */
+export function NoReportsAccess({ title }: { title?: string }) {
+  const t = useT();
+  const inModule = React.useContext(ModuleFrameContext);
+  return (
+    <EmptyState
+      level={inModule ? 2 : 1}
+      icon={<Lock aria-hidden />}
+      title={title ?? t('reports.noAccess')}
+      body={title ? undefined : t('reports.noAccessBody')}
+    />
+  );
+}
+
 export function problemText(t: (k: string) => string, err: unknown): string {
   if (err instanceof ApiProblem) return (err.body.detail as string | undefined) ?? err.title;
   return t('common.error');
 }
 
+/** Axis, legend and tooltip text for chart values in a column's unit (money stays in one currency). */
+export function chartFormatter(
+  t: (k: string, v?: Record<string, string | number>) => string,
+  locale: Locale,
+  c: ReportColumn,
+  currency?: string,
+): (n: number) => string {
+  return (n: number) => {
+    if (c.type === 'money')
+      return currency ? formatMoney(money(Math.round(n), currency), locale) : numberFormat(locale).format(n);
+    if (c.type === 'decimal' || c.type === 'percent')
+      return displayCell(t, locale, c, String(Number(n.toFixed(c.scale ?? 2))));
+    return displayCell(t, locale, c, n);
+  };
+}
+
 /**
- * Accessible chart: hand-rolled SVG (no chart library — fast on low-cost phones), drawn only with design tokens.
- * The SVG has a title and a text summary; the full data is always in the table that follows it. Nothing animates.
+ * The chart of a ready-made report (the API's hint): bars with their values as text for categories, a
+ * line on the first series token for a trend. One series and one axis; text uses text tokens; the
+ * chart has a title and a text summary, and the table that follows has every value. Nothing animates.
  */
 export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; maxBars?: number }) {
   const t = useT();
@@ -60,50 +116,27 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
     top: label(rows[top]!),
     value: displayCell(t, locale, y, rows[top]![y.key] ?? null),
   });
-  const W = 640;
   if (chart.type === 'bar') {
-    const rowH = 28;
-    const labelW = 200;
-    const H = rows.length * rowH + 8;
+    const title = t('reports.chart.barTitle', { measure: headerOf(t, y), dimension: headerOf(t, xCol) });
+    const firstMoney = rows.map((r) => r[y.key]).find((v) => !!v && typeof v === 'object');
+    const currency =
+      firstMoney && typeof firstMoney === 'object' && 'currency' in firstMoney
+        ? firstMoney.currency
+        : undefined;
     return (
-      <figure className="flex flex-col gap-2">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          role="img"
-          aria-labelledby={`${id}-t ${id}-d`}
-          className="h-auto w-full"
-          preserveAspectRatio="xMinYMin meet"
-        >
-          <title id={`${id}-t`}>
-            {t('reports.chart.barTitle', { measure: headerOf(t, y), dimension: headerOf(t, xCol) })}
-          </title>
-          <desc id={`${id}-d`}>{summary}</desc>
-          {rows.map((r, i) => {
-            const w = Math.max(1, ((W - labelW - 90) * values[i]!) / max);
-            const yy = i * rowH + 4;
-            const text = label(r);
-            return (
-              <g key={i}>
-                <text
-                  x={labelW - 8}
-                  y={yy + 17}
-                  textAnchor="end"
-                  className="fill-text-secondary text-footnote"
-                >
-                  {text.length > 26 ? `${text.slice(0, 25)}…` : text}
-                </text>
-                <rect x={labelW} y={yy + 4} width={w} height={rowH - 10} rx={4} className="fill-accent" />
-                <text x={labelW + w + 6} y={yy + 17} className="fill-text text-footnote tabular-nums">
-                  {displayCell(t, locale, y, r[y.key] ?? null)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-        <figcaption className="text-footnote text-text-secondary">{t('reports.chart.tableBelow')}</figcaption>
+      <figure className="m-0 flex flex-col gap-3">
+        <figcaption className="text-callout font-semibold">{title}</figcaption>
+        <p className="sr-only">{summary}</p>
+        <BarList
+          items={rows.map((r, i) => ({ label: label(r), value: values[i]! }))}
+          label={title}
+          format={chartFormatter(t, locale, y, currency)}
+        />
+        <p className="text-footnote text-text-secondary">{t('reports.chart.tableBelow')}</p>
       </figure>
     );
   }
+  const W = 640;
   const H = 220;
   const pad = { l: 48, r: 16, t: 12, b: 32 };
   const step = rows.length > 1 ? (W - pad.l - pad.r) / (rows.length - 1) : 0;
@@ -111,7 +144,7 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
     [pad.l + i * step, pad.t + (H - pad.t - pad.b) * (1 - v / max)] as const;
   const path = values.map((v, i) => pt(i, v).join(',')).join(' ');
   return (
-    <figure className="flex flex-col gap-2">
+    <figure className="m-0 flex flex-col gap-2">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby={`${id}-t ${id}-d`} className="h-auto w-full">
         <title id={`${id}-t`}>
           {t('reports.chart.lineTitle', { measure: headerOf(t, y), dimension: headerOf(t, xCol) })}
@@ -140,13 +173,13 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
         <polyline
           points={path}
           fill="none"
-          className="stroke-accent"
-          strokeWidth={2.5}
+          className="stroke-chart-1"
+          strokeWidth={2}
           strokeLinejoin="round"
         />
         {values.map((v, i) => {
           const [cx, cy] = pt(i, v);
-          return <circle key={i} cx={cx} cy={cy} r={3.5} className="fill-accent" />;
+          return <circle key={i} cx={cx} cy={cy} r={3} className="fill-chart-1" />;
         })}
         {[0, rows.length - 1]
           .filter((i, k, a) => a.indexOf(i) === k)
@@ -177,7 +210,7 @@ export function ReportTable({ result, caption }: { result: ReportResult; caption
   if (!result.rows.length) return <p className="text-callout text-text-secondary">{t('reports.noRows')}</p>;
   const right = (c: ReportColumn) => (NUMERIC.includes(c.type) ? 'text-right' : '');
   return (
-    <Table dense>
+    <Table dense scrollLabel={caption}>
       <caption className="sr-only">{caption}</caption>
       <THead>
         <tr>
@@ -220,50 +253,55 @@ export function ReportTable({ result, caption }: { result: ReportResult; caption
   );
 }
 
+/** A ready-made report's result: summary, facts and chart in one card, the table and notes in another. */
 export function ReportView({ result }: { result: ReportResult }) {
   const t = useT();
   const locale = useLocale();
   return (
     <section aria-label={t('reports.result')} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="mr-auto text-title-3">{result.title}</h2>
-        {result.sensitive ? <Badge tone="warning">{t('reports.sensitiveBadge')}</Badge> : null}
-        {result.restricted ? (
-          <Badge>{t('reports.restrictedCount', { count: result.restricted })}</Badge>
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="mr-auto text-title-3">{result.title}</h2>
+          {result.sensitive ? <Badge tone="warning">{t('reports.sensitiveBadge')}</Badge> : null}
+          {result.restricted ? (
+            <Badge>{t('reports.restrictedCount', { count: result.restricted })}</Badge>
+          ) : null}
+        </div>
+        {result.parameters.length ? (
+          <p className="text-footnote text-text-secondary">{result.parameters.join(' · ')}</p>
         ) : null}
-      </div>
-      {result.parameters.length ? (
-        <p className="text-footnote text-text-secondary">{result.parameters.join(' · ')}</p>
-      ) : null}
-      {result.facts?.length ? (
-        <dl className="grid gap-x-6 gap-y-2 rounded-lg bg-surface p-4 text-callout sm:grid-cols-2">
-          {result.facts.map((f) => (
-            <div key={f.key} className="flex justify-between gap-3">
-              <dt className="text-text-secondary">{t(f.labelKey)}</dt>
-              <dd className="text-right tabular-nums">
-                {displayCell(t, locale, { type: f.type, enumKey: f.enumKey }, f.value)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-      <ReportChart result={result} />
-      <ReportTable result={result} caption={result.title} />
-      {result.notes.length ? (
-        <ul className="flex flex-col gap-1 text-footnote text-text-secondary">
-          {result.notes.map((n) => (
-            <li key={n} className="flex gap-2">
-              <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 stroke-[1.5]" />
-              <span>{t(n)}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+        {result.facts?.length ? (
+          <dl className="grid gap-x-6 gap-y-2 rounded-lg bg-surface p-4 text-callout sm:grid-cols-2">
+            {result.facts.map((f) => (
+              <div key={f.key} className="flex justify-between gap-3">
+                <dt className="text-text-secondary">{t(f.labelKey)}</dt>
+                <dd className="text-right tabular-nums">
+                  {displayCell(t, locale, { type: f.type, enumKey: f.enumKey }, f.value)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+        <ReportChart result={result} />
+      </Card>
+      <Card className="flex flex-col gap-4">
+        <ReportTable result={result} caption={result.title} />
+        <ReportNotes notes={result.notes} />
+      </Card>
     </section>
   );
 }
 
 // ---- background runs: export with progress, then a short-lived download --------------------------------
+/** Badge tone of a run's status. */
+export const runTone = {
+  succeeded: 'success',
+  failed: 'danger',
+  expired: 'neutral',
+  queued: 'neutral',
+  running: 'accent',
+} as const;
+
 interface RunStatus {
   id: string;
   status: string;
@@ -331,13 +369,20 @@ export function RunProgress({ run }: { run: RunStatus | null }) {
   );
 }
 
-/** CSV / Excel / PDF export of any report source, run in the background with progress. */
-export function ExportBar({ source, disabled }: { source: unknown; disabled?: boolean }) {
+type ExportFormat = 'csv' | 'xlsx' | 'pdf';
+const FORMATS: Array<{ format: ExportFormat; icon: React.ReactNode }> = [
+  { format: 'csv', icon: <Download aria-hidden className="h-4 w-4 stroke-[1.5]" /> },
+  { format: 'xlsx', icon: <FileSpreadsheet aria-hidden className="h-4 w-4 stroke-[1.5]" /> },
+  { format: 'pdf', icon: <FileText aria-hidden className="h-4 w-4 stroke-[1.5]" /> },
+];
+
+/** Runs an export of a report source in the background (POST /v1/reports/runs), then downloads it. */
+export function useExport(source: unknown) {
   const t = useT();
   const toast = useToast();
   const { run, start } = useBackgroundRun();
-  const [busy, setBusy] = React.useState<string | null>(null);
-  async function go(format: 'csv' | 'xlsx' | 'pdf') {
+  const [busy, setBusy] = React.useState<ExportFormat | null>(null);
+  async function go(format: ExportFormat) {
     setBusy(format);
     try {
       const r = await start(source, format);
@@ -351,41 +396,146 @@ export function ExportBar({ source, disabled }: { source: unknown; disabled?: bo
       setBusy(null);
     }
   }
+  return { run, busy, go };
+}
+
+/** The same export as a header action: one "Download" button that opens a menu of formats. */
+export function DownloadMenu({ source, disabled }: { source: unknown; disabled?: boolean }) {
+  const t = useT();
+  const { run, busy, go } = useExport(source);
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2" role="group" aria-label={t('reports.export')}>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={disabled || !!busy}
-          loading={busy === 'csv'}
-          onClick={() => go('csv')}
-        >
-          <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('reports.format.csv')}
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={disabled || !!busy}
-          loading={busy === 'xlsx'}
-          onClick={() => go('xlsx')}
-        >
-          <FileSpreadsheet aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('reports.format.xlsx')}
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={disabled || !!busy}
-          loading={busy === 'pdf'}
-          onClick={() => go('pdf')}
-        >
-          <FileText aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('reports.format.pdf')}
-        </Button>
-      </div>
-      {busy ? <RunProgress run={run} /> : null}
-    </div>
+    <>
+      {/* not modal: the rest of the page is not hidden from assistive technology while the menu is open */}
+      <Menu modal={false}>
+        <MenuTrigger asChild disabled={disabled || !!busy}>
+          <Button size="sm" variant="secondary" loading={!!busy}>
+            <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('reports.ui.download')}
+            <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
+          </Button>
+        </MenuTrigger>
+        <MenuContent aria-label={t('reports.export')}>
+          {FORMATS.map(({ format, icon }) => (
+            <MenuItem key={format} onSelect={() => void go(format)}>
+              {icon}
+              {t(`reports.format.${format}`)}
+            </MenuItem>
+          ))}
+        </MenuContent>
+      </Menu>
+      {busy ? (
+        <div className="basis-full">
+          <RunProgress run={run} />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/** Rolling date ranges a saved report can use when it runs later (the API resolves them). */
+export const RELATIVE = [
+  'today',
+  'yesterday',
+  'previousWeek',
+  'previousMonth',
+  'monthToDate',
+  'yearToDate',
+  'previousYear',
+] as const;
+
+export interface SaveForm {
+  name: string;
+  relative: string;
+  shared: boolean;
+}
+
+/** Name, rolling dates and sharing for a saved report (ready-made or built). */
+export function SaveReportDialog({
+  open,
+  onOpenChange,
+  form,
+  onChange,
+  onSubmit,
+  note,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  form: SaveForm;
+  onChange: (form: SaveForm) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  /** Extra line under the description (e.g. why saving comes before scheduling). */
+  note?: string;
+}) {
+  const t = useT();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title={t('reports.saved.save')}
+        description={t('reports.saved.saveBody')}
+        closeLabel={t('common.close')}
+      >
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          {note ? <p className="text-callout text-text-secondary">{note}</p> : null}
+          <Field id="save-name" label={t('reports.saved.name')}>
+            {(a) => (
+              <Input
+                {...a}
+                required
+                maxLength={120}
+                value={form.name}
+                onChange={(e) => onChange({ ...form, name: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field
+            id="save-relative"
+            label={t('reports.saved.relative')}
+            hint={t('reports.saved.relativeHint')}
+          >
+            {(a) => (
+              <select
+                {...a}
+                className={selectClass}
+                value={form.relative}
+                onChange={(e) => onChange({ ...form, relative: e.target.value })}
+              >
+                <option value="">{t('reports.relative.fixed')}</option>
+                {RELATIVE.map((r) => (
+                  <option key={r} value={r}>
+                    {t(`reports.relative.${r}`)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <label className="flex items-center gap-2 text-callout">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[var(--color-accent)]"
+              checked={form.shared}
+              onChange={(e) => onChange({ ...form, shared: e.target.checked })}
+            />
+            {t('reports.saved.shareWithTeam')}
+          </label>
+          <Button type="submit">{t('common.save')}</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Report notes (method and source explanations) under a result. */
+export function ReportNotes({ notes }: { notes: string[] }) {
+  const t = useT();
+  if (!notes.length) return null;
+  return (
+    <ul className="flex flex-col gap-1 text-footnote text-text-secondary">
+      {notes.map((n) => (
+        <li key={n} className="flex gap-2">
+          <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 stroke-[1.5]" />
+          <span>{t(n)}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -62,11 +62,13 @@ test.describe('roles and access', () => {
     // the owner creates the role in settings
     await page.goto('/app/settings');
     await page.getByRole('link', { name: 'Roles and permissions', exact: true }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Roles and permissions' })).toBeVisible();
+    await page.waitForURL(/\/app\/settings\/roles$/);
+    await expect(page.getByRole('heading', { level: 2, name: 'Roles and permissions' })).toBeVisible();
+    await expect(page.getByText('6 roles', { exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Company owner' })).toBeVisible();
     await expectAccessible(page);
     await page.getByRole('link', { name: 'New role' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'New role' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'New role' })).toBeVisible();
     await page.getByLabel('Name', { exact: true }).fill('Engineering viewer');
     await expect(page.getByLabel('Identifier')).toHaveValue('engineering_viewer');
     await page.getByLabel('View people', { exact: true }).check();
@@ -76,16 +78,93 @@ test.describe('roles and access', () => {
     await expectAccessible(page);
     await page.getByRole('button', { name: 'Create role' }).click();
     await page.waitForURL(/\/app\/settings\/roles\/[0-9a-f-]{36}$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Engineering viewer' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Engineering viewer' })).toBeVisible();
     await expect(page.getByLabel('View people', { exact: true })).toBeChecked();
     await expect(page.getByRole('radio', { name: 'Job title: View', exact: true })).toBeChecked();
     await expect(page.getByRole('radio', { name: 'Pay: Default', exact: true })).toBeChecked();
+
+    // the comparison shows the new role beside the built-in ones, then what it is shown in the app
+    const sessionBefore = await (await page.request.get('/v1/auth/session')).json();
+    await page.goto('/app/settings/roles');
+    await page
+      .getByRole('navigation', { name: 'Role views' })
+      .getByRole('link', { name: 'Compare and preview' })
+      .click();
+    await page.waitForURL(/\/app\/settings\/roles\/compare$/);
+    await expect(page.getByRole('heading', { level: 2, name: 'Compare roles' })).toBeVisible();
+    const matrix = page.getByRole('region', { name: 'Permissions' });
+    await expect(matrix.getByRole('columnheader', { name: /Engineering viewer/ })).toBeVisible();
+    const headers = (await matrix.getByRole('columnheader').allInnerTexts()).map((h) => h.split('\n')[0]!);
+    const col = (role: string) => headers.findIndex((h) => h.startsWith(role)) - 1;
+    const viewPeople = matrix
+      .getByRole('row')
+      .filter({ has: page.getByRole('rowheader', { name: 'View people', exact: true }) });
+    await expect(viewPeople.getByRole('cell').nth(col('Engineering viewer'))).toHaveText('Included');
+    await expect(viewPeople.getByRole('cell').nth(col('Employee'))).toHaveText('—Not included');
+    await expect(viewPeople.getByRole('cell').nth(col('Company owner'))).toHaveText('Included');
+    // admin-grade permissions are marked (holders must use MFA)
+    await expect(
+      matrix
+        .getByRole('row')
+        .filter({ has: page.getByRole('rowheader', { name: /^Add people/ }) })
+        .getByText('Admin · MFA'),
+    ).toBeVisible();
+    await expectAccessible(page);
+    await page.getByLabel('Area', { exact: true }).selectOption({ label: 'Reports' });
+    await expect(matrix.getByRole('rowheader', { name: 'View people', exact: true })).toHaveCount(0);
+    await page.getByLabel('Area', { exact: true }).selectOption({ label: 'All areas' });
+    await page.getByRole('searchbox', { name: 'Search permissions' }).fill('people');
+    await expect(matrix.getByRole('rowheader', { name: 'View people', exact: true })).toBeVisible();
+    await expect(matrix.getByRole('rowheader', { name: /Run reports/ })).toHaveCount(0);
+    const fields = page.getByRole('region', { name: 'Field access' });
+    const jobTitle = fields
+      .getByRole('row')
+      .filter({ has: page.getByRole('rowheader', { name: 'Job title', exact: true }) });
+    await expect(jobTitle.getByRole('cell').nth(col('Engineering viewer'))).toHaveText('View');
+    await expect(jobTitle.getByRole('cell').nth(col('Company owner'))).toHaveText('Edit');
+    const birth = fields
+      .getByRole('row')
+      .filter({ has: page.getByRole('rowheader', { name: 'Date of birth', exact: true }) });
+    await expect(birth.getByRole('cell').nth(col('Engineering viewer'))).toHaveText('Hidden');
+    // preview as the new role: a read-only illustration that says the API enforces scope
+    await matrix.getByRole('button', { name: 'Preview as Engineering viewer' }).click();
+    await expect(page.getByLabel('Role to preview').locator('option:checked')).toHaveText(
+      'Engineering viewer',
+    );
+    const previewCard = page.locator('#compare-preview');
+    await expect(previewCard.getByRole('status')).toHaveText(/^Shown to Engineering viewer: /);
+    await expect(
+      previewCard.getByText(/the API checks the permission and limits it to the scope/),
+    ).toBeVisible();
+    const modules = previewCard.getByRole('region', { name: 'Modules and tabs' });
+    await expect(modules.getByText('Directory · Org chart · Documents')).toBeVisible();
+    await expect(
+      previewCard.getByRole('region', { name: 'Settings sections' }).getByText('No settings sections.'),
+    ).toBeVisible();
+    await page.getByLabel('Role to preview').selectOption({ label: 'HR admin' });
+    await expect(
+      previewCard
+        .getByRole('region', { name: 'Settings sections' })
+        .getByText('Roles and permissions', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      previewCard.getByRole('region', { name: 'Quick actions' }).getByText('Add a person'),
+    ).toBeVisible();
+    await expectAccessible(page);
+    // the preview never changes the viewer's own session
+    const sessionAfter = await (await page.request.get('/v1/auth/session')).json();
+    expect([sessionAfter.roles, sessionAfter.permissions]).toEqual([
+      sessionBefore.roles,
+      sessionBefore.permissions,
+    ]);
 
     // …and assigns it to Dana for Engineering only
     await page.goto('/app/settings/users');
     await page.getByRole('searchbox', { name: 'Search by name or email' }).fill('Dana');
     await page.getByRole('link', { name: 'Dana Developer' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Dana Developer' })).toBeVisible();
+    // the user's page sits under the Settings module header; its title is the page's h2
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Dana Developer' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Only themselves', exact: true })).toBeVisible();
     await page.getByLabel('Role', { exact: true }).selectOption({ label: 'Engineering viewer' });
     await page.getByLabel('Applies to', { exact: true }).selectOption({ label: 'Departments' });
@@ -112,7 +191,7 @@ test.describe('roles and access', () => {
     expect((listed.data as Array<{ id: string }>).map((r) => r.id).sort()).toEqual([dana, eli].sort());
 
     await dp.getByRole('link', { name: 'Eli Engineer' }).click();
-    await expect(dp.getByRole('heading', { level: 1, name: 'Eli Engineer' })).toBeVisible();
+    await expect(dp.getByRole('heading', { name: 'Eli Engineer' }).first()).toBeVisible();
     await expect(dp.getByText('Platform engineer').first()).toBeVisible();
     await expect(dp.getByRole('heading', { name: 'Pay', exact: true })).toHaveCount(0);
     await expect(dp.getByText('£40,000.00')).toHaveCount(0);

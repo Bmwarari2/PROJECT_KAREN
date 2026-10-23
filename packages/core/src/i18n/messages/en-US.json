@@ -961,6 +961,11 @@
     "builder": {
       "modeSummary": "Summarize",
       "intro": "Choose what to report on, the fields to show, filters and how to summarize. You only see people and fields your access allows."
+    },
+    "ui": {
+      "noChart": {
+        "list": "Choose Summarize and group the rows to see a chart."
+      }
     }
   },
   "ess": {
