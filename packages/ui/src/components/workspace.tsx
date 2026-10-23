@@ -214,8 +214,11 @@ export function TableToolbar({
   filters,
   actions,
   className,
+  titleAs: Title = 'h2',
 }: {
   title?: React.ReactNode;
+  /** Heading level of the title, to nest under the page's headings. */
+  titleAs?: 'h2' | 'h3' | 'h4';
   count?: React.ReactNode;
   search?: React.ReactNode;
   filters?: React.ReactNode;
@@ -226,7 +229,7 @@ export function TableToolbar({
     <div className={cn('flex flex-wrap items-center gap-3 border-b border-border px-4 py-3', className)}>
       {title || count ? (
         <div className="flex min-w-0 items-baseline gap-2">
-          {title ? <h2 className="text-callout font-semibold">{title}</h2> : null}
+          {title ? <Title className="text-callout font-semibold">{title}</Title> : null}
           {count ? <span className="text-footnote text-text-secondary">{count}</span> : null}
         </div>
       ) : null}

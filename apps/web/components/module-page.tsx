@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Search } from 'lucide-react';
 import { Button, Card, cn, EmptyState, FilterChip, Input, TableToolbar } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
-import { ModuleFrameContext, PageTitle } from '@/app/app/shell';
+import { ModuleFrameContext, ModuleTabVisibleContext, PageTitle } from '@/app/app/shell';
 
 /**
  * Page parts for module pages (ADR-0154, DESIGN.md §4 and §6). Inside a module the shell renders the
@@ -25,8 +25,8 @@ export function useSectionLevel(): { heading: 'h2' | 'h3'; sub: 'h3' | 'h4'; lev
 
 /**
  * A page's header row: its title, a lead paragraph and the primary actions. A title that only repeats
- * the tab's name (`titleIsTab`) is dropped under the module header, which already shows it, and stays
- * as the h1 when the page opens outside a module. Any other title is a `PageTitle`.
+ * the tab's name (`titleIsTab`) is dropped under the module header when the tab's name is already on
+ * screen, and stays as the h1 when the page opens outside a module. Any other title is a `PageTitle`.
  */
 export function PageIntro({
   title,
@@ -42,7 +42,9 @@ export function PageIntro({
   children?: React.ReactNode;
 }) {
   const inModule = useInModule();
-  const showTitle = !!title && !(titleIsTab && inModule);
+  // dropped only when the tab's name is already on screen (tab bar, or a module named like its only tab)
+  const tabVisible = React.useContext(ModuleTabVisibleContext);
+  const showTitle = !!title && !(titleIsTab && inModule && tabVisible);
   if (!showTitle && !lead && !actions && !children) return null;
   return (
     <div className="flex flex-wrap items-start gap-3">
@@ -141,8 +143,11 @@ export function ListCard({
   empty,
   children,
   className,
+  titleAs,
 }: {
   title: React.ReactNode;
+  /** The toolbar title's heading level; h3 when the card sits under a kept h2 page title. */
+  titleAs?: 'h2' | 'h3';
   /** Shown beside the title and announced when it changes (filtering). */
   count?: React.ReactNode;
   search?: React.ReactNode;
@@ -159,6 +164,7 @@ export function ListCard({
     <Card className={cn('flex flex-col p-0', className)}>
       <TableToolbar
         title={title}
+        titleAs={titleAs}
         count={count !== undefined ? <span role="status">{count}</span> : undefined}
         search={search}
         filters={filters}

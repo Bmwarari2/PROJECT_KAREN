@@ -51,6 +51,12 @@ export function useFeature(key: FeatureKey): boolean {
  * own title becomes a section heading (`PageTitle` reads this).
  */
 export const ModuleFrameContext = React.createContext(false);
+/**
+ * Whether the current tab's name is already on screen: in the tab bar, or as the module name when the
+ * module's only tab shares it. A page title that only repeats the tab name is dropped only then, so a
+ * module showing one differently named tab (an employee's Pay → Payslips) keeps its page title.
+ */
+export const ModuleTabVisibleContext = React.createContext(false);
 
 /** A page's title: the h1 outside modules, a section heading under a module header. */
 export function PageTitle({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -208,6 +214,9 @@ export function AppShell({
           count: tabCounts[tab.href],
         }))
       : [];
+  const tabNameVisible =
+    framed &&
+    (tabs.length > 1 || (current.tabs.length === 1 && t(current.tabs[0]!.label) === t(current.label)));
   const renderTab = (tab: TabLink, className: string, kids: React.ReactNode) => (
     <Link href={tab.href} className={className} aria-current={tab.active ? 'page' : undefined}>
       {kids}
@@ -358,7 +367,9 @@ export function AppShell({
                 className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8"
               >
                 <ModuleFrameContext.Provider value={framed}>
-                  {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
+                  <ModuleTabVisibleContext.Provider value={tabNameVisible}>
+                    {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
+                  </ModuleTabVisibleContext.Provider>
                 </ModuleFrameContext.Provider>
               </main>
             </div>
