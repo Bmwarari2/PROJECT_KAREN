@@ -162,8 +162,9 @@ export function tokensCss(): string {
         `    --text-${k}: ${(v as { phoneSize: number }).phoneSize}px;\n    --text-${k}--line-height: ${(v as { phoneLine: number }).phoneLine}px;`,
     )
     .join('\n');
+  // `static`: emit every token, also those only read through var() at run time (chart series, ADR-0154)
   return `/* GENERATED from packages/ui/src/tokens.ts — do not edit by hand. Tailwind v4 theme. */
-@theme {
+@theme static {
   --color-*: initial;
   --radius-*: initial;
   --shadow-*: initial;
