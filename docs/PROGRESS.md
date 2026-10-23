@@ -21,7 +21,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 | 8 | Privacy and trust (6.9) | `phase-8-privacy` | [h] |
 | 9 | Enterprise platform (6.10) | `phase-9-enterprise` | [x] |
 | 10 | Support, back office, pricing and billing (6.11, 6.12) | `phase-10-support-billing` | [h] |
-| 11 | AI assistant behind a feature flag (6.13) | `phase-11-ai-assistant` | [ ] |
+| 11 | AI assistant behind a feature flag (6.13) | `phase-11-ai-assistant` | [h] |
 | 12 | Scale and launch readiness | `phase-12-launch` | [ ] |
 
 ---
@@ -365,11 +365,12 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
 
 ## Phase 11 — AI assistant (6.13)
 
-- [ ] **11.1 "Ask HR"**
+- [h] **11.1 "Ask HR"**
   - Behind a per-tenant feature flag, off by default.
   - Answers employee questions from the company's own policy documents with citations to the source document; clear "you are talking to AI" disclosure.
   - Refuses to make or recommend employment decisions (hiring, performance, pay, dismissal) — tested with a red-team prompt suite.
   - Never sends sensitive data or other employees' data (tested); processing in the tenant's home region where available (provider/region availability verified and recorded); provider listed in SUBPROCESSORS.md.
+  - _Evidence:_ flag: `packages/core/test/platform.test.ts` ("the AI assistant is off by default (brief §6.13)"), `apps/api/test/ai.int.test.ts` ("is off for a new tenant: status says disabled and ask/feedback are refused (403 featureDisabled)"; "needs both the staff-managed entitlement and the customer's own opt-in"; only the owner turns it on, audited) and `tenant-platform.int.test.ts` (staff toggle, super admins only, audited in both trails); answers: `ai.int.test.ts` (Markdown and PDF policies indexed idempotently, personal and non-policy documents never indexed; "answers from policy excerpts, cites the real document, and discloses AI" in the asker's locale; citations of excerpts that were not sent are downgraded; no model call without a matching excerpt; only minimal metadata stored); red team: `ai-guard.test.ts` over `fixtures/ai-red-team.json` (84 prompts covering hiring, dismissal, pay, performance, promotion, discipline, redundancy and injection: 49 refused, 35 benign allowed; decisions in model output rejected; instructions hidden in documents removed) and the document-injection cases in `ai.int.test.ts`; data: "sends no other employee's name, email or number, no vault or HR records, and only policy-folder excerpts" (captured payload), colleague and sensitive questions refused without calling the model, RLS between tenants; region: `ai.residency.test.ts` (Bedrock client only in the home region for every region pair, cross-Region profiles refused, the UK request goes to `bedrock-runtime.eu-west-2` with the bare model id, no in-region model in EU or US), "regions without an in-region model" in `ai.int.test.ts` (EU and US cannot be turned on by the customer or staff), `infra/test/infra.test.ts` ("13. Bedrock (Ask HR) only for the in-region foundation model…"); availability recorded in ADR-0110 and `packages/core/src/ai-models.ts`; provider in `docs/SUBPROCESSORS.md`, kept in sync with the trust centre by `trust.test.ts`; `apps/web/e2e/ask-hr.spec.ts` (off by default, owner setup, disclosure, cited source, refusal, with axe). _Human:_ Bedrock model access in eu-west-2 (HUMAN_TODO 7.1), legal review of the disclosure and the agreements (7.3) and the live red-team run against the real model (7.4).
 
 ---
 

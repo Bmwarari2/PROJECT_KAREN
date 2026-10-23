@@ -78,6 +78,7 @@ const PERSONAL = [
   'app.push_subscriptions',
   'app.import_batches',
   'app.automation_runs',
+  'app.ai_questions',
   'vault.records',
   'audit.events',
   'app.worked_hours',
@@ -117,6 +118,9 @@ const OPERATIONAL = [
   'app.webhook_attempts',
   'app.audit_stream_batches',
   'app.sandboxes',
+  // Ask HR retrieval index, derived from (never-copied) documents and rebuilt by its job.
+  'app.ai_policy_chunks',
+  'app.ai_index_state',
   'audit.chain_heads',
   'app.pay_periods',
   'app.payroll_deliveries',

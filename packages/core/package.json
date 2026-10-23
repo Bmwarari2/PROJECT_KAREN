@@ -22,6 +22,7 @@
     "./help": "./src/help/index.ts",
     "./features": "./src/features.ts",
     "./api-scopes": "./src/api-scopes.ts",
+    "./ai-models": "./src/ai-models.ts",
     "./trust": "./src/trust/index.ts"
   },
   "scripts": {

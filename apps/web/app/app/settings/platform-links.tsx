@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { BookOpen, FlaskConical, KeyRound, Palette, Radio, ToggleRight, Webhook } from 'lucide-react';
+import { BookOpen, Bot, FlaskConical, KeyRound, Palette, Radio, ToggleRight, Webhook } from 'lucide-react';
 import type { FeatureKey } from '@thapsus/core/features';
 import { Card } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
@@ -13,6 +13,7 @@ const LINKS: Array<{ href: string; key: string; icon: React.ReactNode; feature?:
   { href: '/app/settings/audit-streams', key: 'streams', icon: <Radio aria-hidden />, feature: 'auditStreaming', manage: true },
   { href: '/app/settings/sandbox', key: 'sandbox', icon: <FlaskConical aria-hidden />, feature: 'sandboxes', manage: true },
   { href: '/app/settings/branding', key: 'branding', icon: <Palette aria-hidden />, feature: 'customBranding' },
+  { href: '/app/settings/ask-hr', key: 'askHr', icon: <Bot aria-hidden />, feature: 'aiAssistant' },
   { href: '/app/settings/features', key: 'features', icon: <ToggleRight aria-hidden /> },
   { href: '/developers', key: 'developers', icon: <BookOpen aria-hidden /> },
 ];

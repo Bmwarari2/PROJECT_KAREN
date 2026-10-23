@@ -177,3 +177,31 @@ Things only a person with the right accounts or authority can do. The build runs
 - [ ] 6.5 **Legal review:**
   - the sandbox data classification (`apps/api/src/modules/platform/sandbox-tables.ts`), which confirms that no personal data is copied;
   - the wording that customer-configured destinations are not sub-processors (`docs/SUBPROCESSORS.md`).
+
+## 7. Ask HR assistant (Phase 11)
+
+Ask HR is off by default and can only be enabled in the UK cell (ADR-0110). It costs nothing until it is used. Bedrock is billed per token through AWS Marketplace, so ask the product owner before enabling it for customers in staging or production (CLAUDE.md, recurring cost).
+
+- [ ] 7.1 **Enable model access in the UK cell account.** In the AWS console, region **Europe (London) eu-west-2**:
+  1. Open Amazon Bedrock → Model catalog → Anthropic → **Claude Opus 5.5**.
+  2. Anthropic models need a one-time use-case form per account: submit the company details and describe the use case. Suggested wording: "HR policy Q&A for employees; answers only from the customer's policy documents; no automated employment decisions".
+  3. Accept the Anthropic end-user licence and AWS third-party model terms (https://aws.amazon.com/legal/bedrock/third-party-models/). The first call subscribes the account to the model in AWS Marketplace, so the principal doing this must hold `aws-marketplace:Subscribe`, `aws-marketplace:ViewSubscriptions` and `aws-marketplace:Unsubscribe` (an admin, not the task role).
+  4. Do **not** enable cross-Region inference profiles. Do **not** request model access in eu-central-1 or us-east-2 for Ask HR.
+- [ ] 7.2 **Keep Bedrock model invocation logging off** in eu-west-2 (Bedrock → Settings). If it is ever needed, it must log only to an S3 bucket or log group in eu-west-2 encrypted with the cell's KMS key, and SUBPROCESSORS.md and the DPIA must be updated first.
+- [ ] 7.3 **Agreements and review:**
+  1. Confirm that the AWS DPA and the Bedrock data-privacy terms (prompts and outputs are not used to train models or shared with the model provider) cover this use. Record the result in `docs/legal/`.
+  2. Have legal review the AI disclosure wording (`askHr.disclosure` in both catalogues) against the EU AI Act transparency duty (Article 50) and UK and US guidance.
+  3. Have legal confirm that refusing employment decisions keeps the feature out of the AI Act's high-risk employment uses.
+  4. Add Ask HR to the DPIA and the records of processing.
+  5. Send customers the 30-day sub-processor notice (SUBPROCESSORS.md) before the first customer is enabled.
+- [ ] 7.4 **Live evaluation of the red-team suite against the real model** (before the first customer is enabled, and again after any model or prompt change):
+  1. From a workstation with credentials for the UK cell account, after step 7.1: `AWS_PROFILE=<uk-cell-profile> node --import tsx scripts/ai-live-eval.ts --confirm-cost --out .verify/ai-live-eval.json`.
+  2. Each run sends about 90 short requests of fictional text, a few US dollars at list prices.
+  3. Every item must pass. For a failure, read the `raw` output in the report, then tighten the guard or the system prompt and add the prompt to `apps/api/test/fixtures/ai-red-team.json`.
+  4. Keep the report with the release evidence.
+- [ ] 7.5 **Re-check in-region availability every quarter** on https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html, for eu-central-1 and us-east-2 on `bedrock-runtime`. When a current Claude model appears In-Region there:
+  1. Update `packages/core/src/ai-models.ts` (model id, source URL, verified-on date).
+  2. Run the residency and infra tests.
+  3. Update SUBPROCESSORS.md and give customers 30 days' notice.
+- [ ] 7.6 **Entitle a workspace** (after 7.1–7.4): the back office, `PUT /v1/backoffice/tenants/{tenantId}/features/aiAssistant` with `{ "enabled": true }` as a super admin. The customer's owner then turns Ask HR on in Settings → Ask HR and chooses the policy folders.
+

@@ -31,6 +31,8 @@ export function e2eEnv(): Record<string, string> {
     MIGRATOR_DATABASE_URL: `${OWNER}/${E2E_DB}`,
     LOCAL_KMS_KEY: '22'.repeat(32),
     MOCK_IDP_ENABLED: 'true',
+    // Ask HR uses the deterministic fake model in e2e (never a real model).
+    AI_PROVIDER: 'fake',
     OTEL_SDK_DISABLED: 'true',
     LOG_LEVEL: 'warn',
     INTERNAL_TOKEN: 'e2e-internal-token',

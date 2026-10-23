@@ -10,6 +10,7 @@ import { objectStoreFromEnv, type ObjectStore } from './lib/object-store';
 import type { BillingProvider } from './modules/billing/provider';
 import { StripeBillingProvider } from './modules/billing/stripe-provider';
 import { withDeliveryHealth } from './modules/status/service';
+import { aiProviderFromEnv, type AiProvider } from './modules/ai/provider';
 import { STRICT_OUTBOUND, type OutboundPolicy } from './lib/outbound';
 import { crossAccountS3FromEnv, type CrossAccountS3 } from './modules/platform/siem-s3';
 
@@ -59,6 +60,8 @@ export interface Deps {
   billing?: BillingProvider;
   /** Signing secret of this region's Stripe webhook endpoint (Secrets Manager thapsus-hr/<env>/stripe). */
   stripeWebhookSecret?: string;
+  /** "Ask HR" model (in-region Bedrock, or the fake in dev/test); undefined when the cell has no in-region model. */
+  ai?: AiProvider;
   /** SSRF policy for customer-configured destinations (webhooks, SIEM). Strict when omitted. */
   outbound?: OutboundPolicy;
   /** Writes audit batches to customer S3 buckets through a cross-account role (home region only). */
@@ -111,6 +114,7 @@ export async function depsFromEnv(): Promise<Deps> {
       ? { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT ?? `mailto:support@${config.domain}` }
       : undefined,
     integrations: integrationAppsFromEnv(env),
+    ai: env.SERVICE_ROLE === 'global' ? undefined : aiProviderFromEnv(config.cell),
     outbound: outboundPolicyFromEnv(config.env, env),
     siemS3: crossAccountS3FromEnv(config.cell, env),
   };

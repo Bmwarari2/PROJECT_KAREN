@@ -181,7 +181,7 @@ flowchart LR
 - **Feature flags:** the registry is `packages/core/src/features.ts`, overrides are stored in `app.tenants.features->'flags'`, and the check is `featureEnabled(tx, key)`. The web shell reads `/v1/tenant/experience`.
 - **Dedicated databases:** back-office move requests are run by `move-tenant --process-requests` (runbook).
 
-## 6. Support, back office, status and billing (Phase 10)
+## 9. Support, back office, status and billing (Phase 10)
 
 ```mermaid
 flowchart LR
@@ -203,3 +203,28 @@ flowchart LR
 - **Support tickets** stay in the tenant tables; staff work a metadata-only queue and every ticket view is audited (ADR-0101). SLA timers and escalation follow ADR-0102.
 - **Status:** each cell serves a public `/v1/status` (ADR-0105); the web `/status` page shows the three regions side by side.
 - **Back office** (`/backoffice`): staff sessions with mandatory MFA; personal data only through customer-granted support access (ADR-0106).
+
+## 10. Ask HR assistant (Phase 11)
+
+```mermaid
+sequenceDiagram
+  participant E as Employee (web)
+  participant A as API (home cell)
+  participant D as Tenant DB (RLS)
+  participant B as Amazon Bedrock (same region, In-Region)
+  E->>A: POST /v1/ai/ask {question}
+  A->>D: flag + opt-in + region check; rate limit
+  A->>A: deterministic guard (decisions, injection, sensitive, colleagues)
+  A->>D: directory redaction lookups; full-text + trigram retrieval over policy chunks
+  A->>B: frozen system prompt + escaped excerpts + scrubbed question
+  B-->>A: answer with [n] citations
+  A->>A: post-model decision check; citation validation
+  A->>D: ai_questions row (hash, length, outcome, cited ids) + audit (no content)
+  A-->>E: answer, citations, AI disclosure
+```
+
+- **Where it runs:** only in cells with an In-Region Claude model on Bedrock (today the UK cell, eu-west-2, with Claude Opus 5.5; ADR-0110). The map lives in `packages/core/src/ai-models.ts`. The Bedrock client is built by the residency-guarded factory, and IAM allows `bedrock:InvokeModel` on that foundation model only.
+- **Switches:** the staff-managed `aiAssistant` feature flag (entitlement) and the owner's opt-in, both off by default (ADR-0112).
+- **Sources and index:** company documents in policy folders visible to everyone (never personal documents) are chunked into `app.ai_policy_chunks` by the idempotent `ai.index_policies` job. Retrieval is PostgreSQL full-text search plus `pg_trgm` only (ADR-0111).
+- **Model interface:** `deps.ai` (`apps/api/src/modules/ai/provider.ts`): Bedrock in AWS, a deterministic fake in dev and e2e, a capturing mock in tests.
+- **Code:** `apps/api/src/modules/ai` (guard, redaction, extraction, retrieval, prompt, routes), `apps/web/app/app/ask` (employees) and `apps/web/app/app/settings/ask-hr` (admins).

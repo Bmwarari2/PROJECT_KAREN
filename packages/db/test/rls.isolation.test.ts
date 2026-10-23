@@ -123,7 +123,13 @@ describe('catalog-wide isolation checks', () => {
       SELECT n.nspname || '.' || p.proname AS fn, has_function_privilege('public', p.oid, 'EXECUTE') AS public
       FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1`);
-    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'audit.purge_closed_tenant', 'audit.seal_pending']);
+    expect(rows.map((r) => r.fn)).toEqual(['app.analyze_core_hr', 'app.tenants_for_email', 'app.trgm_word_similarity', 'audit.purge_closed_tenant', 'audit.seal_pending']);
+    // Ask HR retrieval (ADR-0111): a pure, pinned-search-path wrapper over pg_trgm's word_similarity(), for the application role only
+    expect(rows.find((r) => r.fn === 'app.trgm_word_similarity')!.public).toBe(false);
+    const trgm = await owner.query<{ app: boolean; backoffice: boolean; volatility: string; config: string[] }>(
+      `SELECT has_function_privilege('thapsus_app', 'app.trgm_word_similarity(text, text)', 'EXECUTE') AS app, has_function_privilege('thapsus_backoffice', 'app.trgm_word_similarity(text, text)', 'EXECUTE') AS backoffice, provolatile AS volatility, proconfig AS config FROM pg_proc WHERE oid = 'app.trgm_word_similarity(text, text)'::regprocedure`,
+    );
+    expect(trgm.rows[0]).toEqual({ app: true, backoffice: false, volatility: 'i', config: ['search_path=pg_catalog, public'] });
     // verified deletion at account closure (ADR-0085): only the application role, and only for its own tenant once closing
     expect(rows.find((r) => r.fn === 'audit.purge_closed_tenant')!.public).toBe(false);
     const purge = await owner.query<{ app: boolean; backoffice: boolean; reporting: boolean }>(

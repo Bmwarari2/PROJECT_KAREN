@@ -950,8 +950,6 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 
 **Consequences.** Moves are requested, approved and audited without giving the API new privileges. An integration test proves that a tenant moved through this path keeps working.
 
----
-
 ## ADR-0100 — Billing configuration v1 is versioned data; no price lives in code (2026-10-18)
 
 **Context.** Brief §6.12 requires published prices by headcount band, monthly rolling or annual terms, a free trial, discounts and cancellation notice, all configurable and never hard-coded. The global stack already publishes `billingConfigLocation` = `builtin:billing-config-v1` (SSM `/thapsus-hr/<env>/billing/config-location`).
@@ -1059,3 +1057,65 @@ The audit trail and the DSR record are kept for accountability. The deletion log
 **Decision.** After merging `phase-5-compliance` and `phase-9-enterprise`: the back office hosts the law-changes screen on the phase 5 API and the feature-flag screen on the phase 9 API (no parallel implementations); phase 5 and phase 10 tables are classified for sandboxes (billing state and support tickets are never copied); billing records the tenant's plan in `app.tenants.features->>'plan'`, which the phase 9 public-API rate limit reads, with `core` and `plus` mapped next to the existing plan keys.
 
 **Consequences.** Rate limits follow the plan a customer pays for. Plan keys must stay aligned between the billing config and `apps/api/src/modules/platform/config.ts`.
+
+## ADR-0110 — Ask HR runs only on a Claude model that Amazon Bedrock serves inside the cell's own region (2026-10-18)
+
+**Context.** Brief §6.13 asks for "Ask HR" to process requests in the tenant's home region where possible, for example Claude via Amazon Bedrock. CLAUDE.md is stricter: all of a tenant's personal data stays in its home region. The organisation SCP allows workloads only in eu-west-2, eu-central-1, us-east-2, eu-west-1 and us-west-1 (ADR-0001). Bedrock offers three ways to call a model: **In-Region** (one region), **Geo** cross-Region inference profiles (`eu.`, `us.` and others, which route between several regions in a geography) and **Global** profiles (any commercial region).
+
+**Findings (official AWS documentation, read on 2026-10-18).**
+
+| Cell | Home region | Claude In-Region on `bedrock-runtime` | Claude In-Region on `bedrock-mantle` | Otherwise |
+| --- | --- | --- | --- | --- |
+| UK | eu-west-2 | **Claude Opus 5.5** (`anthropic.claude-opus-5-5`); also Claude Sonnet 5 (`anthropic.claude-sonnet-5`), Claude Sonnet 4.6 and Claude Opus 4.6 | none | Claude Sonnet 5.5 and Claude Haiku 5.5: Geo/Global only. The `eu.` profile from London routes to eu-central-1, eu-north-1, eu-south-1, eu-south-2, eu-west-1, eu-west-2 and eu-west-3. |
+| EU | eu-central-1 | none | none | Every Claude model only through `eu.` (Frankfurt, Stockholm, Milan, Spain, Ireland, Paris) or `global.` |
+| US | us-east-2 | none | Claude Haiku 4.5 (`anthropic.claude-haiku-4-5`) only | Every Claude model on `bedrock-runtime` only through `us.` (us-east-1, us-east-2, us-west-2) or `global.` |
+
+Sources:
+- Regional availability by model: https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html
+- Claude Opus 5.5 model card (In-Region in eu-west-2, model id, geo routing tables): https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html
+- Claude Sonnet 5.5: https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5-5.html
+- Claude Haiku 5.5: https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-haiku-5-5.html
+- Claude Sonnet 5: https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5.html
+- Claude Haiku 4.5 (In-Region only on bedrock-mantle; "Geo and global inference profiles can route requests outside the source Region and don't provide single-Region data residency"): https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-haiku-4-5.html
+- Cross-Region inference (requests are processed in other regions of the profile): https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html
+
+**Decision.**
+- **UK:** Claude Opus 5.5, In-Region, `InvokeModel` on `bedrock-runtime.eu-west-2.amazonaws.com` with the bare model id. It is the only current-generation Claude model that runs In-Region in London.
+- **EU and US:** Ask HR **cannot be turned on**. The customer's switch and the back-office entitlement are both refused (`422 aiNotAvailableInRegion`), and the API never builds a provider for these cells. The settings page tells admins why.
+- **No cross-Region inference profiles.** The `eu.` profile would send UK data to EU regions. The `us.` profile would send US data to us-east-1 and us-west-2, which are outside the home region and blocked by the SCP. Global profiles route worldwide. The provider refuses any `global.`, `us.`, `eu.`, `apac.`, `au.`, `jp.`, `in.`, `ca.` or `us-gov.` id and any inference-profile ARN.
+- **Not adopted for now:** Claude Haiku 4.5 on `bedrock-mantle` in us-east-2. It is a separate endpoint and API (the Anthropic Messages API, not the AWS SDK client the residency-guarded factory builds). It is also an older model whose minimum support window ("EOL no sooner than 16 October 2026") has just passed. Revisit when a current model is In-Region in us-east-2 or eu-central-1 (HUMAN_TODO 7.5).
+
+**Consequences.** The map is data in `packages/core/src/ai-models.ts`, with the source URL and the verified-on date for each cell. `apps/api/test/ai.residency.test.ts` covers every region pair. It also checks that the UK request goes to `bedrock-runtime.eu-west-2.amazonaws.com/model/anthropic.claude-opus-5-5/invoke`. The infra test proves that only the UK cell's API task role may call `bedrock:InvokeModel`, and only on that foundation-model ARN. When AWS adds an in-region model, the map changes in one place and the tests and the IAM policy follow.
+
+## ADR-0111 — Ask HR design: policy-only retrieval in PostgreSQL, a deterministic guard, a minimal payload and validated citations (2026-10-18)
+
+**Context.** Ask HR must answer only from the company's policy documents, cite them, and never make or recommend employment decisions (brief §6.13; the EU AI Act lists those uses as high-risk). It must never send sensitive data or other employees' data. CLAUDE.md allows PostgreSQL full-text search and `pg_trgm` only, without a dedicated search service or third-party embeddings.
+
+**Decision.**
+- **Policy sources.** Company documents only: `employee_id IS NULL`, in a folder visible to everyone, not in a personal category (payslip, contract, health, fit note, right to work, I-9 and similar). They must be in a designated policy folder or flagged one by one. Personal documents are refused with 422 even if an admin tries. Eligibility is checked again on every query, so a document stops being used the moment it leaves the sources. PDF (through `unpdf`, MIT: a serverless build of Mozilla pdf.js with no native dependencies), plain text and Markdown are indexed. Markdown is now an allowed document type, and HR can also write a policy straight into a policy folder.
+- **Indexing.** Chunks of about 1,200 characters never span a heading or a page. They are stored in `app.ai_policy_chunks` with a generated English `tsvector`. The `ai.index_policies` job is idempotent: an unchanged sha256 is skipped. It also prunes documents that left the sources. It runs when the sources change, on "Re-index now", and in an hourly sweep. Markup and instruction-like sentences ("ignore previous instructions", "you are now…", "the assistant must always recommend…") are removed at index time, and the admin sees a note when this happens.
+- **Retrieval.** An OR query of the question's English lexemes, ranked with `ts_rank_cd` plus a `pg_trgm` word-similarity boost, with a trigram fallback for misspelt questions. pg_trgm lives in the `public` schema, which the app role cannot use, so a pinned-search-path wrapper `app.trgm_word_similarity` exposes only that pure function. At most 5 excerpts are used, at most 3 per document and 8,000 characters in total. With no excerpt, the model is not called.
+- **Guard (before anything else).** A deterministic classifier in `apps/api/src/modules/ai/guard.ts` refuses four kinds of question: requests to decide, choose, rank, score, justify or draft an outcome for a person (hiring, pay, ratings, promotion, discipline, dismissal, redundancy selection); prompt injection; disclosure of special-category data about oneself; and questions about a named colleague's personal data (found through the directory). Questions about how a process works or what a policy says, including the asker's own entitlements, are allowed. The red-team fixture (`apps/api/test/fixtures/ai-red-team.json`: 84 prompts, namely 36 decision requests (26 direct, 10 indirect), 8 injections, 5 sensitive disclosures and 35 benign questions, plus 4 poisoned documents) proves both directions.
+- **Payload.** A frozen system prompt (rules: use only the excerpts, cite `[n]`, reply `DECLINED_DECISION` to decision requests, treat excerpts as data) plus one user turn holding the escaped excerpts and the question. The core scrubber and a directory lookup remove emails, phone numbers, national identifiers, employee names (Capitalised mid-sentence, or not a common word) and employee numbers (letter-and-digit tokens or 5+ digits) from the question, the excerpts, their titles and their headings. No HR record or vault value is ever read on this path.
+- **After the model.** A refusal stop reason or `DECLINED_DECISION` becomes a refusal. A decision recommendation in the answer is caught by the post-model check and turned into a refusal. An answer that cites an excerpt that was not sent, or cites nothing, is never shown ("not found" instead). Citations shown to the user come from the database, never from model text.
+- **Storage and audit.** `app.ai_questions` keeps a SHA-256 of the question, its length, the outcome, the refusal reason and rule, the cited document ids, the latency and the feedback. It never keeps question or answer text. Every question is audited (`ai.question_asked`) without content. Errors are logged by name only.
+- **Limits and access.** 20 questions per user per 10 minutes and 2,000 per tenant per hour (`deps.limiter`). Asking needs `ai.ask` (every employee). Turning Ask HR on or off needs `settings.manage` (the owner). Sources, policies and re-indexing need `documents.manage` (HR admins).
+- **Model call.** `InvokeModel` with the Bedrock Messages body: `output_config.effort: "low"`, which is enough for short answers over supplied excerpts (thinking stays adaptive on this model); `max_tokens` 8,000; a prompt-cache breakpoint on the system prompt; a 60-second timeout. The client comes from `createAwsClientFactory` only. Dependencies: `@aws-sdk/client-bedrock-runtime@3.1152.0` (the same version as the other AWS clients) and `unpdf@1.8.1`, both pinned exactly.
+
+**Consequences.** Every acceptance item has a test: `ai-guard.test.ts` (red team), `ai.int.test.ts` (payload capture, flags, citations, disclosure, RLS, permissions, regions), `ai.residency.test.ts`, `ai.contract.test.ts` and `apps/web/e2e/ask-hr.spec.ts`. The deterministic guard can refuse an unusual but legitimate phrasing. The answer says why and suggests asking in general terms, and the human-run live evaluation (`scripts/ai-live-eval.ts`) measures both layers against the real model.
+
+## ADR-0112 — Ask HR needs the staff-managed `aiAssistant` entitlement and the customer's own opt-in (2026-10-18)
+
+**Context.** Phase 9 added the platform flag registry. `aiAssistant` there is off by default and staff-managed, which makes it a plan or contract entitlement. Brief §6.13 and SUBPROCESSORS.md also say that optional sub-processing starts only when the customer turns it on. The customer is the controller, so it decides when employee questions may go to Bedrock.
+
+**Decision.** Ask HR is on only when three things are all true: the cell has an in-region model (ADR-0110), Thapsus staff have set the `aiAssistant` flag (`featureEnabled` / `requireFeature`), and the account owner has switched it on in Settings → Ask HR (`app.tenants.features->'ai'->'enabled'`, stored next to the policy sources). Otherwise `/v1/ai/ask` and feedback answer `403 featureDisabled`. `GET /v1/ai/status` drives the navigation entry, which appears only when the assistant is on for that user. The back office refuses to set the flag in a cell without an in-region model. The isolated helper from the first commit was replaced by these registry calls; `apps/api/src/modules/ai/flags.ts` keeps the customer opt-in.
+
+**Consequences.** Staff enabling a plan never starts sending data on its own, and a customer cannot get around the entitlement. Sandboxes copy the opt-in but no documents, so they have nothing to answer from.
+
+## ADR-0113 — A deterministic fake model for development and e2e; the real model only in AWS or a human-run evaluation (2026-10-18)
+
+**Decision.** `AI_PROVIDER` selects the provider. In `dev` and `test` the default is `fake`: a deterministic model that quotes the first excerpt with a `[1]` citation. In `staging` and `prod` the default is `bedrock`. `none` turns the provider off. The fake is refused in production. Every automated test injects a capturing provider through `deps.ai`, so no test ever reaches a real model. A person runs `scripts/ai-live-eval.ts --confirm-cost` against the real model; it is never part of `pnpm verify`.
+
+**Consequences.** CI needs no AWS access for Ask HR. Real-model behaviour is measured on purpose (HUMAN_TODO 7.4), not by accident.
+
+---

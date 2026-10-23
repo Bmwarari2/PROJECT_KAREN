@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, Bell, CalendarClock, CalendarDays, CircleHelp, ClipboardList, Clock, CreditCard, DoorOpen, FileText, Home, Inbox, Laptop, LifeBuoy, ListChecks, Lock, LogOut, Menu, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, UserRound, Users, Wallet, Zap } from 'lucide-react';
+import { BarChart3, Bell, CalendarClock, CalendarDays, CircleHelp, ClipboardList, Clock, CreditCard, DoorOpen, FileText, Home, Inbox, Laptop, LifeBuoy, ListChecks, Lock, LogOut, Menu, MessageCircleQuestionMark, Network, Plug, Receipt, Scale, Settings, ShieldCheck, Upload, UserRound, Users, Wallet, Zap } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetTrigger, Sidebar, SidebarNav, Skeleton, TopBar, type NavItem } from '@thapsus/ui';
 import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
 import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
@@ -34,8 +34,8 @@ export function hasPermission(s: SessionInfo | null | undefined, p: string): boo
   return !!s?.permissions.some((g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))));
 }
 
-/** Navigation entries; each feature phase adds its own (permission-filtered). */
-export function navItems(t: (k: string) => string, s: SessionInfo, path: string): NavItem[] {
+/** Navigation entries; each feature phase adds its own (permission-filtered). `askHr`: Ask HR is on for this user. */
+export function navItems(t: (k: string) => string, s: SessionInfo, path: string, opts: { askHr?: boolean } = {}): NavItem[] {
   const has = (p: string) => hasPermission(s, p);
   const items: Array<NavItem & { show: boolean }> = [
     { href: '/app', label: t('app.nav.home'), icon: <Home aria-hidden />, show: true },
@@ -50,6 +50,7 @@ export function navItems(t: (k: string) => string, s: SessionInfo, path: string)
     { href: '/app/tasks', label: t('app.nav.tasks'), icon: <ListChecks aria-hidden />, show: true },
     { href: '/app/approvals', label: t('app.nav.approvals'), icon: <Inbox aria-hidden />, show: true },
     { href: '/app/documents', label: t('app.nav.documents'), icon: <FileText aria-hidden />, show: true },
+    { href: '/app/ask', label: t('app.nav.askHr'), icon: <MessageCircleQuestionMark aria-hidden />, show: !!opts.askHr },
     { href: '/app/payslips', label: t('app.nav.payslips'), icon: <Receipt aria-hidden />, show: has('payslips.read_own') || has('payslips.manage') },
     { href: '/app/assets', label: t('app.nav.assets'), icon: <Laptop aria-hidden />, show: has('assets.read_own') || has('assets.read') },
     { href: '/app/payroll', label: t('app.nav.payroll'), icon: <Wallet aria-hidden />, show: has('payroll.read') },
@@ -99,12 +100,22 @@ export function AppShell({ children, theme, initialSession = null }: { children:
   }, [session, experienceTick]);
   const experienceValue = React.useMemo(() => ({ experience, reload: () => setExperienceTick((n) => n + 1) }), [experience]);
 
+  // Ask HR needs the platform flag, the region and the customer's opt-in; the API resolves all three.
+  const [askHr, setAskHr] = React.useState(false);
+  const aiFlag = !!experience?.features.aiAssistant;
+  React.useEffect(() => {
+    if (!aiFlag) return setAskHr(false);
+    api<{ canAsk: boolean }>('/v1/ai/status')
+      .then((s) => setAskHr(s.canAsk))
+      .catch(() => setAskHr(false));
+  }, [aiFlag, experienceTick, path]);
+
   const signOut = async () => {
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
     router.replace('/signin');
   };
 
-  const nav = session ? navItems(t, session, path) : [];
+  const nav = session ? navItems(t, session, path, { askHr }) : [];
   const renderLink = (item: NavItem, className: string, children: React.ReactNode) => (
     <Link href={item.href} className={`${className} no-underline`} aria-current={item.active ? 'page' : undefined}>
       {children}

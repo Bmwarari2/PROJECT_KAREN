@@ -21,6 +21,7 @@ export const ALLOWED_TYPES: Record<string, string> = {
   'image/jpeg': '.jpg',
   'text/csv': '.csv',
   'text/plain': '.txt',
+  'text/markdown': '.md',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
 };
@@ -448,6 +449,7 @@ export function matchesMagic(contentType: string, b: Buffer): boolean {
       return starts([0x50, 0x4b, 0x03, 0x04]);
     case 'text/csv':
     case 'text/plain':
+    case 'text/markdown':
       return !b.subarray(0, 4096).includes(0);
     default:
       return false;

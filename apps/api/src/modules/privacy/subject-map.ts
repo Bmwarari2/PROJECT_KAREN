@@ -87,6 +87,8 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.compliance_records': { subject: [E()], actor: ['recorded_by'], category: 'personnel_records', erase: DEL },
   'app.pay_report_inputs': { subject: [E()], actor: ['created_by'], category: 'payroll_records', erase: DEL },
   'app.law_change_reads': { subject: [U()], category: 'account', erase: DEL },
+  // Ask HR keeps a hash and the outcome of each question, never its text (ADR-0111).
+  'app.ai_questions': { subject: [U()], category: 'account', erase: DEL },
 
   // ---- payroll handoff, payslips, IT automation and assets ---------------------------------------------
   'app.payslips': { subject: [E()], category: 'payroll_records', erase: DEL },
