@@ -58,10 +58,10 @@ export function PageIntro({
   );
 }
 
-export const filterSelectClass =
+const filterSelectClass =
   'h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text focus-visible:outline-2 focus-visible:outline-accent';
 
-/** The search field of a list toolbar (filters rows already on the page). */
+/** The search field of a list toolbar; the page decides whether it filters loaded rows or asks the API. */
 export function ListSearch({
   value,
   onChange,
