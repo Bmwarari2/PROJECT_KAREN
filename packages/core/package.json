@@ -32,13 +32,13 @@
     "trust-data": "tsx scripts/trust-data.ts"
   },
   "dependencies": {
-    "@js-temporal/polyfill": "^0.5.1",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
     "@opentelemetry/resources": "^2.12.0",
     "@opentelemetry/sdk-node": "^0.223.0",
     "@opentelemetry/sdk-trace-base": "^2.12.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
-    "pino": "^10.4.0"
+    "pino": "^10.4.0",
+    "temporal-polyfill": "1.0.5"
   }
 }
