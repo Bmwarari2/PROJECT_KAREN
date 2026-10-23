@@ -2,9 +2,13 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Field, Input, useToast } from '@thapsus/ui';
+import { parseDecimal } from '@thapsus/core/money';
+import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { viewerZone } from '@/lib/week';
+import { PageTitle, useSession } from '../../shell';
 
 interface Ref {
   id: string;
@@ -16,11 +20,12 @@ export default function NewEmployeePage() {
   const t = useT();
   const router = useRouter();
   const toast = useToast();
+  const session = useSession();
   const entities = useApi<Ref[]>('/v1/org/legal-entities');
   const departments = useApi<Ref[]>('/v1/org/departments');
   const locations = useApi<Ref[]>('/v1/org/locations');
   const [v, setV] = React.useState<Record<string, string>>({
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: today(viewerZone(session?.timeZone)),
     payFrequency: 'annual',
     contractType: 'permanent',
     employmentType: 'full_time',
@@ -34,10 +39,12 @@ export default function NewEmployeePage() {
     e.preventDefault();
     setBusy(true);
     try {
+      const currency = entity?.currency ?? 'GBP';
+      // money: the decimal amount → integer minor units for the entity's currency (no floating point)
       const body: Record<string, unknown> = {
         ...v,
-        payCurrency: entity?.currency ?? 'GBP',
-        payAmountMinor: Math.round(Number(v.salary ?? 0) * 100),
+        payCurrency: currency,
+        payAmountMinor: Number(parseDecimal(v.salary || '0', currency).amountMinor),
       };
       delete body.salary;
       for (const k of Object.keys(body)) if (body[k] === '') delete body[k];
@@ -74,7 +81,7 @@ export default function NewEmployeePage() {
 
   return (
     <form onSubmit={submit} className="flex max-w-[var(--prose-width)] flex-col gap-6">
-      <h1 className="text-title-2">{t('people.add')}</h1>
+      <PageTitle>{t('people.add')}</PageTitle>
       <Card className="grid gap-4 md:grid-cols-2">
         <Field id="legalFirstName" label={t('people.field.legalFirstName')}>
           {(p) => <Input {...p} required value={v.legalFirstName ?? ''} onChange={set('legalFirstName')} />}

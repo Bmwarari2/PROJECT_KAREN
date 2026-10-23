@@ -22,7 +22,8 @@ import { formatDateTime } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { hasPermission, useSession } from '../../../shell';
+import { useInModule, useSectionLevel } from '@/components/module-page';
+import { hasPermission, PageTitle, useSession } from '../../../shell';
 import {
   problemMessage,
   roleName,
@@ -122,6 +123,8 @@ function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () 
 
 export default function UserAccessPage() {
   const t = useT();
+  const inModule = useInModule();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
@@ -140,7 +143,10 @@ export default function UserAccessPage() {
 
   if (error)
     return (
-      <EmptyState level={1} title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')} />
+      <EmptyState
+        level={inModule ? 2 : 1}
+        title={error.status === 403 ? t('errors.forbidden') : t('errors.notFound')}
+      />
     );
   if (!data) return <Skeleton className="h-96 w-full" />;
   const { user, assignments } = data;
@@ -188,7 +194,7 @@ export default function UserAccessPage() {
             .join('')}
         </span>
         <div className="mr-auto">
-          <h1 className="text-title-2">{user.displayName}</h1>
+          <PageTitle>{user.displayName}</PageTitle>
           <p className="break-all text-callout text-text-secondary">{user.email}</p>
           <span className="mt-2 flex flex-wrap gap-2">
             {user.hasMfa ? (
@@ -209,9 +215,13 @@ export default function UserAccessPage() {
       ) : null}
 
       <Card className="flex flex-col gap-4">
-        <CardTitle>{t('access.users.assignmentsTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('access.users.assignmentsTitle')}</CardTitle>
         {assignments.length === 0 ? (
-          <EmptyState icon={<ShieldCheck aria-hidden />} title={t('access.users.noAssignments')} />
+          <EmptyState
+            level={sec.level}
+            icon={<ShieldCheck aria-hidden />}
+            title={t('access.users.noAssignments')}
+          />
         ) : (
           <Table>
             <THead>
@@ -265,7 +275,7 @@ export default function UserAccessPage() {
 
       {canAssign ? (
         <Card className="flex flex-col gap-4">
-          <CardTitle>{t('access.users.assignTitle')}</CardTitle>
+          <CardTitle as={sec.heading}>{t('access.users.assignTitle')}</CardTitle>
           <form onSubmit={assign} className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Field id="assign-role" label={t('access.users.role')}>

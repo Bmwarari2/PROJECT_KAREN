@@ -64,7 +64,7 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   },
   {
     name: 'time off, rota, clock and timesheets',
-    match: (r) => /^\/app\/(time-off|rota|clock|timesheets)(\/|$)/.test(r),
+    match: (r) => /^\/app\/(time|time-off|rota|clock|timesheets)(\/|$)/.test(r),
     as: 'owner',
   },
   {
@@ -75,7 +75,17 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   },
   { name: 'reports', match: (r) => r.startsWith('/app/reports'), as: 'owner' },
   { name: 'compliance and privacy', match: (r) => /^\/app\/(compliance|privacy)(\/|$)/.test(r), as: 'owner' },
-  { name: 'settings', match: (r) => r.startsWith('/app/settings'), as: 'owner' },
+  // roles and their comparison (permission and field matrices, preview as role) are swept on their own
+  {
+    name: 'roles and access',
+    match: (r) => r.startsWith('/app/settings/roles'),
+    as: 'owner',
+  },
+  {
+    name: 'settings',
+    match: (r) => r.startsWith('/app/settings') && !r.startsWith('/app/settings/roles'),
+    as: 'owner',
+  },
   { name: 'back office', match: isBackoffice, as: 'staff' },
 ];
 
@@ -446,6 +456,10 @@ async function checks(page: Page, path: string, app: boolean): Promise<string[]>
         .slice(0, 2)
         .join(', ')})`,
     );
+  // 1.3.1: exactly one h1. Inside a module the shell's module header is the h1 and a page's own title
+  // is an h2 (PageTitle); axe's page-has-heading-one only asks for at least one.
+  const h1s = await page.getByRole('heading', { level: 1 }).allInnerTexts();
+  if (h1s.length !== 1) problems.push(`1.3.1 ${h1s.length} h1 headings, one expected (${h1s.join(' | ')})`);
   problems.push(
     ...(await motionProblems(page)),
     ...(await textSpacingProblems(page)),

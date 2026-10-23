@@ -18,6 +18,7 @@ import {
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
+import { PageIntro } from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 
 interface Status {
@@ -393,7 +394,7 @@ export default function ClockPage() {
   const canManage = hasPermission(session, 'time.manage');
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-title-2">{t('clock.title')}</h1>
+      <PageIntro title={t('clock.title')} titleIsTab />
       {session.employeeId ? (
         <ClockCard userId={session.userId} />
       ) : (

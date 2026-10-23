@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { FormError, PageHeader, ReadOnlyNote, SettingsCard, useAction, usePermission } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Domain {
   id: string;
@@ -18,6 +19,7 @@ interface Domain {
 /** Verified email domains: needed for SSO just-in-time accounts and workspace discovery. */
 export default function DomainsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const has = usePermission();
   const canManage = has('settings.manage');
   const domains = useApi<Domain[]>('/v1/settings/domains');
@@ -71,7 +73,7 @@ export default function DomainsPage() {
         {!domains.data ? (
           <Skeleton className="h-24" />
         ) : domains.data.length === 0 ? (
-          <EmptyState icon={<Globe aria-hidden />} title={t('app.settings.noDomains')} />
+          <EmptyState level={sec.level} icon={<Globe aria-hidden />} title={t('app.settings.noDomains')} />
         ) : (
           <Table dense scrollLabel={t('admin.tableScroll', { name: t('app.settings.domainsTitle') })}>
             <THead>

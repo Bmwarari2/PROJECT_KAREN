@@ -27,6 +27,7 @@ import {
   useDateTime,
 } from '@/components/platform';
 import { useFeature } from '../../shell';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Stream {
   id: string;
@@ -95,6 +96,7 @@ function Batches({ stream }: { stream: Stream }) {
 
 export default function AuditStreamsPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const toast = useToast();
   const when = useDateTime();
   const enabled = useFeature('auditStreaming');
@@ -207,7 +209,7 @@ export default function AuditStreamsPage() {
         <SecretOnce title={created.title} items={created.items} onDone={() => setCreated(null)} />
       ) : null}
       <Card>
-        <CardTitle>{t('platform.streams.createTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.streams.createTitle')}</CardTitle>
         <form onSubmit={create} className="mt-4 flex flex-col gap-4">
           <fieldset className="flex flex-wrap gap-4">
             <legend className="mb-2 text-callout font-semibold">{t('platform.streams.destination')}</legend>
@@ -289,13 +291,13 @@ export default function AuditStreamsPage() {
       </Card>
 
       {streams.data && !streams.data.data.length ? (
-        <EmptyState icon={<Radio aria-hidden />} title={t('platform.streams.none')} />
+        <EmptyState level={sec.level} icon={<Radio aria-hidden />} title={t('platform.streams.none')} />
       ) : null}
       {(streams.data?.data ?? []).map((s) => (
         <Card key={s.id}>
           <div className="flex flex-wrap items-start gap-3">
             <div className="mr-auto min-w-0">
-              <CardTitle>{s.name}</CardTitle>
+              <CardTitle as={sec.heading}>{s.name}</CardTitle>
               <p className="mt-1 break-all text-footnote text-text-secondary">
                 {s.kind === 'https' ? s.url : `s3://${s.s3!.bucket}/${s.s3!.prefix} (${s.s3!.region})`}
               </p>

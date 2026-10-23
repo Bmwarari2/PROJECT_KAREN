@@ -17,6 +17,8 @@ const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ['@thapsus/ui', '@thapsus/core'],
+  // import only the components a page uses from the UI package's barrel (it has no side effects)
+  experimental: { optimizePackageImports: ['@thapsus/ui'] },
   images: { formats: ['image/avif', 'image/webp'] },
   async headers() {
     return [

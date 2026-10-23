@@ -1418,3 +1418,56 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - A script that writes a formatted file (`i18n-merge.mjs`, `loadtest.mjs --record` appending to PERFORMANCE.md) is followed by `pnpm format`.
 - Prettier's first pass did not settle a few files, so a second pass was needed. `prettier --check` in verify catches any recurrence.
 - An `eslint-disable-next-line` comment moved by line wrapping now sits on the line it covers.
+
+## ADR-0154 — A workspace shell: grouped modules, tabs, global search and role-aware dashboards (2026-10-23)
+
+**Context.** The product owner found the app too simple and unstructured: one sidebar listed about 28 links, the home page showed three static cards, and there was no global search. They asked for a structure like the leading workforce platforms and for the role gating to be visible. Patterns reviewed:
+
+- **Rippling:** a dark top bar with "search for anything" and an account menu showing name, role and company; a grouped app rail; app pages with an icon tile, a title and a tab bar; overview dashboards of stat tiles, donut and bar charts; tables with search, "Add filters" and counts; a report builder with a data panel beside the chart and table; permission profiles that grant access to data, scope and actions rather than to screens.
+- **BambooHR:** a per-person home whose widgets appear according to the person's access level, with a "needs your attention" strip.
+- **Personio:** a profile header with status, team and manager above tabbed sections.
+- **Command-palette research:** one keystroke; grouped, permission-scoped results; recents; no dead ends.
+
+**Decision.**
+
+- **One map.** `apps/web/app/app/workspace.tsx` lists every module, its tabs and the quick actions, each with the permission that gates it. The rail, the tab bars, global search, the home page's quick actions and the role preview all read it, so what a person can reach is decided once. The API still enforces every permission and scope.
+- **Shell.** A 56px top bar on new `chrome` tokens (Thapsus teal-black, not another vendor's brand colour) carries global search, help, notifications and the account menu. The rail groups modules under You, Workforce, Insights, Governance and Company, with Home first and Help last, and collapses to icons. Module pages get a header (icon tile, module name as `h1`) and a tab bar; page titles under it are `h2` (`PageTitle`).
+- **Search.** Ctrl/⌘ K or `/` opens a palette that searches:
+  - pages and actions from the map;
+  - people through the existing org-chart directory search, which everyone may use; a result opens the full profile only for people with `employees.read`, otherwise the org chart;
+  - help articles.
+
+  Recents keep pages and actions only, never people, in the browser.
+
+- **Charts.** Dashboards use six categorical chart tokens in a fixed, CVD-validated order (DESIGN.md §2) and small HTML/SVG components (DESIGN.md §6). No chart library, to keep the Lighthouse budget.
+- **No new endpoints.** Dashboards are composed from existing permission-scoped endpoints: `/v1/me/summary`, approvals, tasks, the leave calendar and the report builder preview.
+
+**Consequences.**
+
+- Navigation is shorter: about twelve modules instead of 28 links, each with tabs.
+- Pages under a module drop their own `h1`.
+- Every e2e test that clicked a sidebar link now goes through the rail or the tab bar.
+- Visual baselines are regenerated.
+- New modules and tabs are added to the map, not to the shell.
+
+## ADR-0155 — The report builder picks its chart; the role preview reuses the workspace map (2026-10-23)
+
+**Context.** The reworked report builder (ADR-0154) shows a chart above every result, and Settings → Roles gained "Compare and preview" so customers can see how each role is gated.
+
+**Decision.**
+
+- **The builder chooses the chart from the result** (`reports/builder/chart-model.ts`, unit-tested):
+  - columns over a date grouping, which have one unit and so one axis;
+  - a donut for at most six shares of a count or total;
+  - a bar list otherwise.
+- **Two grouping levels give stacked columns.** Series past six fold into "Other", but only for counts and totals, where adding them up is meaningful.
+- **Money in several currencies is shown as a table only.**
+- **Saved reports remember only Chart or Table.** `spec.chart` stores the choice, and `none` means Table.
+- **The role preview is computed in the browser.** It takes the role's permission list and runs it through the same functions the shell uses: `viewerFromSession`, `visibleModules`, `visibleActions` and `visibleSections`. A unit test checks it agrees with the shell for every built-in role.
+- **The preview never changes the viewer's session.** It says that the API still applies the scope the role is assigned at.
+- **Ask HR is previewed as available when the role holds `ai.ask`.** A footnote says it also needs the workspace setting and the region.
+
+**Consequences.**
+
+- The builder no longer asks people to pick a chart type that might not fit the data.
+- What the preview shows cannot drift from what the app shows, because both read one map.

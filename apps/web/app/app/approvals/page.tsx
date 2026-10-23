@@ -19,6 +19,15 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
+import {
+  ListCard,
+  ListFilter,
+  ListNoMatches,
+  ListSearch,
+  matches,
+  PageIntro,
+  type AppliedFilter,
+} from '@/components/module-page';
 
 /** Fields shown first, in this order; others follow. */
 const DETAIL_ORDER = [
@@ -47,21 +56,8 @@ export default function ApprovalsPage() {
   const { data, reload } = useApi<Approval[]>('/v1/approvals?view=mine');
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [busy, setBusy] = React.useState(false);
-
-  async function bulk(decision: 'approve' | 'reject') {
-    setBusy(true);
-    const r = await api<{ succeeded: string[]; failed: unknown[] }>('/v1/approvals/bulk', {
-      method: 'POST',
-      json: { ids: [...selected], decision },
-    });
-    toast({
-      title: t('approvals.bulkResult', { ok: r.succeeded.length, failed: r.failed.length }),
-      tone: r.failed.length ? 'danger' : 'success',
-    });
-    setSelected(new Set());
-    setBusy(false);
-    reload();
-  }
+  const [query, setQuery] = React.useState('');
+  const [type, setType] = React.useState('');
 
   // Request details in words: known fields with their labels, dates formatted, internal ids left out.
   const known = (key: string) => (t(key) === key ? null : t(key));
@@ -86,47 +82,123 @@ export default function ApprovalsPage() {
       })
       .join(', ');
 
+  // Search and the request-type filter narrow the rows already loaded; bulk actions use only the
+  // selected rows that are still shown.
+  const rows = data ?? [];
+  const types = [...new Set(rows.map((a) => a.policy))].sort((a, b) => a.localeCompare(b, locale));
+  const shown = rows.filter(
+    (a) => (!type || a.policy === type) && matches(query, a.policy, a.subjectName, details(a.payload)),
+  );
+  const picked = shown.filter((a) => selected.has(a.id)).map((a) => a.id);
+  const filtered = !!type || !!query.trim();
+  const clearAll = () => {
+    setQuery('');
+    setType('');
+  };
+  const applied: AppliedFilter[] = type
+    ? [{ key: 'type', label: t('approvals.list.typeChip', { type }), clear: () => setType('') }]
+    : [];
+
+  async function bulk(decision: 'approve' | 'reject') {
+    setBusy(true);
+    const r = await api<{ succeeded: string[]; failed: unknown[] }>('/v1/approvals/bulk', {
+      method: 'POST',
+      json: { ids: picked, decision },
+    });
+    toast({
+      title: t('approvals.bulkResult', { ok: r.succeeded.length, failed: r.failed.length }),
+      tone: r.failed.length ? 'danger' : 'success',
+    });
+    setSelected(new Set());
+    setBusy(false);
+    reload();
+  }
+
   const toggle = (id: string) =>
     setSelected((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set([...s, id])));
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-title-2">{t('approvals.title')}</h1>
-        <Link
-          href="/app/settings/delegations"
-          className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} no-underline`}
-        >
-          <UserRoundCheck aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('admin.delegations.link')}
-        </Link>
-        <ExportLinks list="approvals" params={{ view: 'mine' }} />
-        <Button size="sm" disabled={!selected.size} loading={busy} onClick={() => bulk('approve')}>
-          {t('approvals.approveSelected')}
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={!selected.size || busy}
-          onClick={() => bulk('reject')}
-        >
-          {t('approvals.rejectSelected')}
-        </Button>
-      </div>
-      {/* the heading renders before the list arrives, in the same element as the loaded page */}
-      {!data ? (
-        <Skeleton className="h-64 w-full" />
-      ) : data.length === 0 ? (
-        <EmptyState icon={<Inbox aria-hidden />} title={t('approvals.empty')} />
-      ) : (
-        <Table>
+      <PageIntro
+        title={t('approvals.title')}
+        titleIsTab
+        lead={t('approvals.lead')}
+        actions={
+          <>
+            <Link
+              href="/app/settings/delegations"
+              className={`${buttonVariants({ variant: 'ghost', size: 'sm' })} no-underline`}
+            >
+              <UserRoundCheck aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('admin.delegations.link')}
+            </Link>
+            <ExportLinks list="approvals" params={{ view: 'mine' }} />
+          </>
+        }
+      />
+      <ListCard
+        title={t('approvals.list.title')}
+        count={
+          data
+            ? filtered
+              ? t('approvals.list.countFiltered', { shown: shown.length, count: rows.length })
+              : t('approvals.list.count', { count: rows.length })
+            : undefined
+        }
+        search={
+          rows.length ? (
+            <ListSearch value={query} onChange={setQuery} label={t('approvals.list.search')} />
+          ) : undefined
+        }
+        filters={
+          types.length > 1 || type ? (
+            <ListFilter
+              value={type}
+              onChange={setType}
+              label={t('approvals.list.type')}
+              anyLabel={t('approvals.list.anyType')}
+              options={types.map((p) => ({ value: p, label: p }))}
+            />
+          ) : undefined
+        }
+        actions={
+          rows.length ? (
+            <>
+              <Button size="sm" disabled={!picked.length} loading={busy} onClick={() => bulk('approve')}>
+                {t('approvals.approveSelected')}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={!picked.length || busy}
+                onClick={() => bulk('reject')}
+              >
+                {t('approvals.rejectSelected')}
+              </Button>
+            </>
+          ) : undefined
+        }
+        applied={applied}
+        empty={
+          !data ? (
+            <Skeleton className="h-40 w-full" />
+          ) : rows.length === 0 ? (
+            <EmptyState level={3} icon={<Inbox aria-hidden />} title={t('approvals.empty')} />
+          ) : shown.length === 0 ? (
+            <ListNoMatches onClear={clearAll} />
+          ) : undefined
+        }
+      >
+        <Table scrollLabel={t('approvals.list.title')}>
           <THead>
             <tr>
               <TH className="w-10">
                 <input
                   type="checkbox"
                   aria-label={t('approvals.selectAll')}
-                  checked={selected.size === data.length}
-                  onChange={(e) => setSelected(e.target.checked ? new Set(data.map((d) => d.id)) : new Set())}
+                  checked={shown.length > 0 && picked.length === shown.length}
+                  onChange={(e) =>
+                    setSelected(e.target.checked ? new Set(shown.map((d) => d.id)) : new Set())
+                  }
                 />
               </TH>
               <TH>{t('approvals.col.request')}</TH>
@@ -136,7 +208,7 @@ export default function ApprovalsPage() {
             </tr>
           </THead>
           <tbody>
-            {data.map((a) => (
+            {shown.map((a) => (
               <TR key={a.id}>
                 <TD>
                   <input
@@ -154,7 +226,7 @@ export default function ApprovalsPage() {
             ))}
           </tbody>
         </Table>
-      )}
+      </ListCard>
     </div>
   );
 }

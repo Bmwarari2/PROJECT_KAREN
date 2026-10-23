@@ -22,6 +22,20 @@ export const colors = {
   warning: { light: '#8a5a00', dark: '#f2c14e' },
   danger: { light: '#b42318', dark: '#ff7b72' },
   'on-danger': { light: '#ffffff', dark: '#2a0705' },
+  // App chrome: the dark top bar (deep teal-black in both modes) and the controls on it.
+  chrome: { light: '#132321', dark: '#0d1716' },
+  'chrome-raised': { light: '#1f3331', dark: '#1a2826' },
+  'on-chrome': { light: '#f5f7f6', dark: '#f5f7f6' },
+  'on-chrome-secondary': { light: '#b5c4c1', dark: '#a9b8b5' },
+  'chrome-focus': { light: '#5fd3c6', dark: '#5fd3c6' },
+  // Categorical chart series, in this fixed order (validated for colour-vision deficiency, ADR-0154).
+  // Light slots 1, 5 and 6 sit below 3:1 on the surface, so every chart shows its values as text too.
+  'chart-1': { light: '#1baf7a', dark: '#199e70' },
+  'chart-2': { light: '#2a78d6', dark: '#3987e5' },
+  'chart-3': { light: '#eb6834', dark: '#d95926' },
+  'chart-4': { light: '#6250d6', dark: '#9085e9' },
+  'chart-5': { light: '#e87ba4', dark: '#d55181' },
+  'chart-6': { light: '#eda100', dark: '#c98500' },
 } as const satisfies Record<string, Record<Mode, string>>;
 
 export type ColorToken = keyof typeof colors;
@@ -49,6 +63,10 @@ export const TEXT_PAIRS: Array<[fg: ColorToken, bg: ColorToken]> = [
   ['danger', 'bg'],
   ['danger', 'surface'],
   ['on-danger', 'danger'],
+  ['on-chrome', 'chrome'],
+  ['on-chrome', 'chrome-raised'],
+  ['on-chrome-secondary', 'chrome'],
+  ['on-chrome-secondary', 'chrome-raised'],
 ];
 
 /** Non-text UI pairs (control borders, focus ring) that must meet 3:1. */
@@ -57,6 +75,8 @@ export const UI_PAIRS: Array<[fg: ColorToken, bg: ColorToken]> = [
   ['border-strong', 'surface-raised'],
   ['accent', 'bg'],
   ['accent', 'surface'],
+  ['chrome-focus', 'chrome'],
+  ['chrome-focus', 'chrome-raised'],
 ];
 
 export const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
@@ -94,6 +114,7 @@ export const layout = {
   'app-width': '1440px',
   'prose-width': '680px',
   'sidebar-width': '248px',
+  'rail-collapsed-width': '64px',
   'topbar-height': '56px',
   'nav-height': '48px',
 } as const;
@@ -141,8 +162,9 @@ export function tokensCss(): string {
         `    --text-${k}: ${(v as { phoneSize: number }).phoneSize}px;\n    --text-${k}--line-height: ${(v as { phoneLine: number }).phoneLine}px;`,
     )
     .join('\n');
+  // `static`: emit every token, also those only read through var() at run time (chart series, ADR-0154)
   return `/* GENERATED from packages/ui/src/tokens.ts — do not edit by hand. Tailwind v4 theme. */
-@theme {
+@theme static {
   --color-*: initial;
   --radius-*: initial;
   --shadow-*: initial;

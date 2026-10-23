@@ -31,6 +31,7 @@ import {
   useFormat,
   usePermission,
 } from '../kit';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Grant {
   id: string;
@@ -54,6 +55,7 @@ function statusOf(g: Grant, now: number): 'revoked' | 'expired' | 'active' {
 /** Time-limited access for Thapsus support, granted and revoked by the customer. */
 export default function SupportAccessPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const fmt = useFormat();
   const has = usePermission();
@@ -186,7 +188,7 @@ export default function SupportAccessPage() {
         {!grants.data ? (
           <Skeleton className="h-24" />
         ) : grants.data.length === 0 ? (
-          <EmptyState icon={<LifeBuoy aria-hidden />} title={t('admin.support.none')} />
+          <EmptyState level={sec.level} icon={<LifeBuoy aria-hidden />} title={t('admin.support.none')} />
         ) : (
           <Table dense scrollLabel={t('admin.tableScroll', { name: t('admin.support.listTitle') })}>
             <THead>

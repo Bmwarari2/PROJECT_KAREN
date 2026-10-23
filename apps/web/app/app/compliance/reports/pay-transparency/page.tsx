@@ -19,6 +19,7 @@ import {
 import { formatDate } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro, useSectionLevel } from '@/components/module-page';
 import { SourceLink, usePct } from '../../ui';
 
 interface Indicators {
@@ -57,6 +58,7 @@ interface Entity {
 
 export default function PayTransparencyPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const pct = usePct();
   const [year, setYear] = React.useState(String(new Date().getFullYear() + 1));
@@ -64,10 +66,7 @@ export default function PayTransparencyPage() {
   const r = useApi<Entity[]>(`/v1/compliance/reports/pay-transparency?year=${query}`);
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-title-2">{t('compliance.pt.title')}</h1>
-      <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
-        {t('compliance.pt.intro')}
-      </p>
+      <PageIntro title={t('compliance.pt.title')} lead={t('compliance.pt.intro')} />
       <form
         className="grid gap-3 md:grid-cols-3 md:items-end"
         onSubmit={(e) => {
@@ -92,19 +91,20 @@ export default function PayTransparencyPage() {
       </form>
       {r.error ? (
         <EmptyState
+          level={sec.level}
           icon={<Scale aria-hidden />}
           title={r.error.status === 403 ? t('compliance.noAccess') : t('compliance.noRule')}
         />
       ) : !r.data ? (
         <Skeleton className="h-64 w-full" />
       ) : r.data.length === 0 ? (
-        <EmptyState icon={<Scale aria-hidden />} title={t('compliance.pt.none')} />
+        <EmptyState level={sec.level} icon={<Scale aria-hidden />} title={t('compliance.pt.none')} />
       ) : (
         r.data.map((e) => {
           const i = e.indicators;
           return (
             <Card key={e.entityId} className="flex flex-col gap-3">
-              <CardTitle className="flex flex-wrap items-center gap-2">
+              <CardTitle as={sec.heading} className="flex flex-wrap items-center gap-2">
                 {e.entityName}
                 <Badge>{e.country}</Badge>
                 <Badge tone={e.transposition.status === 'transposed' ? 'success' : 'warning'}>

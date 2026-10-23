@@ -21,6 +21,7 @@ import { formatDate, formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
 
 interface Period {
@@ -169,12 +170,7 @@ export default function PayrollPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-title-2">{t('payroll.title')}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
-          {t('payroll.intro')}
-        </p>
-      </div>
+      <PageIntro title={t('payroll.title')} titleIsTab lead={t('payroll.intro')} />
 
       <Card>
         <CardTitle>{t('payroll.periods')}</CardTitle>
@@ -459,6 +455,7 @@ export default function PayrollPage() {
           </Table>
         ) : (
           <EmptyState
+            level={3}
             icon={<FileSpreadsheet aria-hidden />}
             title={t('payroll.noExports')}
             body={t('payroll.noExportsBody')}

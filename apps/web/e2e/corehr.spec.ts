@@ -55,7 +55,7 @@ test.describe('field-level permissions in the UI', () => {
 
     // the owner sees pay and personal details
     await page.goto(`/app/people/${report}`);
-    await expect(page.getByRole('heading', { level: 1, name: 'Reese Report' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Reese Report' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Pay', exact: true })).toBeVisible();
     await expect(page.getByText('£40,000.00')).toBeVisible();
     await expect(page.getByText('Date of birth')).toBeVisible();
@@ -79,7 +79,7 @@ test.describe('field-level permissions in the UI', () => {
     expect(viaApi.employee.payAmountMinor).toBeUndefined();
 
     await mp.goto(`/app/people/${report}`);
-    await expect(mp.getByRole('heading', { level: 1, name: 'Reese Report' })).toBeVisible();
+    await expect(mp.getByRole('heading', { level: 2, name: 'Reese Report' })).toBeVisible();
     await expect(mp.getByRole('heading', { name: 'Job', exact: true })).toBeVisible();
     await expect(mp.getByText('Analyst').first()).toBeVisible();
     await expect(mp.getByRole('heading', { name: 'Pay', exact: true })).toHaveCount(0);
@@ -127,8 +127,9 @@ test.describe('org chart', () => {
 
     const runs: Array<{ firstRenderMs: number; expandMs: number }> = [];
     for (let i = 0; i < 3; i++) {
-      await page.goto('/app');
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // start from another People tab: the org chart is a tab of the People module
+      await page.goto('/app/people');
+      await expect(page.getByRole('navigation', { name: 'People sections' })).toBeVisible();
       runs.push(
         await page.evaluate(async () => {
           const waitFor = (pred: () => boolean) =>
@@ -142,9 +143,9 @@ test.describe('org chart', () => {
                     : requestAnimationFrame(tick);
               tick();
             });
-          // in-app navigation to the org chart until the first level is on screen
-          const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="/app/org-chart"]')].find(
-            (a) => a.offsetParent !== null,
+          // in-app navigation (the People tab bar) to the org chart until the first level is on screen
+          const link = document.querySelector<HTMLAnchorElement>(
+            'nav[aria-label="People sections"] a[href="/app/org-chart"]',
           )!;
           const t0 = performance.now();
           link.click();
@@ -244,10 +245,16 @@ test.describe('pre-start portal', () => {
     const jp = await context.newPage();
     await jp.goto(magicLink((await lastMailTo(joinerEmail)).text));
     await jp.waitForURL(/\/app$/);
-    await jp.getByRole('link', { name: 'Open your onboarding' }).click();
+    // Home lists the onboarding among what needs the joiner's attention
+    await jp.getByRole('link', { name: /Get ready for your first day/ }).click();
     await jp.waitForURL(/\/app\/welcome$/);
+    // the onboarding tab of My profile: the module is the h1, the welcome the page's own title
+    await expect(jp.getByRole('heading', { level: 1, name: 'My profile' })).toBeVisible();
     await expect(
-      jp.getByRole('heading', { level: 1, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
+      jp.getByRole('navigation', { name: 'My profile sections' }).getByRole('link', { name: 'Onboarding' }),
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(
+      jp.getByRole('heading', { level: 2, name: `Welcome to Fictional ${slug} Ltd, Nova` }),
     ).toBeVisible();
     await expect(jp.getByText(/Days until you start: 2[01]\b/)).toBeVisible();
     await expect(jp.getByText('0 of 5 steps complete')).toBeVisible();
@@ -288,6 +295,18 @@ test.describe('pre-start portal', () => {
     await jp.goto('/app/welcome');
     await expect(jp.getByText('4 of 5 steps complete')).toBeVisible();
     await expect(jp.getByText(/^Signed on /)).toBeVisible();
+    await expectAccessible(jp);
+
+    // without permission to view people, the directory says so and points to the org chart
+    await jp.goto('/app/people');
+    await expect(jp.getByRole('heading', { name: 'The directory isn’t part of your access' })).toBeVisible();
+    await expect(
+      jp.getByText('Opening the directory needs the “View people” permission.', { exact: false }),
+    ).toBeVisible();
+    await expect(jp.getByRole('link', { name: 'Open the org chart' })).toHaveAttribute(
+      'href',
+      '/app/org-chart',
+    );
     await expectAccessible(jp);
 
     // HR sees the joiner's details from their start date

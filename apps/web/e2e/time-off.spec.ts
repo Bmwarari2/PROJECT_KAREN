@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import pg from 'pg';
 import { E2E_DB } from './env';
 import { expectAccessible, signUpAndEnrol } from './helpers';
+import { expectModulePage } from './module-helpers';
 
 const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 
@@ -72,7 +73,7 @@ test.describe('time off', () => {
     await linkUserToEmployee(email, me.id);
 
     await page.goto('/app/time-off');
-    await expect(page.getByRole('heading', { name: 'Time off', level: 1 })).toBeVisible();
+    await expectModulePage(page, 'Time', 'Time off');
     await expect(page.getByText('days available').first()).toBeVisible();
     await expect(page.getByText('No requests yet.')).toBeVisible();
 

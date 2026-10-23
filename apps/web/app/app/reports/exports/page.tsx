@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Database, Lock, Play, Plus, PlugZap, Server, Trash2 } from 'lucide-react';
+import { Database, Play, Plus, PlugZap, Server, Trash2 } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -15,6 +14,7 @@ import {
   Input,
   Skeleton,
   Table,
+  TableToolbar,
   TD,
   TH,
   THead,
@@ -26,9 +26,9 @@ import { formatDateTime, formatTimeOfDay, numberFormat } from '@thapsus/core/i18
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { useSession } from '../../shell';
+import { PageTitle, useSession } from '../../shell';
 import type { Catalogue } from '../page';
-import { problemText, selectClass, weekdayName, zones } from '../ui';
+import { NoReportsAccess, problemText, selectClass, weekdayName, zones } from '../ui';
 
 interface Destination {
   id: string;
@@ -594,7 +594,7 @@ function DeliveryLog({ exp }: { exp: DataExport }) {
     return <p className="text-callout text-text-secondary">{t('reports.exports.noDeliveries')}</p>;
   const n = (v: number | null) => (v === null ? '—' : numberFormat(locale).format(v));
   return (
-    <Table dense>
+    <Table dense scrollLabel={t('reports.exports.deliveries')}>
       <caption className="sr-only">{t('reports.exports.deliveries')}</caption>
       <THead>
         <tr>
@@ -662,15 +662,7 @@ export default function ExportsPage() {
   const [destOpen, setDestOpen] = React.useState(false);
   const [expOpen, setExpOpen] = React.useState(false);
 
-  if (dests.error || exports.error)
-    return (
-      <EmptyState
-        level={1}
-        icon={<Lock aria-hidden />}
-        title={t('reports.noAccess')}
-        body={t('reports.noAccessBody')}
-      />
-    );
+  if (dests.error || exports.error) return <NoReportsAccess />;
   if (!dests.data || !exports.data || !catalogue.data) return <Skeleton className="h-96 w-full" />;
   const destName = (id: string) => dests.data!.data.find((d) => d.id === id)?.name ?? '—';
 
@@ -697,244 +689,254 @@ export default function ExportsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <Link href="/app/reports" className="inline-flex w-fit items-center gap-1 text-callout">
-        <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-        {t('reports.title')}
-      </Link>
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-title-2">{t('reports.exports.title')}</h1>
+        <PageTitle>{t('reports.exports.title')}</PageTitle>
         <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
           {t('reports.exports.intro', { region: dests.data.homeRegion })}
         </p>
       </div>
 
-      <section aria-labelledby="dest-h" className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 id="dest-h" className="mr-auto text-title-3">
-            {t('reports.exports.destinations')}
-          </h2>
-          <Dialog open={destOpen} onOpenChange={setDestOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('reports.exports.addDestination')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              title={t('reports.exports.addDestination')}
-              description={t('reports.exports.addDestinationBody', { region: dests.data.homeRegion })}
-              closeLabel={t('common.close')}
-            >
-              <DestinationForm
-                homeRegion={dests.data.homeRegion}
-                rolePrefix={dests.data.rolePrefix}
-                onDone={() => {
-                  setDestOpen(false);
-                  dests.reload();
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-        {dests.data.data.length ? (
-          <ul className="grid gap-4 md:grid-cols-2">
-            {dests.data.data.map((d) => (
-              <li key={d.id}>
-                <Card className="flex h-full flex-col gap-3">
-                  <div className="flex items-center gap-2 [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-[1.5]">
-                    {d.kind === 's3' ? (
-                      <Database aria-hidden className="text-accent" />
-                    ) : (
-                      <Server aria-hidden className="text-accent" />
-                    )}
-                    <CardTitle className="mr-auto">{d.name}</CardTitle>
-                    <Badge tone={d.lastTestedAt ? 'success' : 'neutral'}>
-                      {d.lastTestedAt
-                        ? t('reports.exports.tested', { when: formatDateTime(d.lastTestedAt, locale, zone) })
-                        : t('reports.exports.untested')}
-                    </Badge>
-                  </div>
-                  <dl className="grid gap-1 text-footnote">
+      <Card className="overflow-hidden p-0">
+        <TableToolbar
+          title={t('reports.exports.destinations')}
+          count={t('reports.ui.destinationCount', { count: dests.data.data.length })}
+          actions={
+            <Dialog open={destOpen} onOpenChange={setDestOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {t('reports.exports.addDestination')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                title={t('reports.exports.addDestination')}
+                description={t('reports.exports.addDestinationBody', { region: dests.data.homeRegion })}
+                closeLabel={t('common.close')}
+              >
+                <DestinationForm
+                  homeRegion={dests.data.homeRegion}
+                  rolePrefix={dests.data.rolePrefix}
+                  onDone={() => {
+                    setDestOpen(false);
+                    dests.reload();
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          }
+        />
+        <div className="p-5">
+          {dests.data.data.length ? (
+            <ul className="grid gap-4 md:grid-cols-2">
+              {dests.data.data.map((d) => (
+                <li key={d.id}>
+                  <div className="flex h-full flex-col gap-3 rounded-md border border-border p-4">
+                    <div className="flex flex-wrap items-center gap-2 [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-[1.5]">
+                      {d.kind === 's3' ? (
+                        <Database aria-hidden className="text-accent" />
+                      ) : (
+                        <Server aria-hidden className="text-accent" />
+                      )}
+                      <CardTitle as="h3" className="mr-auto text-callout font-semibold">
+                        {d.name}
+                      </CardTitle>
+                      <Badge tone={d.lastTestedAt ? 'success' : 'neutral'}>
+                        {d.lastTestedAt
+                          ? t('reports.exports.tested', {
+                              when: formatDateTime(d.lastTestedAt, locale, zone),
+                            })
+                          : t('reports.exports.untested')}
+                      </Badge>
+                    </div>
+                    <dl className="grid gap-1 text-footnote">
+                      {d.s3 ? (
+                        <>
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <dt className="text-text-secondary">{t('reports.exports.bucket')}</dt>
+                            <dd className="break-all">{`s3://${d.s3.bucket}/${d.s3.prefix} (${d.s3.region})`}</dd>
+                          </div>
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <dt className="text-text-secondary">{t('reports.exports.roleArn')}</dt>
+                            <dd className="break-all">{d.s3.roleArn}</dd>
+                          </div>
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <dt className="text-text-secondary">{t('reports.exports.externalId')}</dt>
+                            <dd className="break-all font-mono">{d.s3.externalId}</dd>
+                          </div>
+                        </>
+                      ) : d.sftp ? (
+                        <>
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <dt className="text-text-secondary">{t('reports.exports.host')}</dt>
+                            <dd className="break-all">{`sftp://${d.sftp.username}@${d.sftp.host}:${d.sftp.port}/${d.sftp.directory}`}</dd>
+                          </div>
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <dt className="text-text-secondary">{t('reports.exports.hostKey')}</dt>
+                            <dd className="break-all font-mono">{d.sftp.hostKeySha256}</dd>
+                          </div>
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <dt className="text-text-secondary">{t('reports.exports.auth')}</dt>
+                            <dd>{t(`reports.exports.auth_${d.sftp.auth}`)}</dd>
+                          </div>
+                        </>
+                      ) : null}
+                    </dl>
                     {d.s3 ? (
-                      <>
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <dt className="text-text-secondary">{t('reports.exports.bucket')}</dt>
-                          <dd className="break-all">{`s3://${d.s3.bucket}/${d.s3.prefix} (${d.s3.region})`}</dd>
-                        </div>
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <dt className="text-text-secondary">{t('reports.exports.roleArn')}</dt>
-                          <dd className="break-all">{d.s3.roleArn}</dd>
-                        </div>
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <dt className="text-text-secondary">{t('reports.exports.externalId')}</dt>
-                          <dd className="break-all font-mono">{d.s3.externalId}</dd>
-                        </div>
-                      </>
-                    ) : d.sftp ? (
-                      <>
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <dt className="text-text-secondary">{t('reports.exports.host')}</dt>
-                          <dd className="break-all">{`sftp://${d.sftp.username}@${d.sftp.host}:${d.sftp.port}/${d.sftp.directory}`}</dd>
-                        </div>
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <dt className="text-text-secondary">{t('reports.exports.hostKey')}</dt>
-                          <dd className="break-all font-mono">{d.sftp.hostKeySha256}</dd>
-                        </div>
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <dt className="text-text-secondary">{t('reports.exports.auth')}</dt>
-                          <dd>{t(`reports.exports.auth_${d.sftp.auth}`)}</dd>
-                        </div>
-                      </>
+                      <p className="text-footnote text-text-secondary">{t('reports.exports.trustHint')}</p>
                     ) : null}
-                  </dl>
-                  {d.s3 ? (
-                    <p className="text-footnote text-text-secondary">{t('reports.exports.trustHint')}</p>
-                  ) : null}
-                  <div className="mt-auto flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() =>
-                        act(
-                          () => api(`/v1/data-exports/destinations/${d.id}/test`, { method: 'POST' }),
-                          'reports.exports.testOk',
-                          errorText,
-                        )
-                      }
-                    >
-                      <PlugZap aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                      {t('reports.exports.test')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('reports.exports.deleteNamed', { name: d.name })}
-                      onClick={() =>
-                        act(
-                          () => api(`/v1/data-exports/destinations/${d.id}`, { method: 'DELETE' }),
-                          'reports.exports.deleted',
-                        )
-                      }
-                    >
-                      <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    </Button>
+                    <div className="mt-auto flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          act(
+                            () => api(`/v1/data-exports/destinations/${d.id}/test`, { method: 'POST' }),
+                            'reports.exports.testOk',
+                            errorText,
+                          )
+                        }
+                      >
+                        <PlugZap aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                        {t('reports.exports.test')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('reports.exports.deleteNamed', { name: d.name })}
+                        onClick={() =>
+                          act(
+                            () => api(`/v1/data-exports/destinations/${d.id}`, { method: 'DELETE' }),
+                            'reports.exports.deleted',
+                          )
+                        }
+                      >
+                        <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      </Button>
+                    </div>
                   </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState
-            icon={<Database aria-hidden />}
-            title={t('reports.exports.noDestinations')}
-            body={t('reports.exports.noDestinationsBody')}
-          />
-        )}
-      </section>
-
-      <section aria-labelledby="exp-h" className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 id="exp-h" className="mr-auto text-title-3">
-            {t('reports.exports.scheduled')}
-          </h2>
-          <Dialog open={expOpen} onOpenChange={setExpOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" disabled={!dests.data.data.length}>
-                <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('reports.exports.newExport')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              title={t('reports.exports.newExport')}
-              description={t('reports.exports.newExportBody')}
-              closeLabel={t('common.close')}
-            >
-              <ExportForm
-                catalogue={catalogue.data}
-                destinations={dests.data.data}
-                onDone={() => {
-                  setExpOpen(false);
-                  exports.reload();
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              level={3}
+              icon={<Database aria-hidden />}
+              title={t('reports.exports.noDestinations')}
+              body={t('reports.exports.noDestinationsBody')}
+            />
+          )}
         </div>
-        {exports.data.length ? (
-          <ul className="flex flex-col gap-4">
-            {exports.data.map((x) => (
-              <li key={x.id}>
-                <Card className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CardTitle className="mr-auto">{x.name}</CardTitle>
-                    <Badge tone={x.enabled ? 'success' : 'neutral'}>
-                      {t(x.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}
-                    </Badge>
+      </Card>
+
+      <Card className="overflow-hidden p-0">
+        <TableToolbar
+          title={t('reports.exports.scheduled')}
+          count={t('reports.ui.exportCount', { count: exports.data.length })}
+          actions={
+            <Dialog open={expOpen} onOpenChange={setExpOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" disabled={!dests.data.data.length}>
+                  <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {t('reports.exports.newExport')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                title={t('reports.exports.newExport')}
+                description={t('reports.exports.newExportBody')}
+                closeLabel={t('common.close')}
+              >
+                <ExportForm
+                  catalogue={catalogue.data}
+                  destinations={dests.data.data}
+                  onDone={() => {
+                    setExpOpen(false);
+                    exports.reload();
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          }
+        />
+        <div className="p-5">
+          {exports.data.length ? (
+            <ul className="flex flex-col gap-4">
+              {exports.data.map((x) => (
+                <li key={x.id}>
+                  <div className="flex flex-col gap-3 rounded-md border border-border p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle as="h3" className="mr-auto text-callout font-semibold">
+                        {x.name}
+                      </CardTitle>
+                      <Badge tone={x.enabled ? 'success' : 'neutral'}>
+                        {t(x.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}
+                      </Badge>
+                    </div>
+                    <p className="text-callout text-text-secondary">
+                      {when(x)} · {destName(x.destinationId)} · <span className="uppercase">{x.format}</span>{' '}
+                      · {x.datasets.map((d) => t(`reports.dataset.${d.dataset}`)).join(', ')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          act(
+                            () => api(`/v1/data-exports/${x.id}/run`, { method: 'POST' }),
+                            'reports.exports.runQueued',
+                          )
+                        }
+                      >
+                        <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                        {t('reports.exports.runNow')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          act(
+                            () =>
+                              api(`/v1/data-exports/${x.id}`, {
+                                method: 'PATCH',
+                                json: { enabled: !x.enabled },
+                              }),
+                            x.enabled ? 'reports.schedules.paused' : 'reports.schedules.resumed',
+                          )
+                        }
+                      >
+                        {t(x.enabled ? 'reports.schedules.pause' : 'reports.schedules.resume')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('reports.exports.deleteNamed', { name: x.name })}
+                        onClick={() =>
+                          act(
+                            () => api(`/v1/data-exports/${x.id}`, { method: 'DELETE' }),
+                            'reports.exports.deleted',
+                          )
+                        }
+                      >
+                        <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      </Button>
+                    </div>
+                    <LazyDetails summary={t('reports.exports.deliveries')}>
+                      <DeliveryLog exp={x} />
+                    </LazyDetails>
                   </div>
-                  <p className="text-callout text-text-secondary">
-                    {when(x)} · {destName(x.destinationId)} · <span className="uppercase">{x.format}</span> ·{' '}
-                    {x.datasets.map((d) => t(`reports.dataset.${d.dataset}`)).join(', ')}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() =>
-                        act(
-                          () => api(`/v1/data-exports/${x.id}/run`, { method: 'POST' }),
-                          'reports.exports.runQueued',
-                        )
-                      }
-                    >
-                      <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                      {t('reports.exports.runNow')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        act(
-                          () =>
-                            api(`/v1/data-exports/${x.id}`, {
-                              method: 'PATCH',
-                              json: { enabled: !x.enabled },
-                            }),
-                          x.enabled ? 'reports.schedules.paused' : 'reports.schedules.resumed',
-                        )
-                      }
-                    >
-                      {t(x.enabled ? 'reports.schedules.pause' : 'reports.schedules.resume')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('reports.exports.deleteNamed', { name: x.name })}
-                      onClick={() =>
-                        act(
-                          () => api(`/v1/data-exports/${x.id}`, { method: 'DELETE' }),
-                          'reports.exports.deleted',
-                        )
-                      }
-                    >
-                      <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    </Button>
-                  </div>
-                  <LazyDetails summary={t('reports.exports.deliveries')}>
-                    <DeliveryLog exp={x} />
-                  </LazyDetails>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState
-            icon={<Database aria-hidden />}
-            title={t('reports.exports.noExports')}
-            body={t('reports.exports.noExportsBody')}
-          />
-        )}
-      </section>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              level={3}
+              icon={<Database aria-hidden />}
+              title={t('reports.exports.noExports')}
+              body={t('reports.exports.noExportsBody')}
+            />
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

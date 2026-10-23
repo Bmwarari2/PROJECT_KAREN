@@ -154,6 +154,15 @@ Confirm in CloudFormation that both stacks are gone. Then run `pnpm format`, bec
 
 Production is not part of this phase. It waits for the owner's approval (`docs/runbooks/deploy.md` §2).
 
+## Next UI review
+
+The product owner asked for these references to be looked at in the next UI review:
+
+- <https://easyui.site/>, saved on 2026-10-23. It is an open-source collection of React components, including an interactive area chart, a lock input, animated dropdowns and menus, pill navigation, an unfolding accordion and toggles. Before adopting anything from it:
+  - check its licence in the linked GitHub repository, because the site does not state one;
+  - rebuild what is adopted from the `docs/DESIGN.md` tokens and the `packages/ui` components, not copy its styles;
+  - keep WCAG 2.2 AA and `prefers-reduced-motion` support.
+
 ## Conventions that bite
 
 - **Route handlers:**

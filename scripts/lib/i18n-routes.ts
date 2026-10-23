@@ -34,8 +34,11 @@ export interface RouteReport {
 }
 
 const SPECIAL = ['layout.tsx', 'template.tsx', 'loading.tsx', 'error.tsx', 'not-found.tsx'];
-/** Calls whose string argument names a permission, not a message (`has('reports.run')`). */
-const PERMISSION_CALLS = new Set(['has', 'hasPermission', 'can']);
+/**
+ * Calls whose string argument names a permission, not a message: `has('reports.run')`, `viewer.has(…)`
+ * and the workspace map's `any('reports.run', 'reports.read_team')`.
+ */
+const PERMISSION_CALLS = new Set(['has', 'hasPermission', 'can', 'any']);
 const toPosix = (p: string) => p.split(sep).join('/');
 
 /** Every message key, with plural forms (`org.reports_one`, `org.reports_other`) counted as their base key (`org.reports`). */
@@ -119,8 +122,14 @@ function literalsIn(node: ts.Node, out: Lit[], refs: Set<string>) {
   const visit = (n: ts.Node): void => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) {
       const p = n.parent;
-      const permission =
-        ts.isCallExpression(p) && ts.isIdentifier(p.expression) && PERMISSION_CALLS.has(p.expression.text);
+      const callee = ts.isCallExpression(p)
+        ? ts.isIdentifier(p.expression)
+          ? p.expression.text
+          : ts.isPropertyAccessExpression(p.expression)
+            ? p.expression.name.text
+            : null
+        : null;
+      const permission = !!callee && PERMISSION_CALLS.has(callee);
       if (!permission) out.push({ text: n.text, templateHead: false });
     } else if (ts.isTemplateExpression(n)) out.push({ text: n.head.text, templateHead: true });
     else if (ts.isIdentifier(n)) refs.add(n.text);
@@ -199,6 +208,19 @@ function moduleInfo(file: string, src: string): ModuleInfo {
     literalsIn(st, unit.literals, unit.refs);
     info.units.push(unit);
   }
+  // Code loaded on demand (`import('…')`, next/dynamic) renders under the same layouts, so its keys are
+  // checked as if it were imported for its side effects.
+  const dynamicImports = (n: ts.Node) => {
+    if (
+      ts.isCallExpression(n) &&
+      n.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      n.arguments[0] &&
+      ts.isStringLiteralLike(n.arguments[0])
+    )
+      info.bare.push(n.arguments[0].text);
+    ts.forEachChild(n, dynamicImports);
+  };
+  dynamicImports(sf);
   return info;
 }
 

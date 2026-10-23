@@ -29,6 +29,7 @@ import {
   useDateTime,
 } from '@/components/platform';
 import { useFeature } from '../../shell';
+import { useSectionLevel } from '@/components/module-page';
 
 interface Credential {
   id: string;
@@ -59,6 +60,7 @@ const scopeLabel = (s: string) => `platform.scopes.${s.replace(':', '_')}`;
 
 export default function ApiAccessPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const toast = useToast();
   const when = useDateTime();
   const enabled = useFeature('publicApi');
@@ -157,7 +159,7 @@ export default function ApiAccessPage() {
       ) : null}
 
       <Card>
-        <CardTitle>{t('platform.api.createTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.api.createTitle')}</CardTitle>
         <form onSubmit={create} className="mt-4 flex flex-col gap-4">
           <fieldset className="flex flex-wrap gap-4">
             <legend className="mb-2 text-callout font-semibold">{t('platform.api.kind')}</legend>
@@ -238,10 +240,10 @@ export default function ApiAccessPage() {
       </Card>
 
       <Card>
-        <CardTitle>{t('platform.api.keysTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.api.keysTitle')}</CardTitle>
         <div className="mt-4">
           {keys.data && keys.data.data.length === 0 ? (
-            <EmptyState icon={<KeyRound aria-hidden />} title={t('platform.api.noKeys')} />
+            <EmptyState level={sec.level} icon={<KeyRound aria-hidden />} title={t('platform.api.noKeys')} />
           ) : (
             <Table>
               <THead>
@@ -289,11 +291,15 @@ export default function ApiAccessPage() {
       </Card>
 
       <Card>
-        <CardTitle>{t('platform.api.clientsTitle')}</CardTitle>
+        <CardTitle as={sec.heading}>{t('platform.api.clientsTitle')}</CardTitle>
         <p className="mt-2 text-footnote text-text-secondary">{t('platform.api.clientsBody')}</p>
         <div className="mt-4">
           {clients.data && clients.data.data.length === 0 ? (
-            <EmptyState icon={<KeyRound aria-hidden />} title={t('platform.api.noClients')} />
+            <EmptyState
+              level={sec.level}
+              icon={<KeyRound aria-hidden />}
+              title={t('platform.api.noClients')}
+            />
           ) : (
             <Table>
               <THead>

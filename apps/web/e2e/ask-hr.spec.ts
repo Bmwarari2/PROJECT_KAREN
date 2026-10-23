@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import pg from 'pg';
 import { E2E_DB } from './env';
 import { expectAccessible, signUpAndEnrol } from './helpers';
+import { expectModulePage, moduleTabs } from './module-helpers';
 
 const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 
@@ -28,12 +29,14 @@ test('Ask HR: off by default, set up by the owner, answers with an AI disclosure
   page,
 }) => {
   const { slug } = await signUpAndEnrol(page);
-  const nav = page.getByRole('navigation');
 
-  // Off by default: no nav entry, and the page says so.
+  // Off by default: the page says so (with its own h1, as it is not a Help tab) and Help has no Ask HR tab.
   await page.goto('/app/ask');
   await expect(page.getByText('Ask HR is not turned on')).toBeVisible();
-  await expect(nav.getByRole('link', { name: 'Ask HR' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1, name: 'Ask HR' })).toBeVisible();
+  await page.goto('/app/help');
+  await expectModulePage(page, 'Help');
+  await expect(moduleTabs(page, 'Help').getByRole('link', { name: 'Ask HR' })).toHaveCount(0);
 
   // Thapsus entitles the workspace; the owner chooses the policies and turns it on.
   await entitle(slug);
@@ -59,7 +62,7 @@ test('Ask HR: off by default, set up by the owner, answers with an AI disclosure
 
   // Employees see the assistant, always with the AI disclosure.
   await page.goto('/app/ask');
-  await expect(nav.getByRole('link', { name: 'Ask HR' })).toBeVisible();
+  await expectModulePage(page, 'Help', 'Ask HR');
   await expect(page.getByTestId('ai-disclosure')).toContainText('You are talking to an AI assistant');
   await page.getByLabel('Your question').fill('How many days of annual leave do I get?');
   await page.getByRole('button', { name: 'Ask', exact: true }).click();

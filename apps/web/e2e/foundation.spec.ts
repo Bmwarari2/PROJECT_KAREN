@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible, PASSWORD, signUpAndEnrol, totp } from './helpers';
+import { signOutFromMenu } from './module-helpers';
 
 test.describe('public pages', () => {
   for (const path of ['/', '/signin', '/signup', '/find-workspace', '/design/gallery', '/offline']) {
@@ -130,7 +131,7 @@ test.describe('sign-up, MFA and the app shell', () => {
     expect(h['x-frame-options']).toBe('DENY');
     expect(h['strict-transport-security']).toMatch(/max-age=\d+/);
 
-    await page.getByRole('button', { name: 'Sign out' }).click();
+    await signOutFromMenu(page);
     await page.waitForURL(/\/signin/);
     await page.getByLabel('Workspace').fill(slug);
     await page.getByLabel('Email').fill(email);

@@ -155,6 +155,7 @@ const ALLOWLIST: Record<string, string> = {
   'access.editor.allInArea': '{area} is a permission area name ("All Leave permissions")',
   'access.editor.allInGroup': '{group} is a field group name ("All Pay fields")',
   'developers.params': '{params} is a list of parameter names',
+  'app.ws.sections': '{module} is a module name ("People sections", the tab bar\'s landmark name)',
   'developers.responses': '{codes} is a list of status codes',
   'privacy.ui.incidents.audience.individuals':
     '{jurisdiction} is a place name ("California affected people")',

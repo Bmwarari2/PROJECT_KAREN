@@ -8,7 +8,8 @@ import { formatDateTime, type Locale } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { useSession } from '../../shell';
+import { useSectionLevel } from '@/components/module-page';
+import { PageTitle, useSession } from '../../shell';
 import { slaTone, type TicketSummary } from '../ui';
 
 interface Thread {
@@ -32,6 +33,7 @@ interface Thread {
 
 export default function TicketPage() {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale() as Locale;
   const session = useSession();
   const toast = useToast();
@@ -75,7 +77,7 @@ export default function TicketPage() {
       </Link>
       <div className="flex flex-col gap-2">
         <p className="text-footnote text-text-secondary">{tk.reference}</p>
-        <h1 className="text-title-2">{tk.subject}</h1>
+        <PageTitle>{tk.subject}</PageTitle>
         <div className="flex flex-wrap items-center gap-2">
           <Badge>{t(`support.statuses.${tk.status}`)}</Badge>
           <Badge>{t(`support.priorities.${tk.priority}`)}</Badge>
@@ -115,9 +117,9 @@ export default function TicketPage() {
 
       {thread.data!.attachments.length ? (
         <section aria-labelledby="att-title">
-          <h2 id="att-title" className="text-title-3">
+          <sec.heading id="att-title" className="text-title-3">
             {t('support.attachments')}
-          </h2>
+          </sec.heading>
           <ul className="mt-2 flex flex-col gap-1">
             {thread.data!.attachments.map((a) => (
               <li key={a.id}>

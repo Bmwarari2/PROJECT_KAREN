@@ -5,6 +5,7 @@ import { Badge, Button, Card, EmptyState, Field, Skeleton, Textarea, useToast } 
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { PageIntro } from '@/components/module-page';
 
 interface Status {
   enabled: boolean;
@@ -108,16 +109,12 @@ export default function AskHrPage() {
       'noopener',
     );
 
-  if (!status.data)
-    return status.error ? (
-      <EmptyState icon={<BotOff aria-hidden />} title={t('askHr.off.title')} body={t('askHr.off.body')} />
-    ) : (
-      <Skeleton className="h-64 w-full" />
-    );
-  if (!status.data.canAsk) {
+  // Ask HR is a tab of Help only while the workspace may use it; otherwise the page has its own h1.
+  if (!status.data && !status.error) return <Skeleton className="h-64 w-full" />;
+  if (!status.data?.canAsk) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-title-2">{t('askHr.title')}</h1>
+        <PageIntro title={t('askHr.title')} titleIsTab />
         <EmptyState icon={<BotOff aria-hidden />} title={t('askHr.off.title')} body={t('askHr.off.body')} />
       </div>
     );
@@ -125,7 +122,7 @@ export default function AskHrPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-2">{t('askHr.title')}</h1>
+      <PageIntro title={t('askHr.title')} titleIsTab />
       <div
         role="note"
         aria-label={t('askHr.disclosureShort')}

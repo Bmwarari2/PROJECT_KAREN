@@ -1,27 +1,27 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Play, Save } from 'lucide-react';
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  EmptyState,
-  Field,
-  Input,
-  Skeleton,
-  useToast,
-} from '@thapsus/ui';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, CalendarClock, Play, Save } from 'lucide-react';
+import { Button, buttonVariants, Card, cn, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
 import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import type { ReportResult } from '@/lib/report-format';
-import { useSession } from '../../../shell';
+import { PageTitle, useSession } from '../../../shell';
 import type { Catalogue } from '../../page';
-import { ExportBar, problemText, ReportView, RunProgress, selectClass, useBackgroundRun } from '../../ui';
+import {
+  DownloadMenu,
+  NoReportsAccess,
+  problemText,
+  ReportView,
+  RunProgress,
+  SaveReportDialog,
+  selectClass,
+  useBackgroundRun,
+  type SaveForm,
+} from '../../ui';
 
 type Prop = {
   type?: string;
@@ -31,15 +31,6 @@ type Prop = {
   minimum?: number;
   maximum?: number;
 };
-const RELATIVE = [
-  'today',
-  'yesterday',
-  'previousWeek',
-  'previousMonth',
-  'monthToDate',
-  'yearToDate',
-  'previousYear',
-];
 
 /** Sensible starting values for a parameter form (the viewer's zone; never sent unless the user runs the report). */
 function defaults(props: Record<string, Prop>, zone: string): Record<string, string> {
@@ -56,17 +47,22 @@ function defaults(props: Record<string, Prop>, zone: string): Record<string, str
   return out;
 }
 
+/** A ready-made report: its options in a card, Save, Download and Schedule in the header, then the result. */
 export default function ReadyReportPage() {
   const t = useT();
   const toast = useToast();
+  const router = useRouter();
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { id } = useParams<{ id: string }>();
   const savedId = useSearchParams().get('saved');
   const catalogue = useApi<Catalogue>('/v1/reports/catalogue');
-  const saved = useApi<{ name: string; spec: { params?: Record<string, unknown> } }>(
-    savedId ? `/v1/reports/saved/${savedId}` : null,
-  );
+  const saved = useApi<{
+    id: string;
+    name: string;
+    mine: boolean;
+    spec: { params?: Record<string, unknown> };
+  }>(savedId ? `/v1/reports/saved/${savedId}` : null);
   const entities = useApi<Array<{ id: string; name: string }>>('/v1/org/legal-entities');
   const def = catalogue.data?.ready.find((r) => r.id === id);
   const props = (def?.params.properties ?? {}) as Record<string, Prop>;
@@ -75,18 +71,22 @@ export default function ReadyReportPage() {
   const [busy, setBusy] = React.useState(false);
   const bg = useBackgroundRun();
   const [saveOpen, setSaveOpen] = React.useState(false);
-  const [saveForm, setSaveForm] = React.useState({ name: '', relative: '', shared: false });
+  const [scheduleNext, setScheduleNext] = React.useState(false);
+  const [saveForm, setSaveForm] = React.useState<SaveForm>({ name: '', relative: '', shared: false });
 
   React.useEffect(() => {
     if (!def || values) return;
+    // a saved report's options apply once it has loaded
+    if (savedId && !saved.data && !saved.error) return;
     const base = defaults(props, zone);
     const fromSaved = saved.data?.spec.params ?? {};
     setValues({ ...base, ...Object.fromEntries(Object.entries(fromSaved).map(([k, v]) => [k, String(v)])) });
-  }, [def, values, props, zone, saved.data]);
+    if (saved.data) setSaveForm((f) => ({ ...f, name: saved.data!.name }));
+  }, [def, values, props, zone, saved.data, saved.error, savedId]);
 
-  if (catalogue.error) return <EmptyState level={1} title={t('reports.noAccess')} />;
+  if (catalogue.error) return <NoReportsAccess />;
   if (!catalogue.data || !values) return <Skeleton className="h-96 w-full" />;
-  if (!def) return <EmptyState level={1} title={t('errors.notFound')} />;
+  if (!def) return <NoReportsAccess title={t('errors.notFound')} />;
 
   const params = () => {
     const out: Record<string, unknown> = {};
@@ -124,24 +124,32 @@ export default function ReadyReportPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    const body = {
+      name: saveForm.name,
+      kind: 'ready',
+      reportId: def!.id,
+      params: params(),
+      shared: saveForm.shared,
+      ...(saveForm.relative ? { relative: saveForm.relative } : {}),
+    };
     try {
-      await api('/v1/reports/saved', {
-        method: 'POST',
-        json: {
-          name: saveForm.name,
-          kind: 'ready',
-          reportId: def!.id,
-          params: params(),
-          shared: saveForm.shared,
-          ...(saveForm.relative ? { relative: saveForm.relative } : {}),
-        },
-      });
+      let savedReport: string;
+      if (saved.data?.mine) {
+        await api(`/v1/reports/saved/${saved.data.id}`, { method: 'PUT', json: body });
+        savedReport = saved.data.id;
+      } else
+        savedReport = (await api<{ id: string }>('/v1/reports/saved', { method: 'POST', json: body })).id;
       toast({ title: t('reports.saved.done'), tone: 'success' });
       setSaveOpen(false);
+      if (scheduleNext) router.push(`/app/reports/schedules?report=${savedReport}`);
     } catch (err) {
       toast({ title: problemText(t, err), tone: 'danger' });
     }
   }
+  const openSave = (thenSchedule: boolean) => {
+    setScheduleNext(thenSchedule);
+    setSaveOpen(true);
+  };
 
   const control = (k: string, p: Prop, a: { id: string; 'aria-describedby'?: string }) => {
     const set = (v: string) => setValues((s) => ({ ...s!, [k]: v }));
@@ -195,96 +203,76 @@ export default function ReadyReportPage() {
     <div className="flex flex-col gap-6">
       <Link href="/app/reports" className="inline-flex w-fit items-center gap-1 text-callout">
         <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-        {t('reports.title')}
+        {t('reports.ui.catalogueTitle')}
       </Link>
-      <div>
-        <h1 className="text-title-2">{saved.data?.name ?? t(def.titleKey)}</h1>
-        <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
-          {t(def.descriptionKey)}
-        </p>
-      </div>
-      <form
-        onSubmit={run}
-        className="grid gap-4 rounded-lg bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4"
-        aria-label={t('reports.parameters')}
-      >
-        {Object.entries(props).map(([k, p]) => (
-          <Field key={k} id={`p-${k}`} label={t(`reports.param.${k}`)}>
-            {(a) => control(k, p, a)}
-          </Field>
-        ))}
-        <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4">
-          <Button type="submit" loading={busy}>
-            <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
-            {t('reports.run')}
-          </Button>
-          <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-            <DialogTrigger asChild>
-              <Button type="button" variant="secondary">
-                <Save aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('reports.saved.save')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              title={t('reports.saved.save')}
-              description={t('reports.saved.saveBody')}
-              closeLabel={t('common.close')}
-            >
-              <form onSubmit={save} className="flex flex-col gap-4">
-                <Field id="save-name" label={t('reports.saved.name')}>
-                  {(a) => (
-                    <Input
-                      {...a}
-                      required
-                      maxLength={120}
-                      value={saveForm.name}
-                      onChange={(e) => setSaveForm({ ...saveForm, name: e.target.value })}
-                    />
-                  )}
-                </Field>
-                <Field
-                  id="save-relative"
-                  label={t('reports.saved.relative')}
-                  hint={t('reports.saved.relativeHint')}
-                >
-                  {(a) => (
-                    <select
-                      {...a}
-                      className={selectClass}
-                      value={saveForm.relative}
-                      onChange={(e) => setSaveForm({ ...saveForm, relative: e.target.value })}
-                    >
-                      <option value="">{t('reports.relative.fixed')}</option>
-                      {RELATIVE.map((r) => (
-                        <option key={r} value={r}>
-                          {t(`reports.relative.${r}`)}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </Field>
-                <label className="flex items-center gap-2 text-callout">
-                  <input
-                    type="checkbox"
-                    className="h-5 w-5 accent-[var(--color-accent)]"
-                    checked={saveForm.shared}
-                    onChange={(e) => setSaveForm({ ...saveForm, shared: e.target.checked })}
-                  />
-                  {t('reports.saved.shareWithTeam')}
-                </label>
-                <Button type="submit">{t('common.save')}</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="mr-auto min-w-0">
+          <PageTitle>{saved.data?.name ?? t(def.titleKey)}</PageTitle>
+          <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">
+            {t(def.descriptionKey)}
+          </p>
         </div>
-      </form>
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('reports.ui.actions')}>
+          <Button type="button" size="sm" variant="secondary" onClick={() => openSave(false)}>
+            <Save aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('reports.saved.save')}
+          </Button>
+          <DownloadMenu source={source} />
+          {catalogue.data.canSchedule ? (
+            saved.data ? (
+              <Link
+                href={`/app/reports/schedules?report=${saved.data.id}`}
+                className={cn(buttonVariants({ size: 'sm', variant: 'secondary' }), 'no-underline')}
+              >
+                <CalendarClock aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('reports.ui.schedule')}
+              </Link>
+            ) : (
+              <Button type="button" size="sm" variant="secondary" onClick={() => openSave(true)}>
+                <CalendarClock aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('reports.ui.schedule')}
+              </Button>
+            )
+          ) : null}
+        </div>
+      </div>
+      <Card>
+        <form
+          onSubmit={run}
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          aria-label={t('reports.parameters')}
+        >
+          {Object.entries(props).map(([k, p]) => (
+            <Field key={k} id={`p-${k}`} label={t(`reports.param.${k}`)}>
+              {(a) => control(k, p, a)}
+            </Field>
+          ))}
+          <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4">
+            <Button type="submit" loading={busy}>
+              <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('reports.run')}
+            </Button>
+          </div>
+        </form>
+      </Card>
       {busy && bg.run ? <RunProgress run={bg.run} /> : null}
       {result ? (
-        <>
-          <ExportBar source={source} />
-          <ReportView result={result} />
-        </>
-      ) : null}
+        <ReportView result={result} />
+      ) : busy ? null : (
+        <EmptyState
+          icon={<Play aria-hidden />}
+          title={t('reports.ui.notRun')}
+          body={t('reports.ui.notRunBody')}
+        />
+      )}
+      <SaveReportDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        form={saveForm}
+        onChange={setSaveForm}
+        onSubmit={save}
+        note={scheduleNext ? t('reports.ui.saveBeforeSchedule') : undefined}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 /* GENERATED from packages/ui/src/tokens.ts — do not edit by hand. Tailwind v4 theme. */
-@theme {
+@theme static {
   --color-*: initial;
   --radius-*: initial;
   --shadow-*: initial;
@@ -40,6 +40,7 @@
   --app-width: 1440px;
   --prose-width: 680px;
   --sidebar-width: 248px;
+  --rail-collapsed-width: 64px;
   --topbar-height: 56px;
   --nav-height: 48px;
   --text-display: 80px;
@@ -95,6 +96,17 @@
   --color-warning: #8a5a00;
   --color-danger: #b42318;
   --color-on-danger: #ffffff;
+  --color-chrome: #132321;
+  --color-chrome-raised: #1f3331;
+  --color-on-chrome: #f5f7f6;
+  --color-on-chrome-secondary: #b5c4c1;
+  --color-chrome-focus: #5fd3c6;
+  --color-chart-1: #1baf7a;
+  --color-chart-2: #2a78d6;
+  --color-chart-3: #eb6834;
+  --color-chart-4: #6250d6;
+  --color-chart-5: #e87ba4;
+  --color-chart-6: #eda100;
 }
 :root {
   color-scheme: light;
@@ -128,6 +140,17 @@
   --color-warning: #f2c14e;
   --color-danger: #ff7b72;
   --color-on-danger: #2a0705;
+  --color-chrome: #0d1716;
+  --color-chrome-raised: #1a2826;
+  --color-on-chrome: #f5f7f6;
+  --color-on-chrome-secondary: #a9b8b5;
+  --color-chrome-focus: #5fd3c6;
+  --color-chart-1: #199e70;
+  --color-chart-2: #3987e5;
+  --color-chart-3: #d95926;
+  --color-chart-4: #9085e9;
+  --color-chart-5: #d55181;
+  --color-chart-6: #c98500;
   --shadow-sm: 0 0 0 1px var(--color-border);
   --shadow-md: 0 0 0 1px var(--color-border);
   --shadow-lg: 0 0 0 1px var(--color-border);
@@ -152,6 +175,17 @@
     --color-warning: #f2c14e;
     --color-danger: #ff7b72;
     --color-on-danger: #2a0705;
+    --color-chrome: #0d1716;
+    --color-chrome-raised: #1a2826;
+    --color-on-chrome: #f5f7f6;
+    --color-on-chrome-secondary: #a9b8b5;
+    --color-chrome-focus: #5fd3c6;
+    --color-chart-1: #199e70;
+    --color-chart-2: #3987e5;
+    --color-chart-3: #d95926;
+    --color-chart-4: #9085e9;
+    --color-chart-5: #d55181;
+    --color-chart-6: #c98500;
     --shadow-sm: 0 0 0 1px var(--color-border);
     --shadow-md: 0 0 0 1px var(--color-border);
     --shadow-lg: 0 0 0 1px var(--color-border);
