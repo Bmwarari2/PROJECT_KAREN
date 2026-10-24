@@ -27,6 +27,15 @@ export function contentSecurityPolicy(nonce: string, opts: { dev?: boolean } = {
 export const STATIC_ASSET_CSP =
   "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
 
+/**
+ * Policy for the self-hosted PDF.js worker and its data files under /pdfjs/ (ADR-0168). A worker runs under the
+ * policy of its own response, so it gets exactly what it needs: its own image-decoder modules and WebAssembly from
+ * this origin ('wasm-unsafe-eval' allows compiling WebAssembly, not JavaScript eval) and nothing else. It never
+ * fetches: the page passes it the document bytes and the font data.
+ */
+export const PDF_WORKER_CSP =
+  "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
+
 /** 128 random bits, base64. */
 export function newNonce(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));

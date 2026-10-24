@@ -201,3 +201,27 @@ describe('worker HTTP server', () => {
     expect((await fetch(`${base}/v1/anything`)).status).toBe(404);
   });
 });
+
+describe('cell tasks', () => {
+  it('run on every step, and a failing task never stops the tick', async () => {
+    const clock = { t: 1_000_000, perTick: 10 };
+    const engine = new FakeEngine([1, 0], clock);
+    let calls = 0;
+    const cycle = new WorkerCycle({
+      engine,
+      heartbeat: async () => undefined,
+      cellTasks: async () => {
+        calls++;
+        if (calls === 1) throw new Error('detections down');
+      },
+      log: silent,
+      now: () => clock.t,
+      sweepMs: 5 * 60_000,
+      beatMs: 30_000,
+    });
+    const r = await drain(cycle, { budgetMs: 50_000, now: () => clock.t, log: silent });
+    expect(calls).toBe(2);
+    expect(r.rounds).toBe(2);
+    expect(r.errors).toBe(0);
+  });
+});

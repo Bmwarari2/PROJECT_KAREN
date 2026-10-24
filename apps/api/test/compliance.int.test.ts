@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as OTPAuth from 'otpauth';
 import { withTenant } from '@thapsus/db';
 import {
   closeDb,
@@ -12,8 +11,8 @@ import {
 } from './helpers';
 import { assignRole } from '../src/modules/authz/principal';
 import { hashPassword } from '../src/modules/auth/tokens';
-import { createStaff, STAFF_COOKIE } from '../src/modules/backoffice/auth';
 import { runComplianceDaily } from '../src/modules/compliance/jobs';
+import { elevate, staffSession } from './staff-helpers';
 
 /**
  * Phase 5 compliance centre, end to end through the API on explicit dates (never today's date).
@@ -961,14 +960,8 @@ describe('5.5 law-changes feed', () => {
   let staff: string;
   const ids: Record<string, string> = {};
   beforeAll(async () => {
-    const email = `editor.${Math.random().toString(36).slice(2, 7)}@thapsus.example.test`;
-    const s = await createStaff(ctx.app, email, 'Fictional Editor', 'rules_editor');
-    const res = await ctx.app.inject({
-      method: 'POST',
-      url: '/v1/backoffice/auth/login',
-      payload: { email, password: s.password },
-    });
-    staff = `${STAFF_COOKIE}=${String(res.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
+    const editor = await staffSession(ctx, 'rules_editor');
+    staff = editor.cookie;
     const entry = (jurisdiction: string, title: string, refs: unknown[] = []) => ({
       jurisdiction,
       effectiveDate: '2027-01-01',
@@ -977,31 +970,16 @@ describe('5.5 law-changes feed', () => {
       whatToDo: { 'en-GB': 'Review your policies.' },
       packRuleRefs: refs,
     });
-    expect(
-      (
-        await ctx.app.inject({
-          method: 'POST',
-          url: '/v1/backoffice/law-changes',
-          headers: { cookie: staff },
-          payload: entry('GB', 'blocked'),
-        })
-      ).statusCode,
-    ).toBe(403); // MFA first
-    const code = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(s.totpSecret),
-      digits: 6,
-      period: 30,
-    }).generate();
-    expect(
-      (
-        await ctx.app.inject({
-          method: 'POST',
-          url: '/v1/backoffice/auth/totp',
-          headers: { cookie: staff },
-          payload: { code },
-        })
-      ).statusCode,
-    ).toBe(204);
+    // publishing needs an approved, time-boxed elevation (plan 2.2.3); a draft does not
+    const blocked = await ctx.app.inject({
+      method: 'POST',
+      url: '/v1/backoffice/law-changes',
+      headers: { cookie: staff },
+      payload: entry('GB', 'blocked'),
+    });
+    expect(blocked.statusCode).toBe(403);
+    expect(blocked.json()).toMatchObject({ reason: 'elevationRequired', scope: 'rules_publish' });
+    await elevate(ctx, editor, 'rules_publish');
     const post = async (key: string, body: unknown) => {
       const r = await ctx.app.inject({
         method: 'POST',

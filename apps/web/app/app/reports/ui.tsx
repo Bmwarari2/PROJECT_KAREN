@@ -36,6 +36,7 @@ import {
   type ReportResult,
 } from '@/lib/report-format';
 import { ModuleFrameContext } from '../shell';
+import { PersonLink } from '@/components/person-link';
 
 /** IANA zones the browser knows (for a time-zone picker's suggestions). */
 export const zones = (): string[] =>
@@ -200,6 +201,7 @@ export function ReportChart({ result, maxBars = 30 }: { result: ReportResult; ma
   );
 }
 
+const ROWS_PAGE = 50;
 const numberFormatShort = (v: number, locale: string) =>
   new Intl.NumberFormat(locale, { maximumFractionDigits: 1, notation: 'compact' }).format(v);
 
@@ -207,49 +209,66 @@ const numberFormatShort = (v: number, locale: string) =>
 export function ReportTable({ result, caption }: { result: ReportResult; caption: string }) {
   const t = useT();
   const locale = useLocale();
+  // a long result shows a page of rows at a time (on a phone each row is a labelled list row)
+  const [limit, setLimit] = React.useState(ROWS_PAGE);
+  React.useEffect(() => setLimit(ROWS_PAGE), [result]);
   if (!result.rows.length) return <p className="text-callout text-text-secondary">{t('reports.noRows')}</p>;
   const right = (c: ReportColumn) => (NUMERIC.includes(c.type) ? 'text-right' : '');
   return (
-    <Table dense scrollLabel={caption}>
-      <caption className="sr-only">{caption}</caption>
-      <THead>
-        <tr>
-          {result.columns.map((c) => (
-            <TH key={c.key} className={`${right(c)} whitespace-nowrap`}>
-              {headerOf(t, c)}
-              {c.sensitive ? (
-                <Lock
-                  aria-label={t('reports.sensitive')}
-                  className="ml-1 inline h-3.5 w-3.5 stroke-[1.5] align-[-2px]"
-                />
-              ) : null}
-            </TH>
+    <>
+      <Table dense scrollLabel={caption}>
+        <caption className="sr-only">{caption}</caption>
+        <THead>
+          <tr>
+            {result.columns.map((c) => (
+              <TH key={c.key} className={`${right(c)} whitespace-nowrap`}>
+                {headerOf(t, c)}
+                {c.sensitive ? (
+                  <Lock
+                    aria-label={t('reports.sensitive')}
+                    className="ml-1 inline h-3.5 w-3.5 stroke-[1.5] align-[-2px]"
+                  />
+                ) : null}
+              </TH>
+            ))}
+          </tr>
+        </THead>
+        <tbody>
+          {result.rows.slice(0, limit).map((r, i) => (
+            <TR key={i}>
+              {result.columns.map((c, ci) => (
+                <TD key={c.key} className={`${right(c)} h-9`} label={ci > 0 ? headerOf(t, c) : undefined}>
+                  {/* a person's name opens their profile where the viewer may (ADR-0161) */}
+                  {c.key === 'displayName' && result.rowEmployeeIds?.[i] && typeof r[c.key] === 'string' ? (
+                    <PersonLink id={result.rowEmployeeIds[i]} name={r[c.key] as string} plainClassName="" />
+                  ) : (
+                    displayCell(t, locale, c, r[c.key] ?? null)
+                  )}
+                </TD>
+              ))}
+            </TR>
           ))}
-        </tr>
-      </THead>
-      <tbody>
-        {result.rows.map((r, i) => (
-          <TR key={i}>
-            {result.columns.map((c) => (
-              <TD key={c.key} className={`${right(c)} h-9`}>
-                {displayCell(t, locale, c, r[c.key] ?? null)}
-              </TD>
-            ))}
-          </TR>
-        ))}
-        {(result.totals ?? []).map((r, i) => (
-          <TR key={`t${i}`} className="font-semibold">
-            {result.columns.map((c) => (
-              <TD key={c.key} className={`${right(c)} h-9`}>
-                {r[c.key] === null || r[c.key] === undefined
-                  ? ''
-                  : displayCell(t, locale, c, r[c.key] ?? null)}
-              </TD>
-            ))}
-          </TR>
-        ))}
-      </tbody>
-    </Table>
+          {(result.totals ?? []).map((r, i) => (
+            <TR key={`t${i}`} className="font-semibold">
+              {result.columns.map((c, ci) => (
+                <TD key={c.key} className={`${right(c)} h-9`} label={ci > 0 ? headerOf(t, c) : undefined}>
+                  {r[c.key] === null || r[c.key] === undefined
+                    ? ''
+                    : displayCell(t, locale, c, r[c.key] ?? null)}
+                </TD>
+              ))}
+            </TR>
+          ))}
+        </tbody>
+      </Table>
+      {result.rows.length > limit ? (
+        <div className="flex justify-center">
+          <Button variant="secondary" onClick={() => setLimit((n) => n + ROWS_PAGE)}>
+            {t('reports.ui.moreRows')}
+          </Button>
+        </div>
+      ) : null}
+    </>
   );
 }
 

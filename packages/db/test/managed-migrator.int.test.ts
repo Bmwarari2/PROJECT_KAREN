@@ -17,7 +17,13 @@ import { appUrl, createTestTenant, ownerUrl, TEST_APP_PASSWORD, TEST_DBS, unique
 const ROLE = 'thapsus_test_managed_migrator';
 const PASSWORD = 'local_test_only_managed_migrator';
 const DB = 'thapsus_test_managed';
-const APP_ROLES = ['thapsus_app', 'thapsus_backoffice', 'thapsus_reporting', 'thapsus_lookup'];
+const APP_ROLES = [
+  'thapsus_app',
+  'thapsus_backoffice',
+  'thapsus_reporting',
+  'thapsus_lookup',
+  'thapsus_metrics',
+];
 
 let admin: pg.Client;
 let ownerIsSuperuser: boolean;

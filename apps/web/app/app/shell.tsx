@@ -3,7 +3,7 @@ import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { IntentLink as Link } from '@/components/intent-link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CircleHelp, Menu as MenuIcon, Search } from 'lucide-react';
+import { CircleHelp, Menu as MenuIcon, Search } from 'lucide-react';
 import {
   Button,
   ModuleHeader,
@@ -19,13 +19,13 @@ import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
 import { Logo } from '@/components/logo';
 import { RailNav, RailToggle, useRailCollapsed } from '@/components/workspace/rail';
 import { UserMenuButton } from '@/components/workspace/user-menu-button';
+import { NotificationBellButton } from '@/components/workspace/notification-bell-button';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
-import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
 import { useIdle } from '@/lib/use-idle';
-import { revealIn } from '@/lib/reveal';
+import { centreIn, revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
-import { isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
+import { dockModules, isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
 
 // The search palette and the account menu (and the dialog and menu primitives behind them) load
 // after the page, so they add nothing to what a phone must download and run before it can show it.
@@ -38,6 +38,10 @@ const GlobalSearch = dynamic(
 const loadSearch = () => import('@/components/workspace/global-search');
 type UserMenuType = typeof import('@/components/workspace/user-menu').UserMenu;
 const loadUserMenu = () => import('@/components/workspace/user-menu').then((m) => m.UserMenu);
+// The notification panel (and the popover behind it) loads on intent, like the account menu (ADR-0160).
+type NotificationPanelType = typeof import('@/components/workspace/notification-panel').NotificationPanel;
+const loadNotificationPanel = () =>
+  import('@/components/workspace/notification-panel').then((m) => m.NotificationPanel);
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
@@ -64,6 +68,8 @@ export function useFeature(key: FeatureKey): boolean {
  * own title becomes a section heading (`PageTitle` reads this).
  */
 export const ModuleFrameContext = React.createContext(false);
+/** True on a page inside a drill-down module (Settings, ADR-0181): its title is large on phones. */
+export const DrilledContext = React.createContext(false);
 /**
  * Whether the current tab's name is already on screen: in the tab bar, or as the module name when the
  * module's only tab shares it. A page title that only repeats the tab name is dropped only then, so a
@@ -74,8 +80,12 @@ export const ModuleTabVisibleContext = React.createContext(false);
 /** A page's title: the h1 outside modules, a section heading under a module header. */
 export function PageTitle({ children, className }: { children: React.ReactNode; className?: string }) {
   const inModule = React.useContext(ModuleFrameContext);
+  // in a drill-down module the page's own title is the large title on phones (the module's is hidden)
+  const drilled = React.useContext(DrilledContext);
   return inModule ? (
-    <h2 className={className ?? 'text-title-3'}>{children}</h2>
+    <h2 className={className ?? (drilled ? 'text-large-title lg:text-title-2' : 'text-title-3')}>
+      {children}
+    </h2>
   ) : (
     <h1 className={className ?? 'text-title-2'}>{children}</h1>
   );
@@ -83,10 +93,11 @@ export function PageTitle({ children, className }: { children: React.ReactNode; 
 
 /**
  * The second factor still has to be used in this session: anyone who has one must verify it, and
- * admins must set one up (the API refuses everything else until then; ASVS V6.3.3).
+ * admins (everyone, when the workspace requires it) must set one up first. The API refuses everything
+ * else until then (ASVS V6.3.3, plan 2.1.2).
  */
 export function needsSecondFactor(s: SessionInfo | null | undefined): boolean {
-  return !!s && !s.mfaVerified && (s.hasMfaFactor || s.isAdmin);
+  return !!s && !s.mfaVerified && (s.hasMfaFactor || s.isAdmin || !!s.mustUseMfa);
 }
 
 /** True when one of the session's grants covers the action (scope is enforced by the API). */
@@ -122,8 +133,10 @@ export function AppShell({
   const [collapsed, setCollapsed] = useRailCollapsed();
   // The account menu's code loads when someone points at or touches the button, or activates it:
   // until then the same-looking button stands in, and opens the menu when it arrives if it was used.
+  // Pointing or touching only fetches the code: the button is swapped when it is activated, so a click
+  // that has started never lands on a button replaced under the pointer (which would lose it).
   const [UserMenu, setUserMenu] = React.useState<UserMenuType | null>(null);
-  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'load' | 'open'>('no');
+  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'open'>('no');
   const idle = useIdle();
   // The rail column only shows from the lg breakpoint; on phones (the menu sheet has its own copy)
   // it is not rendered at all, so a phone does not build and hydrate a menu it cannot see.
@@ -135,6 +148,17 @@ export function AppShell({
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
+  const [Panel, setPanel] = React.useState<NotificationPanelType | null>(null);
+  const [panelLoad, setPanelLoad] = React.useState<'no' | 'open'>('no');
+  const wantPanel = panelLoad !== 'no';
+  React.useEffect(() => {
+    if (!wantPanel) return;
+    let live = true;
+    void loadNotificationPanel().then((C) => live && setPanel(() => C));
+    return () => {
+      live = false;
+    };
+  }, [wantPanel]);
   const wantMenu = userMenuLoad !== 'no';
   React.useEffect(() => {
     if (!wantMenu) return;
@@ -215,6 +239,11 @@ export function AppShell({
     };
   }, [ready, idle, path]);
 
+  const setUnread = React.useCallback(
+    (unread: number) => setCounts((prev) => (prev.unread === unread ? prev : { ...prev, unread })),
+    [],
+  );
+
   // Ctrl/⌘ K opens search anywhere; "/" does too when the focus is not in a field.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -242,7 +271,9 @@ export function AppShell({
   // Signing out sends any offline clock punches first, ends the session (the API answers with
   // Clear-Site-Data) and reloads the page so nothing from the session stays in memory (ASVS V14.3.1).
   const signOut = async () => {
-    if (session) await syncQueue(session.userId).catch(() => undefined);
+    // the offline clock queue (and the time library it uses) loads only here, not with every page
+    if (session)
+      await import('@/lib/clock-queue').then((m) => m.syncQueue(session.userId)).catch(() => undefined);
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
     window.location.replace('/signin');
   };
@@ -253,12 +284,21 @@ export function AppShell({
   const current = here?.module ?? null;
   const inboxCount = counts.approvals + counts.tasks;
   const railCounts = React.useMemo(() => ({ inbox: inboxCount }), [inboxCount]);
+  const dock = React.useMemo(() => (viewer ? dockModules(modules, viewer) : []), [modules, viewer]);
+  // keep the current section visible in a sideways-scrolling sections control (phones)
+  // (scrolling the control itself: scrollIntoView would move the Tab starting point past the skip link)
+  React.useEffect(() => {
+    const nav = document.querySelector<HTMLElement>('[data-tab-nav]');
+    centreIn(nav, nav?.querySelector<HTMLElement>('[data-active]') ?? null);
+  }, [path]);
   const tabCounts: Record<string, number> = {
     '/app/approvals': counts.approvals,
     '/app/tasks': counts.tasks,
   };
   // The module header and tab bar frame every module page except Home, which is its own dashboard.
   const framed = !!current && current.key !== 'home' && !mfaSetupPending;
+  // a page inside a drill-down module (Settings): on phones it shows a back link and its own title
+  const drilled = framed && !!current.drillDown && path.replace(/\/$/, '') !== current.href;
   const tabs: TabLink[] =
     framed && current.tabs.length > 1
       ? current.tabs.map((tab) => ({
@@ -270,6 +310,7 @@ export function AppShell({
       : [];
   const tabNameVisible =
     framed &&
+    !drilled &&
     (tabs.length > 1 || (current.tabs.length === 1 && t(current.tabs[0]!.label) === t(current.label)));
   const renderTab = (tab: TabLink, className: string, kids: React.ReactNode) => (
     <Link href={tab.href} className={className} aria-current={tab.active ? 'page' : undefined}>
@@ -283,7 +324,7 @@ export function AppShell({
       <ExperienceContext.Provider value={experienceValue}>
         {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
         <div className="flex min-h-dvh flex-col bg-surface">
-          <header className="sticky top-0 z-40 flex h-[var(--topbar-height)] items-center gap-2 bg-chrome px-3 text-on-chrome md:gap-4 md:px-4">
+          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -352,26 +393,16 @@ export function AppShell({
               >
                 <CircleHelp aria-hidden className="h-5 w-5 stroke-[1.5]" />
               </Link>
-              <Link
-                href="/app/notifications"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-on-chrome hover:bg-chrome-raised focus-visible:outline-2 focus-visible:outline-chrome-focus"
-                aria-label={
-                  counts.unread
-                    ? t('app.ws.notificationsUnread', { count: counts.unread })
-                    : t('app.nav.notifications')
-                }
-                title={t('app.nav.notifications')}
-              >
-                <Bell aria-hidden className="h-5 w-5 stroke-[1.5]" />
-                {counts.unread ? (
-                  <span
-                    aria-hidden
-                    className="absolute right-1 top-1 min-w-[18px] rounded-full bg-chrome-focus px-1 text-center text-footnote font-semibold leading-[18px] text-chrome"
-                  >
-                    {counts.unread > 9 ? '9+' : counts.unread}
-                  </span>
-                ) : null}
-              </Link>
+              {/* The bell opens a panel of recent notifications, each a link to what it is about. */}
+              {Panel ? (
+                <Panel unread={counts.unread} onUnreadChange={setUnread} defaultOpen={panelLoad === 'open'} />
+              ) : (
+                <NotificationBellButton
+                  unread={counts.unread}
+                  onIntent={() => void loadNotificationPanel()}
+                  onOpen={() => setPanelLoad('open')}
+                />
+              )}
               {session ? (
                 UserMenu ? (
                   <UserMenu
@@ -383,7 +414,7 @@ export function AppShell({
                 ) : (
                   <UserMenuButton
                     session={session}
-                    onIntent={() => setUserMenuLoad((v) => (v === 'no' ? 'load' : v))}
+                    onIntent={() => void loadUserMenu()}
                     onOpen={() => setUserMenuLoad('open')}
                   />
                 )
@@ -427,6 +458,7 @@ export function AppShell({
                 <ModuleHeader
                   icon={<CurrentIcon aria-hidden />}
                   title={t(current.label)}
+                  drilled={drilled}
                   tabs={
                     tabs.length ? (
                       <TabNav
@@ -440,17 +472,53 @@ export function AppShell({
               ) : null}
               <main
                 id="main"
-                className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8"
+                data-shell="app"
+                className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 pb-[calc(var(--dock-height)+env(safe-area-inset-bottom)+var(--space-6))] pt-5 md:px-8 md:pt-8 lg:pb-8"
               >
                 <ModuleFrameContext.Provider value={framed}>
                   <ModuleTabVisibleContext.Provider value={tabNameVisible}>
-                    {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
+                    <DrilledContext.Provider value={drilled}>
+                      {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
+                    </DrilledContext.Provider>
                   </ModuleTabVisibleContext.Provider>
                 </ModuleFrameContext.Provider>
               </main>
             </div>
           </div>
         </div>
+        {session && dock.length > 1 ? (
+          // the phone tab bar (ADR-0180): the viewer's main modules, one tap away
+          <nav
+            aria-label={t('app.ws.dock.label')}
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
+          >
+            <ul className="mx-auto flex h-[var(--dock-height)] max-w-lg items-stretch">
+              {dock.map((m) => {
+                const Icon = m.icon;
+                const active = current?.key === m.key;
+                const count = m.key === 'inbox' ? inboxCount : 0;
+                return (
+                  <li key={m.key} className="flex-1">
+                    <Link
+                      href={m.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`relative flex h-full flex-col items-center justify-center gap-0.5 text-footnote no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-chrome-focus ${active ? 'font-semibold text-chrome-focus' : 'text-on-chrome-secondary'}`}
+                    >
+                      <Icon aria-hidden className="h-6 w-6 stroke-[1.75]" />
+                      {m.key === 'me' ? t('app.ws.dock.me') : t(m.label)}
+                      {count ? (
+                        <span className="absolute left-1/2 top-1 ml-2 min-w-[18px] rounded-full bg-chrome-focus px-1 text-center text-footnote font-semibold leading-[18px] text-chrome">
+                          <span className="sr-only">{t('app.ws.pending')} </span>
+                          {count > 9 ? '9+' : count}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : null}
         {session && viewer && (searchOpen || searchUsed) ? (
           <GlobalSearch
             open={searchOpen}

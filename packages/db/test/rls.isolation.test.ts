@@ -14,6 +14,10 @@ const NON_TENANT_SCHEMAS: Record<string, string> = {
   backoffice:
     'Thapsus staff accounts and the staff action trail; tenants referenced only by subject_tenant_id',
   public: 'schema_migrations bookkeeping only',
+  platform:
+    'per-cell request and queue counters by route group and database key (ADR-0176); no tenant id, no personal data',
+  security:
+    'security signals, detections and incidents (ADR-0177): pseudonymous ids and keyed address hashes; tenants only as subject_tenant_id',
 };
 
 /** Registry tables are routing metadata; any new column must be added here deliberately (no personal data). */
@@ -139,6 +143,9 @@ describe('catalog-wide isolation checks', () => {
       FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE p.polname <> 'tenant_isolation' ORDER BY 1`);
     expect(rows.map((r) => r.policy)).toEqual([
+      // the queue sample counts across tenants through platform.queue_snapshot() only (ADR-0176)
+      'app.jobs:metrics_queue_counts',
+      'app.outbox:metrics_queue_counts',
       'app.support_grants:backoffice_grants_read',
       'app.users:lookup_by_email',
     ]);
@@ -155,7 +162,39 @@ describe('catalog-wide isolation checks', () => {
       'app.trgm_word_similarity',
       'audit.purge_closed_tenant',
       'audit.seal_pending',
+      'platform.queue_snapshot',
     ]);
+    // the worker's queue sample (ADR-0176): counts and ages only, for the application role only, owned by a
+    // NOLOGIN role that may read four columns of the two queue tables and nothing else
+    expect(rows.find((r) => r.fn === 'platform.queue_snapshot')!.public).toBe(false);
+    const snapshot = await owner.query<{
+      app: boolean;
+      backoffice: boolean;
+      reporting: boolean;
+      owner: string;
+      payload: boolean;
+      input: boolean;
+    }>(
+      `SELECT has_function_privilege('thapsus_app', 'platform.queue_snapshot(timestamptz)', 'EXECUTE') AS app,
+              has_function_privilege('thapsus_backoffice', 'platform.queue_snapshot(timestamptz)', 'EXECUTE') AS backoffice,
+              has_function_privilege('thapsus_reporting', 'platform.queue_snapshot(timestamptz)', 'EXECUTE') AS reporting,
+              pg_get_userbyid(proowner) AS owner,
+              has_column_privilege('thapsus_metrics', 'app.outbox', 'payload', 'SELECT') AS payload,
+              has_column_privilege('thapsus_metrics', 'app.jobs', 'input', 'SELECT') AS input
+         FROM pg_proc WHERE oid = 'platform.queue_snapshot(timestamptz)'::regprocedure`,
+    );
+    expect(snapshot.rows[0]).toEqual({
+      app: true,
+      backoffice: false,
+      reporting: false,
+      owner: 'thapsus_metrics',
+      payload: false,
+      input: false,
+    });
+    const columns = await owner.query<{ c: string }>(
+      `SELECT unnest(proargnames) AS c FROM pg_proc WHERE oid = 'platform.queue_snapshot(timestamptz)'::regprocedure`,
+    );
+    expect(columns.rows.map((r) => r.c)).not.toContain('tenant_id');
     // Ask HR retrieval (ADR-0111): a pure, pinned-search-path wrapper over pg_trgm's word_similarity(), for the application role only
     expect(rows.find((r) => r.fn === 'app.trgm_word_similarity')!.public).toBe(false);
     const trgm = await owner.query<{

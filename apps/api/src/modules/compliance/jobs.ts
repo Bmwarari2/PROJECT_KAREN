@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { enqueueJob, getPool, writeAudit, type Tx } from '@thapsus/db';
 import { compareDates, daysBetween, instantToDate } from '@thapsus/core/time';
+import { personHref, targetHref } from '@thapsus/core/links';
 import type { RuleBook } from '@thapsus/rules';
 import type { Deps } from '../../deps';
 import { periodic, registerJob } from '../../jobs/registry';
@@ -29,7 +30,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
   const settings = await complianceSettings(tx);
   const locale = await tenantLocale(tx);
   const hr = await complianceRecipients(tx);
-  const counts = { rtw: 0, i9: 0, matrix: 0, service: 0, lawChanges: 0, tasks: 0 };
+  const counts = { rtw: 0, i9: 0, matrix: 0, service: 0, documents: 0, lawChanges: 0, tasks: 0 };
   const emps = await tx.query<EmployeeRow>(
     `SELECT ${EMPLOYEE_COLUMNS} FROM ${EMPLOYEE_FROM} WHERE e.end_date IS NULL OR e.end_date >= $1::date - 3650`,
     [date],
@@ -52,7 +53,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
             kind: 'compliance.rtw_follow_up',
             titleKey: 'notify.rtwFollowUpDue',
             params: { name, date: due, days: offset },
-            link: '/app/compliance/right-to-work',
+            target: { type: 'rtw_check', id: r.check.id },
             dedupeKey: `rtwcheck:${r.check.id}:${offset}`,
           })
         ).length;
@@ -64,7 +65,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
           subjectEmployeeId: r.employee.id,
           assigneeRole: 'hr_admin',
           dueOn: due,
-          link: '/app/compliance/right-to-work',
+          link: targetHref({ type: 'rtw_check', id: r.check.id })!,
           dedupeKey: `rtwcheck:${r.check.id}:task`,
         });
     }
@@ -75,7 +76,8 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
           kind: 'compliance.rtw_missing',
           titleKey: 'notify.rtwCheckMissing',
           params: { name, date: r.employee.start_date },
-          link: '/app/compliance/right-to-work',
+          target: { type: 'employee', id: r.employee.id },
+          link: personHref(r.employee.id, 'compliance'),
           dedupeKey: `rtw-missing:${r.employee.id}`,
         })
       ).length;
@@ -85,7 +87,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
         subjectEmployeeId: r.employee.id,
         assigneeRole: 'hr_admin',
         dueOn: r.employee.start_date,
-        link: '/app/compliance/right-to-work',
+        link: personHref(r.employee.id, 'compliance'),
         dedupeKey: `rtw-missing:${r.employee.id}`,
       });
     }
@@ -105,7 +107,8 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
           kind: 'compliance.i9_section2',
           titleKey: 'notify.i9Section2Due',
           params: { name, date: r.record.section2_due_on },
-          link: '/app/compliance/i9',
+          target: { type: 'employee', id: r.employee.id },
+          link: personHref(r.employee.id, 'compliance'),
           dedupeKey: `i9-s2:${r.record.id}`,
         })
       ).length;
@@ -120,7 +123,8 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
             kind: 'compliance.i9_reverification',
             titleKey: 'notify.i9ReverificationDue',
             params: { name, date: due, days: offset },
-            link: '/app/compliance/i9',
+            target: { type: 'employee', id: r.employee.id },
+            link: personHref(r.employee.id, 'compliance'),
             dedupeKey: `i9-rev:${r.record.id}:${due}:${offset}`,
           })
         ).length;
@@ -132,7 +136,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
           subjectEmployeeId: r.employee.id,
           assigneeRole: 'hr_admin',
           dueOn: due,
-          link: '/app/compliance/i9',
+          link: personHref(r.employee.id, 'compliance'),
           dedupeKey: `i9-rev:${r.record.id}:${due}:task`,
         });
     }
@@ -155,7 +159,8 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
             kind: 'compliance.expiring',
             titleKey: offset === 0 ? 'notify.complianceExpiresToday' : 'notify.complianceExpiring',
             params: { name, requirement: c.requirement.name, date: c.expiresOn, days: offset },
-            link: '/app/compliance/matrix',
+            target: { type: 'employee', id: c.employee.id },
+            link: personHref(c.employee.id, 'compliance'),
             dedupeKey: `matrix:${c.record.id}:${offset}`,
           })
         ).length;
@@ -166,7 +171,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
           subjectEmployeeId: c.employee.id,
           assigneeRole: 'hr_admin',
           dueOn: c.expiresOn,
-          link: '/app/compliance/matrix',
+          link: personHref(c.employee.id, 'compliance'),
           dedupeKey: `matrix:${c.record.id}:task`,
         });
       }
@@ -177,7 +182,8 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
             kind: 'compliance.expired',
             titleKey: 'notify.complianceExpired',
             params: { name, requirement: c.requirement.name, date: c.expiresOn },
-            link: '/app/compliance/matrix',
+            target: { type: 'employee', id: c.employee.id },
+            link: personHref(c.employee.id, 'compliance'),
             dedupeKey: `matrix:${c.record.id}:expired`,
           })
         ).length;
@@ -189,7 +195,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
         title: text(locale, 'compliance.task.missing', { name, requirement: c.requirement.name }),
         subjectEmployeeId: c.employee.id,
         assigneeRole: 'hr_admin',
-        link: '/app/compliance/matrix',
+        link: personHref(c.employee.id, 'compliance'),
         dedupeKey: `matrix-missing:${c.requirement.id}:${c.employee.id}`,
       });
   }
@@ -214,10 +220,71 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
           days: offset,
           period: a.qualifyingPeriod ?? '',
         },
-        link: '/app/compliance',
+        target: { type: 'employee', id: a.employee.id },
         dedupeKey: `${key}:${a.employee.id}:${a.dueOn}:${offset}`,
       })
     ).length;
+  }
+
+  // ---- documents HR attached to a person: expiry reminders and a renewal task (ADR-0169) --------------
+  // Right-to-work evidence uses the right-to-work offsets, everything else the document offsets: both are
+  // tenant settings. The person is told too when the document was shared with them.
+  const docWindow = Math.max(0, ...settings.rtwReminderDays, ...settings.documentReminderDays);
+  const attachments = await tx.query<{
+    id: string;
+    employee_id: string;
+    attachment_type: string;
+    expires_on: string;
+    title: string;
+    visibility: string;
+    display_name: string;
+  }>(
+    `SELECT d.id, d.employee_id, d.attachment_type, d.expires_on::text AS expires_on, d.title, d.visibility, e.display_name
+       FROM app.documents d JOIN app.employees e ON e.tenant_id = d.tenant_id AND e.id = d.employee_id
+      WHERE d.status = 'ready' AND d.attachment_type IS NOT NULL AND d.expires_on IS NOT NULL
+        AND d.expires_on BETWEEN $1::date - 1 AND $1::date + $2::int
+        AND (e.end_date IS NULL OR e.end_date >= $1::date)`,
+    [date, docWindow],
+  );
+  for (const d of attachments) {
+    const offsets =
+      d.attachment_type === 'right_to_work' ? settings.rtwReminderDays : settings.documentReminderDays;
+    const own = d.visibility === 'employee' ? await userForEmployee(tx, d.employee_id) : undefined;
+    const params = { name: d.display_name, title: d.title, date: d.expires_on };
+    const offset = reminderOffsetToday(d.expires_on, date, offsets);
+    if (offset !== null)
+      counts.documents += (
+        await notify(tx, {
+          userIds: [...new Set([...hr, ...(own ? [own] : [])])],
+          kind: 'document.expiring',
+          titleKey: offset === 0 ? 'notify.attachmentExpiresToday' : 'notify.attachmentExpiring',
+          params: { ...params, days: offset, count: offset },
+          target: { type: 'document', id: d.id },
+          dedupeKey: `attachment:${d.id}:${offset}`,
+        })
+      ).length;
+    if (daysBetween(date, d.expires_on) >= 0 && daysBetween(date, d.expires_on) <= Math.max(0, ...offsets))
+      await task({
+        source: 'document',
+        sourceId: d.id,
+        title: text(locale, 'compliance.task.renewDocument', params),
+        subjectEmployeeId: d.employee_id,
+        assigneeRole: 'hr_admin',
+        dueOn: d.expires_on,
+        link: `/app/documents/${d.id}`,
+        dedupeKey: `attachment:${d.id}:task`,
+      });
+    if (daysBetween(d.expires_on, date) === 1)
+      counts.documents += (
+        await notify(tx, {
+          userIds: hr,
+          kind: 'document.expired',
+          titleKey: 'notify.attachmentExpired',
+          params,
+          target: { type: 'document', id: d.id },
+          dedupeKey: `attachment:${d.id}:expired`,
+        })
+      ).length;
   }
 
   // ---- law changes relevant to the tenant's jurisdictions -----------------------------------------
@@ -238,7 +305,7 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
         kind: 'compliance.law_change',
         titleKey: 'notify.lawChangePublished',
         params: { jurisdiction: e.jurisdiction, title: e.title[locale] ?? e.title['en-GB'] ?? '' },
-        link: '/app/compliance/law-changes',
+        target: { type: 'law_change', id: e.id },
         dedupeKey: `lawchange:${e.id}`,
       })
     ).length;

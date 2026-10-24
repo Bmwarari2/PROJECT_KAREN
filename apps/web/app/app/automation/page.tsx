@@ -1,7 +1,18 @@
 'use client';
 import * as React from 'react';
 import { Zap } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Input,
+  ListItem,
+  Skeleton,
+  useToast,
+  PageSection,
+} from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -66,34 +77,35 @@ export default function AutomationPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageIntro title={t('automation.title')} titleIsTab lead={t('automation.lead')} />
-      <Card>
-        <CardTitle>{t('automation.new')}</CardTitle>
-        <form onSubmit={create} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
-          <Field id="name" label={t('automation.name')}>
-            {(p) => <Input {...p} required value={name} onChange={(e) => setName(e.target.value)} />}
-          </Field>
-          <Field id="trigger" label={t('automation.trigger')}>
-            {(p) => (
-              <select
-                {...p}
-                value={trigger}
-                onChange={(e) => setTrigger(e.target.value)}
-                className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
-              >
-                {['record.created', 'record.changed', 'date.reached', 'document.expiring'].map((x) => (
-                  <option key={x} value={x}>
-                    {t(`automation.triggers.${x}`)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field id="title" label={t('automation.taskTitle')}>
-            {(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}
-          </Field>
-          <Button type="submit">{t('common.add')}</Button>
-        </form>
-      </Card>
+      <PageSection headingLevel={2} title={t('automation.new')}>
+        <Card>
+          <form onSubmit={create} className="grid gap-3 md:grid-cols-4 md:items-end">
+            <Field id="name" label={t('automation.name')}>
+              {(p) => <Input {...p} required value={name} onChange={(e) => setName(e.target.value)} />}
+            </Field>
+            <Field id="trigger" label={t('automation.trigger')}>
+              {(p) => (
+                <select
+                  {...p}
+                  value={trigger}
+                  onChange={(e) => setTrigger(e.target.value)}
+                  className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+                >
+                  {['record.created', 'record.changed', 'date.reached', 'document.expiring'].map((x) => (
+                    <option key={x} value={x}>
+                      {t(`automation.triggers.${x}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field id="title" label={t('automation.taskTitle')}>
+              {(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}
+            </Field>
+            <Button type="submit">{t('common.add')}</Button>
+          </form>
+        </Card>
+      </PageSection>
       <ListCard
         title={t('automation.list.title')}
         count={data ? t('automation.list.count', { count: data.length }) : undefined}
@@ -105,20 +117,32 @@ export default function AutomationPage() {
           ) : undefined
         }
       >
-        <ul className="flex flex-col gap-2 p-4">
+        {/* grouped rows (ADR-0180): the rule's name takes the width; the dry run sits under it on phones */}
+        <ul role="list" aria-label={t('automation.list.title')}>
           {(data ?? []).map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
-              <Zap aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-              <span className="text-callout font-semibold">{r.name}</span>
-              <Badge>{t(`automation.triggers.${r.trigger.type}`)}</Badge>
-              <Badge tone={r.enabled ? 'success' : 'neutral'}>
-                {r.enabled ? t('automation.on') : t('automation.off')}
-              </Badge>
-              <span className="ml-auto text-footnote text-text-secondary">{dry[r.id]}</span>
-              <Button size="sm" variant="secondary" onClick={() => dryRun(r.id)}>
-                {t('automation.dryRun')}
-              </Button>
-            </li>
+            <ListItem
+              key={r.id}
+              leading={<Zap aria-hidden />}
+              title={r.name}
+              subtitle={t(`automation.triggers.${r.trigger.type}`)}
+              meta={dry[r.id] || undefined}
+              accessory={
+                <Badge tone={r.enabled ? 'success' : 'neutral'}>
+                  {r.enabled ? t('automation.on') : t('automation.off')}
+                </Badge>
+              }
+              actions={
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="min-h-11 sm:min-h-8"
+                  onClick={() => dryRun(r.id)}
+                  aria-label={t('actionable.automation.dryRunNamed', { name: r.name })}
+                >
+                  {t('automation.dryRun')}
+                </Button>
+              }
+            />
           ))}
         </ul>
       </ListCard>

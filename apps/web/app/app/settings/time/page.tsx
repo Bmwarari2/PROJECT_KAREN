@@ -174,7 +174,7 @@ function Geofencing({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
           {s.geofence.countries.map((c) => (
             <li
               key={c}
-              className="flex flex-col gap-2 rounded-md border border-border p-4"
+              className="flex flex-col gap-2 border-b border-border pb-4"
               data-testid={`geofence-${c}`}
             >
               <div className="flex flex-wrap items-center gap-2">
@@ -394,7 +394,12 @@ function Sites({ countries }: { countries: string[] }) {
   const [editing, setEditing] = React.useState<Location | null>(null);
   const n = (x: number, digits: number) => formatNumber(x, locale, { maximumFractionDigits: digits });
   return (
-    <SettingsCard id="sites" title={t('admin.time.sitesTitle')} description={t('admin.time.sitesBody')}>
+    <SettingsCard
+      id="sites"
+      title={t('admin.time.sitesTitle')}
+      description={t('admin.time.sitesBody')}
+      container={locations.data?.length ? 'none' : 'card'}
+    >
       {!locations.data ? (
         <Skeleton className="h-20" />
       ) : locations.data.length === 0 ? (
@@ -415,13 +420,13 @@ function Sites({ countries }: { countries: string[] }) {
             {locations.data.map((l) => (
               <TR key={l.id}>
                 <TD className="font-semibold">{l.name}</TD>
-                <TD>
+                <TD phone="inline" label={t('admin.time.country')}>
                   {l.country}{' '}
                   {countries.includes(l.country) ? (
                     <Badge tone="success">{t('admin.time.geofenced')}</Badge>
                   ) : null}
                 </TD>
-                <TD>
+                <TD label={t('admin.time.siteArea')}>
                   {l.geofence
                     ? t('admin.time.siteAreaText', {
                         lat: n(l.geofence.lat, 5),

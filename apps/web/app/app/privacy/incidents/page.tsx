@@ -5,13 +5,13 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
   EmptyState,
   Field,
   Input,
   Skeleton,
   Textarea,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -123,84 +123,90 @@ export default function IncidentsPage() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <Card>
-        <CardTitle>{t('privacy.ui.incidents.newTitle')}</CardTitle>
-        <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">
-          {t('privacy.ui.incidents.newLead')}
-        </p>
-        <form onSubmit={create} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field id="inc-title" label={t('privacy.ui.incidents.titleField')}>
-            {(p) => (
-              <Input
-                {...p}
-                required
-                minLength={3}
-                maxLength={200}
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field
-            id="inc-aware"
-            label={t('privacy.ui.incidents.awareAt')}
-            hint={t('privacy.ui.incidents.awareHint')}
-          >
-            {(p) => (
-              <Input
-                {...p}
-                type="datetime-local"
-                required
-                value={form.awareAt}
-                onChange={(e) => setForm({ ...form, awareAt: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field
-            id="inc-affected"
-            label={t('privacy.ui.incidents.affected')}
-            hint={t('privacy.ui.incidents.affectedHint')}
-          >
-            {(p) => (
-              <Input
-                {...p}
-                value={form.affected}
-                onChange={(e) => setForm({ ...form, affected: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="inc-breach" label={t('privacy.ui.incidents.type')}>
-            {(p) => (
-              <select
-                {...p}
-                className={`${SELECT_CLASS} w-full`}
-                value={form.breach ? 'yes' : 'no'}
-                onChange={(e) => setForm({ ...form, breach: e.target.value === 'yes' })}
-              >
-                <option value="yes">{t('privacy.ui.incidents.breach')}</option>
-                <option value="no">{t('privacy.ui.incidents.notBreach')}</option>
-              </select>
-            )}
-          </Field>
-          <Field id="inc-description" label={t('privacy.ui.incidents.description')} className="md:col-span-2">
-            {(p) => (
-              <Textarea
-                {...p}
-                rows={3}
-                maxLength={10000}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-            )}
-          </Field>
-          <div className="md:col-span-2">
-            <Button type="submit" loading={busy === 'create'}>
-              <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              {t('privacy.ui.incidents.log')}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <PageSection
+        headingLevel={2}
+        title={t('privacy.ui.incidents.newTitle')}
+        description={t('privacy.ui.incidents.newLead')}
+      >
+        <Card>
+          <form onSubmit={create} className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Field id="inc-title" label={t('privacy.ui.incidents.titleField')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  minLength={3}
+                  maxLength={200}
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="inc-aware"
+              label={t('privacy.ui.incidents.awareAt')}
+              hint={t('privacy.ui.incidents.awareHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="datetime-local"
+                  required
+                  value={form.awareAt}
+                  onChange={(e) => setForm({ ...form, awareAt: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="inc-affected"
+              label={t('privacy.ui.incidents.affected')}
+              hint={t('privacy.ui.incidents.affectedHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  value={form.affected}
+                  onChange={(e) => setForm({ ...form, affected: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="inc-breach" label={t('privacy.ui.incidents.type')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={`${SELECT_CLASS} w-full`}
+                  value={form.breach ? 'yes' : 'no'}
+                  onChange={(e) => setForm({ ...form, breach: e.target.value === 'yes' })}
+                >
+                  <option value="yes">{t('privacy.ui.incidents.breach')}</option>
+                  <option value="no">{t('privacy.ui.incidents.notBreach')}</option>
+                </select>
+              )}
+            </Field>
+            <Field
+              id="inc-description"
+              label={t('privacy.ui.incidents.description')}
+              className="md:col-span-2"
+            >
+              {(p) => (
+                <Textarea
+                  {...p}
+                  rows={3}
+                  maxLength={10000}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              )}
+            </Field>
+            <div className="md:col-span-2">
+              <Button type="submit" loading={busy === 'create'}>
+                <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('privacy.ui.incidents.log')}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </PageSection>
 
       {!list.data ? (
         <Skeleton className="h-40" />

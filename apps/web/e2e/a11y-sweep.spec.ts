@@ -3,7 +3,7 @@ import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { apiCall, axeViolations, PASSWORD, totp } from './helpers';
-import { createStaff, staffSignIn } from './phase10-helpers';
+import { createStaff, elevateStaff, staffContext, staffSignIn } from './phase10-helpers';
 import { companyWithStaff, sql } from './time-helpers';
 
 /**
@@ -57,7 +57,7 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   {
     name: 'home, me, people and help',
     match: (r) =>
-      /^\/app(\/(me|welcome|people|org-chart|tasks|approvals|notifications|security|help|support|ask)(\/|$)|$)/.test(
+      /^\/app(\/(me|welcome|people|org-chart|tasks|approvals|notifications|security|help|support|ask|contact-hr)(\/|$)|$)/.test(
         r,
       ),
     as: 'owner',
@@ -92,19 +92,42 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
 /** Fictional records the dynamic routes open; filled in by the setup below. */
 interface Fixture {
   employeeId: string;
+  /** Records the detail pages open (ADR-0161). */
+  taskId: string;
+  approvalId: string;
+  leaveId: string;
+  timesheetId: string;
+  rtwCheckId: string;
+  assetId: string;
+  payPeriodId: string;
   helpSlug: string;
   roleId: string;
   userId: string;
   ticketId: string;
   runId: string;
   tenantId: string;
+  /** A security incident about the workspace, for the back office's Security module (ADR-0177). */
+  incidentId: string;
   kioskToken: string;
+  documentId: string;
+  payslipId: string;
   owner: { slug: string; email: string; secret: string; employeeNumber: string };
 }
 
 function concrete(route: string, f: Fixture): string {
   const map: Record<string, string> = {
     '/app/people/[id]': `/app/people/${f.employeeId}`,
+    '/app/documents/[id]': `/app/documents/${f.documentId}`,
+    '/app/payslips/[id]': `/app/payslips/${f.payslipId}`,
+    '/app/tasks/[id]': `/app/tasks/${f.taskId}`,
+    // the owner's own request to HR: the same record HR opens as a task
+    '/app/contact-hr/[id]': `/app/contact-hr/${f.taskId}`,
+    '/app/approvals/[id]': `/app/approvals/${f.approvalId}`,
+    '/app/time-off/[id]': `/app/time-off/${f.leaveId}`,
+    '/app/timesheets/[id]': `/app/timesheets/${f.timesheetId}`,
+    '/app/compliance/right-to-work/[id]': `/app/compliance/right-to-work/${f.rtwCheckId}`,
+    '/app/assets/[id]': `/app/assets/${f.assetId}`,
+    '/app/payroll/periods/[id]': `/app/payroll/periods/${f.payPeriodId}`,
     '/app/help/[slug]': `/app/help/${f.helpSlug}`,
     '/app/reports/ready/[id]': '/app/reports/ready/headcount',
     '/app/reports/runs/[id]': `/app/reports/runs/${f.runId}`,
@@ -113,12 +136,36 @@ function concrete(route: string, f: Fixture): string {
     '/app/support/[id]': `/app/support/${f.ticketId}`,
     '/backoffice/tenants/[id]': `/backoffice/tenants/${f.tenantId}`,
     '/backoffice/support/[tenantId]/[ticketId]': `/backoffice/support/${f.tenantId}/${f.ticketId}`,
+    '/backoffice/security/incidents/[id]': `/backoffice/security/incidents/${f.incidentId}`,
   };
   if (!route.includes('[')) return route;
   const path = map[route];
   if (!path)
     throw new Error(`a11y sweep: no fictional record opens the dynamic route ${route}; add it to concrete()`);
   return path;
+}
+
+/** A small, valid one-page PDF with a line of fictional text, so the viewer renders a real page and its text layer. */
+function onePagePdf(text: string): Buffer {
+  const stream = `BT /F1 18 Tf 72 770 Td (${text}) Tj ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets = objects.map((o, i) => {
+    const at = out.length;
+    out += `${i + 1} 0 obj\n${o}\nendobj\n`;
+    return at;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  out += offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
 }
 
 /** A Wednesday about five weeks ahead, away from the Christmas and New Year bank holidays. */
@@ -139,7 +186,7 @@ function thisMonday() {
   return d.toISOString().slice(0, 10);
 }
 
-/** A fictional UK workspace: three staff and an invited manager, pending leave, a published day of shifts, a paired kiosk, a support ticket and a report run. */
+/** A fictional UK workspace: three staff and an invited manager, pending leave, a published day of shifts, a paired kiosk, a shared contract, a payslip, a support ticket and a report run. */
 async function seedWorkspace(page: Page): Promise<Fixture> {
   const co = await companyWithStaff(page, 3);
   // a second sign-in user: a store manager invited from her employee record
@@ -164,7 +211,7 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
   const types = await apiCall<Array<{ id: string; key: string }>>(page.request, 'GET', '/v1/leave/types');
   const annual = types.find((t) => t.key === 'annual') ?? types[0]!;
   const day = futureWorkingDay();
-  await apiCall(page.request, 'POST', '/v1/leave/requests', {
+  const ownLeave = await apiCall<{ id: string }>(page.request, 'POST', '/v1/leave/requests', {
     leaveTypeId: annual.id,
     startDate: day,
     endDate: day,
@@ -216,6 +263,87 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
     source: { kind: 'ready', reportId: 'headcount', params: { asOf: monday } },
     format: 'csv',
   });
+  // documents and pay: a contract shared with Ada (the owner's record) and her payslip as a provider sent it
+  const doc = await page.request.post(`/v1/employees/${co.staff[0]}/documents`, {
+    multipart: {
+      attachmentType: 'contract',
+      visibility: 'employee',
+      file: {
+        name: 'contract.pdf',
+        mimeType: 'application/pdf',
+        buffer: onePagePdf('Fictional statement of terms'),
+      },
+    },
+  });
+  expect(doc.status(), await doc.text()).toBe(201);
+  const statement = {
+    employeeNumber: co.employeeNumber,
+    currency: 'GBP',
+    employer: { name: 'Fictional Shops Ltd', address: ['1 Example Street', 'London'] },
+    employee: { name: 'Ada Fictional', taxCode: 'SAMPLE1', nationalId: 'QQ 12 34 56 C' },
+    period: { start: '2026-09-01', end: '2026-09-30', payDate: '2026-09-30', frequency: 'monthly' },
+    payment: { method: 'bank_transfer', account: '12345678' },
+    payments: [
+      { kind: 'basic', label: 'Basic pay', quantity: '160.00', rateMinor: 1_500, amountMinor: 240_000 },
+    ],
+    deductions: [{ kind: 'income_tax', label: 'Income tax', amountMinor: 30_000 }],
+    employerContributions: [{ kind: 'pension', label: 'Employer pension', amountMinor: 7_200 }],
+    totals: { grossMinor: 240_000, deductionsMinor: 30_000, netMinor: 210_000 },
+    ytd: [{ key: 'gross', label: 'Gross pay to date', amountMinor: 1_440_000 }],
+  };
+  const batch = await page.request.post('/v1/payslips/batches', {
+    multipart: {
+      kind: 'payslip',
+      label: 'September 2026',
+      statements: {
+        name: 'statements.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          JSON.stringify({ provider: { name: 'Fictional Payroll Bureau' }, statements: [statement] }),
+        ),
+      },
+    },
+  });
+  expect(batch.status(), await batch.text()).toBe(201);
+  const imported = (await batch.json()) as { id: string; items: Array<{ id: string }> };
+  await apiCall(page.request, 'POST', `/v1/payslips/batches/${imported.id}/publish`);
+  // records for the detail pages (ADR-0161): a request to HR (a task), Ben's leave approval, last week's
+  // timesheet, a right-to-work check, an asset and a pay period
+  const hrRequest = await apiCall<{ id: string }>(page.request, 'POST', '/v1/hr-requests', {
+    subject: 'Fictional question about the uniform policy',
+    message: 'Fictional details only.',
+  });
+  const approvals = await apiCall<Array<{ id: string; subjectName: string | null }>>(
+    page.request,
+    'GET',
+    '/v1/approvals?view=mine',
+  );
+  const lastWeek = new Date(`${monday}T00:00:00Z`);
+  lastWeek.setUTCDate(lastWeek.getUTCDate() - 7);
+  const timesheet = await apiCall<{ id: string }>(
+    page.request,
+    'POST',
+    `/v1/timesheets/employees/${co.staff[0]}/weeks/${lastWeek.toISOString().slice(0, 10)}/submit`,
+  );
+  const rtw = await apiCall<{ id: string }>(page.request, 'POST', '/v1/compliance/right-to-work/checks', {
+    employeeId: co.staff[1],
+    checkMethod: 'manual_document_check',
+    listType: 'list_a',
+    checkedOn: monday,
+  });
+  const asset = await apiCall<{ id: string }>(page.request, 'POST', '/v1/assets', {
+    assetTag: 'FICT-A11Y-1',
+    name: 'Fictional laptop',
+    type: 'laptop',
+  });
+  const periodEnd = new Date(`${monday}T00:00:00Z`);
+  periodEnd.setUTCDate(periodEnd.getUTCDate() + 27);
+  const payPeriod = await apiCall<{ id: string }>(page.request, 'POST', '/v1/payroll/periods', {
+    name: 'Fictional four weeks',
+    frequency: 'four_weekly',
+    startDate: monday,
+    endDate: periodEnd.toISOString().slice(0, 10),
+  });
   const roles = await apiCall<Array<{ id: string }>>(page.request, 'GET', '/v1/roles');
   const users = (await apiCall<{ data: Array<{ id: string }> }>(page.request, 'GET', '/v1/users')).data;
   const session = await apiCall<{ tenantId: string; userId: string }>(
@@ -225,15 +353,37 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
   );
   await page.goto('/app/help');
   const helpHref = await page.locator('main a[href^="/app/help/"]').first().getAttribute('href');
+  // a security incident about the workspace (a decoy-key detection with its timeline), as the engine records one
+  const [incident] = await sql<{ id: string }>(
+    `WITH i AS (
+       INSERT INTO security.incidents (reference, dedupe_key, rule_id, area, severity, status, first_seen_at, last_seen_at, detection_count, event_count, tenant_ids, ip_key, ip_net)
+       VALUES ('SEC-' || lpad(nextval('security.incident_reference')::text, 5, '0'), 'sweep:' || gen_random_uuid(), 'THR-PRIV-001', 'privilege', 'medium', 'open', now(), now(), 1, 1, ARRAY[$1::uuid], 'sweep-fixture-key', '192.0.2.0/24')
+       RETURNING id),
+     d AS (
+       INSERT INTO security.detections (rule_id, rule_version, severity, group_key, first_seen_at, last_seen_at, event_count, subject_tenant_id, actor_id, incident_id)
+       SELECT 'THR-PRIV-001', 1, 'medium', $1, now(), now(), 1, $1::uuid, $2::uuid, i.id FROM i RETURNING incident_id)
+     INSERT INTO security.incident_events (incident_id, kind, detail) SELECT incident_id, 'opened', '{"ruleId": "THR-PRIV-001"}' FROM d RETURNING incident_id AS id`,
+    [session.tenantId, session.userId],
+  );
   return {
     employeeId: co.staff[1]!,
+    taskId: hrRequest.id,
+    approvalId: approvals.find((a) => a.subjectName === 'Ben Fictional')!.id,
+    leaveId: ownLeave.id,
+    timesheetId: timesheet.id,
+    rtwCheckId: rtw.id,
+    assetId: asset.id,
+    payPeriodId: payPeriod.id,
     helpSlug: helpHref!.split('/').pop()!,
     roleId: roles[0]!.id,
     userId: users.find((u) => u.id !== session.userId)?.id ?? users[0]!.id,
     ticketId: ticket.id,
     runId: run.id,
     tenantId: session.tenantId,
+    incidentId: incident!.id,
     kioskToken: kiosk.token,
+    documentId: ((await doc.json()) as { id: string }).id,
+    payslipId: imported.items[0]!.id,
     owner: { slug: co.slug, email: co.email, secret: co.secret, employeeNumber: co.employeeNumber },
   };
 }
@@ -266,9 +416,13 @@ async function keyboardProblems(page: Page, max = 400): Promise<string[]> {
       el.setAttribute('data-a11y-reached', '');
       el.setAttribute('data-a11y-last', '');
       const name = `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`;
-      const cs = getComputedStyle(el);
-      const indicator =
-        (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none';
+      const ring = (e: Element) => {
+        const cs = getComputedStyle(e);
+        return (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none';
+      };
+      // a grouped-list row (ListItem, ADR-0180) draws its stretched link's focus ring around the whole row
+      const row = el.hasAttribute('data-row-link') ? el.closest('li') : null;
+      const indicator = ring(el) || (!!row && ring(row));
       const r = el.getBoundingClientRect();
       const points = [
         [r.left + r.width / 2, r.top + r.height / 2],
@@ -550,7 +704,7 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
     const context = await browser.newContext({ viewport: DESKTOP });
     const page = await context.newPage();
     const problems: string[] = [];
-    for (const path of ['/signin', '/signup', '/find-workspace', '/backoffice/signin']) {
+    for (const path of ['/signin', '/signup', '/find-workspace', '/forgot-password', '/backoffice/signin']) {
       await page.goto(path);
       await expect(page.locator('h1').first()).toBeVisible();
       for (const p of await authenticationProblems(page)) problems.push(`${path}: ${p}`);
@@ -581,9 +735,14 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
     const page = ownerPage!;
     await page.goto('/app/approvals');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    const row = page.getByRole('row').filter({ hasText: 'Ben Fictional' }).first();
+    // the requests are a grouped list (ADR-0180): each row's box picks it for a bulk decision
+    const row = page
+      .getByTestId('approval-list')
+      .getByRole('listitem')
+      .filter({ hasText: 'Ben Fictional' })
+      .first();
     await expect(row).toBeVisible();
-    await tabTo(page, 'main tbody input[type="checkbox"]');
+    await tabTo(page, 'main [data-testid="approval-list"] input[type="checkbox"]');
     await page.keyboard.press('Space');
     await expect(page.getByRole('button', { name: 'Approve selected' })).toBeEnabled();
     await tabTo(page, 'main button', { text: 'Approve selected', back: true });
@@ -616,10 +775,18 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
       let close = async () => undefined as void;
       if (area.as === 'owner') page = ownerPage!;
       else {
-        const context = await browser.newContext({ viewport: DESKTOP });
+        // staff open the back office on its own host name (their passkeys are bound to it)
+        const context =
+          area.as === 'staff'
+            ? await staffContext(browser, { viewport: DESKTOP })
+            : await browser.newContext({ viewport: DESKTOP });
         page = await context.newPage();
         close = () => context.close();
-        if (area.as === 'staff') await staffSignIn(page, createStaff('super_admin'));
+        if (area.as === 'staff') {
+          await staffSignIn(page, createStaff('super_admin'));
+          // super admins hold no standing access: a second super admin approves a time-boxed elevation
+          await elevateStaff(browser, page, 'super_admin');
+        }
       }
       const report: string[] = [];
       try {

@@ -286,12 +286,18 @@ test.describe('pre-start portal', () => {
     await jp.getByRole('button', { name: 'Mark as done: Upload a profile photo' }).click();
     await expect(jp.getByText('3 of 5 steps complete')).toBeVisible();
 
-    // sign the contract
-    await jp.getByRole('link', { name: 'Sign Contract of employment' }).click();
-    await jp.getByLabel('Type your full name').fill('Nova Joiner');
-    await jp.getByLabel('I have read this document and agree to sign it electronically.').check();
-    await jp.getByRole('button', { name: 'Sign document' }).click();
-    await expect(jp.getByText('Document signed.', { exact: true })).toBeVisible();
+    // sign the contract: the onboarding row opens it in the in-app viewer (ADR-0168)
+    await jp
+      .getByRole('region', { name: 'Documents to sign' })
+      .getByRole('link', { name: 'Contract of employment' })
+      .click();
+    const panel = jp.getByRole('region', { name: 'Review and sign' });
+    await panel.getByRole('button', { name: 'I have read it' }).click();
+    await panel.getByLabel('I have read this document and agree to sign it electronically.').check();
+    await panel.getByRole('button', { name: 'Continue' }).click();
+    await panel.getByLabel('Type your full name').fill('Nova Joiner');
+    await panel.getByRole('button', { name: 'Sign document' }).click();
+    await expect(jp.getByText('You signed the document.')).toBeVisible();
     await jp.goto('/app/welcome');
     await expect(jp.getByText('4 of 5 steps complete')).toBeVisible();
     await expect(jp.getByText(/^Signed on /)).toBeVisible();

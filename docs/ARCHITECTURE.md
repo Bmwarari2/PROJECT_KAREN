@@ -204,6 +204,7 @@ flowchart LR
 - **Support tickets** stay in the tenant tables; staff work a metadata-only queue and every ticket view is audited (ADR-0101). SLA timers and escalation follow ADR-0102.
 - **Status:** each cell serves a public `/v1/status` (ADR-0105); the web `/status` page shows the three regions side by side.
 - **Back office** (`/backoffice`): staff sessions with mandatory MFA; personal data only through customer-granted support access (ADR-0106).
+- **Founder's console** (back-office home, Customers, Performance, Security; ADR-0175 to ADR-0179). Every figure comes from the cell that holds it: business figures from this cell's registry, usage snapshots and contracts; other regions only as directory counts (region, plan, status, sign-up date) with a link to their own back office. Each API process counts requests by route group in memory and adds them to `platform.request_metrics` once a minute; the worker samples queue depth into `platform.queue_metrics` through a counts-only `SECURITY DEFINER` function. Security monitoring keeps pseudonymous signals, detections, incidents and containment in the cell's `security` schema; one worker at a time runs the rule catalogue every minute, and alert emails leave through the cell's own mailer.
 
 ## 10. Ask HR assistant (Phase 11)
 

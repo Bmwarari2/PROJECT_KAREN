@@ -684,11 +684,14 @@ export async function dataExportRoutes(app: FastifyInstance) {
       return (
         await app.tenantTx(
           req,
-          (tx) =>
-            tx.query<DeliveryRow>(
+          async (tx) => {
+            if (!(await tx.maybe('SELECT 1 FROM app.data_exports WHERE id = $1', [id])))
+              throw new ApiError('notFound');
+            return tx.query<DeliveryRow>(
               'SELECT * FROM app.export_deliveries WHERE export_id = $1 ORDER BY created_at DESC LIMIT 100',
               [id],
-            ),
+            );
+          },
           { readOnly: true },
         )
       ).map(deliveryOut);

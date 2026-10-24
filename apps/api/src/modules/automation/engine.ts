@@ -4,6 +4,7 @@ import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/no
 import { evaluate, type Condition } from '../approvals/service';
 import { startWorkflow } from '../workflows/service';
 import { integrationHandlers, isPublicHttpsUrl, signBody } from './integrations';
+import type { OutboundPost } from '../../lib/outbound';
 
 export type Trigger =
   | { type: 'record.created'; entity: 'employee' }
@@ -80,7 +81,7 @@ export async function runRule(
   tx: Tx,
   rule: Rule,
   subject: Subject,
-  opts: { dryRun: boolean; fetch?: typeof fetch; signingKey?: string },
+  opts: { dryRun: boolean; post?: OutboundPost; signingKey?: string },
 ): Promise<{ matched: boolean; actions: PlannedAction[]; status: string }> {
   const matched = rule.conditions.every((c) => evaluate(c, subject.values));
   const planned: PlannedAction[] = [];
@@ -112,7 +113,6 @@ export async function runRule(
               assigneeUserId: u,
               assigneeRole: action.assignee.type === 'role' ? action.assignee.value : null,
               dueOn: action.dueInDays !== undefined ? addDays(subject.date, action.dueInDays) : null,
-              link: '/app/tasks',
               dedupeKey: `auto:${rule.id}:${subject.eventKey}:${u ?? 'role'}`,
             });
         break;
@@ -126,7 +126,13 @@ export async function runRule(
             kind: 'automation',
             titleKey: 'notify.automation',
             params: { title: action.message },
-            link: '/app',
+            // the person the rule fired for, when the recipients can open their profile (themselves,
+            // their manager or HR); other recipients get the home page as before
+            ...(subject.employeeId &&
+            (['employee', 'manager'].includes(action.to.type) ||
+              (action.to.type === 'role' && ['hr_admin', 'owner'].includes(action.to.value ?? '')))
+              ? { target: { type: 'employee' as const, id: subject.employeeId } }
+              : { link: '/app' }),
             dedupeKey: `auto:${rule.id}:${subject.eventKey}`,
           });
         break;
@@ -153,20 +159,21 @@ export async function runRule(
             break;
           }
           const { t: tenantId } = await tx.one<{ t: string }>('SELECT app.current_tenant()::text AS t');
-          // re-checked at call time: rules saved before the check existed may hold any URL
-          const res = isPublicHttpsUrl(action.url)
-            ? await (opts.fetch ?? fetch)(action.url, {
-                method: 'POST',
-                redirect: 'error',
-                headers: {
-                  'content-type': 'application/json',
-                  'x-thapsus-signature': signBody(opts.signingKey, tenantId, body),
-                },
-                body,
-                signal: AbortSignal.timeout(5000),
-              }).catch((e: Error) => ({ ok: false, status: 0, statusText: e.message }))
-            : { ok: false, status: 0 };
+          // Re-checked at call time (rules saved before the check existed may hold any URL), then sent
+          // through postOutbound, which resolves the name and refuses private, loopback and metadata
+          // addresses at connect time, so a public name pointing inside is blocked too (ASVS V1.3.6).
+          const res =
+            isPublicHttpsUrl(action.url) && opts.post
+              ? await opts
+                  .post(action.url, body, {
+                    'content-type': 'application/json',
+                    'user-agent': 'Thapsus-HR-Automation/1.0',
+                    'x-thapsus-signature': signBody(opts.signingKey, tenantId, body),
+                  })
+                  .catch((e: Error) => ({ status: 0, error: e.message.slice(0, 40) }))
+              : { status: 0, error: 'url_not_allowed' };
           planned[planned.length - 1]!.detail.status = res.status;
+          if ('error' in res && res.error) planned[planned.length - 1]!.detail.error = res.error;
         }
         break;
       }

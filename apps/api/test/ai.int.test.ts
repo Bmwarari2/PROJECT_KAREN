@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '@thapsus/core/i18n';
 import { enqueueJob, setFeatureFlag, withTenant, type JobRow } from '@thapsus/db';
-import * as OTPAuth from 'otpauth';
 import {
   closeDb,
   cookieFrom,
@@ -17,7 +16,6 @@ import {
   uniq,
   type TestContext,
 } from './helpers';
-import { createStaff, STAFF_COOKIE } from '../src/modules/backoffice/auth';
 import { assignRole, loadPrincipal } from '../src/modules/authz/principal';
 import { hashPassword } from '../src/modules/auth/tokens';
 import { jobHandlers } from '../src/worker';
@@ -25,6 +23,7 @@ import { Vault } from '../src/modules/vault/service';
 import { renderTextPdf } from '../src/modules/documents/pdf';
 import type { MemoryObjectStore } from '../src/lib/object-store';
 import type { AiCompletionRequest, AiProvider } from '../src/modules/ai/provider';
+import { staffSession } from './staff-helpers';
 
 /** Mocked model: records every request so tests can prove exactly what would leave the API. */
 class CaptureProvider implements AiProvider {
@@ -773,31 +772,8 @@ describe('regions without an in-region model', () => {
         });
         expect(on.statusCode).toBe(422);
         expect(on.json().detail).toBe('aiNotAvailableInRegion');
-        // Thapsus staff cannot entitle the workspace either.
-        const email = `super.${Math.random().toString(36).slice(2, 6)}@thapsus.example.test`;
-        const staff = await createStaff(c.app, email, 'Fictional Staff', 'super_admin');
-        const login = await c.app.inject({
-          method: 'POST',
-          url: '/v1/backoffice/auth/login',
-          payload: { email, password: staff.password },
-          remoteAddress: randomIp(),
-        });
-        const staffCookie = `${STAFF_COOKIE}=${String(login.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
-        const code = new OTPAuth.TOTP({
-          secret: OTPAuth.Secret.fromBase32(staff.totpSecret),
-          digits: 6,
-          period: 30,
-        }).generate({ timestamp: c.clock.now.getTime() });
-        expect(
-          (
-            await c.app.inject({
-              method: 'POST',
-              url: '/v1/backoffice/auth/totp',
-              headers: { cookie: staffCookie },
-              payload: { code },
-            })
-          ).statusCode,
-        ).toBe(204);
+        // Thapsus staff cannot entitle the workspace either (an elevated super admin).
+        const staffCookie = (await staffSession(c, 'super_admin')).cookie;
         const staffOn = await c.app.inject({
           method: 'PUT',
           url: `/v1/backoffice/tenants/${s.tenantId}/features/aiAssistant`,

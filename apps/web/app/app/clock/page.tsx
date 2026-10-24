@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { Coffee, Copy, KeyRound, LogIn, LogOut, MapPin, Monitor, RefreshCw, WifiOff } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import { Badge, Button, Card, EmptyState, Field, Input, Skeleton, useToast, PageSection } from '@thapsus/ui';
 import { nowInstant } from '@thapsus/core/time';
 import { formatDateTime, formatInstantTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -17,7 +17,7 @@ import {
 } from '@/lib/clock-queue';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { PageIntro } from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 
@@ -193,39 +193,42 @@ function ClockCard({ userId }: { userId: string }) {
           </div>
         ) : null}
       </Card>
-      <Card>
-        <CardTitle>{t('clock.recent')}</CardTitle>
-        {!status ? (
-          <Skeleton className="mt-3 h-24" />
-        ) : status.today.length || queue.length ? (
-          <ul className="mt-3 flex flex-col gap-2">
-            {queue.map((p) => (
-              <li key={p.clientEventId} className="flex items-center justify-between gap-2 text-callout">
-                <span>{t(`clock.kind.${p.kind}`)}</span>
-                <span className="flex items-center gap-2 tabular-nums">
-                  <Badge tone="warning">{t('clock.waiting')}</Badge>
-                  {formatInstantTime(p.occurredAt, locale, zone)}
-                </span>
-              </li>
-            ))}
-            {[...status.today].reverse().map((e) => (
-              <li
-                key={e.id}
-                className={`flex items-center justify-between gap-2 text-callout ${e.superseded ? 'line-through text-text-secondary' : ''}`}
-              >
-                <span>{t(`clock.kind.${e.kind}`)}</span>
-                <span className="flex items-center gap-2 tabular-nums">
-                  {e.source !== 'pwa' ? <Badge>{t(`clock.source.${e.source}`)}</Badge> : null}
-                  {e.withinGeofence === false ? <Badge tone="warning">{t('clock.outsideSite')}</Badge> : null}
-                  {formatInstantTime(e.occurredAt, locale, zone)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('clock.none')}</p>
-        )}
-      </Card>
+      <PageSection headingLevel={2} title={t('clock.recent')}>
+        <Card>
+          {!status ? (
+            <Skeleton className="mt-3 h-24" />
+          ) : status.today.length || queue.length ? (
+            <ul className="mt-3 flex flex-col gap-2">
+              {queue.map((p) => (
+                <li key={p.clientEventId} className="flex items-center justify-between gap-2 text-callout">
+                  <span>{t(`clock.kind.${p.kind}`)}</span>
+                  <span className="flex items-center gap-2 tabular-nums">
+                    <Badge tone="warning">{t('clock.waiting')}</Badge>
+                    {formatInstantTime(p.occurredAt, locale, zone)}
+                  </span>
+                </li>
+              ))}
+              {[...status.today].reverse().map((e) => (
+                <li
+                  key={e.id}
+                  className={`flex items-center justify-between gap-2 text-callout ${e.superseded ? 'line-through text-text-secondary' : ''}`}
+                >
+                  <span>{t(`clock.kind.${e.kind}`)}</span>
+                  <span className="flex items-center gap-2 tabular-nums">
+                    {e.source !== 'pwa' ? <Badge>{t(`clock.source.${e.source}`)}</Badge> : null}
+                    {e.withinGeofence === false ? (
+                      <Badge tone="warning">{t('clock.outsideSite')}</Badge>
+                    ) : null}
+                    {formatInstantTime(e.occurredAt, locale, zone)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-callout text-text-secondary">{t('clock.none')}</p>
+          )}
+        </Card>
+      </PageSection>
     </div>
   );
 }
@@ -252,33 +255,33 @@ function PinCard({ employeeId }: { employeeId: string }) {
     }
   }
   return (
-    <Card>
-      <CardTitle>{t('clock.pinTitle')}</CardTitle>
-      <p className="mt-1 text-callout text-text-secondary">{t('clock.pinBody')}</p>
-      <form onSubmit={save} className="mt-3 flex flex-wrap items-end gap-3">
-        <Field id="kiosk-pin" label={t('clock.pinLabel')}>
-          {(p) => (
-            <Input
-              {...p}
-              type="password"
-              inputMode="numeric"
-              autoComplete="new-password"
-              pattern="\d{4,8}"
-              minLength={4}
-              maxLength={8}
-              required
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-              className="w-40"
-            />
-          )}
-        </Field>
-        <Button type="submit" variant="secondary" loading={busy}>
-          <KeyRound aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('clock.pinSave')}
-        </Button>
-      </form>
-    </Card>
+    <PageSection headingLevel={2} title={t('clock.pinTitle')} description={t('clock.pinBody')}>
+      <Card>
+        <form onSubmit={save} className="flex flex-wrap items-end gap-3">
+          <Field id="kiosk-pin" label={t('clock.pinLabel')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="password"
+                inputMode="numeric"
+                autoComplete="new-password"
+                pattern="\d{4,8}"
+                minLength={4}
+                maxLength={8}
+                required
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                className="w-40"
+              />
+            )}
+          </Field>
+          <Button type="submit" variant="secondary" loading={busy}>
+            <KeyRound aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('clock.pinSave')}
+          </Button>
+        </form>
+      </Card>
+    </PageSection>
   );
 }
 
@@ -307,83 +310,84 @@ function KiosksCard() {
     kiosks.reload();
   }
   return (
-    <Card className="lg:col-span-2">
-      <CardTitle>{t('clock.kiosksTitle')}</CardTitle>
-      <form onSubmit={create} className="mt-3 flex flex-wrap items-end gap-3">
-        <Field id="kiosk-name" label={t('clock.kioskName')}>
-          {(p) => (
-            <Input {...p} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
-          )}
-        </Field>
-        <Field id="kiosk-location" label={t('rota.location')}>
-          {(p) => (
-            <select
-              {...p}
-              value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
-            >
-              <option value="">{t('rota.allLocations')}</option>
-              {(locations.data ?? []).map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-        <Button type="submit" variant="secondary">
-          <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('clock.kioskAdd')}
-        </Button>
-      </form>
-      {link ? (
-        <div role="status" className="mt-3 rounded-md bg-surface p-3 text-callout">
-          <p className="font-semibold">{t('clock.kioskLinkOnce')}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <code className="max-w-full break-all text-footnote" data-testid="kiosk-link">
-              {link}
-            </code>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={async () => {
-                await navigator.clipboard?.writeText(link).catch(() => undefined);
-                toast({ title: t('clock.copied') });
-              }}
-            >
-              <Copy aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              {t('clock.copy')}
-            </Button>
+    <PageSection headingLevel={2} title={t('clock.kiosksTitle')} className="lg:col-span-2">
+      <Card>
+        <form onSubmit={create} className="flex flex-wrap items-end gap-3">
+          <Field id="kiosk-name" label={t('clock.kioskName')}>
+            {(p) => (
+              <Input {...p} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+            )}
+          </Field>
+          <Field id="kiosk-location" label={t('rota.location')}>
+            {(p) => (
+              <select
+                {...p}
+                value={locationId}
+                onChange={(e) => setLocationId(e.target.value)}
+                className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+              >
+                <option value="">{t('rota.allLocations')}</option>
+                {(locations.data ?? []).map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Button type="submit" variant="secondary">
+            <Monitor aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('clock.kioskAdd')}
+          </Button>
+        </form>
+        {link ? (
+          <div role="status" className="mt-3 rounded-md bg-surface p-3 text-callout">
+            <p className="font-semibold">{t('clock.kioskLinkOnce')}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <code className="max-w-full break-all text-footnote" data-testid="kiosk-link">
+                {link}
+              </code>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  await navigator.clipboard?.writeText(link).catch(() => undefined);
+                  toast({ title: t('clock.copied') });
+                }}
+              >
+                <Copy aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('clock.copy')}
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : null}
-      <ul className="mt-4 flex flex-col divide-y divide-border">
-        {(kiosks.data ?? []).map((k) => (
-          <li key={k.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-callout">
-            <span className="font-semibold">{k.name}</span>
-            <span className="flex items-center gap-2 text-footnote text-text-secondary">
-              {t('clock.lastUsed')}:{' '}
-              {k.lastUsedAt ? formatDateTime(k.lastUsedAt, locale, zone) : t('clock.never')}
-              {k.revokedAt ? (
-                <Badge>{t('clock.revoked')}</Badge>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={async () => {
-                    await api(`/v1/kiosks/${k.id}/revoke`, { method: 'POST' });
-                    kiosks.reload();
-                  }}
-                >
-                  {t('clock.revoke')}
-                </Button>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Card>
+        ) : null}
+        <ul className="mt-4 flex flex-col divide-y divide-border">
+          {(kiosks.data ?? []).map((k) => (
+            <li key={k.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-callout">
+              <span className="font-semibold">{k.name}</span>
+              <span className="flex items-center gap-2 text-footnote text-text-secondary">
+                {t('clock.lastUsed')}:{' '}
+                {k.lastUsedAt ? formatDateTime(k.lastUsedAt, locale, zone) : t('clock.never')}
+                {k.revokedAt ? (
+                  <Badge>{t('clock.revoked')}</Badge>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      await api(`/v1/kiosks/${k.id}/revoke`, { method: 'POST' });
+                      kiosks.reload();
+                    }}
+                  >
+                    {t('clock.revoke')}
+                  </Button>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </PageSection>
   );
 }
 

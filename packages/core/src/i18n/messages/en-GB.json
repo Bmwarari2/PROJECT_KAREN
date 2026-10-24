@@ -61,7 +61,7 @@
     "conflict": "That change conflicts with an existing record.",
     "offline": "You are offline. We will sync when you reconnect.",
     "invalidCredentials": "That email and password combination did not work.",
-    "mfaEnrollmentRequired": "Administrators must set up two-step verification before continuing.",
+    "mfaEnrollmentRequired": "Set up two-step verification before continuing.",
     "tenantUnavailable": "This workspace is temporarily unavailable.",
     "gone": "This is no longer available.",
     "unprocessable": "We could not process that request.",
@@ -86,7 +86,8 @@
       "findWorkspace": "Find my workspace",
       "createWorkspace": "Create a workspace",
       "needWorkspace": "Enter your workspace name first.",
-      "needWorkspaceAndEmail": "Enter your workspace name and email first."
+      "needWorkspaceAndEmail": "Enter your workspace name and email first.",
+      "forgotPassword": "Forgot your password?"
     },
     "fields": {
       "workspace": "Workspace",
@@ -130,7 +131,43 @@
       "invalid": "This link has expired or has already been used."
     },
     "mfaResetSubject": "Your two-step verification was reset",
-    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away."
+    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away.",
+    "passwordResetSubject": "Reset your Thapsus-HR password",
+    "passwordResetBody": "Someone asked to reset the password for your Thapsus-HR account. Use this link to choose a new one. It works once and expires in 30 minutes:\n\n{link}\n\nThe link does not sign you in. If you use two-step verification, you will still need it when you sign in.\n\nIf you did not ask for this, you can ignore this email. Your password has not changed.",
+    "passwordResetByAdminSubject": "Set a new password for Thapsus-HR",
+    "passwordResetByAdminBody": "An administrator at {company} sent you a link to set a new password for your Thapsus-HR account. They cannot see or choose your password. The link works once and expires in 24 hours:\n\n{link}\n\nThe link does not sign you in, and your two-step verification stays as it is.\n\nIf you did not expect this, contact your administrator.",
+    "passwordChangedSubject": "Your Thapsus-HR password was changed",
+    "passwordChangedBody": "The password for your Thapsus-HR account was just changed, and you have been signed out on every device. Sign in with your new password here:\n\n{link}\n\nIf you did not do this, reset your password straight away and tell your administrator.",
+    "forgot": {
+      "title": "Reset your password",
+      "lead": "Enter your workspace and your work email. If you have an account, we will email you a link to choose a new password.",
+      "submit": "Email me a reset link",
+      "sentTitle": "Check your email",
+      "sent": "If {email} has an account in this workspace, a reset link is on its way. It works once and expires in 30 minutes. If it does not arrive, check your spam folder or ask your administrator to send one.",
+      "ssoRequired": "Your workspace signs in with single sign-on, so there is no password to reset here. Use your organisation's sign-in instead.",
+      "backToSignIn": "Back to sign in",
+      "needWorkspaceAndEmail": "Enter your workspace and email."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "lead": "Your new password replaces the old one and signs you out on every device.",
+      "newPassword": "New password",
+      "hint": "At least 12 characters. Avoid common passwords and your own or your company’s name.",
+      "submit": "Save new password",
+      "doneTitle": "Password changed",
+      "done": "Your password has been changed and you have been signed out everywhere. Sign in with your new password.",
+      "mfaNote": "If you use two-step verification, you will still need it when you sign in.",
+      "signIn": "Sign in",
+      "invalidTitle": "This link no longer works",
+      "invalid": "Reset links work once and expire after 30 minutes (24 hours when an administrator sent them). Ask for a new one.",
+      "requestNew": "Ask for a new link",
+      "problem": {
+        "tooShort": "Use at least 12 characters.",
+        "tooLong": "Use 128 characters or fewer.",
+        "tooCommon": "That password is too common. Choose one that is harder to guess.",
+        "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
+      }
+    }
   },
   "push": {
     "testBody": "Notifications are working on this device."
@@ -282,7 +319,7 @@
     "security": {
       "title": "Security",
       "verifyRequired": "Enter a code from your authenticator app to continue.",
-      "setupRequired": "Administrators must set up two-step verification before continuing.",
+      "setupRequired": "Set up two-step verification to continue. Your workspace requires it.",
       "mfaDone": "Two-step verification is on.",
       "passkeyAdded": "Passkey added.",
       "passkeyFailed": "We could not add the passkey. Please try again.",
@@ -338,7 +375,8 @@
           "tooLong": "Use 128 characters or fewer.",
           "tooCommon": "That password is too common. Choose one that is harder to guess.",
           "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
-        }
+        },
+        "viaLinkBody": "You signed in with an emailed link, so you can choose a new password without your current one for the next few minutes. Every other session is signed out."
       }
     },
     "notifications": {
@@ -456,7 +494,11 @@
       "myProfile": "My profile",
       "notificationSettings": "Notification settings",
       "notificationsUnread_one": "Notifications, {count} unread",
-      "notificationsUnread_other": "Notifications, {count} unread"
+      "notificationsUnread_other": "Notifications, {count} unread",
+      "dock": {
+        "label": "Main sections",
+        "me": "Me"
+      }
     }
   },
   "gallery": {
@@ -544,7 +586,182 @@
       "categoryChip": "Category: {category}",
       "colTitle": "Document",
       "colAdded": "Added"
+    },
+    "countersignCertificate": {
+      "title": "Countersignature certificate",
+      "signer": "Countersigned by",
+      "signedAt": "Countersigned at (UTC)",
+      "ip": "IP address",
+      "userAgent": "Device",
+      "hash": "SHA-256 of the signed copy countersigned",
+      "reference": "Signature reference",
+      "statement": "The countersigner confirmed they had reviewed the document and the signature above and agreed to countersign it electronically for the company. Thapsus-HR recorded the countersigner, time, IP address, device and a SHA-256 fingerprint of the signed copy they countersigned. Any change to it changes its fingerprint.",
+      "notRecorded": "Not recorded",
+      "viaApprovals": "Approved in the approvals list"
+    },
+    "categoryName": {
+      "general": "General",
+      "policy": "Policy",
+      "health_and_safety": "Health and safety",
+      "licence": "Licence",
+      "contract": "Contract",
+      "offer": "Offer",
+      "letter": "Letter",
+      "signed": "Signed copy",
+      "immigration": "Right to work",
+      "qualification": "Qualification",
+      "background_check": "Background check",
+      "payslip": "Payslip",
+      "other": "Other"
     }
+  },
+  "docView": {
+    "back": "All documents",
+    "download": "Download",
+    "downloadNamed": "Download {title}",
+    "addedOn": "Added {date}",
+    "added": "Added",
+    "details": "Details",
+    "type": "Type",
+    "evidenceType": "Evidence",
+    "person": "About",
+    "issuedOn": "Issued",
+    "issuedOnShort": "Issued {date}",
+    "expiresOn": "Expires",
+    "expiresOnShort": "Expires {date}",
+    "expired": "Expired {date}",
+    "expiring": "Expires {date}",
+    "expiredShort": "Expired",
+    "expiringShort": "Expires soon",
+    "visibility": "Who can see it",
+    "file": "File",
+    "note": "HR note",
+    "vault": "Kept in the vault",
+    "documentRegion": "Document",
+    "toolbar": "Page controls",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pageNumber": "Page number",
+    "ofPages": "of {count}",
+    "pageOf": "Page {page} of {count}",
+    "pageRegion": "{title}, page {page} of {count}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitWidth": "Fit to width",
+    "scrollPage": "Page, scroll to see all of it",
+    "imageAlt": "{title}",
+    "notViewable": "This type of file cannot be shown here. Download it to open it.",
+    "notFound": "This document does not exist or you cannot open it",
+    "signedCopy": "This is the signed copy. {name} signed it on {date}.",
+    "justSigned": "You signed the document.",
+    "openOriginal": "Open the original",
+    "error": {
+      "unsupported": "This browser cannot show the document here. Download it to read it.",
+      "password": "This PDF is protected with a password. Download it to open it.",
+      "failed": "The document could not be shown here. Download it to read it."
+    }
+  },
+  "docAttach": {
+    "type": {
+      "right_to_work": "Right-to-work evidence",
+      "driving_licence": "Driving licence",
+      "contract": "Contract",
+      "qualification": "Qualification or certificate",
+      "background_check": "Background check",
+      "other": "Other document"
+    },
+    "attach": "Attach document",
+    "dialogTitle": "Attach a document to {name}",
+    "dialogBody": "The file is checked and stored in your home region. Right-to-work evidence is kept in the vault, and every view is recorded.",
+    "typeLabel": "Type",
+    "evidenceType": "Kind of evidence",
+    "evidence": {
+      "passport": "Passport",
+      "brp_evisa": "Biometric residence permit or eVisa",
+      "share_code_result": "Share code check result",
+      "birth_certificate": "Birth certificate",
+      "other": "Other evidence"
+    },
+    "vaultHint": "Kept in the vault: only people who may see immigration records can open it.",
+    "title": "Title",
+    "titleHint": "Shown in lists. Leave it blank to use the type.",
+    "issuedOn": "Issue date",
+    "expiresOn": "Expiry date",
+    "expiresHint": "HR is reminded before it expires.",
+    "note": "Note",
+    "noteHint": "Only HR sees the note.",
+    "visibility": "Who can see it",
+    "visibilityHr": "HR only",
+    "visibilityEmployee": "HR and {name}",
+    "sharedShort": "Shared",
+    "drop": "Drag a file here, or choose one",
+    "fileLabel": "File",
+    "acceptedImages": "A PDF or a photo (PNG, JPEG or WebP), up to {size}",
+    "acceptedWord": "A PDF, a photo (PNG, JPEG or WebP) or a Word file, up to {size}",
+    "selected": "{name}, {size}",
+    "remove": "Remove the file",
+    "progressLabel": "Upload progress",
+    "uploading": "Uploading: {percent}%",
+    "attached": "Attached: {title}",
+    "save": "Attach",
+    "tooLarge": "This file is larger than {size}.",
+    "noFile": "Choose a file to attach.",
+    "failed": "The file could not be attached.",
+    "listTitle": "Documents",
+    "evidenceColumn": "Evidence",
+    "evidenceCount_one": "{count} document",
+    "evidenceCount_other": "{count} documents",
+    "rtwAttach": "Attach evidence",
+    "rtwAttachFor": "Attach evidence for {name}"
+  },
+  "docSign": {
+    "policyName": "Countersign signed documents",
+    "signedTitle": "{title} (signed)",
+    "taskSignAgain": "Sign again: {title}",
+    "panelTitle": "Review and sign",
+    "stepsLabel": "Steps",
+    "steps": {
+      "review": "Review",
+      "confirm": "Confirm",
+      "sign": "Sign",
+      "decide": "Decide",
+      "done": "Done"
+    },
+    "stepOf": "Step {n} of {count}: {name}",
+    "reviewBody": "Read the whole document first. Use the page controls to move through it.",
+    "pagesSeen_one": "You have looked at {seen} of {count} page.",
+    "pagesSeen_other": "You have looked at {seen} of {count} pages.",
+    "read": "I have read it",
+    "confirmBody": "Your name, the time, your IP address, your device and a fingerprint of the exact document are recorded with your signature.",
+    "continue": "Continue",
+    "back": "Back",
+    "doneCompleted": "Signed. Your signed copy is ready.",
+    "doneAwaiting": "Signed. It now goes to the company for its countersignature. We will let you know when it is complete.",
+    "awaiting": "You signed this on {date}. It is waiting for the company’s countersignature.",
+    "completed": "Signed and complete on {date}.",
+    "returned": "Returned to you: {reason}",
+    "returnedNoReason": "Returned to you to sign again.",
+    "returnedShort": "Returned to you: read the note and sign again",
+    "requested": "Requested {date}",
+    "signAction": "Sign",
+    "signedOn": "Signed {date}",
+    "signedBy": "Signed by {name} on {date}",
+    "toCountersign": "Waiting for your countersignature",
+    "countersignAction": "Countersign",
+    "waitingList": "Waiting for the company’s countersignature",
+    "countersignTitle": "Countersign",
+    "countersignBody": "{name} signed this on {date}. Review the document, then countersign it for the company or return it.",
+    "fingerprint": "Fingerprint of the signed copy: {hash}",
+    "decision": "Your decision",
+    "approve": "Countersign for the company",
+    "return": "Return to {name}",
+    "countersignConsent": "I have reviewed this document and the signature on it, and I countersign it electronically for the company.",
+    "countersignNow": "Countersign document",
+    "reason": "Why you are returning it",
+    "reasonHint": "This note is shown to {name}.",
+    "returnNow": "Return document",
+    "doneCountersigned": "Countersigned. The document is complete.",
+    "doneReturned": "Returned to {name} with your note."
   },
   "notify": {
     "signatureRequested": "You have a document to sign",
@@ -603,7 +820,15 @@
     "yearEndAvailable": "Your year-end document for {label} is ready",
     "assetAssigned": "Please confirm you received {asset}",
     "reportReady": "A scheduled report is ready. Sign in to download it.",
-    "taskOverdue": "Task overdue: {title}"
+    "taskOverdue": "Task overdue: {title}",
+    "documentShared": "HR shared a document with you: {title}",
+    "attachmentExpiring_one": "{title} for {name} expires in {days} day",
+    "attachmentExpiring_other": "{title} for {name} expires in {days} days",
+    "attachmentExpiresToday": "{title} for {name} expires today",
+    "attachmentExpired": "{title} for {name} has expired",
+    "documentCompleted": "{title} is signed and complete",
+    "documentReturned": "{title} was returned to you. Read the note, then sign again",
+    "payslipReady": "Your payslip for {period:month} is ready"
   },
   "people": {
     "title": "People",
@@ -741,7 +966,8 @@
       "automation": "Automation",
       "document": "Document",
       "manual": "Task",
-      "compliance": "Compliance"
+      "compliance": "Compliance",
+      "hr_request": "Request to HR"
     },
     "lead": "Open tasks assigned to you or your roles, earliest due date first.",
     "list": {
@@ -1197,6 +1423,11 @@
       "timeZone": "Time zone",
       "code": "Code",
       "regionCode": "Region code"
+    },
+    "add": {
+      "legal-entities": "Add a legal entity",
+      "departments": "Add a department",
+      "locations": "Add a location"
     }
   },
   "admin": {
@@ -1232,6 +1463,10 @@
       "time": {
         "title": "Time and attendance",
         "body": "Working-time rules, geofencing and clocking."
+      },
+      "platform": {
+        "title": "Integrations and platform",
+        "body": "API access, webhooks, audit streaming, sandboxes, branding and features."
       }
     },
     "section": {
@@ -1294,6 +1529,10 @@
       "users": {
         "title": "Users and access",
         "body": "Who can sign in and the roles they hold."
+      },
+      "securityCentre": {
+        "title": "Security centre",
+        "body": "Suspicious sign-ins, admin changes, two-step verification and security alerts."
       }
     },
     "name": "Name",
@@ -1332,7 +1571,9 @@
     },
     "domains": {
       "hint": "For example, fictional-company.example",
-      "verifyLabel": "Verify {domain}"
+      "verifyLabel": "Verify {domain}",
+      "listTitle": "Your domains",
+      "addTitle": "Add a domain"
     },
     "sso": {
       "lead": "Let people sign in with your identity provider. Test a connection before you require it.",
@@ -1408,14 +1649,16 @@
       "mfaTitle": "Two-step verification",
       "mfaBody": "Two-step verification is always required for administrator roles.",
       "trustIdpMfa": "Trust two-step verification done by the identity provider",
-      "trustIdpMfaHint": "People who sign in with single sign-on are not asked again.",
+      "trustIdpMfaHint": "Count a single sign-on as two-step verification only when your identity provider confirms it used more than one factor. Otherwise people also use their own authenticator here.",
       "range": "Between {min} and {max}.",
       "endAllTitle": "Sign everyone out",
       "endAllBody": "Ends every session in the workspace except yours, for example after a suspected compromise.",
       "endAll": "Sign everyone out",
       "endAllConfirm": "Everyone else will need to sign in again on every device.",
       "endAllDone_one": "{count} session has been signed out.",
-      "endAllDone_other": "{count} sessions have been signed out."
+      "endAllDone_other": "{count} sessions have been signed out.",
+      "requireMfaForEveryone": "Require two-step verification for everyone",
+      "requireMfaForEveryoneHint": "Everyone sets up an authenticator app or a passkey the first time they sign in. When this is off, only administrators must. Turning it off asks you to confirm it is you."
     },
     "scim": {
       "lead": "Connect your directory (for example Microsoft Entra ID or Okta) so accounts are created, updated and deactivated automatically.",
@@ -1479,7 +1722,8 @@
         "employee.change": "Changes to employee records",
         "timesheet": "Timesheets",
         "shift.claim": "Open shift claims",
-        "shift.swap": "Shift swaps"
+        "shift.swap": "Shift swaps",
+        "document.countersign": "Countersignatures on signed documents"
       },
       "priority": "Priority",
       "priorityHint": "Lower numbers are checked first.",
@@ -1522,7 +1766,8 @@
         "violations": "Working-time issues",
         "weekStart": "Week",
         "date": "Shift date",
-        "warnings": "Working-time warnings"
+        "warnings": "Working-time warnings",
+        "documentTitle": "Document"
       },
       "conditionText": "{field} {op} {value}",
       "conditionPresent": "{field} is set",
@@ -1920,6 +2165,85 @@
       "confirm": "Transfer",
       "nothing": "Choose at least one thing to change.",
       "done": "{name} transfers on {date}."
+    },
+    "securityCentre": {
+      "title": "Security centre",
+      "lead": "What Thapsus-HR's security monitoring has noticed in your workspace, recent failed sign-ins and admin changes, and who is told about it.",
+      "alerts": "Security alerts",
+      "alertsHint": "Raised by Thapsus-HR's monitoring about your workspace.",
+      "noAlerts": "No security alerts.",
+      "alertLine": "{severity} · {events}",
+      "events_one": "{count} event",
+      "events_other": "{count} events",
+      "seen": "First {first} · last {last}",
+      "about": "About {name}",
+      "acknowledge": "Acknowledge",
+      "acknowledged": "Acknowledged {at}",
+      "acknowledgedToast": "Alert acknowledged",
+      "signIns": "Sign-ins in the last 7 days",
+      "succeeded": "Successful",
+      "failed": "Failed",
+      "locked": "Locked accounts now",
+      "recentFailures": "Recent failed sign-ins",
+      "noFailures": "No failed sign-ins in 7 days.",
+      "unknownPerson": "Unknown account",
+      "failureLine": "From {network}",
+      "networkUnknown": "Network not recorded",
+      "adminChanges": "Admin changes in the last 30 days",
+      "noChanges": "No admin changes in 30 days.",
+      "changeBy": "By {name}",
+      "changeBySystem": "By Thapsus-HR",
+      "changeTarget": "For {name}",
+      "action": {
+        "role": {
+          "assigned": "Role given",
+          "revoked": "Role removed",
+          "created": "Role created",
+          "updated": "Role changed",
+          "deleted": "Role deleted"
+        },
+        "user": {
+          "invited": "Person invited"
+        },
+        "auth": {
+          "mfa_reset": "Two-step verification reset"
+        },
+        "sso": {
+          "connection_created": "Single sign-on connection added",
+          "connection_updated": "Single sign-on connection changed",
+          "connection_deleted": "Single sign-on connection removed"
+        },
+        "settings": {
+          "security_updated": "Sign-in policy changed"
+        },
+        "api_key": {
+          "created": "API key created",
+          "revoked": "API key revoked"
+        },
+        "oauth_client": {
+          "created": "OAuth client created"
+        },
+        "scim": {
+          "token_created": "SCIM token created"
+        },
+        "support": {
+          "grant_created": "Support access granted"
+        },
+        "security": {
+          "sessions_ended": "Sessions ended by Thapsus-HR security",
+          "api_key_suspended": "API key suspended by Thapsus-HR security",
+          "api_key_restored": "API key restored"
+        }
+      },
+      "mfa": "Two-step verification",
+      "mfaUsers": "Users with it: {withMfa} of {users}",
+      "mfaAdmins": "Admins without it: {count}",
+      "recipients": "Who is told",
+      "recipientsHint": "Security alert emails about your workspace go to these admins. With nobody chosen, they go to the owners.",
+      "recipientsDefault": "Nobody is chosen, so the owners are told.",
+      "chooseRecipients": "Admins who receive security alerts",
+      "saveRecipients": "Save recipients",
+      "recipientsSaved": "Recipients saved"
     }
   },
   "timeOff": {
@@ -2625,7 +2949,8 @@
       "rtwCheck": "Right-to-work check before the first day: {name}",
       "i9Reverify": "Form I-9 reverification: {name}",
       "renew": "Renew {requirement}: {name}",
-      "missing": "Record {requirement}: {name}"
+      "missing": "Record {requirement}: {name}",
+      "renewDocument": "Renew {title}: {name}"
     },
     "coverage": {
       "title": "Statutory leave where you employ people",
@@ -3010,7 +3335,8 @@
       "super_admin": "Super admin",
       "support": "Support",
       "rules_editor": "Rules editor",
-      "billing": "Billing"
+      "billing": "Billing",
+      "security_analyst": "Security analyst"
     },
     "nav": {
       "label": "Back office",
@@ -3022,11 +3348,14 @@
       "rules": "Rule data",
       "lawChanges": "Law changes",
       "audit": "Staff audit trail",
-      "settings": "Contact channels"
+      "settings": "Contact channels",
+      "access": "Access",
+      "performance": "Performance",
+      "security": "Security"
     },
     "signin": {
       "title": "Staff sign-in",
-      "lead": "For Thapsus staff only. Every action is recorded.",
+      "lead": "Thapsus staff only. Sign in with your passkey or security key.",
       "totpLead": "Enter the six-digit code from your authenticator app.",
       "email": "Work email",
       "password": "Password",
@@ -3034,7 +3363,9 @@
       "codeHint": "Six digits. Codes change every 30 seconds.",
       "continue": "Continue",
       "verify": "Verify and sign in",
-      "note": "Multi-factor authentication is required for every staff session."
+      "note": "There are no staff passwords. New staff get a one-time enrolment link from an operator.",
+      "passkey": "Sign in with a passkey or security key",
+      "failed": "That key was not accepted. Try again, or ask an operator for a new enrolment link."
     },
     "overview": {
       "title": "Overview",
@@ -3063,7 +3394,73 @@
       "activeUsers": "Active users",
       "storage": "Storage",
       "contract": "Contract",
-      "mb": "{value} MB"
+      "mb": "{value} MB",
+      "lead": "Every company that has signed up. This region's rows show usage totals and a health signal; other regions show what the global directory holds.",
+      "filters": "Filter companies",
+      "filterRegion": "Region",
+      "filterPlan": "Plan",
+      "filterStatus": "Status",
+      "filterTrial": "Trial",
+      "filterHealth": "Health",
+      "sortBy": "Sort by",
+      "any": "Any",
+      "allRegionsOption": "All regions",
+      "thisRegionOption": "{region} (this back office)",
+      "planNone": "No plan yet",
+      "planTrial": "Free trial",
+      "statusAll": "Open workspaces",
+      "statusCancelled": "Cancelled",
+      "trialActive": "On a trial",
+      "trialEnding": "Ending within 14 days",
+      "trialEnded": "Trial ended",
+      "sort": {
+        "slug": "Name",
+        "created": "Newest first",
+        "activity": "Recently active",
+        "health": "Needs attention first"
+      },
+      "count_one": "{count} company",
+      "count_other": "{count} companies",
+      "limitNote": "Showing the first 500. Narrow the search to find others.",
+      "none": "No company matches these filters.",
+      "created": "Joined {date}",
+      "employees_one": "{count} employee",
+      "employees_other": "{count} employees",
+      "activeThisWeek_one": "{count} active this week",
+      "activeThisWeek_other": "{count} active this week",
+      "lastActive": "Last active {date}",
+      "neverActive": "No sign-ins yet",
+      "noSnapshot": "No usage snapshot yet",
+      "elsewhere": "Opens the {region} back office",
+      "health": {
+        "label": "Health: {level}",
+        "level": {
+          "good": "Healthy",
+          "watch": "Watch",
+          "risk": "At risk",
+          "unknown": "No data yet"
+        },
+        "reason": {
+          "closing": "Workspace closing",
+          "suspended": "Workspace suspended",
+          "cancelled": "Subscription cancelled",
+          "paymentOverdue": "Payment overdue",
+          "inactive": "No sign-ins for 30 days",
+          "trialEnded": "Trial ended without a plan",
+          "awaitingPayment": "Awaiting payment details",
+          "trialEndingSoon": "Trial ends within 14 days",
+          "quiet": "No sign-ins for 14 days",
+          "supportOverdue": "Overdue support tickets",
+          "noSnapshot": "No usage snapshot yet"
+        }
+      },
+      "regionStatus": {
+        "active": "Active",
+        "moving": "Moving database",
+        "suspended": "Suspended",
+        "closing": "Closing",
+        "deleted": "Deleted"
+      }
     },
     "tenant": {
       "lead": "{slug} · {region} · since {created}",
@@ -3292,6 +3689,568 @@
       "addChannel": "Add channel",
       "save": "Save channels",
       "saved": "Contact channels saved"
+    },
+    "enrol": {
+      "title": "Register your security key",
+      "lead": "This one-time link registers the passkey or security key you will sign in with. It expires 2 hours after it was issued.",
+      "keyName": "Name for this key (optional)",
+      "submit": "Register key",
+      "invalid": "This enrolment link has expired or was already used. Ask an operator for a new one.",
+      "missing": "Open the enrolment link exactly as you received it."
+    },
+    "elevation": {
+      "title": "Access",
+      "lead": "Nobody holds standing access to super-admin actions, rule publishing or a customer's support grant. Ask for time-boxed access with a reason; another staff member must approve it.",
+      "banner": "You have no active super-admin access. Ask for it on the Access page; another super admin must approve it.",
+      "openAccess": "Go to Access",
+      "requestTitle": "Ask for access",
+      "scope": "What for",
+      "scopes": {
+        "super_admin": "Super-admin actions",
+        "rules_publish": "Publishing rules and law changes",
+        "support_grant": "Using a customer's support grant"
+      },
+      "reason": "Reason",
+      "reasonHint": "At least 10 characters, for example the ticket or incident it is for.",
+      "minutes": "For how long",
+      "tenant": "Workspace ID (optional)",
+      "tenantHint": "Limit the access to one customer workspace.",
+      "submit": "Ask for approval",
+      "requested": "Request sent. Another staff member must approve it.",
+      "toApproveTitle": "Waiting for your approval",
+      "noneToApprove": "Nothing is waiting for your approval.",
+      "mineTitle": "Your access",
+      "noneMine": "You have not asked for access yet.",
+      "approve": "Approve",
+      "approveLabel": "Approve {scope} for {email}",
+      "deny": "Deny",
+      "denyLabel": "Deny {scope} for {email}",
+      "revoke": "End now",
+      "approved": "Approved. The access starts now.",
+      "denied": "Request denied.",
+      "revoked": "Access ended.",
+      "requestedBy": "{email} · {when}",
+      "until": "Until {when}",
+      "status": {
+        "pending": "Waiting for approval",
+        "active": "Active",
+        "expired": "Expired",
+        "denied": "Denied",
+        "revoked": "Ended"
+      },
+      "problem": {
+        "ownRequest": "You cannot approve your own request.",
+        "scopeNotForYourRole": "Your role cannot ask for or approve this kind of access.",
+        "elevationRequired": "This needs time-boxed access approved by another staff member. Ask for it on the Access page."
+      },
+      "duration_one": "{count} minute",
+      "duration_other": "{count} minutes",
+      "hours_one": "{count} hour",
+      "hours_other": "{count} hours"
+    },
+    "stepUp": {
+      "failed": "Your key was not accepted, so nothing was changed."
+    },
+    "metrics": {
+      "title": "Overview",
+      "lead": "How Thapsus-HR is doing: companies, trials, revenue, usage and support. Totals only — no customer or employee details.",
+      "regionsLabel": "Region",
+      "allRegions": "All regions",
+      "regionShort": {
+        "uk": "UK",
+        "eu": "EU",
+        "us": "US"
+      },
+      "thisCell": "{region} · this back office",
+      "sections": {
+        "companies": "Companies",
+        "revenue": "Revenue",
+        "usage": "Usage",
+        "service": "Support and incidents"
+      },
+      "companies": "Companies",
+      "companiesHint_one": "{count} new in the last 30 days",
+      "companiesHint_other": "{count} new in the last 30 days",
+      "new7d": "New this week",
+      "new7dHint": "Signed up in the last 7 days",
+      "new30d": "New in 30 days",
+      "trialsEnding": "Trials ending soon",
+      "trialsEndingHint_one": "In the next {count} day · {active} on a trial",
+      "trialsEndingHint_other": "In the next {count} days · {active} on a trial",
+      "conversion": "Trial to paid",
+      "conversionHint": "Ended trials: {ended} · became paying: {converted}",
+      "conversionNone": "No trial has ended yet",
+      "cancelled": "Cancelled",
+      "cancelledHint_one": "{count} in the last 30 days",
+      "cancelledHint_other": "{count} in the last 30 days",
+      "signupsChart": "Sign-ups by week",
+      "signupsChartHint": "The last 12 weeks; each week starts on Monday.",
+      "signupsChartLabel": "Sign-ups per week from {from} to {to}",
+      "signupsRegionsChart": "Sign-ups by week and region",
+      "signupsSeries": "Sign-ups",
+      "week": "Week starting",
+      "showTable": "Show as a table",
+      "byPlan": "Companies by plan",
+      "byPlanHint": "From the latest usage snapshot.",
+      "byBillingStatus": "Billing status",
+      "byRegion": "Companies by region",
+      "byStatus": "Workspace status",
+      "noData": "No companies yet.",
+      "plan": {
+        "trial": "Free trial",
+        "none": "No plan yet"
+      },
+      "billingStatusNone": "Not billed yet",
+      "tenantStatus": {
+        "active": "Active",
+        "moving": "Moving database",
+        "suspended": "Suspended",
+        "closing": "Closing",
+        "deleted": "Deleted"
+      },
+      "mrrHint": "{arr} a year",
+      "noRevenue": "No paying customers yet.",
+      "revenueHint": "Live paid subscriptions and enterprise contracts, priced from the billing configuration. Each currency is shown on its own.",
+      "activeUsers7d": "Active users this week",
+      "activeUsers7dHint": "Signed in during the last 7 days",
+      "activeUsers30d": "Active users this month",
+      "activeUsers30dHint_one": "Of {count} user account",
+      "activeUsers30dHint_other": "Of {count} user accounts",
+      "employees": "Employees under management",
+      "employeesHint": "Active employee records",
+      "mfaAdoption": "Two-step verification",
+      "mfaAdoptionHint": "Users with it: {withMfa} of {users}",
+      "openTickets": "Open support tickets",
+      "openTicketsHint": "{atRisk} at risk · {breached} overdue",
+      "incidents": "Open incidents",
+      "incidentsHint": "On this region's status page",
+      "renewals": "Contract renewals due",
+      "renewalsHint_one": "Of {count} active contract",
+      "renewalsHint_other": "Of {count} active contracts",
+      "snapshot": "Usage and billing figures come from the daily snapshot, last updated {at}.",
+      "snapshotMissing_one": "{count} company has no snapshot yet.",
+      "snapshotMissing_other": "{count} companies have no snapshot yet.",
+      "elsewhere": "Revenue, usage and support figures for {region} stay in that region. Open its back office to see them.",
+      "openRegion": "Open the {region} back office",
+      "globalNote": "Counts from the global directory: region, plan, status and sign-up date only.",
+      "privacy": "Customer personal data is only visible through support access that the customer grants, and every access is logged in their audit log and in the staff trail.",
+      "other": "Other",
+      "mrrIn": "Monthly recurring revenue ({currency})",
+      "notForRole": "Business figures are for support and billing staff. The menu opens the areas your role works in."
+    },
+    "performance": {
+      "title": "Performance",
+      "lead": "How this region's service is running: requests, server errors and response times by area of the product, background queues and the database. Counts only; times in UTC.",
+      "windowLabel": "Time range",
+      "window": {
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days"
+      },
+      "requests": "Requests",
+      "requestsHint": "Answered by the API in this region",
+      "errors": "Server errors",
+      "errorsHint": "{rate} of requests",
+      "errorsNone": "No requests yet",
+      "p95": "Response time (95th percentile)",
+      "p95Hint": "Half of requests within {p50}",
+      "oldestJob": "Oldest waiting job",
+      "oldestJobHint_one": "{count} job due now",
+      "oldestJobHint_other": "{count} jobs due now",
+      "noQueueSample": "No queue sample yet",
+      "databaseSize": "Database size",
+      "databaseSizeHint_one": "Across {count} database",
+      "databaseSizeHint_other": "Across {count} databases",
+      "worker": "Background worker",
+      "workerBeat": "Last seen {at}",
+      "workerNone": "Not seen yet",
+      "requestsChart": "Requests",
+      "requestsChartLabel": "Requests per {unit} from {from} to {to}",
+      "errorsChart": "Server errors",
+      "errorsChartLabel": "Server errors per {unit} from {from} to {to}",
+      "latencyChart": "Response time, 95th percentile",
+      "latencyChartLabel": "95th percentile response time in milliseconds per {unit} from {from} to {to}",
+      "queueChart": "Jobs due",
+      "queueChartLabel": "Most jobs due at once per {unit} from {from} to {to}",
+      "unit": {
+        "hour": "hour",
+        "day": "day"
+      },
+      "slot": {
+        "hour": "Hour starting",
+        "day": "Day"
+      },
+      "showTable": "Show as a table",
+      "noTraffic": "No requests in this time range yet.",
+      "series": {
+        "requests": "Requests",
+        "errors": "Server errors",
+        "p95": "Milliseconds",
+        "jobs": "Jobs due"
+      },
+      "routes": "By area of the product",
+      "routesHint": "Grouped by the first part of the API path. No identifiers or addresses are recorded.",
+      "routeRequests_one": "{count} request",
+      "routeRequests_other": "{count} requests",
+      "routeErrors_one": "{count} server error",
+      "routeErrors_other": "{count} server errors",
+      "routeClientErrors_one": "{count} refused",
+      "routeClientErrors_other": "{count} refused",
+      "routeLatency": "Typical {p50} · slowest 5% above {p95}",
+      "noLatency": "No timings",
+      "queues": "Background queues",
+      "queuesHint": "Sampled by the worker once a minute for every database of this region.",
+      "database": "Database: {key}",
+      "queueLine": "Events waiting: {outbox} · jobs queued: {queued}, due: {due}, running: {running}",
+      "failedLine": "Failed jobs: {hour} in the last hour, {day} in 24 hours",
+      "oldestLine": "Oldest due job: {age}",
+      "noneDue": "Nothing due",
+      "incidents": "Incidents and maintenance",
+      "incidentsHint": "Posted on this region's status page.",
+      "noIncidents": "No incidents in this time range.",
+      "incidentLine": "{status} · started {at}",
+      "resolved": "Resolved {at}",
+      "manage": "Status page",
+      "impact": {
+        "minor": "Minor",
+        "major": "Major",
+        "critical": "Critical",
+        "maintenance": "Maintenance"
+      }
+    },
+    "security": {
+      "rules": {
+        "THR-CRED-001": {
+          "name": "Password spraying from one address",
+          "summary": "Many refused sign-ins from one network address in a few minutes."
+        },
+        "THR-CRED-002": {
+          "name": "Credential stuffing across many accounts",
+          "summary": "Failed sign-ins for many different accounts from one address."
+        },
+        "THR-CRED-003": {
+          "name": "Sign-in failure spike in a workspace",
+          "summary": "Most of a workspace's recent sign-ins are failing."
+        },
+        "THR-CRED-004": {
+          "name": "Sign-in after many failures",
+          "summary": "A person signed in after several failed attempts: a guess may have worked."
+        },
+        "THR-ATO-001": {
+          "name": "Second factor reset",
+          "summary": "An admin reset someone's two-step verification."
+        },
+        "THR-ATO-002": {
+          "name": "Session used from another network",
+          "summary": "A signed-in session was used from a second network."
+        },
+        "THR-ATO-003": {
+          "name": "New sign-in factor after a password reset",
+          "summary": "A new passkey or authenticator was added soon after a password reset."
+        },
+        "THR-ATO-004": {
+          "name": "Single sign-on identity mismatch",
+          "summary": "The identity provider sent a different identity for a person already linked to one."
+        },
+        "THR-PRIV-001": {
+          "name": "Admin role granted",
+          "summary": "Someone was given a role with admin permissions."
+        },
+        "THR-PRIV-002": {
+          "name": "Owner role granted",
+          "summary": "Someone was made an owner of a workspace."
+        },
+        "THR-PRIV-003": {
+          "name": "Machine access or sign-in settings changed",
+          "summary": "An API key, OAuth client or SCIM token was created, or single sign-on or the sign-in policy changed."
+        },
+        "THR-EXFIL-001": {
+          "name": "Burst of exports and downloads",
+          "summary": "One person exported or downloaded far more than usual in an hour."
+        },
+        "THR-EXFIL-002": {
+          "name": "Bulk reads of special-category data",
+          "summary": "One person opened many health, immigration or other special-category records in minutes."
+        },
+        "THR-PROBE-001": {
+          "name": "Permission probing",
+          "summary": "Many refused requests from one address: someone trying records they may not see."
+        },
+        "THR-PROBE-002": {
+          "name": "Scanning for pages and records",
+          "summary": "Many not-found answers for one address: a scanner or someone guessing ids."
+        },
+        "THR-PROBE-003": {
+          "name": "Malformed request burst",
+          "summary": "Many rejected requests from one address: an automated fuzzer or a broken integration."
+        },
+        "THR-STAFF-001": {
+          "name": "Staff sign-in failures",
+          "summary": "Repeated failed sign-in or verification steps for one Thapsus staff account."
+        },
+        "THR-STAFF-002": {
+          "name": "Staff opening many workspaces",
+          "summary": "One Thapsus staff member opened many different customer workspaces in an hour."
+        },
+        "THR-DECEPT-001": {
+          "name": "Decoy key or object used",
+          "summary": "The decoy API key from the documentation, or a decoy file, was used."
+        },
+        "THR-DECEPT-002": {
+          "name": "Honey endpoint requested",
+          "summary": "A trap address such as /.env or /wp-login.php was requested."
+        },
+        "THR-AI-001": {
+          "name": "Ask HR question burst",
+          "summary": "One person asked Ask HR an unusual number of questions in an hour."
+        },
+        "THR-CLOUD-001": {
+          "name": "GuardDuty high or critical finding",
+          "summary": "Planned: a high or critical threat finding from the cloud provider."
+        },
+        "THR-CLOUD-002": {
+          "name": "Security controls or logging switched off",
+          "summary": "Planned: a critical posture control failed, or an audit trail or detector stopped."
+        },
+        "THR-CLOUD-003": {
+          "name": "Cloud root account sign-in",
+          "summary": "Planned: the cloud account root user signed in."
+        },
+        "THR-CLOUD-004": {
+          "name": "Cloud access or key policy changed",
+          "summary": "Planned: an access or encryption key policy changed outside a deployment."
+        },
+        "THR-CLOUD-005": {
+          "name": "Network opened to the internet",
+          "summary": "Planned: a firewall rule opened a service to the whole internet."
+        },
+        "THR-ATO-005": {
+          "name": "Unusual sign-in location",
+          "summary": "Planned: a sign-in from a new country or network, or travel that is not possible."
+        },
+        "THR-STAFF-003": {
+          "name": "Break-glass account used",
+          "summary": "Planned: a sealed emergency staff account was used."
+        },
+        "THR-AI-002": {
+          "name": "Ask HR injection canary echoed",
+          "summary": "Planned: Ask HR repeated a hidden canary planted in its documents."
+        },
+        "title": "Detection rules",
+        "lead": "The catalogue in force (version {version}): versioned in the repository with a test fixture and tuning notes. Rules can be turned off in this region; their logic changes only through a new version.",
+        "test": "Test every rule",
+        "tested": "Rules tested: {passed} of {total} passed",
+        "planned": "Planned",
+        "active": "Active",
+        "off": "Off in this region",
+        "on": "On",
+        "turnOff": "Turn off",
+        "turnOn": "Turn on",
+        "toggled": "Rule updated",
+        "line": "{severity} · {mitre}",
+        "logic": "Window {window} min · threshold {threshold} · dedupe {dedupe} min",
+        "needs": "Needs: {needs}",
+        "customer": "Customers see it",
+        "containment": "Automatic: {kinds}",
+        "lastTest": "Fixture test: {result} {at}",
+        "passed": "passed",
+        "failed": "failed",
+        "notTested": "Fixture not tested in this region yet",
+        "detections30d_one": "{count} detection in 30 days",
+        "detections30d_other": "{count} detections in 30 days",
+        "tuning": "Tuning notes (analysts' record, in English)"
+      },
+      "title": "Security",
+      "lead": "Attacks and misuse detected in this region: sign-in attacks, account takeover, privilege changes, data exfiltration, probing, staff activity, decoys and Ask HR abuse. Workspaces and people appear by id; addresses as a network range.",
+      "sections": "Security sections",
+      "tab": {
+        "overview": "Overview",
+        "incidents": "Incidents",
+        "rules": "Rules",
+        "honeytokens": "Decoys"
+      },
+      "severity": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "status": {
+        "open": "Open",
+        "acknowledged": "Acknowledged",
+        "contained": "Contained",
+        "resolved": "Resolved",
+        "false_positive": "False positive"
+      },
+      "area": {
+        "credential": "Credential attacks",
+        "takeover": "Account takeover",
+        "privilege": "Privilege changes",
+        "exfiltration": "Exfiltration",
+        "probing": "Probing",
+        "staff": "Thapsus staff",
+        "deception": "Deception",
+        "ai": "Ask HR",
+        "cloud": "Cloud"
+      },
+      "containment": {
+        "block_ip": "Block the address",
+        "end_sessions": "End the person's sessions",
+        "suspend_api_key": "Suspend the API key",
+        "freeze_staff": "Freeze the staff account"
+      },
+      "containmentDone": {
+        "block_ip": "Address blocked",
+        "end_sessions": "Sessions ended",
+        "suspend_api_key": "API key suspended",
+        "freeze_staff": "Staff account frozen"
+      },
+      "overview": {
+        "detections": "Detections in 24 hours",
+        "detectionsHint": "{critical} critical · {high} high",
+        "open": "Open incidents",
+        "openHint": "{critical} critical · {high} high",
+        "mtta": "Time to acknowledge",
+        "mttr": "Time to resolve",
+        "mttHint": "Average over the last 30 days",
+        "minutes": "{value} min",
+        "none": "—",
+        "authTitle": "Sign-in health in {region}",
+        "authHint": "Last 24 hours, every workspace in this region.",
+        "signIns": "Successful sign-ins",
+        "failures": "Failed sign-ins",
+        "failureRate": "{rate} of attempts",
+        "lockouts": "Lockouts",
+        "mfa": "Two-step verification",
+        "mfaHint": "Users with it: {withMfa} of {users}",
+        "bySeverity": "Detections by severity",
+        "topIps": "Top offending addresses",
+        "topIpsHint": "Refused, rejected or decoy requests in 24 hours. Addresses are shown as their network range and stored as keyed hashes.",
+        "topIpEvents_one": "{count} event",
+        "topIpEvents_other": "{count} events",
+        "blocked": "Blocked",
+        "unknownNetwork": "Network not recorded",
+        "lastSeen": "Last {at}",
+        "noTopIps": "No offending addresses in 24 hours.",
+        "elevations": "Staff elevation log",
+        "elevationsHint": "Just-in-time elevations asked for, approved, denied and revoked in the last 30 days.",
+        "noElevations": "No elevations in 30 days.",
+        "elevation": {
+          "staff": {
+            "elevation_requested": "Asked for elevation",
+            "elevation_approved": "Elevation approved",
+            "elevation_denied": "Elevation denied",
+            "elevation_revoked": "Elevation revoked"
+          }
+        },
+        "elevationScope": "Scope: {scope}",
+        "pipeline": "Detection pipeline",
+        "pipelineRan": "Last run {at}",
+        "pipelineNever": "Not run yet",
+        "pipelineStale": "No run for over 10 minutes: the dead-man's switch has alerted",
+        "pipelineWaiting_one": "{count} event waiting",
+        "pipelineWaiting_other": "{count} events waiting",
+        "recipients_one": "Alerts go to {count} staff address",
+        "recipients_other": "Alerts go to {count} staff addresses",
+        "noRecipients": "No staff alert recipients are configured for this region (SECURITY_ALERT_EMAILS)",
+        "runNow": "Run detections now",
+        "ran": "Detections run",
+        "otherRegions": "Other regions keep their security data in their own back office."
+      },
+      "incidents": {
+        "title": "Incidents",
+        "filterLabel": "Which incidents",
+        "open": "Open",
+        "all": "All",
+        "none": "No incidents.",
+        "noneOpen": "No open incidents.",
+        "line": "{area} · {status}",
+        "detections_one": "{count} detection",
+        "detections_other": "{count} detections",
+        "events_one": "{count} event",
+        "events_other": "{count} events",
+        "workspaces_one": "{count} workspace",
+        "workspaces_other": "{count} workspaces",
+        "lastSeen": "Last seen {at}",
+        "assigned": "Assigned to {name}",
+        "unassigned": "Unassigned"
+      },
+      "incident": {
+        "back": "Incidents",
+        "lead": "{severity} · {status} · first seen {first}, last seen {last}",
+        "manage": "Status and owner",
+        "statusLabel": "Status",
+        "assignee": "Assigned to",
+        "nobody": "Nobody",
+        "save": "Save",
+        "saved": "Incident updated",
+        "detections": "Detections",
+        "detectionLine": "{events} · first {first}, last {last}",
+        "workspace": "Workspace {id}",
+        "person": "Person {id}",
+        "apiKey": "API key {id}",
+        "staffMember": "Staff member {id}",
+        "network": "Network {net}",
+        "affected": "Affected workspaces",
+        "noAffected": "No workspace is affected.",
+        "actions": "Containment",
+        "actionsHint": "Every action is recorded on the timeline, in the staff trail and, when it touches a workspace, in that workspace's audit log. Nothing is deleted.",
+        "noActions": "No containment applies to this incident.",
+        "apply": "Apply",
+        "applied": "Done",
+        "skipped": "Nothing to do: {reason}",
+        "skipReason": {
+          "alreadyBlocked": "the address is already blocked",
+          "noAddress": "no address is known",
+          "noTarget": "nothing to act on",
+          "alreadyFrozen": "the account is already frozen",
+          "lastSuperAdmin": "it is the last active super admin",
+          "internalAddress": "it is one of this region's own internal addresses"
+        },
+        "automated": "Automatic",
+        "manual": "By staff",
+        "expires": "Until {at}",
+        "reversed": "Reversed {at}",
+        "awaitingSecond": "Unfreeze requested: a second staff member must approve",
+        "reverse": "Reverse",
+        "approveReverse": "Approve unfreeze",
+        "reversedToast": "Reversed",
+        "awaitingToast": "Requested: a second staff member must approve",
+        "timeline": "Timeline",
+        "event": {
+          "opened": "Incident opened",
+          "detection": "Detection: {rule}",
+          "escalated": "Escalated: {rule}",
+          "containment": "Containment: {kind}",
+          "reversal": "Reversal: {kind}",
+          "status": "Status changed to {to}",
+          "assignment": "Assigned",
+          "note": "Note",
+          "alert": "Alert sent"
+        },
+        "by": "by {name}",
+        "system": "automatic",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteHint": "Refer to people and workspaces by id. No names, emails or addresses.",
+        "noteSaved": "Note added",
+        "appliedList": "Applied"
+      },
+      "honeytokens": {
+        "title": "Decoys (honeytokens)",
+        "lead": "Decoys that nobody has a reason to touch: a fake API key in the documentation, trap addresses and decoy file names. Only their fingerprints are stored; any touch is a detection.",
+        "kind": {
+          "api_key": "Decoy API key",
+          "endpoint": "Honey endpoint",
+          "object_key": "Decoy object"
+        },
+        "planted": "Planted in {where} · {date}",
+        "touches_one": "{count} touch in 30 days",
+        "touches_other": "{count} touches in 30 days",
+        "lastTouched": "Last touched {at}",
+        "never": "Never touched",
+        "retired": "Retired",
+        "noFakeEmployees": "No fake employees are planted in customer workspaces: decoy records would appear in their reports, exports and headcount."
+      }
     }
   },
   "privacy": {
@@ -4069,6 +5028,70 @@
       "discarded": "Discarded"
     }
   },
+  "payslipView": {
+    "back": "All payslips",
+    "titleFor": "Payslip: {name}",
+    "payslip": "Payslip",
+    "pdfTitle": "Payslip, {employer}, {date}",
+    "summary": "Summary",
+    "netPay": "Net pay",
+    "grossPay": "Gross pay",
+    "totalDeductions": "Total deductions",
+    "payDate": "Pay date",
+    "period": "Pay period",
+    "periodNumber": "Period",
+    "frequency": "Pay frequency",
+    "frequencies": {
+      "weekly": "Weekly",
+      "fortnightly": "Fortnightly",
+      "four_weekly": "Four-weekly",
+      "semi_monthly": "Twice a month",
+      "monthly": "Monthly",
+      "other": "Other"
+    },
+    "paymentMethod": "Paid by",
+    "methods": {
+      "bank_transfer": "Bank transfer",
+      "cheque": "Cheque",
+      "cash": "Cash",
+      "other": "Other"
+    },
+    "taxCode": "Tax code",
+    "nationalId": "National ID number (masked)",
+    "employer": "Employer",
+    "employerReference": "Employer reference",
+    "employee": "Employee",
+    "employeeNumber": "Employee number",
+    "jobTitle": "Job title",
+    "department": "Department",
+    "parties": "Employer and employee",
+    "payments": "Payments",
+    "deductions": "Deductions",
+    "employerContributions": "Paid by your employer",
+    "ytd": "Year to date",
+    "ytdFor": "Year to date ({year})",
+    "notes": "From the payroll provider",
+    "issuedBy": "Issued by {provider}",
+    "notCalculated": "Every figure comes from the payroll provider. Thapsus-HR does not calculate pay, tax or deductions.",
+    "sampleMarker": "Sample data",
+    "sampleBanner": "Sample data: illustrative figures from a fictional payroll provider for testing. They are not real pay and not correct tax.",
+    "downloadPdf": "Download PDF",
+    "downloadProvider": "Download the provider’s PDF",
+    "print": "Print",
+    "providerPdf": "The payroll provider’s PDF",
+    "showProviderPdf": "Show the provider’s PDF",
+    "notFound": "This payslip does not exist or you cannot open it",
+    "paidOn": "Paid {date}",
+    "year": "Year",
+    "ytdTitle": "Year to date",
+    "ytdAsOf": "As on your payslip of {date} (tax year {year}), from {provider}.",
+    "yearEnd": "Year-end documents",
+    "statementsFile": "Statements from the payroll provider (optional)",
+    "statementsHint": "A JSON file in the statement format (docs/integrations.md). Each statement is matched by employee number; a PDF for the same person is attached to it.",
+    "quantityAtRate": "{quantity} at {rate}",
+    "quantityOnly": "Quantity: {quantity}",
+    "publishedOn": "Published {date}"
+  },
   "integrations": {
     "title": "Integrations",
     "intro": "Create, license and block accounts in Microsoft 365 or Google Workspace when people join and leave. Your administrator grants consent, you choose the licences and groups, and every step can be previewed first.",
@@ -4776,7 +5799,8 @@
       "truncated": "Only the first rows are shown here. Download the report to get every row.",
       "notRun": "Run the report to see the results",
       "notRunBody": "Choose the options above, then run the report. You can also download it or save it to run again later.",
-      "runDetails": "Export details"
+      "runDetails": "Export details",
+      "moreRows": "Show more rows"
     }
   },
   "ess": {
@@ -4878,11 +5902,15 @@
         "report": "Reports"
       }
     },
-    "intro": "Your details, time off, shifts, documents and pay, in one place."
+    "intro": "Your details, time off, shifts, documents and pay, in one place.",
+    "section": {
+      "work": "You and your time",
+      "inbox": "Documents, tasks and pay"
+    }
   },
   "onboarding": {
     "inviteSubject": "Your sign-in for {company} on Thapsus-HR",
-    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 7 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
+    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 3 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
     "title": "Onboarding",
     "heading": "Welcome to {company}, {name}",
     "startsOn": "You start on {date}.",
@@ -5006,7 +6034,8 @@
       "integrations": "IT integrations",
       "webhooks": "Webhooks",
       "billing": "Billing",
-      "account": "Workspace account"
+      "account": "Workspace account",
+      "hr": "Requests to HR"
     },
     "perm": {
       "self": {
@@ -5174,6 +6203,9 @@
         "dpa": "Accept the data processing agreement",
         "export": "Export all company data",
         "close": "Close the workspace"
+      },
+      "hr": {
+        "contact": "Ask the HR team a question or make a request"
       }
     },
     "section": {
@@ -5273,7 +6305,7 @@
       "scopeSummary": "{type}: {values}",
       "signIn": {
         "title": "Sign-in and security",
-        "body": "Sign this person out on every device, or reset two-step verification if they have lost their authenticator.",
+        "body": "Sign this person out, send them a link to choose a new password, or reset two-step verification if they lost their authenticator.",
         "endSessions": "Sign out everywhere",
         "endSessionsTitle": "Sign {name} out everywhere?",
         "endSessionsBody": "They will need to sign in again on every device.",
@@ -5282,12 +6314,31 @@
         "resetMfaTitle": "Reset two-step verification for {name}?",
         "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
         "resetMfaConfirm": "I have confirmed who they are. Reset it",
-        "mfaReset": "Two-step verification has been reset."
+        "mfaReset": "Two-step verification has been reset.",
+        "whoCan": "Who can do this: people whose company-wide role includes managing settings and every permission this person has, so only an owner can help another owner. You confirm it is you first and can never do it for yourself. Every action is recorded in the audit log, and the person is told by email when their password or two-step verification is reset.",
+        "sendReset": "Send password reset link",
+        "sendResetTitle": "Send {name} a password reset link?",
+        "sendResetBody": "They get an email with a link to choose a new password. It works once for 24 hours. You never see or set the password, and their two-step verification stays as it is.",
+        "sendResetConfirm": "Send link",
+        "resetSent": "Password reset link sent.",
+        "unlinkSso": "Unlink single sign-on",
+        "unlinkSsoTitle": "Unlink {name} from single sign-on?",
+        "unlinkSsoBody": "Do this only when your identity provider replaced their account. Their next single sign-on links the new account.",
+        "unlinked": "Single sign-on unlinked.",
+        "linkedTo": "Linked to {connection}",
+        "endSessionsLead": "Ends every session on every device.",
+        "sendResetLead": "Emails a one-time link to choose a new password. You never see it.",
+        "resetMfaLead": "Removes a lost authenticator after you confirm who they are."
       },
       "list": {
         "count_one": "{count} person",
         "count_other": "{count} people",
-        "countMore": "First {count} shown"
+        "countMore": "First {count} shown",
+        "title": "Everyone who can sign in"
+      },
+      "problem": {
+        "ownAccount": "You cannot do this for your own account.",
+        "companyWideSettingsRequired": "This needs a company-wide role that manages settings."
       }
     },
     "errors": {
@@ -5482,5 +6533,253 @@
     "removeFilter": "Remove filter: {label}",
     "clearAll": "Clear filters",
     "noMatches": "Nothing matches these filters"
+  },
+  "actionable": {
+    "crumbs": {
+      "label": "Breadcrumb"
+    },
+    "bell": {
+      "title": "Notifications",
+      "recent": "Recent notifications",
+      "new": "New:",
+      "markAll": "Mark all as read",
+      "empty": "You're all caught up.",
+      "seeAll": "See all notifications"
+    },
+    "task": {
+      "title": "Task",
+      "open": "Open",
+      "openNamed": "Open: {title}",
+      "completeNamed": "Done: {title}",
+      "completed": "Task marked as done",
+      "markDone": "Mark as done",
+      "noDue": "No due date",
+      "noDescription": "No further details were given for this task.",
+      "assignee": "Assigned to",
+      "source": "Comes from",
+      "workflow": "Workflow",
+      "created": "Created",
+      "completedOn": "Done",
+      "completedBy": "{date} by {name}",
+      "status": {
+        "open": "Open",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      },
+      "go": {
+        "workflow": "Go to the step",
+        "approval": "Review the request",
+        "automation": "Open",
+        "document": "Open the document",
+        "manual": "Open",
+        "compliance": "Open the record",
+        "hr_request": "Open"
+      },
+      "due": "Due {date}"
+    },
+    "approval": {
+      "title": "Request",
+      "openNamed": "{request} for {name}",
+      "requestedBy": "Asked by",
+      "system": "The system",
+      "decidedOn": "Decided",
+      "reason": "Reason",
+      "decideTitle": "Your decision",
+      "comment": "Comment (optional)",
+      "commentHint": "The person who asked sees your comment.",
+      "decline": "Decline",
+      "approved": "Request approved",
+      "declined": "Request declined",
+      "steps": "Approval steps",
+      "step": "Step {n}",
+      "approvers": "Approvers: {names}",
+      "decidedBy": "Decided by {name} on {date}",
+      "status": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "rejected": "Declined",
+        "cancelled": "Cancelled",
+        "skipped": "Skipped",
+        "waiting": "Not started",
+        "escalated": "Escalated"
+      },
+      "related": {
+        "leave_request": "Open the leave request",
+        "timesheet": "Open the timesheet",
+        "employee": "Open the profile",
+        "document": "Open the document to countersign"
+      },
+      "forName": "for {name}"
+    },
+    "leave": {
+      "title": "Leave request",
+      "person": "Person",
+      "amount": "Amount",
+      "halfDays": "Half days",
+      "half": {
+        "am": "Morning",
+        "pm": "Afternoon"
+      },
+      "requested": "Requested",
+      "requestedBy": "{date} by {name}",
+      "decided": "Decided",
+      "approval": "See the approval",
+      "cancel": "Cancel this request",
+      "cancelled": "Leave request cancelled"
+    },
+    "common": {
+      "person": "Person",
+      "current": "Current",
+      "superseded": "Replaced by a later check",
+      "open": "Open",
+      "view": "View",
+      "details": "Details",
+      "seeApproval": "See the approval"
+    },
+    "person": {
+      "complianceTab": "Compliance",
+      "noCompliance": "No compliance records apply to this person yet.",
+      "rtwNotDue": "Not needed yet",
+      "noChecks": "No right-to-work check has been recorded.",
+      "rtwList": "Record a check on the right-to-work list",
+      "i9": "Form I-9",
+      "section1": "Section 1 completed",
+      "section2": "Section 2",
+      "dueBy": "Due by {date}",
+      "reverification": "Reverification due",
+      "i9List": "Open the Form I-9 list",
+      "requirements": "Requirements",
+      "matrix": "Open the compliance matrix",
+      "followUpOn": "Follow-up due {date}",
+      "expiresOn": "Expires {date}"
+    },
+    "rtw": {
+      "check": "Right-to-work check",
+      "checkOn": "Check on {date}",
+      "openCheck": "Check on {date} for {name}",
+      "checkedBy": "Checked by",
+      "excuseEnds": "Statutory excuse ends",
+      "evidence": "Documents and evidence",
+      "restricted": "The document details and the copy of the evidence are visible only to people with access to immigration records.",
+      "noEvidence": "No document details or evidence were recorded with this check.",
+      "excuse": {
+        "continuous": "Continuous excuse",
+        "time_limited": "Time-limited excuse"
+      }
+    },
+    "timesheet": {
+      "title": "Timesheet",
+      "viewFor": "View timesheet for {name}"
+    },
+    "asset": {
+      "title": "Asset",
+      "purchasedOn": "Bought on",
+      "notes": "Notes",
+      "history": "Issued to",
+      "returnedOn": "Returned",
+      "stillIssued": "Still issued",
+      "noHistory": "This asset has not been issued to anyone yet."
+    },
+    "payroll": {
+      "payDate": "Pay date",
+      "number": "Employee number",
+      "people_one": "{n} person in this period",
+      "people_other": "{n} people in this period",
+      "peopleLabel": "People in this period",
+      "nobody": "Nobody is in this period.",
+      "section": {
+        "hours": "Approved weeks",
+        "absences": "Absences",
+        "sickPay": "Sick pay",
+        "payChanges": "Pay changes",
+        "starters": "Starters",
+        "leavers": "Leavers"
+      }
+    },
+    "notify": {
+      "hrRequest": "New request to HR from {name}",
+      "hrRequestDone": "HR marked your request as done"
+    },
+    "hr": {
+      "tab": "Contact HR",
+      "contact": "Contact HR",
+      "title": "Contact HR",
+      "lead": "Ask your HR team a question or make a request. They get it in their inbox with your name on it.",
+      "subject": "Subject",
+      "message": "Your question or request",
+      "messageHint": "Do not include medical or other sensitive details here. HR will ask for them in the right place if they need them.",
+      "send": "Send to HR",
+      "sent": "Sent to HR",
+      "mine": "Your requests",
+      "none": "You have not sent HR anything yet.",
+      "sentOn": "Sent {date}",
+      "doneOn": "Done {date}",
+      "status": {
+        "open": "With HR",
+        "done": "Done",
+        "cancelled": "Closed"
+      },
+      "noEmployee": "Only people with an employee record can contact HR here.",
+      "request": "Request to HR",
+      "sentLabel": "Sent",
+      "doneLabel": "Done",
+      "doneBy": "{date} by {name}",
+      "openNote": "HR has your request. You will get a notification when they mark it done.",
+      "doneNote": "HR marked this done. If you still need help, send them a new request."
+    },
+    "automation": {
+      "dryRunNamed": "Dry run {name}"
+    },
+    "support": {
+      "adminsOnly": "Thapsus-HR support is for your workspace’s administrators",
+      "askHr": "Your HR team can help with questions about your job, pay, time off and documents.",
+      "noHr": "Ask an administrator in your organisation for help."
+    }
+  },
+  "securityAlerts": {
+    "footer": "This alert contains no personal data and never asks for a password or a code. Sign in to Thapsus-HR the usual way to see more.",
+    "none": "none",
+    "events_one": "{count} event",
+    "events_other": "{count} events",
+    "detections_one": "{count} detection",
+    "detections_other": "{count} detections",
+    "workspaces_one": "{count} workspace",
+    "workspaces_other": "{count} workspaces",
+    "field": {
+      "severity": "Severity",
+      "rule": "Rule",
+      "region": "Region",
+      "workspaces": "Workspaces affected (ids)",
+      "events": "Events",
+      "firstSeen": "First seen (UTC)",
+      "lastSeen": "Last seen (UTC)",
+      "incident": "Incident",
+      "incidents": "Incidents"
+    },
+    "incident": {
+      "subject": "[Thapsus-HR security] {severity}: {rule} ({region})",
+      "opened": "A new security incident was opened.",
+      "escalated": "A security incident became more severe."
+    },
+    "digest": {
+      "subject": "[Thapsus-HR security] Detections digest: {severity} ({region})",
+      "intro": "Detections in {region} from {from} to {to}:"
+    },
+    "test": {
+      "subject": "[Thapsus-HR security] Daily test alert ({region}, {day})",
+      "body": "This is the daily test of the security alert path for {region}. If it stops arriving, alerts are not reaching you."
+    },
+    "deadman": {
+      "subject": "[Thapsus-HR security] CRITICAL: detections stopped ({region})",
+      "body_one": "No detection run has completed in {region} for more than {count} minute (last run {at}). Attacks are not being detected until the worker runs again.",
+      "body_other": "No detection run has completed in {region} for more than {count} minutes (last run {at}). Attacks are not being detected until the worker runs again."
+    },
+    "tenant": {
+      "subject": "Security alert for {workspace}: {severity}",
+      "digestSubject": "Security alerts for {workspace}",
+      "intro": "Thapsus-HR's security monitoring noticed this in your workspace {workspace}:",
+      "digestIntro": "Thapsus-HR's security monitoring noticed these in your workspace {workspace}:",
+      "open": "Details in your Security centre"
+    }
   }
 }

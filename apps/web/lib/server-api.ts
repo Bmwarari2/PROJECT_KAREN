@@ -25,3 +25,19 @@ export async function serverApi<T>(path: string): Promise<T | undefined> {
     return undefined;
   }
 }
+
+/**
+ * Like serverApi, for a GET the API audits as a view (a document, a payslip): a router prefetch (a link the
+ * person only pointed at) fetches nothing, so it is never recorded as a view; the page then fetches in the
+ * browser when it is really opened. Only a UUID id is ever put into the path.
+ */
+export async function serverApiView<T>(collection: string, id: string): Promise<T | undefined> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return undefined;
+  const h = await headers();
+  const prefetch =
+    h.has('next-router-prefetch') ||
+    h.has('next-router-segment-prefetch') ||
+    /prefetch/i.test(h.get('sec-purpose') ?? h.get('purpose') ?? '');
+  if (prefetch) return undefined;
+  return serverApi<T>(`${collection}/${id}`);
+}

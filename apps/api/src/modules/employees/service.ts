@@ -115,6 +115,11 @@ export interface EmployeeListFilter {
   locationId?: string;
   managerId?: string;
   country?: string;
+  /** Current employment type (applied only for callers who may read it for everyone, see below). */
+  employmentType?: string;
+  /** Start date range, inclusive (the home dashboard's joiners per month). */
+  startFrom?: string;
+  startTo?: string;
 }
 
 /** WHERE clauses (alias `e`) shared by the people list and its export: scope for `action`, then filters. */
@@ -132,6 +137,16 @@ export function employeeListWhere(
   if (f.locationId) where.push(`e.location_id = ${add(f.locationId)}`);
   if (f.managerId) where.push(`e.manager_id = ${add(f.managerId)}`);
   if (f.country) where.push(`e.country = ${add(f.country)}`);
+  if (f.startFrom) where.push(`e.start_date >= ${add(f.startFrom)}::date`);
+  if (f.startTo) where.push(`e.start_date <= ${add(f.startTo)}::date`);
+  // Employment type is a field some roles may not read (managers): filtering by it would reveal it, so
+  // the filter is honoured only for a caller who may read it on everyone (an all-scope grant).
+  if (f.employmentType && fieldAccess(p, 'employee', 'employmentType') !== 'none')
+    where.push(
+      `EXISTS (SELECT 1 FROM app.employee_jobs j WHERE j.tenant_id = e.tenant_id AND j.employee_id = e.id
+                 AND j.valid_from <= current_date AND (j.valid_to IS NULL OR j.valid_to > current_date)
+                 AND j.employment_type = ${add(f.employmentType)})`,
+    );
   if (f.q) {
     const term = f.q.trim();
     // Full-text (words, number, email, title), substring, and trigram word similarity so a misspelt

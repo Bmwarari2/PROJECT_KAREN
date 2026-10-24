@@ -61,7 +61,10 @@ test.describe('roles and access', () => {
 
     // the owner creates the role in settings
     await page.goto('/app/settings');
-    await page.getByRole('link', { name: 'Roles and permissions', exact: true }).click();
+    await page
+      .getByRole('region', { name: 'People and access', exact: true })
+      .getByRole('link', { name: 'Roles and permissions', exact: true })
+      .click();
     await page.waitForURL(/\/app\/settings\/roles$/);
     await expect(page.getByRole('heading', { level: 2, name: 'Roles and permissions' })).toBeVisible();
     await expect(page.getByText('6 roles', { exact: true })).toBeVisible();

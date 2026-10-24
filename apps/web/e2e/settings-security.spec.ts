@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { signUpAndEnrol } from './helpers';
+import { PASSWORD, signUpAndEnrol, uniq } from './helpers';
+import { sql } from './time-helpers';
 import { axeBoth } from './settings-helpers';
 import { expectPageTitle, openModule } from './module-helpers';
 
@@ -149,25 +150,59 @@ test.describe('sign-in and security settings', () => {
     await expect(page.getByRole('row', { name: /fictional-shops\.example/ })).toContainText('Pending');
   });
 
-  test('on a phone the settings sub-navigation is a disclosure and pages fit the screen', async ({
+  test('on a phone the settings index is the navigation and each section goes back to it; pages fit the screen', async ({
     page,
   }) => {
     await signUpAndEnrol(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/app/settings/sso');
-    const subnav = page.getByRole('navigation', { name: 'Settings sections' });
-    const toggle = subnav.getByRole('button', { name: 'Single sign-on', exact: true });
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(subnav.getByRole('link', { name: 'Leave policies' })).toBeHidden();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await subnav.getByRole('link', { name: 'Leave policies' }).click();
+    // no side list on a phone: the section has a back link and its own title
+    await expect(page.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
+    await expectPageTitle(page, 'Settings', 'Single sign-on');
+    const back = page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Settings' });
+    await back.click();
+    await page.waitForURL(/\/app\/settings$/);
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
+    await page
+      .getByRole('region', { name: 'Time off and absence', exact: true })
+      .getByRole('link', { name: 'Leave policies' })
+      .click();
     await expectPageTitle(page, 'Settings', 'Leave policies');
-    await expect(subnav.getByRole('button', { name: 'Leave policies', exact: true })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await axeBoth(page);
+    // a platform page goes back to Settings too
+    await page.goto('/app/settings/features');
+    await expectPageTitle(page, 'Settings', 'Features');
+    await expect(
+      page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Settings' }),
+    ).toBeVisible();
+  });
+
+  test('two-step verification for everyone is on in a new workspace; turning it off asks the admin to confirm it is them', async ({
+    page,
+  }) => {
+    const { email } = await signUpAndEnrol(page, uniq('mfa'), { mfaForEveryone: true });
+    await page.goto('/app/settings/sign-in-policy');
+    const everyone = page.getByLabel('Require two-step verification for everyone');
+    await expect(everyone).toBeChecked();
+    await expect(
+      page.getByLabel('Trust two-step verification done by the identity provider'),
+    ).not.toBeChecked();
+    await axeBoth(page);
+    // the sign-in is older than the re-authentication window
+    await sql(
+      `UPDATE app.sessions SET created_at = now() - interval '20 minutes' WHERE user_id = (SELECT id FROM app.users WHERE email = $1)`,
+      [email],
+    );
+    await everyone.uncheck();
+    await page.getByRole('button', { name: 'Save' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Confirm it is you' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Password').fill(PASSWORD);
+    await dialog.getByRole('button', { name: 'Confirm' }).click();
+    await expect(page.getByText('Changes saved.', { exact: true })).toBeVisible();
+    expect((await (await page.request.get('/v1/settings/security')).json()).requireMfaForEveryone).toBe(
+      false,
+    );
   });
 });

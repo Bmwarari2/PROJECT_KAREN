@@ -74,6 +74,11 @@ export interface WorkspaceModule {
   tabs: ModuleTab[];
   /** Paths that belong to the module without being a tab (detail pages, wizards). */
   paths?: string[];
+  /**
+   * The module's index lists its pages (Settings, ADR-0181): on phones a page under it shows a back link
+   * to the index and its own large title instead of the module's name.
+   */
+  drillDown?: boolean;
 }
 
 const any =
@@ -248,6 +253,7 @@ export const MODULES: WorkspaceModule[] = [
     description: 'app.ws.desc.settings',
     icon: Settings,
     group: 'company',
+    drillDown: true,
     // The settings area lists and filters its own sections (settings/sections.ts).
     tabs: [
       {
@@ -273,11 +279,30 @@ export const MODULES: WorkspaceModule[] = [
     group: 'support',
     tabs: [
       { href: '/app/help', label: 'app.nav.help', show: always },
+      // admins contact Thapsus-HR support; employees and managers ask their own HR team (ADR-0163)
       { href: '/app/support', label: 'app.nav.support', show: any('support.ticket') },
+      {
+        href: '/app/contact-hr',
+        label: 'actionable.hr.tab',
+        show: (v) => v.has('hr.contact') && !v.has('support.ticket'),
+      },
       { href: '/app/ask', label: 'app.nav.askHr', show: (v) => v.askHr },
     ],
   },
 ];
+
+/**
+ * The phone tab bar (ADR-0180): up to five modules, Home first and the viewer's own profile last. People
+ * who manage others get People; everyone else gets Pay. Every entry is a module the viewer can open.
+ */
+export function dockModules(modules: VisibleModule[], v: WorkspaceViewer): VisibleModule[] {
+  const middle = v.has('employees.read') ? ['inbox', 'people', 'time'] : ['inbox', 'time', 'pay'];
+  const pick = (key: string) => modules.find((m) => m.key === key);
+  return ['home', ...middle, 'me'].flatMap((k) => {
+    const m = pick(k);
+    return m ? [m] : [];
+  });
+}
 
 /** A module with only the tabs the viewer may open, or null when none is left. */
 export interface VisibleModule extends Omit<WorkspaceModule, 'tabs'> {

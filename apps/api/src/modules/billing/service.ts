@@ -773,23 +773,79 @@ export async function settleSchedules(
 }
 
 /** Usage aggregates for the back office (counts and bytes only). */
-export async function usageAggregates(tx: Tx) {
-  return tx.one<{ headcount: number; active_users: number; storage_bytes: string }>(
-    `SELECT (SELECT count(*)::int FROM app.employees WHERE status = 'active') AS headcount,
-            (SELECT count(*)::int FROM app.users WHERE status = 'active') AS active_users,
+export async function usageAggregates(tx: Tx, now = new Date().toISOString()) {
+  // Active users: signed in, or used a session, in the last 7 or 30 days (counts only; ADR-0175).
+  return tx.one<{
+    headcount: number;
+    active_users: number;
+    active_users_7d: number;
+    active_users_30d: number;
+    users_with_mfa: number;
+    last_activity_at: string | null;
+    storage_bytes: string;
+  }>(
+    `WITH seen AS (
+       SELECT u.id, greatest(u.last_login_at, (SELECT max(s.last_seen_at) FROM app.sessions s WHERE s.tenant_id = u.tenant_id AND s.user_id = u.id)) AS at,
+              (EXISTS (SELECT 1 FROM app.totp_factors f WHERE f.tenant_id = u.tenant_id AND f.user_id = u.id AND f.verified_at IS NOT NULL)
+               OR EXISTS (SELECT 1 FROM app.passkeys k WHERE k.tenant_id = u.tenant_id AND k.user_id = u.id)) AS mfa
+         FROM app.users u WHERE u.status = 'active')
+     SELECT (SELECT count(*)::int FROM app.employees WHERE status = 'active') AS headcount,
+            (SELECT count(*)::int FROM seen) AS active_users,
+            (SELECT count(*)::int FROM seen WHERE at >= $1::timestamptz - interval '7 days') AS active_users_7d,
+            (SELECT count(*)::int FROM seen WHERE at >= $1::timestamptz - interval '30 days') AS active_users_30d,
+            (SELECT count(*)::int FROM seen WHERE mfa) AS users_with_mfa,
+            (SELECT max(at) FROM seen) AS last_activity_at,
             ((SELECT coalesce(sum(size_bytes), 0) FROM app.documents WHERE status = 'ready') + (SELECT coalesce(sum(size_bytes), 0) FROM app.support_ticket_attachments))::bigint::text AS storage_bytes`,
+    [now],
   );
 }
 
+/**
+ * The back-office usage snapshot (counts, dates and money totals only): plan and status of the default
+ * account's newest subscription (a cancelled one too, for churn), its trial end, and every live paid line
+ * for MRR and ARR (@thapsus/core/metrics). Refreshed daily by billing.daily and on demand by staff.
+ */
 export async function recordUsage(deps: Deps, tenantId: string, tx: Tx, now: string) {
-  const u = await usageAggregates(tx);
-  const sub = await tx.maybe<{ plan_id: string; status: string }>(
-    `SELECT s.plan_id, s.status FROM app.billing_subscriptions s JOIN app.billing_accounts a ON a.tenant_id = s.tenant_id AND a.id = s.billing_account_id WHERE a.is_default AND s.${LIVE}`,
+  const u = await usageAggregates(tx, now);
+  const sub = await tx.maybe<{
+    plan_id: string;
+    status: string;
+    trial_ends_at: string | null;
+    canceled_at: string | null;
+    cancel_effective_at: string | null;
+  }>(
+    `SELECT s.plan_id, s.status, s.trial_ends_at, s.canceled_at, s.cancel_effective_at FROM app.billing_subscriptions s JOIN app.billing_accounts a ON a.tenant_id = s.tenant_id AND a.id = s.billing_account_id
+      WHERE a.is_default ORDER BY (s.status <> 'canceled') DESC, s.created_at DESC LIMIT 1`,
   );
+  const paid = await tx.query<{ currency: string; term: string; interval_amount_minor: string }>(
+    `SELECT currency, term, interval_amount_minor::text FROM app.billing_subscriptions WHERE status IN ('active', 'past_due') AND interval_amount_minor > 0`,
+  );
+  const recurring = paid.map((p) => ({
+    currency: p.currency,
+    term: p.term,
+    intervalAmountMinor: p.interval_amount_minor,
+  }));
   await deps.router.registryPool().query(
-    `INSERT INTO backoffice.tenant_usage (subject_tenant_id, headcount, active_users, storage_bytes, plan_id, billing_status, computed_at) VALUES ($1, $2, $3, $4, $5, $6, $7)
-     ON CONFLICT (subject_tenant_id) DO UPDATE SET headcount = EXCLUDED.headcount, active_users = EXCLUDED.active_users, storage_bytes = EXCLUDED.storage_bytes, plan_id = EXCLUDED.plan_id, billing_status = EXCLUDED.billing_status, computed_at = EXCLUDED.computed_at`,
-    [tenantId, u.headcount, u.active_users, u.storage_bytes, sub?.plan_id ?? null, sub?.status ?? null, now],
+    `INSERT INTO backoffice.tenant_usage (subject_tenant_id, headcount, active_users, storage_bytes, plan_id, billing_status, computed_at, active_users_7d, active_users_30d, users_with_mfa, last_activity_at, trial_ends_at, cancelled_at, recurring)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     ON CONFLICT (subject_tenant_id) DO UPDATE SET headcount = EXCLUDED.headcount, active_users = EXCLUDED.active_users, storage_bytes = EXCLUDED.storage_bytes, plan_id = EXCLUDED.plan_id, billing_status = EXCLUDED.billing_status, computed_at = EXCLUDED.computed_at,
+       active_users_7d = EXCLUDED.active_users_7d, active_users_30d = EXCLUDED.active_users_30d, users_with_mfa = EXCLUDED.users_with_mfa, last_activity_at = EXCLUDED.last_activity_at, trial_ends_at = EXCLUDED.trial_ends_at, cancelled_at = EXCLUDED.cancelled_at, recurring = EXCLUDED.recurring`,
+    [
+      tenantId,
+      u.headcount,
+      u.active_users,
+      u.storage_bytes,
+      sub?.plan_id ?? null,
+      sub?.status ?? null,
+      now,
+      u.active_users_7d,
+      u.active_users_30d,
+      u.users_with_mfa,
+      u.last_activity_at,
+      sub?.trial_ends_at ?? null,
+      sub?.status === 'canceled' ? (sub.canceled_at ?? sub.cancel_effective_at ?? now) : null,
+      JSON.stringify(recurring),
+    ],
   );
   return u;
 }

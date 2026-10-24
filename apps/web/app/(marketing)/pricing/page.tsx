@@ -187,7 +187,9 @@ export default async function PricingPage({
                     })}
                   </TD>
                   {selfServe.map((p) => (
-                    <TD key={p.id}>{perEmployeeMonth(p, b.minEmployees)}</TD>
+                    <TD key={p.id} phone="inline" label={t(`pricing.plans.${p.id}.name`)}>
+                      {perEmployeeMonth(p, b.minEmployees)}
+                    </TD>
                   ))}
                 </TR>
               ))}

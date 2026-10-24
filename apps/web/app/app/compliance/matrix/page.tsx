@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
   Dialog,
   DialogContent,
   EmptyState,
@@ -18,6 +17,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -26,6 +26,7 @@ import { useApi } from '@/lib/use-api';
 import { useSession } from '../../shell';
 import { PageIntro } from '@/components/module-page';
 import { selectClass, StatusBadge } from '../ui';
+import { PersonLink, ROW_LINK } from '@/components/person-link';
 
 const KINDS = ['licence', 'certification', 'background_check', 'training', 'other'] as const;
 const STATUSES = ['missing', 'expired', 'expiring', 'compliant'] as const;
@@ -253,18 +254,26 @@ export default function MatrixPage() {
               {matrix.data.rows.map((r) => (
                 <TR key={`${r.employeeId}:${r.requirementId}`}>
                   <TD>
-                    <span className="font-semibold">{r.employeeName}</span>
+                    <PersonLink
+                      id={r.employeeId}
+                      name={r.employeeName}
+                      tab="compliance"
+                      className={ROW_LINK}
+                    />
                     {r.jobTitle ? (
-                      <span className="block text-footnote text-text-secondary">{r.jobTitle}</span>
+                      <span className="block text-footnote font-normal text-text-secondary">
+                        {r.jobTitle}
+                      </span>
                     ) : null}
                   </TD>
                   <TD>
-                    {r.requirementName} <Badge className="ml-1">{t(`compliance.kind.${r.kind}`)}</Badge>
+                    {r.requirementName}{' '}
+                    <Badge className="ml-1 max-sm:hidden">{t(`compliance.kind.${r.kind}`)}</Badge>
                   </TD>
-                  <TD>
+                  <TD phone="inline">
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>
+                  <TD phone="inline" label={t('compliance.matrix.expires')}>
                     {r.expiresOn
                       ? `${formatDate(r.expiresOn, locale)}${r.daysLeft !== null && r.daysLeft >= 0 ? ` · ${t('compliance.matrix.daysLeft', { days: r.daysLeft, count: r.daysLeft })}` : ''}`
                       : '—'}
@@ -292,27 +301,28 @@ export default function MatrixPage() {
         </Card>
       )}
       {reqs.data?.length ? (
-        <Card>
-          <CardTitle>{t('compliance.matrix.requirements')}</CardTitle>
-          <ul className="mt-3 flex flex-col gap-2 text-callout">
-            {reqs.data.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold">{r.name}</span>
-                <Badge>{t(`compliance.kind.${r.kind}`)}</Badge>
-                <span className="text-text-secondary">
-                  {r.appliesTo.jobTitles?.length
-                    ? r.appliesTo.jobTitles.join(', ')
-                    : t('compliance.matrix.everyone')}
-                </span>
-                {r.validityMonths ? (
+        <PageSection headingLevel={2} title={t('compliance.matrix.requirements')}>
+          <Card>
+            <ul className="flex flex-col gap-2 text-callout">
+              {reqs.data.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">{r.name}</span>
+                  <Badge>{t(`compliance.kind.${r.kind}`)}</Badge>
                   <span className="text-text-secondary">
-                    {t('compliance.matrix.validFor', { months: r.validityMonths, count: r.validityMonths })}
+                    {r.appliesTo.jobTitles?.length
+                      ? r.appliesTo.jobTitles.join(', ')
+                      : t('compliance.matrix.everyone')}
                   </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </Card>
+                  {r.validityMonths ? (
+                    <span className="text-text-secondary">
+                      {t('compliance.matrix.validFor', { months: r.validityMonths, count: r.validityMonths })}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </PageSection>
       ) : null}
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent title={t('compliance.matrix.addRequirement')} closeLabel={t('common.close')}>

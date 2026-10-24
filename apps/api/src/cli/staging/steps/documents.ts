@@ -3,6 +3,12 @@ import { addDays, compareDates } from '@thapsus/core/time';
 import { writeAudit } from '@thapsus/db';
 import type { Deps } from '../../../deps';
 import { appendCertificate, renderTextPdf, sha256 } from '../../../modules/documents/pdf';
+import {
+  certificateLabels,
+  registerCountersignEffects,
+  requestCountersign,
+} from '../../../modules/documents/countersign';
+import { decide } from '../../../modules/approvals/service';
 import { generateFromTemplate } from '../../../modules/documents/routes';
 import { bump, insertRows, mapLimit, seedUuid, type SeedCtx } from '../context';
 import { currentJob, type PlanPerson } from '../plan';
@@ -60,12 +66,73 @@ const POLICIES: Array<[title: string, folder: string, body: string]> = [
   ],
 ];
 
-const TEMPLATES: Array<{ key: string; name: string; locale: string; category: string; body: string }> = [
+const HYBRID_SECTIONS = [
+  [
+    'Purpose',
+    'This agreement sets out how hybrid working works for you at Kestrel Fictional Group: where you work, when you are expected in the office or on site, and what the company provides. It is a fictional sample document for the staging environment and has no legal effect.',
+  ],
+  [
+    'Your working pattern',
+    'Your contracted hours and place of work do not change. You agree a weekly pattern with your manager, for example two days on site and three days at home. Your manager records the pattern so rotas and cover planning stay accurate.',
+  ],
+  [
+    'Core hours',
+    'You are available between 10:00 and 15:00 on working days unless you have agreed something else with your manager. Outside core hours you organise your time to meet the needs of your team.',
+  ],
+  [
+    'Your workspace at home',
+    'You work from a safe, quiet space with a reliable internet connection. You complete the display screen equipment self-assessment within two weeks of starting hybrid working and again each year.',
+  ],
+  [
+    'Equipment',
+    'The company provides a laptop, a headset and, on request, a monitor and a chair. Equipment remains company property; you look after it and return it when you leave or when hybrid working ends.',
+  ],
+  [
+    'Expenses',
+    'Hybrid working is voluntary. The company does not pay home energy or broadband costs. Travel to your usual place of work is not a business expense.',
+  ],
+  [
+    'Information security',
+    'You lock your screen when you step away, keep printed documents to a minimum and shred them at the office, and never let anyone else use company equipment. You report a lost or stolen device to the IT service desk straight away.',
+  ],
+  [
+    'Health and safety',
+    'You report any accident or injury while working at home in the same way as at work. Your manager checks in regularly about your wellbeing and workload.',
+  ],
+  [
+    'Reviewing the arrangement',
+    'You or your manager can ask to review the arrangement at any time. Either side gives four weeks notice of a change, except in an emergency, such as a site closure.',
+  ],
+  [
+    'Ending hybrid working',
+    'If hybrid working no longer meets the needs of the role, your manager explains why in writing and you can appeal under the flexible working procedure.',
+  ],
+  [
+    'Data protection',
+    'The company processes information about your working pattern and equipment for workforce planning and asset management, as described in the data protection notice for staff.',
+  ],
+  [
+    'Agreement',
+    'By signing you confirm that you have read this agreement and agree to work under it. The company countersigns to confirm the arrangement.',
+  ],
+] as const;
+const HYBRID_BODY = HYBRID_SECTIONS.flatMap(([h, body], i) => [`${i + 1}. ${h}`, body, '']).join('\n');
+
+const TEMPLATES: Array<{
+  key: string;
+  name: string;
+  locale: string;
+  category: string;
+  body: string;
+  /** The company countersigns documents from this template (ADR-0169). */
+  countersign: boolean;
+}> = [
   {
     key: 'offer_uk',
     name: 'Offer letter (UK)',
     locale: 'en-GB',
     category: 'offer',
+    countersign: true,
     body: 'Dear {{employee.firstName}},\n\nWe are delighted to offer you the role of {{employee.jobTitle}} in {{employee.department}} at {{entity.name}}, based at {{employee.location}}, starting on {{employee.startDate}}.\n\nYour salary will be {{employee.salary}} ({{employee.payFrequency}}).\n\nThis is a fictional sample letter generated for the staging environment.\n\n{{company.name}}\n{{today}}',
   },
   {
@@ -73,6 +140,7 @@ const TEMPLATES: Array<{ key: string; name: string; locale: string; category: st
     name: 'Statement of main terms (UK)',
     locale: 'en-GB',
     category: 'contract',
+    countersign: true,
     body: 'Employer: {{entity.name}}\nEmployee: {{employee.displayName}} ({{employee.employeeNumber}})\nJob title: {{employee.jobTitle}}\nPlace of work: {{employee.location}}\nStart date: {{employee.startDate}}\nPay: {{employee.salary}} ({{employee.payFrequency}})\n\nThis is a fictional sample contract generated for the staging environment.',
   },
   {
@@ -80,6 +148,7 @@ const TEMPLATES: Array<{ key: string; name: string; locale: string; category: st
     name: 'Change of terms letter',
     locale: 'en-GB',
     category: 'letter',
+    countersign: false,
     body: 'Dear {{employee.firstName}},\n\nThis letter confirms a change to your terms: your role is {{employee.jobTitle}} and your pay is {{employee.salary}} ({{employee.payFrequency}}). Please sign to confirm you agree.\n\nFictional sample letter.\n\n{{company.name}}, {{today}}',
   },
   {
@@ -87,7 +156,24 @@ const TEMPLATES: Array<{ key: string; name: string; locale: string; category: st
     name: 'Offer letter (US)',
     locale: 'en-US',
     category: 'offer',
+    countersign: true,
     body: 'Dear {{employee.firstName}},\n\nWe are pleased to offer you the position of {{employee.jobTitle}} at {{entity.name}} in {{employee.location}}, starting {{employee.startDate}}, at {{employee.salary}} ({{employee.payFrequency}}). Employment is at will.\n\nThis is a fictional sample letter generated for the staging environment.\n\n{{company.name}}',
+  },
+  {
+    key: 'hybrid',
+    name: 'Hybrid working agreement',
+    locale: 'en-GB',
+    category: 'policy',
+    countersign: true,
+    body: `Employee: {{employee.displayName}} ({{employee.employeeNumber}})\nRole: {{employee.jobTitle}}, {{employee.department}}\nPlace of work: {{employee.location}}\n\n${HYBRID_BODY}\n{{company.name}}, {{today}}`,
+  },
+  {
+    key: 'ppe',
+    name: 'Personal protective equipment acknowledgement',
+    locale: 'en-GB',
+    category: 'policy',
+    countersign: true,
+    body: 'I, {{employee.displayName}}, confirm that I have received safety boots, a hi-vis vest and gloves, that I have been shown how to use them, and that I will wear them in the yard and the warehouse.\n\nThe company countersigns to confirm the issue.\n\nFictional sample document for the staging environment.\n\n{{company.name}}, {{today}}',
   },
 ];
 
@@ -182,6 +268,7 @@ export async function seedDocuments(ctx: SeedCtx) {
       locale: x.locale,
       body: x.body,
       category: x.category,
+      requires_countersign: x.countersign,
     })),
   );
   // documents generated by the documents service (merge fields from the employee record) with signatures
@@ -206,41 +293,52 @@ export async function seedDocuments(ctx: SeedCtx) {
   let signed = 0;
   for (const p of signedPeople) {
     const docId = await generate(p, 'contract_uk', true);
+    // contracts need the company's signature: HR countersigned them a day later (completed, both signatures)
     await signRequest(
       ctx,
       docId,
       p,
       compareDates(p.startDate, addDays(anchor, -60)) > 0 ? addDays(p.startDate, -5) : addDays(anchor, -45),
+      { countersignBy: hr },
     );
     signed++;
   }
-  // a change of terms waiting for the employee login's signature (task and notification for them)
+  // The employee login sees a document in every state: two waiting for their signature (a one-page letter and a
+  // multi-page agreement), one they signed that waits for HR's countersignature, and their completed contract.
   const emp = plan.people[plan.logins.employee]!;
   await generate(emp, 'variation', true, 'Change of terms: shift allowance');
+  await generate(emp, 'hybrid', true);
+  const ppe = await generate(emp, 'ppe', true);
+  await signRequest(ctx, ppe, emp, addDays(anchor, -2));
   const mgr = plan.people[plan.logins.manager]!;
   const v = await generate(mgr, 'variation', true, 'Change of terms: team leader allowance');
   await signRequest(ctx, v, mgr, addDays(anchor, -20));
-  ctx.counts.documents = files.length + licences.length + starters.length + signedPeople.length * 2 + 3;
+  ctx.counts.documents = files.length + licences.length + starters.length + signedPeople.length * 2 + 6;
   ctx.counts.signedDocuments = signed + 1;
+  ctx.counts.awaitingCountersignature = 1;
   bump(ctx, 'documentTemplates', TEMPLATES.length);
 }
 
-/** Signs a pending signature request as the signature route does (certificate page appended, signed copy kept). */
-async function signRequest(ctx: SeedCtx, documentId: string, p: PlanPerson, on: string) {
+/**
+ * Signs a pending signature request as the signature route does (certificate page appended). A document without a
+ * countersignature is complete at once; one with a countersignature goes to HR through the approvals service, and
+ * with `countersignBy` HR countersigns it a day later (second certificate, completed copy).
+ */
+async function signRequest(
+  ctx: SeedCtx,
+  documentId: string,
+  p: PlanPerson,
+  on: string,
+  opts: { countersignBy?: string } = {},
+) {
   const { tx, ids } = ctx;
-  const sr = await tx.one<{ id: string; file_key: string; title: string }>(
-    `SELECT s.id, d.file_key, d.title FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id WHERE s.document_id = $1`,
+  const sr = await tx.one<{ id: string; file_key: string; title: string; requires_countersign: boolean }>(
+    `SELECT s.id, d.file_key, d.title, s.requires_countersign FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id WHERE s.document_id = $1`,
     [documentId],
   );
   const original = await ctx.objects.get(sr.file_key);
   const documentSha256 = sha256(original);
   const signedAt = `${on}T11:20:00Z`;
-  const labels = Object.fromEntries(
-    ['title', 'signer', 'signedAt', 'ip', 'userAgent', 'hash', 'reference', 'statement'].map((k) => [
-      k,
-      t('en-GB', `documents.certificate.${k}`),
-    ]),
-  );
   const name = `${p.preferred ?? p.first} ${p.last}`;
   const signedPdf = Buffer.from(
     await appendCertificate(original, {
@@ -251,29 +349,43 @@ async function signRequest(ctx: SeedCtx, documentId: string, p: PlanPerson, on: 
       userAgent: 'Thapsus-HR staging seed',
       documentSha256,
       requestId: sr.id,
-      labels,
+      labels: certificateLabels('en-GB', 'certificate'),
     }),
   );
   const signedKey = `${ctx.tenantId}/employees/${ids.employee[p.idx]}/${seedUuid('signed', sr.id)}.pdf`;
   await ctx.objects.put(signedKey, signedPdf, 'application/pdf');
   const signedSha256 = sha256(signedPdf);
-  await tx.exec(
-    `INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, size_bytes, sha256, status, uploaded_at, created_at)
-     VALUES (app.current_tenant(), $1, $2, 'signed', $3, $4, 'application/pdf', $5, $6, 'ready', $7, $7)`,
-    [
-      ids.employee[p.idx],
-      `${sr.title} (signed)`,
-      signedKey,
-      `${sr.title.replace(/[^\w.-]+/g, '_')}_signed.pdf`,
-      signedPdf.length,
-      signedSha256,
-      signedAt,
-    ],
-  );
+  const signedDoc = sr.requires_countersign
+    ? null
+    : await tx.one<{ id: string }>(
+        `INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, size_bytes, sha256, status, uploaded_at, created_at)
+         VALUES (app.current_tenant(), $1, $2, 'signed', $3, $4, 'application/pdf', $5, $6, 'ready', $7, $7) RETURNING id`,
+        [
+          ids.employee[p.idx],
+          t('en-GB', 'docSign.signedTitle', { title: sr.title }),
+          signedKey,
+          `${sr.title.replace(/[^\w.-]+/g, '_')}_signed.pdf`,
+          signedPdf.length,
+          signedSha256,
+          signedAt,
+        ],
+      );
   const user = p.login ? ids.user[p.login] : null;
   await tx.exec(
-    `UPDATE app.signature_requests SET status = 'signed', signed_at = $2, signer_user_id = $3, signer_name = $4, signer_ip = '192.0.2.10', signer_user_agent = 'Thapsus-HR staging seed', document_sha256 = $5, signed_file_key = $6, signed_sha256 = $7, requested_at = $8 WHERE id = $1`,
-    [sr.id, signedAt, user, name, documentSha256, signedKey, signedSha256, `${addDays(on, -3)}T09:00:00Z`],
+    `UPDATE app.signature_requests SET status = 'signed', signed_at = $2, signer_user_id = $3, signer_name = $4, signer_ip = '192.0.2.10', signer_user_agent = 'Thapsus-HR staging seed',
+            document_sha256 = $5, signed_file_key = $6, signed_sha256 = $7, requested_at = $8, completed_at = $9, signed_document_id = $10 WHERE id = $1`,
+    [
+      sr.id,
+      signedAt,
+      user,
+      name,
+      documentSha256,
+      signedKey,
+      signedSha256,
+      `${addDays(on, -3)}T09:00:00Z`,
+      signedDoc ? signedAt : null,
+      signedDoc?.id ?? null,
+    ],
   );
   await tx.exec(
     `UPDATE app.tasks SET status = 'done', completed_at = $2, completed_by = $3 WHERE dedupe_key = $1`,
@@ -288,6 +400,49 @@ async function signRequest(ctx: SeedCtx, documentId: string, p: PlanPerson, on: 
     action: 'document.signed',
     targetType: 'signature_request',
     targetId: sr.id,
-    diff: { documentSha256, signedSha256, source: 'staging_seed' },
+    diff: { documentSha256, signedSha256, source: 'staging_seed', countersign: sr.requires_countersign },
   });
+  if (!sr.requires_countersign) return;
+  const approvalId = await requestCountersign(
+    tx,
+    { id: sr.id, document_id: documentId, title: sr.title, signer_employee_id: ids.employee[p.idx]! },
+    user,
+  );
+  await tx.exec(`UPDATE app.approval_requests SET created_at = $2 WHERE id = $1`, [approvalId, signedAt]);
+  if (!opts.countersignBy) return;
+  // HR countersigns the next day, as the countersign route records it
+  const at = `${addDays(on, 1)}T10:05:00Z`;
+  const countersigner = user === opts.countersignBy ? ids.user.owner : opts.countersignBy;
+  const hrName = (
+    await tx.one<{ display_name: string }>('SELECT display_name FROM app.users WHERE id = $1', [
+      countersigner,
+    ])
+  ).display_name;
+  await tx.exec(
+    `UPDATE app.signature_requests SET countersigner_user_id = $2, countersigner_name = $3, countersigner_ip = '192.0.2.20', countersigner_user_agent = 'Thapsus-HR staging seed', countersigned_at = $4 WHERE id = $1`,
+    [sr.id, countersigner, hrName, at],
+  );
+  registerCountersignEffects({ objects: ctx.objects, now: () => new Date(at) });
+  // nobody approves their own request: the HR admin's own contract was countersigned by the owner
+  const approver = countersigner;
+  if (approver !== opts.countersignBy)
+    await tx.exec(
+      `UPDATE app.approval_steps SET approver_user_ids = array_append(approver_user_ids, $2) WHERE request_id = $1 AND NOT ($2 = ANY(approver_user_ids))`,
+      [approvalId, approver],
+    );
+  await decide(tx, approvalId, approver, 'approve');
+  await tx.exec(`UPDATE app.approval_steps SET decided_at = $2 WHERE request_id = $1`, [approvalId, at]);
+  await tx.exec(`UPDATE app.approval_requests SET decided_at = $2 WHERE id = $1`, [approvalId, at]);
+  await tx.exec(`UPDATE app.tasks SET completed_at = $2 WHERE source = 'approval' AND source_id = $1`, [
+    approvalId,
+    at,
+  ]);
+  await tx.exec(
+    `UPDATE app.documents SET created_at = $2, uploaded_at = $2 WHERE id = (SELECT signed_document_id FROM app.signature_requests WHERE id = $1)`,
+    [sr.id, at],
+  );
+  await tx.exec(`UPDATE app.notifications SET read_at = $2 WHERE dedupe_key LIKE $1`, [
+    `appr:${approvalId}:%`,
+    at,
+  ]);
 }

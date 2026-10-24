@@ -55,6 +55,8 @@ export interface ReportResult {
   restricted?: number;
   /** True when the result contains special-category data (the run is audited as a sensitive view). */
   sensitive?: boolean;
+  /** The person each row is about, for reports that list people (names link to profiles, ADR-0161). */
+  rowEmployeeIds?: Array<string | null>;
 }
 
 export interface ReportContext {

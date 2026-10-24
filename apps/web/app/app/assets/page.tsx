@@ -5,11 +5,11 @@ import { CheckCircle2, Laptop, PackageCheck, Plus, UserPlus } from 'lucide-react
 import {
   Badge,
   Button,
-  Card,
-  CardTitle,
   Dialog,
   DialogContent,
   EmptyState,
+  ListItem,
+  ListSection,
   Field,
   Input,
   Skeleton,
@@ -35,6 +35,7 @@ import {
   type AppliedFilter,
 } from '@/components/module-page';
 import { useSession } from '../shell';
+import { EntityLink, PersonLink } from '@/components/person-link';
 
 interface Assignment {
   id: string;
@@ -92,6 +93,7 @@ const statusTone = {
   retired: 'neutral',
   lost: 'danger',
 } as const;
+const REGISTER_PAGE = 50;
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export default function AssetsPage() {
@@ -151,6 +153,9 @@ export default function AssetsPage() {
       matches(query, a.assetTag, a.name, a.serialNumber, a.holder?.employeeName),
   );
   const filtered = !!typeFilter || !!statusFilter || !!query.trim();
+  // a long register shows a page at a time (a phone does not lay out hundreds of rows at once)
+  const [limit, setLimit] = React.useState(REGISTER_PAGE);
+  React.useEffect(() => setLimit(REGISTER_PAGE), [typeFilter, statusFilter, query]);
   const clearFilters = () => {
     setQuery('');
     setTypeFilter('');
@@ -255,50 +260,55 @@ export default function AssetsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageIntro title={t('assets.title')} titleIsTab />
+      {/* without the register the page is just "Equipment issued to me", which is its heading */}
+      {canManage ? <PageIntro title={t('assets.title')} titleIsTab /> : null}
 
       {session?.employeeId ? (
-        <Card>
-          <CardTitle>{t('assets.mine')}</CardTitle>
-          {!mine.data ? (
-            <Skeleton className="mt-3 h-20" />
-          ) : mine.data.length ? (
-            <ul className="mt-3 flex flex-col gap-2">
-              {mine.data.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3"
-                >
-                  <Laptop aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{a.assetName}</p>
-                    <p className="text-footnote text-text-secondary">
-                      {t('assets.tagLine', { tag: a.assetTag, date: formatDate(a.assignedOn, locale) })}
-                      {a.serialNumber ? ` · ${t('assets.serial', { serial: a.serialNumber })}` : ''}
-                    </p>
-                  </div>
-                  {a.acknowledgedAt ? (
+        !mine.data ? (
+          <Skeleton className="h-24 w-full" />
+        ) : mine.data.length ? (
+          // a grouped list (ADR-0180): the asset's name takes the width; the sign-off sits under it on phones
+          <ListSection id="my-assets" title={t('assets.mine')}>
+            {mine.data.map((a) => (
+              <ListItem
+                key={a.id}
+                leading={<Laptop aria-hidden />}
+                title={a.assetName}
+                subtitle={
+                  <>
+                    {t('assets.tagLine', { tag: a.assetTag, date: formatDate(a.assignedOn, locale) })}
+                    {a.serialNumber ? ` · ${t('assets.serial', { serial: a.serialNumber })}` : ''}
+                  </>
+                }
+                meta={
+                  a.acknowledgedAt ? (
                     <Badge tone="success">
                       <CheckCircle2 aria-hidden className="h-3 w-3" />
                       {t('assets.acknowledgedOn', { when: formatDateTime(a.acknowledgedAt, locale, tz) })}
                     </Badge>
-                  ) : (
+                  ) : undefined
+                }
+                actions={
+                  a.acknowledgedAt ? undefined : (
                     <Button
                       size="sm"
+                      className="min-h-11 sm:min-h-8"
                       onClick={() => setAck(a)}
                       aria-label={t('assets.confirmReceiptOf', { asset: a.assetName })}
                     >
                       <PackageCheck aria-hidden className="h-4 w-4 stroke-[1.5]" />
                       {t('assets.confirmReceipt')}
                     </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-callout text-text-secondary">{t('assets.noneMine')}</p>
-          )}
-        </Card>
+                  )
+                }
+              />
+            ))}
+          </ListSection>
+        ) : (
+          <ListSection id="my-assets" title={t('assets.mine')}>
+            <ListItem leading={<Laptop aria-hidden />} title={t('assets.noneMine')} />
+          </ListSection>
+        )
       ) : null}
 
       {canManage ? (
@@ -367,8 +377,8 @@ export default function AssetsPage() {
           <Table dense scrollLabel={t('assets.register')}>
             <THead>
               <tr>
-                <TH>{t('assets.tag')}</TH>
                 <TH>{t('assets.name')}</TH>
+                <TH>{t('assets.tag')}</TH>
                 <TH>{t('assets.type')}</TH>
                 <TH className="text-right">{t('assets.cost')}</TH>
                 <TH>{t('common.status')}</TH>
@@ -379,12 +389,17 @@ export default function AssetsPage() {
               </tr>
             </THead>
             <tbody>
-              {shown.map((a) => (
+              {shown.slice(0, limit).map((a) => (
                 <TR key={a.id}>
-                  <TD className="font-mono text-footnote">{a.assetTag}</TD>
-                  <TD className="font-semibold">{a.name}</TD>
-                  <TD>{t(`assets.types.${a.type}`)}</TD>
-                  <TD className="text-right">
+                  {/* the name first: on phones it is the row's title and the whole row opens the asset */}
+                  <TD>
+                    <EntityLink href={`/app/assets/${a.id}`}>{a.name}</EntityLink>
+                  </TD>
+                  <TD className="font-mono text-footnote" phone="inline" label={t('assets.tag')}>
+                    {a.assetTag}
+                  </TD>
+                  <TD phone="inline">{t(`assets.types.${a.type}`)}</TD>
+                  <TD className="text-right" phone="inline" label={t('assets.cost')}>
                     {a.costMinor !== null && a.currency
                       ? formatMoney(money(BigInt(a.costMinor), a.currency), locale)
                       : ''}
@@ -396,8 +411,8 @@ export default function AssetsPage() {
                   </TD>
                   <TD>
                     {a.holder ? (
-                      <span>
-                        {a.holder.employeeName}
+                      <span className="relative z-10">
+                        <PersonLink id={a.holder.employeeId} name={a.holder.employeeName} />
                         <span className="block text-footnote text-text-secondary">
                           {a.holder.acknowledgedAt ? t('assets.signedFor') : t('assets.awaitingSignOff')}
                         </span>
@@ -432,6 +447,13 @@ export default function AssetsPage() {
               ))}
             </tbody>
           </Table>
+          {shown.length > limit ? (
+            <div className="flex justify-center border-t border-border p-3">
+              <Button variant="secondary" onClick={() => setLimit((n) => n + REGISTER_PAGE)}>
+                {t('common.loadMore')}
+              </Button>
+            </div>
+          ) : null}
         </ListCard>
       ) : null}
 

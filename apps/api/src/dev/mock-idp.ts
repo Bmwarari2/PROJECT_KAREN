@@ -72,7 +72,20 @@ export async function mockIdpPlugin(app: FastifyInstance, opts: { baseUrl: strin
     alg: 'RS256',
     use: 'sig',
   };
-  const codes = new Map<string, { email: string; nonce?: string; clientId: string; challenge?: string }>();
+  const codes = new Map<
+    string,
+    { email: string; nonce?: string; clientId: string; challenge?: string; amr?: string[]; sub?: string }
+  >();
+  // Test controls (this IdP is never enabled in production): `mock_amr` (comma-separated RFC 8176 values)
+  // and `mock_sub` (a different subject for the same email) on /authorize; `mock_authn_context` and
+  // `mock_nameid` (a persistent NameID) on the SAML endpoint, used by the SSO tests.
+  const csv = (v?: string) =>
+    v
+      ? v
+          .split(',')
+          .map((x) => x.trim())
+          .filter((x) => /^[a-z]{2,8}$/.test(x))
+      : undefined;
 
   app.get(
     '/__mock-idp/.well-known/openid-configuration',
@@ -104,6 +117,8 @@ export async function mockIdpPlugin(app: FastifyInstance, opts: { baseUrl: strin
         nonce: q.nonce,
         clientId: q.client_id ?? '',
         challenge: q.code_challenge,
+        amr: csv(q.mock_amr),
+        sub: q.mock_sub && /^[\w.-]{1,64}$/.test(q.mock_sub) ? q.mock_sub : undefined,
       });
       const url = new URL(q.redirect_uri!);
       url.searchParams.set('code', code);
@@ -137,11 +152,12 @@ export async function mockIdpPlugin(app: FastifyInstance, opts: { baseUrl: strin
         email_verified: true,
         name: entry.email.split('@')[0],
         nonce: entry.nonce,
+        ...(entry.amr ? { amr: entry.amr } : {}),
       })
         .setProtectedHeader({ alg: 'RS256', kid: 'mock-1' })
         .setIssuer(issuer)
         .setAudience(basic ?? entry.clientId)
-        .setSubject(createHash('sha256').update(entry.email).digest('hex').slice(0, 24))
+        .setSubject(entry.sub ?? createHash('sha256').update(entry.email).digest('hex').slice(0, 24))
         .setIssuedAt()
         .setExpirationTime('5m')
         .sign(key);
@@ -161,16 +177,23 @@ export async function mockIdpPlugin(app: FastifyInstance, opts: { baseUrl: strin
       const requestId = /ID="([^"]+)"/.exec(requestXml)?.[1];
       if (!acs || !spIssuer) return reply.status(400).send('bad request');
       const email = q.login_hint ?? 'sso.user@example.test';
+      const authnContext =
+        q.mock_authn_context && /^[\w:./-]{1,120}$/.test(q.mock_authn_context)
+          ? q.mock_authn_context
+          : 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport';
+      const persistent = q.mock_nameid && /^[\w.-]{1,64}$/.test(q.mock_nameid) ? q.mock_nameid : undefined;
       const now = new Date();
       const later = new Date(now.getTime() + 5 * 60_000);
       const assertionId = `_${randomUUID()}`;
       const assertion =
         `<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="${assertionId}" Version="2.0" IssueInstant="${now.toISOString()}">` +
         `<saml:Issuer>${escapeXml(issuer)}</saml:Issuer>` +
-        `<saml:Subject><saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">${escapeXml(email)}</saml:NameID>` +
+        (persistent
+          ? `<saml:Subject><saml:NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">${escapeXml(persistent)}</saml:NameID>`
+          : `<saml:Subject><saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">${escapeXml(email)}</saml:NameID>`) +
         `<saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer"><saml:SubjectConfirmationData NotOnOrAfter="${later.toISOString()}" Recipient="${escapeXml(acs)}"${requestId ? ` InResponseTo="${escapeXml(requestId)}"` : ''}/></saml:SubjectConfirmation></saml:Subject>` +
         `<saml:Conditions NotBefore="${new Date(now.getTime() - 60_000).toISOString()}" NotOnOrAfter="${later.toISOString()}"><saml:AudienceRestriction><saml:Audience>${escapeXml(spIssuer)}</saml:Audience></saml:AudienceRestriction></saml:Conditions>` +
-        `<saml:AuthnStatement AuthnInstant="${now.toISOString()}" SessionIndex="${assertionId}"><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>` +
+        `<saml:AuthnStatement AuthnInstant="${now.toISOString()}" SessionIndex="${assertionId}"><saml:AuthnContext><saml:AuthnContextClassRef>${escapeXml(authnContext)}</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>` +
         `<saml:AttributeStatement><saml:Attribute Name="email"><saml:AttributeValue>${escapeXml(email)}</saml:AttributeValue></saml:Attribute></saml:AttributeStatement>` +
         `</saml:Assertion>`;
       const sig = new SignedXml({

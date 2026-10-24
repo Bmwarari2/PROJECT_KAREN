@@ -10,6 +10,7 @@ import { Problem } from '../../http/schemas';
 import { authorize } from '../../http/context';
 import { hashPassword, passwordProblems } from '../auth/tokens';
 import { startSession, throttle } from '../auth/common';
+import { CURRENT_SECURITY_DEFAULTS_VERSION, NEW_WORKSPACE_SECURITY } from '../auth/sessions';
 import { assignRole, seedBuiltInRoles } from '../authz/principal';
 import { SlugTakenError } from '../../lib/directory';
 
@@ -116,10 +117,22 @@ export async function tenancyRoutes(app: FastifyInstance) {
       deps.router.invalidate(tenantId);
       const userId = await withTenant(deps.router, tenantId, async (tx) => {
         const locale = isLocale(b.locale) ? b.locale : spec.defaultLocale;
+        // New workspaces require two-step verification for everyone and do not trust IdP MFA by default
+        // (plan 2.1.2, 2.1.3; ADR-0170); admins can change both on the sign-in policy screen.
         await tx.exec(
-          `INSERT INTO app.tenants (tenant_id, slug, name, home_region, default_locale, default_currency, default_time_zone, features)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, '{"aiAssistant": false}')`,
-          [tenantId, b.slug, b.companyName, b.region, locale, spec.defaultCurrency, spec.defaultTimeZone],
+          `INSERT INTO app.tenants (tenant_id, slug, name, home_region, default_locale, default_currency, default_time_zone, features, security, security_defaults_version)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, '{"aiAssistant": false}', $8, $9)`,
+          [
+            tenantId,
+            b.slug,
+            b.companyName,
+            b.region,
+            locale,
+            spec.defaultCurrency,
+            spec.defaultTimeZone,
+            JSON.stringify(NEW_WORKSPACE_SECURITY),
+            CURRENT_SECURITY_DEFAULTS_VERSION,
+          ],
         );
         await seedBuiltInRoles(tx);
         const u = await tx.one<{ id: string }>(

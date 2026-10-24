@@ -55,8 +55,8 @@ const steps = [
   // also writes the CycloneDX SBOM to .verify/sbom.cdx.json (kept as a CI artifact; ASVS V15.1.2)
   {
     id: 'security',
-    name: 'Security scan (pnpm audit high + secret scan + SBOM)',
-    cmd: 'pnpm audit --audit-level high && node scripts/secret-scan.mjs && node scripts/sbom.mjs',
+    name: 'Security scan (pnpm audit high + install policy + secret scan + SBOM)',
+    cmd: 'pnpm audit --audit-level high && node scripts/supply-chain.mjs && node scripts/secret-scan.mjs && node scripts/sbom.mjs',
   },
   { id: 'synth', name: 'CDK synth (all environments × regions)', cmd: 'pnpm --filter @thapsus/infra synth' },
   {

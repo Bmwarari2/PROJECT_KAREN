@@ -109,6 +109,40 @@ These connectors implement the interface (they can be listed and configured, dis
    - Downloads use five-minute presigned links and are audited as sensitive.
    - A document sent in error can be withdrawn. Discarding a draft batch deletes its files.
 
+### Structured statements from the payroll provider (ADR-0167)
+
+Thapsus-HR never calculates pay, tax or deductions. A provider can send each payslip's content as data, so employees get an accessible, printable payslip instead of only a PDF:
+
+1. **Upload.** The same batch upload takes one extra multipart part, `statements`: a JSON file in the `StatementImport` format (`apps/api/src/modules/payslips/statement.ts`, published in the OpenAPI document). The batch kind must be `payslip`. PDFs can be sent in the same request; a PDF matched to the same person is kept as the provider's copy of that statement.
+2. **Format.**
+   - The file: `provider.name`, optional `sample`, and up to 5,000 `statements`.
+   - Each statement:
+     - `employeeNumber` (matched like file names) and `currency` (ISO 4217);
+     - `employer` (name, address, tax reference) and `employee` (name, address, department, job title, tax code, national identifier);
+     - `period` (start, end, pay date, frequency, the provider's period label, tax year) and `payment` (method, account);
+     - `payments`, `deductions` and `employerContributions` lines (kind, label, optional quantity and rate);
+     - `totals` (gross, deductions, net), `ytd` items and up to five `notes`.
+   - Every amount is an integer in minor units.
+3. **Checks.** A file that is not valid JSON or does not match the format is refused as a whole, with the first 20 schema errors. A single statement is refused, and listed in the preview with its reason, when:
+   - its dates are not calendar dates in order (`periodInvalid`);
+   - its lines do not add up to the provider's totals (`paymentsDoNotAddUp`, `deductionsDoNotAddUp`, `netDoesNotAddUp`);
+   - the same person appears twice in one upload (`duplicate`).
+
+   Unknown employee numbers are left unmatched, as for files.
+
+4. **What is stored.** The statement is kept as received, except:
+   - the national identifier, kept masked (`•••• 456C`);
+   - the bank account, kept as its last four digits (`•••• 5678`).
+
+   The pay date, period, currency, gross and net are copied to columns for listing.
+
+5. **What employees see.**
+   - `/app/payslips` lists payslips by year with the year-to-date figures of the year's latest statement.
+   - `/app/payslips/:id` shows the statement with a print style, opens the provider's PDF in the viewer, and downloads the provider's PDF or, when none was sent, a PDF of the statement (`GET /v1/payslips/:id/pdf`).
+   - Every view and download is audited as sensitive.
+   - The publish notification names the period in the reader's locale ("Your payslip for August 2026 is ready").
+6. **Sample data.** The staging workspace's payslips come from a fictional "sample payroll provider" fixture (`apps/api/src/cli/staging/sample-payroll-provider.ts`). Its figures are hand-written and illustrative, never derived from tax rules, and the app marks them "Sample data" with the provider's name.
+
 ## Joiner and leaver IT automation (PROGRESS 6.4)
 
 <a id="microsoft-365"></a>

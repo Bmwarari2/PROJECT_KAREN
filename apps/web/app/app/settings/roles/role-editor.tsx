@@ -7,7 +7,7 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
+  PageSection,
   Dialog,
   DialogClose,
   DialogContent,
@@ -28,6 +28,7 @@ import { actionMatches } from '@thapsus/core/permissions';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { useSectionLevel } from '@/components/module-page';
 import { PageTitle } from '../../shell';
 import {
   adminGrade,
@@ -64,6 +65,7 @@ interface Props {
 
 export function RoleEditor({ role, copyFrom, canManage }: Props) {
   const t = useT();
+  const sec = useSectionLevel();
   const locale = useLocale();
   const toast = useToast();
   const router = useRouter();
@@ -219,9 +221,6 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
           </Dialog>
         ) : null}
       </div>
-      <Link href="/app/settings/roles" className="text-callout">
-        {t('access.roles.back')}
-      </Link>
       {role?.builtIn ? (
         <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
           {t('access.roles.readOnly')}
@@ -295,58 +294,65 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-4">
-        <CardTitle>{t('access.editor.permissionsTitle')}</CardTitle>
-        <p className="text-callout text-text-secondary">{t('access.editor.permissionsBody')}</p>
-        {source?.permissions.includes('*') ? (
-          <p className="text-callout font-semibold">{t('access.roles.allPermissions')}</p>
-        ) : null}
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {cat.areas.map((a) => {
-            const wildcard = `${a.area}.*`;
-            const all = source?.permissions.includes('*') || perms.has(wildcard);
-            return (
-              <fieldset key={a.area} className="flex flex-col gap-2 rounded-md border border-border p-4">
-                <legend className="px-1 text-callout font-semibold">{t(`access.area.${a.area}`)}</legend>
-                <label className="flex items-start gap-3 text-footnote text-text-secondary">
-                  <input
-                    type="checkbox"
-                    className={checkbox}
-                    disabled={readOnly}
-                    checked={!!all}
-                    onChange={(e) => toggle(wildcard, e.target.checked)}
-                  />
-                  <span>{t('access.editor.allInArea', { area: t(`access.area.${a.area}`) })}</span>
-                </label>
-                {a.permissions.map((perm) => {
-                  const covered = !!source?.permissions.includes('*') || coveredByWildcard(perm.key);
-                  return (
-                    <label key={perm.key} className="flex items-start gap-3 text-callout">
-                      <input
-                        type="checkbox"
-                        className={checkbox}
-                        disabled={readOnly || covered}
-                        checked={covered || perms.has(perm.key)}
-                        onChange={(e) => toggle(perm.key, e.target.checked)}
-                      />
-                      <span className="flex flex-wrap items-center gap-2">
-                        {permissionLabel(t, perm.key)}
-                        {perm.admin ? (
-                          <Badge tone="warning">{t('access.editor.adminPermission')}</Badge>
-                        ) : null}
-                      </span>
-                    </label>
-                  );
-                })}
-              </fieldset>
-            );
-          })}
-        </div>
-      </Card>
+      <PageSection
+        headingLevel={sec.level}
+        title={t('access.editor.permissionsTitle')}
+        description={t('access.editor.permissionsBody')}
+      >
+        <Card className="flex flex-col gap-4">
+          {source?.permissions.includes('*') ? (
+            <p className="text-callout font-semibold">{t('access.roles.allPermissions')}</p>
+          ) : null}
+          <div className="grid gap-x-8 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
+            {cat.areas.map((a) => {
+              const wildcard = `${a.area}.*`;
+              const all = source?.permissions.includes('*') || perms.has(wildcard);
+              return (
+                <fieldset key={a.area} className="flex min-w-0 flex-col gap-2">
+                  <legend className="mb-1 text-callout font-semibold">{t(`access.area.${a.area}`)}</legend>
+                  <label className="flex items-start gap-3 text-footnote text-text-secondary">
+                    <input
+                      type="checkbox"
+                      className={checkbox}
+                      disabled={readOnly}
+                      checked={!!all}
+                      onChange={(e) => toggle(wildcard, e.target.checked)}
+                    />
+                    <span>{t('access.editor.allInArea', { area: t(`access.area.${a.area}`) })}</span>
+                  </label>
+                  {a.permissions.map((perm) => {
+                    const covered = !!source?.permissions.includes('*') || coveredByWildcard(perm.key);
+                    return (
+                      <label key={perm.key} className="flex items-start gap-3 text-callout">
+                        <input
+                          type="checkbox"
+                          className={checkbox}
+                          disabled={readOnly || covered}
+                          checked={covered || perms.has(perm.key)}
+                          onChange={(e) => toggle(perm.key, e.target.checked)}
+                        />
+                        <span className="flex flex-wrap items-center gap-2">
+                          {permissionLabel(t, perm.key)}
+                          {perm.admin ? (
+                            <Badge tone="warning">{t('access.editor.adminPermission')}</Badge>
+                          ) : null}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              );
+            })}
+          </div>
+        </Card>
+      </PageSection>
 
-      <Card className="flex flex-col gap-4">
-        <CardTitle>{t('access.editor.fieldsTitle')}</CardTitle>
-        <p className="text-callout text-text-secondary">{t('access.editor.fieldsBody')}</p>
+      <PageSection
+        headingLevel={sec.level}
+        title={t('access.editor.fieldsTitle')}
+        landmark={false}
+        description={t('access.editor.fieldsBody')}
+      >
         <div>
           <Table dense scrollLabel={t('access.editor.fieldsTitle')}>
             <THead>
@@ -381,7 +387,12 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
                         {r.label}
                       </TH>
                       {(['default', ...LEVELS] as const).map((l) => (
-                        <TD key={l} className="text-center">
+                        <TD
+                          key={l}
+                          className="text-center"
+                          phone="inline"
+                          label={t(`access.editor.level.${l}`)}
+                        >
                           <input
                             type="radio"
                             className={checkbox}
@@ -405,8 +416,8 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
           </Table>
         </div>
         {otherRules.length ? (
-          <div>
-            <h3 className="text-callout font-semibold">{t('access.editor.otherRules')}</h3>
+          <div className="px-1">
+            <sec.sub className="text-callout font-semibold">{t('access.editor.otherRules')}</sec.sub>
             <ul className="mt-2 flex flex-col gap-1 text-callout text-text-secondary">
               {otherRules.map(([k, v]) => (
                 <li key={k}>
@@ -417,7 +428,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
             </ul>
           </div>
         ) : null}
-      </Card>
+      </PageSection>
 
       {!readOnly ? (
         <div className="flex justify-end">

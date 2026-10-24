@@ -1,6 +1,13 @@
 import { startTracing } from '@thapsus/core/tracing';
 import { createLogger } from '@thapsus/core/logger';
-import { depsFromEnv, jobHandlers, eventSubscribers, periodic, recordHeartbeat } from '@thapsus/api/worker';
+import {
+  CellTaskRunner,
+  depsFromEnv,
+  jobHandlers,
+  eventSubscribers,
+  periodic,
+  recordHeartbeat,
+} from '@thapsus/api/worker';
 import { Drainer, WorkerCycle } from './drain';
 import { Engine } from './engine';
 import { createWorkerServer } from './http';
@@ -26,10 +33,13 @@ const BEAT_MS = 30_000;
 const MODE = process.env.WORKER_MODE ?? 'loop';
 if (MODE !== 'loop' && MODE !== 'http') throw new Error('WORKER_MODE must be loop or http');
 
-// Sweep if due, heartbeat for the public status page if due (no tenant data), then one engine tick.
+// Sweep if due, heartbeat for the public status page if due (no tenant data), the cell-wide tasks that are
+// due (queue sample, detections, alerts), then one engine tick.
+const cellTasks = new CellTaskRunner(deps, log);
 const cycle = new WorkerCycle({
   engine,
   heartbeat: () => recordHeartbeat(deps.router, 'worker'),
+  cellTasks: () => cellTasks.runDue(),
   log,
   sweepMs: SWEEP_MS,
   beatMs: BEAT_MS,

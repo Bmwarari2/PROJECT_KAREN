@@ -5,6 +5,7 @@ export default function TenantsLayout({ children }: { children: React.ReactNode 
     <Messages
       ns={[
         'backoffice.tenants',
+        'backoffice.metrics.regionShort',
         'backoffice.tenant',
         'backoffice.contracts',
         'backoffice.flags',

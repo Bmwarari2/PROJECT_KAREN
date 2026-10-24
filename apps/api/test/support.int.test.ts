@@ -4,7 +4,14 @@ import { getPool, withTenant } from '@thapsus/db';
 import { MemoryObjectStore } from '../src/lib/object-store';
 import { periodic } from '../src/worker';
 import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
-import { injector, runJob, runQueued, staffSession, userSession } from './phase10-helpers';
+import {
+  injector,
+  runJob,
+  runQueued,
+  staffSession,
+  supportContactRole,
+  userSession,
+} from './phase10-helpers';
 
 /**
  * Help centre and support tickets (PROGRESS 10.1): tickets in the home region (forced RLS),
@@ -23,8 +30,10 @@ const objects = () => ctx.deps.objects as MemoryObjectStore;
 beforeAll(async () => {
   ctx = await startTestApp({ listen: false });
   owner = await ownerSession(ctx);
-  employee = await userSession(ctx, owner, 'employee', 'Fictional Requester');
-  colleague = await userSession(ctx, owner, 'employee', 'Fictional Colleague');
+  // built-in employees ask their own HR team; a custom role granted support.ticket contacts support (ADR-0163)
+  const contact = await supportContactRole(ctx, owner);
+  employee = await userSession(ctx, owner, contact, 'Fictional Requester');
+  colleague = await userSession(ctx, owner, contact, 'Fictional Colleague');
   api = injector(ctx);
 });
 afterAll(async () => {
@@ -49,18 +58,41 @@ const newTicket = (cookie: string, over: Record<string, unknown> = {}) =>
 
 describe('help centre', () => {
   it('searches localised articles and returns contextual articles for an app page', async () => {
-    const s = await api('GET', '/v1/help/articles?q=cancel%20plan', undefined, employee.cookie);
+    const s = await api('GET', '/v1/help/articles?q=cancel%20plan', undefined, owner.cookie);
     expect(s.statusCode).toBe(200);
     expect(s.json()[0].slug).toBe('plans-and-billing');
     const us = await ctx.app.inject({
       method: 'GET',
       url: '/v1/help/articles/plans-and-billing',
-      headers: { cookie: employee.cookie, 'accept-language': 'en-US' },
+      headers: { cookie: owner.cookie, 'accept-language': 'en-US' },
     });
     expect(us.json().title).toMatch(/canceling/);
     const c = await api('GET', '/v1/help/articles?context=/app/time-off', undefined, employee.cookie);
     expect(c.json().map((a: { slug: string }) => a.slug)).toContain('requesting-time-off');
     expect((await api('GET', '/v1/help/articles/nope', undefined, employee.cookie)).statusCode).toBe(404);
+  });
+
+  it('shows each reader only the articles about what they may do (ADR-0162)', async () => {
+    const plain = await userSession(ctx, owner, 'employee', 'Fictional Reader');
+    const slugs = async (url: string, cookie: string) =>
+      ((await api('GET', url, undefined, cookie)).json() as Array<{ slug: string }>).map((a) => a.slug);
+    const all = await slugs('/v1/help/articles', plain.cookie);
+    expect(all).toEqual(
+      expect.arrayContaining(['getting-started', 'requesting-time-off', 'notifications', 'contacting-hr']),
+    );
+    for (const admin of ['plans-and-billing', 'adding-people', 'support-access', 'security-and-sign-in'])
+      expect(all).not.toContain(admin);
+    expect(all).not.toContain('contacting-support');
+    // searching and opening behave the same: an article that is not for the reader is not found
+    expect(await slugs('/v1/help/articles?q=cancel%20plan', plain.cookie)).toEqual([]);
+    expect(
+      (await api('GET', '/v1/help/articles/plans-and-billing', undefined, plain.cookie)).statusCode,
+    ).toBe(404);
+    // the contextual link on a page they cannot use falls back to an article for them
+    expect(await slugs('/v1/help/articles?context=/app/billing', plain.cookie)).toEqual(['getting-started']);
+    expect(await slugs('/v1/help/articles', owner.cookie)).toEqual(
+      expect.arrayContaining(['plans-and-billing']),
+    );
   });
 
   it('shows the contact channels and SLA targets for the plan and region', async () => {

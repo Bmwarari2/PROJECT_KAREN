@@ -31,6 +31,8 @@ export interface ReportResult {
   restricted?: number;
   sensitive?: boolean;
   truncated?: boolean;
+  /** The person each row is about (reports that list people): their name links to their profile. */
+  rowEmployeeIds?: Array<string | null>;
 }
 
 const isMoney = (v: Cell): v is MoneyCell => !!v && typeof v === 'object' && 'amountMinor' in v;

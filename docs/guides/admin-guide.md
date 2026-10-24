@@ -62,14 +62,29 @@ People enter their **Workspace** and **Email**, then use one of:
 
 - **Password** and **Sign in**, then a **Six-digit code** and **Verify** if they use an authenticator app;
 - **Sign in with a passkey** (fingerprint, face or device PIN), which counts as two-step verification;
-- **Email me a sign-in link** (works once, expires after 15 minutes);
+- **Email me a sign-in link** (works once, expires after 10 minutes);
 - **Continue with single sign-on**, if set up.
 
-Sign-in is rate-limited per network address and per account, and repeated failures lock the account for a while.
+**Forgot your password?** under the password field emails a link to choose a new one. It works once, expires after 30 minutes, signs the person out everywhere and does not sign them in: they sign in with the new password and still use their second factor. The answer on screen is the same whether or not the address has an account.
 
-### Two-step verification for admins
+Sign-in is rate-limited per network address, per account and per workspace, and repeated failures lock the account for a while. The workspace limit grows with your number of people, so it only stops attacks spread over many addresses.
 
-The **Company owner**, **HR admin**, **Country or entity HR admin** and **Payroll admin** must use two-step verification. Until they do, the app shows only the **Security** page. There, choose **Authenticator app** → **Set up authenticator app** (add the key, enter the code, **Verify**), or **Passkeys** → **Add a passkey**.
+### Two-step verification
+
+New workspaces require two-step verification for **everyone**: the first time anyone signs in, the app shows only the **Security** page until they choose **Authenticator app** → **Set up authenticator app** (add the key, enter the code, **Verify**), or **Passkeys** → **Add a passkey**. An admin can turn this off for non-admin roles in **Settings** → **Sign-in policy** → **Require two-step verification for everyone** (you confirm it is you first). Workspaces created before this change keep their previous rule (admins only) until an admin turns it on.
+
+The **Company owner**, **HR admin**, **Country or entity HR admin** and **Payroll admin** must always use two-step verification. Their sessions also end sooner: after 15 minutes without activity and after 8 hours at most, whatever the sign-in policy says.
+
+### Who can reset sign-ins
+
+In **Settings** → **Users and access**, open a person. **Sign-in and security** offers:
+
+- **Sign out everywhere**;
+- **Send password reset link**: they get an email with a link that works once for 24 hours. You never see or set their password, and their two-step verification stays as it is;
+- **Reset two-step verification**, when they have lost their authenticator, after you have confirmed who they are (in person or on a video call with ID);
+- **Unlink single sign-on**, when your identity provider replaced their account.
+
+Who can do this: someone whose **company-wide** role includes managing settings (the **Company owner**, or a custom role with `settings.manage` at company scope) **and** every permission the person holds. So nobody can help someone with more access than they have; only an owner can help another owner. You confirm it is you first, and you can never do it for yourself. Each action is in the audit log, and the person is emailed when their password or two-step verification is reset. Thapsus staff cannot reset anyone's sign-in.
 
 ### Verified domains
 
@@ -86,7 +101,9 @@ SAML 2.0 and OpenID Connect are supported. The company owner, signed in, uses:
 2. On first SSO sign-in, an account is created only for addresses at a verified domain, and only while `jitProvisioning` is on (the default). It gets the **Employee** role.
 3. To enforce SSO, call `PATCH /v1/settings/security` with `ssoEnforced: true` (needs an enabled connection). Password, passkey and sign-in-link sign-in are then refused for everyone, so test SSO with the owner account first.
 
-An SSO sign-in counts as two-step verification unless you set `trustIdpMfa: false`.
+The first SSO sign-in links the person to their identity-provider account (its issuer and subject). If the identity provider later sends the same email for a different account, the sign-in is refused; when that is genuine (the provider replaced the account), use **Unlink single sign-on** on the person's page.
+
+An SSO sign-in counts as two-step verification only when **Trust two-step verification done by the identity provider** is on (off by default for new workspaces) **and** the identity provider says it used more than one factor (OIDC `amr`/`acr`, or the SAML authentication context). Otherwise people also use their own authenticator in Thapsus-HR.
 
 ### SCIM provisioning (API only)
 
@@ -158,7 +175,7 @@ Cost centres, grades, positions, addresses and geofences are API only (`/v1/org/
 ### Add, find and change people
 
 - **Add a person**: **People** → **Add person**. Enter **Legal first name**, **Legal last name**, **Work email**, **Job title**, **Start date**, **Legal entity**, **Department**, **Location**, **Pay** and **Weekly hours**, then **Add to the team**. Future joiners show as **Starting soon**.
-- **Give a sign-in**: on the profile, **Invite to sign in** sends a one-time link valid for 7 days (or points to SSO if enforced).
+- **Give a sign-in**: on the profile, **Invite to sign in** sends a one-time link valid for 3 days (or points to SSO if enforced).
 - **Find people**: search **People** by name, number, email or title, and filter by **Active**, **Starting soon**, **Left** or **All**. **Org chart** has **Find a person**, **Show team** and **Hide team**, and stays fast at very large sizes.
 - **View history**: profiles have **Overview**, **History** and **Documents** tabs. **As of** shows the record on any past or future date.
 - **Change a record**: choose **Make a change**, set the **Effective date**, edit the fields you may change and **Save**. Future-dated changes apply on their date. If an approval chain applies, you see **Change sent for approval**.
@@ -434,24 +451,26 @@ The screens are committed; the phase is not signed off.
 
 ## 18. Settings reference
 
-| Setting                                  | Where                                                                           | Default                                        |
-| ---------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Verified domains                         | **Settings** → **Verified domains**                                             | None                                           |
-| SSO connections and enforcement          | `/v1/settings/sso-connections`, `PATCH /v1/settings/security`                   | Off                                            |
-| Session idle and maximum length          | `PATCH /v1/settings/security`                                                   | 30 minutes (5–720); 12 hours (1–720)           |
-| Sign-in lockout                          | `PATCH /v1/settings/security`                                                   | 5 failures (3–20), 15 minutes (1–1,440)        |
-| SCIM tokens, support access              | `/v1/settings/scim-tokens`, `/v1/settings/support-grants`                       | None                                           |
-| Approval chains                          | `/v1/approval-policies`                                                         | Manager approves                               |
-| Leave policies, cover rules, calendars   | `/v1/leave/policies`, `/v1/leave/cover-rules`, `/v1/settings/company-calendars` | Standard policy per region                     |
-| Fit-note threshold, FMLA leave year      | `PUT /v1/settings/absence`                                                      | None                                           |
-| Working-time rules                       | `PUT /v1/settings/time` (`enforcement`)                                         | Warn                                           |
-| Geofencing per country, with notice      | `PUT /v1/settings/time` (`geofence`)                                            | Off                                            |
-| Offline punches, kiosk lockout, variance | `PUT /v1/settings/time` (`clock`, `kiosk`, `timesheets`)                        | 72 hours; 5 tries, 15 minutes; 15 minutes      |
-| Compliance reminders                     | `PUT /v1/settings/compliance`                                                   | 90/30/7/0 days; matrix 60/30/7/0               |
-| Automation rules                         | **Automation**                                                                  | None                                           |
-| Retention and legal holds                | **Privacy** → **Retention**                                                     | Automatic deletion off                         |
-| Reports                                  | `PUT /v1/settings/reports`                                                      | Bradford factor off; results kept 168 hours    |
-| API, webhooks, streams, branding, Ask HR | **Settings** → **Integrations and platform**                                    | See [section 15](#15-integrations-and-the-api) |
+| Setting                                  | Where                                                                           | Default                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Verified domains                         | **Settings** → **Verified domains**                                             | None                                                                        |
+| SSO connections and enforcement          | `/v1/settings/sso-connections`, `PATCH /v1/settings/security`                   | Off                                                                         |
+| Session idle and maximum length          | `PATCH /v1/settings/security`                                                   | 30 minutes (5–720); 12 hours (1–720); admins at most 15 minutes and 8 hours |
+| Sign-in lockout                          | `PATCH /v1/settings/security`                                                   | 5 failures (3–20), 15 minutes (1–1,440)                                     |
+| Two-step verification for everyone       | **Settings** → **Sign-in policy** (`requireMfaForEveryone`)                     | On (new workspaces)                                                         |
+| Trust the identity provider's MFA        | **Settings** → **Sign-in policy** (`trustIdpMfa`)                               | Off (new workspaces)                                                        |
+| SCIM tokens, support access              | `/v1/settings/scim-tokens`, `/v1/settings/support-grants`                       | None                                                                        |
+| Approval chains                          | `/v1/approval-policies`                                                         | Manager approves                                                            |
+| Leave policies, cover rules, calendars   | `/v1/leave/policies`, `/v1/leave/cover-rules`, `/v1/settings/company-calendars` | Standard policy per region                                                  |
+| Fit-note threshold, FMLA leave year      | `PUT /v1/settings/absence`                                                      | None                                                                        |
+| Working-time rules                       | `PUT /v1/settings/time` (`enforcement`)                                         | Warn                                                                        |
+| Geofencing per country, with notice      | `PUT /v1/settings/time` (`geofence`)                                            | Off                                                                         |
+| Offline punches, kiosk lockout, variance | `PUT /v1/settings/time` (`clock`, `kiosk`, `timesheets`)                        | 72 hours; 5 tries, 15 minutes; 15 minutes                                   |
+| Compliance reminders                     | `PUT /v1/settings/compliance`                                                   | 90/30/7/0 days; matrix 60/30/7/0                                            |
+| Automation rules                         | **Automation**                                                                  | None                                                                        |
+| Retention and legal holds                | **Privacy** → **Retention**                                                     | Automatic deletion off                                                      |
+| Reports                                  | `PUT /v1/settings/reports`                                                      | Bradford factor off; results kept 168 hours                                 |
+| API, webhooks, streams, branding, Ask HR | **Settings** → **Integrations and platform**                                    | See [section 15](#15-integrations-and-the-api)                              |
 
 ## 19. Where legal values come from
 

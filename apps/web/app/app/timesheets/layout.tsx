@@ -11,6 +11,7 @@ export default function TimesheetsLayout({ children }: { children: React.ReactNo
         'rota.prevWeek',
         'rota.weekOf',
         'rota.nextWeek',
+        'actionable.timesheet',
       ]}
     >
       {children}

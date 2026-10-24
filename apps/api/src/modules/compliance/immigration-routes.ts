@@ -28,7 +28,7 @@ import {
   vaultActor,
   type EmployeeRow,
 } from './service';
-import { scopePredicate } from '../employees/service';
+import { loadTarget, scopePredicate } from '../employees/service';
 import { i9Statuses, rtwStatuses } from './status';
 
 const Source = Type.Object({ url: Type.String(), title: Type.String() });
@@ -48,6 +48,8 @@ const RtwRow = Type.Object({
   excuseEndsOn: Nullable(Type.String()),
   retainUntil: Nullable(Type.String()),
   hasEvidence: Type.Boolean(),
+  /** Right-to-work evidence documents attached to the person (kept in the vault, ADR-0166). */
+  evidenceDocuments: Type.Optional(Type.Integer()),
 });
 const I9Row = Type.Object({
   employeeId: Uuid,
@@ -157,6 +159,14 @@ export async function immigrationRoutes(app: FastifyInstance) {
           params,
         );
         const statuses = await rtwStatuses(tx, book, emps, asOf, await complianceSettings(tx));
+        const attached = new Map(
+          (
+            await tx.query<{ employee_id: string; n: number }>(
+              `SELECT employee_id, count(*)::int AS n FROM app.documents WHERE attachment_type = 'right_to_work' AND status = 'ready' AND employee_id = ANY($1::uuid[]) GROUP BY employee_id`,
+              [emps.map((e) => e.id)],
+            )
+          ).map((r) => [r.employee_id, r.n]),
+        );
         const rows = statuses.map(({ employee: e, status, check: c, retainUntil }) => ({
           employeeId: e.id,
           employeeName: e.display_name,
@@ -170,7 +180,8 @@ export async function immigrationRoutes(app: FastifyInstance) {
           followUpDueOn: c?.follow_up_due_on ?? null,
           excuseEndsOn: c?.excuse_ends_on ?? null,
           retainUntil,
-          hasEvidence: !!c?.evidence_vault_id,
+          hasEvidence: !!c?.evidence_vault_id || (attached.get(e.id) ?? 0) > 0,
+          evidenceDocuments: attached.get(e.id) ?? 0,
         }));
         // Follow-up dates reveal time-limited immigration permission: the list view is audited as sensitive.
         await app.audit(tx, req, {
@@ -393,17 +404,25 @@ export async function immigrationRoutes(app: FastifyInstance) {
     {
       schema: {
         tags: ['compliance'],
-        summary: 'One check with its vault details (every decrypt is audited)',
+        summary:
+          'One check with its vault details (every view and decrypt is audited). Without vault access to immigration data the details are left out and `detailsRestricted` is true.',
         params: Type.Object({ id: Uuid }),
         response: {
           200: Type.Object({
             id: Uuid,
             employeeId: Uuid,
+            employeeName: Type.String(),
             checkMethod: Type.String(),
             listType: Type.String(),
             checkedOn: Type.String(),
+            checkedByName: Nullable(Type.String()),
+            excuse: Type.String(),
+            permissionExpiresOn: Nullable(Type.String()),
+            pvnDate: Nullable(Type.String()),
             followUpDueOn: Nullable(Type.String()),
             excuseEndsOn: Nullable(Type.String()),
+            current: Type.Boolean(),
+            detailsRestricted: Type.Boolean(),
             details: Nullable(
               Type.Object({
                 documentType: Nullable(Type.String()),
@@ -434,16 +453,34 @@ export async function immigrationRoutes(app: FastifyInstance) {
           details_vault_id: string | null;
           evidence_vault_id: string | null;
           rule_source: unknown;
+          excuse: string;
+          permission_expires_on: string | null;
+          pvn_date: string | null;
+          superseded_by: string | null;
+          checked_by_name: string | null;
         }>(
-          `SELECT id, employee_id, check_method, list_type, checked_on::text, follow_up_due_on::text, excuse_ends_on::text, details_vault_id, evidence_vault_id, rule_source FROM app.rtw_checks WHERE id = $1`,
+          `SELECT c.id, c.employee_id, c.check_method, c.list_type, c.checked_on::text, c.follow_up_due_on::text, c.excuse_ends_on::text, c.details_vault_id, c.evidence_vault_id, c.rule_source,
+                  c.excuse, c.permission_expires_on::text, c.pvn_date::text, c.superseded_by, u.display_name AS checked_by_name
+             FROM app.rtw_checks c LEFT JOIN app.users u ON u.tenant_id = c.tenant_id AND u.id = c.checked_by WHERE c.id = $1`,
           [id],
         );
         if (!c) throw new ApiError('notFound');
-        const target = targetOf(await employee(tx, c.employee_id));
-        if (!can(auth.principal, 'compliance.read', target)) throw new ApiError('forbidden');
+        const emp = await employee(tx, c.employee_id);
+        const target = targetOf(emp);
+        // the same scope as the right-to-work list (the whole management line), not only the direct manager
+        if (!can(auth.principal, 'compliance.read', await loadTarget(tx, c.employee_id)))
+          throw new ApiError('forbidden');
         let details = null;
         let evidence = null;
-        if (c.details_vault_id || c.evidence_vault_id) {
+        const vaultAccess = can(auth.principal, 'vault.read:immigration', target);
+        await app.audit(tx, req, {
+          action: 'compliance.rtw_check_viewed',
+          targetType: 'employee',
+          targetId: c.employee_id,
+          diff: { checkId: c.id, details: vaultAccess },
+          sensitive: true,
+        });
+        if (vaultAccess && (c.details_vault_id || c.evidence_vault_id)) {
           const fields = await vault.read(tx, vaultActor(req), auth.tenantId, target, 'immigration');
           const d = fields.find((f) => f.field === `rtw_details:${id}`);
           if (d)
@@ -460,11 +497,18 @@ export async function immigrationRoutes(app: FastifyInstance) {
         return {
           id: c.id,
           employeeId: c.employee_id,
+          employeeName: emp.display_name,
           checkMethod: c.check_method,
           listType: c.list_type,
           checkedOn: c.checked_on,
+          checkedByName: c.checked_by_name,
+          excuse: c.excuse,
+          permissionExpiresOn: c.permission_expires_on,
+          pvnDate: c.pvn_date,
           followUpDueOn: c.follow_up_due_on,
           excuseEndsOn: c.excuse_ends_on,
+          current: !c.superseded_by,
+          detailsRestricted: !vaultAccess && !!(c.details_vault_id || c.evidence_vault_id),
           details,
           evidence,
           ruleSource: c.rule_source,

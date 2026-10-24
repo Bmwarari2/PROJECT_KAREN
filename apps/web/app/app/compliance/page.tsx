@@ -16,6 +16,7 @@ import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro, useInModule } from '@/components/module-page';
+import { PersonLink } from '@/components/person-link';
 
 interface Dashboard {
   asOf: string;
@@ -210,15 +211,16 @@ export default function ComplianceDashboard() {
               {x.alerts.map((a) => (
                 <li
                   key={`${a.kind}:${a.employeeId}`}
-                  className="flex flex-wrap items-center gap-2 text-callout"
+                  className="flex flex-col items-start gap-1 text-callout sm:flex-row sm:items-center sm:gap-3"
                 >
-                  <span className="font-semibold">{a.employeeName}</span>
-                  <span className="text-text-secondary">
-                    {t(`compliance.alert.${a.kind}`, { period: period(a.qualifyingPeriod) })}
+                  {/* the text takes the width; the date sits under it on phones (ADR-0162) */}
+                  <span className="min-w-0 flex-1">
+                    <PersonLink id={a.employeeId} name={a.employeeName} />{' '}
+                    <span className="text-text-secondary">
+                      {t(`compliance.alert.${a.kind}`, { period: period(a.qualifyingPeriod) })}
+                    </span>
                   </span>
-                  <Badge tone={a.daysLeft <= 7 ? 'warning' : 'neutral'} className="ml-auto">
-                    {formatDate(a.dueOn, locale)}
-                  </Badge>
+                  <Badge tone={a.daysLeft <= 7 ? 'warning' : 'neutral'}>{formatDate(a.dueOn, locale)}</Badge>
                 </li>
               ))}
             </ul>

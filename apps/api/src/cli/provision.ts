@@ -3,6 +3,11 @@ import { withRegistry, withTenant, writeAudit, type TenantRouter, type Tx } from
 import { hashPassword } from '../modules/auth/tokens';
 import { assignRole, seedBuiltInRoles } from '../modules/authz/principal';
 import type { TenantDirectory } from '../lib/directory';
+import {
+  CURRENT_SECURITY_DEFAULTS_VERSION,
+  NEW_WORKSPACE_SECURITY,
+  type TenantSecurity,
+} from '../modules/auth/sessions';
 
 /** Creates a tenant exactly as sign-up does (registry, tenant row, roles, owner). Idempotent by slug. */
 export async function provisionTenant(
@@ -15,6 +20,8 @@ export async function provisionTenant(
     ownerEmail: string;
     ownerName: string;
     password: string;
+    /** Sign-in policy choices on top of a new workspace's (sign-up's) defaults. */
+    security?: Partial<TenantSecurity>;
   },
 ): Promise<{ tenantId: string; ownerId: string; created: boolean }> {
   const existing = await router.lookupSlug(opts.slug);
@@ -50,7 +57,8 @@ export async function provisionTenant(
   const hash = await hashPassword(opts.password);
   const ownerId = await withTenant(router, tenantId, async (tx) => {
     await tx.exec(
-      `INSERT INTO app.tenants (tenant_id, slug, name, home_region, default_locale, default_currency, default_time_zone) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO app.tenants (tenant_id, slug, name, home_region, default_locale, default_currency, default_time_zone, security, security_defaults_version)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         tenantId,
         opts.slug,
@@ -59,6 +67,9 @@ export async function provisionTenant(
         spec.defaultLocale,
         spec.defaultCurrency,
         spec.defaultTimeZone,
+        // as sign-up: two-step verification for everyone (ADR-0170)
+        JSON.stringify({ ...NEW_WORKSPACE_SECURITY, ...opts.security }),
+        CURRENT_SECURITY_DEFAULTS_VERSION,
       ],
     );
     await seedBuiltInRoles(tx);

@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { Button, Card, CardTitle, Field, Input, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
+import { Button, Card, Field, Input, PageSection, Table, TD, TH, THead, TR, useToast } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -24,7 +24,7 @@ const FIELDS: Record<Kind, Array<{ key: string; type?: string; placeholder?: str
   ],
 };
 
-function Section({ kind }: { kind: Kind }) {
+function OrgSection({ kind }: { kind: Kind }) {
   const t = useT();
   const sec = useSectionLevel();
   const toast = useToast();
@@ -43,29 +43,11 @@ function Section({ kind }: { kind: Kind }) {
       toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
     }
   }
+  const [first, ...rest] = FIELDS[kind];
   return (
-    <Card className="flex flex-col gap-4">
-      <CardTitle as={sec.heading}>{t(`orgSettings.${kind}`)}</CardTitle>
-      <form onSubmit={add} className="grid gap-3 sm:grid-cols-5 sm:items-end">
-        {FIELDS[kind].map((f) => (
-          <Field key={f.key} id={`${kind}-${f.key}`} label={t(`orgSettings.field.${f.key}`)}>
-            {(p) => (
-              <Input
-                {...p}
-                required={
-                  f.key === 'name' || f.key === 'country' || f.key === 'currency' || f.key === 'timeZone'
-                }
-                placeholder={f.placeholder}
-                value={v[f.key] ?? ''}
-                onChange={(e) => setV((x) => ({ ...x, [f.key]: e.target.value }))}
-              />
-            )}
-          </Field>
-        ))}
-        <Button type="submit">{t('common.add')}</Button>
-      </form>
+    <PageSection headingLevel={sec.level} title={t(`orgSettings.${kind}`)} className="gap-3">
       {data?.length ? (
-        <Table dense scrollLabel={t(`orgSettings.${kind}`)}>
+        <Table dense scrollLabel={t('admin.tableScroll', { name: t(`orgSettings.${kind}`) })}>
           <THead>
             <tr>
               {FIELDS[kind].map((f) => (
@@ -76,26 +58,59 @@ function Section({ kind }: { kind: Kind }) {
           <tbody>
             {data.map((r) => (
               <TR key={r.id}>
-                {FIELDS[kind].map((f) => (
-                  <TD key={f.key}>{r[f.key]}</TD>
+                <TD className="font-semibold">{r[first!.key]}</TD>
+                {rest.map((f) => (
+                  <TD key={f.key} phone="inline" label={t(`orgSettings.field.${f.key}`)}>
+                    {r[f.key]}
+                  </TD>
                 ))}
               </TR>
             ))}
           </tbody>
         </Table>
       ) : null}
-    </Card>
+      <Card>
+        <form onSubmit={add} className="flex flex-col gap-4">
+          <sec.sub className="text-callout font-semibold">{t(`orgSettings.add.${kind}`)}</sec.sub>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {FIELDS[kind].map((f) => (
+              <Field key={f.key} id={`${kind}-${f.key}`} label={t(`orgSettings.field.${f.key}`)}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    required={
+                      f.key === 'name' || f.key === 'country' || f.key === 'currency' || f.key === 'timeZone'
+                    }
+                    placeholder={f.placeholder}
+                    value={v[f.key] ?? ''}
+                    onChange={(e) => setV((x) => ({ ...x, [f.key]: e.target.value }))}
+                  />
+                )}
+              </Field>
+            ))}
+          </div>
+          <Button type="submit" className="self-start">
+            {t('common.add')}
+          </Button>
+        </form>
+      </Card>
+    </PageSection>
   );
 }
 
 export default function OrganisationSettingsPage() {
   const t = useT();
   return (
-    <div className="flex flex-col gap-6">
-      <PageTitle>{t('orgSettings.title')}</PageTitle>
-      <Section kind="legal-entities" />
-      <Section kind="departments" />
-      <Section kind="locations" />
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-1">
+        <PageTitle>{t('admin.section.organisation.title')}</PageTitle>
+        <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">
+          {t('admin.section.organisation.body')}
+        </p>
+      </div>
+      <OrgSection kind="legal-entities" />
+      <OrgSection kind="departments" />
+      <OrgSection kind="locations" />
     </div>
   );
 }

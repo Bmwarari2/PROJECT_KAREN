@@ -83,3 +83,17 @@ describe('proxyToApi forwarding headers', () => {
     expect(h.get('x-forwarded-host')).toBe('app.example.test');
   });
 });
+
+describe('honey endpoints on the web host (ADR-0179)', () => {
+  it('hand the scanner paths to the API honey route and leave every other page alone', async () => {
+    const { proxy, WEB_HONEY_PATHS } = await import('../proxy');
+    const { NextRequest } = await import('next/server');
+    for (const [path, name] of Object.entries(WEB_HONEY_PATHS)) {
+      const res = proxy(new NextRequest(`http://app.example.test${path}`));
+      expect(res.headers.get('x-middleware-rewrite')).toBe(`http://app.example.test/v1/honey/${name}`);
+    }
+    const page = proxy(new NextRequest('http://app.example.test/pricing'));
+    expect(page.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(page.headers.get('content-security-policy')).toContain('nonce-');
+  });
+});

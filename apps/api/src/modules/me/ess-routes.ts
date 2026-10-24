@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { can, fieldAccess } from '@thapsus/core/permissions';
 import { isLocale, t, type Locale } from '@thapsus/core/i18n';
+import { isTargetType, notificationHref } from '@thapsus/core/links';
 import { isValidTimeZone, today } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
 import { requireAuth } from '../../http/context';
@@ -392,6 +393,10 @@ export async function essRoutes(app: FastifyInstance) {
     category: Type.String(),
     title: Type.String(),
     link: Nullable(Type.String()),
+    /** What the notification is about (ADR-0160); null for older notifications. */
+    target: Nullable(Type.Object({ type: Type.String(), id: Uuid })),
+    /** The page it opens: the target's page, else its stored link, else the list page for its kind. */
+    href: Type.String(),
     createdAt: Type.String(),
     read: Type.Boolean(),
   });
@@ -437,10 +442,13 @@ export async function essRoutes(app: FastifyInstance) {
             title_key: string;
             params: Record<string, string>;
             link: string | null;
+            target_type: string | null;
+            target_id: string | null;
+            dedupe_key: string | null;
             created_at: string;
             read_at: string | null;
           }>(
-            `SELECT id, kind, title_key, params, link, created_at, read_at FROM app.notifications WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
+            `SELECT id, kind, title_key, params, link, target_type, target_id, dedupe_key, created_at, read_at FROM app.notifications WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
             params,
           );
           const unread = (
@@ -457,6 +465,17 @@ export async function essRoutes(app: FastifyInstance) {
               category: r.kind.split('.')[0]!,
               title: t(locale, r.title_key, r.params),
               link: r.link,
+              target:
+                r.target_type && r.target_id && isTargetType(r.target_type)
+                  ? { type: r.target_type, id: r.target_id }
+                  : null,
+              href: notificationHref({
+                kind: r.kind,
+                targetType: r.target_type,
+                targetId: r.target_id,
+                link: r.link,
+                dedupeKey: r.dedupe_key,
+              }),
               createdAt: r.created_at,
               read: !!r.read_at,
             })),

@@ -11,6 +11,9 @@ export default function PeopleDetailLayout({ children }: { children: React.React
         'admin.optional',
         'admin.absence.department',
         'documents.empty',
+        'documents.categoryName',
+        'docAttach',
+        'docView',
         'timeOff.type',
         'timeOff.entitlement',
         'timeOff.carriedOver',
@@ -18,6 +21,14 @@ export default function PeopleDetailLayout({ children }: { children: React.React
         'timeOff.booked',
         'rota.location',
         'reports.enum',
+        'actionable.person',
+        'compliance.noAccess',
+        'compliance.status',
+        'compliance.rtw.title',
+        'compliance.rtw.checkedOn',
+        'compliance.rtw.listType',
+        'compliance.rtw.followUp',
+        'compliance.rtw.list',
       ]}
     >
       {children}

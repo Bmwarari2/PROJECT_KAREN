@@ -7,6 +7,14 @@ import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { periodic, registerJob, subscribe } from '../../jobs/registry';
 import { employeesForDate, employeeValues, runRule, type Action, type Rule } from './engine';
 import { integrationHandlers, isPublicHttpsUrl } from './integrations';
+import { postOutbound, type OutboundPost } from '../../lib/outbound';
+import type { Deps } from '../../deps';
+
+/** Automation calls to customer endpoints: postOutbound with the cell's SSRF policy and a 5-second limit. */
+export const automationPost =
+  (deps: Pick<Deps, 'outbound' | 'outboundPost'>): OutboundPost =>
+  (url, body, headers) =>
+    (deps.outboundPost ?? postOutbound)(url, body, headers, { policy: deps.outbound, timeoutMs: 5000 });
 
 const Recipient = Type.Object({
   type: Type.Union(['manager', 'role', 'user', 'employee'].map((t) => Type.Literal(t))),
@@ -270,11 +278,14 @@ export async function automationRoutes(app: FastifyInstance) {
       const { id } = req.params as { id: string };
       return app.tenantTx(
         req,
-        (tx) =>
-          tx.query(
+        async (tx) => {
+          if (!(await tx.maybe('SELECT 1 FROM app.automation_rules WHERE id = $1', [id])))
+            throw new ApiError('notFound');
+          return tx.query(
             `SELECT id, event_key AS "eventKey", dry_run AS "dryRun", status, detail, created_at AS "createdAt" FROM app.automation_runs WHERE rule_id = $1 ORDER BY created_at DESC LIMIT 200`,
             [id],
-          ),
+          );
+        },
         { readOnly: true },
       );
     },
@@ -326,7 +337,7 @@ registerJob('automation.evaluate', async (ctx) => {
           eventKey: `ev:${eventId}`,
           date: payload.effectiveDate ?? payload.startDate ?? new Date().toISOString().slice(0, 10),
         },
-        { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey },
+        { dryRun: false, post: automationPost(ctx.deps), signingKey: ctx.deps.integrationSigningKey },
       );
       if (r.status === 'succeeded') ran++;
     }
@@ -346,7 +357,7 @@ registerJob('automation.daily', async (ctx) => {
             tx,
             rule,
             { employeeId: emp, values: await employeeValues(tx, emp), eventKey: `date:${emp}:${date}`, date },
-            { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey },
+            { dryRun: false, post: automationPost(ctx.deps), signingKey: ctx.deps.integrationSigningKey },
           );
           if (r.status === 'succeeded') ran++;
         }
@@ -366,7 +377,7 @@ registerJob('automation.daily', async (ctx) => {
               eventKey: `doc:${d.id}:${date}`,
               date,
             },
-            { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey },
+            { dryRun: false, post: automationPost(ctx.deps), signingKey: ctx.deps.integrationSigningKey },
           );
           if (r.status === 'succeeded') ran++;
         }
@@ -391,7 +402,7 @@ registerJob('automation.daily', async (ctx) => {
               eventKey: `thr:${b.key}:${date}`,
               date,
             },
-            { dryRun: false, fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey },
+            { dryRun: false, post: automationPost(ctx.deps), signingKey: ctx.deps.integrationSigningKey },
           );
           if (r.status === 'succeeded') ran++;
         }
@@ -459,7 +470,7 @@ registerJob('integrations.dispatch', async (ctx) => {
           employeeId: p.employeeId,
           date: p.date,
         },
-        { fetch: ctx.deps.fetch, signingKey: ctx.deps.integrationSigningKey },
+        { fetch: ctx.deps.fetch, post: automationPost(ctx.deps), signingKey: ctx.deps.integrationSigningKey },
       )
       .catch((e: Error) => ({ ok: false, detail: { reason: 'handler_error', error: e.name } }));
   }

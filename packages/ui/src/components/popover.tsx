@@ -1,10 +1,12 @@
+'use client';
 import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { cn } from './primitives';
+import { openedOnce, standInTrigger, useOverlayOpened } from './overlay';
 
 /** Popovers (DESIGN.md §6). */
-export const Popover = PopoverPrimitive.Root;
-export const PopoverTrigger = PopoverPrimitive.Trigger;
+export const Popover = openedOnce(PopoverPrimitive.Root, 'Popover');
+export const PopoverTrigger = standInTrigger(PopoverPrimitive.Trigger, 'dialog', 'PopoverTrigger');
 export const PopoverClose = PopoverPrimitive.Close;
 
 export function PopoverContent({
@@ -13,6 +15,8 @@ export function PopoverContent({
   sideOffset = 6,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  // the content mounts once the popover is first opened (ADR-0186)
+  if (!useOverlayOpened()) return null;
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content

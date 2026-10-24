@@ -12,8 +12,12 @@ import { composeToken, hashToken, MAGIC_PREFIX, newToken } from '../auth/tokens'
 import { contactsAsOf, employeeAsOf, filterFields, loadTarget } from '../employees/service';
 import { claimPersonTasks } from '../workflows/service';
 
-/** Invitation links stay valid for a week (a new joiner may open the email days later). */
-const INVITE_TTL_MS = 7 * 24 * 3_600_000;
+/**
+ * Invitation links stay valid for 3 days (a new joiner may open the email days later; HR can send a new
+ * one). Shortened from a week by the security hardening plan (2.3.1, ADR-0171): an emailed credential
+ * should live no longer than it needs to.
+ */
+export const INVITE_TTL_MS = 3 * 24 * 3_600_000;
 /** Non-admin roles an invitation may grant; admin roles are assigned in role settings with MFA. */
 const INVITABLE_ROLES = ['manager'] as const;
 const zoneOf = (req: FastifyRequest) => req.auth?.user.timeZone ?? 'Europe/London';
@@ -141,7 +145,7 @@ export async function onboardingRoutes(app: FastifyInstance) {
         if (passwordless) {
           const secret = newToken();
           await tx.exec(
-            `INSERT INTO app.magic_links (tenant_id, user_id, token_hash, expires_at) VALUES (app.current_tenant(), $1, $2, $3)`,
+            `INSERT INTO app.magic_links (tenant_id, user_id, token_hash, expires_at, purpose) VALUES (app.current_tenant(), $1, $2, $3, 'invitation')`,
             [user.id, hashToken(secret), new Date(deps.now().getTime() + INVITE_TTL_MS)],
           );
           link = `${deps.config.appBaseUrl}/auth/magic?token=${encodeURIComponent(composeToken(MAGIC_PREFIX, auth.tenantId, secret))}`;

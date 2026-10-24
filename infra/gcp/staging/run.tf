@@ -19,6 +19,8 @@ locals {
     LOG_FORMAT        = "gcp"
     LOG_LEVEL         = "info"
     OTEL_SDK_DISABLED = "true"
+    # security alert recipients for the API (dead-man's switch) and the worker (alerts and digests)
+    SECURITY_ALERT_EMAILS = join(",", var.security_alert_emails)
   }
 
   # env name => secret key in secrets.tf
@@ -42,6 +44,12 @@ locals {
     DATABASE_SECRET           = "db-app"
     DIRECTORY_DATABASE_SECRET = "db-directory"
     STAGING_LOGINS            = "test-logins"
+  }
+
+  # The staff-invite job reaches only the back-office schema and who to invite.
+  staff_invite_secrets = {
+    BACKOFFICE_DATABASE_SECRET = "db-backoffice"
+    STAFF_INVITEE              = "staff-invitee"
   }
 }
 
@@ -446,5 +454,82 @@ resource "google_cloud_run_v2_job" "seed" {
     google_project_iam_member.sql_client,
     google_sql_user.directory,
     google_sql_database.global,
+  ]
+}
+
+# Invites the first staff member (the product owner) to the back office (apps/api/src/cli/staff-invite.ts,
+# ADR-0174): creates a passkey-only staff account and writes its one-time enrolment link to the
+# staff-invite secret, never to a log. The deploy runs it once after the seed when GCP_STAFF_OWNER_EMAIL is
+# set; it does nothing once the back office has staff, unless run with STAFF_INVITE_MODE=reissue.
+resource "google_cloud_run_v2_job" "staff_invite" {
+  name                = "${local.prefix}-staff-invite"
+  location            = local.region
+  deletion_protection = false
+
+  template {
+    task_count = 1
+    template {
+      service_account = google_service_account.jobs.email
+      max_retries     = 0
+      timeout         = "300s"
+
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [google_sql_database_instance.main.connection_name]
+        }
+      }
+
+      containers {
+        image   = var.api_image
+        command = ["node", "dist/staff-invite.mjs"]
+
+        resources {
+          limits = {
+            cpu    = "1"
+            memory = "512Mi"
+          }
+        }
+
+        dynamic "env" {
+          for_each = merge(local.common_env, {
+            SERVICE_NAME        = "thapsus-staff-invite"
+            STAFF_INVITE_SECRET = google_secret_manager_secret.staff_invite.id
+            STAFF_INVITE_MODE   = "first"
+          })
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+
+        dynamic "env" {
+          for_each = local.staff_invite_secrets
+          content {
+            name = env.key
+            value_source {
+              secret_key_ref {
+                secret  = google_secret_manager_secret.this[env.value].secret_id
+                version = "latest"
+              }
+            }
+          }
+        }
+
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+      }
+    }
+  }
+
+  # As the seed job: the secret values it reads must exist before Cloud Run creates it (PR #21).
+  depends_on = [
+    google_secret_manager_secret_version.this,
+    google_secret_manager_secret_iam_member.readers,
+    google_secret_manager_secret_iam_member.staff_invite,
+    google_project_iam_member.sql_client,
+    google_sql_database.cell,
   ]
 }

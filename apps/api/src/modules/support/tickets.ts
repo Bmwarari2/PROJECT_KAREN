@@ -31,6 +31,7 @@ import {
   type TicketRow,
 } from './service';
 import './jobs';
+import { canSome } from '@thapsus/core/permissions';
 
 /** Newest back-office override of the contact channels (per region and plan), if any. */
 export async function contactOverrides(
@@ -184,12 +185,14 @@ export async function supportTicketRoutes(app: FastifyInstance) {
       },
     },
     async (req) => {
-      authorizeSome(req, 'help.read');
+      const auth = authorizeSome(req, 'help.read');
+      // only articles about what the reader may do (ADR-0162)
+      const can = (p: string) => canSome(auth.principal, p);
       const q = req.query as { q?: string; context?: string };
       const locale = req.ctx.locale;
-      if (q.q?.trim()) return searchHelp(q.q, locale);
-      if (q.context) return articlesForContext(q.context, locale);
-      return helpArticles(locale);
+      if (q.q?.trim()) return searchHelp(q.q, locale, 10, can);
+      if (q.context) return articlesForContext(q.context, locale, can);
+      return helpArticles(locale, can);
     },
   );
   app.get(
@@ -202,8 +205,11 @@ export async function supportTicketRoutes(app: FastifyInstance) {
       },
     },
     async (req) => {
-      authorizeSome(req, 'help.read');
-      const a = helpArticle((req.params as { slug: string }).slug, req.ctx.locale);
+      const auth = authorizeSome(req, 'help.read');
+      // an article that is not for this reader is not found, like one that does not exist
+      const a = helpArticle((req.params as { slug: string }).slug, req.ctx.locale, (p) =>
+        canSome(auth.principal, p),
+      );
       if (!a) throw new ApiError('notFound');
       return a;
     },

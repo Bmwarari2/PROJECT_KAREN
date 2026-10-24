@@ -78,6 +78,11 @@ export const ReportResultSchema = Type.Object({
   ),
   restricted: Type.Optional(Type.Integer()),
   sensitive: Type.Optional(Type.Boolean()),
+  rowEmployeeIds: Type.Optional(
+    Type.Array(Nullable(Uuid), {
+      description: 'The person each row is about (reports that list people), so names can link to profiles',
+    }),
+  ),
   truncated: Type.Optional(Type.Boolean()),
 });
 const Format = Type.Union([

@@ -23,6 +23,9 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { RESTRICTED, outOn, type LeaveCalendar, type PeopleInsights } from '@/lib/dashboard-data';
 import { Panel } from '@/components/dashboard/parts';
 import { WhosOut } from '@/components/dashboard/whos-out';
+import { useRouter } from 'next/navigation';
+import { dateParts, daysInMonth, makeDate } from '@thapsus/core/time';
+import { useApi } from '@/lib/use-api';
 
 /** Employment types in a fixed order, so a type keeps its series colour from one visit to the next. */
 const TYPE_ORDER = ['full_time', 'part_time', 'casual', 'contractor', 'intern'];
@@ -53,8 +56,16 @@ function InsightsImpl({
 }) {
   const t = useT();
   const locale = useLocale();
+  const router = useRouter();
   const n = (v: number) => numberFormat(locale).format(v);
   const charts = showInsights && !insightsFailed;
+  // every count opens the list behind it (ADR-0161): department names map to the directory's filter
+  const departmentsRef = useApi<Array<{ id: string; name: string }>>(charts ? '/v1/org/departments' : null);
+  const deptId = (name: string) => departmentsRef.data?.find((d) => d.name === name)?.id;
+  const joinedIn = (month: string) => {
+    const { year, month: m } = dateParts(month);
+    return `/app/people?status=all&startFrom=${month}&startTo=${makeDate(year, m, daysInMonth(year, m))}`;
+  };
 
   const outToday = calendar && today ? outOn(calendar.entries, today, true).length : 0;
   const outWeek = calendar
@@ -83,6 +94,12 @@ function InsightsImpl({
           value={n(thisMonth)}
           hint={t('dashboard.org.joinersHint', { n: n(joinersTotal) })}
           icon={<UserPlus aria-hidden />}
+          href={
+            insights.joiners.length
+              ? joinedIn(insights.joiners[insights.joiners.length - 1]!.month)
+              : undefined
+          }
+          linkAs={Link}
         />,
         <KpiTile
           key="prestart"
@@ -129,6 +146,7 @@ function InsightsImpl({
       format={n}
       integer
       height={160}
+      onSelect={(i) => router.push(joinedIn(months[i]!.month))}
     />
   );
 
@@ -141,6 +159,7 @@ function InsightsImpl({
   const types: ChartDatum[] = (insights?.byType ?? []).map((d) => ({
     label: typeLabel(d.key),
     value: d.value,
+    ...(d.key && d.key !== RESTRICTED ? { href: `/app/people?employmentType=${d.key}` } : {}),
   }));
   const typeKey = new Map((insights?.byType ?? []).map((d) => [typeLabel(d.key), d.key]));
   const rank = (label: string) => {
@@ -153,15 +172,19 @@ function InsightsImpl({
   const typesReadable = (insights?.byType ?? []).some((d) => d.key !== RESTRICTED);
 
   const departments = foldOther(
-    (insights?.byDepartment ?? []).map((d) => ({
-      label:
-        d.key === null
-          ? t('dashboard.org.noDepartment')
-          : d.key === RESTRICTED
-            ? t('dashboard.org.restricted')
-            : d.key,
-      value: d.value,
-    })),
+    (insights?.byDepartment ?? []).map((d) => {
+      const id = d.key && d.key !== RESTRICTED ? deptId(d.key) : undefined;
+      return {
+        label:
+          d.key === null
+            ? t('dashboard.org.noDepartment')
+            : d.key === RESTRICTED
+              ? t('dashboard.org.restricted')
+              : d.key,
+        value: d.value,
+        ...(id ? { href: `/app/people?departmentId=${id}` } : {}),
+      };
+    }),
     t('dashboard.org.other'),
     DEPARTMENT_BARS,
   );
@@ -215,7 +238,14 @@ function InsightsImpl({
                       <tbody>
                         {insights.joiners.map((m) => (
                           <TR key={m.month}>
-                            <TD>{long(m.month)}</TD>
+                            <TD>
+                              <Link
+                                href={joinedIn(m.month)}
+                                className="text-accent underline underline-offset-2"
+                              >
+                                {long(m.month)}
+                              </Link>
+                            </TD>
                             <TD className="text-right">{n(m.value)}</TD>
                           </TR>
                         ))}
@@ -240,6 +270,7 @@ function InsightsImpl({
               <p className="text-callout text-text-secondary">{t('dashboard.org.noPeople')}</p>
             ) : (
               <DonutChart
+                linkAs={Link}
                 items={typeSlices}
                 label={t('dashboard.org.byType')}
                 centerValue={n(activeTotal)}
@@ -256,7 +287,7 @@ function InsightsImpl({
             ) : departments.length === 0 ? (
               <p className="text-callout text-text-secondary">{t('dashboard.org.noPeople')}</p>
             ) : (
-              <BarList items={departments} label={t('dashboard.org.byDepartment')} format={n} />
+              <BarList items={departments} label={t('dashboard.org.byDepartment')} format={n} linkAs={Link} />
             )}
           </Panel>
         ) : null}

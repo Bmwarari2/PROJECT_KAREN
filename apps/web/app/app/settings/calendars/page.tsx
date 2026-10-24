@@ -187,7 +187,11 @@ export default function CalendarsPage() {
   return (
     <>
       <PageHeader title={t('admin.section.calendars.title')} lead={t('admin.calendars.lead')} />
-      <SettingsCard id="calendars" title={t('admin.calendars.listTitle')}>
+      <SettingsCard
+        id="calendars"
+        title={t('admin.calendars.listTitle')}
+        container={calendars.data?.length ? 'none' : 'card'}
+      >
         {!calendars.data ? (
           <Skeleton className="h-24" />
         ) : calendars.data.length === 0 ? (
@@ -199,7 +203,7 @@ export default function CalendarsPage() {
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
             {calendars.data.map((c) => (
-              <li key={c.id} className="flex flex-col gap-2 rounded-md border border-border p-4">
+              <li key={c.id} className="flex flex-col gap-2 rounded-lg bg-surface-raised p-4 shadow-sm">
                 <sec.sub className="text-callout font-semibold">{c.name}</sec.sub>
                 <p className="text-footnote text-text-secondary">{scope(c)}</p>
                 <ul className="flex flex-col gap-1 text-callout">

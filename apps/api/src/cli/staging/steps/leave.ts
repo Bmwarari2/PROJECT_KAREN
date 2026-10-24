@@ -669,7 +669,6 @@ async function seedSickness(ctx: SeedCtx, h: Helpers) {
         subjectEmployeeId: employeeId,
         assigneeUserId: manager,
         dueOn: addDays(sp.end, 2),
-        link: '/app/absence',
         dedupeKey: `rtw:${rec.id}`,
       });
     await writeAudit(tx, {

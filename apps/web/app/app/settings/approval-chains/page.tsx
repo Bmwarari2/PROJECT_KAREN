@@ -349,7 +349,7 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
         ) : null}
         <ol className="flex flex-col gap-4">
           {steps.map((s, i) => (
-            <li key={s.key} className="flex flex-col gap-4 rounded-md border border-border p-4">
+            <li key={s.key} className="flex flex-col gap-4 border-t border-border pt-4">
               <div className="flex items-center gap-2">
                 <sec.sub className="mr-auto text-callout font-semibold">
                   {t('admin.approvals.stepN', { n: i + 1 })}
@@ -445,7 +445,7 @@ function PolicyItem({ p, onEdit }: { p: Policy; onEdit: () => void }) {
   const locale = useLocale();
   const describe = useDescribe();
   return (
-    <li className="flex flex-col gap-3 rounded-md border border-border p-4">
+    <li className="flex flex-col gap-3 rounded-lg bg-surface-raised p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <sec.sub className="mr-auto text-callout font-semibold">{p.name}</sec.sub>
         {p.enabled ? <Badge tone="success">{t('admin.on')}</Badge> : <Badge>{t('admin.off')}</Badge>}
@@ -544,6 +544,7 @@ export default function ApprovalChainsPage() {
               id={`chains-${g.subject.replace('.', '-')}`}
               title={t(`admin.approvals.subjects.${g.subject}`)}
               description={t('admin.approvals.orderHint')}
+              container="none"
             >
               <ul className="flex flex-col gap-3">
                 {g.items.map((p) => (
@@ -553,7 +554,7 @@ export default function ApprovalChainsPage() {
             </SettingsCard>
           ))}
           {other.length ? (
-            <SettingsCard id="chains-other" title={t('admin.approvals.otherSubjects')}>
+            <SettingsCard id="chains-other" title={t('admin.approvals.otherSubjects')} container="none">
               <ul className="flex flex-col gap-3">
                 {other.map((p) => (
                   <PolicyItem key={p.id} p={p} onEdit={() => setEditing(p)} />

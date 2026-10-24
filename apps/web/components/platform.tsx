@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, Copy, KeyRound, PowerOff } from 'lucide-react';
+import { Check, Copy, KeyRound, PowerOff } from 'lucide-react';
 import { Badge, Button, Card, CardTitle, EmptyState } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -10,15 +10,13 @@ import { useSectionLevel } from '@/components/module-page';
 
 /** Shared building blocks for the enterprise platform settings screens (Phase 9). */
 
-/** The page header of a platform settings screen: its title (`PageTitle`: an h2 under the Settings module header) and lead. */
+/**
+ * The page header of a platform settings screen: its title (`PageTitle`: an h2 under the Settings module
+ * header, large on phones) and lead. The settings frame gives it the back link (ADR-0181).
+ */
 export function PageHeader({ title, lead }: { title: string; lead?: string }) {
-  const t = useT();
   return (
     <div className="flex flex-col gap-2">
-      <Link href="/app/settings" className="inline-flex items-center gap-1 text-footnote">
-        <ArrowLeft aria-hidden className="h-4 w-4 stroke-[1.5]" />
-        {t('platform.backToSettings')}
-      </Link>
       <PageTitle>{title}</PageTitle>
       {lead ? <p className="max-w-[var(--prose-width)] text-callout text-text-secondary">{lead}</p> : null}
     </div>

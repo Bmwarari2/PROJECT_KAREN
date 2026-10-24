@@ -121,7 +121,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
 
   return (
     <div>
-      <h1 className="text-title-2">{t('auth.signIn.title')}</h1>
+      <h1 className="text-large-title">{t('auth.signIn.title')}</h1>
       <p className="mt-2 text-callout text-text-secondary">{t('auth.signIn.lead')}</p>
       {error ? (
         <p role="alert" className="mt-4 rounded-md bg-surface p-3 text-callout text-danger">
@@ -135,6 +135,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
             {(p) => (
               <Input
                 {...p}
+                className="h-11"
                 name="workspace"
                 autoComplete="organization"
                 required
@@ -147,6 +148,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
             {(p) => (
               <Input
                 {...p}
+                className="h-11"
                 name="email"
                 type="email"
                 autoComplete="username"
@@ -161,7 +163,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
               <p className="text-callout text-text-secondary">{t('errors.ssoRequired')}</p>
               <a
                 href={ssoHref}
-                className="inline-flex h-10 items-center justify-center rounded-pill bg-accent px-5 text-callout font-semibold text-on-accent no-underline hover:bg-accent-hover"
+                className="inline-flex h-11 items-center justify-center rounded-pill bg-accent px-5 text-callout font-semibold text-on-accent no-underline hover:bg-accent-hover"
               >
                 {t('auth.signIn.continueSso')}
               </a>
@@ -172,6 +174,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
                 {(p) => (
                   <Input
                     {...p}
+                    className="h-11"
                     name="password"
                     type="password"
                     autoComplete="current-password"
@@ -181,7 +184,13 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
                   />
                 )}
               </Field>
-              <Button type="submit" loading={busy}>
+              <Link
+                href={`/forgot-password${workspace.trim() ? `?workspace=${encodeURIComponent(workspace.trim().toLowerCase())}` : ''}`}
+                className="-mt-2 self-start py-2 text-callout"
+              >
+                {t('auth.signIn.forgotPassword')}
+              </Link>
+              <Button type="submit" className="h-11" loading={busy}>
                 {t('auth.signIn.submit')}
               </Button>
               <div className="flex items-center gap-3 text-footnote text-text-secondary">
@@ -192,15 +201,15 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
               <div className="grid gap-2">
                 <a
                   href={ssoHref}
-                  className="inline-flex h-10 items-center justify-center rounded-pill border border-border px-5 text-callout font-semibold text-text no-underline hover:bg-surface"
+                  className="inline-flex h-11 items-center justify-center rounded-pill border border-border px-5 text-callout font-semibold text-text no-underline hover:bg-surface"
                 >
                   {t('auth.signIn.continueSso')}
                 </a>
-                <Button type="button" variant="secondary" onClick={passkey} disabled={busy}>
+                <Button type="button" variant="secondary" className="h-11" onClick={passkey} disabled={busy}>
                   <KeyRound aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   {t('auth.signIn.passkey')}
                 </Button>
-                <Button type="button" variant="ghost" onClick={magicLink} disabled={busy}>
+                <Button type="button" variant="ghost" className="h-11" onClick={magicLink} disabled={busy}>
                   <Mail aria-hidden className="h-4 w-4 stroke-[1.5]" />
                   {t('auth.signIn.magicLink')}
                 </Button>
@@ -216,6 +225,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
             {(p) => (
               <Input
                 {...p}
+                className="h-11"
                 name="code"
                 inputMode="numeric"
                 autoComplete="one-time-code"
@@ -227,7 +237,7 @@ export function SignInForm({ initialWorkspace }: { initialWorkspace: string }) {
               />
             )}
           </Field>
-          <Button type="submit" loading={busy}>
+          <Button type="submit" className="h-11" loading={busy}>
             {t('auth.mfa.verify')}
           </Button>
         </form>

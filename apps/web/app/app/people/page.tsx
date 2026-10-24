@@ -41,11 +41,12 @@ import { formatDate, numberFormat } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { useStatusCounts } from '@/lib/dashboard-data';
 import { Avatar } from '@/components/dashboard/parts';
 import { ExportLinks } from '@/components/export-links';
 import { ModuleFrameContext, hasPermission, useSession } from '../shell';
+import { ROW_LINK } from '@/components/person-link';
 
 interface Row {
   id: string;
@@ -96,8 +97,16 @@ function readFilters(params: URLSearchParams) {
     departmentId: params.get('departmentId') ?? '',
     locationId: params.get('locationId') ?? '',
     entityId: params.get('entityId') ?? '',
+    // set by the home dashboard's charts (ADR-0161): one employment type, or a range of start dates
+    employmentType: EMPLOYMENT_TYPES.includes(params.get('employmentType') ?? '')
+      ? params.get('employmentType')!
+      : '',
+    startFrom: civil(params.get('startFrom')),
+    startTo: civil(params.get('startTo')),
   };
 }
+const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'casual', 'contractor', 'intern'];
+const civil = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '');
 type Filters = ReturnType<typeof readFilters>;
 
 /** Replaces the query string without a navigation; Next.js keeps useSearchParams in step. */
@@ -106,6 +115,7 @@ function writeFilters(f: Filters) {
   if (f.status !== 'active') q.set('status', f.status);
   if (f.q) q.set('q', f.q);
   for (const r of REFS) if (f[r.param]) q.set(r.param, f[r.param]);
+  for (const k of ['employmentType', 'startFrom', 'startTo'] as const) if (f[k]) q.set(k, f[k]);
   const s = q.toString();
   window.history.replaceState(null, '', `${window.location.pathname}${s ? `?${s}` : ''}`);
 }
@@ -169,6 +179,8 @@ export default function PeoplePage() {
       const p = new URLSearchParams({ limit: '50', status: filters.status });
       if (filters.q) p.set('q', filters.q);
       for (const r of REFS) if (filters[r.param]) p.set(r.param, filters[r.param]);
+      for (const k of ['employmentType', 'startFrom', 'startTo'] as const)
+        if (filters[k]) p.set(k, filters[k]);
       if (after) p.set('cursor', after);
       const page = await api<{ data: Row[]; nextCursor: string | null }>(`/v1/employees?${p}`);
       setRows((prev) => (after && prev ? [...prev, ...page.data] : page.data));
@@ -224,6 +236,20 @@ export default function PeoplePage() {
         value: refData[r.param]?.find((x) => x.id === filters[r.param])?.name ?? '…',
         remove: () => set({ [r.param]: '' } as Partial<Filters>),
       });
+  if (filters.employmentType)
+    chips.push({
+      key: 'employmentType',
+      field: t('people.field.employmentType'),
+      value: t(`reports.enum.employmentType.${filters.employmentType}`),
+      remove: () => set({ employmentType: '' }),
+    });
+  if (filters.startFrom || filters.startTo)
+    chips.push({
+      key: 'started',
+      field: t('people.field.startDate'),
+      value: [filters.startFrom, filters.startTo].map((d) => (d ? formatDate(d, locale) : '…')).join(' – '),
+      remove: () => set({ startFrom: '', startTo: '' }),
+    });
   const activeFilters = chips.length;
 
   // Sorting is on the rows already loaded, so it is offered once the whole result is on screen;
@@ -510,35 +536,50 @@ export default function PeoplePage() {
                   <TR key={r.id}>
                     <TD className="py-2">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="hidden sm:inline-flex">
-                          <Avatar name={r.displayName ?? ''} size="sm" />
-                        </span>
+                        <Avatar name={r.displayName ?? ''} size="sm" />
                         <div className="flex min-w-0 flex-col">
+                          {/* on phones the whole row is the link (ADR-0180) */}
                           <Link
                             href={`/app/people/${r.id}`}
-                            className="font-semibold text-text no-underline hover:text-accent hover:underline"
+                            className={`font-semibold text-text no-underline hover:text-accent hover:underline ${ROW_LINK}`}
                           >
                             {r.displayName}
                           </Link>
-                          {/* phones show the job title here instead of in its own column */}
-                          {r.jobTitle ? (
-                            <span className="text-footnote text-text-secondary sm:hidden">{r.jobTitle}</span>
+                          {/* phones: job title · location on one line instead of their own columns */}
+                          {r.jobTitle || r.location ? (
+                            <span className="text-footnote font-normal text-text-secondary sm:hidden">
+                              {[r.jobTitle, r.location].filter(Boolean).join(' · ')}
+                            </span>
                           ) : null}
                           {r.employeeNumber ? (
                             <span className="hidden text-footnote text-text-secondary sm:inline">
                               {r.employeeNumber}
                             </span>
                           ) : null}
+                          {/* phones: the status under the text, in line with the name (not under the avatar) */}
+                          {r.status ? (
+                            <span className="mt-1 sm:hidden">
+                              <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
+                                {t(`people.status.${r.status}`)}
+                              </Badge>
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </TD>
-                    <TD className="hidden sm:table-cell">{r.jobTitle}</TD>
-                    <TD className="hidden md:table-cell">{r.department}</TD>
-                    <TD className="hidden lg:table-cell">{r.location}</TD>
-                    <TD className="hidden text-text-secondary xl:table-cell">
+                    <TD phone="hide" className="hidden sm:table-cell">
+                      {r.jobTitle}
+                    </TD>
+                    <TD phone="hide" className="hidden md:table-cell">
+                      {r.department}
+                    </TD>
+                    <TD phone="hide" className="hidden lg:table-cell">
+                      {r.location}
+                    </TD>
+                    <TD phone="hide" className="hidden text-text-secondary xl:table-cell">
                       {r.startDate ? formatDate(r.startDate, locale) : null}
                     </TD>
-                    <TD>
+                    <TD phone="hide">
                       {r.status ? (
                         <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
                           {t(`people.status.${r.status}`)}

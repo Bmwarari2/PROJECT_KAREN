@@ -47,8 +47,19 @@ export function totp(secret: string, offsetSteps = 0) {
   }).generate({ timestamp: Date.now() + offsetSteps * 30_000 });
 }
 
-/** Signs up a fictional UK workspace in the browser and completes admin MFA. Returns the TOTP secret. */
-export async function signUpAndEnrol(page: Page, slug = uniq('e2e')) {
+/**
+ * Signs up a fictional UK workspace in the browser and completes admin MFA. Returns the TOTP secret.
+ *
+ * New workspaces require two-step verification for everyone (ADR-0170). The specs for other modules sign
+ * invited employees in with an emailed link only, so the helper turns that off afterwards (through the
+ * sign-in policy API, as an admin would) unless `mfaForEveryone` is set; password-reset.spec.ts and
+ * settings-security.spec.ts keep the real default.
+ */
+export async function signUpAndEnrol(
+  page: Page,
+  slug = uniq('e2e'),
+  opts: { mfaForEveryone?: boolean } = {},
+) {
   await page.goto('/signup');
   await page.getByLabel(/United Kingdom/).check();
   await page.getByLabel('Company name').fill(`Fictional ${slug} Ltd`);
@@ -64,6 +75,10 @@ export async function signUpAndEnrol(page: Page, slug = uniq('e2e')) {
   await page.getByLabel('Six-digit code').fill(totp(secret));
   await page.getByRole('button', { name: 'Verify' }).click();
   await page.waitForURL(/\/app$/);
+  if (!opts.mfaForEveryone) {
+    const off = await page.request.patch('/v1/settings/security', { data: { requireMfaForEveryone: false } });
+    expect(off.status(), await off.text()).toBe(200);
+  }
   return { slug, secret, email: `owner@${slug}.example.test` };
 }
 

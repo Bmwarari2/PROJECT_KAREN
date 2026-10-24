@@ -527,7 +527,7 @@ export async function assetRoutes(app: FastifyInstance) {
             kind: 'asset.assigned',
             titleKey: 'notify.assetAssigned',
             params: { asset: a.name },
-            link: `/app/assets?ack=${s.id}`,
+            target: { type: 'asset_assignment', id: s.id },
             dedupeKey: `asset-assigned:${s.id}`,
           });
         }

@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next';
-import { STATIC_ASSET_CSP } from './lib/csp';
+import { PDF_WORKER_CSP, STATIC_ASSET_CSP } from './lib/csp';
 
 // Pages get a per-request nonce-based Content-Security-Policy from proxy.ts (ADR-0130); the static
 // assets below, which the proxy skips, get a fixed policy under which nothing can run or be framed.
@@ -29,6 +29,15 @@ const config: NextConfig = {
         source,
         headers: [{ key: 'Content-Security-Policy', value: STATIC_ASSET_CSP }],
       })),
+      // the self-hosted PDF.js worker and data (copied by scripts/copy-pdfjs.mjs into a versioned folder)
+      {
+        source: '/pdfjs/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: PDF_WORKER_CSP },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+        ],
+      },
       {
         source: '/sw.js',
         headers: [

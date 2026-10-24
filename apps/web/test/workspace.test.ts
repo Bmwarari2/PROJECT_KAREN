@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { BUILT_IN_ROLES } from '@thapsus/core/roles';
-import { locate, MODULES, viewerFromSession, visibleActions, visibleModules } from '../app/app/workspace';
+import {
+  dockModules,
+  locate,
+  MODULES,
+  viewerFromSession,
+  visibleActions,
+  visibleModules,
+} from '../app/app/workspace';
 
 /**
  * The workspace map decides what each role sees (ADR-0154): modules, tabs and quick actions. These
@@ -100,6 +107,24 @@ describe('workspace map', () => {
       expect(employee).not.toContain(k);
   });
 
+  it('admins contact Thapsus-HR support; employees and managers contact their own HR team (ADR-0163)', () => {
+    for (const key of ['owner', 'hr_admin', 'entity_hr_admin', 'payroll_admin']) {
+      expect(tabs(key, 'help'), key).toContain('/app/support');
+      expect(tabs(key, 'help'), key).not.toContain('/app/contact-hr');
+    }
+    for (const key of ['manager', 'employee']) {
+      expect(tabs(key, 'help'), key).toContain('/app/contact-hr');
+      expect(tabs(key, 'help'), key).not.toContain('/app/support');
+    }
+    // a custom role granted support.ticket can still contact support
+    const custom = viewerFromSession({ permissions: ['support.ticket', 'help.read'], employeeId: 'e-1' });
+    expect(
+      visibleModules(custom)
+        .find((m) => m.key === 'help')
+        ?.tabs.map((t) => t.href),
+    ).toContain('/app/support');
+  });
+
   it('Ask HR appears only when the workspace and region allow it', () => {
     expect(tabs('employee', 'help')).not.toContain('/app/ask');
     const v = viewer('employee', true, true);
@@ -145,5 +170,28 @@ describe('account menu role line', () => {
       'employee',
     ]);
     expect(bySeniority(['manager', 'payroll_admin', 'owner'])).toEqual(['owner', 'payroll_admin', 'manager']);
+  });
+});
+
+describe('phone tab bar', () => {
+  const dock = (key: string, employee = true) => {
+    const v = viewer(key, employee);
+    return dockModules(visibleModules(v), v).map((m) => m.key);
+  };
+  it('gives employees Home, Inbox, Time, Pay and Me', () => {
+    expect(dock('employee')).toEqual(['home', 'inbox', 'time', 'pay', 'me']);
+  });
+  it('gives people who manage others People instead of Pay', () => {
+    expect(dock('hr_admin')).toEqual(['home', 'inbox', 'people', 'time', 'me']);
+    expect(dock('manager')).toEqual(['home', 'inbox', 'people', 'time', 'me']);
+  });
+  it('only lists modules the viewer can open, at most five', () => {
+    for (const r of BUILT_IN_ROLES) {
+      const v = viewer(r.key, false);
+      const visible = new Set(visibleModules(v).map((m) => m.key));
+      const keys = dockModules(visibleModules(v), v).map((m) => m.key);
+      expect(keys.length).toBeLessThanOrEqual(5);
+      for (const k of keys) expect(visible.has(k)).toBe(true);
+    }
   });
 });

@@ -42,7 +42,9 @@ If you lose signal, the app shows **You are offline**. Clock-ins you make still 
 
 ### The first time
 
-HR sends you an email with a sign-in link. The link works once and lasts 7 days. If it has expired, ask HR for a new invitation.
+HR sends you an email with a sign-in link. The link works once and lasts 3 days. If it has expired, ask HR for a new invitation.
+
+The first time you sign in, your company may ask you to set up two-step verification: an authenticator app on your phone, or a passkey (your fingerprint, face or phone PIN). Follow the steps on the **Security** page.
 
 ### After that
 
@@ -50,11 +52,13 @@ HR sends you an email with a sign-in link. The link works once and lasts 7 days.
 2. Enter your **Email** (your work email).
 3. Choose one way to sign in:
    - **Sign in with a passkey**: use your fingerprint, face or phone PIN. This is the quickest and safest way.
-   - **Email me a sign-in link**: we email you a link. It works once and lasts 15 minutes.
+   - **Email me a sign-in link**: we email you a link. It works once and lasts 10 minutes.
    - Your **Password**, then **Sign in**. If you set up an authenticator app, type the **Six-digit code** and choose **Verify**.
    - **Continue with single sign-on**: use this if your company signs you in with its own system.
 
 Forgot your workspace name? Choose **Find my workspace** and enter your work email. We email you a list.
+
+Forgot your password? Choose **Forgot your password?**, enter your workspace and email, and follow the link we email you. It works once and lasts 30 minutes. You then sign in with your new password (and your authenticator, if you use one). Your HR admin can also send you a reset link; they never see your password.
 
 If you are not active for a while, you are signed out. Just sign in again.
 

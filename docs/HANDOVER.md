@@ -9,26 +9,35 @@ Everything in brief §10 except the AWS work is done and merged to `main`. What 
 
 The product owner hands that back to the original agent on the owner's machine. Read `CLAUDE.md`, `docs/BUILD_BRIEF.md` §10 and `docs/PROGRESS.md` first.
 
-## Google Cloud staging (added 2026-10-23)
+## Google Cloud staging (added 2026-10-23, live since 2026-10-23)
 
 The product owner chose to test on Google Cloud, in one region, and to improve the UI while staging is live. Phase 13 in PROGRESS.md and ADR-0156 to ADR-0158 have the detail.
 
-- **Ready:**
-  - one UK cell in europe-west2 (`infra/gcp`);
-  - the Google Cloud adapters;
-  - the fictional test organisation `kestrel` with five role sign-ins;
-  - the deploy workflow "Deploy staging (Google Cloud)".
-- **Waiting on the owner:** `docs/HUMAN_TODO.md` §9 — project and billing, `infra/gcp/bootstrap.sh` in Cloud Shell, GitHub variables, and the `staging-gcp` environment with required reviewers.
-- **Every deploy:** after CI passes on `main` (or a manual run), the workflow builds and checks the images, posts the OpenTofu change set, waits for the owner's approval, migrates, applies, seeds on the first run and smoke-tests.
-- **Sign-ins:** `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`.
-- **UI changes while live:** branch, PR, CI, merge to `main`, then the owner approves the deploy.
-- **Not proven until the first deploy:**
-  - IAM-signed download URLs;
-  - Cloud KMS and Cloud Storage against the real services;
-  - the Cloud SQL connector;
-  - the regional log routing.
+- **Live:** one UK cell in europe-west2 (`infra/gcp`), deployed through "Deploy staging (Google Cloud)" with the owner's approval. The first successful run was <https://github.com/Bmwarari2/PROJECT_KAREN/actions/runs/40034922405>.
+- **Every deploy:** after CI passes on `main` (or on a manual run), the workflow:
+  - builds and checks the images;
+  - posts the OpenTofu change set and waits for the owner's approval;
+  - migrates and applies;
+  - seeds on the first run, invites the first staff member (ADR-0174), and smoke-tests.
+- **Manual inputs:**
+  - `seed`: re-run the seed (sign-ins only).
+  - `reset_test_data`: rebuild the fictional test company through the verified purge (ADR-0185; the owner approved this on 2026-10-24).
+  - `staff_invite`: a new back-office enrolment link.
+- **Sign-ins:**
+  - Test logins: `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`. Every login enrols two-step verification at first sign-in (ADR-0170).
+  - The owner's back-office passkey: HUMAN_TODO §9.8.
+- **Staging mail** is written to the mail bucket; HUMAN_TODO §9.7 explains how to read it.
+- **Changes while live:** branch, PR, CI, merge to `main`, then the owner approves the deploy. Use `scripts/phone-tour.mjs` (`TOUR_ALL=1` for every page) to photograph the staging seed at iPhone size before and after a UI change.
 
-  Each has a fake-backed test; the deploy's smoke test and the first sign-in confirm them.
+## Founder's console (added 2026-10-24)
+
+The owner (founder of Thapsus) sees the business in the **back office** (`/backoffice`). Staff sign in with a passkey; ADR-0173 covers sign-in and ADR-0175 to ADR-0178 the screens.
+
+- **Overview** (home): companies, sign-ups by week and region, trials and conversion, churn, billing status and plans, MRR and ARR per currency, active users, employees under management, two-step adoption, support SLA and incidents. Other regions show counts from the global directory only.
+- **Customers:** search, filters and a health signal per company.
+- **Performance:** requests, errors, 95th-percentile latency, queues, failed jobs and database size, over 24 hours or 7 days.
+- **Security** (security analysts and super admins): detections, incidents with containment, the rule catalogue and decoys. Alert emails go to the `SECURITY_ALERT_EMAILS_JSON` list (HUMAN_TODO §9.11).
+- **Customers' view:** customer admins get a Security centre under Settings.
 
 ## What is done
 
@@ -175,14 +184,16 @@ Confirm in CloudFormation that both stacks are gone. Then run `pnpm format`, bec
 
 Production is not part of this phase. It waits for the owner's approval (`docs/runbooks/deploy.md` §2).
 
-## Next UI review
+## UI direction (2026-10-24)
 
-The product owner asked for these references to be looked at in the next UI review:
+The owner tested on an iPhone and asked for Apple's design principles and ideas from EasyUI (<https://easyui.site/>, MIT, © 2026 Suraj Maurya). Both are now the direction: ADR-0180 to ADR-0182 and DESIGN.md §1 principle 6, §4 and §6.
 
-- <https://easyui.site/>, saved on 2026-10-23. It is an open-source collection of React components, including an interactive area chart, a lock input, animated dropdowns and menus, pill navigation, an unfolding accordion and toggles. Before adopting anything from it:
-  - check its licence in the linked GitHub repository, because the site does not state one;
-  - rebuild what is adopted from the `docs/DESIGN.md` tokens and the `packages/ui` components, not copy its styles;
-  - keep WCAG 2.2 AA and `prefers-reduced-motion` support.
+- Grouped lists (`ListSection`, `ListItem`) are the default for collections.
+- Tables become lists on phones (`TD label`, `phone="inline"|"hide"`).
+- Pages have one large title, module sections are a segmented control, the top bar is light and translucent, and phones get a bottom tab bar.
+- Settings works like a phone's settings app.
+- EasyUI is a reference, not a dependency. What we take is rebuilt from our tokens without `framer-motion`.
+- Check UI changes at phone size with `scripts/phone-tour.mjs` before asking the owner to look.
 
 ## Conventions that bite
 

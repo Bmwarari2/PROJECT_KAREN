@@ -1,6 +1,9 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+/** Where staff open the back office in e2e (see BACKOFFICE_BASE_URL below). */
+export const staffBaseUrl = () => e2eEnv().BACKOFFICE_BASE_URL!;
+
 /** Isolated environment for e2e: its own database and ports; no external services required. */
 export const E2E_DB = 'thapsus_e2e';
 /** Emails the e2e API sends are written here as JSON files (MAIL_TRANSPORT=file) so tests can follow links. */
@@ -17,6 +20,9 @@ export function e2eEnv(): Record<string, string> {
     : '127.0.0.1';
   const origin = `http://${browserHost}:${webPort}`;
   return {
+    // Staff passkeys need a host name, not an IP address (WebAuthn relying party ids are domains), so the
+    // back office is opened as localhost: a separate host for staff, as planned for production (plan 2.2.2).
+    BACKOFFICE_BASE_URL: process.env.PW_REMOTE_WS ? origin : `http://localhost:${webPort}`,
     WEB_PORT: webPort,
     API_PORT: apiPort,
     PORT: apiPort,

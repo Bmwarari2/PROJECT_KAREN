@@ -25,3 +25,4 @@ apps/web/playwright-report/
 *.tfstate
 *.tfstate.*
 *.tfplan
+apps/web/public/pdfjs/

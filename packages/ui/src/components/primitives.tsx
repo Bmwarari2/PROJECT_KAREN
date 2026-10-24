@@ -14,6 +14,7 @@ const twMerge = extendTailwindMerge({
             'display',
             'headline',
             'title-1',
+            'large-title',
             'title-2',
             'title-3',
             'body-lg',
@@ -126,11 +127,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
 });
 
 // ---- Inputs ---------------------------------------------------------------------------------
+// Below `sm` fields are 44px tall (a touch target, DESIGN.md §1 principle 4); 40px from `sm` up.
 const fieldBase = `w-full rounded-sm border border-border-strong bg-surface-raised px-3 text-callout text-text placeholder:text-text-secondary transition-[border-color,box-shadow] duration-[var(--duration-fast)] ${focusRing} aria-[invalid=true]:border-danger`;
+
+/** The class of a native `<select>` that looks like an Input (filters, short choices in forms). */
+export const nativeSelectClass = cn(fieldBase, 'h-10 px-2 max-sm:h-11');
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...props }, ref) {
-    return <input ref={ref} className={cn(fieldBase, 'h-10', className)} {...props} />;
+    return <input ref={ref} className={cn(fieldBase, 'h-10 max-sm:h-11', className)} {...props} />;
   },
 );
 
@@ -154,7 +159,8 @@ export interface FieldProps {
 export function Field({ id, label, hint, error, children, className }: FieldProps) {
   const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    // full width on phones, so a field in a wrapping row of fields takes the whole line (ADR-0181)
+    <div className={cn('flex flex-col gap-1.5 max-sm:w-full', className)}>
       <label htmlFor={id} className="text-callout font-semibold text-text">
         {label}
       </label>
@@ -179,16 +185,14 @@ export function Card({
   size = 'app',
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { size?: 'app' | 'marketing' }) {
-  return (
-    <div
-      className={cn(
-        'bg-surface-raised text-text shadow-sm',
-        size === 'marketing' ? 'rounded-xl p-8 md:p-10' : 'rounded-lg p-5',
-        className,
-      )}
-      {...props}
-    />
+  const classes = cn(
+    'bg-surface-raised text-text shadow-sm',
+    size === 'marketing' ? 'rounded-xl p-8 md:p-10' : 'rounded-lg p-5',
+    className,
   );
+  // With the standard padding, a table placed directly in the card runs to its edges (base.css), so the
+  // card is the table's container rather than a box around another box.
+  return <div data-card={/(^| )p-5( |$)/.test(classes) ? '' : undefined} className={classes} {...props} />;
 }
 /**
  * A card's title. Cards are usually the sections of a page, so the title is an h2 under the page's h1
@@ -253,7 +257,8 @@ export function EmptyState({
 }) {
   const Heading = `h${level}` as const;
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg bg-surface px-6 py-12 text-center">
+    // no box of its own: it sits in the card or section that has nothing to show (never a card in a card)
+    <div className="flex flex-col items-center gap-3 rounded-lg px-6 py-10 text-center">
       {icon ? (
         <div className="text-text-secondary [&_svg]:h-8 [&_svg]:w-8 [&_svg]:stroke-[1.5]">{icon}</div>
       ) : null}
@@ -264,26 +269,47 @@ export function EmptyState({
   );
 }
 
-// ---- Table -----------------------------------------------------------------------------------
+// ---- Table ----------------------------------------------------------------------------------
 /**
  * `scrollLabel` names the scroll area and makes it focusable, so keyboard users can scroll a table
  * that is wider than the screen (WCAG 2.1.1); pass it wherever a table may overflow on phones.
+ *
+ * On phones (below `sm`) a table is shown as a list (ADR-0180, `.thr-stack` in base.css): each row
+ * becomes a list row whose first cell is the title and whose other cells are lines under it. Cells
+ * with buttons move under the text, and a row whose first cell is one link is tapped as a whole. Pass
+ * `stack={false}` for wide numeric grids (report previews) that read better scrolled sideways. The
+ * explicit roles keep the table's semantics where a browser drops them for re-laid-out tables.
  */
 export function Table({
   className,
   dense,
   scrollLabel,
+  stack = true,
   ...props
-}: React.TableHTMLAttributes<HTMLTableElement> & { dense?: boolean; scrollLabel?: string }) {
+}: React.TableHTMLAttributes<HTMLTableElement> & {
+  dense?: boolean;
+  scrollLabel?: string;
+  stack?: boolean;
+}) {
   const scroll = scrollLabel ? { tabIndex: 0, role: 'region', 'aria-label': scrollLabel } : {};
   return (
     <div
-      className={cn('w-full overflow-x-auto rounded-lg border border-border', scrollLabel && focusRing)}
+      className={cn(
+        // its own container (a table is never put inside a card): white with a hairline border
+        'thr-table w-full overflow-x-auto rounded-lg border border-border bg-surface-raised',
+        stack && 'thr-stack-wrap',
+        scrollLabel && focusRing,
+      )}
       {...scroll}
     >
       <table
+        role={stack ? 'table' : undefined}
         data-dense={dense || undefined}
-        className={cn('w-full border-collapse text-left text-callout tabular-nums', className)}
+        className={cn(
+          'w-full border-collapse text-left text-callout tabular-nums',
+          stack && 'thr-stack',
+          className,
+        )}
         {...props}
       />
     </div>
@@ -300,6 +326,7 @@ export function THead(props: React.HTMLAttributes<HTMLTableSectionElement>) {
 export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
+      role="row"
       className={cn(
         'border-b border-border last:border-b-0 hover:bg-surface/60 focus-within:bg-accent-subtle',
         className,
@@ -309,8 +336,34 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   );
 }
 export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th scope="col" className={cn('h-11 px-4 align-middle font-semibold', className)} {...props} />;
+  return (
+    <th
+      scope="col"
+      role="columnheader"
+      className={cn('h-11 px-4 align-middle font-semibold', className)}
+      {...props}
+    />
+  );
 }
-export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('h-11 px-4 align-middle text-text', className)} {...props} />;
+/**
+ * Phone layout of a cell (tables show as lists below `sm`, ADR-0180): `label` names the column before
+ * the value where the value alone is unclear; `phone="inline"` joins the cell with its inline
+ * neighbours on one line ("Job title · Location"); `phone="hide"` leaves it out on phones (it stays on
+ * the detail page).
+ */
+export function TD({
+  className,
+  label,
+  phone,
+  ...props
+}: React.TdHTMLAttributes<HTMLTableCellElement> & { label?: string; phone?: 'inline' | 'hide' }) {
+  return (
+    <td
+      role="cell"
+      data-label={label}
+      data-phone={phone}
+      className={cn('h-11 px-4 align-middle text-text', className)}
+      {...props}
+    />
+  );
 }

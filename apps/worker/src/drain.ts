@@ -14,6 +14,8 @@ export interface WorkerCycleOptions {
   engine: WorkerEngine;
   /** Status-page heartbeat (no tenant data). */
   heartbeat: () => Promise<void>;
+  /** Cell-wide tasks (queue sample, detections, alerts); the runner decides which are due (ADR-0176). */
+  cellTasks?: () => Promise<unknown>;
   log: Log;
   sweepMs: number;
   beatMs: number;
@@ -43,6 +45,7 @@ export class WorkerCycle {
       beat = true;
       await this.o.heartbeat().catch((err: unknown) => this.o.log.warn({ err }, 'heartbeat failed'));
     }
+    await this.o.cellTasks?.().catch((err: unknown) => this.o.log.warn({ err }, 'cell tasks failed'));
     return { tenants: await this.o.engine.tick(), swept, beat };
   }
 }

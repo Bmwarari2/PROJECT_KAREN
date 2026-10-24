@@ -33,6 +33,8 @@ export interface DirectoryEntry {
   status: 'active' | 'suspended' | 'closing' | 'deleted';
   planRef: string | null;
   verifiedDomains: string[];
+  /** When the workspace signed up (set by the directory; for sign-up counts by region and week). */
+  createdAt?: string;
 }
 
 export interface TenantDirectory {
@@ -57,7 +59,10 @@ export class InMemoryDirectory implements TenantDirectory {
     for (const x of this.entries.values())
       if (x.slug === e.slug && x.tenantId !== e.tenantId) throw new SlugTakenError();
     this.entries.set(e.tenantId, { ...e });
+    if (!this.created.has(e.tenantId)) this.created.set(e.tenantId, e.createdAt ?? new Date().toISOString());
   }
+  /** Sign-up times, kept beside the entries (a stored directory keeps them in its created_at column). */
+  private readonly created = new Map<string, string>();
   async bySlug(slug: string) {
     return [...this.entries.values()].find((e) => e.slug === slug);
   }
@@ -73,7 +78,9 @@ export class InMemoryDirectory implements TenantDirectory {
     if (e) this.entries.set(id, { ...e, ...patch, tenantId: id });
   }
   async list(limit = 5000) {
-    return [...this.entries.values()].slice(0, limit).map((e) => ({ ...e }));
+    return [...this.entries.values()]
+      .slice(0, limit)
+      .map((e) => ({ ...e, createdAt: this.created.get(e.tenantId) }));
   }
 }
 
@@ -99,6 +106,7 @@ export class PgDirectory implements TenantDirectory {
       status: r.status as DirectoryEntry['status'],
       planRef: (r.plan_ref as string) ?? null,
       verifiedDomains: (r.verified_domains as string[]) ?? [],
+      createdAt: r.created_at ? new Date(r.created_at as string).toISOString() : undefined,
     };
   }
   async register(e: DirectoryEntry) {
@@ -139,8 +147,9 @@ export class PgDirectory implements TenantDirectory {
   async update(id: string, p: Partial<DirectoryEntry>) {
     await this.pool.query(
       `UPDATE directory_tenants SET status = coalesce($2, status), plan_ref = coalesce($3, plan_ref),
-        verified_domains = coalesce($4, verified_domains), updated_at = now() WHERE tenant_id = $1`,
-      [id, p.status ?? null, p.planRef ?? null, p.verifiedDomains ?? null],
+        verified_domains = coalesce($4, verified_domains), slug = coalesce($5, slug), updated_at = now()
+        WHERE tenant_id = $1`,
+      [id, p.status ?? null, p.planRef ?? null, p.verifiedDomains ?? null, p.slug ?? null],
     );
   }
 }
@@ -165,6 +174,7 @@ export class DynamoDirectory implements TenantDirectory {
       status: item.status!.S! as DirectoryEntry['status'],
       planRef: item.planRef?.S ?? null,
       verifiedDomains: item.verifiedDomains?.SS ?? [],
+      createdAt: item.createdAt?.S,
     };
   }
   async register(e: DirectoryEntry) {
@@ -243,6 +253,8 @@ export class DynamoDirectory implements TenantDirectory {
     return out.slice(0, limit).sort((a, b) => a.slug.localeCompare(b.slug));
   }
   async update(id: string, p: Partial<DirectoryEntry>) {
+    // Renaming is only used to retire a deleted staging workspace (ADR-0185), never in production.
+    if (p.slug) throw new Error('The DynamoDB directory does not rename workspaces');
     const sets: string[] = [];
     const values: Record<string, { S: string } | { SS: string[] }> = {};
     if (p.status) {

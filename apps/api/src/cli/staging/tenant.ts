@@ -4,6 +4,7 @@ import { withRegistry, withTenant, writeAudit, type TenantRouter, type Tx } from
 import type { TenantDirectory } from '../../lib/directory';
 import { hashPassword, verifyPassword } from '../../modules/auth/tokens';
 import { assignRole, seedBuiltInRoles } from '../../modules/authz/principal';
+import { CURRENT_SECURITY_DEFAULTS_VERSION, NEW_WORKSPACE_SECURITY } from '../../modules/auth/sessions';
 import type { LoginRole, StagingLogin } from './config';
 
 const HOME = 'uk' as const;
@@ -43,8 +44,8 @@ export async function ensureTenant(
   const passwordHash = await hashPassword(opts.owner.password);
   await withTenant(router, tenantId, async (tx) => {
     await tx.exec(
-      `INSERT INTO app.tenants (tenant_id, slug, name, home_region, default_locale, default_currency, default_time_zone, features)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO app.tenants (tenant_id, slug, name, home_region, default_locale, default_currency, default_time_zone, features, security, security_defaults_version)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         tenantId,
         opts.slug,
@@ -55,6 +56,10 @@ export async function ensureTenant(
         spec.defaultTimeZone,
         // as sign-up; plus the company's own absence policy (fit note after 7 calendar days)
         JSON.stringify({ aiAssistant: false, absence: { fitNoteAfterCalendarDays: 7 } }),
+        // as sign-up: two-step verification for everyone, so every login enrols an authenticator at its
+        // first sign-in (ADR-0170; HUMAN_TODO 9.7)
+        JSON.stringify(NEW_WORKSPACE_SECURITY),
+        CURRENT_SECURITY_DEFAULTS_VERSION,
       ],
     );
     await seedBuiltInRoles(tx);

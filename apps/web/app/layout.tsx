@@ -21,6 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // content may run under the iPhone's rounded corners and home indicator; the bars pad for them
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: colors.bg.light },
     { media: '(prefers-color-scheme: dark)', color: colors.bg.dark },

@@ -422,7 +422,7 @@ export async function applyErasure(
   }
   if (s.employeeId && erasing.has('payroll_records')) {
     const slips = await tx.query<{ file_key: string }>(
-      `SELECT file_key FROM app.payslips WHERE employee_id = $1`,
+      `SELECT file_key FROM app.payslips WHERE employee_id = $1 AND file_key IS NOT NULL`,
       [s.employeeId],
     );
     fileKeys.push(...slips.map((d) => d.file_key));

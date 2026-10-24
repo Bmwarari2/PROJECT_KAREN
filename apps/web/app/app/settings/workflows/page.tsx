@@ -201,7 +201,7 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
         ) : null}
         <ol className="flex flex-col gap-4">
           {tasks.map((x, i) => (
-            <li key={x.key} className="flex flex-col gap-4 rounded-md border border-border p-4">
+            <li key={x.key} className="flex flex-col gap-4 border-t border-border pt-4">
               <div className="flex items-center gap-2">
                 <sec.sub className="mr-auto text-callout font-semibold">
                   {t('admin.workflows.taskN', { n: i + 1 })}
@@ -347,6 +347,7 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
           ) : null}
         </span>
       }
+      container="none"
     >
       <Table dense scrollLabel={t('admin.tableScroll', { name: tpl.name })}>
         <THead>
@@ -368,7 +369,7 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
               </TD>
               <TD>{assignee(x.assignee)}</TD>
               <TD>{due(tpl.kind, x.dueOffsetDays)}</TD>
-              <TD>
+              <TD label={t('admin.workflows.reminderCol')}>
                 {x.reminderDaysBefore === undefined
                   ? t('admin.workflows.defaultReminder')
                   : x.reminderDaysBefore === 0

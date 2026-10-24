@@ -1,7 +1,20 @@
 'use client';
 import * as React from 'react';
 import { BellRing, Plus, Users } from 'lucide-react';
-import { Badge, Button, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { formatUnit } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -204,6 +217,7 @@ function Triggers() {
   return (
     <SettingsCard
       id="absence-triggers"
+      container="none"
       title={t('admin.absence.triggersTitle')}
       description={t('admin.absence.triggersBody')}
     >
@@ -225,7 +239,7 @@ function Triggers() {
             {triggers.data.map((x) => (
               <TR key={x.id}>
                 <TD className="font-semibold">{x.name}</TD>
-                <TD>
+                <TD label={t('admin.absence.threshold')}>
                   {[
                     x.bradfordThreshold !== null
                       ? t('admin.absence.bradfordAtLeast', { n: x.bradfordThreshold })
@@ -237,8 +251,8 @@ function Triggers() {
                     .filter(Boolean)
                     .join(t('admin.absence.or'))}
                 </TD>
-                <TD>{formatUnit(x.windowDays, 'day', locale)}</TD>
-                <TD>
+                <TD label={t('admin.absence.window')}>{formatUnit(x.windowDays, 'day', locale)}</TD>
+                <TD label={t('admin.absence.notifies')}>
                   {x.notifyManager
                     ? t('admin.absence.roleAndManager', { role: roleName(x.notifyRole) })
                     : roleName(x.notifyRole)}
@@ -248,84 +262,94 @@ function Triggers() {
           </tbody>
         </Table>
       )}
-      <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4">
-        <sec.sub className="text-callout font-semibold">{t('admin.absence.addTrigger')}</sec.sub>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field id="trg-name" label={t('admin.name')}>
-            {(p) => (
-              <Input
-                {...p}
-                required
-                maxLength={120}
-                value={v.name}
-                onChange={(e) => setV({ ...v, name: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="trg-window" label={t('admin.absence.windowLabel')} hint={t('admin.absence.windowHint')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                inputMode="numeric"
-                required
-                min={7}
-                max={730}
-                step={1}
-                value={v.windowDays}
-                onChange={(e) => setV({ ...v, windowDays: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="trg-bradford" label={t('admin.absence.bradford')} hint={t('admin.absence.bradfordHint')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={v.bradford}
-                onChange={(e) => setV({ ...v, bradford: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="trg-spells" label={t('admin.absence.spells')} hint={t('admin.absence.spellsHint')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={v.spells}
-                onChange={(e) => setV({ ...v, spells: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="trg-role" label={t('admin.absence.notifyRole')}>
-            {(p) => (
-              <RoleSelect
-                id={p.id}
-                aria-describedby={p['aria-describedby']}
-                value={v.notifyRole}
-                onChange={(notifyRole) => setV({ ...v, notifyRole })}
-              />
-            )}
-          </Field>
-        </div>
-        <Checkbox
-          id="trg-manager"
-          label={t('admin.absence.notifyManager')}
-          checked={v.notifyManager}
-          onChange={(notifyManager) => setV({ ...v, notifyManager })}
-        />
-        <FormError message={action.error} />
-        <Button type="submit" className="self-start" loading={action.busy}>
-          <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('admin.absence.addTriggerButton')}
-        </Button>
-      </form>
+      <Card>
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <sec.sub className="text-callout font-semibold">{t('admin.absence.addTrigger')}</sec.sub>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field id="trg-name" label={t('admin.name')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={120}
+                  value={v.name}
+                  onChange={(e) => setV({ ...v, name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="trg-window"
+              label={t('admin.absence.windowLabel')}
+              hint={t('admin.absence.windowHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="numeric"
+                  required
+                  min={7}
+                  max={730}
+                  step={1}
+                  value={v.windowDays}
+                  onChange={(e) => setV({ ...v, windowDays: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="trg-bradford"
+              label={t('admin.absence.bradford')}
+              hint={t('admin.absence.bradfordHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  value={v.bradford}
+                  onChange={(e) => setV({ ...v, bradford: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="trg-spells" label={t('admin.absence.spells')} hint={t('admin.absence.spellsHint')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  value={v.spells}
+                  onChange={(e) => setV({ ...v, spells: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="trg-role" label={t('admin.absence.notifyRole')}>
+              {(p) => (
+                <RoleSelect
+                  id={p.id}
+                  aria-describedby={p['aria-describedby']}
+                  value={v.notifyRole}
+                  onChange={(notifyRole) => setV({ ...v, notifyRole })}
+                />
+              )}
+            </Field>
+          </div>
+          <Checkbox
+            id="trg-manager"
+            label={t('admin.absence.notifyManager')}
+            checked={v.notifyManager}
+            onChange={(notifyManager) => setV({ ...v, notifyManager })}
+          />
+          <FormError message={action.error} />
+          <Button type="submit" className="self-start" loading={action.busy}>
+            <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('admin.absence.addTriggerButton')}
+          </Button>
+        </form>
+      </Card>
     </SettingsCard>
   );
 }
@@ -370,6 +394,7 @@ function CoverRules() {
   return (
     <SettingsCard
       id="cover-rules"
+      container="none"
       title={t('admin.absence.coverTitle')}
       description={t('admin.absence.coverBody')}
     >
@@ -391,13 +416,15 @@ function CoverRules() {
             {rules.data.map((r) => (
               <TR key={r.id}>
                 <TD className="font-semibold">{r.name}</TD>
-                <TD>
+                <TD label={t('admin.absence.coverScope')}>
                   {[nameOf(departments.data, r.departmentId), nameOf(locations.data, r.locationId)]
                     .filter(Boolean)
                     .join(' · ') || t('admin.leave.everyone')}
                 </TD>
-                <TD className="text-right">{r.minPresent}</TD>
-                <TD>
+                <TD className="text-right" phone="inline" label={t('admin.absence.minPresent')}>
+                  {r.minPresent}
+                </TD>
+                <TD phone="inline">
                   {r.enforcement === 'block' ? (
                     <Badge tone="warning">{t('admin.absence.block')}</Badge>
                   ) : (
@@ -409,89 +436,91 @@ function CoverRules() {
           </tbody>
         </Table>
       )}
-      <form onSubmit={submit} className="flex flex-col gap-4 border-t border-border pt-4">
-        <sec.sub className="text-callout font-semibold">{t('admin.absence.addCover')}</sec.sub>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field id="cover-name" label={t('admin.name')}>
-            {(p) => (
-              <Input
-                {...p}
-                required
-                maxLength={120}
-                value={v.name}
-                onChange={(e) => setV({ ...v, name: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field
-            id="cover-min"
-            label={t('admin.absence.minPresent')}
-            hint={t('admin.absence.minPresentHint')}
-          >
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                inputMode="numeric"
-                required
-                min={0}
-                step={1}
-                value={v.minPresent}
-                onChange={(e) => setV({ ...v, minPresent: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="cover-department" label={t('admin.absence.department')}>
-            {(p) => (
-              <select
-                {...p}
-                className={selectClass}
-                value={v.departmentId}
-                onChange={(e) => setV({ ...v, departmentId: e.target.value })}
-              >
-                <option value="">{t('admin.absence.allDepartments')}</option>
-                {(departments.data ?? []).map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field id="cover-location" label={t('rota.location')}>
-            {(p) => (
-              <select
-                {...p}
-                className={selectClass}
-                value={v.locationId}
-                onChange={(e) => setV({ ...v, locationId: e.target.value })}
-              >
-                <option value="">{t('rota.allLocations')}</option>
-                {(locations.data ?? []).map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-        </div>
-        <RadioGroup
-          name="cover-enforcement"
-          legend={t('admin.absence.enforcement')}
-          value={v.enforcement}
-          onChange={(enforcement) => setV({ ...v, enforcement })}
-          options={[
-            { value: 'warn', label: t('admin.absence.warn'), hint: t('admin.absence.warnHint') },
-            { value: 'block', label: t('admin.absence.block'), hint: t('admin.absence.blockHint') },
-          ]}
-        />
-        <FormError message={action.error} />
-        <Button type="submit" className="self-start" loading={action.busy}>
-          <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('admin.absence.addCoverButton')}
-        </Button>
-      </form>
+      <Card>
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <sec.sub className="text-callout font-semibold">{t('admin.absence.addCover')}</sec.sub>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field id="cover-name" label={t('admin.name')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  required
+                  maxLength={120}
+                  value={v.name}
+                  onChange={(e) => setV({ ...v, name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field
+              id="cover-min"
+              label={t('admin.absence.minPresent')}
+              hint={t('admin.absence.minPresentHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  inputMode="numeric"
+                  required
+                  min={0}
+                  step={1}
+                  value={v.minPresent}
+                  onChange={(e) => setV({ ...v, minPresent: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="cover-department" label={t('admin.absence.department')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={selectClass}
+                  value={v.departmentId}
+                  onChange={(e) => setV({ ...v, departmentId: e.target.value })}
+                >
+                  <option value="">{t('admin.absence.allDepartments')}</option>
+                  {(departments.data ?? []).map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field id="cover-location" label={t('rota.location')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={selectClass}
+                  value={v.locationId}
+                  onChange={(e) => setV({ ...v, locationId: e.target.value })}
+                >
+                  <option value="">{t('rota.allLocations')}</option>
+                  {(locations.data ?? []).map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          </div>
+          <RadioGroup
+            name="cover-enforcement"
+            legend={t('admin.absence.enforcement')}
+            value={v.enforcement}
+            onChange={(enforcement) => setV({ ...v, enforcement })}
+            options={[
+              { value: 'warn', label: t('admin.absence.warn'), hint: t('admin.absence.warnHint') },
+              { value: 'block', label: t('admin.absence.block'), hint: t('admin.absence.blockHint') },
+            ]}
+          />
+          <FormError message={action.error} />
+          <Button type="submit" className="self-start" loading={action.busy}>
+            <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('admin.absence.addCoverButton')}
+          </Button>
+        </form>
+      </Card>
     </SettingsCard>
   );
 }

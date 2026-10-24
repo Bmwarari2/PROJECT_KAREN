@@ -2,14 +2,16 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ShieldCheck, UserMinus } from 'lucide-react';
+import { KeyRound, Link2Off, LogOut, ShieldCheck, ShieldOff, UserMinus } from 'lucide-react';
 import {
   Badge,
   Button,
   Card,
-  CardTitle,
+  PageSection,
   EmptyState,
   Field,
+  ListItem,
+  ListSection,
   Skeleton,
   Table,
   TD,
@@ -32,7 +34,7 @@ import {
   type Role,
   type UserSummary,
 } from '../../roles/shared';
-import { ConfirmAction, SettingsCard } from '../../kit';
+import { ConfirmAction } from '../../kit';
 import { useStepUp } from '../../../step-up';
 
 const SCOPES = ['all', 'entity', 'country', 'department', 'location', 'own_team', 'self'] as const;
@@ -67,57 +69,127 @@ function useScopeOptions(type: ScopeType) {
 }
 
 /**
- * Sign a person out everywhere, or reset a lost second factor after confirming who they are
- * (company-wide settings.manage; ASVS V7.4.5, V6.4.4). The API also requires that the admin holds
- * everything the person holds, and a recent re-authentication for a reset.
+ * Who can reset someone's sign-in (ADR-0171): an admin whose company-wide role manages settings and covers
+ * every permission the person holds, after re-authenticating, never for themselves. They can sign the person
+ * out everywhere, email them a password reset link (never seeing or setting the password), reset a lost
+ * second factor after confirming who they are, and unlink a replaced SSO account. The API enforces all of it.
  */
 function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () => void }) {
   const t = useT();
   const toast = useToast();
   const stepUp = useStepUp();
+  const identities = useApi<Array<{ connectionId: string; connectionName: string }>>(
+    `/v1/users/${user.id}/sso-identities`,
+  );
   const done = (title: string) => (toast({ title, tone: 'success' }), onChanged());
   const fail = (err: unknown) => toast({ title: problemMessage(t, err), tone: 'danger' });
+  // the confirmation closes first; a re-authentication prompt may follow
+  const guarded = (call: () => Promise<unknown>, message: string) => async () => {
+    void stepUp
+      .run(call)
+      .then((ok) => ok && done(message))
+      .catch(fail);
+  };
+  const button = 'h-11 sm:h-8';
+  const linked = identities.data ?? [];
   return (
-    <SettingsCard
+    <ListSection
       id="user-sign-in"
       title={t('access.users.signIn.title')}
       description={t('access.users.signIn.body')}
+      footer={t('access.users.signIn.whoCan')}
     >
-      <div className="flex flex-wrap gap-2">
-        <ConfirmAction
-          label={t('access.users.signIn.endSessions')}
-          title={t('access.users.signIn.endSessionsTitle', { name: user.displayName })}
-          body={t('access.users.signIn.endSessionsBody')}
-          confirmLabel={t('access.users.signIn.endSessions')}
-          onConfirm={() =>
-            api(`/v1/users/${user.id}/sessions/end`, { method: 'POST' }).then(() =>
-              done(t('access.users.signIn.sessionsEnded')),
-            )
+      <ListItem
+        leading={<LogOut />}
+        title={t('access.users.signIn.endSessions')}
+        subtitle={t('access.users.signIn.endSessionsLead')}
+        actions={
+          <ConfirmAction
+            label={t('access.users.signIn.endSessions')}
+            title={t('access.users.signIn.endSessionsTitle', { name: user.displayName })}
+            body={t('access.users.signIn.endSessionsBody')}
+            confirmLabel={t('access.users.signIn.endSessions')}
+            triggerVariant="secondary"
+            triggerClassName={button}
+            onConfirm={() =>
+              api(`/v1/users/${user.id}/sessions/end`, { method: 'POST' }).then(() =>
+                done(t('access.users.signIn.sessionsEnded')),
+              )
+            }
+          />
+        }
+      />
+      {user.status === 'active' ? (
+        <ListItem
+          leading={<KeyRound />}
+          title={t('access.users.signIn.sendReset')}
+          subtitle={t('access.users.signIn.sendResetLead')}
+          actions={
+            <ConfirmAction
+              label={t('access.users.signIn.sendReset')}
+              title={t('access.users.signIn.sendResetTitle', { name: user.displayName })}
+              body={t('access.users.signIn.sendResetBody')}
+              confirmLabel={t('access.users.signIn.sendResetConfirm')}
+              triggerVariant="secondary"
+              triggerClassName={button}
+              onConfirm={guarded(
+                () => api(`/v1/users/${user.id}/password-reset`, { method: 'POST' }),
+                t('access.users.signIn.resetSent'),
+              )}
+            />
           }
         />
-        {user.hasMfa ? (
-          <ConfirmAction
-            label={t('access.users.signIn.resetMfa')}
-            title={t('access.users.signIn.resetMfaTitle', { name: user.displayName })}
-            body={t('access.users.signIn.resetMfaBody')}
-            confirmLabel={t('access.users.signIn.resetMfaConfirm')}
-            onConfirm={async () => {
-              // the confirmation closes first; a re-authentication prompt may follow
-              void stepUp
-                .run(() =>
+      ) : null}
+      {user.hasMfa ? (
+        <ListItem
+          leading={<ShieldOff />}
+          title={t('access.users.signIn.resetMfa')}
+          subtitle={t('access.users.signIn.resetMfaLead')}
+          actions={
+            <ConfirmAction
+              label={t('access.users.signIn.resetMfa')}
+              title={t('access.users.signIn.resetMfaTitle', { name: user.displayName })}
+              body={t('access.users.signIn.resetMfaBody')}
+              confirmLabel={t('access.users.signIn.resetMfaConfirm')}
+              triggerVariant="secondary"
+              triggerClassName={button}
+              onConfirm={guarded(
+                () =>
                   api(`/v1/users/${user.id}/mfa/reset`, {
                     method: 'POST',
                     json: { identityConfirmed: true },
                   }),
-                )
-                .then((ok) => ok && done(t('access.users.signIn.mfaReset')))
-                .catch(fail);
-            }}
-          />
-        ) : null}
-      </div>
+                t('access.users.signIn.mfaReset'),
+              )}
+            />
+          }
+        />
+      ) : null}
+      {linked.length ? (
+        <ListItem
+          leading={<Link2Off />}
+          title={t('access.users.signIn.unlinkSso')}
+          subtitle={linked
+            .map((l) => t('access.users.signIn.linkedTo', { connection: l.connectionName }))
+            .join(' · ')}
+          actions={
+            <ConfirmAction
+              label={t('access.users.signIn.unlinkSso')}
+              title={t('access.users.signIn.unlinkSsoTitle', { name: user.displayName })}
+              body={t('access.users.signIn.unlinkSsoBody')}
+              confirmLabel={t('access.users.signIn.unlinkSso')}
+              triggerVariant="secondary"
+              triggerClassName={button}
+              onConfirm={guarded(async () => {
+                await api(`/v1/users/${user.id}/sso-identities`, { method: 'DELETE' });
+                identities.reload();
+              }, t('access.users.signIn.unlinked'))}
+            />
+          }
+        />
+      ) : null}
       {stepUp.dialog}
-    </SettingsCard>
+    </ListSection>
   );
 }
 
@@ -206,22 +278,20 @@ export default function UserAccessPage() {
           </span>
         </div>
       </div>
-      <Link href="/app/settings/users" className="text-callout">
-        {t('access.users.back')}
-      </Link>
 
       {hasPermission(session, 'settings.manage') && user.id !== session?.userId ? (
         <SignInControls user={user} onChanged={reload} />
       ) : null}
 
-      <Card className="flex flex-col gap-4">
-        <CardTitle as={sec.heading}>{t('access.users.assignmentsTitle')}</CardTitle>
+      <PageSection headingLevel={sec.level} title={t('access.users.assignmentsTitle')}>
         {assignments.length === 0 ? (
-          <EmptyState
-            level={sec.level}
-            icon={<ShieldCheck aria-hidden />}
-            title={t('access.users.noAssignments')}
-          />
+          <Card>
+            <EmptyState
+              level={sec.level}
+              icon={<ShieldCheck aria-hidden />}
+              title={t('access.users.noAssignments')}
+            />
+          </Card>
         ) : (
           <Table>
             <THead>
@@ -245,8 +315,8 @@ export default function UserAccessPage() {
                         {a.isAdmin ? <Badge tone="warning">{t('access.roles.admin')}</Badge> : null}
                       </span>
                     </TD>
-                    <TD>{scopeSummary(t, a)}</TD>
-                    <TD className="hidden text-text-secondary md:table-cell">
+                    <TD label={t('access.users.colScope')}>{scopeSummary(t, a)}</TD>
+                    <TD className="hidden text-text-secondary md:table-cell" phone="hide">
                       {formatDateTime(a.createdAt, locale, zone)}
                     </TD>
                     <TD className="text-right">
@@ -271,95 +341,96 @@ export default function UserAccessPage() {
             </tbody>
           </Table>
         )}
-      </Card>
+      </PageSection>
 
       {canAssign ? (
-        <Card className="flex flex-col gap-4">
-          <CardTitle as={sec.heading}>{t('access.users.assignTitle')}</CardTitle>
-          <form onSubmit={assign} className="flex flex-col gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field id="assign-role" label={t('access.users.role')}>
-                {(p) => (
-                  <select
-                    {...p}
-                    required
-                    value={roleId}
-                    onChange={(e) => setRoleId(e.target.value)}
-                    className={selectClass}
-                  >
-                    <option value="">{t('access.users.chooseRole')}</option>
-                    {(roles.data ?? []).map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {roleName(t, r)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-              <Field id="assign-scope" label={t('access.users.scopeType')}>
-                {(p) => (
-                  <select
-                    {...p}
-                    value={scopeType}
-                    onChange={(e) => {
-                      setScopeType(e.target.value as ScopeType);
-                      setValues([]);
-                    }}
-                    className={selectClass}
-                  >
-                    {SCOPES.map((s) => (
-                      <option key={s} value={s}>
-                        {t(`access.scope.${s}`)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-            </div>
-            {VALUED.includes(scopeType) ? (
-              <fieldset className="flex flex-col gap-2">
-                <legend className="text-callout font-semibold">{t('access.users.scopeValues')}</legend>
-                {!options ? (
-                  <Skeleton className="h-10 w-64" />
-                ) : options.length === 0 ? (
-                  <p className="text-callout text-text-secondary">{t('access.users.noScopeValues')}</p>
-                ) : (
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    {options.map((o) => (
-                      <label key={o.value} className="flex items-center gap-2 text-callout">
-                        <input
-                          type="checkbox"
-                          className="h-5 w-5 accent-[var(--color-accent)]"
-                          checked={values.includes(o.value)}
-                          onChange={(e) =>
-                            setValues((v) =>
-                              e.target.checked ? [...v, o.value] : v.filter((x) => x !== o.value),
-                            )
-                          }
-                        />
-                        {o.label}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-            ) : null}
-            {chosen?.isAdmin && !user.hasMfa ? (
-              <p role="status" className="max-w-[var(--prose-width)] text-callout text-warning">
-                {t('access.users.adminNoMfa')}
-              </p>
-            ) : null}
-            <div>
-              <Button
-                type="submit"
-                loading={busy}
-                disabled={!roleId || (VALUED.includes(scopeType) && values.length === 0)}
-              >
-                {t('access.users.assign')}
-              </Button>
-            </div>
-          </form>
-        </Card>
+        <PageSection headingLevel={sec.level} title={t('access.users.assignTitle')}>
+          <Card>
+            <form onSubmit={assign} className="flex flex-col gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field id="assign-role" label={t('access.users.role')}>
+                  {(p) => (
+                    <select
+                      {...p}
+                      required
+                      value={roleId}
+                      onChange={(e) => setRoleId(e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value="">{t('access.users.chooseRole')}</option>
+                      {(roles.data ?? []).map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {roleName(t, r)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <Field id="assign-scope" label={t('access.users.scopeType')}>
+                  {(p) => (
+                    <select
+                      {...p}
+                      value={scopeType}
+                      onChange={(e) => {
+                        setScopeType(e.target.value as ScopeType);
+                        setValues([]);
+                      }}
+                      className={selectClass}
+                    >
+                      {SCOPES.map((s) => (
+                        <option key={s} value={s}>
+                          {t(`access.scope.${s}`)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              </div>
+              {VALUED.includes(scopeType) ? (
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="text-callout font-semibold">{t('access.users.scopeValues')}</legend>
+                  {!options ? (
+                    <Skeleton className="h-10 w-64" />
+                  ) : options.length === 0 ? (
+                    <p className="text-callout text-text-secondary">{t('access.users.noScopeValues')}</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                      {options.map((o) => (
+                        <label key={o.value} className="flex items-center gap-2 text-callout">
+                          <input
+                            type="checkbox"
+                            className="h-5 w-5 accent-[var(--color-accent)]"
+                            checked={values.includes(o.value)}
+                            onChange={(e) =>
+                              setValues((v) =>
+                                e.target.checked ? [...v, o.value] : v.filter((x) => x !== o.value),
+                              )
+                            }
+                          />
+                          {o.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
+              ) : null}
+              {chosen?.isAdmin && !user.hasMfa ? (
+                <p role="status" className="max-w-[var(--prose-width)] text-callout text-warning">
+                  {t('access.users.adminNoMfa')}
+                </p>
+              ) : null}
+              <div>
+                <Button
+                  type="submit"
+                  loading={busy}
+                  disabled={!roleId || (VALUED.includes(scopeType) && values.length === 0)}
+                >
+                  {t('access.users.assign')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </PageSection>
       ) : null}
     </div>
   );

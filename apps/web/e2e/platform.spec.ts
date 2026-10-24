@@ -7,7 +7,11 @@ test.describe('enterprise platform settings', () => {
   test('an admin creates an API key and sees it exactly once', async ({ page }) => {
     await signUpAndEnrol(page);
     await page.goto('/app/settings');
-    await page.getByRole('link', { name: /API access/ }).click();
+    // the index lists it under its group (the side list names it too)
+    await page
+      .getByRole('region', { name: 'Integrations and platform', exact: true })
+      .getByRole('link', { name: 'API access' })
+      .click();
     await page.waitForURL(/\/app\/settings\/api$/);
     await expectPageTitle(page, 'Settings', 'API access');
     await expectAccessible(page);

@@ -47,6 +47,7 @@ run "uk_cell_stays_in_london" {
       google_cloud_run_v2_service.worker.location == "europe-west2",
       google_cloud_run_v2_job.migrate.location == "europe-west2",
       google_cloud_run_v2_job.seed.location == "europe-west2",
+      google_cloud_run_v2_job.staff_invite.location == "europe-west2",
       google_cloud_scheduler_job.drain.region == "europe-west2",
       google_storage_bucket.files.location == "EUROPE-WEST2",
       google_storage_bucket.mail.location == "EUROPE-WEST2",
@@ -61,6 +62,13 @@ run "uk_cell_stays_in_london" {
       length(s.replication[0].user_managed[0].replicas) == 1 && s.replication[0].user_managed[0].replicas[0].location == "europe-west2"
     ])
     error_message = "every secret must be replicated to europe-west2 only"
+  }
+  assert {
+    condition = (
+      length(google_secret_manager_secret.staff_invite.replication[0].user_managed[0].replicas) == 1 &&
+      google_secret_manager_secret.staff_invite.replication[0].user_managed[0].replicas[0].location == "europe-west2"
+    )
+    error_message = "the staff enrolment link must stay in London"
   }
   assert {
     condition     = google_sql_database_instance.main.settings[0].backup_configuration[0].location == "europe-west2"
@@ -109,9 +117,22 @@ run "nothing_is_open_that_should_not_be" {
   assert {
     condition = alltrue([
       for k in keys(google_secret_manager_secret_iam_member.readers) :
-      (startswith(k, "test-logins:") || startswith(k, "db-owner:")) ? endswith(k, ":jobs") : true
+      (startswith(k, "test-logins:") || startswith(k, "db-owner:") || startswith(k, "staff-invitee:")) ? endswith(k, ":jobs") : true
     ])
-    error_message = "only the jobs service account may read test-logins and db-owner"
+    error_message = "only the jobs service account may read test-logins, staff-invitee and db-owner"
+  }
+  # The enrolment link is written and read by the jobs account only; the job reads just two secrets.
+  assert {
+    condition = alltrue([
+      for m in google_secret_manager_secret_iam_member.staff_invite : m.member == "serviceAccount:${google_service_account.jobs.email}"
+    ])
+    error_message = "only the jobs service account may write or read the staff enrolment link"
+  }
+  assert {
+    condition = length([
+      for e in google_cloud_run_v2_job.staff_invite.template[0].template[0].containers[0].env : e if length(e.value_source) > 0
+    ]) == 2
+    error_message = "the staff-invite job reads only the back-office database secret and the invitee"
   }
   # The worker is called by the scheduler only; it has no public invoker.
   assert {
@@ -184,4 +205,43 @@ run "unknown_cell_is_refused" {
   }
 
   expect_failures = [var.cell]
+}
+
+run "the_back_office_and_security_alerts_reach_the_api_and_the_worker" {
+  command = apply
+
+  variables {
+    security_alert_emails = ["security@thapsus.example.test", "founder@thapsus.example.test"]
+  }
+
+  assert {
+    condition = alltrue([
+      for c in concat(
+        [for x in google_cloud_run_v2_service.app.template[0].containers : x if x.name == "api"],
+        google_cloud_run_v2_service.worker.template[0].containers,
+      ) :
+      contains([for e in c.env : e.name if e.value_source != null && length(e.value_source) > 0], "BACKOFFICE_DATABASE_SECRET")
+    ])
+    error_message = "the API and the worker need the back-office database secret (founder's console, security module)"
+  }
+  assert {
+    condition = alltrue([
+      for c in concat(
+        [for x in google_cloud_run_v2_service.app.template[0].containers : x if x.name == "api"],
+        google_cloud_run_v2_service.worker.template[0].containers,
+      ) :
+      contains([for e in c.env : "${e.name}=${e.value}" if e.value != null], "SECURITY_ALERT_EMAILS=security@thapsus.example.test,founder@thapsus.example.test")
+    ])
+    error_message = "the API and the worker get the security alert recipients"
+  }
+}
+
+run "security_alert_recipients_must_be_addresses" {
+  command = plan
+
+  variables {
+    security_alert_emails = ["not an address"]
+  }
+
+  expect_failures = [var.security_alert_emails]
 }

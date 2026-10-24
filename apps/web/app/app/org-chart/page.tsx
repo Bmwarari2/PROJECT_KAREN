@@ -1,12 +1,12 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
-import { Input, Skeleton } from '@thapsus/ui';
+import { Input, ListValue, Skeleton } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useDebounced } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { PersonLink } from '@/components/person-link';
 
 interface OrgNode {
   id: string;
@@ -31,39 +31,46 @@ function NodeRow({ node, depth, expandTo }: { node: OrgNode; depth: number; expa
       aria-level={depth + 1}
       aria-selected={expandTo.at(-1) === node.id}
     >
+      {/* a grouped-list row (ADR-0180): the name and job take the width, the count stays at the end */}
       <div
-        className="flex items-center gap-2 rounded-md py-1.5 pr-2 hover:bg-surface"
-        style={{ paddingLeft: `${depth * 20 + 4}px` }}
+        className="flex min-h-[52px] items-center gap-1 border-t border-border py-1.5 pr-4 hover:bg-surface/60"
+        style={{ paddingLeft: `${Math.min(depth, 8) * 16 + 4}px` }}
       >
         {node.directReports ? (
           <button
             type="button"
             onClick={() => setOpen(!open)}
             aria-label={open ? t('org.collapse') : t('org.expand')}
-            className="rounded-sm p-1 text-text-secondary hover:text-text"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text"
           >
             {open ? (
-              <ChevronDown aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              <ChevronDown aria-hidden className="h-5 w-5 stroke-[1.5]" />
             ) : (
-              <ChevronRight aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              <ChevronRight aria-hidden className="h-5 w-5 stroke-[1.5]" />
             )}
           </button>
         ) : (
-          <span className="w-6" />
+          <span aria-hidden className="w-10 shrink-0" />
         )}
-        <Link
-          href={`/app/people/${node.id}`}
-          className={`text-callout no-underline ${expandTo.at(-1) === node.id ? 'font-semibold text-accent' : 'text-text'}`}
-        >
-          {node.displayName}
-        </Link>
-        <span className="truncate text-footnote text-text-secondary">
-          {[node.jobTitle, node.department].filter(Boolean).join(' · ')}
-        </span>
+        <div className="flex min-w-0 flex-1 flex-col py-1">
+          {/* a link only where the viewer may open the profile (ADR-0161) */}
+          <PersonLink
+            id={node.id}
+            name={node.displayName}
+            quiet={expandTo.at(-1) !== node.id}
+            className="text-body"
+            plainClassName={expandTo.at(-1) === node.id ? 'font-semibold' : ''}
+          />
+          {node.jobTitle || node.department ? (
+            <span className="text-footnote text-text-secondary">
+              {[node.jobTitle, node.department].filter(Boolean).join(' · ')}
+            </span>
+          ) : null}
+        </div>
         {node.directReports ? (
-          <span className="ml-auto text-footnote text-text-secondary">
+          <ListValue className="shrink-0 text-footnote">
             {t('org.reports', { count: node.directReports })}
-          </span>
+          </ListValue>
         ) : null}
       </div>
       {open && children ? (
@@ -73,7 +80,7 @@ function NodeRow({ node, depth, expandTo }: { node: OrgNode; depth: number; expa
           ))}
         </ul>
       ) : open ? (
-        <Skeleton className="ml-10 h-6 w-48" />
+        <Skeleton className="my-2 ml-12 h-6 w-48" />
       ) : null}
     </li>
   );
@@ -143,7 +150,7 @@ export default function OrgChartPage() {
           role="tree"
           aria-label={t('org.title')}
           key={focus.join()}
-          className="rounded-lg border border-border p-2"
+          className="overflow-hidden rounded-lg bg-surface-raised shadow-sm [&>li:first-child>div]:border-t-0"
         >
           {roots.map((r) => (
             <NodeRow key={r.id} node={r} depth={0} expandTo={focus} />
