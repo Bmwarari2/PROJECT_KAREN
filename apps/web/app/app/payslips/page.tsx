@@ -1,15 +1,13 @@
 'use client';
 import * as React from 'react';
-import { Download, FileText, Send, Upload } from 'lucide-react';
+import { Send, Upload } from 'lucide-react';
 import {
   Badge,
   Button,
   Card,
   CardTitle,
-  EmptyState,
   Field,
   Input,
-  Skeleton,
   Table,
   TD,
   TH,
@@ -17,26 +15,16 @@ import {
   TR,
   useToast,
 } from '@thapsus/ui';
-import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
-import { useLocale, useT } from '@/lib/i18n-client';
+import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { PageIntro } from '@/components/module-page';
+import { MyPayslips } from '@/components/payslips/my-payslips';
 import { useSession } from '../shell';
 
-interface MyPayslip {
-  id: string;
-  kind: 'payslip' | 'year_end';
-  docType: string;
-  label: string;
-  payDate: string | null;
-  fileName: string;
-  publishedAt: string;
-  viewed: boolean;
-}
 interface Item {
   id: string;
-  fileName: string;
+  fileName: string | null;
+  hasStatement: boolean;
   matchStatus: 'matched' | 'unmatched' | 'ambiguous' | 'manual';
   employeeName: string | null;
   employeeNumber: string | null;
@@ -71,13 +59,11 @@ const matchTone = {
 
 export default function PayslipsPage() {
   const t = useT();
-  const locale = useLocale();
   const toast = useToast();
   const session = useSession();
   const canManage = !!session?.permissions.some(
     (g) => g === '*' || g === 'payslips.*' || g === 'payslips.manage',
   );
-  const mine = useApi<MyPayslip[]>(session?.employeeId ? '/v1/me/payslips' : null);
   const batches = useApi<Batch[]>(canManage ? '/v1/payslips/batches' : null);
   const [form, setForm] = React.useState({
     kind: 'payslip',
@@ -88,6 +74,8 @@ export default function PayslipsPage() {
     pattern: '',
   });
   const [files, setFiles] = React.useState<FileList | null>(null);
+  // the payroll provider's structured statements (a JSON file, ADR-0167); PDFs are optional with it
+  const [statements, setStatements] = React.useState<File | null>(null);
   const [preview, setPreview] = React.useState<BatchDetail | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
   const fail = (err: unknown) =>
@@ -96,27 +84,15 @@ export default function PayslipsPage() {
       tone: 'danger',
     });
 
-  async function download(p: MyPayslip) {
-    setBusy(p.id);
-    try {
-      const r = await api<{ url: string }>(`/v1/payslips/${p.id}/download`);
-      mine.reload();
-      window.location.assign(r.url);
-    } catch (err) {
-      fail(err);
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function upload(e: React.FormEvent) {
     e.preventDefault();
-    if (!files?.length) return;
+    if (!files?.length && !statements) return;
     setBusy('upload');
     const body = new FormData();
     for (const [k, v] of Object.entries(form))
       if (v && !(k === 'pattern' && form.matchBy !== 'pattern')) body.set(k, v);
-    for (const f of Array.from(files)) body.append('files', f);
+    for (const f of Array.from(files ?? [])) body.append('files', f);
+    if (statements) body.append('statements', statements, statements.name);
     try {
       const res = await fetch('/v1/payslips/batches', { method: 'POST', body, credentials: 'same-origin' });
       const json = await res.json();
@@ -153,52 +129,9 @@ export default function PayslipsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageIntro title={t('payslips.title')} titleIsTab />
+      {/* the module header names the page ("Pay", with "Payslips" as its section): no second title here */}
 
-      {session?.employeeId ? (
-        <Card>
-          <CardTitle>{t('payslips.mine')}</CardTitle>
-          {!mine.data ? (
-            <Skeleton className="mt-3 h-24" />
-          ) : mine.data.length ? (
-            <ul className="mt-3 flex flex-col gap-2">
-              {mine.data.map((p) => (
-                <li
-                  key={p.id}
-                  className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3"
-                >
-                  <FileText aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{p.label}</p>
-                    <p className="text-footnote text-text-secondary">
-                      {t(`payslips.docTypes.${p.docType}`)}
-                      {p.payDate ? ` · ${t('payslips.paidOn', { date: formatDate(p.payDate, locale) })}` : ''}
-                    </p>
-                  </div>
-                  {!p.viewed ? <Badge tone="accent">{t('payslips.new')}</Badge> : null}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    loading={busy === p.id}
-                    onClick={() => download(p)}
-                    aria-label={t('payslips.downloadNamed', { label: p.label })}
-                  >
-                    <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    {t('payslips.download')}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              level={3}
-              icon={<FileText aria-hidden />}
-              title={t('payslips.none')}
-              body={t('payslips.noneBody')}
-            />
-          )}
-        </Card>
-      ) : null}
+      {session?.employeeId ? <MyPayslips /> : null}
 
       {canManage ? (
         <>
@@ -305,13 +238,31 @@ export default function PayslipsPage() {
                     {...p}
                     type="file"
                     multiple
-                    required
+                    required={!statements}
                     accept=".pdf,.zip,application/pdf,application/zip"
                     className="text-callout"
                     onChange={(e) => setFiles(e.target.files)}
                   />
                 )}
               </Field>
+              {form.kind === 'payslip' ? (
+                <Field
+                  id="ps-statements"
+                  label={t('payslipView.statementsFile')}
+                  hint={t('payslipView.statementsHint')}
+                  className="md:col-span-2"
+                >
+                  {(p) => (
+                    <input
+                      {...p}
+                      type="file"
+                      accept=".json,application/json"
+                      className="text-callout"
+                      onChange={(e) => setStatements(e.target.files?.[0] ?? null)}
+                    />
+                  )}
+                </Field>
+              ) : null}
               <Button type="submit" loading={busy === 'upload'}>
                 <Upload aria-hidden className="h-4 w-4 stroke-[1.5]" />
                 {t('payslips.uploadAndMatch')}
