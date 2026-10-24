@@ -1001,6 +1001,16 @@ describe('pre-start portal', () => {
     const mail = ctx.mailer.sent.at(-1)!;
     expect(mail.to).toBe('nova.joiner@personal.example.test');
     expect(mail.subject).toBe(`Your sign-in for Fictional ${owner.slug} Ltd on Thapsus-HR`);
+    // the link is scoped to the invitation and lasts 3 days (plan 2.3.1, ADR-0171)
+    const issued = await tx((t) =>
+      t.one<{ purpose: string; expires_at: Date }>(
+        `SELECT purpose, expires_at FROM app.magic_links WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [inv.json().userId],
+      ),
+    );
+    expect(issued.purpose).toBe('invitation');
+    expect((new Date(issued.expires_at).getTime() - ctx.deps.now().getTime()) / 3_600_000).toBe(72);
+    expect(mail.text).toContain('3 days');
     const token = decodeURIComponent(/\/auth\/magic\?token=(\S+)/.exec(mail.text)![1]!);
 
     // signs in before the start date with the one-time link (no admin role, so no MFA step)
