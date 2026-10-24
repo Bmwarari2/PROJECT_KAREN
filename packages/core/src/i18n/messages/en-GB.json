@@ -5383,7 +5383,7 @@
       "scopeSummary": "{type}: {values}",
       "signIn": {
         "title": "Sign-in and security",
-        "body": "Sign this person out on every device, or reset two-step verification if they have lost their authenticator.",
+        "body": "Sign this person out, send them a link to choose a new password, or reset two-step verification if they lost their authenticator.",
         "endSessions": "Sign out everywhere",
         "endSessionsTitle": "Sign {name} out everywhere?",
         "endSessionsBody": "They will need to sign in again on every device.",
@@ -5393,7 +5393,7 @@
         "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
         "resetMfaConfirm": "I have confirmed who they are. Reset it",
         "mfaReset": "Two-step verification has been reset.",
-        "whoCan": "Who can do this: people whose company-wide role includes managing settings and every permission this person has (so only an owner can help another owner). You confirm it is you first, you can never do it for yourself, and every action is recorded in the audit log and emailed to the person.",
+        "whoCan": "Who can do this: people whose company-wide role includes managing settings and every permission this person has, so only an owner can help another owner. You confirm it is you first and can never do it for yourself. Every action is recorded in the audit log, and the person is told by email when their password or two-step verification is reset.",
         "sendReset": "Send password reset link",
         "sendResetTitle": "Send {name} a password reset link?",
         "sendResetBody": "They get an email with a link to choose a new password. It works once for 24 hours. You never see or set the password, and their two-step verification stays as it is.",
@@ -5403,7 +5403,10 @@
         "unlinkSsoTitle": "Unlink {name} from single sign-on?",
         "unlinkSsoBody": "Do this only when your identity provider replaced their account. Their next single sign-on links the new account.",
         "unlinked": "Single sign-on unlinked.",
-        "linkedTo": "Linked to {connection}"
+        "linkedTo": "Linked to {connection}",
+        "endSessionsLead": "Ends every session on every device.",
+        "sendResetLead": "Emails a one-time link to choose a new password. You never see it.",
+        "resetMfaLead": "Removes a lost authenticator after you confirm who they are."
       },
       "list": {
         "count_one": "{count} person",

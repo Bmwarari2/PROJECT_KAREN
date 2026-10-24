@@ -15,10 +15,10 @@ import {
   Textarea,
   useToast,
 } from '@thapsus/ui';
-import { api, ApiProblem } from '@/lib/api';
+import { ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useT } from '@/lib/i18n-client';
-import { PageTitle, selectClass } from '../ui';
+import { PageTitle, selectClass, useStaffApi } from '../ui';
 
 interface Catalogue {
   jurisdictions: Array<{
@@ -43,6 +43,7 @@ interface Version {
 /** Jurisdiction rule data: append-only back-office versions over the packs (existing rules API). */
 export default function RulesAdmin() {
   const t = useT();
+  const call = useStaffApi();
   const toast = useToast();
   const cat = useApi<Catalogue>('/v1/backoffice/rules/catalogue');
   const [j, setJ] = React.useState('GB');
@@ -69,7 +70,7 @@ export default function RulesAdmin() {
     }
     setBusy(true);
     try {
-      await api(`/v1/backoffice/rules/${j}/${key}/versions`, {
+      await call(`/v1/backoffice/rules/${j}/${key}/versions`, {
         method: 'POST',
         json: {
           effectiveFrom: f.effectiveFrom,

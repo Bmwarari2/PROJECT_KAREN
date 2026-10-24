@@ -16,7 +16,17 @@ export default async function BackofficeLayout({ children }: { children: React.R
   const { theme } = await serverContext();
   return (
     <Messages
-      ns={['backoffice.*', 'backoffice.nav', 'backoffice.cell', 'backoffice.roles', 'backoffice.overview']}
+      ns={[
+        'backoffice.*',
+        'backoffice.nav',
+        'backoffice.cell',
+        'backoffice.roles',
+        'backoffice.overview',
+        'backoffice.elevation.banner',
+        'backoffice.elevation.openAccess',
+        'backoffice.elevation.problem.elevationRequired',
+        'backoffice.stepUp.failed',
+      ]}
     >
       <BackofficeShell theme={theme}>{children}</BackofficeShell>
     </Messages>

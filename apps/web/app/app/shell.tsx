@@ -83,10 +83,11 @@ export function PageTitle({ children, className }: { children: React.ReactNode; 
 
 /**
  * The second factor still has to be used in this session: anyone who has one must verify it, and
- * admins must set one up (the API refuses everything else until then; ASVS V6.3.3).
+ * admins (everyone, when the workspace requires it) must set one up first. The API refuses everything
+ * else until then (ASVS V6.3.3, plan 2.1.2).
  */
 export function needsSecondFactor(s: SessionInfo | null | undefined): boolean {
-  return !!s && !s.mfaVerified && (s.hasMfaFactor || s.isAdmin);
+  return !!s && !s.mfaVerified && (s.hasMfaFactor || s.isAdmin || !!s.mustUseMfa);
 }
 
 /** True when one of the session's grants covers the action (scope is enforced by the API). */

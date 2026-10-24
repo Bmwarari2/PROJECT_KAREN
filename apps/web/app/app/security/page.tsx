@@ -150,6 +150,9 @@ function PasswordCard() {
   const session = useSession();
   const stepUp = useStepUp();
   const has = !!session?.hasPassword;
+  // signed in with an emailed link (a forgotten password): no current password needed for now (ADR-0171)
+  const viaLink = has && session?.method === 'magic_link' && !!session.passwordWithoutCurrent;
+  const needsCurrent = has && !viaLink;
   const [current, setCurrent] = React.useState('');
   const [next, setNext] = React.useState('');
   const [busy, setBusy] = React.useState(false);
@@ -163,7 +166,7 @@ function PasswordCard() {
       const ok = await stepUp.run(() =>
         api('/v1/auth/password', {
           method: 'POST',
-          json: has ? { currentPassword: current, newPassword: next } : { newPassword: next },
+          json: needsCurrent ? { currentPassword: current, newPassword: next } : { newPassword: next },
         }),
       );
       if (ok) {
@@ -195,10 +198,14 @@ function PasswordCard() {
         <CardTitle>{t('app.security.password.title')}</CardTitle>
       </div>
       <p className="mt-2 text-callout text-text-secondary">
-        {has ? t('app.security.password.changeBody') : t('app.security.password.setBody')}
+        {viaLink
+          ? t('app.security.password.viaLinkBody')
+          : has
+            ? t('app.security.password.changeBody')
+            : t('app.security.password.setBody')}
       </p>
       <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
-        {has ? (
+        {needsCurrent ? (
           <Field id="current-password" label={t('app.security.password.current')}>
             {(p) => (
               <Input
