@@ -40,6 +40,22 @@ const NOT_CAPTURED: Array<[match: (r: string) => boolean, reason: string]> = [
     'SLA deadlines and the ticket reference come from the real clock and random bytes',
   ],
   [
+    (r) =>
+      [
+        '/app/approvals/[id]',
+        '/app/assets/[id]',
+        '/app/compliance/right-to-work/[id]',
+        '/app/contact-hr/[id]',
+        '/app/documents/[id]',
+        '/app/payroll/periods/[id]',
+        '/app/payslips/[id]',
+        '/app/tasks/[id]',
+        '/app/time-off/[id]',
+        '/app/timesheets/[id]',
+      ].includes(r),
+    'record pages added in Phase 14 (ADR-0161, ADR-0168): built from the ListSection, ListItem and Table primitives the list baselines cover; the a11y sweep opens each with a fictional record and the phone tour photographs them',
+  ],
+  [
     (r) => r.startsWith('/backoffice') && r !== '/backoffice/signin',
     'staff-only screens list every tenant the run creates (random slugs); covered by the a11y sweep',
   ],
