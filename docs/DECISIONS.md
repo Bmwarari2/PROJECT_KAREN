@@ -2179,3 +2179,36 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - On the same machine, the full Lighthouse run now passes on all 23 pages. App screens score 92–96, and People, the report builder, the document viewer and the back-office home score 95, 95, 95 and 98 (`docs/PERFORMANCE.md`).
 - A new overlay should use the `packages/ui` wrappers, not a Radix root directly. Otherwise it brings back the synchronous re-render.
 - Other first-use costs are left as they are: the first `Intl.NumberFormat` (about 70 ms at 4×) and Temporal on pages that use dates. They are the next candidates if a page nears the threshold again.
+
+## ADR-0187 — Phase 16: every task and approval leads to the work, with the owner's defaults (2026-10-24)
+
+**Context.** On staging, the owner found tasks with only a title and **Mark as done**, approvals that showed raw payloads (pay in minor units, "Asked by: The system"), controls that fail with "You do not have permission", help articles for features the reader cannot use, no way for the company to sign, no signatures on the documents themselves, and compliance lists without filters. An audit of every task source (workflow templates, compliance jobs, assets, automation, documents, absence, approvals, HR requests) and every approval subject (leave, shift swap, open shift claim, employee change, self-service change, timesheet, countersignature) found the same gap everywhere. The plan was agreed on 2026-10-24 (PROGRESS.md Phase 16).
+
+**Decision.** Phase 16 is built in eight parts, in waves of at most three agents:
+
+- **A, B and C first:** permissions and visibility, tasks, documents.
+- **Then D, E and F:** approvals, compliance, payroll hand-over.
+- **Then G and H:** forms and conversations, IT and offboarding.
+
+The owner's defaults (2026-10-24):
+
+- **Permissions.** View-only pages are shown read-only. Pages someone cannot view are hidden.
+- **IT admin role.** Holds devices, IT accounts and SCIM only. HR keeps a read-only view of leavers' assets.
+- **Signing.**
+  - The company signs through authorised signatories: HR admins and owners by default, after step-up, never on their own document.
+  - The employee signs first by default; templates can change the order.
+  - The signature is a typed name in an open-licence handwriting font, or drawn.
+- **Approvals.**
+  - Approvers see colleagues outside their scope only as "off", never the leave type.
+  - Shift swaps and claims are never auto-approved unless a workspace turns it on.
+  - A change-of-terms letter is sent for signature after an approved pay change; workspaces can turn this off.
+  - Pay comparisons are shown only for groups of five or more.
+- **Conversations.**
+  - Exit interview answers are HR-only, and leavers may decline.
+  - Return-to-work notes are seen only by the manager who held the conversation and by HR.
+  - A probation outcome of "not passed" needs HR approval before anything happens.
+- **Other.**
+  - Door-access systems stay manual checklist items, because connecting one would add a sub-processor.
+  - Right-to-work and I-9 records past retention are listed for HR to confirm deletion, not deleted automatically.
+
+**Consequences.** Each part records its own ADRs (ranges ADR-0188 to ADR-0215) and migrations (0028 to 0045, allocated per part). The task action registry (part B) is the extension point that the other parts plug into. Thapsus-HR still never runs payroll or calculates tax: part F only gathers what the payroll provider needs and hands it over.

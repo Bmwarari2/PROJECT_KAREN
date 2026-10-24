@@ -548,6 +548,66 @@ Identity half (plan §2.1, §2.2, §2.3.1; ADR-0170 to ADR-0174; migrations 0024
   - `pnpm verify` fails if either setting is removed.
   - _Evidence:_ `scripts/test/supply-chain.test.ts` and the security step of `pnpm verify` (`scripts/supply-chain.mjs`).
 
+## Phase 16 — Every task and approval leads to the work (owner review, 2026-10-24)
+
+The owner reviewed the staging inbox and found that tasks and approvals named a job without the means to do it. Plan agreed on 2026-10-24, with defaults in ADR-0187. Each part ships with tests, an e2e run of its flows (with axe), phone layouts, visual baselines and Lighthouse; employment rules come only from the jurisdiction packs.
+
+**A. Permissions and visibility**
+
+- [ ] **16.1 One permission map.** Every page, settings section, navigation item and action names its permission in one map in `@thapsus/core`, used by the API and the app. A test fails when a UI action's permission differs from the permission of the API route it calls.
+- [ ] **16.2 What you cannot do, you do not see.** Navigation, the settings index, search, buttons and links are filtered by the map. A page someone may view but not change is shown read-only, with no save controls. A sweep signs in as every role, opens every page and fails on any "no permission" response from a visible control.
+- [ ] **16.3 IT admin role.** A built-in IT admin role holds the asset register, asset returns, the IT integrations and SCIM. It has no access to pay, contracts or sensitive records. HR keeps a read-only view of what a leaver holds. Device and access tasks go to IT admins, or to a role chosen in Settings → Workflows. The staging seed has an IT admin login.
+- [ ] **16.4 Help by feature.** Every help article declares the features and permissions it covers. An article is shown only when the reader can see those features, the feature is on for the workspace and the country applies. The rule applies in the help centre, search, Ask HR and in-page help, is validated, and is tested for every role.
+
+**B. Tasks that lead to the work**
+
+- [ ] **16.5 Every task explains itself.** Seeded workflow tasks and system-made tasks (compliance, assets, documents, approvals, absence) carry a description in the reader's language. The workflow and automation editors accept descriptions.
+- [ ] **16.6 Task actions.** A registry of action kinds gives each task a main button that opens the work with the person already chosen, plus a live status of the linked record. Mark as done stays as a fallback that asks for a note and is audited. The workflow editor has an action picker.
+- [ ] **16.7 Tasks close themselves.** A task linked to a record closes when that record is complete. Each action kind proves this with a test.
+- [ ] **16.8 Truthful labels and due dates.** "Comes from" names the real source and links to it. "Asked by" names the person who asked; "The system" is used only for automations. Due dates follow the person's own dates and the packs (for example the probation end date, or business days).
+
+**C. Documents**
+
+- [ ] **16.9 Templates in Settings.** Templates can be listed, created, edited and archived. Edits create a version; sent documents keep theirs. The editor has simple formatting, a field picker, a live preview with a fictional person and flags for unknown fields. The UK, Ireland and US starter templates are labelled as samples, and their legal review is in HUMAN_TODO.
+- [ ] **16.10 Fields and layout.** New merge fields cover hours, holiday entitlement, notice, probation end, pay frequency and pay day, contract type, continuous employment, manager and employer address. Templates can ask for fields at send time. PDFs have a title, headings, page numbers and a signature block.
+- [ ] **16.11 Send from a template.** From a person, choose a template, preview it in the viewer and send it for signature, countersignature or both, with a signing order, due date and message. Sending is blocked while values are missing. A bulk send screen offers filters and progress.
+- [ ] **16.12 Signing status and the company signature.** A status timeline shows each step, with remind, void and replace, and resend. The company signs in the viewer: only authorised signatories (default HR admins and owners), after step-up, never on their own document. The signing order can be employee first (default), company first, or either.
+- [ ] **16.13 Signatures on the document.** Signature blocks are filled in with the signature (typed in an open-licence handwriting font, or drawn), printed name, "for and on behalf of", date and reference. Uploaded PDFs get placed fields or a signature page. The certificate page covers both parties, and every version is kept with its hash.
+- [ ] **16.14 Statement-of-terms task.** "Prepare and send" opens 16.11 with the template already chosen. The task closes when the document is signed and countersigned.
+
+**D. Approvals with the facts**
+
+- [ ] **16.15 Approval pages per subject.** Each subject shows its own facts and a steps timeline. Money is shown in currency, never as stored minor units.
+- [ ] **16.16 Leave.** The page shows the balance before and after approval, the days counted, a staffing strip with the cover rule for each day, overlapping requests and the shifts affected (which can be released as open shifts). The approver can approve, decline with a reason, or suggest other dates. Colleagues outside the approver's scope show only as "off".
+- [ ] **16.17 Shift swaps and open shift claims.** The page shows both people and both shifts, the colleague's acceptance, and checks: rest and maximum hours from the packs, young workers, skills, contract hours and overtime cost, and cover. Claimants are ordered by a setting and one is chosen. Auto-approval is off by default.
+- [ ] **16.18 Employee changes.** Pay, job, manager, hours and location changes, and employees' own detail changes, show current and proposed values with the difference. For pay, the page also shows the percentage change, the period it lands in (with a cut-off warning), history, position in the pay range (optional ranges per job level) and a peer comparison for groups of five or more. The approver can approve a different amount or date. On approval, the dated record is created, the change appears in that period's payroll inputs and a change-of-terms letter is sent (on by default). In self-service changes, sensitive values are masked.
+- [ ] **16.19 Timesheets.** The page shows recorded hours against the rota, overtime, breaks, rest-rule breaches and exceptions. The approver can approve line by line or the whole timesheet.
+
+**E. Compliance**
+
+- [ ] **16.20 Lists that find the problems.** The right-to-work and I-9 lists open on "Needs action" with status counts and filters by entity, location, department, start date and method. Filtered lists can be exported (audited), with bulk reminders and tasks. Overview tiles and alerts open the filtered list.
+- [ ] **16.21 Right-to-work evidence when recording the check.** Several files can be uploaded, including from the phone camera. The evidence each method requires comes from the UK pack. A "needs evidence" status flags checks without it, and evidence can be viewed in the viewer. A follow-up date is set automatically, and the task opens the dialog.
+- [ ] **16.22 Form I-9.** Employees complete Section 1 in self-service. HR completes Section 2: List A or List B and C, expiry dates, examiner and the method from the pack. The deadline counts business days from the US pack (this fixes the calendar-day count). Reverification has its own flow. Tasks close themselves.
+- [ ] **16.23 Compliance renewals.** Renewal and missing-requirement tasks open a flow to upload evidence or record the renewal.
+
+**F. Payroll hand-over (Thapsus-HR never runs payroll or calculates tax)**
+
+- [ ] **16.24 Starter checklist.** What the payroll provider needs for a starter in each country comes from the packs; in the US, withholding forms are collected for the provider. Missing items are asked of the employee, and sensitive values go to the vault. The checklist shows the first period and pay date and has a "Send to payroll" button. The task closes on delivery.
+- [ ] **16.25 Leaver summary for payroll.** Covers the last day, notice dates, holiday owed or overtaken (from the leave engine with the pack's accrual rules), unpaid absence, late pay changes and unreturned assets (for information). The summary goes to the period's Leavers section and the task closes on delivery. The task is renamed so that it no longer says "calculate final pay".
+
+**G. Forms and conversations**
+
+- [ ] **16.26 Forms engine.** Structured forms with question types and visibility rules. Sensitive answers go to the vault. Forms support employee confirmation, retention and audited views.
+- [ ] **16.27 Return-to-work conversation.** Starts from the absence. Records fitness to return, adjustments, a phased return, the fit note under the pack rules, an occupational health referral and a review date. The employee confirms. Only the manager who held it and HR can see it. Follow-up tasks are created, and the due date is a setting.
+- [ ] **16.28 Exit interviews.** A question set in Settings. The leaver completes it, or HR records it; the leaver may decline. A structured reason for leaving is saved on the leaver record. Answers are HR-only, and a reasons report suppresses small groups.
+- [ ] **16.29 Probation reviews.** The outcome is pass, extend or not passed, and HR approves it. The contract is changed with an effective date and a letter is sent from a template. The due date follows the probation end date. "Not passed" starts offboarding with notice from the pack.
+- [ ] **16.30 Check-ins and handovers.** Covers the 30-day check-in, buddy and first-week plan, handover plan and transfer welcome. Each is a short form that notifies the people involved.
+
+**H. IT and offboarding**
+
+- [ ] **16.31 IT requests.** "Order laptop, phone or site access card" opens an IT request in the IT admin queue. Fulfilling it assigns items from the asset register; the employee confirms receipt, and the task closes.
+- [ ] **16.32 Access removal.** A live checklist covers connected accounts and their leaver steps, the Thapsus-HR sign-in ending at the end of the last day, assets to return, and manual items recorded with who and when. The task closes when everything is done. Access still active after the leave date raises an alert in the Security centre.
+
 ## Documentation (brief §9)
 
 - [x] README
