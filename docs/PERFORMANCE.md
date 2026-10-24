@@ -73,6 +73,17 @@ The output is deterministic: two runs with the same size produce byte-identical 
 
 What moved the numbers: per-route message scoping (ADR-0150) removed about 55 KB of compressed HTML from every page; each page renders its heading and intro before its data in the same elements as the loaded page (the rota's draft-shift explanation moved next to its heading, as the late largest paint there); the Inter font is preloaded; the app top bar no longer uses a backdrop filter; and fixing skipped heading levels took app screens from 98 to 100 for accessibility. On the same machine under heavy load from other jobs (load average 6 to 11) the rota, timesheets and report builder screens dropped to 84 to 89 on total blocking time alone; they are the first candidates for code splitting if CI numbers fall.
 
+#### Sign-in and security screens after security hardening P0 (Phase 15)
+
+The forgot-password page joined the audited pages. Measured on 2026-10-24 with `LIGHTHOUSE_ONLY=/signin,/forgot-password,/app/security,/app/settings` on the shared build machine at a load average of about 6 (other jobs running), so the performance scores are lower than the quiet-machine run above; all pass.
+
+| Page                               | Performance | Accessibility | Best practices | LCP      | CLS   | TBT    |
+| ---------------------------------- | ----------- | ------------- | -------------- | -------- | ----- | ------ |
+| Sign in `/signin`                  | 95          | 100           | 100            | 2,961 ms | 0.000 | 61 ms  |
+| Forgot password `/forgot-password` | 99          | 100           | 100            | 1,607 ms | 0.000 | 107 ms |
+| Settings `/app/settings`           | 94          | 100           | 100            | 3,065 ms | 0.000 | 46 ms  |
+| Security `/app/security`           | 93          | 100           | 100            | 3,076 ms | 0.000 | 124 ms |
+
 #### Message catalogue in the page payload (Phase 12, ADR-0150)
 
 Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.

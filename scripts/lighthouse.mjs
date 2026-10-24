@@ -36,6 +36,7 @@ const ALL_PAGES = [
   { path: '/developers', label: 'Developers' },
   { path: '/signin', label: 'Sign in' },
   { path: '/signup', label: 'Sign up' },
+  { path: '/forgot-password', label: 'Forgot password' },
   { path: '/app', label: 'App home (signed in)', auth: true },
   { path: '/app/me', label: 'Me hub (signed in)', auth: true },
   { path: '/app/people', label: 'People (signed in)', auth: true },
