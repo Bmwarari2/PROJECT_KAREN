@@ -411,13 +411,17 @@ export async function applyErasure(
       `SELECT file_key FROM app.documents WHERE employee_id = $1 AND category IS DISTINCT FROM 'immigration'`,
       [s.employeeId],
     );
-    const signed = await tx.query<{ signed_file_key: string | null }>(
-      `SELECT s.signed_file_key FROM app.signature_requests s WHERE s.signer_employee_id = $1`,
+    // every version of a signed document (sent, signed by each party, completed) and drawn signatures (ADR-0197)
+    const signed = await tx.query<{ k: string | null }>(
+      `SELECT unnest(ARRAY[s.signed_file_key, s.original_file_key, s.employee_signed_file_key, s.company_signed_file_key,
+                           s.signature_drawing_key, s.countersignature_drawing_key]) AS k
+         FROM app.signature_requests s WHERE s.signer_employee_id = $1
+       UNION SELECT e.file_key FROM app.signature_events e WHERE e.employee_id = $1`,
       [s.employeeId],
     );
     fileKeys.push(
       ...docs.flatMap((d) => (d.file_key ? [d.file_key] : [])),
-      ...signed.flatMap((d) => (d.signed_file_key ? [d.signed_file_key] : [])),
+      ...[...new Set(signed.flatMap((d) => (d.k ? [d.k] : [])))],
     );
   }
   if (s.employeeId && erasing.has('payroll_records')) {

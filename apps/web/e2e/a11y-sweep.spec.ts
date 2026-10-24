@@ -110,6 +110,8 @@ interface Fixture {
   incidentId: string;
   kioskToken: string;
   documentId: string;
+  /** A document template, for its editor in Settings → Documents (16.9). */
+  templateId: string;
   payslipId: string;
   owner: { slug: string; email: string; secret: string; employeeNumber: string };
 }
@@ -118,6 +120,8 @@ function concrete(route: string, f: Fixture): string {
   const map: Record<string, string> = {
     '/app/people/[id]': `/app/people/${f.employeeId}`,
     '/app/documents/[id]': `/app/documents/${f.documentId}`,
+    '/app/people/[id]/documents/new': `/app/people/${f.employeeId}/documents/new`,
+    '/app/settings/documents/templates/[id]': `/app/settings/documents/templates/${f.templateId}`,
     '/app/payslips/[id]': `/app/payslips/${f.payslipId}`,
     '/app/tasks/[id]': `/app/tasks/${f.taskId}`,
     // the owner's own request to HR: the same record HR opens as a task
@@ -383,6 +387,13 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
     incidentId: incident!.id,
     kioskToken: kiosk.token,
     documentId: ((await doc.json()) as { id: string }).id,
+    templateId: (
+      await apiCall<{ id: string }>(page.request, 'POST', '/v1/document-templates', {
+        name: 'Fictional sweep letter',
+        body: '# Welcome\n\nDear {{employee.firstName}},\n\n- Start date: {{employee.startDate}}',
+        askFields: [{ key: 'note', label: 'A note', required: false }],
+      })
+    ).id,
     payslipId: imported.items[0]!.id,
     owner: { slug: co.slug, email: co.email, secret: co.secret, employeeNumber: co.employeeNumber },
   };

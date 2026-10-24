@@ -56,6 +56,14 @@ const NOT_CAPTURED: Array<[match: (r: string) => boolean, reason: string]> = [
     'record pages added in Phase 14 (ADR-0161, ADR-0168): built from the ListSection, ListItem and Table primitives the list baselines cover; the a11y sweep opens each with a fictional record and the phone tour photographs them',
   ],
   [
+    (r) => r === '/app/settings/documents',
+    'redirects to /app/settings/documents/templates, which has its own baseline',
+  ],
+  [
+    (r) => r === '/app/settings/documents/templates/[id]',
+    'the same template editor as /app/settings/documents/templates/new (baselined); documents-send.spec.ts opens it with a fictional template, with axe',
+  ],
+  [
     (r) => r.startsWith('/backoffice') && r !== '/backoffice/signin',
     'staff-only screens list every tenant the run creates (random slugs); covered by the a11y sweep',
   ],
@@ -223,6 +231,7 @@ test('app screens', async ({ page }, testInfo) => {
   const concrete: Record<string, string> = {
     '/app/help/[slug]': help,
     '/app/people/[id]': `/app/people/${employee.id}`,
+    '/app/people/[id]/documents/new': `/app/people/${employee.id}/documents/new`,
     '/app/reports/ready/[id]': '/app/reports/ready/headcount',
     '/app/reports/runs/[id]': `/app/reports/runs/${run.id}`,
     '/app/settings/roles/[id]': `/app/settings/roles/${roles[0]!.id}`,

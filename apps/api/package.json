@@ -36,6 +36,7 @@
     "@google-cloud/storage": "^8.4.0",
     "@node-rs/argon2": "^2.2.2",
     "@node-saml/node-saml": "^5.1.0",
+    "@pdf-lib/fontkit": "1.1.1",
     "@simplewebauthn/server": "^14.0.3",
     "@thapsus/core": "workspace:*",
     "@thapsus/db": "workspace:*",

@@ -7,7 +7,9 @@ WORKDIR /repo
 COPY . .
 RUN pnpm install --frozen-lockfile --filter @thapsus/worker... --filter thapsus-hr
 RUN node scripts/bundle.mjs apps/worker/src/main.ts apps/worker/dist/main.mjs
-RUN pnpm deploy --filter @thapsus/worker --prod --legacy --config.node-linker=hoisted /out && cp -r apps/worker/dist /out/dist
+# the signature font (Alex Brush, SIL OFL, with its licence) next to the bundle: ../assets/fonts (ADR-0197)
+RUN pnpm deploy --filter @thapsus/worker --prod --legacy --config.node-linker=hoisted /out && cp -r apps/worker/dist /out/dist \
+ && mkdir -p /out/assets && cp -r assets/fonts /out/assets/fonts
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production

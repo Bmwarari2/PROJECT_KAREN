@@ -106,10 +106,32 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.documents': { subject: [E()], actor: ['created_by'], category: 'personnel_records', erase: DEL },
   'app.signature_requests': {
     subject: [E('signer_employee_id'), U('signer_user_id')],
-    actor: ['requested_by', 'countersigner_user_id'],
+    actor: ['requested_by', 'countersigner_user_id', 'voided_by'],
     category: 'personnel_records',
     erase: DEL,
   },
+  // each step of a signature request, with the version it produced (ADR-0195)
+  'app.signature_events': {
+    subject: [E()],
+    actor: ['actor_user_id'],
+    category: 'personnel_records',
+    erase: DEL,
+  },
+  // templates and their versions hold no one's data; who edited or archived them is accountability (ADR-0194)
+  'app.document_templates': {
+    subject: [],
+    actor: ['updated_by', 'archived_by'],
+    category: 'accountability',
+    erase: { keep: 'who changed a company template' },
+  },
+  'app.document_template_versions': {
+    subject: [],
+    actor: ['created_by'],
+    category: 'accountability',
+    erase: { keep: 'who changed a company template' },
+  },
+  // the people named as authorised signatories (ADR-0196)
+  'app.document_signatories': { subject: [U()], actor: ['created_by'], category: 'account', erase: DEL },
   'app.workflow_instances': {
     subject: [E()],
     actor: ['started_by'],

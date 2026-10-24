@@ -1,0 +1,22 @@
+/* The typed signature preview uses the same open-licence handwriting font the PDF is stamped with (ADR-0197):
+   Alex Brush (SIL OFL 1.1), self-hosted from public/fonts/alex-brush (scripts/copy-fonts.mjs). The browser
+   fetches it only when this preview is on screen. Never SF Pro or any Apple asset. */
+@font-face {
+  font-family: 'Thapsus Signature';
+  src: url('/fonts/alex-brush/AlexBrush-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+.script {
+  font-family: 'Thapsus Signature', cursive;
+  font-size: 34px;
+  line-height: 56px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* drawing by finger must not scroll or zoom the page */
+.pad {
+  touch-action: none;
+  cursor: crosshair;
+}

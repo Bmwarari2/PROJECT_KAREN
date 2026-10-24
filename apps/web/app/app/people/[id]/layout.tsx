@@ -14,6 +14,7 @@ export default function PeopleDetailLayout({ children }: { children: React.React
         'documents.categoryName',
         'docAttach',
         'docView',
+        'docSend.newFromTemplate',
         'timeOff.type',
         'timeOff.entitlement',
         'timeOff.carriedOver',

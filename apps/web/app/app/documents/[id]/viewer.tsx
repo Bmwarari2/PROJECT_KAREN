@@ -2,7 +2,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft, CircleCheck, Download, FileText, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, CircleCheck, Download, FileSignature, FileText, ShieldCheck } from 'lucide-react';
 import { Badge, buttonVariants, EmptyState, Skeleton } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
@@ -17,6 +17,8 @@ import {
   type Countersign,
   type Signature,
 } from '@/components/documents/sign-panel';
+import { SigningStatus, type Signing } from '@/components/documents/signing-status';
+import { newDocumentHref } from '@thapsus/core/documents';
 import { PageTitle, useSession } from '../../shell';
 
 // PDF.js loads only here, only for PDFs, and only in the browser (ADR-0168).
@@ -51,6 +53,10 @@ export interface DocView {
   signature: Signature | null;
   countersign: Countersign | null;
   signedCopyOf: { documentId: string; signerName: string | null; signedAt: string | null } | null;
+  /** where the document is in its signing, for its details panel (16.12) */
+  signing?: Signing | null;
+  /** HR may send this PDF for signature */
+  canSendForSignature?: boolean;
 }
 
 /**
@@ -65,7 +71,7 @@ export function DocumentViewer({ id, initial }: { id: string; initial?: DocView 
   const router = useRouter();
   const session = useSession();
   const justSigned = useSearchParams().get('signed') === '1';
-  const { data, error } = useApi<DocView>(`/v1/documents/${id}`, initial);
+  const { data, error, reload } = useApi<DocView>(`/v1/documents/${id}`, initial);
   const [pages, setPages] = React.useState(0);
   const [seen, setSeen] = React.useState<Set<number>>(new Set());
 
@@ -179,7 +185,18 @@ export function DocumentViewer({ id, initial }: { id: string; initial?: DocView 
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">{download}</div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {data.canSendForSignature && d.employeeId ? (
+            <IntentLink
+              href={newDocumentHref({ employeeId: d.employeeId, documentId: d.id })}
+              className={buttonVariants({ variant: 'secondary' }) + ' min-h-11 no-underline'}
+            >
+              <FileSignature aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('docSend.sendForSignature')}
+            </IntentLink>
+          ) : null}
+          {download}
+        </div>
       </div>
 
       {data.signedCopyOf ? (
@@ -232,6 +249,7 @@ export function DocumentViewer({ id, initial }: { id: string; initial?: DocView 
               onDone={(r) => {
                 if (r.status === 'completed' && r.signedDocumentId && data.canManage)
                   router.push(`/app/documents/${r.signedDocumentId}`);
+                else reload();
               }}
             />
           ) : pending || data.signature ? (
@@ -246,6 +264,9 @@ export function DocumentViewer({ id, initial }: { id: string; initial?: DocView 
                   router.push(`/app/documents/${r.signedDocumentId}?signed=1`);
               }}
             />
+          ) : null}
+          {data.signing ? (
+            <SigningStatus signing={data.signing} canManage={data.canManage} onChanged={reload} />
           ) : null}
           <section aria-labelledby="doc-details" className="flex flex-col gap-2">
             <h2 id="doc-details" className="px-1 text-title-3">

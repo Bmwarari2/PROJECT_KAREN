@@ -1,8 +1,15 @@
-import { t } from '@thapsus/core/i18n';
+import { formatDate, t } from '@thapsus/core/i18n';
 import { addDays, compareDates } from '@thapsus/core/time';
 import { writeAudit } from '@thapsus/db';
 import type { Deps } from '../../../deps';
-import { appendCertificate, renderTextPdf, sha256 } from '../../../modules/documents/pdf';
+import {
+  appendCertificate,
+  renderTextPdf,
+  sha256,
+  stampSignature,
+  type SignatureField,
+} from '../../../modules/documents/pdf';
+import { addEvent } from '../../../modules/documents/signing';
 import {
   certificateLabels,
   registerCountersignEffects,
@@ -10,6 +17,7 @@ import {
 } from '../../../modules/documents/countersign';
 import { decide } from '../../../modules/approvals/service';
 import { generateFromTemplate } from '../../../modules/documents/routes';
+import { sampleByKey } from '../../../modules/documents/samples';
 import { bump, insertRows, mapLimit, seedUuid, type SeedCtx } from '../context';
 import { currentJob, type PlanPerson } from '../plan';
 
@@ -118,6 +126,21 @@ const HYBRID_SECTIONS = [
 ] as const;
 const HYBRID_BODY = HYBRID_SECTIONS.flatMap(([h, body], i) => [`${i + 1}. ${h}`, body, '']).join('\n');
 
+/** A starter sample (16.9) as the staging workspace's own copy, labelled as a sample. */
+const fromSample = (key: string, sampleKey: string) => {
+  const s = sampleByKey(sampleKey)!;
+  return {
+    key,
+    name: t(s.locale, `docTpl.samples.${s.key}.name`),
+    locale: s.locale,
+    category: s.category,
+    body: s.body,
+    countersign: s.requiresCountersign,
+    sample: s.key,
+    order: s.signingOrder,
+  };
+};
+
 const TEMPLATES: Array<{
   key: string;
   name: string;
@@ -126,6 +149,9 @@ const TEMPLATES: Array<{
   body: string;
   /** The company countersigns documents from this template (ADR-0169). */
   countersign: boolean;
+  /** A copy of a starter sample (ADR-0194). */
+  sample?: string;
+  order?: string;
 }> = [
   {
     key: 'offer_uk',
@@ -135,14 +161,8 @@ const TEMPLATES: Array<{
     countersign: true,
     body: 'Dear {{employee.firstName}},\n\nWe are delighted to offer you the role of {{employee.jobTitle}} in {{employee.department}} at {{entity.name}}, based at {{employee.location}}, starting on {{employee.startDate}}.\n\nYour salary will be {{employee.salary}} ({{employee.payFrequency}}).\n\nThis is a fictional sample letter generated for the staging environment.\n\n{{company.name}}\n{{today}}',
   },
-  {
-    key: 'contract_uk',
-    name: 'Statement of main terms (UK)',
-    locale: 'en-GB',
-    category: 'contract',
-    countersign: true,
-    body: 'Employer: {{entity.name}}\nEmployee: {{employee.displayName}} ({{employee.employeeNumber}})\nJob title: {{employee.jobTitle}}\nPlace of work: {{employee.location}}\nStart date: {{employee.startDate}}\nPay: {{employee.salary}} ({{employee.payFrequency}})\n\nThis is a fictional sample contract generated for the staging environment.',
-  },
+  fromSample('contract_uk', 'uk_statement'),
+  fromSample('contract_ie', 'ie_statement'),
   {
     key: 'variation',
     name: 'Change of terms letter',
@@ -151,14 +171,7 @@ const TEMPLATES: Array<{
     countersign: false,
     body: 'Dear {{employee.firstName}},\n\nThis letter confirms a change to your terms: your role is {{employee.jobTitle}} and your pay is {{employee.salary}} ({{employee.payFrequency}}). Please sign to confirm you agree.\n\nFictional sample letter.\n\n{{company.name}}, {{today}}',
   },
-  {
-    key: 'offer_us',
-    name: 'Offer letter (US)',
-    locale: 'en-US',
-    category: 'offer',
-    countersign: true,
-    body: 'Dear {{employee.firstName}},\n\nWe are pleased to offer you the position of {{employee.jobTitle}} at {{entity.name}} in {{employee.location}}, starting {{employee.startDate}}, at {{employee.salary}} ({{employee.payFrequency}}). Employment is at will.\n\nThis is a fictional sample letter generated for the staging environment.\n\n{{company.name}}',
-  },
+  fromSample('offer_us', 'us_offer'),
   {
     key: 'hybrid',
     name: 'Hybrid working agreement',
@@ -269,14 +282,43 @@ export async function seedDocuments(ctx: SeedCtx) {
       body: x.body,
       category: x.category,
       requires_countersign: x.countersign,
+      sample_key: x.sample ?? null,
+      signing_order: x.order ?? 'employee_first',
     })),
   );
+  // the samples' ask-when-sending fields are part of their first version (labels in the workspace's language)
+  for (const x of TEMPLATES.filter((y) => y.sample)) {
+    const s = sampleByKey(x.sample!)!;
+    await tx.exec(
+      `INSERT INTO app.document_template_versions (tenant_id, template_id, version, name, locale, category, body, ask_fields, requires_countersign, signing_order)
+       VALUES (app.current_tenant(), $1, 1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`,
+      [
+        tpl[x.key],
+        x.name,
+        x.locale,
+        x.category,
+        x.body,
+        JSON.stringify(
+          s.askFields.map((a) => ({ ...a, label: t(s.locale, `docTpl.samples.${s.key}.ask.${a.key}`) })),
+        ),
+        x.countersign,
+        x.order ?? 'employee_first',
+      ],
+    );
+  }
   // documents generated by the documents service (merge fields from the employee record) with signatures
   const deps = { objects: ctx.objects } as Pick<Deps, 'objects'> as Deps;
   const hr = ids.user.hr_admin;
+  // the values HR types in when sending a sample (fictional)
+  const askValues = (p: PlanPerson) => ({
+    continuousEmployment: formatDate(p.startDate, 'en-GB', 'long'),
+    normalHours: '09:00 to 17:30, Monday to Friday',
+    respondBy: formatDate(addDays(p.startDate, -14), 'en-US', 'long'),
+  });
   const generate = async (p: PlanPerson, key: string, sign: boolean, title?: string) =>
     generateFromTemplate(deps, tx, tpl[key]!, ids.employee[p.idx]!, hr, {
       requireSignature: sign,
+      values: askValues(p),
       ...(title ? { title } : {}),
     });
   const starters = plan.people.filter((p) => p.kind === 'upcoming_starter');
@@ -332,16 +374,31 @@ async function signRequest(
   opts: { countersignBy?: string } = {},
 ) {
   const { tx, ids } = ctx;
-  const sr = await tx.one<{ id: string; file_key: string; title: string; requires_countersign: boolean }>(
-    `SELECT s.id, d.file_key, d.title, s.requires_countersign FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id WHERE s.document_id = $1`,
+  const sr = await tx.one<{
+    id: string;
+    file_key: string;
+    title: string;
+    requires_countersign: boolean;
+    fields: SignatureField[] | null;
+  }>(
+    `SELECT s.id, coalesce(s.original_file_key, d.file_key) AS file_key, d.title, s.requires_countersign, s.fields FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id WHERE s.document_id = $1`,
     [documentId],
   );
   const original = await ctx.objects.get(sr.file_key);
   const documentSha256 = sha256(original);
   const signedAt = `${on}T11:20:00Z`;
   const name = `${p.preferred ?? p.first} ${p.last}`;
+  // the signature goes into the document's signature block, as the signing route stamps it (ADR-0197)
+  const stamped = sr.fields?.length
+    ? await stampSignature(original, sr.fields, 'employee', {
+        method: 'typed',
+        name,
+        date: formatDate(on, 'en-GB', 'long'),
+        reference: t('en-GB', 'docPdf.ref', { id: sr.id }),
+      })
+    : original;
   const signedPdf = Buffer.from(
-    await appendCertificate(original, {
+    await appendCertificate(stamped, {
       signerName: name,
       signerEmail: p.workEmail,
       signedAtUtc: signedAt,
@@ -371,9 +428,34 @@ async function signRequest(
         ],
       );
   const user = p.login ? ids.user[p.login] : null;
+  await addEvent(tx, {
+    requestId: sr.id,
+    employeeId: ids.employee[p.idx]!,
+    kind: 'employee_signed',
+    actorUserId: p.login ? ids.user[p.login] : null,
+    actorName: name,
+    fileKey: signedKey,
+    sha256: signedSha256,
+    detail: { method: 'typed', documentSha256, source: 'staging_seed' },
+    at: signedAt,
+  });
+  if (signedDoc)
+    await addEvent(tx, {
+      requestId: sr.id,
+      employeeId: ids.employee[p.idx]!,
+      kind: 'completed',
+      fileKey: signedKey,
+      sha256: signedSha256,
+      at: signedAt,
+    });
+  await tx.exec(`UPDATE app.signature_events SET at = $2 WHERE signature_request_id = $1 AND kind = 'sent'`, [
+    sr.id,
+    `${addDays(on, -3)}T09:00:00Z`,
+  ]);
   await tx.exec(
     `UPDATE app.signature_requests SET status = 'signed', signed_at = $2, signer_user_id = $3, signer_name = $4, signer_ip = '192.0.2.10', signer_user_agent = 'Thapsus-HR staging seed',
-            document_sha256 = $5, signed_file_key = $6, signed_sha256 = $7, requested_at = $8, completed_at = $9, signed_document_id = $10 WHERE id = $1`,
+            document_sha256 = $5, signed_file_key = $6, signed_sha256 = $7, requested_at = $8, completed_at = $9, signed_document_id = $10,
+            employee_signed_file_key = $6, employee_signed_sha256 = $7, signature_method = 'typed' WHERE id = $1`,
     [
       sr.id,
       signedAt,

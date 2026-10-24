@@ -76,6 +76,8 @@ Font stack: `-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif`. 
 
 Reading width is at most 680px for prose. Never use text smaller than 13px.
 
+**Signatures only (ADR-0197):** a typed signature is previewed and stamped in Alex Brush (SIL OFL 1.1, bundled in `assets/fonts/alex-brush` with its licence), 34px on screen, in `accent`. It is never used for interface text, and it is never SF Pro or any Apple asset.
+
 ## 4. Spacing, layout, radii, shadows
 
 - **Spacing scale (px):** 0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128 (`--space-0` … `--space-13`).

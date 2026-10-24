@@ -25,8 +25,10 @@ const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const MAX_CANVAS_PIXELS = 12_000_000;
 
 export interface PdfViewerProps {
-  /** Same-origin URL of the PDF bytes. */
+  /** Same-origin URL of the PDF bytes (or, with `load`, a key that changes when the bytes do). */
   src: string;
+  /** Fetches the bytes instead of a GET of `src` (the send page's preview is a POST with the typed values). */
+  load?: () => Promise<ArrayBuffer>;
   /** The document's title, for the page region's accessible name. */
   title: string;
   /** Shown instead of the page when the PDF cannot be shown (with a download, for example). */
@@ -35,7 +37,7 @@ export interface PdfViewerProps {
   onPage?: (page: number) => void;
 }
 
-export default function PdfViewer({ src, title, fallback, onPages, onPage }: PdfViewerProps) {
+export default function PdfViewer({ src, load, title, fallback, onPages, onPage }: PdfViewerProps) {
   const t = useT();
   const [doc, setDoc] = React.useState<PdfDocument | null>(null);
   const [error, setError] = React.useState<'unsupported' | 'password' | 'failed' | null>(null);
@@ -62,12 +64,13 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
     }
     (async () => {
       try {
-        const res = await fetch(src, { credentials: 'same-origin' });
-        if (!res.ok) throw new Error(String(res.status));
-        const [data, pdfjs] = await Promise.all([
-          res.arrayBuffer().then((b) => new Uint8Array(b)),
-          loadPdfJs(),
-        ]);
+        const bytes = load
+          ? load()
+          : fetch(src, { credentials: 'same-origin' }).then((res) => {
+              if (!res.ok) throw new Error(String(res.status));
+              return res.arrayBuffer();
+            });
+        const [data, pdfjs] = await Promise.all([bytes.then((b) => new Uint8Array(b)), loadPdfJs()]);
         if (cancelled) return;
         task = pdfjs.getDocument({
           data,
@@ -92,7 +95,7 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
       cancelled = true;
       void task?.destroy();
     };
-    // onPages is a notification only, deliberately not a dependency
+    // onPages is a notification only and `load` follows `src`, deliberately not dependencies
   }, [src]);
 
   // the frame's width decides "fit to width"

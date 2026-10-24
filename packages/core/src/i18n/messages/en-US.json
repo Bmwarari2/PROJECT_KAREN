@@ -44,6 +44,10 @@
       "platform": {
         "title": "Integrations and platform",
         "body": "API access, webhooks, audit streaming, sandboxes, branding and features."
+      },
+      "documents": {
+        "title": "Documents",
+        "body": "Document templates, and who signs for the company."
       }
     },
     "section": {
@@ -55,6 +59,14 @@
       },
       "securityCentre": {
         "title": "Security center"
+      },
+      "documentTemplates": {
+        "title": "Document templates",
+        "body": "Letters and contracts to send for signature, with their versions."
+      },
+      "signatories": {
+        "title": "Authorized signatories",
+        "body": "Who signs documents for the company."
       }
     },
     "sso": {
@@ -153,7 +165,10 @@
     "timesheetRejected": "Your timesheet for the week of {week} was returned",
     "supportReply": "Thapsus-HR support replied to ticket {reference}",
     "payslipAvailable": "Your pay stub for {label} is ready",
-    "payslipReady": "Your pay stub for {period:month} is ready"
+    "payslipReady": "Your pay stub for {period:month} is ready",
+    "signatureReminder": "Reminder: {title} is waiting for your signature",
+    "countersignReminder": "Reminder: {title} is waiting for the company’s signature",
+    "documentVoided": "{title} no longer needs your signature"
   },
   "platform": {
     "errors": {
@@ -1177,10 +1192,385 @@
     },
     "vaultHint": "Kept in the vault: only people who may see work authorization records can open it."
   },
+  "docTpl": {
+    "lead": "The letters and contracts HR sends for signature. Saving a change makes a new version; documents already sent keep the version they were made from.",
+    "new": "New template",
+    "newLead": "Write the wording once, with fields that fill in from each person’s record.",
+    "editLead_one": "Version {version}. {count} document has been made from this template.",
+    "editLead_other": "Version {version}. {count} documents have been made from this template.",
+    "active": "Templates",
+    "archived": "Archived",
+    "empty": "No templates yet",
+    "notFound": "This template does not exist or you cannot open it",
+    "untitled": "Untitled template",
+    "versionShort": "Version {version}",
+    "versionBy": "{date} by {name}",
+    "updatedOn": "Updated {date}",
+    "current": "Current",
+    "versions": "Versions",
+    "companySigns": "Company signs",
+    "sample": "Sample",
+    "sampleNote": "Wording to review with your legal adviser before use",
+    "sampleHint": "This is a sample to start from. Its wording is not legal advice: have it reviewed by a qualified employment lawyer for your country before you use it.",
+    "samplesLead": "Samples for the UK, Ireland and the US, to copy and adapt.",
+    "addSample": "Add",
+    "addSampleNamed": "Add {name} to your templates",
+    "sampleAdded": "Added to your templates",
+    "details": "Details",
+    "name": "Name",
+    "category": "Type",
+    "language": "Language",
+    "countersign": "The company signs too",
+    "countersignHint": "An authorized signatory signs for the company in the document viewer.",
+    "order": "Who signs first",
+    "theEmployee": "The employee",
+    "askTitle": "Ask when sending",
+    "askLead": "Values HR types in when sending, such as a start time. Use them in the wording like any other field.",
+    "askLabel": "Label",
+    "askKey": "Field name",
+    "askKeyHint": "In the wording: {{ask.{key}}}",
+    "askRequired": "Required",
+    "askAdd": "Add a field",
+    "askNone": "No fields are asked for when sending.",
+    "askRemove": "Remove {label}",
+    "askBadKey": "Each field name must start with a letter, use only letters, numbers and underscores, and be used once.",
+    "askPlaceholder": "[{label}]",
+    "insert": "Insert",
+    "wording": "Wording",
+    "wordingLead": "Headings, paragraphs, lists and bold. Leave a blank line between paragraphs.",
+    "formatting": "Formatting",
+    "tool": {
+      "heading": "Heading",
+      "subheading": "Subheading",
+      "bold": "Bold",
+      "bullets": "Bulleted list",
+      "numbers": "Numbered list"
+    },
+    "boldText": "bold text",
+    "fieldPicker": "Field",
+    "chooseField": "Choose a field to insert",
+    "insertField": "Insert field",
+    "body": "Text",
+    "bodyHint": "# for a heading, ## for a subheading, - or 1. for lists, **text** for bold, {{field}} for a field.",
+    "unknownTitle_one": "{count} field is not one Thapsus-HR knows",
+    "unknownTitle_other": "{count} fields are not ones Thapsus-HR knows",
+    "unknownHint": "Choose fields from the field picker, or add an ask-when-sending field. The template cannot be saved until these are fixed.",
+    "preview": "Preview",
+    "previewLead": "Filled in for a fictional sample person.",
+    "create": "Create template",
+    "created": "Template created",
+    "saveVersion": "Save as a new version",
+    "savedVersion": "Saved as version {version}",
+    "archive": "Archive",
+    "archiveTitle": "Archive {name}?",
+    "archiveBody": "It can no longer be sent. Documents already made from it, and its versions, are kept. You can restore it later.",
+    "archivedToast": "Template archived",
+    "archivedNote": "This template is archived. Restore it to edit or send it.",
+    "restore": "Restore",
+    "restored": "Template restored",
+    "samplesTitle": "Starter templates",
+    "samples": {
+      "uk_statement": {
+        "name": "Statement of main terms (UK)",
+        "ask": {
+          "continuousEmployment": "Date continuous employment began"
+        }
+      },
+      "ie_statement": {
+        "name": "Written statement of terms (Ireland)",
+        "ask": {
+          "normalHours": "Normal start and finish times"
+        }
+      },
+      "us_offer": {
+        "name": "Offer letter (US)",
+        "ask": {
+          "respondBy": "Reply by"
+        }
+      }
+    }
+  },
+  "docFields": {
+    "group": {
+      "employee": "Person",
+      "job": "Job",
+      "contract": "Contract",
+      "pay": "Pay",
+      "leave": "Time off",
+      "manager": "Manager",
+      "employer": "Employer",
+      "document": "Document",
+      "ask": "Asked when sending"
+    },
+    "employee": {
+      "displayName": "Full name",
+      "firstName": "Legal first name",
+      "lastName": "Legal last name",
+      "employeeNumber": "Employee number",
+      "workEmail": "Work email",
+      "jobTitle": "Job title",
+      "department": "Department",
+      "location": "Place of work",
+      "startDate": "Start date",
+      "employmentType": "Employment type",
+      "weeklyHours": "Weekly hours",
+      "workPattern": "Working pattern",
+      "salary": "Pay amount",
+      "payFrequency": "Pay basis"
+    },
+    "contract": {
+      "type": "Contract type",
+      "noticePeriod": "Notice period",
+      "probationEndDate": "Probation end date"
+    },
+    "pay": {
+      "rate": "Pay with its basis",
+      "schedule": "How often pay is paid",
+      "nextPayDate": "Next pay day"
+    },
+    "leave": {
+      "annualEntitlement": "Paid time off",
+      "yearStart": "Time off year start"
+    },
+    "manager": {
+      "name": "Manager’s name",
+      "jobTitle": "Manager’s job title"
+    },
+    "company": {
+      "name": "Company name"
+    },
+    "entity": {
+      "name": "Employer (legal entity)",
+      "address": "Employer’s address",
+      "registrationNumber": "Employer’s registration number"
+    },
+    "today": "Today’s date",
+    "value": {
+      "pattern": "{days} ({hours} hours a week)",
+      "weeklyHours": "{hours} hours a week",
+      "perYear": "{amount} a year",
+      "accrual": "{percent}% of the hours worked",
+      "rate": {
+        "annual": "{amount} a year",
+        "monthly": "{amount} a month",
+        "weekly": "{amount} a week",
+        "daily": "{amount} a day",
+        "hourly": "{amount} an hour"
+      },
+      "schedule": {
+        "weekly": "weekly",
+        "fortnightly": "biweekly",
+        "four_weekly": "every four weeks",
+        "semi_monthly": "twice a month",
+        "monthly": "monthly"
+      }
+    }
+  },
+  "docPdf": {
+    "signatures": "Signatures",
+    "employee": "The employee",
+    "company": "The company",
+    "signature": "Signature",
+    "name": "Name",
+    "date": "Date",
+    "reference": "Reference",
+    "onBehalf": "For and on behalf of {company}",
+    "ref": "Ref. {id}",
+    "page": "Page {n} of {count}"
+  },
+  "docSend": {
+    "newFromTemplate": "New from template",
+    "sendForSignature": "Send for signature",
+    "title": "New document for {name}",
+    "back": "Back",
+    "lead": "Choose a template, check the filled-in document, then send it for signature.",
+    "leadDocument": "Choose who signs and where, check the document, then send it for signature.",
+    "fromTask": "Sending this completes the task it was opened from once the document is signed.",
+    "noPerson": "This person does not exist or you cannot open them",
+    "templateSection": "What to send",
+    "template": "Template",
+    "chooseTemplate": "Choose a template",
+    "sampleOption": "{name} (sample)",
+    "noTemplates": "There are no templates yet. Add one in Settings, Documents.",
+    "askSection": "Values to fill in",
+    "askLead": "The template asks for these when sending.",
+    "missingTitle_one": "{count} value is missing",
+    "missingTitle_other": "{count} values are missing",
+    "missing": {
+      "empty": "{field}: there is nothing in {name}’s record yet",
+      "required": "{field}: type it in above",
+      "unknown": "{field}: the template uses a field Thapsus-HR does not know"
+    },
+    "missingHint": "Add the missing details to the person’s record, or fix the template, then come back. Nothing can be sent with blanks.",
+    "previewSection": "Preview",
+    "previewTitle": "Preview of {name}",
+    "previewEmpty": "Choose a template to see the document.",
+    "boxesSection": "Where people sign",
+    "boxesLead": "Place signature and date boxes on the pages. Without a signature box, a signature page is added at the end.",
+    "box": "Box {n}",
+    "boxParty": "For",
+    "boxKind": "Box",
+    "boxPage": "Page",
+    "boxPosition": "Position",
+    "company": "The company",
+    "kind": {
+      "signature": "Signature",
+      "date": "Date"
+    },
+    "position": {
+      "top_left": "Top left",
+      "top_centre": "Top center",
+      "top_right": "Top right",
+      "middle_left": "Middle left",
+      "middle_centre": "Middle center",
+      "middle_right": "Middle right",
+      "bottom_left": "Bottom left",
+      "bottom_centre": "Bottom center",
+      "bottom_right": "Bottom right"
+    },
+    "addBox": "Add a box",
+    "removeBox": "Remove box {n}",
+    "noBoxes": "No boxes placed: a signature page will be added.",
+    "signingSection": "Signing",
+    "employeeSigns": "{name} signs",
+    "companySigns": "The company signs",
+    "companySignsHint": "An authorized signatory signs for the company in the viewer.",
+    "order": "Who signs first",
+    "orderOption": {
+      "employee_first": "{name} first",
+      "company_first": "The company first",
+      "any": "Either, in any order"
+    },
+    "dueOn": "Sign by",
+    "message": "Message",
+    "messageHint": "Shown to {name} with the document.",
+    "nobody": "Choose at least one person to sign.",
+    "send": "Send for signature",
+    "blocked": "Sending is blocked until every value is filled in.",
+    "sent": "Sent to {name}"
+  },
+  "docStatus": {
+    "title": "Signing",
+    "timeline": "Signing steps",
+    "waitingEmployee": "Waiting for {name} to sign",
+    "waitingCompany": "Waiting for {company} to sign",
+    "waitingBoth": "Waiting for {name} and {company} to sign",
+    "company": "the company",
+    "companyNamed": "the company ({names})",
+    "completed": "Signed and complete",
+    "voided": "Voided",
+    "since": "Since {date}",
+    "due": "Sign by {date}",
+    "order": {
+      "employee_first": "Employee signs first",
+      "company_first": "Company signs first",
+      "any": "Either signs first"
+    },
+    "openSigned": "Open the signed copy",
+    "fingerprint": "SHA-256 {hash}…",
+    "event": {
+      "sent": "Sent for signature",
+      "sentBy": "Sent for signature by {name}",
+      "reminded": "Reminder sent by {name}",
+      "employeeSigned": {
+        "typed": "{name} signed (typed name)",
+        "drawn": "{name} signed (drawn signature)"
+      },
+      "companySigned": "Signed for the company by {name}",
+      "returned": "Returned to be signed again",
+      "returnedReason": "Returned to be signed again: {reason}",
+      "voided": "Voided by {name}: {reason}",
+      "resent": "Sent again by {name}",
+      "completed": "Completed"
+    },
+    "remind": "Send a reminder",
+    "reminded": "Reminder sent",
+    "voidReplace": "Void and replace",
+    "void": "Void",
+    "voidTitle": "Void this signature request?",
+    "voidBody": "Nobody can sign it any more. Everything signed so far stays in the timeline and the audit log.",
+    "voidReplaceTitle": "Void it and send a new one?",
+    "voidReplaceBody": "Nobody can sign this one any more, and you go on to prepare a new document from the same template.",
+    "reason": "Reason",
+    "reasonHint": "Kept in the timeline and the audit log.",
+    "voidedToast": "Signature request voided",
+    "resend": "Send again",
+    "resent": "Sent again",
+    "companyFirstFor": "For {name}, sent {date}. The company signs first.",
+    "companySignsFirst": "The company signs first. You are asked to sign after it has."
+  },
+  "docSignature": {
+    "how": "Signature",
+    "method": {
+      "typed": "Use my typed name",
+      "drawn": "Draw my signature"
+    },
+    "preview": "How your signature will look",
+    "padLabel": "Signature pad. Draw with your finger, a mouse or a stylus.",
+    "padDrawn": "Signature pad with your drawn signature",
+    "padHint": "Draw with your finger, a mouse or a stylus. Your typed name is printed under it.",
+    "clear": "Clear",
+    "companyFirst": "The company signs this first. You will be asked to sign when it has.",
+    "companyFirstBody": "The company signs this first. The employee is asked to sign after you.",
+    "decline": "Do not sign: void it with a reason",
+    "doneCompanyFirst": "Signed for the company. {name} is asked to sign next.",
+    "doneDeclined": "Not signed. The request is void.",
+    "stepUpHint": "You may be asked for your password or an authenticator code before signing for the company.",
+    "message": "Message from HR",
+    "dueOn": "Please sign by {date}."
+  },
+  "docSignatories": {
+    "lead": "The people who may sign documents for the company. They sign in the document viewer after confirming it is them, and never on their own document.",
+    "default": "No list has been saved yet, so HR admins and owners sign for the company.",
+    "roles": "Roles",
+    "rolesLead": "Everyone holding one of these roles may sign.",
+    "people": "People",
+    "peopleLead": "Named people may sign, whatever their role.",
+    "noPeople": "No one is named.",
+    "add": "Add a person",
+    "addButton": "Add",
+    "remove": "Remove {name}",
+    "save": "Save signatories",
+    "saved": "Signatories saved",
+    "now": "Who can sign now",
+    "nowLead": "Everyone with an active sign-in on the list.",
+    "nobody": "Nobody can sign for the company"
+  },
+  "docBulk": {
+    "open": "Send to many",
+    "title": "Send to many people",
+    "lead": "Send one template to everyone who matches. People whose record lacks a value the template needs are skipped and counted.",
+    "what": "What to send",
+    "askHint": "The same value is used for everyone.",
+    "who": "Who",
+    "entity": "Legal entity",
+    "department": "Department",
+    "location": "Location",
+    "any": "Any",
+    "employeeSigns": "Each person signs",
+    "eachPerson": "Each person",
+    "count": "Count people",
+    "matching_one": "{count} person matches",
+    "matching_other": "{count} people match",
+    "send_one": "Send to {count} person",
+    "send_other": "Send to {count} people",
+    "sendNone": "Send",
+    "sending": "Sending: {done} of {count}",
+    "progress": "Sending progress",
+    "done": "Sent",
+    "failed": "Sending stopped with an error",
+    "result": "{sent} sent, {skipped} skipped, of which {missing} had missing values."
+  },
   "documents": {
     "categoryName": {
       "licence": "License",
       "immigration": "Work authorization"
+    },
+    "certificate": {
+      "method": {
+        "typed": "Signature: the typed name, shown in a handwriting font",
+        "drawn": "Signature: drawn by the signer"
+      }
     }
   },
   "payslipView": {
@@ -1263,5 +1653,8 @@
     "tenant": {
       "open": "Details in your Security center"
     }
+  },
+  "docSign": {
+    "taskSign": "Sign: {title}"
   }
 }

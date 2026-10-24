@@ -13,6 +13,11 @@ export interface WorkflowTaskDef {
   assignee: { type: 'role' | 'manager' | 'employee' | 'user'; value?: string };
   dueOffsetDays: number;
   reminderDaysBefore?: number;
+  /**
+   * The work the task leads to (Phase 16 part B owns the action registry). Part C uses `send_document`: the task
+   * opens the send page with the template chosen and closes when the document is complete (16.14).
+   */
+  action?: { kind: string; params?: Record<string, unknown> };
 }
 
 /**

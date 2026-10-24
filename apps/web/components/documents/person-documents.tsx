@@ -1,7 +1,8 @@
 'use client';
 import * as React from 'react';
-import { FileText, Paperclip, ShieldCheck } from 'lucide-react';
-import { Badge, Button, EmptyState, ListItem, ListSection, Skeleton } from '@thapsus/ui';
+import { FilePlus2, FileText, Paperclip, ShieldCheck } from 'lucide-react';
+import { Badge, Button, buttonVariants, EmptyState, ListItem, ListSection, Skeleton } from '@thapsus/ui';
+import { newDocumentHref } from '@thapsus/core/documents';
 import { formatDate } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -41,10 +42,20 @@ export function PersonDocuments({
   const [open, setOpen] = React.useState(false);
   const date = (v: string) => formatDate(v.slice(0, 10), locale);
   const attach = canAttach ? (
-    <Button className="min-h-11" onClick={() => setOpen(true)}>
-      <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
-      {t('docAttach.attach')}
-    </Button>
+    <span className="flex flex-wrap gap-2">
+      {/* prepare a document from a template and send it for signature (16.11) */}
+      <IntentLink
+        href={newDocumentHref({ employeeId })}
+        className={buttonVariants({ variant: 'secondary' }) + ' min-h-11 no-underline'}
+      >
+        <FilePlus2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+        {t('docSend.newFromTemplate')}
+      </IntentLink>
+      <Button className="min-h-11" onClick={() => setOpen(true)}>
+        <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
+        {t('docAttach.attach')}
+      </Button>
+    </span>
   ) : null;
   const subtitle = (d: Doc) =>
     [

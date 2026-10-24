@@ -9,6 +9,8 @@ import {
   CalendarDays,
   CalendarRange,
   Clock,
+  FileSignature,
+  FileText,
   FlaskConical,
   Forward,
   GitBranch,
@@ -58,6 +60,8 @@ const ICONS: Record<string, React.ReactNode> = {
   askHr: <Bot aria-hidden />,
   features: <ToggleRight aria-hidden />,
   developers: <BookOpen aria-hidden />,
+  documentTemplates: <FileText aria-hidden />,
+  signatories: <FileSignature aria-hidden />,
 };
 
 /**

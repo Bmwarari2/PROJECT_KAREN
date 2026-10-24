@@ -12,12 +12,19 @@ const task = (
   assignee: WorkflowTaskDef['assignee'],
   dueOffsetDays: number,
   reminderDaysBefore?: number,
+  action?: WorkflowTaskDef['action'],
 ): WorkflowTaskDef => ({
   key,
   title,
   assignee,
   dueOffsetDays,
   ...(reminderDaysBefore !== undefined ? { reminderDaysBefore } : {}),
+  ...(action ? { action } : {}),
+});
+/** "Prepare and send": the task opens the send page with this template chosen (16.14). */
+const sendDocument = (templateKey: string): WorkflowTaskDef['action'] => ({
+  kind: 'send_document',
+  params: { templateId: seedUuid('template', templateKey) },
 });
 const HR = { type: 'role' as const, value: 'hr_admin' };
 const PAYROLL = { type: 'role' as const, value: 'payroll_admin' };
@@ -39,7 +46,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
       entity: ids.entity.uk,
       tasks: [
         task('rtw', 'Check right to work before day one', HR, -3, 5),
-        task('contract', 'Send the statement of main terms', HR, -7, 3),
+        task('contract', 'Send the statement of main terms', HR, -7, 3, sendDocument('contract_uk')),
         task('details', 'Complete your personal details and emergency contacts', EMPLOYEE, -2),
         task('kit', 'Order laptop, phone or site access card', MANAGER, -5, 3),
         task('payroll', 'Set up on payroll (starter checklist)', PAYROLL, 5),
@@ -54,7 +61,14 @@ export async function seedWorkflows(ctx: SeedCtx) {
       name: 'Onboarding (Ireland)',
       entity: ids.entity.ie,
       tasks: [
-        task('contract', 'Send the written statement of terms', HR, -7),
+        task(
+          'contract',
+          'Send the written statement of terms',
+          HR,
+          -7,
+          undefined,
+          sendDocument('contract_ie'),
+        ),
         task('details', 'Complete your personal details', EMPLOYEE, -2),
         task('payroll', 'Register the employment with payroll', PAYROLL, 3),
         task('checkin', '30-day check-in', MANAGER, 30),

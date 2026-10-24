@@ -17,8 +17,10 @@ RUN node scripts/bundle.mjs apps/api/src/main.ts apps/api/dist/main.mjs \
  && node scripts/bundle.mjs apps/api/src/cli/seed-staging.ts apps/api/dist/seed-staging.mjs \
  && node scripts/bundle.mjs apps/api/src/cli/staff-invite.ts apps/api/dist/staff-invite.mjs \
  && cp -r packages/db/migrations apps/api/dist/migrations
-# The bundles read the jurisdiction packs from ../packs relative to dist/ (packages/rules PACKS_DIR).
-RUN pnpm deploy --filter @thapsus/api --prod --legacy --config.node-linker=hoisted /out && cp -r apps/api/dist /out/dist && cp -r packages/rules/packs /out/packs
+# The bundles read the jurisdiction packs from ../packs relative to dist/ (packages/rules PACKS_DIR), and the
+# signature font (Alex Brush, SIL OFL, with its licence) from ../assets/fonts (ADR-0197).
+RUN pnpm deploy --filter @thapsus/api --prod --legacy --config.node-linker=hoisted /out && cp -r apps/api/dist /out/dist && cp -r packages/rules/packs /out/packs \
+ && mkdir -p /out/assets && cp -r assets/fonts /out/assets/fonts
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production

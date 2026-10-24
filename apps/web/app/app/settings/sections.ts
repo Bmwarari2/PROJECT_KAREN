@@ -5,7 +5,8 @@ import type { FeatureKey } from '@thapsus/core/features';
  * API checks decide visibility (the API still enforces them), so the sub-navigation, the settings
  * index and the app sidebar never disagree.
  */
-export type SettingsGroup = 'workspace' | 'access' | 'signIn' | 'approvals' | 'timeOff' | 'time' | 'platform';
+export type SettingsGroup =
+  'workspace' | 'documents' | 'access' | 'signIn' | 'approvals' | 'timeOff' | 'time' | 'platform';
 
 export interface SettingsSection {
   key: string;
@@ -28,6 +29,7 @@ export interface SettingsSection {
 
 export const SETTINGS_GROUPS: SettingsGroup[] = [
   'workspace',
+  'documents',
   'access',
   'signIn',
   'approvals',
@@ -45,6 +47,19 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: '/app/settings/organisation',
     group: 'workspace',
     visible: (has) => has('org.manage'),
+  },
+  // document templates and who signs for the company (Phase 16 part C, ADR-0194, ADR-0196)
+  {
+    key: 'documentTemplates',
+    href: '/app/settings/documents/templates',
+    group: 'documents',
+    visible: (has) => has('documents.manage'),
+  },
+  {
+    key: 'signatories',
+    href: '/app/settings/documents/signatories',
+    group: 'documents',
+    visible: (has) => has('documents.manage'),
   },
   { key: 'roles', href: '/app/settings/roles', group: 'access', visible: (has) => has('roles.read') },
   { key: 'users', href: '/app/settings/users', group: 'access', visible: (has) => has('roles.read') },

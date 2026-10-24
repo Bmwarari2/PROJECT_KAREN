@@ -1,8 +1,20 @@
 'use client';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FileClock, FileSignature, FileText, PenLine } from 'lucide-react';
-import { Badge, EmptyState, ListItem, ListSection, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import { FileClock, FileSignature, FileText, PenLine, Send } from 'lucide-react';
+import {
+  Badge,
+  buttonVariants,
+  EmptyState,
+  ListItem,
+  ListSection,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -30,6 +42,8 @@ interface SigReq {
   approvalStatus: string | null;
   returnedReason: string | null;
   completedAt: string | null;
+  /** false while the company signs first */
+  myTurn?: boolean;
 }
 interface Doc {
   id: string;
@@ -45,7 +59,7 @@ interface Approval {
   subject: string;
   subjectName: string | null;
   requestedAt: string;
-  payload: { documentId?: string; documentTitle?: string };
+  payload: { documentId?: string; documentTitle?: string; companyFirst?: boolean };
 }
 
 /**
@@ -76,8 +90,13 @@ export default function DocumentsPage() {
   }, [params, sigs.data, router]);
 
   const day = (iso: string) => formatDate(iso.slice(0, 10), locale);
-  const toSign = (sigs.data ?? []).filter((s) => s.status === 'pending');
-  const awaiting = (sigs.data ?? []).filter((s) => s.status === 'signed' && s.approvalStatus === 'pending');
+  const toSign = (sigs.data ?? []).filter((s) => s.status === 'pending' && s.myTurn !== false);
+  // waiting for the company: signed and with the company, or not yet theirs to sign (the company signs first)
+  const awaiting = (sigs.data ?? []).filter(
+    (s) =>
+      (s.status === 'signed' && s.approvalStatus === 'pending') ||
+      (s.status === 'pending' && s.myTurn === false),
+  );
   const toCountersign = (approvals.data ?? []).filter(
     (a) => a.subject === 'document.countersign' && a.payload.documentId,
   );
@@ -93,7 +112,20 @@ export default function DocumentsPage() {
       <PageIntro
         title={t('documents.title')}
         titleIsTab
-        actions={<ExportLinks list="documents" params={{ employeeId: session?.employeeId ?? undefined }} />}
+        actions={
+          <span className="flex flex-wrap items-center gap-2">
+            {hasPermission(session, 'documents.manage') ? (
+              <IntentLink
+                href="/app/documents/bulk-send"
+                className={buttonVariants({ variant: 'secondary' }) + ' min-h-11 no-underline'}
+              >
+                <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('docBulk.open')}
+              </IntentLink>
+            ) : null}
+            <ExportLinks list="documents" params={{ employeeId: session?.employeeId ?? undefined }} />
+          </span>
+        }
       />
       {toSign.length ? (
         <ListSection title={t('documents.toSign')} id="to-sign">
@@ -124,7 +156,11 @@ export default function DocumentsPage() {
               linkAs={IntentLink}
               leading={<PenLine />}
               title={a.payload.documentTitle ?? t('documents.title')}
-              subtitle={t('docSign.signedBy', { name: a.subjectName ?? '', date: day(a.requestedAt) })}
+              subtitle={
+                a.payload.companyFirst
+                  ? t('docStatus.companyFirstFor', { name: a.subjectName ?? '', date: day(a.requestedAt) })
+                  : t('docSign.signedBy', { name: a.subjectName ?? '', date: day(a.requestedAt) })
+              }
               meta={<Badge tone="accent">{t('docSign.countersignAction')}</Badge>}
             />
           ))}
@@ -139,7 +175,11 @@ export default function DocumentsPage() {
               linkAs={IntentLink}
               leading={<FileClock />}
               title={<span className="wrap-anywhere">{s.title}</span>}
-              subtitle={t('docSign.signedOn', { date: day(s.signedAt ?? s.requestedAt) })}
+              subtitle={
+                s.status === 'pending'
+                  ? t('docStatus.companySignsFirst')
+                  : t('docSign.signedOn', { date: day(s.signedAt ?? s.requestedAt) })
+              }
             />
           ))}
         </ListSection>

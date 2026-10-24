@@ -2,19 +2,33 @@ import type { FastifyInstance } from 'fastify';
 import { matchesMagic } from '../../lib/file-types';
 import { Type } from 'typebox';
 import { can, canSome, type Target } from '@thapsus/core/permissions';
-import { formatDate, formatMoney, isLocale, t, type Locale } from '@thapsus/core/i18n';
-import { money } from '@thapsus/core';
+import { isLocale, type Locale } from '@thapsus/core/i18n';
 import { instantToDate } from '@thapsus/core/time';
-import { targetHref } from '@thapsus/core/links';
+import { isSigningOrder, type SigningOrder } from '@thapsus/core/documents';
 import { enqueueJob, type Tx } from '@thapsus/db';
 import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { objectKey } from '../../lib/object-store';
-import { createTask, notify, userForEmployee } from '../../lib/notify';
+import { notify, userForEmployee } from '../../lib/notify';
 import { loadTarget, scopePredicate } from '../employees/service';
-import { appendCertificate, mergeFields, renderTextPdf, sha256 } from './pdf';
-import { certificateLabels, requestCountersign } from './countersign';
+import { sha256 } from './pdf';
+import { certificateLabels } from './countersign';
+import {
+  createTemplateDocument,
+  decodeDrawing,
+  employeeSign,
+  loadRequest,
+  openSignatureRequest,
+  partiesFor,
+  sendFromTemplate,
+  stageOf,
+  templateVersion,
+} from './signing';
+import { templateRoutes } from './templates';
+import { signingRoutes } from './signing-routes';
+import './workflow-actions';
+export { mergeValuesFor } from './fields';
 import { registerJob, periodic } from '../../jobs/registry';
 import { complianceSettings } from '../compliance/service';
 import { expiryStatus, expiryWindows } from './expiry';
@@ -229,132 +243,63 @@ export async function listDocuments(
   );
 }
 
-export async function mergeValuesFor(
-  tx: Tx,
-  employeeId: string,
-  locale: Locale,
-): Promise<Record<string, string>> {
-  const e = await tx.one<Record<string, string | null>>(
-    `SELECT e.display_name, e.employee_number, e.job_title, e.start_date, e.work_email, p.legal_first_name, p.legal_last_name,
-            d.name AS department, l.name AS location, le.name AS entity, pay.amount_minor, pay.currency, pay.frequency, t.name AS company
-       FROM app.employees e
-       JOIN app.tenants t ON t.tenant_id = e.tenant_id
-       LEFT JOIN app.employee_personal p ON p.tenant_id = e.tenant_id AND p.employee_id = e.id AND p.valid_from <= current_date AND (p.valid_to IS NULL OR p.valid_to > current_date)
-       LEFT JOIN app.employee_pay pay ON pay.tenant_id = e.tenant_id AND pay.employee_id = e.id AND pay.valid_from <= current_date AND (pay.valid_to IS NULL OR pay.valid_to > current_date)
-       LEFT JOIN app.departments d ON d.tenant_id = e.tenant_id AND d.id = e.department_id
-       LEFT JOIN app.locations l ON l.tenant_id = e.tenant_id AND l.id = e.location_id
-       LEFT JOIN app.legal_entities le ON le.tenant_id = e.tenant_id AND le.id = e.entity_id
-      WHERE e.id = $1`,
-    [employeeId],
-  );
-  return {
-    'employee.displayName': e.display_name ?? '',
-    'employee.firstName': e.legal_first_name ?? '',
-    'employee.lastName': e.legal_last_name ?? '',
-    'employee.employeeNumber': e.employee_number ?? '',
-    'employee.jobTitle': e.job_title ?? '',
-    'employee.department': e.department ?? '',
-    'employee.location': e.location ?? '',
-    'employee.workEmail': e.work_email ?? '',
-    'employee.startDate': e.start_date ? formatDate(e.start_date, locale, 'long') : '',
-    'employee.salary':
-      e.amount_minor && e.currency ? formatMoney(money(BigInt(e.amount_minor), e.currency), locale) : '',
-    'employee.payFrequency': e.frequency ?? '',
-    'entity.name': e.entity ?? '',
-    'company.name': e.company ?? '',
-    today: formatDate(new Date().toISOString().slice(0, 10), locale, 'long'),
-  };
-}
-
-/** Generates a document for one employee from a template (idempotent per template+employee+key). */
+/**
+ * Generates a document for one employee from a template's current version and, when asked, sends it for signature
+ * (the staging seed, the bulk send job and the legacy generate route). Empty values render empty; unknown merge
+ * fields are refused. The send page uses sendFromTemplate, which also refuses empty values (16.11).
+ */
 export async function generateFromTemplate(
-  deps: Deps,
+  deps: Pick<Deps, 'objects'> & Partial<Pick<Deps, 'now'>>,
   tx: Tx,
   templateId: string,
   employeeId: string,
   actor: string | null,
-  opts: { requireSignature?: boolean; requireCountersign?: boolean; title?: string } = {},
+  opts: {
+    requireSignature?: boolean;
+    requireCountersign?: boolean;
+    title?: string;
+    values?: Record<string, string>;
+    order?: SigningOrder;
+    dueOn?: string | null;
+    message?: string | null;
+    taskId?: string | null;
+  } = {},
 ) {
-  const tpl = await tx.maybe<{
-    name: string;
-    body: string;
-    locale: string;
-    category: string;
-    requires_countersign: boolean;
-  }>('SELECT name, body, locale, category, requires_countersign FROM app.document_templates WHERE id = $1', [
-    templateId,
-  ]);
-  if (!tpl) throw new ApiError('notFound');
-  const locale: Locale = isLocale(tpl.locale) ? tpl.locale : 'en-GB';
-  const { text, missing } = mergeFields(tpl.body, await mergeValuesFor(tx, employeeId, locale));
-  if (missing.length) throw new ApiError('validation', `Unknown merge fields: ${missing.join(', ')}`);
-  const tenant = (await tx.one<{ t: string }>('SELECT app.current_tenant()::text AS t')).t;
-  const pdf = await renderTextPdf(opts.title ?? tpl.name, text);
-  const key = objectKey(tenant, 'documents', '.pdf');
-  await deps.objects.put(key, Buffer.from(pdf), 'application/pdf');
-  const doc = await tx.one<{ id: string }>(
-    `INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, size_bytes, sha256, status, template_id, created_by, uploaded_at)
-     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, 'application/pdf', $6, $7, 'ready', $8, $9, now()) RETURNING id`,
-    [
-      employeeId,
-      opts.title ?? tpl.name,
-      tpl.category,
-      key,
-      `${(opts.title ?? tpl.name).replace(/[^\w.-]+/g, '_')}.pdf`,
-      pdf.length,
-      sha256(pdf),
-      templateId,
-      actor,
-    ],
-  );
+  const version = await templateVersion(tx, templateId);
+  if (!version) throw new ApiError('notFound');
+  const companySigns = !!opts.requireSignature && (opts.requireCountersign ?? version.requires_countersign);
+  const send = {
+    employeeSigns: !!opts.requireSignature,
+    companySigns,
+    order: opts.order ?? version.signing_order,
+    dueOn: opts.dueOn,
+    message: opts.message,
+    taskId: opts.taskId,
+  };
+  const doc = await createTemplateDocument(deps, tx, {
+    version,
+    employeeId,
+    actor,
+    typed: opts.values,
+    title: opts.title,
+    parties: partiesFor(send),
+    allowEmpty: true,
+  });
   if (opts.requireSignature)
-    await requestSignature(
-      tx,
-      doc.id,
+    await openSignatureRequest(tx, {
+      ...send,
+      ...doc,
+      documentId: doc.documentId,
       employeeId,
       actor,
-      opts.requireCountersign ?? tpl.requires_countersign,
-    );
-  return doc.id;
+      fileKey: doc.key,
+      at: deps.now?.().toISOString(),
+    });
+  return doc.documentId;
 }
 
 /** Documents in these categories need a company signature unless the template says otherwise (ADR-0169). */
 export const COUNTERSIGNED_BY_DEFAULT = ['contract', 'offer', 'policy'];
-
-async function requestSignature(
-  tx: Tx,
-  documentId: string,
-  employeeId: string,
-  actor: string | null,
-  requiresCountersign = false,
-) {
-  const sr = await tx.one<{ id: string }>(
-    `INSERT INTO app.signature_requests (tenant_id, document_id, signer_employee_id, requested_by, requires_countersign) VALUES (app.current_tenant(), $1, $2, $3, $4) RETURNING id`,
-    [documentId, employeeId, actor, requiresCountersign],
-  );
-  const user = await userForEmployee(tx, employeeId);
-  if (user) {
-    await notify(tx, {
-      userIds: [user],
-      kind: 'document.signature_requested',
-      titleKey: 'notify.signatureRequested',
-      // the document's own page, opened at its signature request (ADR-0160)
-      target: { type: 'document', id: documentId },
-      link: `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`,
-      dedupeKey: `sign:${sr.id}`,
-    });
-    await createTask(tx, {
-      source: 'document',
-      sourceId: sr.id,
-      title: 'Sign document',
-      subjectEmployeeId: employeeId,
-      assigneeUserId: user,
-      link: `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`,
-      dedupeKey: `sign:${sr.id}`,
-    });
-  }
-  return sr.id;
-}
 
 export async function documentRoutes(app: FastifyInstance) {
   const deps = app.deps;
@@ -572,88 +517,9 @@ export async function documentRoutes(app: FastifyInstance) {
     },
   );
 
-  // ---- templates and generation -----------------------------------------------------------------
-  app.post(
-    '/v1/document-templates',
-    {
-      config: { selfAudited: true },
-      schema: {
-        tags: ['documents'],
-        body: Type.Object({
-          name: Type.String({ minLength: 1, maxLength: 200 }),
-          body: Type.String({ minLength: 1, maxLength: 50_000 }),
-          locale: Type.Optional(Type.String()),
-          category: Type.Optional(Type.String({ maxLength: 40 })),
-          /** Signed documents from this template need a countersignature (default: contracts, offers and policies). */
-          requiresCountersign: Type.Optional(Type.Boolean()),
-        }),
-        response: { 201: Type.Object({ id: Uuid, mergeFields: Type.Array(Type.String()) }), 403: Problem },
-      },
-    },
-    async (req, reply) => {
-      authorize(req, 'documents.manage');
-      const b = req.body as {
-        name: string;
-        body: string;
-        locale?: string;
-        category?: string;
-        requiresCountersign?: boolean;
-      };
-      const category = b.category ?? 'letter';
-      const row = await app.tenantTx(req, async (tx) => {
-        const r = await tx.one<{ id: string }>(
-          `INSERT INTO app.document_templates (tenant_id, name, body, locale, category, requires_countersign) VALUES (app.current_tenant(), $1, $2, $3, $4, $5) RETURNING id`,
-          [
-            b.name,
-            b.body,
-            isLocale(b.locale) ? b.locale : 'en-GB',
-            category,
-            b.requiresCountersign ?? COUNTERSIGNED_BY_DEFAULT.includes(category),
-          ],
-        );
-        await app.audit(tx, req, {
-          action: 'document_template.created',
-          targetType: 'document_template',
-          targetId: r.id,
-        });
-        return r;
-      });
-      return reply.status(201).send({
-        id: row.id,
-        mergeFields: [...b.body.matchAll(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g)].map((m) => m[1]!),
-      });
-    },
-  );
-  app.get(
-    '/v1/document-templates',
-    {
-      schema: {
-        tags: ['documents'],
-        response: {
-          200: Type.Array(
-            Type.Object({
-              id: Uuid,
-              name: Type.String(),
-              locale: Type.String(),
-              category: Type.String(),
-              requiresCountersign: Type.Boolean(),
-            }),
-          ),
-        },
-      },
-    },
-    async (req) => {
-      authorizeSome(req, 'documents.manage');
-      return app.tenantTx(
-        req,
-        (tx) =>
-          tx.query(
-            'SELECT id, name, locale, category, requires_countersign AS "requiresCountersign" FROM app.document_templates ORDER BY name',
-          ),
-        { readOnly: true },
-      );
-    },
-  );
+  // ---- templates (Settings, ADR-0194) and sending (ADR-0195) ------------------------------------------------
+  await templateRoutes(app);
+  await signingRoutes(app);
 
   app.post(
     '/v1/document-templates/:id/generate',
@@ -712,6 +578,17 @@ export async function documentRoutes(app: FastifyInstance) {
         body: Type.Object({
           templateId: Uuid,
           requireSignature: Type.Optional(Type.Boolean()),
+          /** Overrides the template's company signature setting (only with requireSignature). */
+          requireCountersign: Type.Optional(Type.Boolean()),
+          signingOrder: Type.Optional(
+            Type.Union(['employee_first', 'company_first', 'any'].map((v) => Type.Literal(v))),
+          ),
+          dueOn: Type.Optional(CivilDate),
+          message: Type.Optional(Type.String({ maxLength: 1000 })),
+          /** Values for the template's ask-when-sending fields, the same for everyone. */
+          values: Type.Optional(Type.Record(Type.String({ maxLength: 40 }), Type.String({ maxLength: 500 }))),
+          /** Count the recipients without sending anything. */
+          dryRun: Type.Optional(Type.Boolean()),
           filter: Type.Object({
             entityId: Type.Optional(Uuid),
             departmentId: Type.Optional(Uuid),
@@ -720,7 +597,11 @@ export async function documentRoutes(app: FastifyInstance) {
           }),
           idempotencyKey: Type.Optional(Type.String({ maxLength: 100 })),
         }),
-        response: { 202: Type.Object({ jobId: Uuid, recipients: Type.Integer() }), 403: Problem },
+        response: {
+          200: Type.Object({ jobId: Nullable(Uuid), recipients: Type.Integer() }),
+          202: Type.Object({ jobId: Uuid, recipients: Type.Integer() }),
+          403: Problem,
+        },
       },
     },
     async (req, reply) => {
@@ -728,12 +609,19 @@ export async function documentRoutes(app: FastifyInstance) {
       const b = req.body as {
         templateId: string;
         requireSignature?: boolean;
+        requireCountersign?: boolean;
+        signingOrder?: SigningOrder;
+        dueOn?: string;
+        message?: string;
+        values?: Record<string, string>;
+        dryRun?: boolean;
         filter: { entityId?: string; departmentId?: string; locationId?: string; employeeIds?: string[] };
         idempotencyKey?: string;
       };
       const out = await app.tenantTx(req, async (tx) => {
-        if (!(await tx.maybe('SELECT 1 FROM app.document_templates WHERE id = $1', [b.templateId])))
-          throw new ApiError('notFound');
+        const version = await templateVersion(tx, b.templateId);
+        if (!version) throw new ApiError('notFound');
+        if (version.status !== 'active') throw new ApiError('conflict', 'templateArchived');
         const params: unknown[] = [];
         const where = [scopePredicate(auth.principal, 'documents.manage', params), `e.status <> 'leaver'`];
         const add = (v: unknown) => (params.push(v), `$${params.length}`);
@@ -747,11 +635,21 @@ export async function documentRoutes(app: FastifyInstance) {
             params,
           )
         ).map((r) => r.id);
+        if (b.dryRun) return { jobId: null, recipients: ids.length, dry: true };
         const job = await enqueueJob(
           tx,
           'documents.bulk_send',
           b.idempotencyKey ?? `${b.templateId}:${req.id}`,
-          { templateId: b.templateId, employeeIds: ids, requireSignature: !!b.requireSignature },
+          {
+            templateId: b.templateId,
+            employeeIds: ids,
+            requireSignature: !!b.requireSignature,
+            requireCountersign: b.requireCountersign ?? null,
+            signingOrder: isSigningOrder(b.signingOrder) ? b.signingOrder : null,
+            dueOn: b.dueOn ?? null,
+            message: b.message ?? null,
+            values: b.values ?? {},
+          },
           { createdBy: auth.userId, total: ids.length },
         );
         await app.audit(tx, req, {
@@ -760,9 +658,10 @@ export async function documentRoutes(app: FastifyInstance) {
           targetId: job.id,
           diff: { recipients: ids.length, templateId: b.templateId },
         });
-        return { jobId: job.id, recipients: ids.length };
+        return { jobId: job.id, recipients: ids.length, dry: false };
       });
-      return reply.status(202).send(out);
+      if (out.dry) return reply.status(200).send({ jobId: null, recipients: out.recipients });
+      return reply.status(202).send({ jobId: out.jobId, recipients: out.recipients });
     },
   );
 
@@ -817,7 +716,7 @@ export async function documentRoutes(app: FastifyInstance) {
     },
   );
 
-  // ---- click-to-sign (and the countersignature that may follow, ADR-0169) --------------------------------------
+  // ---- signing (and the company's signature that may follow or come first, ADR-0169, ADR-0196) ----------------
   const SigReq = Type.Object({
     id: Uuid,
     documentId: Uuid,
@@ -832,6 +731,9 @@ export async function documentRoutes(app: FastifyInstance) {
     returnedReason: Nullable(Type.String()),
     completedAt: Nullable(Type.String()),
     signedDocumentId: Nullable(Uuid),
+    /** false while the company signs first (16.12). */
+    myTurn: Type.Optional(Type.Boolean()),
+    dueOn: Type.Optional(Nullable(Type.String())),
   });
   type SigRow = {
     id: string;
@@ -841,10 +743,13 @@ export async function documentRoutes(app: FastifyInstance) {
     requested_at: string;
     signed_at: string | null;
     requires_countersign: boolean;
+    requires_employee_signature: boolean;
+    signing_order: SigningOrder;
     approval_status: string | null;
     returned_reason: string | null;
     completed_at: string | null;
     signed_document_id: string | null;
+    due_on: string | null;
   };
   const mapSig = (r: SigRow) => ({
     id: r.id,
@@ -858,6 +763,8 @@ export async function documentRoutes(app: FastifyInstance) {
     returnedReason: r.returned_reason,
     completedAt: r.completed_at,
     signedDocumentId: r.signed_document_id,
+    myTurn: r.status === 'pending' && ['employee', 'both'].includes(stageOf(r)),
+    dueOn: r.due_on,
   });
   app.get(
     '/v1/signature-requests',
@@ -870,10 +777,11 @@ export async function documentRoutes(app: FastifyInstance) {
         async (tx) =>
           (
             await tx.query<SigRow>(
-              `SELECT s.id, s.document_id, d.title, s.status, s.requested_at, s.signed_at, s.requires_countersign, s.approval_status,
-                      s.returned_reason, s.completed_at, s.signed_document_id
+              `SELECT s.id, s.document_id, d.title, s.status, s.requested_at, s.signed_at, s.requires_countersign, s.requires_employee_signature,
+                      s.signing_order, s.approval_status, s.returned_reason, s.completed_at, s.signed_document_id, s.due_on
                  FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id
-                WHERE s.signer_employee_id = $1 AND s.status IN ('pending', 'signed') ORDER BY s.requested_at DESC`,
+                WHERE s.signer_employee_id = $1 AND s.status IN ('pending', 'signed') AND s.requires_employee_signature
+                ORDER BY s.requested_at DESC`,
               [auth.principal.employeeId],
             )
           ).map(mapSig),
@@ -889,15 +797,18 @@ export async function documentRoutes(app: FastifyInstance) {
       schema: {
         tags: ['documents'],
         summary:
-          'Sign a document (consent and typed name). It is complete straight away, or goes to the approver when it needs a countersignature.',
+          'Sign a document (consent, and a typed name or a drawn signature). It is complete straight away, or goes to the company when it needs its signature.',
         params: Type.Object({ id: Uuid }),
         body: Type.Object({
           consent: Type.Literal(true),
           typedName: Type.String({ minLength: 2, maxLength: 120 }),
+          /** typed (default): the typed name in the handwriting font; drawn: `drawing` is a PNG data URL */
+          method: Type.Optional(Type.Union([Type.Literal('typed'), Type.Literal('drawn')])),
+          drawing: Type.Optional(Type.String({ maxLength: 420_000 })),
         }),
         response: {
           200: Type.Object({
-            /** completed, or awaiting_approval (countersignature needed). */
+            /** completed, or awaiting_approval (the company's signature is needed). */
             status: Type.String(),
             /** The signed copy, once the document is complete. */
             signedDocumentId: Nullable(Uuid),
@@ -913,97 +824,48 @@ export async function documentRoutes(app: FastifyInstance) {
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
-      const b = req.body as { typedName: string };
+      const b = req.body as { typedName: string; method?: 'typed' | 'drawn'; drawing?: string };
+      const drawing = b.method === 'drawn' ? decodeDrawing(b.drawing) : undefined;
+      if (b.method === 'drawn' && !drawing) throw new ApiError('validation', 'drawingRequired');
       return app.tenantTx(req, async (tx) => {
-        const sr = await tx.maybe<{
-          id: string;
-          status: string;
-          signer_employee_id: string;
-          document_id: string;
-          file_key: string;
-          title: string;
-          employee_id: string;
-          requires_countersign: boolean;
-        }>(
-          `SELECT s.id, s.status, s.signer_employee_id, s.document_id, d.file_key, d.title, d.employee_id, s.requires_countersign FROM app.signature_requests s
-             JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id WHERE s.id = $1 FOR UPDATE OF s`,
-          [id],
-        );
+        const sr = await loadRequest(tx, id, true);
         if (!sr) throw new ApiError('notFound');
         if (
           sr.signer_employee_id !== auth.principal.employeeId ||
           !can(auth.principal, 'documents.sign', { employeeId: sr.signer_employee_id })
         )
           throw new ApiError('forbidden');
-        if (sr.status !== 'pending') throw new ApiError('conflict');
-        const original = await deps.objects.get(sr.file_key);
-        const documentSha256 = sha256(original);
-        const signedAt = deps.now().toISOString();
         const locale: Locale = isLocale(auth.user.locale) ? auth.user.locale : req.ctx.locale;
-        const signed = await appendCertificate(original, {
-          signerName: b.typedName,
-          signerEmail: auth.user.email,
-          signedAtUtc: signedAt,
-          ip: req.ctx.ip,
-          userAgent: req.ctx.userAgent ?? '',
-          documentSha256,
-          requestId: sr.id,
-          labels: certificateLabels(locale, 'certificate'),
-        });
-        const signedKey = objectKey(auth.tenantId, `employees/${sr.employee_id}`, '.pdf');
-        await deps.objects.put(signedKey, Buffer.from(signed), 'application/pdf');
-        const signedSha256 = sha256(signed);
-        // Without a countersignature the signed copy is the completed document; with one, it waits for the approver.
-        const signedDoc = sr.requires_countersign
-          ? null
-          : await tx.one<{ id: string }>(
-              `INSERT INTO app.documents (tenant_id, employee_id, title, category, file_key, file_name, content_type, size_bytes, sha256, status, created_by, uploaded_at)
-               VALUES (app.current_tenant(), $1, $2, 'signed', $3, $4, 'application/pdf', $5, $6, 'ready', $7, now()) RETURNING id`,
-              [
-                sr.employee_id,
-                t(locale, 'docSign.signedTitle', { title: sr.title }),
-                signedKey,
-                `${sr.title.replace(/[^\w.-]+/g, '_')}_signed.pdf`,
-                signed.length,
-                signedSha256,
-                auth.userId,
-              ],
-            );
-        await tx.exec(
-          `UPDATE app.signature_requests SET status = 'signed', signed_at = $2, signer_user_id = $3, signer_name = $4, signer_ip = $5, signer_user_agent = $6,
-                  document_sha256 = $7, signed_file_key = $8, signed_sha256 = $9, completed_at = $10, signed_document_id = $11 WHERE id = $1`,
-          [
-            id,
-            signedAt,
-            auth.userId,
-            b.typedName,
-            req.ctx.ip,
-            req.ctx.userAgent?.slice(0, 512) ?? null,
-            documentSha256,
-            signedKey,
-            signedSha256,
-            signedDoc ? signedAt : null,
-            signedDoc?.id ?? null,
-          ],
-        );
-        // the signing task, and any "sign again" task after a return
-        await tx.exec(
-          `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE (dedupe_key = $1 OR dedupe_key LIKE $1 || ':%') AND status = 'open'`,
-          [`sign:${id}`, auth.userId],
+        const out = await employeeSign(
+          deps,
+          tx,
+          sr,
+          {
+            userId: auth.userId,
+            email: auth.user.email,
+            typedName: b.typedName,
+            method: drawing ? 'drawn' : 'typed',
+            drawing,
+            ip: req.ctx.ip,
+            userAgent: req.ctx.userAgent ?? '',
+            at: deps.now().toISOString(),
+            zone: auth.user.timeZone ?? 'UTC',
+          },
+          certificateLabels(locale, 'certificate'),
         );
         await app.audit(tx, req, {
           action: 'document.signed',
           targetType: 'signature_request',
           targetId: id,
-          diff: { documentSha256, signedSha256, signer: b.typedName, countersign: sr.requires_countersign },
+          diff: {
+            documentSha256: out.documentSha256,
+            signedSha256: out.signedSha256,
+            signer: b.typedName,
+            countersign: sr.requires_countersign,
+            method: drawing ? 'drawn' : 'typed',
+          },
         });
-        if (sr.requires_countersign) await requestCountersign(tx, sr, auth.userId);
-        return {
-          status: sr.requires_countersign ? 'awaiting_approval' : 'completed',
-          signedDocumentId: signedDoc?.id ?? null,
-          documentSha256,
-          signedSha256,
-        };
+        return out;
       });
     },
   );
@@ -1046,6 +908,8 @@ export async function documentRoutes(app: FastifyInstance) {
             countersigner_name: string | null;
             countersigned_at: string | null;
             completed_at: string | null;
+            original_file_key: string | null;
+            original_sha256: string | null;
           }>(
             `SELECT s.*, d.file_key FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id WHERE s.id = $1`,
             [id],
@@ -1070,11 +934,14 @@ export async function documentRoutes(app: FastifyInstance) {
           signedSha256: null,
           ...none,
         };
+      // the version that was sent (with its signature block) is the "unsigned" version (ADR-0197)
       const [signed, original] = await Promise.all([
         deps.objects.get(sr.signed_file_key),
-        deps.objects.get(sr.file_key),
+        deps.objects.get(sr.original_file_key ?? sr.file_key),
       ]);
-      const valid = sha256(signed) === sr.signed_sha256 && sha256(original) === sr.document_sha256;
+      const valid =
+        sha256(signed) === sr.signed_sha256 &&
+        sha256(original) === (sr.original_sha256 ?? sr.document_sha256);
       return {
         valid,
         signedAt: sr.signed_at,
@@ -1129,13 +996,29 @@ export { matchesMagic };
 
 // ---- background jobs ------------------------------------------------------------------------------------
 registerJob('documents.bulk_send', async (ctx) => {
-  const { templateId, employeeIds, requireSignature } = ctx.job.input as {
+  const {
+    templateId,
+    employeeIds,
+    requireSignature,
+    requireCountersign,
+    signingOrder,
+    dueOn,
+    message,
+    values,
+  } = ctx.job.input as {
     templateId: string;
     employeeIds: string[];
     requireSignature: boolean;
+    requireCountersign?: boolean | null;
+    signingOrder?: SigningOrder | null;
+    dueOn?: string | null;
+    message?: string | null;
+    values?: Record<string, string>;
   };
   let done = 0;
   let skipped = 0;
+  /** people whose record lacks a value the template needs: nothing is sent to them (16.11) */
+  let missing = 0;
   for (let i = 0; i < employeeIds.length; i += 50) {
     const chunk = employeeIds.slice(i, i + 50);
     await ctx.tx(async (tx) => {
@@ -1149,13 +1032,35 @@ registerJob('documents.bulk_send', async (ctx) => {
           skipped++;
           continue;
         }
-        await generateFromTemplate(ctx.deps, tx, templateId, emp, ctx.job.created_by, { requireSignature });
+        const version = await templateVersion(tx, templateId);
+        const companySigns =
+          requireSignature && (requireCountersign ?? version?.requires_countersign ?? false);
+        try {
+          await tx.exec('SAVEPOINT bulk_one');
+          await sendFromTemplate(ctx.deps, tx, {
+            templateId,
+            employeeId: emp,
+            actor: ctx.job.created_by,
+            typed: values ?? {},
+            employeeSigns: requireSignature,
+            companySigns,
+            order: signingOrder ?? version?.signing_order ?? 'employee_first',
+            dueOn: dueOn ?? null,
+            message: message ?? null,
+          });
+          await tx.exec('RELEASE SAVEPOINT bulk_one');
+        } catch (err) {
+          await tx.exec('ROLLBACK TO SAVEPOINT bulk_one');
+          if (!(err instanceof ApiError) || err.code !== 'unprocessable') throw err;
+          missing++;
+          skipped++;
+        }
       }
     });
     done += chunk.length;
     await ctx.progress(done, employeeIds.length);
   }
-  return { sent: done - skipped, skipped };
+  return { sent: done - skipped, skipped, missing };
 });
 
 registerJob('documents.expiry_reminders', async (ctx) => {

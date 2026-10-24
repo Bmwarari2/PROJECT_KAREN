@@ -127,6 +127,11 @@ type Handler = (
 export const approvalHandlers: Record<string, Handler> = {};
 /** Called when a request is rejected or cancelled. */
 export const rejectionHandlers: Record<string, Handler> = {};
+/**
+ * Subjects whose approval is a signature (the company's signature on a document, ADR-0196): approving one needs a
+ * recent sign-in (step-up, ASVS V7.5.1), wherever it is approved. Registered by the modules that own them.
+ */
+export const stepUpSubjects = new Set<string>();
 
 /**
  * Starts an approval if an enabled policy matches the subject and payload; returns the request id,

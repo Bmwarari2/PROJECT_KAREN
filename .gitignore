@@ -26,3 +26,4 @@ apps/web/playwright-report/
 *.tfstate.*
 *.tfplan
 apps/web/public/pdfjs/
+apps/web/public/fonts/alex-brush/

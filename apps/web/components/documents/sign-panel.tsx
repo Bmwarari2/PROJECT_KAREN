@@ -1,11 +1,13 @@
 'use client';
 import * as React from 'react';
 import { CircleCheck, Undo2 } from 'lucide-react';
-import { Button, Field, Input, Textarea, useToast } from '@thapsus/ui';
+import { Button, Field, Textarea, useToast } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
+import { useStepUp } from '@/app/app/step-up';
 import { Stepper } from './stepper';
+import { SignatureInput, signatureBody, signatureReady, type SignatureValue } from './signature-input';
 
 export interface Signature {
   id: string;
@@ -17,6 +19,11 @@ export interface Signature {
   approvalStatus: string | null;
   returnedReason: string | null;
   completedAt: string | null;
+  /** false while the company signs first */
+  myTurn?: boolean;
+  signingOrder?: string;
+  dueOn?: string | null;
+  message?: string | null;
 }
 export interface Countersign {
   signatureRequestId: string;
@@ -24,6 +31,8 @@ export interface Countersign {
   signedAt: string | null;
   documentSha256: string | null;
   signedSha256: string | null;
+  /** the company signs before the employee has */
+  companyFirst?: boolean;
 }
 
 const panel = 'flex flex-col gap-4 rounded-lg bg-surface-raised p-4 shadow-sm md:p-5';
@@ -50,7 +59,7 @@ export function SignPanel({
   const toast = useToast();
   const [step, setStep] = React.useState(0);
   const [consent, setConsent] = React.useState(false);
-  const [name, setName] = React.useState('');
+  const [sig, setSig] = React.useState<SignatureValue>({ typedName: '', method: 'typed' });
   const [busy, setBusy] = React.useState(false);
   const [done, setDone] = React.useState<string | null>(null);
   const heading = React.useRef<HTMLHeadingElement>(null);
@@ -81,13 +90,26 @@ export function SignPanel({
       </section>
     );
 
+  // the company signs first: the person reads it now and is asked to sign once the company has
+  if (request.status === 'pending' && request.myTurn === false)
+    return (
+      <section className={panel} aria-labelledby="sign-title">
+        <h2 id="sign-title" className="text-title-3">
+          {t('docSign.panelTitle')}
+        </h2>
+        <p className="text-callout text-text-secondary" role="status">
+          {t('docSignature.companyFirst')}
+        </p>
+      </section>
+    );
+
   async function sign(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
       const r = await api<{ status: string; signedDocumentId: string | null }>(
         `/v1/signature-requests/${request.id}/sign`,
-        { method: 'POST', json: { consent: true, typedName: name } },
+        { method: 'POST', json: { consent: true, ...signatureBody(sig) } },
       );
       setDone(r.status);
       move(3);
@@ -113,6 +135,17 @@ export function SignPanel({
           {request.returnedReason
             ? t('docSign.returned', { reason: request.returnedReason })
             : t('docSign.returnedNoReason')}
+        </p>
+      ) : null}
+      {request.message ? (
+        <div className="rounded-md border border-border bg-surface p-3">
+          <p className="text-footnote font-semibold text-text-secondary">{t('docSignature.message')}</p>
+          <p className="whitespace-pre-line text-callout">{request.message}</p>
+        </div>
+      ) : null}
+      {request.dueOn ? (
+        <p className="text-footnote text-text-secondary">
+          {t('docSignature.dueOn', { date: formatDate(request.dueOn, locale, 'long') })}
         </p>
       ) : null}
       <Stepper steps={steps} current={done ? steps.length : step} label={t('docSign.stepsLabel')} />
@@ -154,21 +187,9 @@ export function SignPanel({
         </div>
       ) : step === 2 ? (
         <form onSubmit={sign} className="flex flex-col gap-3">
-          <Field id="typedName" label={t('documents.typedName')}>
-            {(p) => (
-              <Input
-                {...p}
-                required
-                minLength={2}
-                maxLength={120}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-              />
-            )}
-          </Field>
+          <SignatureInput id="typedName" value={sig} onChange={setSig} />
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="min-h-11" loading={busy} disabled={name.trim().length < 2}>
+            <Button type="submit" className="min-h-11" loading={busy} disabled={!signatureReady(sig)}>
               {t('documents.signNow')}
             </Button>
             <Button type="button" className="min-h-11" variant="secondary" onClick={() => move(1)}>
@@ -203,10 +224,12 @@ export function CountersignPanel({
   const [step, setStep] = React.useState(0);
   const [choice, setChoice] = React.useState<'approve' | 'return'>('approve');
   const [consent, setConsent] = React.useState(false);
-  const [name, setName] = React.useState('');
+  const [sig, setSig] = React.useState<SignatureValue>({ typedName: '', method: 'typed' });
   const [reason, setReason] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [done, setDone] = React.useState<string | null>(null);
+  // signing for the company asks for the password or an authenticator code again when the sign-in is not recent
+  const stepUp = useStepUp();
   const signer = request.signerName ?? '';
   const steps = [t('docSign.steps.review'), t('docSign.steps.decide'), t('docSign.steps.done')];
 
@@ -214,16 +237,20 @@ export function CountersignPanel({
     e.preventDefault();
     setBusy(true);
     try {
-      const r = await api<{ status: string; signedDocumentId: string | null }>(
-        `/v1/signature-requests/${request.signatureRequestId}/countersign`,
-        {
-          method: 'POST',
-          json:
-            choice === 'approve'
-              ? { decision: 'approve', consent: true, typedName: name }
-              : { decision: 'return', reason },
-        },
-      );
+      let r: { status: string; signedDocumentId: string | null } | undefined;
+      const ok = await stepUp.run(async () => {
+        r = await api<{ status: string; signedDocumentId: string | null }>(
+          `/v1/signature-requests/${request.signatureRequestId}/countersign`,
+          {
+            method: 'POST',
+            json:
+              choice === 'approve'
+                ? { decision: 'approve', consent: true, ...signatureBody(sig) }
+                : { decision: 'return', reason },
+          },
+        );
+      });
+      if (!ok || !r) return;
       setDone(r.status);
       setStep(2);
       onDone(r);
@@ -243,10 +270,12 @@ export function CountersignPanel({
       {step === 0 ? (
         <div className="flex flex-col gap-3">
           <p className="text-callout text-text-secondary">
-            {t('docSign.countersignBody', {
-              name: signer,
-              date: request.signedAt ? formatDate(day(request.signedAt), locale, 'long') : '',
-            })}
+            {request.companyFirst
+              ? t('docSignature.companyFirstBody')
+              : t('docSign.countersignBody', {
+                  name: signer,
+                  date: request.signedAt ? formatDate(day(request.signedAt), locale, 'long') : '',
+                })}
           </p>
           {request.signedSha256 ? (
             <p className="break-all text-footnote text-text-secondary">
@@ -270,7 +299,11 @@ export function CountersignPanel({
                   onChange={() => setChoice(c)}
                   className="h-5 w-5 accent-[var(--color-accent)]"
                 />
-                {c === 'approve' ? t('docSign.approve') : t('docSign.return', { name: signer })}
+                {c === 'approve'
+                  ? t('docSign.approve')
+                  : request.companyFirst
+                    ? t('docSignature.decline')
+                    : t('docSign.return', { name: signer })}
               </label>
             ))}
           </fieldset>
@@ -285,19 +318,8 @@ export function CountersignPanel({
                 />
                 <span>{t('docSign.countersignConsent')}</span>
               </label>
-              <Field id="countersignName" label={t('documents.typedName')}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    required
-                    minLength={2}
-                    maxLength={120}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoComplete="name"
-                  />
-                )}
-              </Field>
+              <SignatureInput id="countersignName" value={sig} onChange={setSig} />
+              <p className="text-footnote text-text-secondary">{t('docSignature.stepUpHint')}</p>
             </>
           ) : (
             <Field
@@ -324,7 +346,7 @@ export function CountersignPanel({
               className="min-h-11"
               loading={busy}
               variant={choice === 'approve' ? 'primary' : 'secondary'}
-              disabled={choice === 'approve' ? !consent || name.trim().length < 2 : reason.trim().length < 3}
+              disabled={choice === 'approve' ? !consent || !signatureReady(sig) : reason.trim().length < 3}
             >
               {choice === 'approve' ? t('docSign.countersignNow') : t('docSign.returnNow')}
             </Button>
@@ -338,9 +360,14 @@ export function CountersignPanel({
           <CircleCheck aria-hidden className="mt-0.5 h-5 w-5 shrink-0 stroke-[1.5] text-success" />
           {done === 'completed'
             ? t('docSign.doneCountersigned')
-            : t('docSign.doneReturned', { name: signer })}
+            : done === 'awaiting_employee'
+              ? t('docSignature.doneCompanyFirst', { name: signer })
+              : done === 'voided'
+                ? t('docSignature.doneDeclined')
+                : t('docSign.doneReturned', { name: signer })}
         </p>
       )}
+      {stepUp.dialog}
     </section>
   );
 }

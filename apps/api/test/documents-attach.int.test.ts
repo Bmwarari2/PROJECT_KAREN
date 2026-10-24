@@ -572,12 +572,17 @@ describe('review and sign in the viewer', () => {
     expect(
       (await get('/v1/approvals?view=mine', cookie.hr!)).json().some((a: { id: string }) => a.id === item.id),
     ).toBe(false);
+    // the signer is told it is complete (and so is whoever sent it, unless they did the last step themselves)
     const done = await c.tx((t) =>
-      t.query(`SELECT 1 FROM app.notifications WHERE kind = 'document.completed' AND dedupe_key = $1`, [
-        `completed:${sr.id}`,
-      ]),
+      t.query<{ user_id: string }>(
+        `SELECT user_id FROM app.notifications WHERE kind = 'document.completed' AND dedupe_key = $1`,
+        [`completed:${sr.id}`],
+      ),
     );
-    expect(done).toHaveLength(1);
+    const ada = await c.tx((t) =>
+      t.one<{ id: string }>('SELECT id FROM app.users WHERE employee_id = $1', [emp.ada]),
+    );
+    expect(done.map((d) => d.user_id)).toContain(ada.id);
   });
 
   it('the approver can return it with a reason; the person reads it and signs again', async () => {
@@ -629,12 +634,11 @@ describe('review and sign in the viewer', () => {
         `SELECT u.id FROM app.users u JOIN app.role_assignments a ON a.tenant_id = u.tenant_id AND a.user_id = u.id JOIN app.roles r ON r.tenant_id = a.tenant_id AND r.id = a.role_id WHERE r.key = 'manager' LIMIT 1`,
       ),
     );
-    // the customer names an authorised signatory in the approval chain
-    await c.tx((t) =>
-      t.exec(`UPDATE app.approval_policies SET steps = $1 WHERE subject = 'document.countersign'`, [
-        JSON.stringify([{ approver: { type: 'user', value: mgrUser.id } }]),
-      ]),
-    );
+    // the customer names an authorised signatory in Settings → Documents (ADR-0196)
+    const named = await c.api('PUT', '/v1/document-signatories', {
+      entries: [{ kind: 'user', userId: mgrUser.id }],
+    });
+    expect(named.statusCode, named.body).toBe(200);
     const other = await c.hire({ legalFirstName: 'Cy', legalLastName: 'Fictional' });
     const cy = await c.login(other);
     const doc = await generate(tplContract, other);

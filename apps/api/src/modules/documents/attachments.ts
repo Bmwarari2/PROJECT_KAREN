@@ -22,6 +22,7 @@ import { expiryStatus, expiryWindows } from './expiry';
 import { Vault, type VaultActor } from '../vault/service';
 import { canReadDoc, Doc, mapDoc, type DocRow } from './routes';
 import { pendingCountersignFor } from './countersign';
+import { signingStatus, stageOf, workingKey, type SrRow } from './signing';
 
 /**
  * Documents HR attaches to a person (ADR-0165) and the in-app document viewer (ADR-0168).
@@ -380,6 +381,43 @@ export async function attachmentRoutes(app: FastifyInstance) {
     approvalStatus: Nullable(Type.String()),
     returnedReason: Nullable(Type.String()),
     completedAt: Nullable(Type.String()),
+    /** false while the company signs first (16.12) */
+    myTurn: Type.Optional(Type.Boolean()),
+    signingOrder: Type.Optional(Type.String()),
+    dueOn: Type.Optional(Nullable(Type.String())),
+    /** HR's message with the request */
+    message: Type.Optional(Nullable(Type.String())),
+  });
+  /** The status timeline in the details panel (16.12). */
+  const Signing = Type.Object({
+    id: Uuid,
+    /** employee, company or both (whose turn), completed or voided */
+    stage: Type.String(),
+    signingOrder: Type.String(),
+    requiresEmployeeSignature: Type.Boolean(),
+    requiresCompanySignature: Type.Boolean(),
+    employeeName: Nullable(Type.String()),
+    /** the signatories who may sign for the company now */
+    companySigners: Type.Array(Type.String()),
+    waitingSince: Nullable(Type.String()),
+    dueOn: Nullable(Type.String()),
+    message: Nullable(Type.String()),
+    reminderCount: Type.Integer(),
+    remindedAt: Nullable(Type.String()),
+    voidReason: Nullable(Type.String()),
+    signedDocumentId: Nullable(Uuid),
+    replacedBy: Nullable(Uuid),
+    templateId: Nullable(Uuid),
+    taskId: Nullable(Uuid),
+    events: Type.Array(
+      Type.Object({
+        kind: Type.String(),
+        at: Type.String(),
+        actorName: Nullable(Type.String()),
+        sha256: Nullable(Type.String()),
+        detail: Type.Any(),
+      }),
+    ),
   });
   app.get(
     '/v1/documents/:id',
@@ -414,8 +452,14 @@ export async function attachmentRoutes(app: FastifyInstance) {
                 signedAt: Nullable(Type.String()),
                 documentSha256: Nullable(Type.String()),
                 signedSha256: Nullable(Type.String()),
+                /** the company signs before the employee has */
+                companyFirst: Type.Optional(Type.Boolean()),
               }),
             ),
+            /** The latest signature request and its timeline, for whoever may read the document (16.12). */
+            signing: Type.Optional(Nullable(Signing)),
+            /** The reader may send this PDF for signature (HR, no request in progress). */
+            canSendForSignature: Type.Optional(Type.Boolean()),
             /** For a signed copy: the request it records. */
             signedCopyOf: Nullable(
               Type.Object({
@@ -467,13 +511,18 @@ export async function attachmentRoutes(app: FastifyInstance) {
               signed_at: string | null;
               signed_document_id: string | null;
               requires_countersign: boolean;
+              requires_employee_signature: boolean;
+              signing_order: SrRow['signing_order'];
               approval_status: string | null;
               returned_reason: string | null;
               completed_at: string | null;
+              due_on: string | null;
+              message: string | null;
             }>(
-              `SELECT s.id, s.status, s.requested_at, s.signed_at, s.signed_document_id, s.requires_countersign, s.approval_status,
-                      s.returned_reason, s.completed_at
+              `SELECT s.id, s.status, s.requested_at, s.signed_at, s.signed_document_id, s.requires_countersign, s.requires_employee_signature,
+                      s.signing_order, s.approval_status, s.returned_reason, s.completed_at, s.due_on, s.message
                  FROM app.signature_requests s WHERE s.document_id = $1 AND s.signer_employee_id = $2 AND s.status IN ('pending', 'signed')
+                  AND s.requires_employee_signature
                 ORDER BY (s.status = 'pending') DESC, s.requested_at DESC LIMIT 1`,
               [id, auth.principal.employeeId],
             )
@@ -485,6 +534,8 @@ export async function attachmentRoutes(app: FastifyInstance) {
                 [doc.file_key],
               )
             : null;
+        // the status timeline: for HR, for the person, and for a signatory asked to sign
+        const signing = doc.category === 'signed' || doc.vault_record_id ? null : await signingStatus(tx, id);
         if (evidence) req.auditWritten = true; // the vault read wrote the sensitive audit entry
         const w = doc.expires_on ? await expiryWindows(tx) : { rtw: 0, other: 0 };
         return {
@@ -511,6 +562,10 @@ export async function attachmentRoutes(app: FastifyInstance) {
                 approvalStatus: sig.approval_status,
                 returnedReason: sig.returned_reason,
                 completedAt: sig.completed_at,
+                myTurn: sig.status === 'pending' && ['employee', 'both'].includes(stageOf(sig)),
+                signingOrder: sig.signing_order,
+                dueOn: sig.due_on,
+                message: sig.message,
               }
             : null,
           countersign: pending
@@ -518,10 +573,19 @@ export async function attachmentRoutes(app: FastifyInstance) {
                 signatureRequestId: pending.id,
                 signerName: pending.signer_name,
                 signedAt: pending.signed_at,
-                documentSha256: pending.document_sha256,
+                documentSha256: pending.document_sha256 ?? pending.original_sha256,
                 signedSha256: pending.signed_sha256,
+                companyFirst: pending.status !== 'signed',
               }
             : null,
+          signing,
+          canSendForSignature:
+            canManage &&
+            !doc.vault_record_id &&
+            !!doc.employee_id &&
+            doc.content_type === 'application/pdf' &&
+            doc.category !== 'signed' &&
+            (!signing || signing.stage === 'completed' || signing.stage === 'voided'),
           signedCopyOf: copy
             ? { documentId: copy.document_id, signerName: copy.signer_name, signedAt: copy.signed_at }
             : null,
@@ -557,7 +621,19 @@ export async function attachmentRoutes(app: FastifyInstance) {
           !(await pendingCountersignFor(tx, auth.userId, id))
         )
           throw new ApiError('forbidden');
-        const stored = await deps.objects.get(doc.file_key).catch(() => undefined);
+        // while it is being signed, the document shows its latest version: the copy sent for signature (with its
+        // signature block or added page), then each signature as it is stamped in (ADR-0197)
+        const inProgress = doc.vault_record_id
+          ? null
+          : await tx.maybe<SrRow>(
+              `SELECT s.*, d.file_key FROM app.signature_requests s JOIN app.documents d ON d.tenant_id = s.tenant_id AND d.id = s.document_id
+                WHERE s.document_id = $1 AND s.status <> 'cancelled' AND s.completed_at IS NULL ORDER BY s.requested_at DESC LIMIT 1`,
+              [id],
+            );
+        const key = inProgress
+          ? workingKey(inProgress, inProgress.status === 'signed' ? 'company' : 'employee')
+          : doc.file_key;
+        const stored = await deps.objects.get(key).catch(() => undefined);
         if (!stored) throw new ApiError('notFound');
         let body = stored;
         let name = doc.file_name;

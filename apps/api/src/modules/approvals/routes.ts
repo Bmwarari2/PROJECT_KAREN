@@ -9,7 +9,26 @@ import { periodic, registerJob } from '../../jobs/registry';
 import { applyEmployeeChange, assertWritable, loadTarget } from '../employees/service';
 import { FIELDS } from '../employees/model';
 import { loadPrincipal } from '../authz/principal';
-import { approvalDetail, approvalHandlers, decide, escalateOverdue, listApprovals } from './service';
+import { requireRecentAuth } from '../auth/session-routes';
+import type { AuthContext } from '../auth/sessions';
+import type { Tx } from '@thapsus/db';
+import {
+  approvalDetail,
+  approvalHandlers,
+  decide,
+  escalateOverdue,
+  listApprovals,
+  stepUpSubjects,
+} from './service';
+
+/** Approving a signature (a step-up subject) needs a recent sign-in, here as in the viewer. */
+async function stepUpFor(tx: Tx, requestId: string, auth: AuthContext, now: Date) {
+  if (!stepUpSubjects.size) return;
+  const r = await tx.maybe<{ subject: string }>('SELECT subject FROM app.approval_requests WHERE id = $1', [
+    requestId,
+  ]);
+  if (r && stepUpSubjects.has(r.subject)) requireRecentAuth(auth, now);
+}
 
 const Approver = Type.Object({
   type: Type.Union(['manager', 'skip_level', 'role', 'user'].map((t) => Type.Literal(t))),
@@ -321,6 +340,7 @@ export async function approvalRoutes(app: FastifyInstance) {
       const b = req.body as { decision: 'approve' | 'reject'; comment?: string };
       const status = await app.tenantTx(req, async (tx) => {
         req.auditWritten = true;
+        if (b.decision === 'approve') await stepUpFor(tx, id, auth, app.deps.now());
         return decide(tx, id, auth.userId, b.decision, b.comment);
       });
       return { id, status };
@@ -354,7 +374,10 @@ export async function approvalRoutes(app: FastifyInstance) {
       for (const id of b.ids) {
         try {
           // each decision commits independently so one failure does not block the rest
-          await app.tenantTx(req, (tx) => decide(tx, id, auth.userId, b.decision, b.comment));
+          await app.tenantTx(req, async (tx) => {
+            if (b.decision === 'approve') await stepUpFor(tx, id, auth, app.deps.now());
+            return decide(tx, id, auth.userId, b.decision, b.comment);
+          });
           succeeded.push(id);
         } catch (err) {
           failed.push({ id, code: err instanceof ApiError ? err.code : 'internal' });
