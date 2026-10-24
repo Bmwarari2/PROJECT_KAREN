@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Field, Input, useToast } from '@thapsus/ui';
+import { Button, Card, Field, Input, nativeSelectClass, PageSection, useToast } from '@thapsus/ui';
 import { parseDecimal } from '@thapsus/core/money';
 import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
@@ -66,7 +66,7 @@ export default function NewEmployeePage() {
           required={required}
           value={v[id] ?? ''}
           onChange={set(id)}
-          className="h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-3 text-callout"
+          className={nativeSelectClass}
         >
           <option value="">{t('common.none')}</option>
           {(opts ?? []).map((o) => (
@@ -82,52 +82,56 @@ export default function NewEmployeePage() {
   return (
     <form onSubmit={submit} className="flex max-w-[var(--prose-width)] flex-col gap-6">
       <PageTitle>{t('people.add')}</PageTitle>
-      <Card className="grid gap-4 md:grid-cols-2">
-        <Field id="legalFirstName" label={t('people.field.legalFirstName')}>
-          {(p) => <Input {...p} required value={v.legalFirstName ?? ''} onChange={set('legalFirstName')} />}
-        </Field>
-        <Field id="legalLastName" label={t('people.field.legalLastName')}>
-          {(p) => <Input {...p} required value={v.legalLastName ?? ''} onChange={set('legalLastName')} />}
-        </Field>
-        <Field id="workEmail" label={t('people.field.workEmail')}>
-          {(p) => <Input {...p} type="email" value={v.workEmail ?? ''} onChange={set('workEmail')} />}
-        </Field>
-        <Field id="startDate" label={t('people.field.startDate')}>
-          {(p) => <Input {...p} type="date" required value={v.startDate} onChange={set('startDate')} />}
-        </Field>
-      </Card>
-      <Card className="grid gap-4 md:grid-cols-2">
-        <Field id="jobTitle" label={t('people.field.jobTitle')}>
-          {(p) => <Input {...p} required value={v.jobTitle ?? ''} onChange={set('jobTitle')} />}
-        </Field>
-        {select('entityId', t('people.field.entity'), entities.data, true)}
-        {select('departmentId', t('people.field.department'), departments.data)}
-        {select('locationId', t('people.field.location'), locations.data)}
-        <Field id="weeklyHours" label={t('people.field.weeklyHours')}>
-          {(p) => (
-            <Input
-              {...p}
-              type="number"
-              step="0.5"
-              value={v.weeklyHours ?? ''}
-              onChange={set('weeklyHours')}
-            />
-          )}
-        </Field>
-        <Field id="salary" label={t('people.field.payAmountMinor')} hint={entity?.currency}>
-          {(p) => (
-            <Input
-              {...p}
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              value={v.salary ?? ''}
-              onChange={set('salary')}
-            />
-          )}
-        </Field>
-      </Card>
+      <PageSection headingLevel={3} title={t('people.section.personal')}>
+        <Card className="grid gap-4 md:grid-cols-2">
+          <Field id="legalFirstName" label={t('people.field.legalFirstName')}>
+            {(p) => <Input {...p} required value={v.legalFirstName ?? ''} onChange={set('legalFirstName')} />}
+          </Field>
+          <Field id="legalLastName" label={t('people.field.legalLastName')}>
+            {(p) => <Input {...p} required value={v.legalLastName ?? ''} onChange={set('legalLastName')} />}
+          </Field>
+          <Field id="workEmail" label={t('people.field.workEmail')}>
+            {(p) => <Input {...p} type="email" value={v.workEmail ?? ''} onChange={set('workEmail')} />}
+          </Field>
+          <Field id="startDate" label={t('people.field.startDate')}>
+            {(p) => <Input {...p} type="date" required value={v.startDate} onChange={set('startDate')} />}
+          </Field>
+        </Card>
+      </PageSection>
+      <PageSection headingLevel={3} title={t('people.section.job')}>
+        <Card className="grid gap-4 md:grid-cols-2">
+          <Field id="jobTitle" label={t('people.field.jobTitle')}>
+            {(p) => <Input {...p} required value={v.jobTitle ?? ''} onChange={set('jobTitle')} />}
+          </Field>
+          {select('entityId', t('people.field.entity'), entities.data, true)}
+          {select('departmentId', t('people.field.department'), departments.data)}
+          {select('locationId', t('people.field.location'), locations.data)}
+          <Field id="weeklyHours" label={t('people.field.weeklyHours')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                step="0.5"
+                value={v.weeklyHours ?? ''}
+                onChange={set('weeklyHours')}
+              />
+            )}
+          </Field>
+          <Field id="salary" label={t('people.field.payAmountMinor')} hint={entity?.currency}>
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={v.salary ?? ''}
+                onChange={set('salary')}
+              />
+            )}
+          </Field>
+        </Card>
+      </PageSection>
       <Button type="submit" loading={busy} className="self-start">
         {t('people.hire')}
       </Button>

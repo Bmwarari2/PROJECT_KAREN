@@ -1,8 +1,10 @@
 import Link from 'next/link';
-import { CalendarDays, Clock, Globe2, ShieldCheck, Users, Workflow } from 'lucide-react';
+import { CalendarDays, Clock, Download, Globe2, LifeBuoy, ShieldCheck, Tag, Users } from 'lucide-react';
 import { Badge, buttonVariants, Card, Section } from '@thapsus/ui';
 import { Reveal } from '@/components/client';
 import { FeatureShowcase } from '@/components/showcase';
+
+const FAIR_ICONS = { pricing: Tag, export: Download, support: LifeBuoy } as const;
 import { ProductMock } from '@/components/product-mock';
 import { serverContext } from '@/lib/server';
 
@@ -88,20 +90,24 @@ export default async function Home() {
       </Section>
 
       <Section tone="bg" labelledBy="fair-title">
-        <div className="grid gap-6 md:grid-cols-3">
-          {(['pricing', 'export', 'support'] as const).map((k, i) => (
-            <Reveal key={k} delay={i * 80}>
-              <Card size="marketing" className="h-full bg-surface shadow-none">
-                <Workflow aria-hidden className="h-6 w-6 stroke-[1.5] text-accent" />
-                <h3 className="mt-4 text-title-2">{t(`marketing.fair.${k}.title`)}</h3>
-                <p className="mt-2 text-callout text-text-secondary">{t(`marketing.fair.${k}.body`)}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
+        {/* before the cards, so the headings keep their order (h2, then the cards' h3) */}
         <h2 id="fair-title" className="sr-only">
           {t('marketing.fair.title')}
         </h2>
+        <div className="grid gap-6 md:grid-cols-3">
+          {(['pricing', 'export', 'support'] as const).map((k, i) => {
+            const Icon = FAIR_ICONS[k];
+            return (
+              <Reveal key={k} delay={i * 80}>
+                <Card size="marketing" className="h-full bg-surface shadow-none">
+                  <Icon aria-hidden className="h-6 w-6 stroke-[1.5] text-accent" />
+                  <h3 className="mt-4 text-title-2">{t(`marketing.fair.${k}.title`)}</h3>
+                  <p className="mt-2 text-callout text-text-secondary">{t(`marketing.fair.${k}.body`)}</p>
+                </Card>
+              </Reveal>
+            );
+          })}
+        </div>
         <div className="mt-16 flex flex-col items-center text-center">
           <p className="max-w-[20ch] text-title-1">{t('marketing.cta.title')}</p>
           <Link href="/signup" className={buttonVariants({ size: 'lg' }) + ' mt-6 no-underline'}>

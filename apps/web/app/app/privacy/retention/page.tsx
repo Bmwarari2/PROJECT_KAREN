@@ -137,6 +137,7 @@ export default function RetentionPage() {
       <PageSection
         headingLevel={2}
         title={t('privacy.ui.retention.rulesTitle')}
+        landmark={false}
         description={t('privacy.ui.retention.rulesLead')}
       >
         <Table dense scrollLabel={t('privacy.ui.retention.rulesTitle')}>
@@ -451,6 +452,7 @@ export default function RetentionPage() {
       <PageSection
         headingLevel={2}
         title={t('privacy.ui.retention.logTitle')}
+        landmark={false}
         description={t('privacy.ui.retention.logLead')}
       >
         {log.data?.length ? (

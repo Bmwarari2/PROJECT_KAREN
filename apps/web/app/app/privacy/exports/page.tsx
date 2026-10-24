@@ -100,6 +100,7 @@ export default function ExportsPage() {
       <PageSection
         headingLevel={2}
         title={t('privacy.ui.exports.title')}
+        landmark={false}
         description={t('privacy.ui.exports.lead')}
       >
         <Card>

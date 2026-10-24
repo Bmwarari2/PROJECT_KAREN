@@ -495,7 +495,7 @@ function PreviewAsRole({ roles, role, onRole }: { roles: Role[]; role: Role; onR
       <div className="grid gap-4 lg:grid-cols-3">
         <section
           aria-labelledby="pv-modules"
-          className="flex flex-col gap-3 rounded-md border border-border p-4"
+          className="flex flex-col gap-3 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0 lg:first:border-l-0 lg:first:pl-0"
         >
           <h3 id="pv-modules" className="text-callout font-semibold">
             {t('access.compare.modulesTitle')}
@@ -546,7 +546,7 @@ function PreviewAsRole({ roles, role, onRole }: { roles: Role[]; role: Role; onR
         </section>
         <section
           aria-labelledby="pv-actions"
-          className="flex flex-col gap-3 rounded-md border border-border p-4"
+          className="flex flex-col gap-3 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0 lg:first:border-l-0 lg:first:pl-0"
         >
           <h3 id="pv-actions" className="text-callout font-semibold">
             {t('access.compare.actionsTitle')}
@@ -573,7 +573,7 @@ function PreviewAsRole({ roles, role, onRole }: { roles: Role[]; role: Role; onR
         </section>
         <section
           aria-labelledby="pv-settings"
-          className="flex flex-col gap-3 rounded-md border border-border p-4"
+          className="flex flex-col gap-3 border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0 lg:first:border-l-0 lg:first:pl-0"
         >
           <h3 id="pv-settings" className="text-callout font-semibold">
             {t('access.compare.settingsTitle')}

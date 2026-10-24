@@ -121,7 +121,7 @@ export default function Eeo1Page() {
             <p className="text-footnote text-text-secondary">{t('compliance.eeo1.privacy')}</p>
             <SourceLink source={r.data.source} verifiedOn={r.data.verifiedOn} />
           </Card>
-          <PageSection headingLevel={sec.level} title={t('compliance.eeo1.tableCaption')}>
+          <PageSection headingLevel={sec.level} title={t('compliance.eeo1.tableCaption')} landmark={false}>
             <Table dense scrollLabel={t('compliance.eeo1.tableCaption')} stack={false}>
               <caption className="sr-only">{t('compliance.eeo1.tableCaption')}</caption>
               <THead>

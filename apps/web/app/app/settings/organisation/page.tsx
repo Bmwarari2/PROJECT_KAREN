@@ -47,7 +47,7 @@ function OrgSection({ kind }: { kind: Kind }) {
   return (
     <PageSection headingLevel={sec.level} title={t(`orgSettings.${kind}`)} className="gap-3">
       {data?.length ? (
-        <Table dense scrollLabel={t(`orgSettings.${kind}`)}>
+        <Table dense scrollLabel={t('admin.tableScroll', { name: t(`orgSettings.${kind}`) })}>
           <THead>
             <tr>
               {FIELDS[kind].map((f) => (

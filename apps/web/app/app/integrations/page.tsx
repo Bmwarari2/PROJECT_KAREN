@@ -525,7 +525,7 @@ export default function IntegrationsPage() {
               </p>
               <ol className="mt-2 flex flex-col gap-2">
                 {plan.operations.map((o) => (
-                  <li key={o.seq} className="rounded-md border border-border p-3">
+                  <li key={o.seq} className="border-t border-border pt-2 first:border-t-0 first:pt-0">
                     <p className="text-callout font-semibold">
                       {o.seq}. {t(`integrations.ops.${o.op}`)}
                     </p>

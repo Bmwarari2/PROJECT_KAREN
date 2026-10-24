@@ -350,6 +350,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
       <PageSection
         headingLevel={sec.level}
         title={t('access.editor.fieldsTitle')}
+        landmark={false}
         description={t('access.editor.fieldsBody')}
       >
         <div>

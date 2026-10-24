@@ -308,8 +308,8 @@ export default function MyDetailsPage() {
           const visible = s.fields.filter((f) => f in e);
           if (!visible.length) return null;
           return (
-            <PageSection headingLevel={2} title={t(`people.section.${s.key}`)}>
-              <Card key={s.key}>
+            <PageSection key={s.key} headingLevel={2} title={t(`people.section.${s.key}`)}>
+              <Card>
                 <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-x-4 gap-y-2 text-callout">
                   {visible.map((f) => (
                     <React.Fragment key={f}>

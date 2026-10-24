@@ -220,6 +220,7 @@ export default function TimeOffPage() {
   const [busy, setBusy] = React.useState(false);
   // the newest requests first, ten at a time
   const [mineLimit, setMineLimit] = React.useState(10);
+  const [teamLimit, setTeamLimit] = React.useState(10);
   const typeName = (key: string) => {
     const lt = types.data?.find((x) => x.key === key);
     return lt ? (lt.name[locale] ?? lt.name['en-GB'] ?? key) : t(`timeOff.kind.${key}`);
@@ -455,19 +456,26 @@ export default function TimeOffPage() {
         }
       >
         {team.data?.entries.length ? (
-          team.data.entries.map((e, i) => (
-            <ListItem
-              key={i}
-              leading={<CalendarDays aria-hidden />}
-              title={<PersonLink id={e.employeeId} name={e.name} tab="time-off" />}
-              subtitle={`${formatDate(e.start, locale)} – ${formatDate(e.end, locale)}`}
-              meta={<Badge>{typeName(e.kind)}</Badge>}
-            />
-          ))
+          team.data.entries
+            .slice(0, teamLimit)
+            .map((e, i) => (
+              <ListItem
+                key={i}
+                leading={<CalendarDays aria-hidden />}
+                title={<PersonLink id={e.employeeId} name={e.name} tab="time-off" />}
+                subtitle={`${formatDate(e.start, locale)} – ${formatDate(e.end, locale)}`}
+                meta={<Badge>{typeName(e.kind)}</Badge>}
+              />
+            ))
         ) : (
           <ListItem title={t('timeOff.teamNone')} />
         )}
       </ListSection>
+      {(team.data?.entries.length ?? 0) > teamLimit ? (
+        <Button variant="secondary" className="-mt-3 self-center" onClick={() => setTeamLimit((n) => n + 10)}>
+          {t('common.loadMore')}
+        </Button>
+      ) : null}
     </div>
   );
 }
