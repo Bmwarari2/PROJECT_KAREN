@@ -1831,6 +1831,8 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - A PDF.js upgrade changes the versioned folder and the pinned version together. The copy script re-copies when the version or build changes.
 - The CSP unit test covers the worker route's policy and the proxy exclusion, and `documents-sign.spec.ts` fails on any CSP violation while a PDF renders and is signed.
 
+- **Update (2026-10-24):** the library is loaded as a native module from its self-hosted copy (`/pdfjs/<version>/pdf.min.mjs`, `components/documents/pdfjs.ts`), not from the page's bundle. The browser then compiles it off the main thread. On mobile Lighthouse the viewer went from 89 (312 ms total blocking time) to 92 (188 ms). `'strict-dynamic'` in the page's policy trusts the import, and a unit test keeps the hard-coded version equal to the installed package.
+
 ## ADR-0169 — Countersignature through the approvals service (2026-10-23)
 
 **Context.** Contracts and some policies need a company signature after the person signs. Until now they counted as complete as soon as the person signed. The product owner asked for a countersign step that shows in the approver's inbox and approvals, and is configurable.
