@@ -24,7 +24,7 @@ import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
 import { useIdle } from '@/lib/use-idle';
-import { revealIn } from '@/lib/reveal';
+import { centreIn, revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
 import { dockModules, isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
 
@@ -276,10 +276,10 @@ export function AppShell({
   const railCounts = React.useMemo(() => ({ inbox: inboxCount }), [inboxCount]);
   const dock = React.useMemo(() => (viewer ? dockModules(modules, viewer) : []), [modules, viewer]);
   // keep the current section visible in a sideways-scrolling sections control (phones)
+  // (scrolling the control itself: scrollIntoView would move the Tab starting point past the skip link)
   React.useEffect(() => {
-    document
-      .querySelector('[data-tab-nav] [data-active]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const nav = document.querySelector<HTMLElement>('[data-tab-nav]');
+    centreIn(nav, nav?.querySelector<HTMLElement>('[data-active]') ?? null);
   }, [path]);
   const tabCounts: Record<string, number> = {
     '/app/approvals': counts.approvals,

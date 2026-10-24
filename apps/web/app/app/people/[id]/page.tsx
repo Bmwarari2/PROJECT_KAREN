@@ -13,6 +13,8 @@ import {
   EmptyState,
   Field,
   Input,
+  ListItem,
+  ListSection,
   Skeleton,
   Tabs,
   TabsContent,
@@ -28,7 +30,8 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
 import { Avatar } from '@/components/dashboard/parts';
-import { EntityLink, PersonLink } from '@/components/person-link';
+import { IntentLink } from '@/components/intent-link';
+import { PersonLink } from '@/components/person-link';
 import { PageTitle, hasPermission, useSession } from '../../shell';
 import type { LeaveBalance } from '@/components/leave-balances';
 import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
@@ -398,20 +401,17 @@ export default function EmployeePage() {
           </div>
         </TabsContent>
         <TabsContent value="history" className="pt-5">
-          <ol className="flex flex-col gap-3">
+          {/* grouped rows (ADR-0180): each job, newest first, with its dates under it */}
+          <ListSection>
             {(history.data?.job ?? []).map((j) => (
-              <li key={String(j.id)} className="flex gap-3 rounded-md border border-border p-3">
-                <History aria-hidden className="mt-0.5 h-5 w-5 stroke-[1.5] text-accent" />
-                <div>
-                  <p className="text-callout font-semibold">{String(j.job_title)}</p>
-                  <p className="text-footnote text-text-secondary">
-                    {formatDate(String(j.valid_from), locale)} –{' '}
-                    {j.valid_to ? formatDate(String(j.valid_to), locale) : t('people.ongoing')}
-                  </p>
-                </div>
-              </li>
+              <ListItem
+                key={String(j.id)}
+                leading={<History aria-hidden />}
+                title={String(j.job_title)}
+                subtitle={`${formatDate(String(j.valid_from), locale)} – ${j.valid_to ? formatDate(String(j.valid_to), locale) : t('people.ongoing')}`}
+              />
             ))}
-          </ol>
+          </ListSection>
         </TabsContent>
         {balances.data ? (
           <TabsContent value="time-off" className="pt-5">
@@ -431,19 +431,18 @@ export default function EmployeePage() {
         ) : null}
         <TabsContent value="documents" className="pt-5">
           {docs.data?.length ? (
-            <ul className="flex flex-col gap-2">
+            <ListSection>
               {docs.data.map((d) => (
-                <li key={d.id} className="flex items-center gap-3 rounded-md border border-border p-3">
-                  <FileText aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                  <EntityLink href={`/app/documents/${d.id}`} className="text-callout">
-                    {d.title}
-                  </EntityLink>
-                  <span className="ml-auto text-footnote text-text-secondary">
-                    {formatDate(d.createdAt.slice(0, 10), locale)}
-                  </span>
-                </li>
+                <ListItem
+                  key={d.id}
+                  href={`/app/documents/${d.id}`}
+                  linkAs={IntentLink}
+                  leading={<FileText aria-hidden />}
+                  title={d.title}
+                  meta={formatDate(d.createdAt.slice(0, 10), locale)}
+                />
               ))}
-            </ul>
+            </ListSection>
           ) : (
             <EmptyState icon={<FileText aria-hidden />} title={t('documents.empty')} />
           )}

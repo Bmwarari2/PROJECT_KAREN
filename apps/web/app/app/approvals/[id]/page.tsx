@@ -10,6 +10,8 @@ import {
   CardTitle,
   EmptyState,
   Field,
+  ListItem,
+  ListSection,
   Skeleton,
   Textarea,
   useToast,
@@ -202,35 +204,36 @@ export default function ApprovalPage() {
         </Card>
       ) : null}
 
-      <Card className="flex flex-col gap-3">
-        <CardTitle as={sec.heading}>{t('actionable.approval.steps')}</CardTitle>
-        <ol className="flex flex-col gap-3">
-          {data.steps.map((s) => (
-            <li key={s.index} className="flex flex-col gap-1 rounded-md border border-border p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-callout font-semibold">
-                  {t('actionable.approval.step', { n: s.index + 1 })}
+      {/* the chain as grouped rows (ADR-0180): one row per step, its status at the end */}
+      <ListSection title={t('actionable.approval.steps')} headingLevel={sec.level}>
+        {data.steps.map((s) => (
+          <ListItem
+            key={s.index}
+            title={t('actionable.approval.step', { n: s.index + 1 })}
+            subtitle={
+              <>
+                <span className="block">
+                  {t('actionable.approval.approvers', { names: s.approvers.join(', ') || '—' })}
                 </span>
-                <Badge tone={tone[s.status as keyof typeof tone] ?? 'neutral'}>
-                  {t(`actionable.approval.status.${s.status}`)}
-                </Badge>
-              </div>
-              <p className="text-footnote text-text-secondary">
-                {t('actionable.approval.approvers', { names: s.approvers.join(', ') || '—' })}
-              </p>
-              {s.decidedAt ? (
-                <p className="text-footnote text-text-secondary">
-                  {t('actionable.approval.decidedBy', {
+                {s.comment ? <span className="mt-1 block text-text">{s.comment}</span> : null}
+              </>
+            }
+            meta={
+              s.decidedAt
+                ? t('actionable.approval.decidedBy', {
                     name: s.decidedByName ?? '—',
                     date: when(s.decidedAt),
-                  })}
-                </p>
-              ) : null}
-              {s.comment ? <p className="text-callout">{s.comment}</p> : null}
-            </li>
-          ))}
-        </ol>
-      </Card>
+                  })
+                : undefined
+            }
+            accessory={
+              <Badge tone={tone[s.status as keyof typeof tone] ?? 'neutral'}>
+                {t(`actionable.approval.status.${s.status}`)}
+              </Badge>
+            }
+          />
+        ))}
+      </ListSection>
     </div>
   );
 }

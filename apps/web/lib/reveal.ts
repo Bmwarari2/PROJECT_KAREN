@@ -10,3 +10,11 @@ export function revealIn(scroller: HTMLElement | null, el: HTMLElement | null, m
   if (r.bottom > box.bottom) scroller.scrollTop += r.bottom - box.bottom + margin;
   else if (r.top < box.top) scroller.scrollTop -= box.top - r.top + margin;
 }
+
+/** Scrolls `scroller` sideways so `el` sits in its middle (a sections control on a phone), like revealIn. */
+export function centreIn(scroller: HTMLElement | null, el: HTMLElement | null) {
+  if (!scroller || !el || scroller.scrollWidth <= scroller.clientWidth) return;
+  const box = scroller.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  scroller.scrollLeft += r.left + r.width / 2 - (box.left + box.width / 2);
+}

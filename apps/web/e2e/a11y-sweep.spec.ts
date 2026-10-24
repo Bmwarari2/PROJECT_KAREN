@@ -325,9 +325,13 @@ async function keyboardProblems(page: Page, max = 400): Promise<string[]> {
       el.setAttribute('data-a11y-reached', '');
       el.setAttribute('data-a11y-last', '');
       const name = `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`;
-      const cs = getComputedStyle(el);
-      const indicator =
-        (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none';
+      const ring = (e: Element) => {
+        const cs = getComputedStyle(e);
+        return (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none';
+      };
+      // a grouped-list row (ListItem, ADR-0180) draws its stretched link's focus ring around the whole row
+      const row = el.hasAttribute('data-row-link') ? el.closest('li') : null;
+      const indicator = ring(el) || (!!row && ring(row));
       const r = el.getBoundingClientRect();
       const points = [
         [r.left + r.width / 2, r.top + r.height / 2],

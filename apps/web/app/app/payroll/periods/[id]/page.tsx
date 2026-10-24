@@ -2,7 +2,20 @@
 import * as React from 'react';
 import { useParams } from 'next/navigation';
 import { Lock, Wallet } from 'lucide-react';
-import { Badge, Card, CardTitle, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  Badge,
+  Card,
+  CardTitle,
+  EmptyState,
+  ListItem,
+  ListSection,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { formatDate, formatDateTime, numberFormat } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -133,9 +146,11 @@ export default function PayPeriodPage() {
                     <TD>
                       <PersonLink id={e.employeeId} name={e.displayName} />
                     </TD>
-                    <TD className="font-mono text-footnote">{e.employeeNumber}</TD>
+                    <TD className="font-mono text-footnote" phone="inline">
+                      {e.employeeNumber}
+                    </TD>
                     {SECTIONS.map((k) => (
-                      <TD key={k} className="text-right">
+                      <TD key={k} className="text-right" label={t(`actionable.payroll.section.${k}`)}>
                         {n(count(k, e.employeeId))}
                       </TD>
                     ))}
@@ -148,23 +163,19 @@ export default function PayPeriodPage() {
           <p className="px-5 pb-5 text-callout text-text-secondary">{t('actionable.payroll.nobody')}</p>
         )}
       </Card>
-      <Card className="flex flex-col gap-3">
-        <CardTitle as={sec.heading}>{t('payroll.exports')}</CardTitle>
+      <ListSection title={t('payroll.exports')} headingLevel={sec.level}>
         {mine.length ? (
-          <ul className="flex flex-col gap-2">
-            {mine.map((x) => (
-              <li key={x.id} className="flex flex-col gap-0.5 rounded-md border border-border p-3">
-                <span className="break-words font-semibold">{x.fileName}</span>
-                <span className="text-footnote text-text-secondary">
-                  {formatDateTime(x.createdAt, locale, zone)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          mine.map((x) => (
+            <ListItem
+              key={x.id}
+              title={<span className="break-words">{x.fileName}</span>}
+              subtitle={formatDateTime(x.createdAt, locale, zone)}
+            />
+          ))
         ) : (
-          <p className="text-callout text-text-secondary">{t('payroll.noExports')}</p>
+          <ListItem title={<span className="text-text-secondary">{t('payroll.noExports')}</span>} />
         )}
-      </Card>
+      </ListSection>
     </div>
   );
 }
