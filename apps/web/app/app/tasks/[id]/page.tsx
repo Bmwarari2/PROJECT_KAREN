@@ -8,7 +8,7 @@ import { compareDates, today as todayIn } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { DetailList, type DetailItem } from '@/components/detail-list';
 import { IntentLink } from '@/components/intent-link';

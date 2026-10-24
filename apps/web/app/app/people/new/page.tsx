@@ -7,7 +7,7 @@ import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { PageTitle, useSession } from '../../shell';
 
 interface Ref {

@@ -28,7 +28,7 @@ import { today } from '@thapsus/core/time';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { Avatar } from '@/components/dashboard/parts';
 import { PersonLink } from '@/components/person-link';
 import { PageTitle, hasPermission, useSession } from '../../shell';

@@ -7,7 +7,7 @@ import { formatDate, formatDateTime, formatUnit } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { DetailList } from '@/components/detail-list';
 import { IntentLink } from '@/components/intent-link';

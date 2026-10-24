@@ -8,7 +8,7 @@ import { formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { PageIntro } from '@/components/module-page';
 import { needsSecondFactor, useSession } from '../shell';
 import { useStepUp } from '../step-up';

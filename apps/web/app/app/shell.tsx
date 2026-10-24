@@ -21,7 +21,6 @@ import { RailNav, RailToggle, useRailCollapsed } from '@/components/workspace/ra
 import { UserMenuButton } from '@/components/workspace/user-menu-button';
 import { NotificationBellButton } from '@/components/workspace/notification-bell-button';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
-import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
 import { useIdle } from '@/lib/use-idle';
 import { centreIn, revealIn } from '@/lib/reveal';
@@ -272,7 +271,9 @@ export function AppShell({
   // Signing out sends any offline clock punches first, ends the session (the API answers with
   // Clear-Site-Data) and reloads the page so nothing from the session stays in memory (ASVS V14.3.1).
   const signOut = async () => {
-    if (session) await syncQueue(session.userId).catch(() => undefined);
+    // the offline clock queue (and the time library it uses) loads only here, not with every page
+    if (session)
+      await import('@/lib/clock-queue').then((m) => m.syncQueue(session.userId)).catch(() => undefined);
     await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
     window.location.replace('/signin');
   };

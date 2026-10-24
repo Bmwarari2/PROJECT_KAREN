@@ -28,7 +28,7 @@ import {
   type AppliedFilter,
 } from '@/components/module-page';
 import { compareDates, today as todayIn } from '@thapsus/core/time';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { useSession } from '../shell';
 
 interface Task {

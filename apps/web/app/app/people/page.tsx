@@ -41,7 +41,7 @@ import { formatDate, numberFormat } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { useStatusCounts } from '@/lib/dashboard-data';
 import { Avatar } from '@/components/dashboard/parts';
 import { ExportLinks } from '@/components/export-links';

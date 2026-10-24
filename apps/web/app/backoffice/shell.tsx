@@ -119,13 +119,22 @@ function navItems(t: (k: string) => string, s: StaffSession, path: string): NavI
     }));
 }
 
-export function BackofficeShell({ children, theme }: { children: React.ReactNode; theme: ThemeChoice }) {
+export function BackofficeShell({
+  children,
+  theme,
+  initialStaff = null,
+}: {
+  children: React.ReactNode;
+  theme: ThemeChoice;
+  /** The staff session the server read for this request (null when signed out or unknown). */
+  initialStaff?: StaffSession | null;
+}) {
   const t = useT();
   const router = useRouter();
   const path = usePathname();
   // signing in and the one-time enrolment link have no shell (nobody is signed in yet)
   const signin = path.startsWith('/backoffice/signin') || path.startsWith('/backoffice/enrol');
-  const [staff, setStaff] = React.useState<StaffSession | null>(null);
+  const [staff, setStaff] = React.useState<StaffSession | null>(initialStaff);
 
   React.useEffect(() => {
     if (signin) return;

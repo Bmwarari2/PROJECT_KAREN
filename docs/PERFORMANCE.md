@@ -113,6 +113,38 @@ The forgot-password page joined the audited pages. Measured on 2026-10-24 with `
 
 The home's largest paint is its lead paragraph; the figures arrive after it in skeleton-sized cards, which keeps CLS low. Settings scored 87 in the first of the two runs: its second Lighthouse pass spent about 4.4 s of main thread in the settings chunk both times (passes one and three: under 2 s), so the median depends on that pass. That is worth a look by whoever next changes the settings frame.
 
+#### After the phone-app UI round: light overlays and no time library in the shell (ADR-0186)
+
+CI failed the gate on the report builder (87), the document viewer (88) and the back-office home (88). Locally, People scored 84 to 88, while `main` scored 91 to 93 on the same machine at the same time. A CPU profile at 4× slowdown with source maps traced the regression to two things. Closed overlays forced a synchronous re-render, together with every effect on the page, in the hydration task. The shell also loaded the Temporal polyfill on every app page. ADR-0186 removes both, and the back-office home now renders its figures on the server. Full run on 2026-10-24 on the shared 4-core machine (load average about 1.5), median of three:
+
+| Page                                  | Performance | Accessibility | Best practices | LCP      | CLS   | TBT    |
+| ------------------------------------- | ----------- | ------------- | -------------- | -------- | ----- | ------ |
+| Marketing home `/`                    | 96          | 100           | 100            | 2,756 ms | 0.000 | 49 ms  |
+| Pricing `/pricing`                    | 97          | 100           | 100            | 2,633 ms | 0.000 | 43 ms  |
+| Trust centre `/trust`                 | 98          | 100           | 100            | 2,496 ms | 0.000 | 53 ms  |
+| Status page `/status`                 | 97          | 100           | 100            | 2,619 ms | 0.000 | 44 ms  |
+| Developers `/developers`              | 94          | 100           | 100            | 3,075 ms | 0.000 | 60 ms  |
+| Sign in `/signin`                     | 97          | 100           | 100            | 2,641 ms | 0.000 | 31 ms  |
+| Sign up `/signup`                     | 98          | 100           | 100            | 2,182 ms | 0.000 | 97 ms  |
+| Forgot password `/forgot-password`    | 99          | 100           | 100            | 2,171 ms | 0.000 | 42 ms  |
+| App home `/app`                       | 95          | 100           | 100            | 2,684 ms | 0.000 | 159 ms |
+| Me hub `/app/me`                      | 96          | 100           | 100            | 2,360 ms | 0.000 | 174 ms |
+| People `/app/people`                  | 95          | 100           | 100            | 2,351 ms | 0.000 | 193 ms |
+| Time off `/app/time-off`              | 94          | 100           | 100            | 2,907 ms | 0.000 | 94 ms  |
+| Rota `/app/rota`                      | 94          | 100           | 100            | 2,483 ms | 0.000 | 222 ms |
+| Timesheets `/app/timesheets`          | 95          | 100           | 100            | 1,670 ms | 0.000 | 263 ms |
+| Reports catalogue `/app/reports`      | 96          | 100           | 100            | 2,650 ms | 0.000 | 84 ms  |
+| Report builder `/app/reports/builder` | 95          | 100           | 100            | 2,777 ms | 0.000 | 143 ms |
+| Settings `/app/settings`              | 93          | 100           | 100            | 3,232 ms | 0.000 | 62 ms  |
+| Notifications `/app/notifications`    | 96          | 100           | 100            | 2,617 ms | 0.004 | 119 ms |
+| Security `/app/security`              | 92          | 100           | 100            | 2,971 ms | 0.000 | 184 ms |
+| Payslips `/app/payslips`              | 93          | 100           | 100            | 3,139 ms | 0.000 | 78 ms  |
+| Payslip `/app/payslips/:id`           | 94          | 100           | 100            | 3,075 ms | 0.000 | 85 ms  |
+| Document viewer `/app/documents/:id`  | 95          | 100           | 100            | 2,485 ms | 0.000 | 199 ms |
+| Back office home `/backoffice`        | 98          | 100           | 100            | 2,339 ms | 0.000 | 48 ms  |
+
+Run-to-run spread on this machine is about ±5 points on total blocking time alone. In the same session, `main` itself ranged from 165 to 420 ms TBT on People. Profile before treating a single low run as a regression. The approach that found these causes: a production build with `productionBrowserSourceMaps`, a Playwright CPU profile at `Emulation.setCPUThrottlingRate(4)` (with `--js-flags=--no-turbo-inlining` for exact stacks), and the samples split into busy stretches mapped back to source.
+
 #### Message catalogue in the page payload (Phase 12, ADR-0150)
 
 Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.

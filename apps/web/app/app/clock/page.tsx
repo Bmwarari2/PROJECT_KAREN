@@ -17,7 +17,7 @@ import {
 } from '@/lib/clock-queue';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { PageIntro } from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 

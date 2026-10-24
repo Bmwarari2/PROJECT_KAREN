@@ -19,7 +19,7 @@ import { instantToDate } from '@thapsus/core/time';
 import { ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
-import { viewerZone } from '@/lib/week';
+import { viewerZone } from '@/lib/zone';
 import { useSectionLevel } from '@/components/module-page';
 import { hasPermission, PageTitle, useSession } from '../shell';
 

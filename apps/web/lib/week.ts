@@ -1,10 +1,7 @@
 import { addDays, dayOfWeek, today } from '@thapsus/core/time';
 import { dateTimeFormat, type Locale } from '@thapsus/core/i18n';
 
-/** The viewer's IANA zone (account setting, else the device). */
-export function viewerZone(sessionZone: string | null | undefined): string {
-  return sessionZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-}
+export { viewerZone } from './zone';
 
 /** Start of the workweek containing `date` (ISO weekday, 7 = Sunday). */
 export function weekStartOf(date: string, workweekStartsOn = 1): string {

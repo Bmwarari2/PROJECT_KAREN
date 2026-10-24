@@ -3,9 +3,13 @@ import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { cn } from './primitives';
+import { openedOnce, useOverlayOpened } from './overlay';
 
-/** Dialog and sheet (DESIGN.md §6). Radix supplies focus trapping and Escape handling. */
-export const Dialog = DialogPrimitive.Root;
+/**
+ * Dialog and sheet (DESIGN.md §6). Radix supplies focus trapping and Escape handling; the content mounts
+ * once the dialog is first opened (ADR-0186).
+ */
+export const Dialog = openedOnce(DialogPrimitive.Root, 'Dialog');
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
@@ -25,6 +29,7 @@ export function DialogContent({
   children: React.ReactNode;
   className?: string;
 }) {
+  if (!useOverlayOpened()) return null;
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className={overlay} />
@@ -56,7 +61,7 @@ export function DialogContent({
   );
 }
 
-export const Sheet = DialogPrimitive.Root;
+export const Sheet = openedOnce(DialogPrimitive.Root, 'Sheet');
 export const SheetTrigger = DialogPrimitive.Trigger;
 
 export function SheetContent({
@@ -77,6 +82,7 @@ export function SheetContent({
     left: 'left-0 top-0 h-full w-[min(86vw,320px)]',
     bottom: 'bottom-0 left-0 w-full max-h-[85vh] rounded-t-lg',
   }[side];
+  if (!useOverlayOpened()) return null;
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className={overlay} />

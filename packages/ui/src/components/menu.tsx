@@ -1,10 +1,12 @@
+'use client';
 import * as React from 'react';
 import * as MenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { cn } from './primitives';
+import { openedOnce, standInTrigger, useOverlayOpened } from './overlay';
 
 /** Menus (DESIGN.md §6): Radix dropdown menu with token styling. */
-export const Menu = MenuPrimitive.Root;
-export const MenuTrigger = MenuPrimitive.Trigger;
+export const Menu = openedOnce(MenuPrimitive.Root, 'Menu');
+export const MenuTrigger = standInTrigger(MenuPrimitive.Trigger, 'menu', 'MenuTrigger');
 export const MenuGroup = MenuPrimitive.Group;
 
 export function MenuContent({
@@ -13,6 +15,8 @@ export function MenuContent({
   sideOffset = 6,
   ...props
 }: React.ComponentProps<typeof MenuPrimitive.Content>) {
+  // the content mounts once the menu is first opened (ADR-0186)
+  if (!useOverlayOpened()) return null;
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Content

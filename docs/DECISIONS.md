@@ -2151,3 +2151,23 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 
 - Anything a tester changed in the test company is lost on a reset. The sign-in passwords stay as they are, from the Secret Manager secret, but every login enrols two-step verification again.
 - `apps/api/test/seed-staging-reset.int.test.ts` covers three cases: a workspace the seed did not create is refused, the purge is certified and empty, and the workspace is rebuilt under the same name with working sign-ins.
+
+## ADR-0186 — Overlays start light, and the app shell no longer loads the time library (2026-10-24)
+
+**Context.** After the phone-app UI round (ADR-0180–0182) and the new features of this release, the Lighthouse gate failed in CI on the report builder (87), the document viewer (88) and the back-office home (88), and locally on People (84–88). On the same machine at the same time, `main` scored 91–93 on those pages, so this was a real regression of about 200 ms of total blocking time, not noise. A CPU profile of People at 4× slowdown with source maps found three causes:
+
+1. A **closed** Radix overlay still works while the page commits. The presence hook of a closed dialog, sheet or popover dispatches in a layout effect. A popover's or menu's trigger is a positioning anchor that sets state from its ref. Both are synchronous updates, so React re-renders straight after the hydration commit and first runs **every** passive effect on the page in the same task. That task took about 264 ms at 4× slowdown, on every page with the shell's menu sheet, plus about 110 ms more where a popover trigger was on screen.
+2. **Every** app page loaded and evaluated the Temporal polyfill (about 100 ms at 4×). The reason was that the shell imported the offline clock queue, only to send queued punches at sign-out, and that module imports `@thapsus/core/time`. Pages that only needed the viewer's zone also pulled it in through `lib/week.ts`.
+3. The back-office home fetched its figures on the client after the session check, so they arrived late and shifted the layout (CLS 0.061).
+
+**Decision.**
+
+- **`packages/ui/src/components/overlay.tsx`.** `openedOnce(Root)` wraps the Radix roots of `Dialog`, `Sheet`, `Popover` and `Menu`. They keep the same API, controlled or uncontrolled, and the wrapper remembers whether the overlay has been opened. Until then `DialogContent`, `SheetContent`, `PopoverContent` and `MenuContent` render nothing, which matches what Radix shows when closed. `PopoverTrigger` and `MenuTrigger` render a plain stand-in button (`standInTrigger`) with the same props, `aria-haspopup`, `aria-expanded="false"` and `data-state="closed"`. The first activation swaps in the Radix trigger, so positioning starts only when something has to be positioned. After the first open, everything behaves as before. Focus moves into the content on open and returns to the trigger on close, as Radix does.
+- **The time library loads where it is used.** The shell imports the clock queue dynamically at sign-out. `viewerZone` moves to `apps/web/lib/zone.ts`, which does not import the time library, and pages that need only the zone import it from there; `lib/week.ts` re-exports it. Date logic still goes through `@thapsus/core/time` only.
+- **The back-office home renders on the server.** The layout passes the staff session to the shell, and the home page fetches the cell's figures before rendering (`(home)/page.tsx` server component, `overview.tsx` client component with `initial`).
+
+**Consequences.**
+
+- On the same machine, the full Lighthouse run now passes on all 23 pages. App screens score 92–96, and People, the report builder, the document viewer and the back-office home score 95, 95, 95 and 98 (`docs/PERFORMANCE.md`).
+- A new overlay should use the `packages/ui` wrappers, not a Radix root directly. Otherwise it brings back the synchronous re-render.
+- Other first-use costs are left as they are: the first `Intl.NumberFormat` (about 70 ms at 4×) and Temporal on pages that use dates. They are the next candidates if a page nears the threshold again.
