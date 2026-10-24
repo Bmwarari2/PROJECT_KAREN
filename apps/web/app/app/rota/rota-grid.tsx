@@ -6,6 +6,7 @@ import { formatTimeOfDay, type Locale } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useVirtualRows } from '@/lib/use-virtual';
 import { dayLabel, dayLong } from '@/lib/week';
+import { PersonLink } from '@/components/person-link';
 
 export interface ShiftDto {
   id: string;
@@ -104,7 +105,13 @@ const RowView = React.memo(function RowView({
             role="rowheader"
             className="sticky left-0 z-10 flex min-w-0 flex-col justify-center bg-surface-raised px-3"
           >
-            <span className="truncate text-callout font-semibold">{r.name}</span>
+            <PersonLink
+              id={r.employeeId}
+              name={r.name}
+              quiet
+              className="block truncate text-callout font-semibold"
+              plainClassName="block truncate text-callout font-semibold"
+            />
             {r.jobTitle ? (
               <span className="truncate text-footnote text-text-secondary">{r.jobTitle}</span>
             ) : null}

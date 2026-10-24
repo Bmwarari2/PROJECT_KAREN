@@ -96,8 +96,16 @@ function readFilters(params: URLSearchParams) {
     departmentId: params.get('departmentId') ?? '',
     locationId: params.get('locationId') ?? '',
     entityId: params.get('entityId') ?? '',
+    // set by the home dashboard's charts (ADR-0161): one employment type, or a range of start dates
+    employmentType: EMPLOYMENT_TYPES.includes(params.get('employmentType') ?? '')
+      ? params.get('employmentType')!
+      : '',
+    startFrom: civil(params.get('startFrom')),
+    startTo: civil(params.get('startTo')),
   };
 }
+const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'casual', 'contractor', 'intern'];
+const civil = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '');
 type Filters = ReturnType<typeof readFilters>;
 
 /** Replaces the query string without a navigation; Next.js keeps useSearchParams in step. */
@@ -106,6 +114,7 @@ function writeFilters(f: Filters) {
   if (f.status !== 'active') q.set('status', f.status);
   if (f.q) q.set('q', f.q);
   for (const r of REFS) if (f[r.param]) q.set(r.param, f[r.param]);
+  for (const k of ['employmentType', 'startFrom', 'startTo'] as const) if (f[k]) q.set(k, f[k]);
   const s = q.toString();
   window.history.replaceState(null, '', `${window.location.pathname}${s ? `?${s}` : ''}`);
 }
@@ -169,6 +178,8 @@ export default function PeoplePage() {
       const p = new URLSearchParams({ limit: '50', status: filters.status });
       if (filters.q) p.set('q', filters.q);
       for (const r of REFS) if (filters[r.param]) p.set(r.param, filters[r.param]);
+      for (const k of ['employmentType', 'startFrom', 'startTo'] as const)
+        if (filters[k]) p.set(k, filters[k]);
       if (after) p.set('cursor', after);
       const page = await api<{ data: Row[]; nextCursor: string | null }>(`/v1/employees?${p}`);
       setRows((prev) => (after && prev ? [...prev, ...page.data] : page.data));
@@ -224,6 +235,20 @@ export default function PeoplePage() {
         value: refData[r.param]?.find((x) => x.id === filters[r.param])?.name ?? '…',
         remove: () => set({ [r.param]: '' } as Partial<Filters>),
       });
+  if (filters.employmentType)
+    chips.push({
+      key: 'employmentType',
+      field: t('people.field.employmentType'),
+      value: t(`reports.enum.employmentType.${filters.employmentType}`),
+      remove: () => set({ employmentType: '' }),
+    });
+  if (filters.startFrom || filters.startTo)
+    chips.push({
+      key: 'started',
+      field: t('people.field.startDate'),
+      value: [filters.startFrom, filters.startTo].map((d) => (d ? formatDate(d, locale) : '…')).join(' – '),
+      remove: () => set({ startFrom: '', startTo: '' }),
+    });
   const activeFilters = chips.length;
 
   // Sorting is on the rows already loaded, so it is offered once the whole result is on screen;

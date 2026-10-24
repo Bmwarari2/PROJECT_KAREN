@@ -19,7 +19,6 @@ export const TARGET_TYPES = [
   'privacy_request',
   'privacy_incident',
   'timesheet',
-  'import',
   'payroll_period',
   'payslip',
   'law_change',
@@ -57,7 +56,6 @@ const ROUTES: Record<TargetType, (id: string) => string> = {
   privacy_request: (id) => `/app/privacy?request=${id}`,
   privacy_incident: () => '/app/privacy/incidents',
   timesheet: (id) => `/app/timesheets/${id}`,
-  import: (id) => `/app/imports/${id}`,
   payroll_period: (id) => `/app/payroll/periods/${id}`,
   payslip: () => '/app/payslips',
   law_change: () => '/app/compliance/law-changes',
@@ -138,11 +136,11 @@ export function notificationHref(n: {
   link?: string | null;
   dedupeKey?: string | null;
 }): string {
-  const direct =
-    n.targetType && n.targetId ? targetHref({ type: n.targetType, id: n.targetId }) : null;
+  const direct = n.targetType && n.targetId ? targetHref({ type: n.targetType, id: n.targetId }) : null;
   const stored = safeAppLink(n.link);
   // a stored link that refines the target's page (`/app/documents/<id>?sign=…`) is kept
-  if (direct) return stored && stored.startsWith(direct) && /^[?#]/.test(stored.slice(direct.length)) ? stored : direct;
+  if (direct)
+    return stored && stored.startsWith(direct) && /^[?#]/.test(stored.slice(direct.length)) ? stored : direct;
   const legacy = legacyTarget(n.kind, n.dedupeKey ?? null);
   return (legacy && targetHref(legacy)) || stored || notificationFallbackHref(n.kind);
 }
@@ -152,7 +150,10 @@ export function legacyTarget(kind: string, dedupeKey: string | null): LinkTarget
   if (!dedupeKey) return null;
   const [prefix, id] = dedupeKey.split(':');
   if (!id || !UUID.test(id)) return null;
-  if ((kind === 'approval.requested' && prefix === 'appr') || (kind === 'approval.decided' && prefix === 'appr-done'))
+  if (
+    (kind === 'approval.requested' && prefix === 'appr') ||
+    (kind === 'approval.decided' && prefix === 'appr-done')
+  )
     return { type: 'approval_request', id };
   if ((kind === 'task.due' && prefix === 'due') || (kind === 'task.overdue' && prefix === 'overdue'))
     return { type: 'task', id };

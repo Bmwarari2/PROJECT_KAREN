@@ -77,6 +77,17 @@ export async function employeeRoutes(app: FastifyInstance) {
           locationId: Type.Optional(Uuid),
           managerId: Type.Optional(Uuid),
           country: Type.Optional(Type.String({ pattern: '^[A-Z]{2}$' })),
+          employmentType: Type.Optional(
+            Type.Union(
+              ['full_time', 'part_time', 'casual', 'contractor', 'intern'].map((k) => Type.Literal(k)),
+              {
+                description:
+                  'Current employment type; honoured only for callers who may read employment types for everyone',
+              },
+            ),
+          ),
+          startFrom: Type.Optional(CivilDate),
+          startTo: Type.Optional(CivilDate),
           cursor: Type.Optional(Type.String({ maxLength: 500 })),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
         }),

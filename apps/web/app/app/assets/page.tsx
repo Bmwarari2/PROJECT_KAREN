@@ -35,6 +35,7 @@ import {
   type AppliedFilter,
 } from '@/components/module-page';
 import { useSession } from '../shell';
+import { EntityLink, PersonLink } from '@/components/person-link';
 
 interface Assignment {
   id: string;
@@ -382,7 +383,9 @@ export default function AssetsPage() {
               {shown.map((a) => (
                 <TR key={a.id}>
                   <TD className="font-mono text-footnote">{a.assetTag}</TD>
-                  <TD className="font-semibold">{a.name}</TD>
+                  <TD>
+                    <EntityLink href={`/app/assets/${a.id}`}>{a.name}</EntityLink>
+                  </TD>
                   <TD>{t(`assets.types.${a.type}`)}</TD>
                   <TD className="text-right">
                     {a.costMinor !== null && a.currency
@@ -397,7 +400,7 @@ export default function AssetsPage() {
                   <TD>
                     {a.holder ? (
                       <span>
-                        {a.holder.employeeName}
+                        <PersonLink id={a.holder.employeeId} name={a.holder.employeeName} />
                         <span className="block text-footnote text-text-secondary">
                           {a.holder.acknowledgedAt ? t('assets.signedFor') : t('assets.awaitingSignOff')}
                         </span>

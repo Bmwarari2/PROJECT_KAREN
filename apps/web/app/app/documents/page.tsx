@@ -34,6 +34,7 @@ import {
   matches,
   PageIntro,
 } from '@/components/module-page';
+import { EntityLink } from '@/components/person-link';
 
 interface SigReq {
   id: string;
@@ -118,7 +119,9 @@ export default function DocumentsPage() {
             {pending.map((s) => (
               <li key={s.id} className="flex items-center gap-3">
                 <FileSignature aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                <span className="flex-1 text-callout">{s.title}</span>
+                <span className="min-w-0 flex-1 text-callout">
+                  <EntityLink href={`/app/documents/${s.documentId}?sign=${s.id}`}>{s.title}</EntityLink>
+                </span>
                 <Button size="sm" variant="secondary" onClick={() => open(s.documentId)}>
                   {t('documents.read')}
                 </Button>
@@ -195,13 +198,10 @@ export default function DocumentsPage() {
                 <TD>
                   <span className="flex items-center gap-3">
                     <FileText aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-accent" />
-                    <button
-                      type="button"
-                      className="text-left text-callout text-accent hover:underline"
-                      onClick={() => open(d.id)}
-                    >
+                    {/* the document's own page (the in-app viewer, ADR-0161) */}
+                    <EntityLink href={`/app/documents/${d.id}`} className="text-callout">
                       {d.title}
-                    </button>
+                    </EntityLink>
                   </span>
                 </TD>
                 <TD>

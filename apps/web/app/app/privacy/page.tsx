@@ -23,6 +23,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
 import { SELECT_CLASS, type Dsr, type ErasurePlan } from './types';
+import { PersonLink } from '@/components/person-link';
 
 const KINDS = ['access', 'correction', 'deletion'] as const;
 const CHANNELS = ['email', 'portal', 'letter', 'phone', 'in_person', 'other'] as const;
@@ -303,7 +304,9 @@ export default function PrivacyRequestsPage() {
               <tbody>
                 {list.data.map((r) => (
                   <TR key={r.id} className={selected === r.id ? 'bg-accent-subtle' : undefined}>
-                    <TD>{r.subjectName ?? '—'}</TD>
+                    <TD>
+                      <PersonLink id={r.subjectEmployeeId} name={r.subjectName} />
+                    </TD>
                     <TD>{t(`privacy.ui.kind.${r.kind}`)}</TD>
                     <TD className="tabular-nums">{formatDate(r.receivedOn, locale)}</TD>
                     <TD className="tabular-nums">

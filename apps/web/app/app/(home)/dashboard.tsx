@@ -126,7 +126,8 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   if (pending.length)
     attention.push({
       key: 'approvals',
-      href: '/app/approvals',
+      // one request opens it; several open the list (ADR-0161)
+      href: pending.length === 1 ? `/app/approvals/${pending[0]!.id}` : '/app/approvals',
       icon: <ClipboardCheck />,
       label: t('dashboard.attention.approvals', { n: n(pending.length), count: pending.length }),
       hint: pending[0]!.subjectName
@@ -136,7 +137,12 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   if (openTasks.length)
     attention.push({
       key: 'tasks',
-      href: '/app/tasks',
+      href:
+        openTasks.length === 1 && openTasks[0]!.href
+          ? openTasks[0]!.href
+          : overdue
+            ? '/app/tasks?overdue=1'
+            : '/app/tasks',
       icon: <ListChecks />,
       label: t('dashboard.attention.tasks', { n: n(openTasks.length), count: openTasks.length }),
       hint: t('dashboard.attention.tasksHint', { title: openTasks[0]!.title }),

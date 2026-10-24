@@ -5482,5 +5482,164 @@
     "removeFilter": "Remove filter: {label}",
     "clearAll": "Clear filters",
     "noMatches": "Nothing matches these filters"
+  },
+  "actionable": {
+    "crumbs": {
+      "label": "Breadcrumb"
+    },
+    "bell": {
+      "title": "Notifications",
+      "recent": "Recent notifications",
+      "new": "New:",
+      "markAll": "Mark all as read",
+      "empty": "You're all caught up.",
+      "seeAll": "See all notifications"
+    },
+    "task": {
+      "title": "Task",
+      "open": "Open",
+      "openNamed": "Open: {title}",
+      "completeNamed": "Done: {title}",
+      "completed": "Task marked as done",
+      "markDone": "Mark as done",
+      "noDue": "No due date",
+      "noDescription": "No further details were given for this task.",
+      "assignee": "Assigned to",
+      "source": "Comes from",
+      "workflow": "Workflow",
+      "created": "Created",
+      "completedOn": "Done",
+      "completedBy": "{date} by {name}",
+      "status": {
+        "open": "Open",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      },
+      "go": {
+        "workflow": "Go to the step",
+        "approval": "Review the request",
+        "automation": "Open",
+        "document": "Open the document",
+        "manual": "Open",
+        "compliance": "Open the record"
+      }
+    },
+    "approval": {
+      "title": "Request",
+      "openNamed": "{request} for {name}",
+      "requestedBy": "Asked by",
+      "system": "The system",
+      "decidedOn": "Decided",
+      "reason": "Reason",
+      "decideTitle": "Your decision",
+      "comment": "Comment (optional)",
+      "commentHint": "The person who asked sees your comment.",
+      "decline": "Decline",
+      "approved": "Request approved",
+      "declined": "Request declined",
+      "steps": "Approval steps",
+      "step": "Step {n}",
+      "approvers": "Approvers: {names}",
+      "decidedBy": "Decided by {name} on {date}",
+      "status": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "rejected": "Declined",
+        "cancelled": "Cancelled",
+        "skipped": "Skipped",
+        "waiting": "Not started",
+        "escalated": "Escalated"
+      },
+      "related": {
+        "leave_request": "Open the leave request",
+        "timesheet": "Open the timesheet",
+        "employee": "Open the profile"
+      }
+    },
+    "leave": {
+      "title": "Leave request",
+      "person": "Person",
+      "amount": "Amount",
+      "halfDays": "Half days",
+      "half": {
+        "am": "Morning",
+        "pm": "Afternoon"
+      },
+      "requested": "Requested",
+      "requestedBy": "{date} by {name}",
+      "decided": "Decided",
+      "approval": "See the approval",
+      "cancel": "Cancel this request",
+      "cancelled": "Leave request cancelled"
+    },
+    "common": {
+      "person": "Person",
+      "current": "Current",
+      "superseded": "Replaced by a later check",
+      "open": "Open",
+      "view": "View",
+      "details": "Details",
+      "seeApproval": "See the approval"
+    },
+    "person": {
+      "complianceTab": "Compliance",
+      "noCompliance": "No compliance records apply to this person yet.",
+      "rtwNotDue": "Not needed yet",
+      "noChecks": "No right-to-work check has been recorded.",
+      "rtwList": "Record a check on the right-to-work list",
+      "i9": "Form I-9",
+      "section1": "Section 1 completed",
+      "section2": "Section 2",
+      "dueBy": "Due by {date}",
+      "reverification": "Reverification due",
+      "i9List": "Open the Form I-9 list",
+      "requirements": "Requirements",
+      "requirement": "Requirement",
+      "expires": "Expires",
+      "matrix": "Open the compliance matrix"
+    },
+    "rtw": {
+      "check": "Right-to-work check",
+      "checkOn": "Check on {date}",
+      "openCheck": "Check on {date} for {name}",
+      "checkedBy": "Checked by",
+      "excuseEnds": "Statutory excuse ends",
+      "evidence": "Documents and evidence",
+      "restricted": "The document details and the copy of the evidence are visible only to people with access to immigration records.",
+      "noEvidence": "No document details or evidence were recorded with this check.",
+      "excuse": {
+        "continuous": "Continuous excuse",
+        "time_limited": "Time-limited excuse"
+      }
+    },
+    "timesheet": {
+      "title": "Timesheet",
+      "viewFor": "View timesheet for {name}"
+    },
+    "asset": {
+      "title": "Asset",
+      "purchasedOn": "Bought on",
+      "notes": "Notes",
+      "history": "Issued to",
+      "returnedOn": "Returned",
+      "stillIssued": "Still issued",
+      "noHistory": "This asset has not been issued to anyone yet."
+    },
+    "payroll": {
+      "payDate": "Pay date",
+      "number": "Employee number",
+      "people_one": "{n} person in this period",
+      "people_other": "{n} people in this period",
+      "peopleLabel": "People in this period",
+      "nobody": "Nobody is in this period.",
+      "section": {
+        "hours": "Approved weeks",
+        "absences": "Absences",
+        "sickPay": "Sick pay",
+        "payChanges": "Pay changes",
+        "starters": "Starters",
+        "leavers": "Leavers"
+      }
+    }
   }
 }

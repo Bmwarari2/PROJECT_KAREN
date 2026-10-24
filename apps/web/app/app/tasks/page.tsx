@@ -1,12 +1,14 @@
 'use client';
 import * as React from 'react';
-import { CheckCircle2, ListChecks } from 'lucide-react';
-import { Badge, Button, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import { ArrowRight, CheckCircle2, ListChecks } from 'lucide-react';
+import { Badge, Button, buttonVariants, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
+import { IntentLink } from '@/components/intent-link';
+import { EntityLink, PersonLink } from '@/components/person-link';
 import {
   ListCard,
   ListFilter,
@@ -16,26 +18,42 @@ import {
   PageIntro,
   type AppliedFilter,
 } from '@/components/module-page';
+import { compareDates, today as todayIn } from '@thapsus/core/time';
+import { viewerZone } from '@/lib/week';
+import { useSession } from '../shell';
 
 interface Task {
   id: string;
   title: string;
   source: string;
   dueOn: string | null;
+  subjectEmployeeId: string | null;
   subjectName: string | null;
   status: string;
+  /** What the task is about (ADR-0160): its request, document, onboarding step or its own page. */
+  href: string;
 }
+
+/** Requests and signatures close their tasks when they are decided or signed, not with "Complete". */
+const CLOSED_BY_ACTION = new Set(['approval', 'document']);
 
 export default function TasksPage() {
   const t = useT();
   const locale = useLocale();
   const { data, reload } = useApi<Task[]>('/v1/tasks');
   const [query, setQuery] = React.useState('');
+  // the home dashboard opens the list on its overdue tasks: /app/tasks?overdue=1 (ADR-0161)
   const [source, setSource] = React.useState('');
   const [overdueOnly, setOverdueOnly] = React.useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  React.useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('overdue') === '1') setOverdueOnly(true);
+    if (q.get('source')) setSource(q.get('source')!);
+  }, []);
+  const session = useSession();
+  const today = React.useMemo(() => todayIn(viewerZone(session?.timeZone)), [session?.timeZone]);
   const rows = data ?? [];
-  const overdue = (task: Task) => !!task.dueOn && task.dueOn < today;
+  const overdue = (task: Task) => !!task.dueOn && compareDates(task.dueOn, today) < 0;
   // Search and filters narrow the open tasks already loaded.
   const shown = rows.filter(
     (task) =>
@@ -136,10 +154,16 @@ export default function TasksPage() {
             {shown.map((task) => (
               <TR key={task.id}>
                 <TD>
-                  <span className="font-semibold">{task.title}</span>{' '}
+                  <EntityLink href={task.href}>{task.title}</EntityLink>{' '}
                   <Badge className="ml-2">{t(`tasks.source.${task.source}`)}</Badge>
                 </TD>
-                <TD>{task.subjectName ?? '—'}</TD>
+                <TD>
+                  {task.subjectName ? (
+                    <PersonLink id={task.subjectEmployeeId} name={task.subjectName} />
+                  ) : (
+                    '—'
+                  )}
+                </TD>
                 <TD>
                   {task.dueOn ? (
                     <span className={overdue(task) ? 'font-semibold text-danger' : ''}>
@@ -150,17 +174,29 @@ export default function TasksPage() {
                   )}
                 </TD>
                 <TD className="text-right">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={async () => {
-                      await api(`/v1/tasks/${task.id}/complete`, { method: 'POST' });
-                      reload();
-                    }}
-                  >
-                    <CheckCircle2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    {t('tasks.complete')}
-                  </Button>
+                  {CLOSED_BY_ACTION.has(task.source) ? (
+                    <IntentLink
+                      href={task.href}
+                      className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
+                      aria-label={t('actionable.task.openNamed', { title: task.title })}
+                    >
+                      {t('actionable.task.open')}
+                      <ArrowRight aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                    </IntentLink>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      aria-label={t('actionable.task.completeNamed', { title: task.title })}
+                      onClick={async () => {
+                        await api(`/v1/tasks/${task.id}/complete`, { method: 'POST' });
+                        reload();
+                      }}
+                    >
+                      <CheckCircle2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      {t('tasks.complete')}
+                    </Button>
+                  )}
                 </TD>
               </TR>
             ))}

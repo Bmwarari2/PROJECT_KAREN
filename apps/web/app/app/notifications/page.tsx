@@ -1,6 +1,5 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
 import { BellRing, CheckCheck, Inbox } from 'lucide-react';
 import {
   Button,
@@ -20,16 +19,44 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { EntityLink } from '@/components/person-link';
+import { useNotificationHref, type NotificationItem } from '@/components/notification-link';
 import { useSession } from '../shell';
 
-interface Note {
-  id: string;
-  kind: string;
-  category: string;
-  title: string;
-  link: string | null;
-  createdAt: string;
-  read: boolean;
+type Note = NotificationItem;
+
+/** One notification: a link to what it is about (ADR-0160); opening it marks it read. */
+function NoteRow({ n, zone, onMark }: { n: Note; zone: string; onMark: (body: { ids: string[] }) => void }) {
+  const t = useT();
+  const locale = useLocale();
+  const href = useNotificationHref(n);
+  return (
+    <li
+      className={`flex flex-wrap items-center gap-3 rounded-md border p-3 ${n.read ? 'border-border' : 'border-accent'}`}
+    >
+      {!n.read ? <span className="sr-only">{t('ess.notifications.new')}</span> : null}
+      <span className="mr-auto min-w-0 flex-1 text-callout">
+        <EntityLink
+          href={href}
+          className={n.read ? 'font-normal' : undefined}
+          onClick={() => !n.read && onMark({ ids: [n.id] })}
+        >
+          {n.title}
+        </EntityLink>
+      </span>
+      <span className="text-footnote text-text-secondary">{formatDateTime(n.createdAt, locale, zone)}</span>
+      {!n.read ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onMark({ ids: [n.id] })}
+          aria-label={t('ess.notifications.markReadNamed', { title: n.title })}
+        >
+          {t('ess.notifications.markRead')}
+        </Button>
+      ) : null}
+    </li>
+  );
 }
 interface Prefs {
   email: boolean;
@@ -42,7 +69,6 @@ interface Prefs {
 /** My in-app notifications (newest first), with mark-as-read. */
 function NotificationList() {
   const t = useT();
-  const locale = useLocale();
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [cursor, setCursor] = React.useState<string | null>(null);
@@ -87,36 +113,9 @@ function NotificationList() {
         </Button>
       </div>
       {items.length ? (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2" data-testid="notification-list">
           {items.map((n) => (
-            <li
-              key={n.id}
-              className={`flex flex-wrap items-center gap-3 rounded-md border p-3 ${n.read ? 'border-border' : 'border-accent'}`}
-            >
-              {!n.read ? <span className="sr-only">{t('ess.notifications.new')}</span> : null}
-              <span className="mr-auto min-w-0 flex-1 text-callout">
-                {n.link ? (
-                  <Link href={n.link} onClick={() => !n.read && void mark({ ids: [n.id] })}>
-                    {n.title}
-                  </Link>
-                ) : (
-                  n.title
-                )}
-              </span>
-              <span className="text-footnote text-text-secondary">
-                {formatDateTime(n.createdAt, locale, zone)}
-              </span>
-              {!n.read ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => mark({ ids: [n.id] })}
-                  aria-label={t('ess.notifications.markReadNamed', { title: n.title })}
-                >
-                  {t('ess.notifications.markRead')}
-                </Button>
-              ) : null}
-            </li>
+            <NoteRow key={n.id} n={n} zone={zone} onMark={(b) => void mark(b)} />
           ))}
         </ul>
       ) : (

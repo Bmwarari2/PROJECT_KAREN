@@ -7008,6 +7008,66 @@
           },
           {
             "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "full_time"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "part_time"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "casual"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "contractor"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "intern"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "employmentType",
+            "required": false,
+            "description": "Current employment type; honoured only for callers who may read employment types for everyone"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "startFrom",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "startTo",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string",
               "maxLength": 500
             },
@@ -76776,6 +76836,21 @@
                     "sensitive": {
                       "type": "boolean"
                     },
+                    "rowEmployeeIds": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "description": "The person each row is about (reports that list people), so names can link to profiles"
+                    },
                     "truncated": {
                       "type": "boolean"
                     }
@@ -77711,6 +77786,21 @@
                     },
                     "sensitive": {
                       "type": "boolean"
+                    },
+                    "rowEmployeeIds": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "description": "The person each row is about (reports that list people), so names can link to profiles"
                     },
                     "truncated": {
                       "type": "boolean"
@@ -79477,6 +79567,21 @@
                     },
                     "sensitive": {
                       "type": "boolean"
+                    },
+                    "rowEmployeeIds": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "description": "The person each row is about (reports that list people), so names can link to profiles"
                     },
                     "truncated": {
                       "type": "boolean"

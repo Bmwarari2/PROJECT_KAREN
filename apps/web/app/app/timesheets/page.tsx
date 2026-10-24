@@ -17,39 +17,19 @@ import {
   useToast,
 } from '@thapsus/ui';
 import { addDays } from '@thapsus/core/time';
-import { formatDate, formatHours } from '@thapsus/core/i18n';
+import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { dayLong, thisWeek, viewerZone } from '@/lib/week';
-import { FindingList, type FindingDto } from '@/components/findings';
+import { thisWeek, viewerZone } from '@/lib/week';
 import { PageIntro } from '@/components/module-page';
+import { EntityLink, PersonLink } from '@/components/person-link';
+import { Hours, tone, WeekBody, type Timesheet } from './week';
 import { hasPermission, useSession } from '../shell';
 
-interface Timesheet {
-  id: string | null;
-  status: string;
-  weekStart: string;
-  days: Array<{
-    date: string;
-    workedMinutes: number;
-    scheduledMinutes: number;
-    varianceMinutes: number;
-    flagged: boolean;
-  }>;
-  workedMinutes: number;
-  scheduledMinutes: number;
-  regularMinutes: number;
-  overtimeMinutes: number;
-  doubleMinutes: number;
-  violations: FindingDto[];
-  timeRecordingRequired: boolean;
-  timeRecordingJurisdiction: string | null;
-  optedOut: boolean;
-  openClock: boolean;
-}
 interface TeamRow {
   id: string;
+  employeeId: string;
   employeeName: string;
   status: string;
   workedMinutes: number;
@@ -59,20 +39,8 @@ interface TeamRow {
   approvalRequestId: string | null;
 }
 
-const tone = { open: 'neutral', submitted: 'warning', approved: 'success', rejected: 'danger' } as const;
-
-function Hours({ minutes, signed }: { minutes: number; signed?: boolean }) {
-  const locale = useLocale();
-  const t = useT();
-  const v = formatHours(Math.abs(minutes), locale);
-  return (
-    <>{t('timesheets.hours', { hours: signed && minutes !== 0 ? `${minutes > 0 ? '+' : '−'}${v}` : v })}</>
-  );
-}
-
 function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: string; onChange: () => void }) {
   const t = useT();
-  const locale = useLocale();
   const toast = useToast();
   const ts = useApi<Timesheet>(`/v1/timesheets/employees/${employeeId}/weeks/${week}`);
   const [busy, setBusy] = React.useState(false);
@@ -108,80 +76,7 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
           </Button>
         ) : null}
       </div>
-      <Table dense scrollLabel={t('timesheets.mine')}>
-        <THead>
-          <tr>
-            <TH>{t('timesheets.day')}</TH>
-            <TH className="text-right">{t('timesheets.scheduled')}</TH>
-            <TH className="text-right">{t('timesheets.worked')}</TH>
-            <TH className="text-right">{t('timesheets.variance')}</TH>
-          </tr>
-        </THead>
-        <tbody>
-          {d.days.map((day) => (
-            <TR key={day.date} className={day.flagged ? 'bg-accent-subtle' : undefined}>
-              <TD>{dayLong(day.date, locale)}</TD>
-              <TD className="text-right">
-                <Hours minutes={day.scheduledMinutes} />
-              </TD>
-              <TD className="text-right">
-                <Hours minutes={day.workedMinutes} />
-              </TD>
-              <TD
-                className={`text-right ${day.flagged ? 'font-semibold text-warning' : 'text-text-secondary'}`}
-              >
-                <Hours minutes={day.varianceMinutes} signed />
-                {day.flagged ? <span className="sr-only"> {t('timesheets.flagged')}</span> : null}
-              </TD>
-            </TR>
-          ))}
-          <TR>
-            <TD className="font-semibold">{t('timesheets.total')}</TD>
-            <TD className="text-right font-semibold">
-              <Hours minutes={d.scheduledMinutes} />
-            </TD>
-            <TD className="text-right font-semibold">
-              <Hours minutes={d.workedMinutes} />
-            </TD>
-            <TD className="text-right font-semibold">
-              <Hours minutes={d.workedMinutes - d.scheduledMinutes} signed />
-            </TD>
-          </TR>
-        </tbody>
-      </Table>
-      <dl className="grid grid-cols-3 gap-3 text-callout">
-        {(
-          [
-            ['regular', d.regularMinutes],
-            ['overtime', d.overtimeMinutes],
-            ['double', d.doubleMinutes],
-          ] as const
-        ).map(([k, v]) => (
-          <div key={k} className="rounded-md bg-surface p-3">
-            <dt className="text-footnote text-text-secondary">{t(`timesheets.${k}`)}</dt>
-            <dd className="text-title-3 tabular-nums" data-testid={`ts-${k}`}>
-              <Hours minutes={v} />
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <div>
-        <h3 className="mb-2 text-callout font-semibold">{t('timesheets.findings')}</h3>
-        {d.violations.length ? (
-          <FindingList findings={d.violations} />
-        ) : (
-          <p className="text-callout text-text-secondary">{t('timesheets.noFindings')}</p>
-        )}
-        {d.timeRecordingRequired ? (
-          <p className="mt-2 text-footnote text-text-secondary">
-            {t('timesheets.recordingRequired', { jurisdiction: d.timeRecordingJurisdiction ?? '' })}
-          </p>
-        ) : null}
-        {d.optedOut ? (
-          <p className="mt-2 text-footnote text-text-secondary">{t('timesheets.optedOut')}</p>
-        ) : null}
-        {d.openClock ? <p className="mt-2 text-footnote text-warning">{t('timesheets.openClock')}</p> : null}
-      </div>
+      <WeekBody d={d} label={t('timesheets.mine')} />
     </Card>
   );
 }
@@ -245,7 +140,9 @@ function TeamWeek({ week }: { week: string }) {
               const approval = approvable.get(r.id);
               return (
                 <TR key={r.id}>
-                  <TD className="font-semibold">{r.employeeName}</TD>
+                  <TD>
+                    <PersonLink id={r.employeeId} name={r.employeeName} />
+                  </TD>
                   <TD>
                     <Badge tone={tone[r.status as keyof typeof tone] ?? 'neutral'}>
                       {t(`timesheets.status.${r.status}`)}
@@ -259,25 +156,34 @@ function TeamWeek({ week }: { week: string }) {
                   </TD>
                   <TD className={`text-right ${r.violations ? 'text-warning' : ''}`}>{r.violations}</TD>
                   <TD className="text-right">
-                    {approval && r.status === 'submitted' ? (
-                      <span className="inline-flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => decide(approval, 'approve')}
-                          aria-label={t('timesheets.approveFor', { name: r.employeeName })}
-                        >
-                          {t('common.approve')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => decide(approval, 'reject')}
-                          aria-label={t('timesheets.rejectFor', { name: r.employeeName })}
-                        >
-                          {t('common.reject')}
-                        </Button>
-                      </span>
-                    ) : null}
+                    <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                      <EntityLink
+                        href={`/app/timesheets/${r.id}`}
+                        className="inline-flex min-h-8 items-center px-1"
+                        aria-label={t('actionable.timesheet.viewFor', { name: r.employeeName })}
+                      >
+                        {t('actionable.common.view')}
+                      </EntityLink>
+                      {approval && r.status === 'submitted' ? (
+                        <span className="inline-flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => decide(approval, 'approve')}
+                            aria-label={t('timesheets.approveFor', { name: r.employeeName })}
+                          >
+                            {t('common.approve')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => decide(approval, 'reject')}
+                            aria-label={t('timesheets.rejectFor', { name: r.employeeName })}
+                          >
+                            {t('common.reject')}
+                          </Button>
+                        </span>
+                      ) : null}
+                    </span>
                   </TD>
                 </TR>
               );

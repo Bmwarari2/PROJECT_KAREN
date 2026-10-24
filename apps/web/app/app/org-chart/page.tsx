@@ -1,12 +1,12 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { Input, Skeleton } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useDebounced } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { PersonLink } from '@/components/person-link';
 
 interface OrgNode {
   id: string;
@@ -51,12 +51,14 @@ function NodeRow({ node, depth, expandTo }: { node: OrgNode; depth: number; expa
         ) : (
           <span className="w-6" />
         )}
-        <Link
-          href={`/app/people/${node.id}`}
-          className={`text-callout no-underline ${expandTo.at(-1) === node.id ? 'font-semibold text-accent' : 'text-text'}`}
-        >
-          {node.displayName}
-        </Link>
+        {/* a link only where the viewer may open the profile (ADR-0161) */}
+        <PersonLink
+          id={node.id}
+          name={node.displayName}
+          quiet={expandTo.at(-1) !== node.id}
+          className="text-callout"
+          plainClassName={expandTo.at(-1) === node.id ? 'font-semibold' : ''}
+        />
         <span className="truncate text-footnote text-text-secondary">
           {[node.jobTitle, node.department].filter(Boolean).join(' · ')}
         </span>

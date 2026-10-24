@@ -22,6 +22,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { EntityLink, PersonLink } from '@/components/person-link';
 import { useSession } from '../shell';
 
 interface Balance {
@@ -63,6 +64,7 @@ const rtwTone = { due: 'warning', completed: 'success', not_required: 'neutral' 
 
 interface SicknessRecord {
   id: string;
+  employeeId: string;
   employeeName: string | null;
   startDate: string;
   endDate: string | null;
@@ -162,7 +164,7 @@ function SicknessCard() {
         <ul className="mt-2 flex flex-col gap-2">
           {recent.data.slice(0, 10).map((r) => (
             <li key={r.id} className="flex flex-wrap items-center gap-2 text-callout">
-              <span className="font-semibold">{r.employeeName}</span>
+              <PersonLink id={r.employeeId} name={r.employeeName} tab="time-off" />
               <span className="text-text-secondary">
                 {formatDate(r.startDate, locale)} –{' '}
                 {r.endDate ? formatDate(r.endDate, locale) : t('timeOff.sickness.ongoing')}
@@ -383,7 +385,9 @@ export default function TimeOffPage() {
                 <tbody>
                   {mine.data.map((r) => (
                     <TR key={r.id}>
-                      <TD>{typeName(r.leaveType)}</TD>
+                      <TD>
+                        <EntityLink href={`/app/time-off/${r.id}`}>{typeName(r.leaveType)}</EntityLink>
+                      </TD>
                       <TD>
                         {formatDate(r.startDate, locale)} – {formatDate(r.endDate, locale)}
                       </TD>
@@ -426,7 +430,7 @@ export default function TimeOffPage() {
           <ul className="mt-3 flex flex-col gap-2">
             {team.data.entries.map((e, i) => (
               <li key={i} className="flex flex-wrap items-center gap-2 text-callout">
-                <span className="font-semibold">{e.name}</span>
+                <PersonLink id={e.employeeId} name={e.name} tab="time-off" />
                 <Badge>{typeName(e.kind)}</Badge>
                 <span className="text-text-secondary">
                   {formatDate(e.start, locale)} – {formatDate(e.end, locale)}

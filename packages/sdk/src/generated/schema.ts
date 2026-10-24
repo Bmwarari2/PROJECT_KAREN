@@ -3632,6 +3632,10 @@ export interface paths {
                     locationId?: string;
                     managerId?: string;
                     country?: string;
+                    /** @description Current employment type; honoured only for callers who may read employment types for everyone */
+                    employmentType?: "full_time" | "part_time" | "casual" | "contractor" | "intern";
+                    startFrom?: string;
+                    startTo?: string;
                     cursor?: string;
                     limit?: number;
                 };
@@ -29892,6 +29896,8 @@ export interface paths {
                             }[];
                             restricted?: number;
                             sensitive?: boolean;
+                            /** @description The person each row is about (reports that list people), so names can link to profiles */
+                            rowEmployeeIds?: (string | null)[];
                             truncated?: boolean;
                         };
                     };
@@ -30104,6 +30110,8 @@ export interface paths {
                             }[];
                             restricted?: number;
                             sensitive?: boolean;
+                            /** @description The person each row is about (reports that list people), so names can link to profiles */
+                            rowEmployeeIds?: (string | null)[];
                             truncated?: boolean;
                         };
                     };
@@ -30641,6 +30649,8 @@ export interface paths {
                             }[];
                             restricted?: number;
                             sensitive?: boolean;
+                            /** @description The person each row is about (reports that list people), so names can link to profiles */
+                            rowEmployeeIds?: (string | null)[];
                             truncated?: boolean;
                         };
                     };

@@ -8,6 +8,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { outOn, type CalendarEntry, type LeaveCalendar } from '@/lib/dashboard-data';
 import { formatDayRange } from './me-tiles';
 import { Avatar, Panel, PanelLink, type HeadingLevel } from './parts';
+import { PersonLink } from '@/components/person-link';
 
 /**
  * Who is off today and later this week, from the leave calendar (the API decides whose leave the
@@ -60,7 +61,14 @@ export function WhosOut({
               <li key={`${e.employeeId}-${e.start}-${i}`} className="flex min-w-0 items-center gap-3">
                 <Avatar name={e.name} size="sm" />
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-callout font-semibold text-text">{e.name}</span>
+                  {/* the person's time off on their profile, where the viewer may open it (ADR-0161) */}
+                  <PersonLink
+                    id={e.employeeId}
+                    name={e.name}
+                    tab="time-off"
+                    className="truncate text-callout"
+                    plainClassName="truncate text-callout font-semibold text-text"
+                  />
                   <span className="text-footnote text-text-secondary">
                     {kind(e.kind)} · {formatDayRange(e.start, e.end, locale)}
                   </span>

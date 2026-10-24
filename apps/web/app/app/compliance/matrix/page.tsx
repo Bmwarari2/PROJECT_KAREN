@@ -26,6 +26,7 @@ import { useApi } from '@/lib/use-api';
 import { useSession } from '../../shell';
 import { PageIntro } from '@/components/module-page';
 import { selectClass, StatusBadge } from '../ui';
+import { PersonLink } from '@/components/person-link';
 
 const KINDS = ['licence', 'certification', 'background_check', 'training', 'other'] as const;
 const STATUSES = ['missing', 'expired', 'expiring', 'compliant'] as const;
@@ -253,7 +254,7 @@ export default function MatrixPage() {
               {matrix.data.rows.map((r) => (
                 <TR key={`${r.employeeId}:${r.requirementId}`}>
                   <TD>
-                    <span className="font-semibold">{r.employeeName}</span>
+                    <PersonLink id={r.employeeId} name={r.employeeName} tab="compliance" />
                     {r.jobTitle ? (
                       <span className="block text-footnote text-text-secondary">{r.jobTitle}</span>
                     ) : null}
