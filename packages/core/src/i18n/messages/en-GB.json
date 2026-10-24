@@ -5610,9 +5610,9 @@
       "reverification": "Reverification due",
       "i9List": "Open the Form I-9 list",
       "requirements": "Requirements",
-      "requirement": "Requirement",
-      "expires": "Expires",
-      "matrix": "Open the compliance matrix"
+      "matrix": "Open the compliance matrix",
+      "followUpOn": "Follow-up due {date}",
+      "expiresOn": "Expires {date}"
     },
     "rtw": {
       "check": "Right-to-work check",

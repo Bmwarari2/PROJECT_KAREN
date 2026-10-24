@@ -127,8 +127,10 @@ export function AppShell({
   const [collapsed, setCollapsed] = useRailCollapsed();
   // The account menu's code loads when someone points at or touches the button, or activates it:
   // until then the same-looking button stands in, and opens the menu when it arrives if it was used.
+  // Pointing or touching only fetches the code: the button is swapped when it is activated, so a click
+  // that has started never lands on a button replaced under the pointer (which would lose it).
   const [UserMenu, setUserMenu] = React.useState<UserMenuType | null>(null);
-  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'load' | 'open'>('no');
+  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'open'>('no');
   const idle = useIdle();
   // The rail column only shows from the lg breakpoint; on phones (the menu sheet has its own copy)
   // it is not rendered at all, so a phone does not build and hydrate a menu it cannot see.
@@ -141,7 +143,7 @@ export function AppShell({
     return () => mq.removeEventListener('change', update);
   }, []);
   const [Panel, setPanel] = React.useState<NotificationPanelType | null>(null);
-  const [panelLoad, setPanelLoad] = React.useState<'no' | 'load' | 'open'>('no');
+  const [panelLoad, setPanelLoad] = React.useState<'no' | 'open'>('no');
   const wantPanel = panelLoad !== 'no';
   React.useEffect(() => {
     if (!wantPanel) return;
@@ -386,7 +388,7 @@ export function AppShell({
               ) : (
                 <NotificationBellButton
                   unread={counts.unread}
-                  onIntent={() => setPanelLoad((v) => (v === 'no' ? 'load' : v))}
+                  onIntent={() => void loadNotificationPanel()}
                   onOpen={() => setPanelLoad('open')}
                 />
               )}
@@ -401,7 +403,7 @@ export function AppShell({
                 ) : (
                   <UserMenuButton
                     session={session}
-                    onIntent={() => setUserMenuLoad((v) => (v === 'no' ? 'load' : v))}
+                    onIntent={() => void loadUserMenu()}
                     onOpen={() => setUserMenuLoad('open')}
                   />
                 )

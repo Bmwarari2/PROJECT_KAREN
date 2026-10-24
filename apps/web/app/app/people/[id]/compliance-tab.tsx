@@ -1,11 +1,12 @@
 'use client';
 import * as React from 'react';
 import { BadgeCheck } from 'lucide-react';
-import { Badge, Card, CardTitle, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import { Badge, Card, CardTitle, EmptyState, ListItem, ListSection, Skeleton } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { targetHref } from '@thapsus/core/links';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
+import { IntentLink } from '@/components/intent-link';
 import { EntityLink } from '@/components/person-link';
 import { StatusBadge } from '../../compliance/ui';
 
@@ -65,55 +66,51 @@ export function ComplianceTab({ employeeId }: { employeeId: string }) {
   return (
     <div className="flex flex-col gap-4" data-testid="profile-compliance">
       {data.rightToWork ? (
-        <Card className="flex flex-col gap-3 p-0">
-          <div className="flex flex-wrap items-center gap-3 px-5 pt-5">
-            <CardTitle as="h3" className="mr-auto">
-              {t('compliance.rtw.title')}
-            </CardTitle>
-            {data.rightToWork.status === 'not_due' ? (
+        // grouped rows (ADR-0180): each check opens its own page
+        <ListSection
+          title={t('compliance.rtw.title')}
+          headingLevel={3}
+          action={
+            data.rightToWork.status === 'not_due' ? (
               <Badge>{t('actionable.person.rtwNotDue')}</Badge>
             ) : (
               <StatusBadge status={data.rightToWork.status} />
-            )}
-          </div>
-          {data.rightToWork.checks.length ? (
-            <div className="[&>div]:rounded-t-none [&>div]:border-x-0 [&>div]:border-b-0">
-              <Table dense scrollLabel={t('compliance.rtw.title')}>
-                <THead>
-                  <tr>
-                    <TH>{t('compliance.rtw.checkedOn')}</TH>
-                    <TH>{t('compliance.rtw.listType')}</TH>
-                    <TH>{t('compliance.rtw.followUp')}</TH>
-                    <TH>{t('common.status')}</TH>
-                  </tr>
-                </THead>
-                <tbody>
-                  {data.rightToWork.checks.map((c) => (
-                    <TR key={c.id}>
-                      <TD>
-                        <EntityLink href={targetHref({ type: 'rtw_check', id: c.id })!}>
-                          {formatDate(c.checkedOn, locale)}
-                        </EntityLink>
-                      </TD>
-                      <TD>{t(`compliance.rtw.list.${c.listType}`)}</TD>
-                      <TD>{d(c.followUpDueOn)}</TD>
-                      <TD>
-                        <Badge tone={c.current ? 'success' : 'neutral'}>
-                          {t(c.current ? 'actionable.common.current' : 'actionable.common.superseded')}
-                        </Badge>
-                      </TD>
-                    </TR>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          ) : (
-            <p className="px-5 pb-5 text-callout text-text-secondary">{t('actionable.person.noChecks')}</p>
-          )}
-          <p className="px-5 pb-5 text-callout">
+            )
+          }
+          footer={
             <EntityLink href="/app/compliance/right-to-work">{t('actionable.person.rtwList')}</EntityLink>
-          </p>
-        </Card>
+          }
+        >
+          {data.rightToWork.checks.length ? (
+            data.rightToWork.checks.map((c) => (
+              <ListItem
+                key={c.id}
+                href={targetHref({ type: 'rtw_check', id: c.id })!}
+                linkAs={IntentLink}
+                title={formatDate(c.checkedOn, locale)}
+                subtitle={
+                  <>
+                    <span className="block">{t(`compliance.rtw.list.${c.listType}`)}</span>
+                    {c.followUpDueOn ? (
+                      <span className="block">
+                        {t('actionable.person.followUpOn', { date: d(c.followUpDueOn) })}
+                      </span>
+                    ) : null}
+                  </>
+                }
+                accessory={
+                  <Badge tone={c.current ? 'success' : 'neutral'}>
+                    {t(c.current ? 'actionable.common.current' : 'actionable.common.superseded')}
+                  </Badge>
+                }
+              />
+            ))
+          ) : (
+            <ListItem
+              title={<span className="text-text-secondary">{t('actionable.person.noChecks')}</span>}
+            />
+          )}
+        </ListSection>
       ) : null}
       {data.i9 ? (
         <Card className="flex flex-col gap-3">
@@ -149,36 +146,20 @@ export function ComplianceTab({ employeeId }: { employeeId: string }) {
         </Card>
       ) : null}
       {data.requirements.length ? (
-        <Card className="flex flex-col gap-3 p-0">
-          <div className="px-5 pt-5">
-            <CardTitle as="h3">{t('actionable.person.requirements')}</CardTitle>
-          </div>
-          <div className="[&>div]:rounded-t-none [&>div]:border-x-0 [&>div]:border-b-0">
-            <Table dense scrollLabel={t('actionable.person.requirements')}>
-              <THead>
-                <tr>
-                  <TH>{t('actionable.person.requirement')}</TH>
-                  <TH>{t('common.status')}</TH>
-                  <TH>{t('actionable.person.expires')}</TH>
-                </tr>
-              </THead>
-              <tbody>
-                {data.requirements.map((r) => (
-                  <TR key={r.requirementId}>
-                    <TD>{r.name}</TD>
-                    <TD>
-                      <StatusBadge status={r.status} />
-                    </TD>
-                    <TD>{d(r.expiresOn)}</TD>
-                  </TR>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-          <p className="px-5 pb-5 text-callout">
-            <EntityLink href="/app/compliance/matrix">{t('actionable.person.matrix')}</EntityLink>
-          </p>
-        </Card>
+        <ListSection
+          title={t('actionable.person.requirements')}
+          headingLevel={3}
+          footer={<EntityLink href="/app/compliance/matrix">{t('actionable.person.matrix')}</EntityLink>}
+        >
+          {data.requirements.map((r) => (
+            <ListItem
+              key={r.requirementId}
+              title={r.name}
+              subtitle={r.expiresOn ? t('actionable.person.expiresOn', { date: d(r.expiresOn) }) : undefined}
+              accessory={<StatusBadge status={r.status} />}
+            />
+          ))}
+        </ListSection>
       ) : null}
     </div>
   );
