@@ -11,6 +11,14 @@
   --scale-round-y: 1px;
 }
 
+/* the first page is drawn out of the flow, unseen, while the placeholder holds its place */
+.pending {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  visibility: hidden;
+}
+
 .canvas {
   display: block;
 }

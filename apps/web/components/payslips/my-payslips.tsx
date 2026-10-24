@@ -54,10 +54,10 @@ export const yearOf = (p: Pick<MyPayslip, 'payDate' | 'publishedAt'>) =>
  * The employee's payslips (ADR-0167): one year at a time, newest first, each row opening the payslip, with the
  * year-to-date figures as the payroll provider printed them on the latest payslip of that year.
  */
-export function MyPayslips() {
+export function MyPayslips({ initial }: { initial?: MyPayslip[] } = {}) {
   const t = useT() as T;
   const locale = useLocale();
-  const mine = useApi<MyPayslip[]>('/v1/me/payslips');
+  const mine = useApi<MyPayslip[]>('/v1/me/payslips', initial);
   const years = [...new Set((mine.data ?? []).map(yearOf))].sort().reverse();
   const [year, setYear] = React.useState<string>('');
   const shownYear = year || years[0] || '';

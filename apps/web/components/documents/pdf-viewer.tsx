@@ -1,11 +1,11 @@
 'use client';
 import * as React from 'react';
-import { ChevronLeft, ChevronRight, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 // the legacy build: it carries polyfills for the newest built-ins, so older phone browsers work too
 import { getDocument, GlobalWorkerOptions, TextLayer, version } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { Button, Skeleton } from '@thapsus/ui';
+import { Skeleton } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import styles from './pdf-viewer.module.css';
+import { PdfToolbar } from './pdf-toolbar';
 
 /**
  * The in-app PDF viewer (ADR-0168), loaded only on the pages that show a document. PDF.js renders each page to
@@ -47,6 +47,7 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
   const [width, setWidth] = React.useState(0);
   const [scale, setScale] = React.useState(1);
   const [rendering, setRendering] = React.useState(true);
+  const [drawn, setDrawn] = React.useState(false);
   const frame = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -139,6 +140,7 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
         if (cancelled) return;
         setScale(s);
         setRendering(false);
+        setDrawn(true);
         onPage?.(page);
       } catch (err) {
         if (!cancelled && (err as { name?: string }).name !== 'RenderingCancelledException')
@@ -175,99 +177,37 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
   };
   return (
     <div className="flex flex-col gap-3">
-      <div
-        role="group"
-        aria-label={t('docView.toolbar')}
-        className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-raised p-2 shadow-sm"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => go(page - 1)}
-          disabled={!doc || page <= 1}
-          aria-label={t('docView.previousPage')}
-        >
-          <ChevronLeft aria-hidden className="h-5 w-5 stroke-[1.5]" />
-        </Button>
-        <label className="flex items-center gap-2 text-callout text-text-secondary">
-          <span className="sr-only">{t('docView.pageNumber')}</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={count || 1}
-            value={pageInput}
-            disabled={!doc}
-            onChange={(e) => setPageInput(e.target.value)}
-            onBlur={() => go(Number(pageInput) || page)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') go(Number(pageInput) || page);
-            }}
-            className="h-10 w-16 rounded-sm border border-border-strong bg-surface-raised px-2 text-center text-callout text-text tabular-nums focus-visible:outline-2 focus-visible:outline-accent"
-          />
-          <span aria-hidden>{t('docView.ofPages', { count })}</span>
-        </label>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => go(page + 1)}
-          disabled={!doc || page >= count}
-          aria-label={t('docView.nextPage')}
-        >
-          <ChevronRight aria-hidden className="h-5 w-5 stroke-[1.5]" />
-        </Button>
-        <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
-        <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => zoomBy(-1)}
-            disabled={!doc}
-            aria-label={t('docView.zoomOut')}
-          >
-            <ZoomOut aria-hidden className="h-5 w-5 stroke-[1.5]" />
-          </Button>
-          <span className="w-12 text-center text-footnote text-text-secondary tabular-nums" aria-hidden>
-            {Math.round(scale * 75)}%
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => zoomBy(1)}
-            disabled={!doc}
-            aria-label={t('docView.zoomIn')}
-          >
-            <ZoomIn aria-hidden className="h-5 w-5 stroke-[1.5]" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setZoom('fit')}
-            disabled={!doc || zoom === 'fit'}
-            aria-label={t('docView.fitWidth')}
-            aria-pressed={zoom === 'fit'}
-          >
-            <Maximize2 aria-hidden className="h-5 w-5 stroke-[1.5]" />
-          </Button>
-        </div>
-      </div>
+      <PdfToolbar
+        page={page}
+        count={count}
+        pageInput={pageInput}
+        scale={scale}
+        fit={zoom === 'fit'}
+        ready={!!doc}
+        onPageInput={setPageInput}
+        onGo={go}
+        onZoom={zoomBy}
+        onFit={() => setZoom('fit')}
+      />
       <p className="sr-only" aria-live="polite">
         {doc ? t('docView.pageOf', { page, count }) : ''}
       </p>
       <div
         ref={frame}
-        className="w-full overflow-x-auto"
+        className="relative w-full overflow-x-auto"
         tabIndex={zoom === 'fit' ? undefined : 0}
         aria-label={zoom === 'fit' ? undefined : t('docView.scrollPage')}
         role={zoom === 'fit' ? undefined : 'region'}
       >
-        {!doc ? <Skeleton className="aspect-[1/1.414] w-full" /> : null}
+        {/* the placeholder stays until the first page is drawn, which is drawn out of the flow meanwhile, so the
+            page takes the placeholder's place in one step and nothing around it moves (CLS) */}
+        {!drawn ? <Skeleton className="aspect-[1/1.414] w-full" /> : null}
         <div
           ref={pageRef}
           role="region"
           aria-label={t('docView.pageRegion', { title, page, count })}
           aria-busy={rendering || undefined}
-          className={`${styles.page} ${doc ? '' : 'hidden'}`}
+          className={drawn ? styles.page : `${styles.page} ${styles.pending}`}
         >
           <canvas ref={canvasRef} className={styles.canvas} aria-hidden />
           <div ref={textRef} className="textLayer" />
