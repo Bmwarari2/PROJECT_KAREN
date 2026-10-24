@@ -1493,14 +1493,12 @@ describe('automation rules', () => {
     const { signBody } = await import('../src/modules/automation/integrations');
     const hooks: string[] = [];
     const signed: Array<{ body: string; signature: string }> = [];
-    ctx.deps.fetch = (async (url: string, init?: RequestInit) => {
+    // customer endpoints are called through postOutbound (DNS-pinned, private ranges refused); recorded here
+    ctx.deps.outboundPost = async (url, body, headers) => {
       hooks.push(url);
-      signed.push({
-        body: String(init?.body),
-        signature: new Headers(init?.headers).get('x-thapsus-signature') ?? '',
-      });
-      return new Response('ok');
-    }) as typeof fetch;
+      signed.push({ body: String(body), signature: headers['x-thapsus-signature'] ?? '' });
+      return { status: 200, durationMs: 1 };
+    };
     ctx.deps.integrationSigningKey = 'fictional-test-signing-key';
     const rule = (
       await api('POST', '/v1/automation/rules', {
@@ -1546,7 +1544,61 @@ describe('automation rules', () => {
     );
     expect(runs.some((r: { dryRun: boolean }) => r.dryRun)).toBe(true);
     ctx.deps.integrationSigningKey = undefined;
+    ctx.deps.outboundPost = undefined;
     void ft;
+  });
+
+  it('webhooks and the http integration go through postOutbound: a public name that resolves inside is refused (ASVS V1.3.6)', async () => {
+    const { postOutbound } = await import('../src/lib/outbound');
+    const resolved: string[] = [];
+    // the real sender, with a DNS answer that points the public-looking name at a private address
+    ctx.deps.outboundPost = (url, body, headers, opts) =>
+      postOutbound(url, body, headers, {
+        ...opts,
+        resolve: (host, _o, cb) => {
+          resolved.push(host);
+          cb(null, [{ address: '10.20.30.40', family: 4 }]);
+        },
+      });
+    ctx.deps.integrationSigningKey = 'fictional-test-signing-key';
+    try {
+      const rule = (
+        await api('POST', '/v1/automation/rules', {
+          name: 'Rebinding attempt',
+          trigger: { type: 'record.created', entity: 'employee' },
+          conditions: [{ field: 'jobTitle', op: 'eq', value: 'Rebinding tester' }],
+          actions: [
+            { type: 'webhook', url: 'https://inside.hooks.example.test/hr' },
+            {
+              type: 'integration',
+              integration: 'http',
+              operation: 'employee.sync',
+              params: { url: 'https://inside.integrations.example.test/thapsus' },
+            },
+          ],
+        })
+      ).json().id;
+      const emp = await hire({ jobTitle: 'Rebinding tester' });
+      await drain();
+      expect(resolved).toEqual(
+        expect.arrayContaining(['inside.hooks.example.test', 'inside.integrations.example.test']),
+      );
+      const runs = (await api('GET', `/v1/automation/rules/${rule}/runs`)).json() as Array<{
+        dryRun: boolean;
+        detail: { actions: Array<{ type: string; detail: Record<string, unknown> }> };
+      }>;
+      const webhook = runs.find((r) => !r.dryRun)!.detail.actions.find((a) => a.type === 'webhook')!;
+      expect(webhook.detail).toMatchObject({ status: 0, error: 'blocked_address' });
+      const calls = (await api('GET', `/v1/automation/integration-calls?ruleId=${rule}`)).json();
+      expect(calls.find((c: { subjectEmployeeId: string }) => c.subjectEmployeeId === emp)).toMatchObject({
+        status: 'failed',
+        result: { status: 0, error: 'blocked_address' },
+      });
+      await tx((t) => t.exec(`UPDATE app.automation_rules SET enabled = false WHERE id = $1`, [rule]));
+    } finally {
+      ctx.deps.outboundPost = undefined;
+      ctx.deps.integrationSigningKey = undefined;
+    }
   });
 
   it('date-reached rules fire on the day (work anniversary)', async () => {
@@ -1758,15 +1810,11 @@ describe('automation triggers, actions and integrations', () => {
   it('call-integration actions are dispatched to registered handlers and the result is recorded', async () => {
     const { signBody } = await import('../src/modules/automation/integrations');
     const calls: Array<{ url: string; body: string; signature: string }> = [];
-    const previousFetch = ctx.deps.fetch;
-    ctx.deps.fetch = (async (url: string, init?: RequestInit) => {
-      calls.push({
-        url: String(url),
-        body: String(init?.body),
-        signature: (init?.headers as Record<string, string>)['x-thapsus-signature']!,
-      });
-      return new Response('accepted', { status: 202 });
-    }) as typeof fetch;
+    const previousPost = ctx.deps.outboundPost;
+    ctx.deps.outboundPost = async (url, body, headers) => {
+      calls.push({ url: String(url), body: String(body), signature: headers['x-thapsus-signature']! });
+      return { status: 202, durationMs: 1 };
+    };
     ctx.deps.integrationSigningKey = 'fictional-test-signing-key';
     const trigger = { type: 'record.created', entity: 'employee' };
     const bad = async (action: Record<string, unknown>) =>
@@ -1859,9 +1907,9 @@ describe('automation triggers, actions and integrations', () => {
     expect(calls).toHaveLength(1);
     expect(await log()).toHaveLength(2);
     // failures are recorded on the call, not thrown: an unreachable endpoint, then no signing key
-    ctx.deps.fetch = (async () => {
-      throw new Error('connect ECONNREFUSED');
-    }) as typeof fetch;
+    ctx.deps.outboundPost = async () => {
+      throw new Error('connection_refused');
+    };
     const down = await hire({ jobTitle: 'Integration tester' });
     await drain();
     ctx.deps.integrationSigningKey = undefined;
@@ -1876,7 +1924,7 @@ describe('automation triggers, actions and integrations', () => {
       status: 'failed',
       result: { reason: 'signing_key_not_configured' },
     });
-    ctx.deps.fetch = previousFetch;
+    ctx.deps.outboundPost = previousPost;
     await disable(rule);
   });
 });

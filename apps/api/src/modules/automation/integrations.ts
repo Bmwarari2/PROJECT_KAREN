@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
+import type { OutboundPost } from '../../lib/outbound';
 
 /**
  * "Call integration" automation actions are dispatched to handlers registered here, keyed by
@@ -24,6 +25,11 @@ export interface IntegrationResult {
 
 export interface IntegrationContext {
   fetch: typeof fetch;
+  /**
+   * Customer-directed destinations (the `http` integration) go through postOutbound: https only, DNS
+   * resolved and checked at connect time, private and metadata ranges refused, no redirects (ASVS V1.3.6).
+   */
+  post: OutboundPost;
   /** Server-side key for signing outbound calls (per-tenant key derived from it); absent = not configured. */
   signingKey?: string;
 }
@@ -114,17 +120,16 @@ registerIntegration('http', {
       date: req.date,
     });
     const res = await ctx
-      .fetch(url, {
-        method: 'POST',
-        redirect: 'error',
-        headers: {
-          'content-type': 'application/json',
-          'x-thapsus-signature': signBody(ctx.signingKey, req.tenantId, body),
-        },
-        body,
-        signal: AbortSignal.timeout(5000),
+      .post(url, body, {
+        'content-type': 'application/json',
+        'user-agent': 'Thapsus-HR-Automation/1.0',
+        'x-thapsus-signature': signBody(ctx.signingKey, req.tenantId, body),
       })
-      .catch((e: Error) => ({ ok: false, status: 0, statusText: e.name }));
-    return { ok: res.ok, detail: { status: res.status } };
+      .then(
+        (r) => ({ status: r.status, error: undefined }),
+        (e: Error) => ({ status: 0, error: e.message.slice(0, 40) }),
+      );
+    const ok = res.status >= 200 && res.status < 300;
+    return { ok, detail: { status: res.status, ...(res.error ? { error: res.error } : {}) } };
   },
 });
