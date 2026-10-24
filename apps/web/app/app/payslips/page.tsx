@@ -23,6 +23,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
+import { PersonLink } from '@/components/person-link';
 
 interface MyPayslip {
   id: string;
@@ -38,6 +39,7 @@ interface Item {
   id: string;
   fileName: string;
   matchStatus: 'matched' | 'unmatched' | 'ambiguous' | 'manual';
+  employeeId: string | null;
   employeeName: string | null;
   employeeNumber: string | null;
   status: string;
@@ -364,7 +366,16 @@ export default function PayslipsPage() {
                           {t(`payslips.matchStatus.${i.matchStatus}`)}
                         </Badge>
                       </TD>
-                      <TD>{i.employeeName ? `${i.employeeName} (${i.employeeNumber})` : ''}</TD>
+                      <TD>
+                        {i.employeeName ? (
+                          <>
+                            <PersonLink id={i.employeeId} name={i.employeeName} />
+                            {i.employeeNumber ? ` (${i.employeeNumber})` : ''}
+                          </>
+                        ) : (
+                          ''
+                        )}
+                      </TD>
                       <TD>{t(`payslips.itemStatus.${i.status}`)}</TD>
                     </TR>
                   ))}

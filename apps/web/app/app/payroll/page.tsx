@@ -23,6 +23,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
 import { useSession } from '../shell';
+import { EntityLink } from '@/components/person-link';
 
 interface Period {
   id: string;
@@ -191,7 +192,9 @@ export default function PayrollPage() {
             <tbody>
               {periods.data.map((p) => (
                 <TR key={p.id}>
-                  <TD className="font-semibold">{p.name}</TD>
+                  <TD>
+                    <EntityLink href={`/app/payroll/periods/${p.id}`}>{p.name}</EntityLink>
+                  </TD>
                   <TD>
                     {formatDate(p.startDate, locale)} – {formatDate(p.endDate, locale)}
                   </TD>

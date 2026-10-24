@@ -1658,16 +1658,19 @@ describe('automation triggers, actions and integrations', () => {
     expect(runs[0]).toMatchObject({ status: 'succeeded', eventKey: expect.stringMatching(/^ev:\d+$/) });
     const notes = await tx((t) =>
       t.query(
-        `SELECT kind, title_key, params->>'title' AS title, link FROM app.notifications WHERE user_id = $1 AND kind = 'automation'`,
+        `SELECT kind, title_key, params->>'title' AS title, link, target_type, target_id FROM app.notifications WHERE user_id = $1 AND kind = 'automation'`,
         [mgr.userId],
       ),
     );
+    // the manager can open the report's profile, so the notification opens it (ADR-0160)
     expect(notes).toEqual([
       {
         kind: 'automation',
         title_key: 'notify.automation',
         title: 'A report has a new job title',
-        link: '/app',
+        link: `/app/people/${emp}`,
+        target_type: 'employee',
+        target_id: emp,
       },
     ]);
     const wf = (

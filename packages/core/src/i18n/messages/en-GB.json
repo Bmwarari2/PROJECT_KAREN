@@ -745,7 +745,8 @@
       "automation": "Automation",
       "document": "Document",
       "manual": "Task",
-      "compliance": "Compliance"
+      "compliance": "Compliance",
+      "hr_request": "Request to HR"
     },
     "lead": "Open tasks assigned to you or your roles, earliest due date first.",
     "list": {
@@ -5014,7 +5015,8 @@
       "integrations": "IT integrations",
       "webhooks": "Webhooks",
       "billing": "Billing",
-      "account": "Workspace account"
+      "account": "Workspace account",
+      "hr": "Requests to HR"
     },
     "perm": {
       "self": {
@@ -5182,6 +5184,9 @@
         "dpa": "Accept the data processing agreement",
         "export": "Export all company data",
         "close": "Close the workspace"
+      },
+      "hr": {
+        "contact": "Ask the HR team a question or make a request"
       }
     },
     "section": {
@@ -5490,5 +5495,206 @@
     "removeFilter": "Remove filter: {label}",
     "clearAll": "Clear filters",
     "noMatches": "Nothing matches these filters"
+  },
+  "actionable": {
+    "crumbs": {
+      "label": "Breadcrumb"
+    },
+    "bell": {
+      "title": "Notifications",
+      "recent": "Recent notifications",
+      "new": "New:",
+      "markAll": "Mark all as read",
+      "empty": "You're all caught up.",
+      "seeAll": "See all notifications"
+    },
+    "task": {
+      "title": "Task",
+      "open": "Open",
+      "openNamed": "Open: {title}",
+      "completeNamed": "Done: {title}",
+      "completed": "Task marked as done",
+      "markDone": "Mark as done",
+      "noDue": "No due date",
+      "noDescription": "No further details were given for this task.",
+      "assignee": "Assigned to",
+      "source": "Comes from",
+      "workflow": "Workflow",
+      "created": "Created",
+      "completedOn": "Done",
+      "completedBy": "{date} by {name}",
+      "status": {
+        "open": "Open",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      },
+      "go": {
+        "workflow": "Go to the step",
+        "approval": "Review the request",
+        "automation": "Open",
+        "document": "Open the document",
+        "manual": "Open",
+        "compliance": "Open the record",
+        "hr_request": "Open"
+      },
+      "due": "Due {date}"
+    },
+    "approval": {
+      "title": "Request",
+      "openNamed": "{request} for {name}",
+      "requestedBy": "Asked by",
+      "system": "The system",
+      "decidedOn": "Decided",
+      "reason": "Reason",
+      "decideTitle": "Your decision",
+      "comment": "Comment (optional)",
+      "commentHint": "The person who asked sees your comment.",
+      "decline": "Decline",
+      "approved": "Request approved",
+      "declined": "Request declined",
+      "steps": "Approval steps",
+      "step": "Step {n}",
+      "approvers": "Approvers: {names}",
+      "decidedBy": "Decided by {name} on {date}",
+      "status": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "rejected": "Declined",
+        "cancelled": "Cancelled",
+        "skipped": "Skipped",
+        "waiting": "Not started",
+        "escalated": "Escalated"
+      },
+      "related": {
+        "leave_request": "Open the leave request",
+        "timesheet": "Open the timesheet",
+        "employee": "Open the profile"
+      },
+      "forName": "for {name}"
+    },
+    "leave": {
+      "title": "Leave request",
+      "person": "Person",
+      "amount": "Amount",
+      "halfDays": "Half days",
+      "half": {
+        "am": "Morning",
+        "pm": "Afternoon"
+      },
+      "requested": "Requested",
+      "requestedBy": "{date} by {name}",
+      "decided": "Decided",
+      "approval": "See the approval",
+      "cancel": "Cancel this request",
+      "cancelled": "Leave request cancelled"
+    },
+    "common": {
+      "person": "Person",
+      "current": "Current",
+      "superseded": "Replaced by a later check",
+      "open": "Open",
+      "view": "View",
+      "details": "Details",
+      "seeApproval": "See the approval"
+    },
+    "person": {
+      "complianceTab": "Compliance",
+      "noCompliance": "No compliance records apply to this person yet.",
+      "rtwNotDue": "Not needed yet",
+      "noChecks": "No right-to-work check has been recorded.",
+      "rtwList": "Record a check on the right-to-work list",
+      "i9": "Form I-9",
+      "section1": "Section 1 completed",
+      "section2": "Section 2",
+      "dueBy": "Due by {date}",
+      "reverification": "Reverification due",
+      "i9List": "Open the Form I-9 list",
+      "requirements": "Requirements",
+      "matrix": "Open the compliance matrix",
+      "followUpOn": "Follow-up due {date}",
+      "expiresOn": "Expires {date}"
+    },
+    "rtw": {
+      "check": "Right-to-work check",
+      "checkOn": "Check on {date}",
+      "openCheck": "Check on {date} for {name}",
+      "checkedBy": "Checked by",
+      "excuseEnds": "Statutory excuse ends",
+      "evidence": "Documents and evidence",
+      "restricted": "The document details and the copy of the evidence are visible only to people with access to immigration records.",
+      "noEvidence": "No document details or evidence were recorded with this check.",
+      "excuse": {
+        "continuous": "Continuous excuse",
+        "time_limited": "Time-limited excuse"
+      }
+    },
+    "timesheet": {
+      "title": "Timesheet",
+      "viewFor": "View timesheet for {name}"
+    },
+    "asset": {
+      "title": "Asset",
+      "purchasedOn": "Bought on",
+      "notes": "Notes",
+      "history": "Issued to",
+      "returnedOn": "Returned",
+      "stillIssued": "Still issued",
+      "noHistory": "This asset has not been issued to anyone yet."
+    },
+    "payroll": {
+      "payDate": "Pay date",
+      "number": "Employee number",
+      "people_one": "{n} person in this period",
+      "people_other": "{n} people in this period",
+      "peopleLabel": "People in this period",
+      "nobody": "Nobody is in this period.",
+      "section": {
+        "hours": "Approved weeks",
+        "absences": "Absences",
+        "sickPay": "Sick pay",
+        "payChanges": "Pay changes",
+        "starters": "Starters",
+        "leavers": "Leavers"
+      }
+    },
+    "notify": {
+      "hrRequest": "New request to HR from {name}",
+      "hrRequestDone": "HR marked your request as done"
+    },
+    "hr": {
+      "tab": "Contact HR",
+      "contact": "Contact HR",
+      "title": "Contact HR",
+      "lead": "Ask your HR team a question or make a request. They get it in their inbox with your name on it.",
+      "subject": "Subject",
+      "message": "Your question or request",
+      "messageHint": "Do not include medical or other sensitive details here. HR will ask for them in the right place if they need them.",
+      "send": "Send to HR",
+      "sent": "Sent to HR",
+      "mine": "Your requests",
+      "none": "You have not sent HR anything yet.",
+      "sentOn": "Sent {date}",
+      "doneOn": "Done {date}",
+      "status": {
+        "open": "With HR",
+        "done": "Done",
+        "cancelled": "Closed"
+      },
+      "noEmployee": "Only people with an employee record can contact HR here.",
+      "request": "Request to HR",
+      "sentLabel": "Sent",
+      "doneLabel": "Done",
+      "doneBy": "{date} by {name}",
+      "openNote": "HR has your request. You will get a notification when they mark it done.",
+      "doneNote": "HR marked this done. If you still need help, send them a new request."
+    },
+    "automation": {
+      "dryRunNamed": "Dry run {name}"
+    },
+    "support": {
+      "adminsOnly": "Thapsus-HR support is for your workspace’s administrators",
+      "askHr": "Your HR team can help with questions about your job, pay, time off and documents.",
+      "noHr": "Ask an administrator in your organisation for help."
+    }
   }
 }

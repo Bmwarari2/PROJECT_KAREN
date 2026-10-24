@@ -199,8 +199,8 @@ describe('absence trigger alerts', () => {
     await runTriggers('2026-05-29');
     const alerts = await f.tx((t) =>
       t.query<{ user_id: string; params: { trigger: string } }>(
-        `SELECT user_id, params FROM app.notifications WHERE kind = 'absence.trigger' AND link = $1`,
-        [`/app/people/${emp}`],
+        `SELECT user_id, params FROM app.notifications WHERE kind = 'absence.trigger' AND link = $1 AND target_type = 'employee' AND target_id = $2`,
+        [`/app/people/${emp}?tab=time-off`, emp],
       ),
     );
     const byTrigger = (name: string) =>

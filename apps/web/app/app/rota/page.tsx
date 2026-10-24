@@ -836,7 +836,12 @@ export default function RotaPage() {
   const startsOn = settings.data?.workweekStartsOn ?? 1;
   const [week, setWeek] = React.useState<string | null>(null);
   React.useEffect(() => {
-    if (settings.data && !week) setWeek(thisWeek(zone, startsOn));
+    if (!settings.data || week) return;
+    // notifications about a shift open the rota on its week: /app/rota?week=YYYY-MM-DD (ADR-0160)
+    const asked = new URLSearchParams(window.location.search).get('week');
+    setWeek(
+      asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) ? weekStartOf(asked, startsOn) : thisWeek(zone, startsOn),
+    );
   }, [settings.data, week, zone, startsOn]);
   const canView = hasPermission(session, 'rota.view');
 

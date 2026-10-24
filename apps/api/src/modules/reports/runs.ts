@@ -382,7 +382,7 @@ registerJob('reports.run', async (ctx) => {
           userIds: [run.requested_by],
           kind: 'report.ready',
           titleKey: 'notify.reportReady',
-          link: `/app/reports/runs/${runId}`,
+          target: { type: 'report_run', id: runId },
           dedupeKey: `report-ready:${runId}`,
         });
     });

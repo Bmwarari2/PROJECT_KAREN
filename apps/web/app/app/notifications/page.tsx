@@ -1,12 +1,13 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
-import { BellRing, CheckCheck, Inbox } from 'lucide-react';
+import { BellRing, Check, CheckCheck, Inbox } from 'lucide-react';
 import {
   Button,
   Card,
   CardTitle,
   EmptyState,
+  ListItem,
+  ListSection,
   Skeleton,
   Table,
   TD,
@@ -20,16 +21,45 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { RowLink, RowLinkContext } from '@/components/row-link';
+import { useNotificationHref, type NotificationItem } from '@/components/notification-link';
 import { useSession } from '../shell';
+import { notificationFallbackHref } from '@thapsus/core/links';
 
-interface Note {
-  id: string;
-  kind: string;
-  category: string;
-  title: string;
-  link: string | null;
-  createdAt: string;
-  read: boolean;
+type Note = NotificationItem;
+
+/**
+ * One notification (ADR-0160, ADR-0180): a row that opens what it is about; opening it marks it read.
+ * Unread rows carry the accent dot and an icon button to mark them read without opening them.
+ */
+function NoteRow({ n, zone, onMark }: { n: Note; zone: string; onMark: (body: { ids: string[] }) => void }) {
+  const t = useT();
+  const locale = useLocale();
+  const href = useNotificationHref(n);
+  return (
+    <ListItem
+      href={href}
+      linkAs={RowLink}
+      title={n.title}
+      subtitle={formatDateTime(n.createdAt, locale, zone)}
+      unread={!n.read}
+      unreadLabel={t('ess.notifications.new')}
+      accessory={
+        !n.read ? (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-11 w-11"
+            onClick={() => onMark({ ids: [n.id] })}
+            aria-label={t('ess.notifications.markReadNamed', { title: n.title })}
+            title={t('ess.notifications.markRead')}
+          >
+            <Check aria-hidden className="h-5 w-5 stroke-[1.5]" />
+          </Button>
+        ) : undefined
+      }
+    />
+  );
 }
 interface Prefs {
   email: boolean;
@@ -42,7 +72,6 @@ interface Prefs {
 /** My in-app notifications (newest first), with mark-as-read. */
 function NotificationList() {
   const t = useT();
-  const locale = useLocale();
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [cursor, setCursor] = React.useState<string | null>(null);
@@ -63,71 +92,59 @@ function NotificationList() {
     setItems((cur) => cur.map((n) => (body.all || body.ids?.includes(n.id) ? { ...n, read: true } : n)));
     setUnread((u) => (body.all ? 0 : Math.max(0, u - (body.ids?.length ?? 0))));
   }
+  // opening a row marks it (and any other unread notification about the same page) read
+  const followed = React.useCallback(
+    (href: string) => {
+      const ids = items
+        .filter((n) => !n.read && (n.href === href || notificationFallbackHref(n.kind) === href))
+        .map((n) => n.id);
+      if (ids.length) void mark({ ids });
+    },
+    [items],
+  );
   if (!page.data && !items.length)
     return (
       <section aria-labelledby="inbox-h" className="flex flex-col gap-3">
-        <h2 id="inbox-h" className="mr-auto text-title-3">
+        <h2 id="inbox-h" className="mr-auto px-1 text-title-3">
           {t('ess.notifications.inbox')}
         </h2>
         <Skeleton className="h-40 w-full" />
       </section>
     );
   return (
-    <section aria-labelledby="inbox-h" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id="inbox-h" className="mr-auto text-title-3">
-          {t('ess.notifications.inbox')}
-        </h2>
-        <span className="text-footnote text-text-secondary" role="status">
-          {t('ess.notifications.unread', { n: unread })}
-        </span>
-        <Button size="sm" variant="secondary" disabled={!unread} onClick={() => mark({ all: true })}>
-          <CheckCheck aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('ess.notifications.markAll')}
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3" data-testid="notification-list">
       {items.length ? (
-        <ul className="flex flex-col gap-2">
-          {items.map((n) => (
-            <li
-              key={n.id}
-              className={`flex flex-wrap items-center gap-3 rounded-md border p-3 ${n.read ? 'border-border' : 'border-accent'}`}
-            >
-              {!n.read ? <span className="sr-only">{t('ess.notifications.new')}</span> : null}
-              <span className="mr-auto min-w-0 flex-1 text-callout">
-                {n.link ? (
-                  <Link href={n.link} onClick={() => !n.read && void mark({ ids: [n.id] })}>
-                    {n.title}
-                  </Link>
-                ) : (
-                  n.title
-                )}
-              </span>
-              <span className="text-footnote text-text-secondary">
-                {formatDateTime(n.createdAt, locale, zone)}
-              </span>
-              {!n.read ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => mark({ ids: [n.id] })}
-                  aria-label={t('ess.notifications.markReadNamed', { title: n.title })}
-                >
-                  {t('ess.notifications.markRead')}
-                </Button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        <RowLinkContext.Provider value={followed}>
+          <ListSection
+            id="inbox"
+            title={t('ess.notifications.inbox')}
+            description={<span role="status">{t('ess.notifications.unread', { n: unread })}</span>}
+            action={
+              <Button size="sm" variant="ghost" disabled={!unread} onClick={() => mark({ all: true })}>
+                <CheckCheck aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('ess.notifications.markAll')}
+              </Button>
+            }
+          >
+            {items.map((n) => (
+              <NoteRow key={n.id} n={n} zone={zone} onMark={(b) => void mark(b)} />
+            ))}
+          </ListSection>
+        </RowLinkContext.Provider>
       ) : (
-        <EmptyState icon={<Inbox aria-hidden />} title={t('ess.notifications.empty')} />
+        <section aria-labelledby="inbox-h" className="flex flex-col gap-3">
+          <h2 id="inbox-h" className="px-1 text-title-3">
+            {t('ess.notifications.inbox')}
+          </h2>
+          <EmptyState icon={<Inbox aria-hidden />} title={t('ess.notifications.empty')} />
+        </section>
       )}
       {page.data?.nextCursor ? (
         <Button size="sm" variant="ghost" className="w-fit" onClick={() => setCursor(page.data!.nextCursor)}>
           {t('common.loadMore')}
         </Button>
       ) : null}
-    </section>
+    </div>
   );
 }
 
@@ -221,7 +238,7 @@ function Preferences() {
             return (
               <TR key={c}>
                 <TD>{name}</TD>
-                <TD className="text-center">
+                <TD className="text-center" label={t('ess.notifications.email')}>
                   <input
                     type="checkbox"
                     className={box}
@@ -231,7 +248,7 @@ function Preferences() {
                     onChange={(e) => save({ categories: { [c]: { email: e.target.checked } } })}
                   />
                 </TD>
-                <TD className="text-center">
+                <TD className="text-center" label={t('ess.notifications.push')}>
                   <input
                     type="checkbox"
                     className={box}

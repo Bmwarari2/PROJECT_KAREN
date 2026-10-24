@@ -26,10 +26,16 @@ const SELF_SERVICE = [
   'payslips.read_own',
   'assets.read_own',
   'assets.acknowledge',
-  'support.ticket',
   'help.read',
   'ai.ask',
 ];
+
+/**
+ * Who people turn to (ADR-0163): admin roles contact Thapsus-HR support (`support.ticket`); employees
+ * and managers ask their own HR team (`hr.contact`), which lands as a task in the HR admins' inbox.
+ */
+const CONTACT_SUPPORT = 'support.ticket';
+const CONTACT_HR = 'hr.contact';
 
 export const BUILT_IN_ROLES: BuiltInRole[] = [
   {
@@ -100,6 +106,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
       'assets.*',
       'vault.read:*',
       'vault.write:*',
+      CONTACT_SUPPORT,
       ...SELF_SERVICE,
     ],
     fieldAccess: { 'employee.*': 'write', 'employee.pay.*': 'write' },
@@ -120,6 +127,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
       'reports.run',
       'exports.*',
       'payslips.*',
+      CONTACT_SUPPORT,
       ...SELF_SERVICE,
     ],
     fieldAccess: { 'employee.*': 'read', 'employee.pay.*': 'write', 'employee.bank.*': 'write' },
@@ -144,6 +152,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
       'documents.read',
       'workflows.tasks',
       'compliance.read',
+      CONTACT_HR,
       ...SELF_SERVICE,
     ],
     fieldAccess: {
@@ -167,7 +176,7 @@ export const BUILT_IN_ROLES: BuiltInRole[] = [
     name: 'Employee',
     isAdmin: false,
     defaultScope: 'self',
-    permissions: SELF_SERVICE,
+    permissions: [CONTACT_HR, ...SELF_SERVICE],
     fieldAccess: {
       'employee.*': 'read',
       'employee.pay.*': 'read',

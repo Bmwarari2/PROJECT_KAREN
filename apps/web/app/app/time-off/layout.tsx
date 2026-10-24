@@ -1,5 +1,5 @@
 import { Messages } from '@/lib/i18n-scope';
 
 export default function TimeOffLayout({ children }: { children: React.ReactNode }) {
-  return <Messages ns={['timeOff']}>{children}</Messages>;
+  return <Messages ns={['timeOff', 'actionable.leave']}>{children}</Messages>;
 }

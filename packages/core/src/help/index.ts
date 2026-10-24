@@ -1,4 +1,5 @@
 import data from './articles.json' with { type: 'json' };
+import { PERMISSION_KEYS } from '../access';
 import { LOCALES, type Locale } from '../i18n';
 
 /**
@@ -16,7 +17,20 @@ export interface HelpArticle {
   version: number;
   updatedOn: string;
   contexts: string[];
+  /**
+   * Who the article is for (ADR-0162): the permissions a reader needs, any one of them. An empty list
+   * means everyone signed in. Readers never see articles about things they cannot do.
+   */
+  audience: string[];
   locales: Record<Locale, HelpArticleText>;
+}
+
+/** A test of the reader's permissions (wildcards included), as the workspace map and the API use. */
+export type CanRead = (permission: string) => boolean;
+
+/** Whether a reader with these permissions may read the article (no test: everyone, for tooling). */
+export function canReadArticle(a: Pick<HelpArticle, 'audience'>, can?: CanRead): boolean {
+  return !can || !a.audience.length || a.audience.some((p) => can(p));
 }
 export interface HelpArticleView extends HelpArticleText {
   slug: string;
@@ -39,6 +53,10 @@ export function validateHelpArticles(articles: readonly HelpArticle[] = HELP_ART
     if (!/^\d{4}-\d{2}-\d{2}$/.test(a.updatedOn)) problems.push(`${a.slug}: updatedOn must be a date`);
     if (!a.contexts.length || !a.contexts.every((c) => c.startsWith('/app')))
       problems.push(`${a.slug}: contexts must be app paths`);
+    if (!Array.isArray(a.audience)) problems.push(`${a.slug}: audience must be a list of permissions`);
+    else
+      for (const perm of a.audience)
+        if (!PERMISSION_KEYS.includes(perm)) problems.push(`${a.slug}: unknown audience permission ${perm}`);
     for (const l of LOCALES) {
       const t = a.locales[l];
       if (!t?.title || !t.summary || !t.body?.length) problems.push(`${a.slug}: missing ${l} text`);
@@ -55,22 +73,27 @@ const view = (a: HelpArticle, locale: Locale): HelpArticleView => ({
   ...a.locales[locale],
 });
 
-export function helpArticle(slug: string, locale: Locale): HelpArticleView | undefined {
+/** One article, or undefined when it does not exist or is not for this reader. */
+export function helpArticle(slug: string, locale: Locale, can?: CanRead): HelpArticleView | undefined {
   const a = HELP_ARTICLES.find((x) => x.slug === slug);
-  return a ? view(a, locale) : undefined;
+  return a && canReadArticle(a, can) ? view(a, locale) : undefined;
 }
 
-export function helpArticles(locale: Locale): HelpArticleView[] {
-  return HELP_ARTICLES.map((a) => view(a, locale));
+/** Every article this reader may read. */
+export function helpArticles(locale: Locale, can?: CanRead): HelpArticleView[] {
+  return HELP_ARTICLES.filter((a) => canReadArticle(a, can)).map((a) => view(a, locale));
 }
 
-/** Articles linked from an app path: exact path first, then the closest parent path. */
-export function articlesForContext(path: string, locale: Locale): HelpArticleView[] {
+/**
+ * Articles linked from an app path that this reader may read: exact path first, then the closest
+ * parent path with an article for them.
+ */
+export function articlesForContext(path: string, locale: Locale, can?: CanRead): HelpArticleView[] {
   const clean = path.split('?')[0]!.replace(/\/+$/, '') || '/app';
   const parts = clean.split('/');
   for (let i = parts.length; i >= 2; i--) {
     const prefix = parts.slice(0, i).join('/');
-    const hits = HELP_ARTICLES.filter((a) => a.contexts.includes(prefix));
+    const hits = HELP_ARTICLES.filter((a) => a.contexts.includes(prefix) && canReadArticle(a, can));
     if (hits.length) return hits.map((a) => view(a, locale));
   }
   return [];
@@ -160,7 +183,7 @@ function indexFor(locale: Locale): Index {
  * Ranked search. Every query term must match (exactly, or as a prefix for the last term so results
  * appear while typing); ties keep the article order.
  */
-export function searchHelp(query: string, locale: Locale, limit = 10): HelpArticleView[] {
+export function searchHelp(query: string, locale: Locale, limit = 10, can?: CanRead): HelpArticleView[] {
   const terms = tokenize(query.slice(0, 200));
   if (!terms.length) return [];
   const idx = indexFor(locale);
@@ -182,7 +205,9 @@ export function searchHelp(query: string, locale: Locale, limit = 10): HelpArtic
     }
   });
   const order = HELP_ARTICLES.map((a) => a.slug);
+  const readable = new Set(HELP_ARTICLES.filter((a) => canReadArticle(a, can)).map((a) => a.slug));
   return [...(scores ?? new Map<string, number>())]
+    .filter(([slug]) => readable.has(slug))
     .sort((a, b) => b[1] - a[1] || order.indexOf(a[0]) - order.indexOf(b[0]))
     .slice(0, limit)
     .map(([slug]) => helpArticle(slug, locale)!);

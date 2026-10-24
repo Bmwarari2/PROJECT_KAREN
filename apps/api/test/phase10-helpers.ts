@@ -88,6 +88,21 @@ export async function userSession(
   return { cookie: cookieFrom(res), userId, email };
 }
 
+/**
+ * A custom, non-admin role that may contact Thapsus-HR support (ADR-0163: built-in employees and
+ * managers ask their own HR team instead). Returns its key for `userSession`.
+ */
+export async function supportContactRole(ctx: TestContext, owner: { tenantId: string }) {
+  await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+    tx.exec(
+      `INSERT INTO app.roles (tenant_id, key, name, built_in, is_admin, permissions)
+       VALUES (app.current_tenant(), 'support_contact', 'Fictional support contact', false, false, ARRAY['support.ticket', 'help.read'])
+       ON CONFLICT (tenant_id, key) DO NOTHING`,
+    ),
+  );
+  return 'support_contact';
+}
+
 /** Staff sign-in: password, then the mandatory TOTP step. */
 export async function staffSession(ctx: TestContext, role: StaffRole, verify = true) {
   const email = `${role}.${Math.random().toString(36).slice(2, 7)}@thapsus.example.test`;

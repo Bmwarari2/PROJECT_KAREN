@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import { IntentLink as Link } from '@/components/intent-link';
 import {
   ChevronDown,
-  ChevronRight,
   CircleCheck,
   ClipboardCheck,
   FileSignature,
@@ -12,7 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
-import { Badge, Skeleton, buttonVariants, cn, focusRing } from '@thapsus/ui';
+import { Badge, ListItem, ListSection, Skeleton, buttonVariants, cn, focusRing } from '@thapsus/ui';
 import { compareDates, today as todayIn } from '@thapsus/core/time';
 import { numberFormat } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -126,7 +125,8 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   if (pending.length)
     attention.push({
       key: 'approvals',
-      href: '/app/approvals',
+      // one request opens it; several open the list (ADR-0161)
+      href: pending.length === 1 ? `/app/approvals/${pending[0]!.id}` : '/app/approvals',
       icon: <ClipboardCheck />,
       label: t('dashboard.attention.approvals', { n: n(pending.length), count: pending.length }),
       hint: pending[0]!.subjectName
@@ -136,7 +136,12 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
   if (openTasks.length)
     attention.push({
       key: 'tasks',
-      href: '/app/tasks',
+      href:
+        openTasks.length === 1 && openTasks[0]!.href
+          ? openTasks[0]!.href
+          : overdue
+            ? '/app/tasks?overdue=1'
+            : '/app/tasks',
       icon: <ListChecks />,
       label: t('dashboard.attention.tasks', { n: n(openTasks.length), count: openTasks.length }),
       hint: t('dashboard.attention.tasksHint', { title: openTasks[0]!.title }),
@@ -238,35 +243,30 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
         ) : null}
       </div>
 
-      <section aria-labelledby="home-attention" className="flex flex-col gap-4">
-        <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
-        {!attentionReady ? (
+      {!attentionReady ? (
+        <section aria-labelledby="home-attention" className="flex flex-col gap-4">
+          <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
           <Skeleton className="h-20 w-full" />
-        ) : attention.length ? (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="attention">
-            {attention.map((a) => (
-              <li key={a.key}>
-                <Link
-                  href={a.href}
-                  className={cn(
-                    'flex h-full min-w-0 items-center gap-3 rounded-lg border border-border bg-surface-raised p-4 text-text no-underline transition-colors duration-[var(--duration-fast)] hover:border-border-strong',
-                    focusRing,
-                  )}
-                >
-                  <IconTile>{a.icon}</IconTile>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-callout font-semibold">{a.label}</span>
-                    {a.hint ? (
-                      <span className="break-words text-footnote text-text-secondary">{a.hint}</span>
-                    ) : null}
-                  </span>
-                  {a.badge}
-                  <ChevronRight aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-text-secondary" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
+        </section>
+      ) : attention.length ? (
+        // a grouped list (ADR-0180): each row opens the item, or the list when there are several
+        <ListSection id="home-attention" title={t('dashboard.attention.title')}>
+          {attention.map((a) => (
+            <ListItem
+              key={a.key}
+              href={a.href}
+              linkAs={Link}
+              leading={a.icon}
+              title={a.label}
+              subtitle={a.hint}
+              // under the text on phones, so the hint keeps the row's width (ADR-0180)
+              meta={a.badge}
+            />
+          ))}
+        </ListSection>
+      ) : (
+        <section aria-labelledby="home-attention" className="flex flex-col gap-4">
+          <SectionHeading id="home-attention" title={t('dashboard.attention.title')} />
           <div
             className="flex items-center gap-4 rounded-lg border border-border bg-surface-raised p-5"
             data-testid="caught-up"
@@ -279,8 +279,8 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
               <p className="text-footnote text-text-secondary">{t('dashboard.attention.caughtUpBody')}</p>
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {showYou ? (
         <section aria-labelledby="home-you" className="flex flex-col gap-4">

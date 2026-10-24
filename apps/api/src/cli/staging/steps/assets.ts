@@ -210,7 +210,7 @@ export async function seedAssets(ctx: SeedCtx) {
     kind: 'asset.assigned',
     titleKey: 'notify.assetAssigned',
     params: { asset: COST.headset[0] },
-    link: `/app/assets?ack=${pending.id}`,
+    target: { type: 'asset_assignment', id: String(pending.id) },
     dedupeKey: `asset-assigned:${pending.id}`,
   });
   ctx.counts.assets = assets.length;

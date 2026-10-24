@@ -22,12 +22,15 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { EntityLink, PersonLink, ROW_LINK } from '@/components/person-link';
+import { targetHref } from '@thapsus/core/links';
 import { selectClass, SourceLink, StatusBadge } from '../ui';
 
 interface Row {
   employeeId: string;
   employeeName: string;
   status: string;
+  checkId: string | null;
   checkMethod: string | null;
   listType: string | null;
   checkedOn: string | null;
@@ -136,15 +139,43 @@ export default function RightToWorkPage() {
             <tbody>
               {rows.data.map((r) => (
                 <TR key={r.employeeId}>
-                  <TD className="font-semibold">{r.employeeName}</TD>
+                  <TD>
+                    <PersonLink
+                      id={r.employeeId}
+                      name={r.employeeName}
+                      tab="compliance"
+                      className={ROW_LINK}
+                    />
+                  </TD>
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>
-                    {r.checkedOn ? `${d(r.checkedOn)} · ${t(`compliance.rtw.list.${r.listType}`)}` : '—'}
+                  <TD phone="inline" label={t('compliance.rtw.checked')}>
+                    {r.checkedOn && r.checkId ? (
+                      <>
+                        <EntityLink
+                          className="relative z-10"
+                          href={targetHref({ type: 'rtw_check', id: r.checkId })!}
+                          aria-label={t('actionable.rtw.openCheck', {
+                            date: d(r.checkedOn),
+                            name: r.employeeName,
+                          })}
+                        >
+                          {d(r.checkedOn)}
+                        </EntityLink>
+                        {` · ${t(`compliance.rtw.list.${r.listType}`)}`}
+                      </>
+                    ) : r.checkedOn ? (
+                      `${d(r.checkedOn)} · ${t(`compliance.rtw.list.${r.listType}`)}`
+                    ) : (
+                      '—'
+                    )}
                   </TD>
-                  <TD>{d(r.followUpDueOn)}</TD>
-                  <TD>{d(r.retainUntil)}</TD>
+                  {/* its own labelled line on phones, and left out there when there is none */}
+                  <TD phone={r.followUpDueOn ? undefined : 'hide'} label={t('compliance.rtw.followUp')}>
+                    {d(r.followUpDueOn)}
+                  </TD>
+                  <TD phone="hide">{d(r.retainUntil)}</TD>
                   <TD className="text-right">
                     {r.status !== 'retention' ? (
                       <Button

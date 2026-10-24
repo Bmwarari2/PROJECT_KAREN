@@ -1036,5 +1036,23 @@
     "org": {
       "titleCompany": "Your organization"
     }
+  },
+  "actionable": {
+    "task": {
+      "status": {
+        "cancelled": "Canceled"
+      }
+    },
+    "approval": {
+      "status": {
+        "cancelled": "Canceled"
+      }
+    },
+    "leave": {
+      "cancelled": "Leave request canceled"
+    },
+    "support": {
+      "noHr": "Ask an administrator in your organization for help."
+    }
   }
 }

@@ -1,7 +1,18 @@
 'use client';
 import * as React from 'react';
 import { Zap } from 'lucide-react';
-import { Badge, Button, Card, CardTitle, EmptyState, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  EmptyState,
+  Field,
+  Input,
+  ListItem,
+  Skeleton,
+  useToast,
+} from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -105,20 +116,32 @@ export default function AutomationPage() {
           ) : undefined
         }
       >
-        <ul className="flex flex-col gap-2 p-4">
+        {/* grouped rows (ADR-0180): the rule's name takes the width; the dry run sits under it on phones */}
+        <ul role="list" aria-label={t('automation.list.title')}>
           {(data ?? []).map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
-              <Zap aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-              <span className="text-callout font-semibold">{r.name}</span>
-              <Badge>{t(`automation.triggers.${r.trigger.type}`)}</Badge>
-              <Badge tone={r.enabled ? 'success' : 'neutral'}>
-                {r.enabled ? t('automation.on') : t('automation.off')}
-              </Badge>
-              <span className="ml-auto text-footnote text-text-secondary">{dry[r.id]}</span>
-              <Button size="sm" variant="secondary" onClick={() => dryRun(r.id)}>
-                {t('automation.dryRun')}
-              </Button>
-            </li>
+            <ListItem
+              key={r.id}
+              leading={<Zap aria-hidden />}
+              title={r.name}
+              subtitle={t(`automation.triggers.${r.trigger.type}`)}
+              meta={dry[r.id] || undefined}
+              accessory={
+                <Badge tone={r.enabled ? 'success' : 'neutral'}>
+                  {r.enabled ? t('automation.on') : t('automation.off')}
+                </Badge>
+              }
+              actions={
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="min-h-11 sm:min-h-8"
+                  onClick={() => dryRun(r.id)}
+                  aria-label={t('actionable.automation.dryRunNamed', { name: r.name })}
+                >
+                  {t('automation.dryRun')}
+                </Button>
+              }
+            />
           ))}
         </ul>
       </ListCard>

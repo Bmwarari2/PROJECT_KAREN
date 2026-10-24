@@ -2,23 +2,15 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Inbox, UserRoundCheck } from 'lucide-react';
-import {
-  Button,
-  buttonVariants,
-  EmptyState,
-  Skeleton,
-  Table,
-  TD,
-  TH,
-  THead,
-  TR,
-  useToast,
-} from '@thapsus/ui';
-import { formatDate, numberFormat } from '@thapsus/core/i18n';
+import { Button, buttonVariants, EmptyState, ListItem, Skeleton, useToast } from '@thapsus/ui';
+import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
+import { IntentLink } from '@/components/intent-link';
+import { PersonLink } from '@/components/person-link';
+import { useApprovalDetails } from './details';
 import {
   ListCard,
   ListFilter,
@@ -29,21 +21,10 @@ import {
   type AppliedFilter,
 } from '@/components/module-page';
 
-/** Fields shown first, in this order; others follow. */
-const DETAIL_ORDER = [
-  'leaveType',
-  'startDate',
-  'endDate',
-  'amountDays',
-  'date',
-  'weekStart',
-  'effectiveDate',
-];
-const order = (k: string) => (DETAIL_ORDER.includes(k) ? DETAIL_ORDER.indexOf(k) : DETAIL_ORDER.length);
-
 interface Approval {
   id: string;
   policy: string;
+  subjectEmployeeId: string | null;
   subjectName: string | null;
   requestedAt: string;
   payload: Record<string, unknown>;
@@ -60,26 +41,10 @@ export default function ApprovalsPage() {
   const [type, setType] = React.useState('');
 
   // Request details in words: known fields with their labels, dates formatted, internal ids left out.
-  const known = (key: string) => (t(key) === key ? null : t(key));
+  const describe = useApprovalDetails();
   const details = (payload: Record<string, unknown>) =>
-    Object.entries(payload)
-      .filter(([k]) => k !== 'reason' && !k.startsWith('__') && !/Id$/.test(k))
-      .map(([k, v]) => [k, known(`admin.approvals.field.${k}`) ?? known(`people.field.${k}`), v] as const)
-      .filter(([, label]) => label)
-      .sort(([a], [b]) => order(a) - order(b))
-      .map(([k, label, v]) => {
-        const value =
-          k === 'leaveType' && typeof v === 'string'
-            ? (known(`timeOff.kind.${v}`) ?? v)
-            : typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)
-              ? formatDate(v, locale)
-              : Array.isArray(v)
-                ? numberFormat(locale).format(v.length)
-                : typeof v === 'number'
-                  ? numberFormat(locale).format(v)
-                  : String(v);
-        return `${label}: ${value}`;
-      })
+    describe(payload)
+      .map((d) => `${d.label}: ${d.value}`)
       .join(', ');
 
   // Search and the request-type filter narrow the rows already loaded; bulk actions use only the
@@ -188,44 +153,64 @@ export default function ApprovalsPage() {
           ) : undefined
         }
       >
-        <Table scrollLabel={t('approvals.list.title')}>
-          <THead>
-            <tr>
-              <TH className="w-10">
-                <input
-                  type="checkbox"
-                  aria-label={t('approvals.selectAll')}
-                  checked={shown.length > 0 && picked.length === shown.length}
-                  onChange={(e) =>
-                    setSelected(e.target.checked ? new Set(shown.map((d) => d.id)) : new Set())
-                  }
-                />
-              </TH>
-              <TH>{t('approvals.col.request')}</TH>
-              <TH>{t('approvals.col.person')}</TH>
-              <TH>{t('approvals.col.details')}</TH>
-              <TH>{t('approvals.col.requested')}</TH>
-            </tr>
-          </THead>
-          <tbody>
-            {shown.map((a) => (
-              <TR key={a.id}>
-                <TD>
+        {/* a grouped list (ADR-0180): each row opens the request; the boxes pick rows for bulk decisions */}
+        <label className="flex min-h-11 items-center gap-3 border-b border-border px-4 text-callout">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-[var(--color-accent)]"
+            checked={shown.length > 0 && picked.length === shown.length}
+            onChange={(e) => setSelected(e.target.checked ? new Set(shown.map((d) => d.id)) : new Set())}
+          />
+          {t('approvals.selectAll')}
+        </label>
+        <ul role="list" aria-label={t('approvals.list.title')} data-testid="approval-list">
+          {shown.map((a) => (
+            <ListItem
+              key={a.id}
+              href={`/app/approvals/${a.id}`}
+              linkAs={IntentLink}
+              leadingTile={false}
+              leading={
+                <span className="relative z-10 flex h-8 w-8 items-center justify-center">
                   <input
                     type="checkbox"
+                    className="h-5 w-5 accent-[var(--color-accent)]"
                     aria-label={t('approvals.select', { name: a.subjectName ?? a.policy })}
                     checked={selected.has(a.id)}
                     onChange={() => toggle(a.id)}
                   />
-                </TD>
-                <TD className="font-semibold">{a.policy}</TD>
-                <TD>{a.subjectName ?? '—'}</TD>
-                <TD className="text-footnote text-text-secondary">{details(a.payload)}</TD>
-                <TD>{formatDate(a.requestedAt.slice(0, 10), locale)}</TD>
-              </TR>
-            ))}
-          </tbody>
-        </Table>
+                </span>
+              }
+              title={
+                <>
+                  {a.policy}
+                  <span className="sr-only">
+                    {' '}
+                    {t('actionable.approval.forName', { name: a.subjectName ?? '—' })}
+                  </span>
+                </>
+              }
+              subtitle={
+                <>
+                  {a.subjectName ? (
+                    <>
+                      <PersonLink
+                        id={a.subjectEmployeeId}
+                        name={a.subjectName}
+                        className="relative z-10"
+                        plainClassName="text-text"
+                      />
+                      {details(a.payload) ? <span className="max-sm:hidden"> · </span> : null}
+                    </>
+                  ) : null}
+                  {/* on a phone the details take two lines at most: the request's page has them all */}
+                  <span className="max-sm:line-clamp-2">{details(a.payload)}</span>
+                </>
+              }
+              meta={formatDate(a.requestedAt.slice(0, 10), locale)}
+            />
+          ))}
+        </ul>
       </ListCard>
     </div>
   );

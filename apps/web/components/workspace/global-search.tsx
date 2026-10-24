@@ -127,17 +127,27 @@ export function GlobalSearch({
     api<Array<{ id: string; displayName: string; jobTitle: string | null; department: string | null }>>(
       `/v1/org-chart/search?q=${term}`,
     )
-      .then((rows) => {
+      .then(async (rows) => {
         if (cancelled) return;
-        const full = viewer.has('employees.read');
+        const top = rows.slice(0, 6);
+        // a profile only where the viewer may open it (ADR-0161); everyone else on the org chart
+        let open = new Set<string>(viewer.employeeId ? [viewer.employeeId] : []);
+        if (viewer.has('employees.read') && top.length) {
+          const r = await api<{ all: boolean; visible: string[] }>('/v1/people/visibility', {
+            method: 'POST',
+            json: { ids: top.map((p) => p.id) },
+          }).catch(() => ({ all: false, visible: [] as string[] }));
+          open = r.all ? new Set(top.map((p) => p.id)) : new Set([...open, ...r.visible]);
+        }
+        if (cancelled) return;
         setPeople(
-          rows.slice(0, 6).map((p) => ({
+          top.map((p) => ({
             id: `person:${p.id}`,
             group: 'people',
             kind: 'person',
             label: p.displayName,
             detail: [p.jobTitle, p.department].filter(Boolean).join(' · ') || undefined,
-            href: full ? `/app/people/${p.id}` : `/app/org-chart?focus=${p.id}`,
+            href: open.has(p.id) ? `/app/people/${p.id}` : `/app/org-chart?focus=${p.id}`,
           })),
         );
       })

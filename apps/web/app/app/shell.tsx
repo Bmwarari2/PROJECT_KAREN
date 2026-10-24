@@ -3,7 +3,7 @@ import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { IntentLink as Link } from '@/components/intent-link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, CircleHelp, Menu as MenuIcon, Search } from 'lucide-react';
+import { CircleHelp, Menu as MenuIcon, Search } from 'lucide-react';
 import {
   Button,
   ModuleHeader,
@@ -19,11 +19,12 @@ import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
 import { Logo } from '@/components/logo';
 import { RailNav, RailToggle, useRailCollapsed } from '@/components/workspace/rail';
 import { UserMenuButton } from '@/components/workspace/user-menu-button';
+import { NotificationBellButton } from '@/components/workspace/notification-bell-button';
 import { api, ApiProblem, type SessionInfo } from '@/lib/api';
 import { syncQueue } from '@/lib/clock-queue';
 import { useT } from '@/lib/i18n-client';
 import { useIdle } from '@/lib/use-idle';
-import { revealIn } from '@/lib/reveal';
+import { centreIn, revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
 import { dockModules, isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
 
@@ -38,6 +39,10 @@ const GlobalSearch = dynamic(
 const loadSearch = () => import('@/components/workspace/global-search');
 type UserMenuType = typeof import('@/components/workspace/user-menu').UserMenu;
 const loadUserMenu = () => import('@/components/workspace/user-menu').then((m) => m.UserMenu);
+// The notification panel (and the popover behind it) loads on intent, like the account menu (ADR-0160).
+type NotificationPanelType = typeof import('@/components/workspace/notification-panel').NotificationPanel;
+const loadNotificationPanel = () =>
+  import('@/components/workspace/notification-panel').then((m) => m.NotificationPanel);
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
@@ -122,8 +127,10 @@ export function AppShell({
   const [collapsed, setCollapsed] = useRailCollapsed();
   // The account menu's code loads when someone points at or touches the button, or activates it:
   // until then the same-looking button stands in, and opens the menu when it arrives if it was used.
+  // Pointing or touching only fetches the code: the button is swapped when it is activated, so a click
+  // that has started never lands on a button replaced under the pointer (which would lose it).
   const [UserMenu, setUserMenu] = React.useState<UserMenuType | null>(null);
-  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'load' | 'open'>('no');
+  const [userMenuLoad, setUserMenuLoad] = React.useState<'no' | 'open'>('no');
   const idle = useIdle();
   // The rail column only shows from the lg breakpoint; on phones (the menu sheet has its own copy)
   // it is not rendered at all, so a phone does not build and hydrate a menu it cannot see.
@@ -135,6 +142,17 @@ export function AppShell({
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
+  const [Panel, setPanel] = React.useState<NotificationPanelType | null>(null);
+  const [panelLoad, setPanelLoad] = React.useState<'no' | 'open'>('no');
+  const wantPanel = panelLoad !== 'no';
+  React.useEffect(() => {
+    if (!wantPanel) return;
+    let live = true;
+    void loadNotificationPanel().then((C) => live && setPanel(() => C));
+    return () => {
+      live = false;
+    };
+  }, [wantPanel]);
   const wantMenu = userMenuLoad !== 'no';
   React.useEffect(() => {
     if (!wantMenu) return;
@@ -215,6 +233,11 @@ export function AppShell({
     };
   }, [ready, idle, path]);
 
+  const setUnread = React.useCallback(
+    (unread: number) => setCounts((prev) => (prev.unread === unread ? prev : { ...prev, unread })),
+    [],
+  );
+
   // Ctrl/⌘ K opens search anywhere; "/" does too when the focus is not in a field.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -255,10 +278,10 @@ export function AppShell({
   const railCounts = React.useMemo(() => ({ inbox: inboxCount }), [inboxCount]);
   const dock = React.useMemo(() => (viewer ? dockModules(modules, viewer) : []), [modules, viewer]);
   // keep the current section visible in a sideways-scrolling sections control (phones)
+  // (scrolling the control itself: scrollIntoView would move the Tab starting point past the skip link)
   React.useEffect(() => {
-    document
-      .querySelector('[data-tab-nav] [data-active]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const nav = document.querySelector<HTMLElement>('[data-tab-nav]');
+    centreIn(nav, nav?.querySelector<HTMLElement>('[data-active]') ?? null);
   }, [path]);
   const tabCounts: Record<string, number> = {
     '/app/approvals': counts.approvals,
@@ -359,26 +382,16 @@ export function AppShell({
               >
                 <CircleHelp aria-hidden className="h-5 w-5 stroke-[1.5]" />
               </Link>
-              <Link
-                href="/app/notifications"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-on-chrome hover:bg-chrome-raised focus-visible:outline-2 focus-visible:outline-chrome-focus"
-                aria-label={
-                  counts.unread
-                    ? t('app.ws.notificationsUnread', { count: counts.unread })
-                    : t('app.nav.notifications')
-                }
-                title={t('app.nav.notifications')}
-              >
-                <Bell aria-hidden className="h-5 w-5 stroke-[1.5]" />
-                {counts.unread ? (
-                  <span
-                    aria-hidden
-                    className="absolute right-1 top-1 min-w-[18px] rounded-full bg-chrome-focus px-1 text-center text-footnote font-semibold leading-[18px] text-chrome"
-                  >
-                    {counts.unread > 9 ? '9+' : counts.unread}
-                  </span>
-                ) : null}
-              </Link>
+              {/* The bell opens a panel of recent notifications, each a link to what it is about. */}
+              {Panel ? (
+                <Panel unread={counts.unread} onUnreadChange={setUnread} defaultOpen={panelLoad === 'open'} />
+              ) : (
+                <NotificationBellButton
+                  unread={counts.unread}
+                  onIntent={() => void loadNotificationPanel()}
+                  onOpen={() => setPanelLoad('open')}
+                />
+              )}
               {session ? (
                 UserMenu ? (
                   <UserMenu
@@ -390,7 +403,7 @@ export function AppShell({
                 ) : (
                   <UserMenuButton
                     session={session}
-                    onIntent={() => setUserMenuLoad((v) => (v === 'no' ? 'load' : v))}
+                    onIntent={() => void loadUserMenu()}
                     onOpen={() => setUserMenuLoad('open')}
                   />
                 )

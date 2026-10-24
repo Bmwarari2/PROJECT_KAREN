@@ -18,6 +18,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         'compliance.nav',
         'platform.branding.logoAlt',
         'platform.sandbox.banner',
+        'actionable.crumbs',
+        'actionable.bell',
+        'actionable.common',
+        'actionable.hr.tab',
       ]}
     >
       <AppShell theme={theme} initialSession={session}>

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { headers } from 'next/headers';
 import type { SessionInfo } from './api';
 import { clientIpHeaders } from './proxy';
@@ -9,7 +10,10 @@ import { clientIpHeaders } from './proxy';
  * is the local and e2e API. Returns null when neither is set, there is no cookie, or the API does not
  * answer quickly: the shell then fetches the session in the browser as before.
  */
-export async function serverSession(): Promise<SessionInfo | null> {
+export const serverSession = cache(readSession);
+
+// one read per request (the app layout and pages that filter by permission share it)
+async function readSession(): Promise<SessionInfo | null> {
   const base = process.env.API_INTERNAL_URL ?? process.env.API_PROXY_URL;
   if (!base) return null;
   const h = await headers();

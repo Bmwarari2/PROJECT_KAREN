@@ -12,6 +12,7 @@ import { MeTiles, formatDayRange } from '@/components/dashboard/me-tiles';
 import { Avatar, IconTile, Panel, PanelLink } from '@/components/dashboard/parts';
 import { WhosOut } from '@/components/dashboard/whos-out';
 import { hasPermission, useSession } from '../shell';
+import { EntityLink } from '@/components/person-link';
 
 interface WeekSheet {
   status: string;
@@ -134,9 +135,10 @@ export default function TimeOverviewPage() {
                             <li key={a.id} className="flex min-w-0 items-center gap-3">
                               <Avatar name={a.subjectName ?? ''} size="sm" />
                               <span className="flex min-w-0 flex-1 flex-col">
-                                <span className="truncate text-callout font-semibold text-text">
+                                {/* the request's own page, where its approver decides (ADR-0160) */}
+                                <EntityLink href={`/app/approvals/${a.id}`} className="truncate text-callout">
                                   {a.subjectName ?? a.policy}
-                                </span>
+                                </EntityLink>
                                 <span className="text-footnote text-text-secondary">
                                   {[
                                     kind(a.payload.leaveType),

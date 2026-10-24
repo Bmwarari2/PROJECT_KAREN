@@ -595,5 +595,7 @@ export async function runSpec(
     restricted,
     sensitive: c.sensitive || c.vaultColumns.length > 0,
     truncated,
+    // a list of people (not a grouped summary): each row's person, for links to their profiles
+    ...(c.grouped ? {} : { rowEmployeeIds: rows.map((r) => (r.__eid ? String(r.__eid) : null)) }),
   };
 }

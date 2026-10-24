@@ -112,7 +112,6 @@ export async function runRule(
               assigneeUserId: u,
               assigneeRole: action.assignee.type === 'role' ? action.assignee.value : null,
               dueOn: action.dueInDays !== undefined ? addDays(subject.date, action.dueInDays) : null,
-              link: '/app/tasks',
               dedupeKey: `auto:${rule.id}:${subject.eventKey}:${u ?? 'role'}`,
             });
         break;
@@ -126,7 +125,13 @@ export async function runRule(
             kind: 'automation',
             titleKey: 'notify.automation',
             params: { title: action.message },
-            link: '/app',
+            // the person the rule fired for, when the recipients can open their profile (themselves,
+            // their manager or HR); other recipients get the home page as before
+            ...(subject.employeeId &&
+            (['employee', 'manager'].includes(action.to.type) ||
+              (action.to.type === 'role' && ['hr_admin', 'owner'].includes(action.to.value ?? '')))
+              ? { target: { type: 'employee' as const, id: subject.employeeId } }
+              : { link: '/app' }),
             dedupeKey: `auto:${rule.id}:${subject.eventKey}`,
           });
         break;
