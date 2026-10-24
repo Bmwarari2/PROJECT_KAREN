@@ -2153,7 +2153,7 @@ export async function generateAccessExport(
         userIds: [userId],
         kind: 'privacy.dsr',
         titleKey: 'notify.dsrExportReady',
-        link: `/app/privacy?request=${requestId}`,
+        target: { type: 'privacy_request', id: requestId },
         dedupeKey: `dsr-export:${requestId}:${exp.generatedAt}`,
       });
     },
@@ -2282,7 +2282,7 @@ registerJob('privacy.reminders', async (ctx) => {
             kind: 'privacy.dsr',
             titleKey: 'notify.dsrOverdue',
             params: { date: due },
-            link: `/app/privacy?request=${r.id}`,
+            target: { type: 'privacy_request', id: r.id },
             dedupeKey: `dsr:${r.id}:overdue:${due}`,
           })
         ).length;
@@ -2293,7 +2293,7 @@ registerJob('privacy.reminders', async (ctx) => {
             kind: 'privacy.dsr',
             titleKey: 'notify.dsrDue',
             params: { days: left, count: left, date: due },
-            link: `/app/privacy?request=${r.id}`,
+            target: { type: 'privacy_request', id: r.id },
             dedupeKey: `dsr:${r.id}:${due}:${left}`,
           })
         ).length;
@@ -2360,7 +2360,7 @@ registerJob('privacy.incident_reminders', async (ctx) => {
               hours: Math.max(0, hoursLeft),
               count: Math.max(0, hoursLeft),
             },
-            link: '/app/privacy/incidents',
+            target: { type: 'privacy_incident', id: r.id },
             dedupeKey: `incident:${r.id}:${d.jurisdiction}:${d.audience}:${threshold}`,
           })
         ).length;

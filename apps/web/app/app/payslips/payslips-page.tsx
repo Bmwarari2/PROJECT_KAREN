@@ -20,12 +20,14 @@ import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { MyPayslips, type MyPayslip } from '@/components/payslips/my-payslips';
 import { useSession } from '../shell';
+import { PersonLink } from '@/components/person-link';
 
 interface Item {
   id: string;
   fileName: string | null;
   hasStatement: boolean;
   matchStatus: 'matched' | 'unmatched' | 'ambiguous' | 'manual';
+  employeeId: string | null;
   employeeName: string | null;
   employeeNumber: string | null;
   status: string;
@@ -315,7 +317,16 @@ export function PayslipsPage({ initialPayslips }: { initialPayslips?: MyPayslip[
                           {t(`payslips.matchStatus.${i.matchStatus}`)}
                         </Badge>
                       </TD>
-                      <TD>{i.employeeName ? `${i.employeeName} (${i.employeeNumber})` : ''}</TD>
+                      <TD>
+                        {i.employeeName ? (
+                          <>
+                            <PersonLink id={i.employeeId} name={i.employeeName} />
+                            {i.employeeNumber ? ` (${i.employeeNumber})` : ''}
+                          </>
+                        ) : (
+                          ''
+                        )}
+                      </TD>
                       <TD>{t(`payslips.itemStatus.${i.status}`)}</TD>
                     </TR>
                   ))}

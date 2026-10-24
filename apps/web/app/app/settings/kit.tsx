@@ -317,6 +317,8 @@ export function ConfirmAction({
   confirmLabel,
   onConfirm,
   disabled,
+  triggerClassName,
+  triggerVariant = 'ghost',
 }: {
   label: string;
   ariaLabel?: string;
@@ -325,6 +327,9 @@ export function ConfirmAction({
   confirmLabel: string;
   onConfirm: () => Promise<unknown>;
   disabled?: boolean;
+  /** e.g. a 44px touch target on phones in a list row (ADR-0180) */
+  triggerClassName?: string;
+  triggerVariant?: 'ghost' | 'secondary';
 }) {
   const t = useT();
   const [open, setOpen] = React.useState(false);
@@ -332,7 +337,14 @@ export function ConfirmAction({
   return (
     <Dialog open={open} onOpenChange={(o) => (setOpen(o), action.setError(null))}>
       <DialogTrigger asChild>
-        <Button type="button" size="sm" variant="ghost" aria-label={ariaLabel} disabled={disabled}>
+        <Button
+          type="button"
+          size="sm"
+          variant={triggerVariant}
+          className={triggerClassName}
+          aria-label={ariaLabel}
+          disabled={disabled}
+        >
           {label}
         </Button>
       </DialogTrigger>

@@ -5,7 +5,7 @@ import { RULE_KEYS } from '@thapsus/rules';
 import { authorizeSome } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
-import { backofficePool, requireStaff, staffAudit } from '../backoffice/auth';
+import { backofficePool, requireStaff, staffAudit, assertElevated } from '../backoffice/auth';
 import { ruleBook } from '../rules/routes';
 import { relevantJurisdictions } from './engine';
 import { tenantJurisdictionCodes } from './service';
@@ -138,6 +138,8 @@ export async function lawChangeRoutes(app: FastifyInstance) {
         throw new ApiError('validation', 'Unknown jurisdiction');
       await validateRefs(b);
       const status = b.status ?? 'published';
+      // publishing reaches every tenant's compliance feed: it needs an approved, time-boxed elevation
+      if (status === 'published') assertElevated(app.deps, req, 'rules_publish');
       const { rows } = await backofficePool(app).query<Row>(
         `INSERT INTO backoffice.law_changes (jurisdiction, effective_date, title, summary, what_to_do, rule_version_ids, pack_rule_refs, source_url, status, published_at, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $9 = 'published' THEN now() END, $10) RETURNING ${COLS}`,
@@ -201,6 +203,7 @@ export async function lawChangeRoutes(app: FastifyInstance) {
       const before = (await pool.query<Row>(`SELECT ${COLS} FROM backoffice.law_changes WHERE id = $1`, [id]))
         .rows[0];
       if (!before) throw new ApiError('notFound');
+      if ((b.status ?? before.status) === 'published') assertElevated(app.deps, req, 'rules_publish');
       const { rows } = await pool.query<Row>(
         `UPDATE backoffice.law_changes SET jurisdiction = $2, effective_date = $3, title = $4, summary = $5, what_to_do = $6, rule_version_ids = $7, pack_rule_refs = $8, source_url = $9, status = $10,
          published_at = CASE WHEN $10 = 'published' AND published_at IS NULL THEN now() ELSE published_at END WHERE id = $1 RETURNING ${COLS}`,

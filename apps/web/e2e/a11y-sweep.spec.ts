@@ -3,7 +3,7 @@ import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { apiCall, axeViolations, PASSWORD, totp } from './helpers';
-import { createStaff, staffSignIn } from './phase10-helpers';
+import { createStaff, elevateStaff, staffContext, staffSignIn } from './phase10-helpers';
 import { companyWithStaff, sql } from './time-helpers';
 
 /**
@@ -57,7 +57,7 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
   {
     name: 'home, me, people and help',
     match: (r) =>
-      /^\/app(\/(me|welcome|people|org-chart|tasks|approvals|notifications|security|help|support|ask)(\/|$)|$)/.test(
+      /^\/app(\/(me|welcome|people|org-chart|tasks|approvals|notifications|security|help|support|ask|contact-hr)(\/|$)|$)/.test(
         r,
       ),
     as: 'owner',
@@ -92,6 +92,14 @@ const AREAS: Array<{ name: string; match: (r: string) => boolean; as: 'public' |
 /** Fictional records the dynamic routes open; filled in by the setup below. */
 interface Fixture {
   employeeId: string;
+  /** Records the detail pages open (ADR-0161). */
+  taskId: string;
+  approvalId: string;
+  leaveId: string;
+  timesheetId: string;
+  rtwCheckId: string;
+  assetId: string;
+  payPeriodId: string;
   helpSlug: string;
   roleId: string;
   userId: string;
@@ -109,6 +117,15 @@ function concrete(route: string, f: Fixture): string {
     '/app/people/[id]': `/app/people/${f.employeeId}`,
     '/app/documents/[id]': `/app/documents/${f.documentId}`,
     '/app/payslips/[id]': `/app/payslips/${f.payslipId}`,
+    '/app/tasks/[id]': `/app/tasks/${f.taskId}`,
+    // the owner's own request to HR: the same record HR opens as a task
+    '/app/contact-hr/[id]': `/app/contact-hr/${f.taskId}`,
+    '/app/approvals/[id]': `/app/approvals/${f.approvalId}`,
+    '/app/time-off/[id]': `/app/time-off/${f.leaveId}`,
+    '/app/timesheets/[id]': `/app/timesheets/${f.timesheetId}`,
+    '/app/compliance/right-to-work/[id]': `/app/compliance/right-to-work/${f.rtwCheckId}`,
+    '/app/assets/[id]': `/app/assets/${f.assetId}`,
+    '/app/payroll/periods/[id]': `/app/payroll/periods/${f.payPeriodId}`,
     '/app/help/[slug]': `/app/help/${f.helpSlug}`,
     '/app/reports/ready/[id]': '/app/reports/ready/headcount',
     '/app/reports/runs/[id]': `/app/reports/runs/${f.runId}`,
@@ -191,7 +208,7 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
   const types = await apiCall<Array<{ id: string; key: string }>>(page.request, 'GET', '/v1/leave/types');
   const annual = types.find((t) => t.key === 'annual') ?? types[0]!;
   const day = futureWorkingDay();
-  await apiCall(page.request, 'POST', '/v1/leave/requests', {
+  const ownLeave = await apiCall<{ id: string }>(page.request, 'POST', '/v1/leave/requests', {
     leaveTypeId: annual.id,
     startDate: day,
     endDate: day,
@@ -287,6 +304,43 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
   expect(batch.status(), await batch.text()).toBe(201);
   const imported = (await batch.json()) as { id: string; items: Array<{ id: string }> };
   await apiCall(page.request, 'POST', `/v1/payslips/batches/${imported.id}/publish`);
+  // records for the detail pages (ADR-0161): a request to HR (a task), Ben's leave approval, last week's
+  // timesheet, a right-to-work check, an asset and a pay period
+  const hrRequest = await apiCall<{ id: string }>(page.request, 'POST', '/v1/hr-requests', {
+    subject: 'Fictional question about the uniform policy',
+    message: 'Fictional details only.',
+  });
+  const approvals = await apiCall<Array<{ id: string; subjectName: string | null }>>(
+    page.request,
+    'GET',
+    '/v1/approvals?view=mine',
+  );
+  const lastWeek = new Date(`${monday}T00:00:00Z`);
+  lastWeek.setUTCDate(lastWeek.getUTCDate() - 7);
+  const timesheet = await apiCall<{ id: string }>(
+    page.request,
+    'POST',
+    `/v1/timesheets/employees/${co.staff[0]}/weeks/${lastWeek.toISOString().slice(0, 10)}/submit`,
+  );
+  const rtw = await apiCall<{ id: string }>(page.request, 'POST', '/v1/compliance/right-to-work/checks', {
+    employeeId: co.staff[1],
+    checkMethod: 'manual_document_check',
+    listType: 'list_a',
+    checkedOn: monday,
+  });
+  const asset = await apiCall<{ id: string }>(page.request, 'POST', '/v1/assets', {
+    assetTag: 'FICT-A11Y-1',
+    name: 'Fictional laptop',
+    type: 'laptop',
+  });
+  const periodEnd = new Date(`${monday}T00:00:00Z`);
+  periodEnd.setUTCDate(periodEnd.getUTCDate() + 27);
+  const payPeriod = await apiCall<{ id: string }>(page.request, 'POST', '/v1/payroll/periods', {
+    name: 'Fictional four weeks',
+    frequency: 'four_weekly',
+    startDate: monday,
+    endDate: periodEnd.toISOString().slice(0, 10),
+  });
   const roles = await apiCall<Array<{ id: string }>>(page.request, 'GET', '/v1/roles');
   const users = (await apiCall<{ data: Array<{ id: string }> }>(page.request, 'GET', '/v1/users')).data;
   const session = await apiCall<{ tenantId: string; userId: string }>(
@@ -298,6 +352,13 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
   const helpHref = await page.locator('main a[href^="/app/help/"]').first().getAttribute('href');
   return {
     employeeId: co.staff[1]!,
+    taskId: hrRequest.id,
+    approvalId: approvals.find((a) => a.subjectName === 'Ben Fictional')!.id,
+    leaveId: ownLeave.id,
+    timesheetId: timesheet.id,
+    rtwCheckId: rtw.id,
+    assetId: asset.id,
+    payPeriodId: payPeriod.id,
     helpSlug: helpHref!.split('/').pop()!,
     roleId: roles[0]!.id,
     userId: users.find((u) => u.id !== session.userId)?.id ?? users[0]!.id,
@@ -339,11 +400,13 @@ async function keyboardProblems(page: Page, max = 400): Promise<string[]> {
       el.setAttribute('data-a11y-reached', '');
       el.setAttribute('data-a11y-last', '');
       const name = `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`;
-      // a grouped-list row link (ListItem) draws its focus ring on the whole row it stretches over
-      const ringed = el.hasAttribute('data-row-link') ? (el.closest('li') ?? el) : el;
-      const cs = getComputedStyle(ringed);
-      const indicator =
-        (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none';
+      const ring = (e: Element) => {
+        const cs = getComputedStyle(e);
+        return (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none';
+      };
+      // a grouped-list row (ListItem, ADR-0180) draws its stretched link's focus ring around the whole row
+      const row = el.hasAttribute('data-row-link') ? el.closest('li') : null;
+      const indicator = ring(el) || (!!row && ring(row));
       const r = el.getBoundingClientRect();
       const points = [
         [r.left + r.width / 2, r.top + r.height / 2],
@@ -625,7 +688,7 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
     const context = await browser.newContext({ viewport: DESKTOP });
     const page = await context.newPage();
     const problems: string[] = [];
-    for (const path of ['/signin', '/signup', '/find-workspace', '/backoffice/signin']) {
+    for (const path of ['/signin', '/signup', '/find-workspace', '/forgot-password', '/backoffice/signin']) {
       await page.goto(path);
       await expect(page.locator('h1').first()).toBeVisible();
       for (const p of await authenticationProblems(page)) problems.push(`${path}: ${p}`);
@@ -656,9 +719,14 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
     const page = ownerPage!;
     await page.goto('/app/approvals');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    const row = page.getByRole('row').filter({ hasText: 'Ben Fictional' }).first();
+    // the requests are a grouped list (ADR-0180): each row's box picks it for a bulk decision
+    const row = page
+      .getByTestId('approval-list')
+      .getByRole('listitem')
+      .filter({ hasText: 'Ben Fictional' })
+      .first();
     await expect(row).toBeVisible();
-    await tabTo(page, 'main tbody input[type="checkbox"]');
+    await tabTo(page, 'main [data-testid="approval-list"] input[type="checkbox"]');
     await page.keyboard.press('Space');
     await expect(page.getByRole('button', { name: 'Approve selected' })).toBeEnabled();
     await tabTo(page, 'main button', { text: 'Approve selected', back: true });
@@ -691,10 +759,18 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
       let close = async () => undefined as void;
       if (area.as === 'owner') page = ownerPage!;
       else {
-        const context = await browser.newContext({ viewport: DESKTOP });
+        // staff open the back office on its own host name (their passkeys are bound to it)
+        const context =
+          area.as === 'staff'
+            ? await staffContext(browser, { viewport: DESKTOP })
+            : await browser.newContext({ viewport: DESKTOP });
         page = await context.newPage();
         close = () => context.close();
-        if (area.as === 'staff') await staffSignIn(page, createStaff('super_admin'));
+        if (area.as === 'staff') {
+          await staffSignIn(page, createStaff('super_admin'));
+          // super admins hold no standing access: a second super admin approves a time-boxed elevation
+          await elevateStaff(browser, page, 'super_admin');
+        }
       }
       const report: string[] = [];
       try {

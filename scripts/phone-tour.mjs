@@ -6,10 +6,11 @@
 //   pnpm exec turbo run build --filter=@thapsus/web && node --import tsx scripts/phone-tour.mjs
 //
 // TOUR_OUT=<dir> (default .verify/phone-tour), TOUR_ROLES=employee,hr_admin, TOUR_SCHEMES=dark,light,
-// TOUR_PAGES=/app,/app/me (limit the pages). Needs the local Postgres and S3 mock (docker compose up).
+// TOUR_PAGES=/app,/app/me (limit the pages), TOUR_ALL=1 (every page without a dynamic segment). Needs the local Postgres and S3 mock (docker compose up).
 // Every name, email and password here is fictional and local-only.
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -32,7 +33,8 @@ const WEB = Number(process.env.TOUR_WEB_PORT ?? 3300);
 const API = Number(process.env.TOUR_API_PORT ?? 4300);
 const OUT = process.env.TOUR_OUT ?? '.verify/phone-tour';
 const base = `http://127.0.0.1:${WEB}`;
-const LOGIN_PASSWORD = 'Amber-Lantern-Orbit-9157';
+// A fresh password for each run, so none is kept in the repository (it only lives in the local tour database).
+const LOGIN_PASSWORD = `Tour-${randomBytes(12).toString('base64url')}-7q`;
 const ROLES = ['owner', 'hr_admin', 'payroll_admin', 'manager', 'employee'];
 const LOGINS = {
   workspace: 'kestrel',
@@ -49,6 +51,12 @@ const LOGINS = {
 const PAGES = {
   employee: [
     '/app',
+    '/app/time',
+    '/app/clock',
+    '/app/timesheets',
+    '/app/security',
+    '/app/welcome',
+    '/app/org-chart',
     '/app/me',
     '/app/me/details',
     '/app/notifications',
@@ -62,7 +70,7 @@ const PAGES = {
     '/app/rota',
     '/app/assets',
     '/app/help',
-    '/app/support',
+    '/app/contact-hr',
   ],
   manager: ['/app', '/app/people', '/app/approvals', '/app/time-off', '/app/rota', '/app/timesheets'],
   hr_admin: [
@@ -78,11 +86,38 @@ const PAGES = {
     '/app/documents',
     '/app/reports',
     '/app/settings',
+    '/app/settings/time-off',
     '/app/notifications',
+    '/app/imports',
+    '/app/privacy',
+    '/app/integrations',
+    '/app/automation',
   ],
   payroll_admin: ['/app', '/app/payroll', '/app/payslips'],
   owner: ['/app', '/app/billing', '/app/settings'],
 };
+/** TOUR_ALL=1: every page without a dynamic segment, for the given roles (app, marketing and auth pages). */
+function allPages() {
+  const out = [];
+  const walk = (dir, route) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory()) {
+        if (e.name === 'page.tsx') out.push(route || '/');
+        continue;
+      }
+      if (e.name.startsWith('[') || e.name.startsWith('_') || e.name.startsWith('%5F')) continue;
+      // route groups such as (marketing) add nothing to the path
+      walk(join(dir, e.name), e.name.startsWith('(') ? route : `${route}/${e.name}`);
+    }
+  };
+  for (const [dir, route] of [
+    ['apps/web/app/app', '/app'],
+    ['apps/web/app/(marketing)', ''],
+  ])
+    walk(dir, route);
+  return [...new Set(out)].sort();
+}
+if (process.env.TOUR_ALL) for (const r of ROLES) PAGES[r] = allPages();
 const roles = process.env.TOUR_ROLES ? process.env.TOUR_ROLES.split(',') : ['employee', 'hr_admin'];
 const schemes = process.env.TOUR_SCHEMES ? process.env.TOUR_SCHEMES.split(',') : ['dark', 'light'];
 const only = process.env.TOUR_PAGES?.split(',');
@@ -194,7 +229,7 @@ async function colleagueProfile(cookie) {
   const r = await fetch(`${base}/v1/employees?limit=5`, { headers: { cookie } });
   if (!r.ok) return null;
   const body = await r.json();
-  const list = Array.isArray(body) ? body : (body.data ?? body.items ?? body.employees ?? []);
+  const list = body.data ?? [];
   return list[1]?.id ? `/app/people/${list[1].id}` : null;
 }
 

@@ -22,12 +22,8 @@ const RULES = [
 const ALLOW = [
   // fictional test fixtures and local-only defaults, never used outside dev/test
   [/test\/|e2e\/|\.test\.ts$/, /Generic password assignment/],
-  // Docker-local Postgres role password shared by dev and the test suites (never used in AWS), and the phone
-  // tour's fictional sign-in password for the locally seeded staging organisation
-  [
-    /^scripts\/(dev-setup|lighthouse|phone-tour)\.mjs$|^packages\/db\/src\/testing\.ts$/,
-    /Generic password assignment/,
-  ],
+  // Docker-local Postgres role password shared by dev and the test suites (never used in AWS)
+  [/^scripts\/(dev-setup|lighthouse)\.mjs$|^packages\/db\/src\/testing\.ts$/, /Generic password assignment/],
 ];
 
 const findings = [];

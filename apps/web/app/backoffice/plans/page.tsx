@@ -19,7 +19,7 @@ import { money, parseDecimal } from '@thapsus/core/money';
 import { api, ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { PageTitle, selectClass } from '../ui';
+import { PageTitle, selectClass, useStaffApi } from '../ui';
 
 interface PlansResp {
   location: string;
@@ -69,6 +69,7 @@ interface TenantRow {
 /** Plans (read-only, from the billing config) and enterprise contracts (back-office records; ADR-0107). */
 export default function PlansPage() {
   const t = useT();
+  const call = useStaffApi();
   const locale = useLocale() as Locale;
   const toast = useToast();
   const plans = useApi<PlansResp>('/v1/backoffice/plans');
@@ -266,7 +267,7 @@ export default function PlansPage() {
                       onClick={() =>
                         window.confirm(t('backoffice.contracts.endConfirm')) &&
                         run(
-                          () => api(`/v1/backoffice/contracts/${k.id}/end`, { method: 'POST' }),
+                          () => call(`/v1/backoffice/contracts/${k.id}/end`, { method: 'POST' }),
                           t('backoffice.contracts.ended'),
                         )
                       }

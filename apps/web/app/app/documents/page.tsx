@@ -18,6 +18,7 @@ import {
   matches,
   PageIntro,
 } from '@/components/module-page';
+import { EntityLink } from '@/components/person-link';
 
 interface SigReq {
   id: string;
@@ -208,12 +209,10 @@ export default function DocumentsPage() {
                 <TD>
                   <span className="flex min-w-0 items-center gap-3">
                     <FileText aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-accent" />
-                    <IntentLink
-                      href={`/app/documents/${d.id}`}
-                      className="min-w-0 break-words text-callout text-accent no-underline hover:underline"
-                    >
+                    {/* the document's own page (the in-app viewer, ADR-0161) */}
+                    <EntityLink href={`/app/documents/${d.id}`} className="min-w-0 break-words text-callout">
                       {d.title}
-                    </IntentLink>
+                    </EntityLink>
                   </span>
                 </TD>
                 <TD>

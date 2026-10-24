@@ -1,4 +1,5 @@
 import { writeAudit, type Tx } from '@thapsus/db';
+import { targetHref, type LinkTarget } from '@thapsus/core/links';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 import { ApiError } from '../../http/errors';
 
@@ -99,7 +100,7 @@ async function openStep(
       title,
       subjectEmployeeId,
       assigneeUserId: user,
-      link: `/app/approvals`,
+      link: targetHref({ type: 'approval_request', id: requestId })!,
       dedupeKey: `appr:${requestId}:${index}:${user}`,
     });
   }
@@ -108,7 +109,7 @@ async function openStep(
     kind: 'approval.requested',
     titleKey: 'notify.approvalRequested',
     params: { title },
-    link: '/app/approvals',
+    target: { type: 'approval_request', id: requestId },
     dedupeKey: `appr:${requestId}:${index}`,
   });
 }
@@ -247,7 +248,7 @@ export async function decide(
         kind: 'approval.decided',
         titleKey: 'notify.approvalDecided',
         params: { decision: status },
-        link: '/app/approvals',
+        target: { type: 'approval_request', id: requestId },
         dedupeKey: `appr-done:${requestId}`,
       });
   }
@@ -295,7 +296,7 @@ export async function escalateOverdue(tx: Tx, now: Date): Promise<number> {
         title: s.name,
         subjectEmployeeId: s.subject_employee_id,
         assigneeUserId: u,
-        link: '/app/approvals',
+        link: targetHref({ type: 'approval_request', id: s.request_id })!,
         dedupeKey: `appr:${s.request_id}:${s.step_index}:${u}`,
       });
     await notify(tx, {
@@ -303,7 +304,7 @@ export async function escalateOverdue(tx: Tx, now: Date): Promise<number> {
       kind: 'approval.escalated',
       titleKey: 'notify.approvalEscalated',
       params: { title: s.name },
-      link: '/app/approvals',
+      target: { type: 'approval_request', id: s.request_id },
       dedupeKey: `esc:${s.id}`,
     });
   }
@@ -315,6 +316,7 @@ export interface ApprovalView {
   subject: string;
   status: string;
   policy: string;
+  subjectEmployeeId: string | null;
   subjectName: string | null;
   requestedAt: string;
   currentStep: number;
@@ -329,7 +331,7 @@ export async function listApprovals(
   limit = 500,
 ): Promise<ApprovalView[]> {
   const rows = await tx.query<Record<string, unknown>>(
-    `SELECT r.id, r.subject, r.status, p.name AS policy, e.display_name AS subject_name, r.created_at, r.current_step, r.payload
+    `SELECT r.id, r.subject, r.status, p.name AS policy, r.subject_employee_id, e.display_name AS subject_name, r.created_at, r.current_step, r.payload
        FROM app.approval_requests r JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
        LEFT JOIN app.employees e ON e.tenant_id = r.tenant_id AND e.id = r.subject_employee_id
       WHERE CASE $2
@@ -347,10 +349,134 @@ export async function listApprovals(
       subject: r.subject as string,
       status: r.status as string,
       policy: r.policy as string,
+      subjectEmployeeId: (r.subject_employee_id as string | null) ?? null,
       subjectName: r.subject_name as string | null,
       requestedAt: r.created_at as string,
       currentStep: r.current_step as number,
       payload,
     };
   });
+}
+
+/** The record an approval request is about, and the page that shows it (ADR-0160). */
+export function relatedTarget(
+  subject: string,
+  subjectEmployeeId: string | null,
+  payload: Record<string, unknown>,
+): LinkTarget | null {
+  const id = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : null);
+  if (subject === 'leave.request' && id('leaveRequestId'))
+    return { type: 'leave_request', id: id('leaveRequestId')! };
+  if (subject === 'timesheet' && id('timesheetId')) return { type: 'timesheet', id: id('timesheetId')! };
+  if ((subject === 'employee.change' || subject === 'employee.self_change') && subjectEmployeeId)
+    return { type: 'employee', id: subjectEmployeeId };
+  // a countersignature is reviewed and signed in the document viewer (ADR-0169)
+  if (subject === 'document.countersign' && id('documentId'))
+    return { type: 'document', id: id('documentId')! };
+  return null;
+}
+
+export interface ApprovalDetail extends ApprovalView {
+  requestedBy: { userId: string; name: string } | null;
+  decidedAt: string | null;
+  steps: Array<{
+    index: number;
+    status: string;
+    approvers: string[];
+    decidedByName: string | null;
+    decidedAt: string | null;
+    comment: string | null;
+    dueAt: string | null;
+  }>;
+  related: { type: string; id: string; href: string } | null;
+  /** The caller is an approver of the current step and did not make the request. */
+  canDecide: boolean;
+}
+
+/**
+ * One approval request with its steps, for the people involved: its approvers (any step), whoever made
+ * it, and those who manage approvals. Undefined when the caller may not see it.
+ */
+export async function approvalDetail(
+  tx: Tx,
+  id: string,
+  caller: { userId: string; manages: boolean },
+): Promise<ApprovalDetail | undefined> {
+  const r = await tx.maybe<{
+    id: string;
+    subject: string;
+    status: string;
+    policy: string;
+    subject_employee_id: string | null;
+    subject_name: string | null;
+    requested_by: string | null;
+    requester_name: string | null;
+    created_at: string;
+    decided_at: string | null;
+    current_step: number;
+    payload: Record<string, unknown>;
+  }>(
+    `SELECT r.id, r.subject, r.status, p.name AS policy, r.subject_employee_id, e.display_name AS subject_name, r.requested_by,
+            u.display_name AS requester_name, r.created_at, r.decided_at, r.current_step, r.payload
+       FROM app.approval_requests r JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
+       LEFT JOIN app.employees e ON e.tenant_id = r.tenant_id AND e.id = r.subject_employee_id
+       LEFT JOIN app.users u ON u.tenant_id = r.tenant_id AND u.id = r.requested_by
+      WHERE r.id = $1`,
+    [id],
+  );
+  if (!r) throw new ApiError('notFound');
+  const steps = await tx.query<{
+    step_index: number;
+    status: string;
+    approver_user_ids: string[];
+    approvers: string[] | null;
+    decided_by_name: string | null;
+    decided_at: string | null;
+    comment: string | null;
+    due_at: string | null;
+  }>(
+    `SELECT s.step_index, s.status, s.approver_user_ids, s.decided_at, s.comment, s.due_at, d.display_name AS decided_by_name,
+            (SELECT array_agg(a.display_name ORDER BY a.display_name) FROM app.users a WHERE a.tenant_id = s.tenant_id AND a.id = ANY(s.approver_user_ids)) AS approvers
+       FROM app.approval_steps s LEFT JOIN app.users d ON d.tenant_id = s.tenant_id AND d.id = s.decided_by
+      WHERE s.request_id = $1 ORDER BY s.step_index`,
+    [id],
+  );
+  // the person a request is about sees it only when they made it: a change HR proposes about someone
+  // (and its reason) stays with the approvers until it is decided
+  const approver = steps.some((s) => s.approver_user_ids.includes(caller.userId));
+  const involved = approver || r.requested_by === caller.userId;
+  if (!involved && !caller.manages) return undefined;
+  const { __steps: _s, ...payload } = r.payload;
+  void _s;
+  const current = steps.find((s) => s.step_index === r.current_step);
+  const related = relatedTarget(r.subject, r.subject_employee_id, payload);
+  const relatedHref = related ? targetHref(related) : null;
+  return {
+    id: r.id,
+    subject: r.subject,
+    status: r.status,
+    policy: r.policy,
+    subjectEmployeeId: r.subject_employee_id,
+    subjectName: r.subject_name,
+    requestedAt: r.created_at,
+    currentStep: r.current_step,
+    payload,
+    requestedBy: r.requested_by ? { userId: r.requested_by, name: r.requester_name ?? '' } : null,
+    decidedAt: r.decided_at,
+    steps: steps.map((s) => ({
+      index: s.step_index,
+      status: s.status,
+      approvers: s.approvers ?? [],
+      decidedByName: s.decided_by_name,
+      decidedAt: s.decided_at,
+      comment: s.comment,
+      dueAt: s.due_at,
+    })),
+    related: related && relatedHref ? { ...related, href: relatedHref } : null,
+    canDecide:
+      r.status === 'pending' &&
+      !!current &&
+      current.approver_user_ids.includes(caller.userId) &&
+      r.requested_by !== caller.userId,
+  };
 }

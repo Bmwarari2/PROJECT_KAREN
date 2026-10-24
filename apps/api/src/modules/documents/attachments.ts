@@ -352,7 +352,7 @@ export async function attachmentRoutes(app: FastifyInstance) {
               kind: 'document.shared',
               titleKey: 'notify.documentShared',
               params: { title },
-              link: `/app/documents/${id}`,
+              target: { type: 'document', id },
               dedupeKey: `shared:${id}`,
             });
         }

@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useParams } from 'next/navigation';
 import { History, Pencil, Send } from 'lucide-react';
 import {
   Badge,
@@ -14,6 +13,8 @@ import {
   EmptyState,
   Field,
   Input,
+  ListItem,
+  ListSection,
   Skeleton,
   Tabs,
   TabsContent,
@@ -29,10 +30,15 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
 import { Avatar } from '@/components/dashboard/parts';
+import { PersonLink } from '@/components/person-link';
 import { PageTitle, hasPermission, useSession } from '../../shell';
 import type { LeaveBalance } from '@/components/leave-balances';
 import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
 import { PersonDocuments } from '@/components/documents/person-documents';
+import { ComplianceTab } from './compliance-tab';
+
+/** Profile tabs a link can open (`?tab=`, ADR-0161; the keys are `PROFILE_TABS` in @thapsus/core/links). */
+type Tab = 'overview' | 'history' | 'documents' | 'time-off' | 'compliance';
 
 interface ProfileResponse {
   employee: Record<string, unknown> & { id: string; displayName?: string };
@@ -122,8 +128,6 @@ export default function EmployeePage() {
   const locale = useLocale();
   const toast = useToast();
   const { id } = useParams<{ id: string }>();
-  // ?tab=documents opens the Documents tab (links from right-to-work evidence and expiry reminders)
-  const openTab = useSearchParams().get('tab') === 'documents' ? 'documents' : 'overview';
   const [asOf, setAsOf] = React.useState<string>('');
   const { data, error, reload } = useApi<ProfileResponse>(
     `/v1/employees/${id}${asOf ? `?asOf=${asOf}` : ''}`,
@@ -140,6 +144,27 @@ export default function EmployeePage() {
   const [inviting, setInviting] = React.useState(false);
   const canInvite = hasPermission(session, 'users.invite');
   const balances = useApi<LeaveBalance[]>(`/v1/leave/balances/${id}`);
+  // the tab is part of the address, so a link can open the profile on it and the back button returns to it
+  const path = usePathname();
+  const search = useSearchParams();
+  const asked = (search.get('tab') ?? 'overview') as Tab;
+  const canCompliance = hasPermission(session, 'compliance.read');
+  const available: Record<Tab, boolean> = {
+    overview: true,
+    history: !!history.data,
+    documents: true,
+    'time-off': !!balances.data,
+    compliance: canCompliance,
+  };
+  // a tab that is not (yet) available shows the overview until it is
+  const tab: Tab = available[asked] ? asked : 'overview';
+  const selectTab = (v: string) => {
+    const q = new URLSearchParams(window.location.search);
+    if (v === 'overview') q.delete('tab');
+    else q.set('tab', v);
+    const qs = q.toString();
+    window.history.replaceState(null, '', `${path}${qs ? `?${qs}` : ''}`);
+  };
 
   if (error)
     return (
@@ -192,9 +217,7 @@ export default function EmployeePage() {
       key: 'manager',
       label: t('people.field.managerId'),
       value: manager ? (
-        <Link href={`/app/people/${manager.id}`} className="text-text hover:text-accent">
-          {manager.displayName}
-        </Link>
+        <PersonLink id={manager.id} name={manager.displayName} />
       ) : (
         t('people.profile.noManager')
       ),
@@ -332,13 +355,16 @@ export default function EmployeePage() {
         ) : null}
       </Card>
 
-      <Tabs defaultValue={openTab}>
+      <Tabs value={tab} onValueChange={selectTab}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <TabsList>
             <TabsTrigger value="overview">{t('people.tab.overview')}</TabsTrigger>
             {history.data ? <TabsTrigger value="history">{t('people.tab.history')}</TabsTrigger> : null}
             <TabsTrigger value="documents">{t('people.tab.documents')}</TabsTrigger>
             {balances.data ? <TabsTrigger value="time-off">{t('admin.balances.tab')}</TabsTrigger> : null}
+            {canCompliance ? (
+              <TabsTrigger value="compliance">{t('actionable.person.complianceTab')}</TabsTrigger>
+            ) : null}
           </TabsList>
           <label className="flex items-center gap-2 text-footnote text-text-secondary">
             {t('people.asOf')}
@@ -372,20 +398,17 @@ export default function EmployeePage() {
           </div>
         </TabsContent>
         <TabsContent value="history" className="pt-5">
-          <ol className="flex flex-col gap-3">
+          {/* grouped rows (ADR-0180): each job, newest first, with its dates under it */}
+          <ListSection>
             {(history.data?.job ?? []).map((j) => (
-              <li key={String(j.id)} className="flex gap-3 rounded-md border border-border p-3">
-                <History aria-hidden className="mt-0.5 h-5 w-5 stroke-[1.5] text-accent" />
-                <div>
-                  <p className="text-callout font-semibold">{String(j.job_title)}</p>
-                  <p className="text-footnote text-text-secondary">
-                    {formatDate(String(j.valid_from), locale)} –{' '}
-                    {j.valid_to ? formatDate(String(j.valid_to), locale) : t('people.ongoing')}
-                  </p>
-                </div>
-              </li>
+              <ListItem
+                key={String(j.id)}
+                leading={<History aria-hidden />}
+                title={String(j.job_title)}
+                subtitle={`${formatDate(String(j.valid_from), locale)} – ${j.valid_to ? formatDate(String(j.valid_to), locale) : t('people.ongoing')}`}
+              />
             ))}
-          </ol>
+          </ListSection>
         </TabsContent>
         {balances.data ? (
           <TabsContent value="time-off" className="pt-5">
@@ -396,6 +419,11 @@ export default function EmployeePage() {
               balances={balances.data}
               onChanged={balances.reload}
             />
+          </TabsContent>
+        ) : null}
+        {canCompliance ? (
+          <TabsContent value="compliance" className="pt-5">
+            {tab === 'compliance' ? <ComplianceTab employeeId={id} /> : null}
           </TabsContent>
         ) : null}
         <TabsContent value="documents" className="pt-5">

@@ -6,6 +6,7 @@ import { LifeBuoy, Mail, MessageSquare, Phone, Ticket } from 'lucide-react';
 import {
   Badge,
   Button,
+  buttonVariants,
   Card,
   CardTitle,
   EmptyState,
@@ -31,6 +32,7 @@ import {
   ListSearch,
   matches,
   PageIntro,
+  useInModule,
 } from '@/components/module-page';
 import { hasPermission, useSession } from '../shell';
 import { duration, selectClass, slaTone, type TicketSummary } from './ui';
@@ -52,7 +54,40 @@ const CHANNEL_ICON: Record<string, React.ReactNode> = {
   help_centre: <LifeBuoy aria-hidden className="h-4 w-4 stroke-[1.5]" />,
 };
 
+/**
+ * Support from Thapsus-HR is for the workspace's administrators (ADR-0163); everyone else asks their
+ * own HR team, so a direct visit here points them to Contact HR.
+ */
 export default function SupportPage() {
+  const t = useT();
+  const session = useSession();
+  // outside the Help module's tabs for these readers, so the message is the page's heading
+  const inModule = useInModule();
+  if (session && !hasPermission(session, 'support.ticket')) {
+    const hr = hasPermission(session, 'hr.contact');
+    return (
+      <EmptyState
+        level={inModule ? 2 : 1}
+        icon={<LifeBuoy aria-hidden />}
+        title={t('actionable.support.adminsOnly')}
+        body={hr ? t('actionable.support.askHr') : t('actionable.support.noHr')}
+        action={
+          hr ? (
+            <Link
+              href="/app/contact-hr"
+              className={`${buttonVariants({ variant: 'primary', size: 'md' })} no-underline`}
+            >
+              {t('actionable.hr.contact')}
+            </Link>
+          ) : undefined
+        }
+      />
+    );
+  }
+  return <SupportDesk />;
+}
+
+function SupportDesk() {
   const t = useT();
   const locale = useLocale() as Locale;
   const session = useSession();

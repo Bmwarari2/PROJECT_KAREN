@@ -1669,6 +1669,74 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - The first open of either menu can wait for one small chunk on a very slow connection; pointing at the button usually covers that time. A keyboard user who opens it waits for the same chunk, and the menu takes the focus when it opens.
 - When the platform ships Temporal natively everywhere we support, the import in `time.ts` is the one line to remove.
 
+## ADR-0160 — Notifications and tasks name what they are about, and open it (2026-10-24)
+
+**Context.** The product owner tested staging and reported that tasks in the inbox and most notifications could not be clicked, or opened a list rather than the thing they were about. Notifications stored a free-text `link` (usually a list page such as `/app/approvals`), tasks a `link` that was often `/app/tasks` (or `/app/absence`, a page that does not exist), and e-mails and web push used the same list links.
+
+**Decision.**
+
+- **One deep-link map.** `packages/core/src/links.ts` (`@thapsus/core/links`) maps a target type (approval request, task, leave request, employee, document, asset, asset assignment, right-to-work check, report run, support ticket, privacy request or incident, timesheet, pay period, payslip, law change, request to HR) and its id to the page that shows it. The API, the worker's e-mail and push delivery and the web app all use it.
+- **Notifications carry a target.** Migration 0021 adds `target_type` and `target_id` to `app.notifications` (nullable, expand only). `notify()` takes a `target` (or a function of the recipient, so each assignee of a workflow task is sent to their own task). Every notification call site passes one where a record exists. A stored `link` that refines the target's page (`/app/documents/<id>?sign=<request>`) is kept.
+- **The page is computed when read.** `GET /v1/me/notifications` returns `target` and `href`: the target's page, else the request or task an older notification's dedupe key names, else its stored link (only relative `/app` paths), else the list page for its kind. Older notifications on staging therefore open something sensible without a data migration. E-mails and web push link to the same `href`.
+- **Tasks report the page they are about** (`href` on `GET /v1/tasks`): approval tasks open the request, e-signature tasks the document (Agent B's viewer at `/app/documents/[id]`), a joiner's own onboarding steps the welcome page at the step (`#task-<id>`), compliance reminders the check or the person's compliance tab, and everything else its own page `/app/tasks/[id]` (new `GET /v1/tasks/:id`, visible to the assignee, the role queue and people who manage or read workflows for the person). Approval and signature tasks are closed by deciding or signing, so their pages offer the way there instead of "Done".
+- **The bell.** The top bar's bell opens a panel of the eight latest notifications as links (Radix Popover, our tokens, no animation library; the idea of EasyUI's notification bell and stack, MIT). Opening one marks it read. Its code is fetched on pointer enter or touch start and the stand-in button is swapped for it only on click, Enter or Space, never on focus alone (as ADR-0159), so it adds nothing to first load. Swapping on hover could replace the button between a press and its release and lose the click; the account menu now waits for activation in the same way.
+- **Approval requests have a page.** `GET /v1/approvals/:id` returns the request, its steps with approvers and decisions, the record it is about and whether the caller may decide. It is visible to the approvers of any step, the person who made the request and people who manage approvals; the person a change is about does not see a change someone else proposed until it is decided. The page decides with an optional comment.
+
+**Consequences.**
+
+- Every notification and task opens a page; a person-profile target the viewer may not open falls back to the list for its kind (ADR-0161).
+- Rota notifications open the rota at the shift's week (`/app/rota?week=`); workspace-level privacy notices (closure, exports, DPA, sub-processors) keep their page links, because there is no single record to open.
+- Integration tests: `apps/api/test/actionable.int.test.ts`; unit tests of the map: `packages/core/test/links.test.ts`.
+
+## ADR-0161 — A name opens the person, a row opens its record (2026-10-24)
+
+**Context.** Names on the right-to-work list, approvals, time off, the rota and other lists were plain text, and many list rows had no detail page. A link must also never lead somewhere the viewer may not go: a manager may open their team's profiles only, an employee only their own.
+
+**Decision.**
+
+- **`PersonLink`** (`apps/web/components/person-link.tsx`) renders a name (optionally with initials) as a link to `/app/people/[id]`, on a given tab where that helps, when the viewer may open that profile, and as text otherwise. The answer comes from **`POST /v1/people/visibility`**: the names on a page are asked about together (one request per tick, at most 200 ids; `lib/person-visibility.ts`). It applies the same scope as `GET /v1/employees/:id`, returns only the ids the caller may open (no personal data, so it is not audited), and answers `all: true` for callers who may open every profile so later names need no request. Global search and the notification links use it too.
+- **Profile tabs are in the address** (`?tab=overview|history|documents|time-off|compliance`). A new **Compliance** tab (for `compliance.read`) shows the person's right-to-work checks, Form I-9 and matrix requirements from **`GET /v1/compliance/people/:employeeId`**, which is loaded only when the tab opens and audited as a sensitive view.
+- **Detail pages from read endpoints**, each with a breadcrumb trail (the idea of EasyUI's breadcrumb, our tokens): tasks, approval requests, leave requests (new `GET /v1/leave/requests/:id`; sensitive kinds show as "away" without absence access), timesheets (new `GET /v1/timesheets/:id`), right-to-work checks (the existing endpoint now returns the person and check facts, and leaves the vault details out instead of failing for viewers without immigration access), assets and pay periods. Document rows link to Agent B's `/app/documents/[id]`.
+- **Rows.** In tables, the record's name is the link; on phones (ADR-0180) the title link covers the row (`ROW_LINK`), and other links in the row sit above it. The people directory, compliance lists, tasks, approvals, notifications, the equipment list and the onboarding checklist follow the phone row rules of ADR-0180.
+- **Home.** Every tile, chart segment and list item opens what is behind it: one pending request or task opens itself; joiners open the directory filtered by start month, employment-type slices by type and department bars by department. `GET /v1/employees` gains `startFrom`/`startTo` and `employmentType` filters; the type filter is honoured only for callers who may read employment types for everyone, so filtering never reveals a field the caller cannot read.
+- **Reports** that list people return `rowEmployeeIds`, so the name column links to profiles.
+
+**Consequences.**
+
+- One small extra request on pages that name people, answered from memory for the rest of the session.
+- Not built: an audit-event viewer (there is no audit list screen to link from) and import detail pages (imports have no list of past runs).
+- e2e: `apps/web/e2e/actionable.spec.ts` signs in as each built-in role and follows the links; the a11y sweep covers every new page.
+
+## ADR-0162 — Help articles are for the readers who can use them (2026-10-24)
+
+**Context.** The product owner asked for help articles to be limited to roles: employees saw articles about billing, adding people and support access.
+
+**Decision.** Each article in `packages/core/src/help/articles.json` has an `audience`: the permissions a reader needs (any one of them); an empty list means everyone signed in. `validateHelpArticles` checks every entry against the access catalogue. `helpArticle`, `helpArticles`, `articlesForContext` and `searchHelp` take the reader's permission test, and the help API, the help centre, article pages (404 when not allowed), global search and the contextual help link all pass it. A contextual link on a page with no article for the reader falls back to the closest parent path with one. Five articles for everyone in self-service were added: payslips, signing documents, updating your details, notifications and asking HR.
+
+**Consequences.** Without a session the help pages show only the articles for everyone. Changing an article's audience is a content change like any other (bump its version).
+
+## ADR-0163 — Employees and managers contact their own HR team; admins contact Thapsus-HR support (2026-10-24)
+
+**Context.** Every role could raise a ticket with Thapsus-HR (the vendor) through `support.ticket` in the self-service permissions. Employees and managers should go to their own HR team; only the customer's administrators should contact the vendor.
+
+**Decision.**
+
+- `support.ticket` leaves `SELF_SERVICE`; the owner (`*`), HR admins (`support.*`), entity HR admins and payroll admins keep it, as do custom roles that are granted it.
+- A new permission **`hr.contact`** (area "Requests to HR" in the access catalogue) is given to the built-in employee and manager roles. Migration 0021 updates existing tenants' built-in role rows the same way (custom roles are untouched).
+- **Contact HR** (`/app/contact-hr`, a tab of Help for those with `hr.contact` and without `support.ticket`): `POST /v1/hr-requests` files a task with source `hr_request` (the task source check gains the value) in the HR admins' queue, about the person who asked, and notifies the HR admins (or the owners when there are none) with the task as the target. The message is kept in the task's description and never put into a notification or e-mail. `GET /v1/hr-requests` lists the caller's own requests with their status, and each opens its own page (`/app/contact-hr/[id]`, `GET /v1/hr-requests/:id`: what they asked, its status and who closed it; anyone else's request reads as missing). When HR marks one done the person is notified with that page as the target.
+- A direct visit to `/app/support` by someone without `support.ticket` says that support is for the workspace's administrators and points to Contact HR.
+- The help centre's "Contact support" action and "Still stuck?" link go to Contact HR for these readers; the role tests in `apps/web/test/workspace.test.ts` pin who sees which.
+
+**Consequences.** Existing support tickets raised by employees stay readable by their workspace admins. The staging seed gives the employee login one answered and one waiting request.
+
+## ADR-0164 — Row links that also do something (2026-10-24)
+
+**Context.** `ListItem` (ADR-0180) renders its own link, but a notification row must also mark the notification read when it is followed, and a task or approval row names a person who should open their profile.
+
+**Decision.** `RowLink` (`apps/web/components/row-link.tsx`) is the `linkAs` of such rows; the list provides `RowLinkContext` with what to do when a row's link is followed (the notifications page and the bell mark what was opened as read). Links inside a row's subtitle (a `PersonLink`) carry `relative z-10` so they stay above the row's stretched link and keep their own target.
+
+**Consequences.** Every row stays one tap target with a real link inside for keyboard and screen-reader users, while names in it remain separately reachable.
+
 ## ADR-0165 — HR attaches documents to a person; expiry reminders come from settings (2026-10-23)
 
 **Context.** HR had no way to keep a person's right-to-work evidence, driving licence, contract, qualifications or background checks with their record, or to be told before one runs out. Uploads are an attack surface (ASVS V5/V12): the file name and the declared type are both under the uploader's control.
@@ -1726,7 +1794,7 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
   - **Download:** the provider's PDF, or a PDF of the same statement when there is none (`/v1/payslips/:id/pdf`).
   - **Audit:** every view and download is audited as sensitive.
 - **The sample payroll provider** (`cli/staging/sample-payroll-provider.ts`) is the only source of staging payslips. It is a fixture: its deductions are hand-written, illustrative figures per gross-pay band, never derived from a tax rule. Gross pay is the fictional person's contracted pay. Every statement is `illustrative`, every batch `sample`, and the app shows a "Sample data" marker and banner with the provider's name.
-- **Months are formatted in the reader's locale.** Catalogue templates gain a `{name:month}` placeholder (`interpolate` in `@thapsus/core/i18n`), which formats a stored calendar date as month and year in the reader's locale. Notifications store the period start date, not a label, and now read "Your payslip for August 2026 is ready".
+- **Months are formatted in the reader's locale.** Catalogue templates gain a `{name:month}` placeholder (`interpolate` in `@thapsus/core/i18n`), which formats a stored calendar date as month and year in the reader's locale. Notifications store the period start date, not a label, and now read "Your payslip for August 2026 is ready". They target the payslip, whose own page (`@thapsus/core/links`) is `/app/payslips/<id>`.
 
 **Consequences.**
 
@@ -1771,7 +1839,7 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 - **Where it is set.** Templates carry `requires_countersign`, and each signature request keeps its own copy of the setting. A new template defaults to on for the contract, offer and policy categories and off otherwise; HR can set it when creating the template, and override it per document when sending (`requireCountersign`).
 - **Routing.** When the person signs a document that needs it, the request becomes `approval_status = 'pending'` and an approval request with subject `document.countersign` is raised through the approvals service. The default chain is created on first use: HR admins, or the owner when there are none; nobody approves their own document, and the chain escalates to the owner after 72 hours. A customer names an authorised signatory by editing that chain, like any other.
-- **The approver's view.** The approver reviews the document in the same viewer. They either countersign with the same e-signature method, or return it with a reason, and the person then signs again.
+- **The approver's view.** The approval's own page (ADR-0160) offers "Open the document to countersign". The approver reviews the document in the same viewer. They either countersign with the same e-signature method, or return it with a reason, and the person then signs again.
 - **Completion.** Countersigning appends a second certificate to the copy the person signed, so the completed copy records both signatures with their timestamps and hashes. The request is complete (`completed_at`) only then, and the person is notified. A return notifies them too, and the viewer shows the reason. Every step is audited (`document.signed`, `document.countersigned`, `document.returned`).
 - **Migration 0022** adds the countersign columns to `app.signature_requests` and `app.document_templates` (expand only). It backfills `completed_at` for signatures made before countersignatures existed, lifting forced RLS for the migrator inside the migration's transaction only.
 
@@ -1780,6 +1848,79 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - A contract shows as awaiting approval in the person's documents until it is countersigned.
 - Approver changes are approval-chain configuration, with no code change.
 - The staging seed has one document in each state: awaiting the employee, awaiting approval, and completed.
+
+## ADR-0170 — Two-step verification for everyone in new workspaces, versioned sign-in defaults, and shorter admin sessions (2026-10-24)
+
+**Context.** The approved hardening plan (docs/SECURITY_HARDENING.md 2.1.2, 2.1.5) asks for a tenant setting "require two-step verification for everyone", on by default for new workspaces, closing the accepted risk ASVS V6.3.3. Existing workspaces must keep their behaviour. The sign-in policy lives in the `app.tenants.security` JSON, filled from code defaults, so changing a default would silently change every existing workspace. A data migration cannot fix that reliably: with forced row level security, a managed-Postgres migrator (Cloud SQL, RDS) sees no tenant rows, so an `UPDATE` would quietly change nothing. Admin sessions used the workspace's limits (30 idle minutes and 12 hours by default). The plan also asks admins to re-authenticate when their network (ASN) changes.
+
+**Decision.**
+
+- **Versioned defaults.** Migration 0024 adds `app.tenants.security_defaults_version` with `DEFAULT 1` (every existing row gets 1 without a rewrite) and then sets the column default to 2. Version 1 is the old behaviour (two-step verification for admins only, Trust IdP MFA on); version 2 is the new one (everyone, Trust IdP MFA off). `securityFrom()` merges the explicit JSON choices over the defaults of the row's version. It is DDL only, so it behaves the same for every migrator.
+- **Every creation path sets it.** Sign-up, the provisioning CLI and the staging seed write `{ requireMfaForEveryone: true, trustIdpMfa: false }` and version 2 explicitly; sandboxes copy the source's version. The load-test tenant (`synth-enterprise`) turns it off, because its synthetic employees sign in with a password only.
+- **Enforcement reuses the enrolment-at-sign-in flow.** `mfaGate` asks for enrolment when the person is an admin or the workspace requires everyone; every sign-in route returns `mfaEnrollmentRequired` from one helper, and the web shell uses the session's new `mustUseMfa`. Turning the setting off (and turning Trust IdP MFA on) needs a recent re-authentication.
+- **Test fixtures.** The API `signup()` and e2e `signUpAndEnrol()` helpers turn the setting off unless asked not to, so the suites for other modules keep signing invited employees in with a link or password only. The identity suites, the staging seed test, `password-reset.spec.ts` and `settings-security.spec.ts` run with the real default and prove it.
+- **Admin sessions** last at most 15 idle minutes and 8 hours, whatever the workspace allows (`sessionLimits`); someone who becomes an admin mid-session gets the shorter limits at the next request.
+- **Network change.** No cell has a trustworthy ASN signal today: the AWS ALB and Google Cloud Run front ends do not add one, and an in-region ASN database would be a new licence and data source. The API is ready for one: `CLIENT_ASN_HEADER` names a header set (and overwritten) by a trusted proxy, such as CloudFront's `CloudFront-Viewer-ASN`. With it, an admin session whose ASN changes is refused with `reauthenticationRequired` (reason `networkChanged`) until `POST /v1/auth/reauth`, and an `auth.session_network_changed` event is emitted. Without it, nothing changes.
+
+**Consequences.** New customers' employees set up an authenticator app or a passkey at their first sign-in; the frontline-worker trade-off recorded in SECURITY.md now applies only where an admin chooses it. Existing workspaces are untouched until an admin turns the setting on. ASVS V6.3.3 is met for new workspaces. The ASN rule stays inactive until a proxy with the signal sits in front of a cell (HUMAN_TODO when the domain and CDN decision are made).
+
+## ADR-0171 — Forgotten passwords, admin-sent reset links, and purpose-scoped emailed links (2026-10-24)
+
+**Context.** The product owner asked "who is able to reset passwords and such for people". Nobody could reset another person's password, and someone who forgot theirs could sign in with an emailed link but then could not set a new one, because changing a password demanded the current one. The plan also asks for uniform responses and timing on every authentication path (2.1.7) and for URL tokens to be shortened and scoped (2.3.1). Sign-in links and invitations shared one table and one token type, and invitations lasted a week.
+
+**Decision.**
+
+- **Forgot password.** `POST /v1/auth/password-reset` always answers `202` with an empty body, no sooner than 300 ms after the request arrived, and sends the email without waiting for it, so neither the answer nor its timing shows whether the account exists. It is throttled per account (3), per IP (20) and per workspace (the shared email-link budget) in 15 minutes. The link holds a 256-bit token stored as a SHA-256 hash, works once, lasts 30 minutes, and only the newest one works.
+- **Using it.** `POST /v1/auth/password-reset/complete` applies the password policy (a refused password keeps the link usable), stores the new password, ends every session, clears a lockout, writes `auth.password_reset_completed` and emails the person. It never signs anyone in and never touches second factors, so whoever has one uses it at the next sign-in (ASVS V6.4.3).
+- **Admin-sent links.** `POST /v1/users/:id/password-reset` follows the rule of the existing two-step reset, now one function (`assertAccountAuthority`): company-wide `settings.manage`, company-wide grants covering every permission the person holds, a recent re-authentication, never yourself. The admin never sees or sets the password; the link lasts 24 hours (the person may not be at their desk); the action is audited and the person emailed. The same rule unlinks a replaced SSO identity.
+- **Setting a password after an emailed-link sign-in.** Within the 10-minute re-authentication window, a session that signed in with an emailed link may set a new password without the current one. ASVS reasoning: V6.2.3 asks for the current password so that a hijacked session cannot change it; here the session's sign-in itself was a fresh, single-use, 10-minute proof of the mailbox (the same proof a reset link gives, V6.4.3), the second-factor gate already applied to that session, the window bounds the exposure exactly as for adding a first password (V7.5.1), and the change ends every other session and emails the person (V7.4.3). Outside the window the person re-authenticates first; a password sign-in still needs the current password.
+- **Scoped, shorter links.** `app.magic_links.purpose` (`sign_in`, `invitation`, `password_reset`): only sign-in links and invitations sign someone in, and only reset links reset, and reset tokens have their own prefix (`r_`). Invitations last 3 days instead of 7. The reset and enrolment pages remove the token from the address bar at once; the staff enrolment token travels in the URL fragment, which never reaches a server log.
+- **UI.** "Forgot your password?" on the sign-in page; forgot-password and reset pages with one large title and one primary action; the profile's sign-in controls as a grouped list (ADR-0180) with who-can help text; a help-centre article "Who can reset passwords and two-step verification".
+
+**Consequences.** Everyone can recover a forgotten password without help, and admins can help without ever handling a password. Workspace slugs remain discoverable through sign-in (as they are through "Find my workspace"); account existence is not. Emailed links still work on another device (V6.6.2 stays a recorded gap).
+
+## ADR-0172 — SSO identity binding and IdP-asserted MFA, browser-bound SAML, per-account and per-workspace throttles, auth security events, and SSRF-safe automation (2026-10-24)
+
+**Context.** Accepted risks in SECURITY.md: SSO linked people by email only (V6.8.1, V10.5.2); "Trust IdP MFA" was on by default and counted every SSO sign-in as two-step (V6.8.4); the SAML response was not bound to the browser that started the sign-in; throttles were per IP and per account only, which residential-proxy credential stuffing avoids (plan 2.1.6); automation webhooks and the `http` integration checked the host name without resolving it (V1.3.6). The monitoring half of the plan (another agent) needs security events at the right places.
+
+**Decision.**
+
+- **Binding.** `app.sso_identities` links a person to (connection, issuer, subject) at their first SSO sign-in through a connection; later sign-ins are matched on that triple. If the IdP sends a linked person's email with another subject, the sign-in is refused (`ssoSubjectChanged`), audited and emitted as a high-severity `auth.sso_subject_mismatch`. SAML uses the assertion's issuer and NameID; transient NameIDs are not bound. An admin who may reset the person's sign-in (ADR-0171) unlinks them when the IdP genuinely replaced the account.
+- **IdP MFA.** A sign-in counts as two-step only when the workspace trusts its IdP (off by default, ADR-0170) and the IdP asserts more than one factor: OIDC `amr` with `mfa`, `hwk` or `sc`, or a knowledge factor with a possession or biometric one (RFC 8176), or an `acr` / SAML AuthnContextClassRef in a reviewed list of multi-factor values. No signal means no, and the person uses their own factor (the documented fallback of V6.8.4).
+- **SAML browser binding without SameSite=None.** The IdP posts the assertion cross-site, where a `SameSite=Lax` cookie is not sent. So `/v1/auth/sso/start` sets the same short-lived binding cookie as OIDC; the ACS validates the signed assertion (SHA-2 only, replay cache) and keeps the verified result for 2 minutes, then redirects (303) to `/v1/auth/sso/saml/finish`, a same-site top-level GET that does carry the cookie. Only that browser can finish; the hand-over works once and is emptied afterwards; abandoned ones are deleted.
+- **Throttles.** Per account and per IP as before, plus per workspace: a failure budget for password sign-ins (larger of 100 and 5% of the workspace's active people per 15 minutes) and for authenticator codes (50 or 2%), and a request budget for emailed links (100 or 2%), read with a non-incrementing `peek` so successful sign-ins never use it. Refusals are `429` with `Retry-After`, as before; account lockout is unchanged. Authenticator codes are also limited per IP. A malicious lockout of a whole workspace's password sign-ins is possible for one window; SSO, passkeys and existing sessions are unaffected, and the event is high severity so it is seen.
+- **Security events.** `lib/security-events.ts`: typed `auth.*` and `staff.*` events (failures, lockouts, throttles, MFA failures and resets, password resets, SSO binding, network change, staff sign-in, enrolment and elevation) written as structured log lines and handed to in-process subscribers (`onSecurityEvent`), the hook for the detection pipeline. They carry ids and keyed hashes (HMAC per cell) of the client address and of a submitted account name, never the address, email or token.
+- **SSRF.** Automation webhooks and the `http` integration send through `postOutbound` (https only, DNS resolved and every address checked at connect time, private, loopback and metadata ranges refused, no redirects), with the cell's outbound policy. `deps.outboundPost` exists only as a test seam; `depsFromEnv` never sets it.
+
+**Consequences.** ASVS V1.3.6, V6.8.1, V6.8.4 and V10.5.2 are met. SAML now costs one extra redirect. IdPs that never send `amr`/`acr` (Google Workspace OIDC, many SAML set-ups) no longer count as two-step: their users set up a factor in Thapsus-HR, which is the safe reading. The detection rules, alerts and dashboard consume the events later.
+
+## ADR-0173 — Staff sign in only with passkeys or security keys, just-in-time elevation, and short staff sessions (2026-10-24)
+
+**Context.** Plan 2.2.1, 2.2.3 and 2.2.5: staff sign in with phishing-resistant keys only (closing V6.4.1, the never-changed generated staff password), hold no standing access to super-admin actions, rule publishing or the use of a customer's support grant, and have 15-minute idle and 4-hour absolute sessions with re-authentication before destructive actions. The bootstrap must be safe, and `e2e/backoffice.spec.ts` must keep working without a test-only bypass.
+
+**Decision.**
+
+- **WebAuthn only.** `backoffice.staff_passkeys` holds each staff member's keys (user verification required, discoverable credentials); the password and TOTP sign-in routes are removed, and their columns stay unused until a contract migration. The relying party is the back office's own address (`BACKOFFICE_BASE_URL`, the app's until a separate host exists).
+- **Bootstrap.** Only the operator CLIs issue enrolment links: `create-staff` (new account) and `staff-enrolment-link [--reset-keys]` (another key, or a lost one). A link's token is hashed, single-use, valid 2 hours, the newest only, and carried in the URL fragment. Using it registers the key and starts a session. Runbook: `docs/runbooks/staff-access.md`.
+- **Elevations.** `backoffice.staff_elevations`: a staff member asks for a scope (`super_admin`, `rules_publish`, `support_grant`), with a reason (10–500 characters), a duration (up to 4 hours) and optionally one workspace. Another staff member who may hold the scope approves it after re-authenticating; nobody approves their own (also a database check). A super admin needs an active `super_admin` elevation for every route except sign-in, the overview and the elevation routes; rule versions and published law changes need `rules_publish`; routes that use a customer's support grant need `support_grant` (scoped to that workspace when the elevation names one). Every step is in `backoffice.staff_audit` and emitted as `staff.elevation_*`.
+- **Sessions.** 15 idle minutes and 4 hours. Destructive actions (contract end, feature flags and API settings, database moves, notifying breach controllers, approving elevations, support-grant writes) need a key assertion within 5 minutes; the back-office UI retries the action after the browser's passkey prompt.
+- **Tests.** API tests register a software authenticator through the real enrolment routes; e2e uses Chrome's virtual WebAuthn authenticator (DevTools Protocol). In e2e the back office is opened as `localhost`, because WebAuthn relying parties must be domains, not IP addresses. No route or flag exists that skips the ceremony in any environment.
+
+**Consequences.** A stolen staff password or code no longer exists to steal. One super admin alone cannot use super-admin actions; every cell needs at least two staff who can approve each other (HUMAN_TODO 5.1). Hardware-only keys need attestation, which is not checked yet: platform passkeys (Face ID, Windows Hello) are accepted, and HUMAN_TODO 5.1 suggests FIDO2 keys. The plan's Verified Access front door (2.2.2) is still a P1 owner step.
+
+## ADR-0174 — A staging job invites the first staff member to the back office (2026-10-24)
+
+**Context.** The product owner must reach the back office of the Google Cloud staging cell (ADR-0157), and staff can now only be bootstrapped by an operator CLI with database access (ADR-0173), which nobody runs on staging. The repository is public, so no real address may be committed or printed.
+
+**Decision.**
+
+- **Job.** `thapsus-stg-<cell>-staff-invite` (infra/gcp/staging/run.tf) mirrors the seed job: the API image with its own bundle (`node dist/staff-invite.mjs`), the jobs service account, the Cloud SQL socket, and only two secrets: the back-office database credentials and `staff-invitee`. It creates a passkey-only `super_admin` account and writes the one-time enrolment link to a new Secret Manager secret `thapsus-stg-<cell>-staff-invite` (London-only replica; the jobs account may add and read versions; no workload reads it as an environment value). It logs only the outcome and the staff id.
+- **Invitee.** The GitHub repository variables `GCP_STAFF_OWNER_EMAIL` and `GCP_STAFF_OWNER_NAME` become sensitive OpenTofu variables (never shown in the public plan logs), stored in the `staff-invitee` secret, so the address is not visible in the job's configuration either.
+- **When it runs.** The deploy runs it after the seed when the email variable is set and the job has never succeeded; the job itself does nothing while the back office has any staff. A manual run with `staff_invite` ticked sets `STAFF_INVITE_MODE=reissue`: a new link for the configured person (creating the account if missing), keeping their keys.
+- **Secrets before the job.** The deploy's targeted first step includes the job, and the offline `first-deploy` test checks that every secret it reads has a version in that step (the PR #21 failure).
+- **Writing the secret** uses the job's identity through the metadata server and the Secret Manager REST API; no new client library.
+
+**Consequences.** The owner sets two variables, re-runs the deploy, reads the secret with `gcloud` and registers Face ID or Touch ID on their iPhone (HUMAN_TODO 9.8). Inviting a second staff member (to approve elevations) is the same with other values. Old link versions stay in the secret but expire after 2 hours; only the newest works.
 
 ## ADR-0180 — The app follows phone-app conventions: grouped lists, large titles, a light translucent bar and a bottom tab bar (2026-10-24)
 

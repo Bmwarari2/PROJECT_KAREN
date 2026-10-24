@@ -7,6 +7,7 @@ import { deadlineColumns, resolveSubject } from '../../../modules/privacy/dsr';
 import { insertRows, seedUuid, type SeedCtx } from '../context';
 import { currentPay } from '../plan';
 import { backdateApproval } from './leave';
+import { raiseHrRequest } from '../../../modules/workflows/hr-requests';
 
 /**
  * Approvals that need a decision from the admin logins, saved and scheduled reports, and privacy operations
@@ -87,6 +88,41 @@ export async function seedApprovalsReportsPrivacy(ctx: SeedCtx) {
     },
   );
   if (selfChange) await backdateApproval(ctx, selfChange, `${addDays(anchor, -1)}T20:05:00Z`, null);
+
+  // ---- Contact HR (ADR-0163): the employee login asked HR two things; one is answered, one is waiting ----
+  const empId = ids.employee[emp.idx]!;
+  const answered = await raiseHrRequest(
+    tx,
+    empId,
+    'Can I carry over holiday into next year?',
+    'I have three days left and a family trip planned for January. Fictional request for the staging workspace.',
+    ids.user.employee,
+  );
+  await tx.exec(
+    `UPDATE app.tasks SET created_at = $2, status = 'done', completed_at = $3, completed_by = $4 WHERE id = $1`,
+    [answered, `${addDays(anchor, -12)}T10:15:00Z`, `${addDays(anchor, -11)}T09:30:00Z`, ids.user.hr_admin],
+  );
+  await tx.exec(`UPDATE app.notifications SET created_at = $2, read_at = $3 WHERE dedupe_key = $1`, [
+    `hr-request:${answered}`,
+    `${addDays(anchor, -12)}T10:15:00Z`,
+    `${addDays(anchor, -11)}T09:25:00Z`,
+  ]);
+  const waiting = await raiseHrRequest(
+    tx,
+    empId,
+    'Update to my bank details',
+    'I have moved bank and need to give payroll my new account. Who should I send it to? Fictional request.',
+    ids.user.employee,
+  );
+  await tx.exec('UPDATE app.tasks SET created_at = $2 WHERE id = $1', [
+    waiting,
+    `${addDays(anchor, -1)}T16:40:00Z`,
+  ]);
+  await tx.exec('UPDATE app.notifications SET created_at = $2 WHERE dedupe_key = $1', [
+    `hr-request:${waiting}`,
+    `${addDays(anchor, -1)}T16:40:00Z`,
+  ]);
+  ctx.counts.hrRequests = 2;
 
   // ---- reports ------------------------------------------------------------------------------------------
   const saved = [

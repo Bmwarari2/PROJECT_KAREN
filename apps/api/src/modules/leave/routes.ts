@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { matchesMagic } from '../../lib/file-types';
 import multipart from '@fastify/multipart';
 import { Type } from 'typebox';
-import { can } from '@thapsus/core/permissions';
+import { can, canSome } from '@thapsus/core/permissions';
+import { personHref } from '@thapsus/core/links';
 import {
   addDays,
   addMonths,
@@ -883,6 +884,111 @@ export async function leaveRoutes(app: FastifyInstance) {
     },
   );
 
+  app.get(
+    '/v1/leave/requests/:id',
+    {
+      schema: {
+        tags: ['leave'],
+        summary:
+          'One leave request (ADR-0160): the person, dates, amount, status and who asked. Sensitive kinds show as "away" unless the caller may read absence detail.',
+        params: Type.Object({ id: Uuid }),
+        response: {
+          200: Type.Object({
+            ...LeaveRequest.properties,
+            leaveTypeName: Nullable(Type.Record(Type.String(), Type.String())),
+            startHalf: Nullable(Type.String()),
+            endHalf: Nullable(Type.String()),
+            requestedByName: Nullable(Type.String()),
+            createdAt: Type.String(),
+            decidedAt: Nullable(Type.String()),
+            approvalRequestId: Nullable(Uuid),
+            canCancel: Type.Boolean(),
+          }),
+          403: Problem,
+          404: Problem,
+        },
+      },
+    },
+    async (req) => {
+      const auth = requireAuth(req);
+      const { id } = req.params as { id: string };
+      return app.tenantTx(
+        req,
+        async (tx) => {
+          const r = await tx.maybe<{
+            id: string;
+            employee_id: string;
+            display_name: string | null;
+            key: string;
+            name: Record<string, string>;
+            category: string;
+            start_date: string;
+            end_date: string;
+            start_half: string | null;
+            end_half: string | null;
+            amount_days: string;
+            amount_hours: string;
+            status: string;
+            note: string | null;
+            requested_by_name: string | null;
+            created_at: string;
+            decided_at: string | null;
+            approval_request_id: string | null;
+          }>(
+            `SELECT l.*, e.display_name, t.key, t.name, t.category, u.display_name AS requested_by_name
+               FROM app.leave_requests l JOIN app.employees e ON e.tenant_id = l.tenant_id AND e.id = l.employee_id
+               JOIN app.leave_types t ON t.tenant_id = l.tenant_id AND t.id = l.leave_type_id
+               LEFT JOIN app.users u ON u.tenant_id = l.tenant_id AND u.id = l.requested_by
+              WHERE l.id = $1`,
+            [id],
+          );
+          if (!r) throw new ApiError('notFound');
+          if (!(await canActOn(tx, auth, r.employee_id, 'leave.read'))) throw new ApiError('forbidden');
+          const own = r.employee_id === auth.principal.employeeId;
+          const target = own ? null : await loadTarget(tx, r.employee_id);
+          const hide =
+            SENSITIVE_CATEGORIES.has(r.category) && !own && !can(auth.principal, 'absence.read', target!);
+          // the approval request is linked only for those who may open it (its approvers, whoever asked, HR)
+          const approvalVisible =
+            !!r.approval_request_id &&
+            (canSome(auth.principal, 'approvals.manage') ||
+              !!(await tx.maybe(
+                `SELECT 1 FROM app.approval_requests a WHERE a.id = $1 AND (a.requested_by = $2
+                   OR EXISTS (SELECT 1 FROM app.approval_steps s WHERE s.request_id = a.id AND $2 = ANY(s.approver_user_ids)))`,
+                [r.approval_request_id, auth.userId],
+              )));
+          const cancellable =
+            ['pending', 'approved'].includes(r.status) &&
+            r.category !== 'sickness' &&
+            (own
+              ? r.status === 'pending' || compareDates(r.start_date, today('UTC')) > 0
+              : can(auth.principal, 'leave.record', target!));
+          return {
+            id: r.id,
+            employeeId: r.employee_id,
+            employeeName: r.display_name,
+            leaveType: hide ? 'away' : r.key,
+            leaveTypeName: hide ? null : r.name,
+            startDate: r.start_date,
+            endDate: r.end_date,
+            startHalf: r.start_half,
+            endHalf: r.end_half,
+            amountDays: Number(r.amount_days),
+            amountHours: Number(r.amount_hours),
+            status: r.status,
+            note: hide ? null : r.note,
+            requestedByName: r.requested_by_name,
+            createdAt: r.created_at,
+            decidedAt: r.decided_at,
+            approvalRequestId: approvalVisible ? r.approval_request_id : null,
+            canCancel: cancellable,
+          };
+        },
+        { readOnly: true },
+      );
+    },
+  );
+
   app.post(
     '/v1/leave/requests/:id/cancel',
     {
@@ -1319,7 +1425,6 @@ export async function leaveRoutes(app: FastifyInstance) {
             subjectEmployeeId: employeeId,
             assigneeUserId: manager,
             dueOn: addDays(b.endDate, 2),
-            link: '/app/absence',
             dedupeKey: `rtw:${rec.id}`,
           });
         await app.audit(tx, req, {
@@ -2335,7 +2440,7 @@ approvalHandlers['leave.request'] = async (tx, r) => {
       userIds: [user],
       kind: 'leave.approved',
       titleKey: 'notify.leaveApproved',
-      link: '/app/time-off',
+      target: { type: 'leave_request', id: String(r.payload.leaveRequestId) },
       dedupeKey: `leave-ok:${r.payload.leaveRequestId}`,
     });
 };
@@ -2350,7 +2455,7 @@ rejectionHandlers['leave.request'] = async (tx, r) => {
       userIds: [user],
       kind: 'leave.rejected',
       titleKey: 'notify.leaveRejected',
-      link: '/app/time-off',
+      target: { type: 'leave_request', id: String(r.payload.leaveRequestId) },
       dedupeKey: `leave-no:${r.payload.leaveRequestId}`,
     });
 };
@@ -2412,7 +2517,8 @@ registerJob('absence.triggers', async (ctx) => {
             kind: 'absence.trigger',
             titleKey: 'notify.absenceTrigger',
             params: { trigger: t.name, score: bf.score },
-            link: `/app/people/${employee_id}`,
+            target: { type: 'employee', id: employee_id },
+            link: personHref(employee_id, 'time-off'),
             dedupeKey: `trigger:${t.id}:${employee_id}:${bf.spells}`,
           })
         ).length;

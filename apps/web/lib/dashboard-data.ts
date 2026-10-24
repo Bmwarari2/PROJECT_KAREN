@@ -50,6 +50,7 @@ export interface ApprovalItem {
   subject: string;
   status: string;
   policy: string;
+  subjectEmployeeId?: string | null;
   subjectName: string | null;
   requestedAt: string;
   payload: Record<string, unknown>;
@@ -61,6 +62,8 @@ export interface TaskItem {
   title: string;
   dueOn: string | null;
   link: string | null;
+  /** The page the task is about (ADR-0160). */
+  href?: string;
 }
 
 /** GET /v1/leave/calendar */

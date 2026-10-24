@@ -10,6 +10,7 @@ export default function ApprovalsLayout({ children }: { children: React.ReactNod
         'admin.delegations.link',
         'admin.approvals.field',
         'timeOff.kind',
+        'actionable.approval',
       ]}
     >
       {children}

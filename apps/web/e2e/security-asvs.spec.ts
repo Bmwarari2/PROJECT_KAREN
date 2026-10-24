@@ -1,5 +1,5 @@
 import { expect, request as playwrightRequest, test } from '@playwright/test';
-import { PASSWORD, signUpAndEnrol, totp } from './helpers';
+import { lastMailTo, PASSWORD, signUpAndEnrol, totp } from './helpers';
 import { axeBoth } from './settings-helpers';
 import { sql } from './time-helpers';
 import { signOutFromMenu } from './module-helpers';
@@ -52,7 +52,7 @@ test.describe('sessions and passwords (V7.4, V7.5, V6.2)', () => {
     await page.goto('/app/security');
     await expect(page.getByRole('heading', { name: 'Where you are signed in' })).toBeVisible();
     await expect(
-      page.getByRole('list', { name: 'Where you are signed in' }).getByRole('listitem'),
+      page.getByRole('region', { name: 'Where you are signed in' }).getByRole('listitem'),
     ).toHaveCount(2);
     await expect(page.getByText('This device')).toBeVisible();
     await axeBoth(page);
@@ -103,6 +103,40 @@ test.describe('sessions and passwords (V7.4, V7.5, V6.2)', () => {
       data: { tenant: slug, email, password: 'Quiet-river-at-dawn-42' },
     });
     expect(again.status()).toBe(200);
+  });
+
+  test('someone signed in with an emailed link sets a new password without the old one (V6.4.3)', async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    const { slug, secret, email } = await signUpAndEnrol(page);
+    const context = await browser.newContext({ baseURL, locale: 'en-GB' });
+    const p = await context.newPage();
+    const ask = await p.request.post('/v1/auth/magic-link', { data: { tenant: slug, email } });
+    expect(ask.status()).toBe(202);
+    const link = /(https?:\/\/\S+\/auth\/magic\?token=\S+)/.exec((await lastMailTo(email)).text)![1]!;
+    await p.goto(link);
+    // the second factor still applies to an emailed-link sign-in
+    await p.waitForURL(/\/signin/);
+    expect(
+      (await p.request.post('/v1/auth/mfa/totp/verify', { data: { code: totp(secret, 1) } })).status(),
+    ).toBe(204);
+    await p.goto('/app/security');
+    await expect(p.getByText('You signed in with an emailed link')).toBeVisible();
+    await expect(p.getByLabel('Current password')).toHaveCount(0);
+    await axeBoth(p);
+    await p.getByLabel('New password').fill('Copper-kettle-by-the-sea-58');
+    await p.getByRole('button', { name: 'Change password' }).click();
+    await expect(
+      p.getByText('Your password has been saved. Your other sessions have been signed out.', { exact: true }),
+    ).toBeVisible();
+    expect((await lastMailTo(email)).subject).toBe('Your Thapsus-HR password was changed');
+    const again = await p.request.post('/v1/auth/login', {
+      data: { tenant: slug, email, password: 'Copper-kettle-by-the-sea-58' },
+    });
+    expect(again.status()).toBe(200);
+    await context.close();
   });
 
   test('requests from another origin cannot change anything', async ({ page }) => {

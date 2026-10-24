@@ -145,8 +145,8 @@ describe('V3.3 session cookie', () => {
   it('the back-office staff cookie is __Host-thr_staff over HTTPS', async () => {
     const res = await inject(https, {
       method: 'POST',
-      url: '/v1/backoffice/auth/login',
-      payload: { email: 'nobody@thapsus.example.test', password: 'not-a-real-password' },
+      url: '/v1/backoffice/auth/passkey/verify',
+      payload: { challengeId: crypto.randomUUID(), response: { id: 'not-a-registered-key' } },
       remoteAddress: ip(),
     });
     expect(res.statusCode).toBe(401);

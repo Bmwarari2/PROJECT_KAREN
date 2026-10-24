@@ -6,6 +6,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app"],
+      "audience": [],
       "locales": {
         "en-GB": {
           "title": "Getting started with your workspace",
@@ -32,6 +33,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/people", "/app/imports"],
+      "audience": ["employees.create", "imports.run"],
       "locales": {
         "en-GB": {
           "title": "Adding and importing people",
@@ -58,6 +60,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/time-off", "/app/approvals"],
+      "audience": [],
       "locales": {
         "en-GB": {
           "title": "Requesting and approving time off",
@@ -84,6 +87,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/rota", "/app/clock", "/app/timesheets"],
+      "audience": ["time.clock", "rota.view_own", "rota.view"],
       "locales": {
         "en-GB": {
           "title": "Rotas, clocking in and timesheets",
@@ -110,6 +114,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/support", "/app/help"],
+      "audience": ["support.ticket"],
       "locales": {
         "en-GB": {
           "title": "Contacting Thapsus-HR support",
@@ -136,6 +141,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/billing"],
+      "audience": ["billing.manage"],
       "locales": {
         "en-GB": {
           "title": "Plans, billing and cancelling",
@@ -159,26 +165,62 @@
     },
     {
       "slug": "security-and-sign-in",
-      "version": 1,
-      "updatedOn": "2026-10-18",
+      "version": 2,
+      "updatedOn": "2026-10-24",
       "contexts": ["/app/security", "/app/settings"],
+      "audience": ["settings.manage"],
       "locales": {
         "en-GB": {
           "title": "Sign-in security, SSO and passkeys",
-          "summary": "Multi-factor authentication, single sign-on and verified domains.",
+          "summary": "Two-step verification, forgotten passwords, single sign-on and verified domains.",
           "body": [
-            "Admins must use multi-factor authentication. Everyone can add a passkey for quick, phishing-resistant sign-in.",
-            "To use single sign-on, verify your email domain in Settings and connect your identity provider with SAML 2.0 or OpenID Connect. You can then require SSO for everyone.",
-            "Sessions end after a period of inactivity and after a maximum length that your admins choose."
+            "New workspaces require two-step verification for everyone: the first time you sign in, set up an authenticator app or a passkey. Your admins can turn this off for non-admin roles on the sign-in policy screen; admins always need it.",
+            "Forgot your password? Choose “Forgot your password?” on the sign-in page. If you have an account, we email you a link that works once for 30 minutes. It does not sign you in, and you still use your second factor afterwards.",
+            "To use single sign-on, verify your email domain in Settings and connect your identity provider with SAML 2.0 or OpenID Connect. You can then require SSO for everyone. The first SSO sign-in links your account to your identity provider account.",
+            "Sessions end after a period of inactivity and after a maximum length that your admins choose. Admin sessions end sooner: after 15 idle minutes and 8 hours at most."
           ]
         },
         "en-US": {
           "title": "Sign-in security, SSO and passkeys",
-          "summary": "Multi-factor authentication, single sign-on and verified domains.",
+          "summary": "Two-step verification, forgotten passwords, single sign-on and verified domains.",
           "body": [
-            "Admins must use multi-factor authentication. Everyone can add a passkey for quick, phishing-resistant sign-in.",
-            "To use single sign-on, verify your email domain in Settings and connect your identity provider with SAML 2.0 or OpenID Connect. You can then require SSO for everyone.",
-            "Sessions end after a period of inactivity and after a maximum length that your admins choose."
+            "New workspaces require two-step verification for everyone: the first time you sign in, set up an authenticator app or a passkey. Your admins can turn this off for non-admin roles on the sign-in policy screen; admins always need it.",
+            "Forgot your password? Choose “Forgot your password?” on the sign-in page. If you have an account, we email you a link that works once for 30 minutes. It does not sign you in, and you still use your second factor afterwards.",
+            "To use single sign-on, verify your email domain in Settings and connect your identity provider with SAML 2.0 or OpenID Connect. You can then require SSO for everyone. The first SSO sign-in links your account to your identity provider account.",
+            "Sessions end after a period of inactivity and after a maximum length that your admins choose. Admin sessions end sooner: after 15 idle minutes and 8 hours at most."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "resetting-sign-in",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/settings", "/app/security"],
+      "audience": [],
+      "locales": {
+        "en-GB": {
+          "title": "Who can reset passwords and two-step verification",
+          "summary": "What you can do yourself, what an admin can do for you, and who that admin can be.",
+          "body": [
+            "You can always reset your own password: choose “Forgot your password?” on the sign-in page and follow the emailed link. It works once for 30 minutes and signs you out everywhere. Your two-step verification stays as it is.",
+            "If you signed in with an emailed link, you can set a new password on your Security page without your old one for the next few minutes.",
+            "An admin can, from Settings → Users and access → the person: sign them out everywhere, email them a password reset link (valid for 24 hours), reset a lost authenticator after confirming who they are, or unlink a replaced single sign-on account. The admin never sees or sets the password.",
+            "Who that admin can be: someone whose company-wide role includes managing settings and every permission the person has. So an owner can help anyone, but nobody can help someone with more access than they have, and nobody can do it for themselves. They confirm it is them first.",
+            "Every reset is recorded in the audit log, and the person is told by email. If you did not expect such an email, contact your admin straight away.",
+            "Thapsus-HR staff cannot reset your password or two-step verification."
+          ]
+        },
+        "en-US": {
+          "title": "Who can reset passwords and two-step verification",
+          "summary": "What you can do yourself, what an admin can do for you, and who that admin can be.",
+          "body": [
+            "You can always reset your own password: choose “Forgot your password?” on the sign-in page and follow the emailed link. It works once for 30 minutes and signs you out everywhere. Your two-step verification stays as it is.",
+            "If you signed in with an emailed link, you can set a new password on your Security page without your old one for the next few minutes.",
+            "An admin can, from Settings → Users and access → the person: sign them out everywhere, email them a password reset link (valid for 24 hours), reset a lost authenticator after confirming who they are, or unlink a replaced single sign-on account. The admin never sees or sets the password.",
+            "Who that admin can be: someone whose company-wide role includes managing settings and every permission the person has. So an owner can help anyone, but nobody can help someone with more access than they have, and nobody can do it for themselves. They confirm it is them first.",
+            "Every reset is recorded in the audit log, and the person is told by email. If you did not expect such an email, contact your admin straight away.",
+            "Thapsus-HR staff cannot reset your password or two-step verification."
           ]
         }
       }
@@ -188,6 +230,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/settings", "/app/support"],
+      "audience": ["settings.manage"],
       "locales": {
         "en-GB": {
           "title": "Giving Thapsus-HR support temporary access",
@@ -203,6 +246,141 @@
           "body": [
             "Sometimes support needs to look at a record to fix a problem. Only an admin can allow this, for one named support person, for up to 30 days, as read-only or read and write.",
             "Every time support opens your data it is written to your audit log and to our staff audit trail. You can revoke access at any time and it stops immediately."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "viewing-payslips",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/payslips"],
+      "audience": ["payslips.read_own", "payslips.manage"],
+      "locales": {
+        "en-GB": {
+          "title": "Viewing your payslips",
+          "summary": "Find your payslips and end-of-year certificates, and know when a new one arrives.",
+          "body": [
+            "Open Pay → Payslips. Your payslips and end-of-year certificates are listed newest first.",
+            "When payroll publishes a new payslip you get a notification. Open it from the bell or from the list.",
+            "Your pay is calculated by your company's payroll provider. If something looks wrong, ask HR: open Help → Contact HR and say which payslip you mean."
+          ]
+        },
+        "en-US": {
+          "title": "Viewing your pay stubs",
+          "summary": "Find your pay stubs and year-end forms, and know when a new one arrives.",
+          "body": [
+            "Open Pay → Payslips. Your pay stubs and year-end forms are listed newest first.",
+            "When payroll publishes a new pay stub you get a notification. Open it from the bell or from the list.",
+            "Your pay is calculated by your company's payroll provider. If something looks wrong, ask HR: open Help → Contact HR and say which pay stub you mean."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "signing-documents",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/documents", "/app/welcome"],
+      "audience": ["documents.sign", "documents.read_own"],
+      "locales": {
+        "en-GB": {
+          "title": "Signing documents",
+          "summary": "Read and sign the documents HR sends you, such as your contract.",
+          "body": [
+            "When HR asks you to sign something, a task appears in your Inbox and you get a notification. Both open the document.",
+            "Read the document, then type your full name and confirm that you agree to sign electronically. The date and time of your signature are recorded with it.",
+            "Signed documents stay in Documents, where you can open them at any time."
+          ]
+        },
+        "en-US": {
+          "title": "Signing documents",
+          "summary": "Read and sign the documents HR sends you, such as your contract.",
+          "body": [
+            "When HR asks you to sign something, a task appears in your Inbox and you get a notification. Both open the document.",
+            "Read the document, then type your full name and confirm that you agree to sign electronically. The date and time of your signature are recorded with it.",
+            "Signed documents stay in Documents, where you can open them at any time."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "updating-my-details",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/me", "/app/me/details"],
+      "audience": ["self.update_contact"],
+      "locales": {
+        "en-GB": {
+          "title": "Updating your details",
+          "summary": "Change your contact details and emergency contacts, and ask HR to correct your legal details.",
+          "body": [
+            "Open My profile → My details. You can change your preferred name, pronouns, personal email, phone number, address and emergency contacts yourself. The change is saved straight away.",
+            "Your legal name, date of birth and nationality are checked by HR. Choose Request a change, say what is wrong and send it. You can follow the request on the same page.",
+            "Your job, pay and contract are changed by HR. If something is out of date, open Help → Contact HR."
+          ]
+        },
+        "en-US": {
+          "title": "Updating your details",
+          "summary": "Change your contact details and emergency contacts, and ask HR to correct your legal details.",
+          "body": [
+            "Open My profile → My details. You can change your preferred name, pronouns, personal email, phone number, address and emergency contacts yourself. The change is saved straight away.",
+            "Your legal name, date of birth and nationality are checked by HR. Choose Request a change, say what is wrong and send it. You can follow the request on the same page.",
+            "Your job, pay and contract are changed by HR. If something is out of date, open Help → Contact HR."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "notifications",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/notifications"],
+      "audience": [],
+      "locales": {
+        "en-GB": {
+          "title": "Notifications and what to do with them",
+          "summary": "Open what a notification is about, mark it read and choose how you are told.",
+          "body": [
+            "The bell in the top bar shows how many notifications you have not read. Open it to see the latest ones.",
+            "Each notification opens the thing it is about: a request to approve, a task, your time off or a document to sign. Opening one marks it read. Mark all as read clears the rest.",
+            "Open My profile → Notifications to choose which kinds reach you by email or as a push notification on this device. You always see them in the app."
+          ]
+        },
+        "en-US": {
+          "title": "Notifications and what to do with them",
+          "summary": "Open what a notification is about, mark it read and choose how you are told.",
+          "body": [
+            "The bell in the top bar shows how many notifications you have not read. Open it to see the latest ones.",
+            "Each notification opens the thing it is about: a request to approve, a task, your time off or a document to sign. Opening one marks it read. Mark all as read clears the rest.",
+            "Open My profile → Notifications to choose which kinds reach you by email or as a push notification on this device. You always see them in the app."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "contacting-hr",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/contact-hr", "/app/help"],
+      "audience": ["hr.contact"],
+      "locales": {
+        "en-GB": {
+          "title": "Asking HR a question",
+          "summary": "Send a question or a request to your HR team and follow its progress.",
+          "body": [
+            "Open Help → Contact HR, choose a subject and describe what you need. Your HR team gets it in their inbox, with your name on it.",
+            "Your requests are listed on the same page with their status. When HR marks one as done you get a notification.",
+            "Do not include medical or other sensitive details here. HR will ask for them in the right place if they need them."
+          ]
+        },
+        "en-US": {
+          "title": "Asking HR a question",
+          "summary": "Send a question or a request to your HR team and follow its progress.",
+          "body": [
+            "Open Help → Contact HR, choose a subject and describe what you need. Your HR team gets it in their inbox, with your name on it.",
+            "Your requests are listed on the same page with their status. When HR marks one as done you get a notification.",
+            "Do not include medical or other sensitive details here. HR will ask for them in the right place if they need them."
           ]
         }
       }

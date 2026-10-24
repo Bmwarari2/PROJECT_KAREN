@@ -470,7 +470,8 @@ describe('review and sign in the viewer', () => {
         [emp.ada],
       ),
     );
-    expect(link[0]!.link).toBe(`/app/documents/${doc}`);
+    // the viewer, opened at the signature request (ADR-0160)
+    expect(link[0]!.link).toMatch(new RegExp(`^/app/documents/${doc}\\?sign=[0-9a-f-]{36}$`));
     const meta = (await get(`/v1/documents/${doc}`, cookie.ada!)).json();
     expect(meta).toMatchObject({
       viewable: true,

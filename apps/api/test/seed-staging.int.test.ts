@@ -61,12 +61,18 @@ async function signIn(l: StagingLogin) {
     payload: { tenant: 'kestrel', email: l.email, password: l.password },
   });
 }
+// One session per role: the staging workspace asks everyone for a second step (ADR-0170), so a second
+// sign-in after the test-only enrolment below would stop at the code prompt.
+const sessions = new Map<LoginRole, string>();
 async function session(role: LoginRole) {
+  const known = sessions.get(role);
+  if (known) return known;
   const res = await signIn(login(role));
   expect(res.statusCode, res.body).toBe(200);
   const cookie = cookieFrom(res);
-  // admins enrol MFA at first sign-in (the seed never creates a factor); a test-only enrolment here
+  // the seed never creates a factor, so each login enrols at first sign-in; a test-only enrolment here
   if (res.json().mfaEnrollmentRequired) await enrolTotp(ctx, cookie);
+  sessions.set(role, cookie);
   return cookie;
 }
 const get = (cookie: string, url: string) => ctx.app.inject({ method: 'GET', url, headers: { cookie } });
@@ -152,11 +158,20 @@ describe('staging seed', () => {
     expect(future.n).toBeGreaterThanOrEqual(3);
   });
 
-  it('lets every login sign in with its password; admin roles must enrol MFA first', async () => {
+  it('lets every login sign in with its password; every login must enrol MFA first (two-step verification for everyone)', async () => {
+    const security = await tx((x) =>
+      x.one<{ security: Record<string, unknown>; security_defaults_version: number }>(
+        'SELECT security, security_defaults_version FROM app.tenants',
+      ),
+    );
+    expect(security).toMatchObject({
+      security: { requireMfaForEveryone: true },
+      security_defaults_version: 2,
+    });
     for (const l of logins) {
       const res = await signIn(l);
       expect(res.statusCode, `${l.role}: ${res.body}`).toBe(200);
-      expect(res.json().mfaEnrollmentRequired).toBe(['owner', 'hr_admin', 'payroll_admin'].includes(l.role));
+      expect(res.json().mfaEnrollmentRequired, l.role).toBe(true);
       expect(res.json().mfaRequired).toBe(false);
     }
     const factors = await tx((x) => x.one<{ n: number }>('SELECT count(*)::int AS n FROM app.totp_factors'));

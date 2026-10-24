@@ -42,7 +42,7 @@ Use this for very large tenants, such as the 200,000-employee enterprise profile
 
    The stack outputs, in `.deploy/ThapsusHr-<env>-cell-<cell>.json`, include `Dedicated<Key>ProxyEndpoint`, `Dedicated<Key>WriterEndpoint` and `Dedicated<Key>ToolsTaskDefinitionArn`. `<Key>` is the key in PascalCase (`big-co` → `BigCo`).
 
-3. **Request the move in the back office.** Sign in as a super admin (password + TOTP) and call:
+3. **Request the move in the back office.** Sign in to the back office with your passkey, hold an approved `super_admin` elevation ([staff access](staff-access.md)) and re-authenticate with your key if asked, then call:
    ```http
    POST /v1/backoffice/tenants/<tenantId>/database-moves
    { "targetKey": "<key>", "purgeSource": false, "reason": "<change ticket and contract reference>" }

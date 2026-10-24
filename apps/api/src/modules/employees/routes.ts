@@ -26,6 +26,7 @@ import {
   setCustomFields,
   setManager,
   applyEmployeeChange,
+  scopePredicate,
 } from './service';
 
 const EmployeeSummary = Type.Object({
@@ -76,6 +77,17 @@ export async function employeeRoutes(app: FastifyInstance) {
           locationId: Type.Optional(Uuid),
           managerId: Type.Optional(Uuid),
           country: Type.Optional(Type.String({ pattern: '^[A-Z]{2}$' })),
+          employmentType: Type.Optional(
+            Type.Union(
+              ['full_time', 'part_time', 'casual', 'contractor', 'intern'].map((k) => Type.Literal(k)),
+              {
+                description:
+                  'Current employment type; honoured only for callers who may read employment types for everyone',
+              },
+            ),
+          ),
+          startFrom: Type.Optional(CivilDate),
+          startTo: Type.Optional(CivilDate),
           cursor: Type.Optional(Type.String({ maxLength: 500 })),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
         }),
@@ -210,6 +222,53 @@ export async function employeeRoutes(app: FastifyInstance) {
         })),
         nextCursor: rows.length > limit ? encodeCursor([page.at(-1)!.display_name, page.at(-1)!.id]) : null,
       };
+    },
+  );
+
+  // ---- which profiles the caller may open (ADR-0161) -------------------------------------------
+  // The web app links a person's name to their profile only where GET /v1/employees/:id would answer;
+  // it asks for the names on a page in one batch. Ids the caller may not open (or that do not exist)
+  // are left out; no personal data is returned.
+  app.post(
+    '/v1/people/visibility',
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['employees'],
+        summary: 'Which of these people the caller may open (their profile page), in one batch',
+        body: Type.Object(
+          { ids: Type.Array(Uuid, { minItems: 1, maxItems: 200 }) },
+          { additionalProperties: false },
+        ),
+        response: {
+          200: Type.Object({
+            all: Type.Boolean({ description: 'The caller may open every profile in the workspace' }),
+            visible: Type.Array(Uuid),
+          }),
+        },
+      },
+    },
+    async (req) => {
+      const auth = requireAuth(req);
+      const ids = [...new Set((req.body as { ids: string[] }).ids.map((i) => i.toLowerCase()))];
+      req.auditWritten = true; // names no record and returns no personal data
+      const params: unknown[] = [ids];
+      const scope = scopePredicate(auth.principal, 'employees.read', params);
+      if (scope === 'true') return { all: true, visible: ids };
+      const self =
+        auth.principal.employeeId && canSome(auth.principal, 'self.read')
+          ? `e.id = $${params.push(auth.principal.employeeId)}::uuid`
+          : 'false';
+      const rows = await app.tenantTx(
+        req,
+        (tx) =>
+          tx.query<{ id: string }>(
+            `SELECT e.id FROM app.employees e WHERE e.id = ANY($1::uuid[]) AND (${scope} OR ${self})`,
+            params,
+          ),
+        { readOnly: true },
+      );
+      return { all: false, visible: rows.map((r) => r.id) };
     },
   );
 

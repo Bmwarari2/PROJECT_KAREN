@@ -14,6 +14,7 @@ import {
   Newspaper,
   ScrollText,
   Settings2,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Badge,
@@ -78,6 +79,12 @@ function navItems(t: (k: string) => string, s: StaffSession, path: string): NavI
       show: staffCan(s, 'rules_editor', 'support'),
     },
     {
+      href: '/backoffice/access',
+      label: t('backoffice.nav.access'),
+      icon: <ShieldCheck aria-hidden />,
+      show: true,
+    },
+    {
       href: '/backoffice/audit',
       label: t('backoffice.nav.audit'),
       icon: <ScrollText aria-hidden />,
@@ -102,7 +109,8 @@ export function BackofficeShell({ children, theme }: { children: React.ReactNode
   const t = useT();
   const router = useRouter();
   const path = usePathname();
-  const signin = path.startsWith('/backoffice/signin');
+  // signing in and the one-time enrolment link have no shell (nobody is signed in yet)
+  const signin = path.startsWith('/backoffice/signin') || path.startsWith('/backoffice/enrol');
   const [staff, setStaff] = React.useState<StaffSession | null>(null);
 
   React.useEffect(() => {
@@ -196,6 +204,22 @@ export function BackofficeShell({ children, theme }: { children: React.ReactNode
             id="main"
             className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8"
           >
+            {staff?.role === 'super_admin' &&
+            !staff.elevations?.some((e) => e.scope === 'super_admin') &&
+            !path.startsWith('/backoffice/access') ? (
+              <div
+                role="status"
+                className="mb-6 flex flex-col gap-3 rounded-lg bg-surface-raised p-4 shadow-sm sm:flex-row sm:items-center"
+              >
+                <p className="min-w-0 flex-1 text-callout">{t('backoffice.elevation.banner')}</p>
+                <Link
+                  href="/backoffice/access"
+                  className="inline-flex h-11 shrink-0 items-center justify-center self-start rounded-pill border border-border px-5 text-callout font-semibold text-text no-underline hover:bg-surface sm:h-10 sm:self-auto"
+                >
+                  {t('backoffice.elevation.openAccess')}
+                </Link>
+              </div>
+            ) : null}
             {staff ? children : <Skeleton className="h-64 w-full" />}
           </main>
         </div>

@@ -14,6 +14,36 @@ export const seriesColor = (i: number) => `var(--color-chart-${Math.min(i, SERIE
 export interface ChartDatum {
   label: string;
   value: number;
+  /** The list behind this category (ADR-0161): its label becomes a link there. */
+  href?: string;
+}
+
+/** A category label: a link to the list behind it when the datum has one. */
+function DatumLabel({
+  d,
+  linkAs: LinkAs = 'a',
+  className,
+}: {
+  d: ChartDatum;
+  linkAs?: React.ElementType;
+  className?: string;
+}) {
+  return d.href ? (
+    <LinkAs
+      href={d.href}
+      className={cn(
+        'rounded-sm text-text underline decoration-1 underline-offset-2 hover:text-accent',
+        className,
+      )}
+      title={d.label}
+    >
+      {d.label}
+    </LinkAs>
+  ) : (
+    <span className={cn('text-text', className)} title={d.label}>
+      {d.label}
+    </span>
+  );
 }
 
 /** Folds categories past the palette into one "Other" entry (largest first). */
@@ -84,6 +114,7 @@ export function ColumnChart({
   format = (n: number) => String(n),
   label,
   integer = false,
+  onSelect,
 }: {
   categories: string[];
   series: BarSeries[];
@@ -94,6 +125,11 @@ export function ColumnChart({
   label: string;
   /** Whole-number data (counts): the axis shows whole numbers only. */
   integer?: boolean;
+  /**
+   * Pointer shortcut to the list behind a category (ADR-0161). The page must offer the same lists as
+   * real links too (the chart is an image to assistive technology).
+   */
+  onSelect?: (index: number) => void;
 }) {
   const [hover, setHover] = React.useState<{ c: number; s: number } | null>(null);
   const totals = categories.map((_, c) =>
@@ -138,8 +174,12 @@ export function ColumnChart({
               {categories.map((cat, c) => (
                 <div
                   key={cat}
-                  className="relative flex h-full items-end justify-center gap-0.5"
+                  className={cn(
+                    'relative flex h-full items-end justify-center gap-0.5',
+                    onSelect && 'cursor-pointer',
+                  )}
                   style={{ width }}
+                  onClick={onSelect ? () => onSelect(c) : undefined}
                 >
                   {stacked ? (
                     <div className="flex h-full w-[min(28px,70%)] flex-col-reverse gap-0.5">
@@ -206,20 +246,21 @@ export function BarList({
   format = (n: number) => String(n),
   label,
   colorIndex = 0,
+  linkAs,
 }: {
   items: ChartDatum[];
   format?: (n: number) => string;
   label: string;
   colorIndex?: number;
+  /** The app's router link, for labels with an `href`. */
+  linkAs?: React.ElementType;
 }) {
   const max = Math.max(1, ...items.map((d) => d.value));
   return (
     <ul aria-label={label} className="flex flex-col gap-3">
       {items.map((d) => (
         <li key={d.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
-          <span className="truncate text-callout text-text" title={d.label}>
-            {d.label}
-          </span>
+          <DatumLabel d={d} linkAs={linkAs} className="min-w-0 truncate text-callout" />
           <span className="text-callout tabular-nums text-text-secondary">{format(d.value)}</span>
           <span aria-hidden className="col-span-2 block h-2 w-full overflow-hidden rounded-full bg-surface">
             <span
@@ -240,12 +281,15 @@ export function DonutChart({
   centerValue,
   centerLabel,
   format = (n: number) => String(n),
+  linkAs,
 }: {
   items: ChartDatum[];
   label: string;
   centerValue?: string;
   centerLabel?: string;
   format?: (n: number) => string;
+  /** The app's router link, for legend entries with an `href`. */
+  linkAs?: React.ElementType;
 }) {
   const total = items.reduce((n, d) => n + d.value, 0);
   const size = 160;
@@ -311,7 +355,9 @@ export function DonutChart({
               className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ background: seriesColor(i) }}
             />
-            <span className="min-w-0 flex-1 truncate text-text">{d.label}</span>
+            <span className="min-w-0 flex-1 truncate">
+              <DatumLabel d={d} linkAs={linkAs} />
+            </span>
             <span className="tabular-nums text-text-secondary">{format(d.value)}</span>
           </li>
         ))}

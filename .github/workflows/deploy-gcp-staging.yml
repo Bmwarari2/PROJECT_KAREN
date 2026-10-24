@@ -21,6 +21,10 @@ on:
         description: Re-run the test organisation seed (it runs by itself on the first deploy)
         type: boolean
         default: false
+      staff_invite:
+        description: Send a new back-office enrolment link to GCP_STAFF_OWNER_EMAIL (one is sent by itself after the first deploy)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,6 +45,9 @@ env:
   TF_VAR_web_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/web:${{ github.event.workflow_run.head_sha || github.sha }}
   TF_VAR_api_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/api:${{ github.event.workflow_run.head_sha || github.sha }}
   TF_VAR_worker_image: europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/thapsus/worker:${{ github.event.workflow_run.head_sha || github.sha }}
+  # The first back-office staff member (ADR-0174). Sensitive OpenTofu variables, so plans never print them.
+  TF_VAR_staff_owner_email: ${{ vars.GCP_STAFF_OWNER_EMAIL }}
+  TF_VAR_staff_owner_name: ${{ vars.GCP_STAFF_OWNER_NAME }}
   SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
   # gcloud's default project (the jobs and secrets commands below do not repeat it)
   CLOUDSDK_CORE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
@@ -181,7 +188,8 @@ jobs:
         working-directory: infra/gcp/staging
         run: |
           tofu plan -no-color -out=jobs.tfplan \
-            -target=google_cloud_run_v2_job.migrate -target=google_cloud_run_v2_job.seed >/dev/null
+            -target=google_cloud_run_v2_job.migrate -target=google_cloud_run_v2_job.seed \
+            -target=google_cloud_run_v2_job.staff_invite >/dev/null
           part="$(tofu show -json jobs.tfplan | jq -c -f ../plan-changes.jq)"
           jq -e -n --argjson all "$REVIEWED" --argjson part "$part" '($part - $all) | length == 0' >/dev/null \
             || { echo "::error::Planned changes outside the approved plan"; exit 1; }
@@ -206,6 +214,23 @@ jobs:
           else
             echo "The test organisation is already seeded (run the workflow by hand with 'seed' ticked to re-run it)."
           fi
+      # The founder's first way into the back office: a passkey-only staff account and a one-time
+      # enrolment link in Secret Manager (never in this log). Automatic once, while the back office has
+      # no staff; by hand with 'staff_invite' ticked for a new link.
+      - name: Invite the first back-office staff member
+        if: vars.GCP_STAFF_OWNER_EMAIL != ''
+        run: |
+          job="thapsus-stg-$CELL-staff-invite"
+          invited="$(gcloud run jobs executions list --job "$job" --region "$REGION" \
+            --filter='status.succeededCount>0' --limit 1 --format='value(name)')"
+          if [[ "${{ inputs.staff_invite }}" == "true" ]]; then
+            gcloud run jobs execute "$job" --region "$REGION" --wait --update-env-vars STAFF_INVITE_MODE=reissue
+          elif [[ -z "$invited" ]]; then
+            gcloud run jobs execute "$job" --region "$REGION" --wait
+          else
+            echo "The staff invite already ran (run the workflow by hand with 'staff_invite' ticked for a new link)."
+          fi
+          echo "- Back-office enrolment link: \`gcloud secrets versions access latest --secret=thapsus-stg-$CELL-staff-invite --project=${{ vars.GCP_PROJECT_ID }}\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Smoke test
         working-directory: infra/gcp/staging
         run: |

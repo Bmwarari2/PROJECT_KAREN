@@ -195,7 +195,7 @@ export async function completeCountersign(
       kind: 'document.completed',
       titleKey: 'notify.documentCompleted',
       params: { title: sr.title },
-      link: `/app/documents/${doc.id}`,
+      target: { type: 'document', id: doc.id },
       dedupeKey: `completed:${sr.id}`,
     });
   return doc.id;
@@ -235,7 +235,7 @@ export async function returnToSigner(tx: Tx, approvalRequestId: string) {
       kind: 'document.returned',
       titleKey: 'notify.documentReturned',
       params: { title: sr.title },
-      link,
+      target: { type: 'document', id: sr.document_id },
       dedupeKey: `returned:${approvalRequestId}`,
     });
     await createTask(tx, {

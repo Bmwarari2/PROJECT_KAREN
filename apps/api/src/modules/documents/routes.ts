@@ -5,6 +5,7 @@ import { can, canSome, type Target } from '@thapsus/core/permissions';
 import { formatDate, formatMoney, isLocale, t, type Locale } from '@thapsus/core/i18n';
 import { money } from '@thapsus/core';
 import { instantToDate } from '@thapsus/core/time';
+import { targetHref } from '@thapsus/core/links';
 import { enqueueJob, type Tx } from '@thapsus/db';
 import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
@@ -337,8 +338,9 @@ async function requestSignature(
       userIds: [user],
       kind: 'document.signature_requested',
       titleKey: 'notify.signatureRequested',
-      // the viewer opens the document with its review-and-sign panel (ADR-0168)
-      link: `/app/documents/${documentId}`,
+      // the document's own page, opened at its signature request (ADR-0160)
+      target: { type: 'document', id: documentId },
+      link: `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`,
       dedupeKey: `sign:${sr.id}`,
     });
     await createTask(tx, {
@@ -347,7 +349,7 @@ async function requestSignature(
       title: 'Sign document',
       subjectEmployeeId: employeeId,
       assigneeUserId: user,
-      link: `/app/documents/${documentId}`,
+      link: `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`,
       dedupeKey: `sign:${sr.id}`,
     });
   }
@@ -1181,7 +1183,7 @@ registerJob('documents.expiry_reminders', async (ctx) => {
             kind: 'document.expiring',
             titleKey: days === 0 ? 'notify.documentExpired' : 'notify.documentExpiring',
             params: { title: d.title, days, count: days },
-            link: `/app/documents/${d.id}`,
+            target: { type: 'document', id: d.id },
             dedupeKey: `expiry:${d.id}:${days}`,
           })
         ).length;

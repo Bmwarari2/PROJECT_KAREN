@@ -91,6 +91,17 @@ What moved the numbers:
 
 The viewer is the page closest to the threshold. Evaluating the PDF.js display library costs about 350 ms of main thread on this machine (one long task), on top of the shell. That is the price of drawing PDFs in the page on phones that have no inline PDF viewer. Re-run it at a quiet moment before treating a failure as a regression. If CI numbers fall below 90, the next steps are moving the text layer after first paint and scoping the documents layout's message namespaces per page.
 
+#### Sign-in and security screens after security hardening P0 (Phase 15)
+
+The forgot-password page joined the audited pages. Measured on 2026-10-24 with `LIGHTHOUSE_ONLY=/signin,/forgot-password,/app/security,/app/settings` on the shared build machine at a load average of about 6 (other jobs running), so the performance scores are lower than the quiet-machine run above; all pass.
+
+| Page                               | Performance | Accessibility | Best practices | LCP      | CLS   | TBT    |
+| ---------------------------------- | ----------- | ------------- | -------------- | -------- | ----- | ------ |
+| Sign in `/signin`                  | 95          | 100           | 100            | 2,961 ms | 0.000 | 61 ms  |
+| Forgot password `/forgot-password` | 99          | 100           | 100            | 1,607 ms | 0.000 | 107 ms |
+| Settings `/app/settings`           | 94          | 100           | 100            | 3,065 ms | 0.000 | 46 ms  |
+| Security `/app/security`           | 93          | 100           | 100            | 3,076 ms | 0.000 | 124 ms |
+
 #### Message catalogue in the page payload (Phase 12, ADR-0150)
 
 Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.

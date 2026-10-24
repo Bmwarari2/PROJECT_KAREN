@@ -13,6 +13,11 @@ export interface CellConfig {
   apiBaseUrl: string;
   globalBaseUrl: string;
   /**
+   * Where Thapsus staff open the back office (its own host name once the domain exists, plan 2.2.2;
+   * the app's address until then). Staff passkeys are bound to this host. Defaults to appBaseUrl.
+   */
+  backofficeBaseUrl?: string;
+  /**
    * Multiplies every per-IP throttle (sign-in, sign-up, magic links…). Always 1 except in the
    * temporary load-test environment, where one load generator signs in thousands of synthetic users.
    * Refused above 1 in production.
@@ -53,6 +58,7 @@ export function loadCellConfig(): CellConfig {
     appBaseUrl: env('APP_BASE_URL', 'http://localhost:3000'),
     apiBaseUrl: env('API_BASE_URL', 'http://localhost:4000'),
     globalBaseUrl: env('GLOBAL_BASE_URL', 'http://localhost:3000'),
+    backofficeBaseUrl: process.env.BACKOFFICE_BASE_URL || undefined,
     ipThrottleMultiplier,
     internalToken,
   };

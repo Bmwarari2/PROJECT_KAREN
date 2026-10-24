@@ -5,12 +5,13 @@ import { buildSpec } from '../src/openapi';
 import { FakeBillingProvider } from '../src/modules/billing/provider';
 import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
 import {
+  WEBHOOK_SECRET,
   injector,
   postWebhook,
   signedEvent,
   staffSession,
+  supportContactRole,
   userSession,
-  WEBHOOK_SECRET,
 } from './phase10-helpers';
 
 /** Phase 10 responses validate against the published OpenAPI 3.1 document. */
@@ -137,7 +138,7 @@ describe('phase 10 endpoints match the spec', () => {
     );
     check('post', '/v1/billing/webhooks/stripe', await postWebhook(ctx, { payload: '{}', header: 'bad' }));
 
-    const e = await userSession(ctx, o);
+    const e = await userSession(ctx, o, await supportContactRole(ctx, o));
     check('get', '/v1/billing', await api('GET', '/v1/billing', undefined, e.cookie)); // 403
     check('get', '/v1/help/articles', await api('GET', '/v1/help/articles?q=rota', undefined, e.cookie));
     check(

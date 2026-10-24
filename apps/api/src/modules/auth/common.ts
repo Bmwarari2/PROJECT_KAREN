@@ -3,23 +3,90 @@ import { withTenant, writeAudit, type Tx } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { ApiError } from '../../http/errors';
 import { sessionCookie } from '../../http/security';
+import { emitSecurityEvent } from '../../lib/security-events';
 import { createSession, loadSecurity, SESSION_PREFIX, type AuthMethod } from './sessions';
 import { hashToken, parseToken } from './tokens';
 
+/** Which identity a throttle key counts: `…:ip:…`, `…:acct:…` or `…:tenant:…` (else the account). */
+export function throttleScope(key: string): 'ip' | 'account' | 'tenant' {
+  if (key.includes(':ip:')) return 'ip';
+  if (key.includes(':tenant:')) return 'tenant';
+  return 'account';
+}
+
 /**
  * Fixed-window throttles. Throws 429 with Retry-After when any key is over its limit. Per-IP keys
- * (`…:ip:…`) scale with the cell's ipThrottleMultiplier (1 outside the load-test environment).
+ * (`…:ip:…`) scale with the cell's ipThrottleMultiplier (1 outside the load-test environment). With a
+ * request, a refusal is also emitted as an `auth.throttled` security event naming the scope.
  */
 export async function throttle(
   deps: Deps,
   rules: Array<[key: string, limit: number, windowSeconds: number]>,
+  req?: FastifyRequest,
 ) {
   const ipFactor = deps.config.ipThrottleMultiplier ?? 1;
   for (const [key, base, windowSeconds] of rules) {
     const limit = key.includes(':ip:') ? base * ipFactor : base;
     const { count, resetSeconds } = await deps.limiter.hit(key, windowSeconds);
-    if (count > limit) throw new ApiError('rateLimited', undefined, { retryAfter: resetSeconds });
+    if (count > limit) {
+      if (req) throttled(deps, req, key);
+      throw new ApiError('rateLimited', undefined, { retryAfter: resetSeconds });
+    }
   }
+}
+
+function throttled(deps: Deps, req: FastifyRequest, key: string, tenantId?: string) {
+  const [name] = key.split(':');
+  const scope = throttleScope(key);
+  emitSecurityEvent(deps, req, {
+    type: 'auth.throttled',
+    severity: scope === 'tenant' ? 'high' : 'medium',
+    tenantId,
+    detail: { scope, limit: name ?? 'auth' },
+  });
+}
+
+/**
+ * Failure budgets: a request is refused while the key's failures in the window are at the limit, and
+ * only failures count (so a busy tenant's successful sign-ins never use up its budget). Used for the
+ * per-tenant limits that catch credential stuffing spread over many addresses and accounts.
+ */
+export async function assertFailureBudget(
+  deps: Deps,
+  req: FastifyRequest,
+  key: string,
+  limit: number,
+  tenantId?: string,
+) {
+  const { count, resetSeconds } = await deps.limiter.peek(key);
+  if (count >= limit) {
+    throttled(deps, req, key, tenantId);
+    throw new ApiError('rateLimited', undefined, { retryAfter: Math.max(1, resetSeconds) });
+  }
+}
+
+export const countFailure = (deps: Deps, key: string, windowSeconds: number) =>
+  deps.limiter.hit(key, windowSeconds);
+
+/**
+ * Routes whose answer must not reveal whether an account exists (magic links, password resets) answer
+ * no sooner than this after the request arrived, and send their email without waiting for it, so the
+ * response time is the same either way (plan 2.1.7).
+ */
+export const UNIFORM_RESPONSE_MS = 300;
+
+export async function uniformDelay(startedAt: number, floorMs = UNIFORM_RESPONSE_MS) {
+  const wait = floorMs - (performance.now() - startedAt);
+  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+}
+
+/** Sends an email without holding up the response; failures are logged without the address. */
+export function sendInBackground(
+  deps: Deps,
+  req: FastifyRequest,
+  mail: Parameters<Deps['mailer']['send']>[0],
+) {
+  void deps.mailer.send(mail).catch((err: Error) => req.log.error({ err: err.name }, 'email not sent'));
 }
 
 /**
@@ -84,6 +151,7 @@ export async function startSession(
     ...opts,
     ip: req.ctx.ip,
     userAgent: req.ctx.userAgent,
+    network: req.ctx.network,
     now: deps.now(),
   });
   await writeAudit(tx, {
@@ -114,21 +182,38 @@ export async function recordFailure(
   tenantId: string,
   userId: string | undefined,
   reason: string,
+  account?: { tenant: string; email: string },
 ) {
   await withTenant(deps.router, tenantId, async (tx) => {
     if (userId) {
       const security = await loadSecurity(tx);
-      await tx.exec(
+      const locked = await tx.maybe<{ locked: boolean }>(
         `UPDATE app.users SET failed_attempts = failed_attempts + 1,
            locked_until = CASE WHEN failed_attempts + 1 >= $2 THEN $3::timestamptz ELSE locked_until END
-         WHERE id = $1`,
+         WHERE id = $1 RETURNING (failed_attempts = $2) AS locked`,
         [
           userId,
           security.lockoutThreshold,
           new Date(deps.now().getTime() + security.lockoutMinutes * 60_000),
         ],
       );
+      if (locked?.locked)
+        emitSecurityEvent(deps, req, {
+          type: 'auth.lockout',
+          severity: 'medium',
+          tenantId,
+          userId,
+          detail: { minutes: security.lockoutMinutes },
+        });
     }
+    emitSecurityEvent(deps, req, {
+      type: 'auth.login_failed',
+      severity: 'low',
+      tenantId,
+      userId,
+      account: userId ? undefined : account,
+      detail: { reason, method: 'password' },
+    });
     await writeAudit(tx, {
       actorType: 'user',
       actorId: userId ?? null,

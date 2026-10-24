@@ -30,7 +30,7 @@ import { employeeAsOf } from '../employees/service';
 import { withSupportAccess } from '../support/access';
 import { deadlinesFor, slaView, syncQueueEntry, type TicketRow } from '../support/service';
 import { threadJson, ThreadT, contactOverrides } from '../support/tickets';
-import { backofficePool, requireStaff, staffAudit } from './auth';
+import { backofficePool, requireStaff, staffAudit, type StaffGuard } from './auth';
 
 /**
  * Thapsus back office for this cell (ADR-0106). Company-level metadata (tenants, usage aggregates,
@@ -44,6 +44,11 @@ export async function backofficeRoutes(app: FastifyInstance) {
   const staff = (...roles: Array<'support' | 'rules_editor' | 'billing'>) => ({
     config: { auth: 'public' as const, selfAudited: true },
     preHandler: requireStaff(app, roles),
+  });
+  /** As staff(), plus a guard: an elevation for support-grant use, or a fresh key for destructive actions. */
+  const guarded = (guard: StaffGuard, ...roles: Array<'support' | 'rules_editor' | 'billing'>) => ({
+    config: { auth: 'public' as const, selfAudited: true },
+    preHandler: requireStaff(app, roles, guard),
   });
   const now = () => deps.now().toISOString();
   const today = () => instantToDate(now(), 'UTC');
@@ -83,7 +88,8 @@ export async function backofficeRoutes(app: FastifyInstance) {
   app.get(
     '/v1/backoffice/overview',
     {
-      ...staff('support', 'rules_editor', 'billing'),
+      // company-level counts only: every staff member lands here, elevated or not
+      ...guarded({ noElevation: true }, 'support', 'rules_editor', 'billing'),
       schema: {
         tags: ['backoffice'],
         response: {
@@ -859,7 +865,7 @@ export async function backofficeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/backoffice/contracts/:id/end',
     {
-      ...staff('billing'),
+      ...guarded({ reauth: true }, 'billing'),
       schema: {
         tags: ['backoffice'],
         params: Type.Object({ id: Uuid }),
@@ -1058,7 +1064,7 @@ export async function backofficeRoutes(app: FastifyInstance) {
             kind: 'support.reply',
             titleKey: 'notify.supportReply',
             params: { reference: cur.reference },
-            link: `/app/support/${ticketId}`,
+            target: { type: 'support_ticket', id: ticketId },
             dedupeKey: `support-reply:${m.id}`,
           });
           return { msg: m, t: u };
@@ -1253,7 +1259,7 @@ export async function backofficeRoutes(app: FastifyInstance) {
   app.get(
     '/v1/backoffice/tenants/:tenantId/employees/:employeeId',
     {
-      ...staff('support'),
+      ...guarded({ elevation: 'support_grant' }, 'support'),
       schema: {
         tags: ['backoffice'],
         summary:
@@ -1290,7 +1296,7 @@ export async function backofficeRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/backoffice/tenants/:tenantId/employees/:employeeId',
     {
-      ...staff('support'),
+      ...guarded({ elevation: 'support_grant', reauth: true }, 'support'),
       schema: {
         tags: ['backoffice'],
         summary:

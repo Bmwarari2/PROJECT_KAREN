@@ -140,9 +140,10 @@ export function ListItem({
       {/* everything right of the leading element; the hairline between rows starts here */}
       <div className="flex min-h-[52px] min-w-0 flex-1 items-center gap-3 border-t border-border py-3 pr-4 group-first/row:border-t-0">
         <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-start gap-2">
             {unread ? (
-              <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-accent">
+              // level with the title's first line when the title wraps
+              <span className="mt-[0.45em] inline-flex h-2 w-2 shrink-0 rounded-full bg-accent">
                 {unreadLabel ? <span className="sr-only">{unreadLabel}</span> : null}
               </span>
             ) : null}

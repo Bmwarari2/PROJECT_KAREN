@@ -36,6 +36,7 @@ import {
   type ReportResult,
 } from '@/lib/report-format';
 import { ModuleFrameContext } from '../shell';
+import { PersonLink } from '@/components/person-link';
 
 /** IANA zones the browser knows (for a time-zone picker's suggestions). */
 export const zones = (): string[] =>
@@ -232,7 +233,12 @@ export function ReportTable({ result, caption }: { result: ReportResult; caption
           <TR key={i}>
             {result.columns.map((c) => (
               <TD key={c.key} className={`${right(c)} h-9`}>
-                {displayCell(t, locale, c, r[c.key] ?? null)}
+                {/* a person's name opens their profile where the viewer may (ADR-0161) */}
+                {c.key === 'displayName' && result.rowEmployeeIds?.[i] && typeof r[c.key] === 'string' ? (
+                  <PersonLink id={result.rowEmployeeIds[i]} name={r[c.key] as string} plainClassName="" />
+                ) : (
+                  displayCell(t, locale, c, r[c.key] ?? null)
+                )}
               </TD>
             ))}
           </TR>

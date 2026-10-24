@@ -17,7 +17,7 @@ import type { BillingProvider } from './modules/billing/provider';
 import { StripeBillingProvider } from './modules/billing/stripe-provider';
 import { withDeliveryHealth } from './modules/status/service';
 import { aiProviderFromEnv, type AiProvider } from './modules/ai/provider';
-import { STRICT_OUTBOUND, type OutboundPolicy } from './lib/outbound';
+import { STRICT_OUTBOUND, type OutboundPolicy, type OutboundPost } from './lib/outbound';
 import { crossAccountS3FromEnv, type CrossAccountS3 } from './modules/platform/siem-s3';
 
 /** Platform-level OAuth apps for customer-directed integrations (secrets from Secrets Manager via env). */
@@ -70,10 +70,40 @@ export interface Deps {
   stripeWebhookSecret?: string;
   /** "Ask HR" model (in-region Bedrock, or the fake in dev/test); undefined when the cell has no in-region model. */
   ai?: AiProvider;
-  /** SSRF policy for customer-configured destinations (webhooks, SIEM). Strict when omitted. */
+  /** SSRF policy for customer-configured destinations (webhooks, SIEM, automation). Strict when omitted. */
   outbound?: OutboundPolicy;
+  /**
+   * Replaces postOutbound for automation webhooks and the `http` integration (tests record calls or add a
+   * DNS stub). Never set by depsFromEnv, so a running cell always uses postOutbound.
+   */
+  outboundPost?: OutboundPost;
   /** Writes audit batches to customer S3 buckets through a cross-account role (home region only). */
   siemS3?: CrossAccountS3;
+  /**
+   * The client's network (autonomous system) from a header a trusted proxy in front of the cell sets and
+   * overwrites; undefined when the cell has no such signal (ADR-0170). Admin sessions re-authenticate
+   * when it changes.
+   */
+  clientNetwork?: (headers: Record<string, string | string[] | undefined>) => string | undefined;
+  /** Per-tenant authentication budgets (production values in modules/auth/throttles.ts); tests lower them. */
+  authBudgets?: Partial<
+    Record<'loginFailures' | 'mfaFailures' | 'emailLinks', { floor: number; perUser: number }>
+  >;
+}
+
+/**
+ * CLIENT_ASN_HEADER names a request header carrying the client's autonomous system number, set by a
+ * proxy that overwrites any value the client sent (for example CloudFront's CloudFront-Viewer-ASN).
+ * Unset (today's AWS ALB and Google Cloud Run cells): no network signal.
+ */
+export function clientNetworkFromEnv(env: NodeJS.ProcessEnv = process.env): Deps['clientNetwork'] {
+  const header = env.CLIENT_ASN_HEADER?.trim().toLowerCase();
+  if (!header) return undefined;
+  return (headers) => {
+    const raw = headers[header];
+    const value = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+    return value && /^\d{1,10}$/.test(value) ? `AS${value}` : undefined;
+  };
 }
 
 /** Dev/test-only relaxations (a local webhook receiver); refused in production. */
@@ -148,5 +178,6 @@ export async function depsFromEnv(): Promise<Deps> {
     ai: env.SERVICE_ROLE === 'global' ? undefined : aiProviderFromEnv(config.cell),
     outbound: outboundPolicyFromEnv(config.env, env),
     siemS3: crossAccountS3FromEnv(config.cell, env),
+    clientNetwork: clientNetworkFromEnv(env),
   };
 }

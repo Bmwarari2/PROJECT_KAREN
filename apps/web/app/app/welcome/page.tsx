@@ -89,6 +89,13 @@ export default function WelcomePage() {
   const [contact, setContact] = React.useState<Record<string, string>>({});
   const [busy, setBusy] = React.useState<string | null>(null);
 
+  // a link to one step (/app/welcome#task-<id>, ADR-0160) scrolls to it once the checklist has loaded
+  React.useEffect(() => {
+    if (!data) return;
+    const id = window.location.hash.slice(1);
+    if (/^task-[0-9a-f-]{36}$/.test(id)) document.getElementById(id)?.scrollIntoView({ block: 'center' });
+  }, [data]);
+
   React.useEffect(() => {
     if (!data) return;
     const v = data.forms.personalDetails.values;
@@ -326,32 +333,39 @@ export default function WelcomePage() {
         </Card>
       </div>
 
-      <Card>
-        <CardTitle as={sec.heading}>{t('onboarding.checklistTitle')}</CardTitle>
-        {data.tasks.length ? (
-          <ul className="mt-3 flex flex-col gap-2">
-            {data.tasks.map((k) => (
-              <li
-                key={k.id}
-                className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3"
-              >
-                {k.status === 'done' ? (
-                  <CheckCircle2 aria-hidden className="h-5 w-5 stroke-[1.5] text-success" />
+      {data.tasks.length ? (
+        // a grouped list (ADR-0180); tasks and notifications link to a step as #task-<id>
+        <ListSection
+          id="onboarding-checklist"
+          title={t('onboarding.checklistTitle')}
+          headingLevel={sec.level}
+        >
+          {data.tasks.map((k) => (
+            <ListItem
+              key={k.id}
+              leadingTile={false}
+              leading={
+                k.status === 'done' ? (
+                  <CheckCircle2 aria-hidden className="h-6 w-6 stroke-[1.5] text-success" />
                 ) : (
-                  <Circle aria-hidden className="h-5 w-5 stroke-[1.5] text-text-secondary" />
-                )}
-                <span className="flex-1 text-callout">{k.title}</span>
-                {k.dueOn ? (
-                  <span className="text-footnote text-text-secondary">
-                    {t('onboarding.due', { date: formatDate(k.dueOn, locale) })}
-                  </span>
-                ) : null}
-                {k.status === 'done' ? (
-                  <Badge tone="success">{t('onboarding.done')}</Badge>
-                ) : (
+                  <Circle aria-hidden className="h-6 w-6 stroke-[1.5] text-text-secondary" />
+                )
+              }
+              title={
+                <span id={`task-${k.id}`} className="scroll-mt-24">
+                  {k.title}
+                </span>
+              }
+              subtitle={k.dueOn ? t('onboarding.due', { date: formatDate(k.dueOn, locale) }) : undefined}
+              accessory={
+                k.status === 'done' ? <Badge tone="success">{t('onboarding.done')}</Badge> : undefined
+              }
+              actions={
+                k.status === 'done' ? undefined : (
                   <Button
                     size="sm"
                     variant="secondary"
+                    className="min-h-11 sm:min-h-8"
                     loading={busy === k.id}
                     aria-label={t('onboarding.markDone', { title: k.title })}
                     onClick={() =>
@@ -360,18 +374,21 @@ export default function WelcomePage() {
                   >
                     {t('onboarding.markDoneShort')}
                   </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
+                )
+              }
+            />
+          ))}
+        </ListSection>
+      ) : (
+        <Card>
+          <CardTitle as={sec.heading}>{t('onboarding.checklistTitle')}</CardTitle>
           <EmptyState
             level={sec.level}
             icon={<ListChecks aria-hidden />}
             title={t('onboarding.checklistEmpty')}
           />
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }

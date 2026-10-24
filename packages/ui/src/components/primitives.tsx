@@ -339,16 +339,23 @@ export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
     />
   );
 }
-/** `label` names the column for the phone layout (shown before the value) where the value alone is unclear. */
+/**
+ * Phone layout of a cell (tables show as lists below `sm`, ADR-0180): `label` names the column before
+ * the value where the value alone is unclear; `phone="inline"` joins the cell with its inline
+ * neighbours on one line ("Job title · Location"); `phone="hide"` leaves it out on phones (it stays on
+ * the detail page).
+ */
 export function TD({
   className,
   label,
+  phone,
   ...props
-}: React.TdHTMLAttributes<HTMLTableCellElement> & { label?: string }) {
+}: React.TdHTMLAttributes<HTMLTableCellElement> & { label?: string; phone?: 'inline' | 'hide' }) {
   return (
     <td
       role="cell"
       data-label={label}
+      data-phone={phone}
       className={cn('h-11 px-4 align-middle text-text', className)}
       {...props}
     />

@@ -30,7 +30,7 @@ const PER_CHAPTER: Record<string, number> = {
   V17: 7,
 };
 const STATUS =
-  /^(Met|Met by platform \(AWS, .+\)|Not applicable \(.+\)|Fixed in this review|Gap — recorded in .+)$/;
+  /^(Met|Met by platform \(AWS, .+\)|Not applicable \(.+\)|Fixed in this review|Fixed in hardening P0|Gap — recorded in .+)$/;
 
 const rows = doc
   .split('\n')
@@ -55,7 +55,7 @@ describe('docs/ASVS.md', () => {
     for (const r of rows) {
       expect(r.level, r.id).toMatch(/^L[12]$/);
       expect(r.status, r.id).toMatch(STATUS);
-      if (r.status === 'Met' || r.status === 'Fixed in this review') expect(r.evidence, r.id).not.toBe('—');
+      if (r.status === 'Met' || r.status.startsWith('Fixed in ')) expect(r.evidence, r.id).not.toBe('—');
     }
   });
 
@@ -65,7 +65,8 @@ describe('docs/ASVS.md', () => {
       Number(new RegExp(`^\\| ${label} \\| \\d+ \\| \\d+ \\| (\\d+) \\|$`, 'm').exec(doc)?.[1]);
     expect(total('Met')).toBe(count(/^Met$/));
     expect(total('Met by platform')).toBe(count(/^Met by platform/));
-    expect(total('Fixed in this review')).toBe(count(/^Fixed/));
+    expect(total('Fixed in this review')).toBe(count(/^Fixed in this review$/));
+    expect(total('Fixed in hardening P0')).toBe(count(/^Fixed in hardening P0$/));
     expect(total('Not applicable')).toBe(count(/^Not applicable/));
     expect(total('Gap \\(recorded\\)')).toBe(count(/^Gap/));
   });

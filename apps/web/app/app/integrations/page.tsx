@@ -30,6 +30,7 @@ import {
   type AppliedFilter,
 } from '@/components/module-page';
 import { useSession } from '../shell';
+import { PersonLink } from '@/components/person-link';
 
 type Provider = 'microsoft365' | 'google_workspace';
 const PROVIDER_KEYS: Provider[] = ['microsoft365', 'google_workspace'];
@@ -58,6 +59,7 @@ interface Plan {
 }
 interface Operation {
   id: string;
+  employeeId: string;
   employeeName: string | null;
   provider: Provider;
   lifecycle: string;
@@ -599,7 +601,7 @@ export default function IntegrationsPage() {
             {shown.map((o) => (
               <TR key={o.id}>
                 <TD>{formatDateTime(o.executedAt ?? o.createdAt, locale, tz)}</TD>
-                <TD>{o.employeeName ?? ''}</TD>
+                <TD>{o.employeeName ? <PersonLink id={o.employeeId} name={o.employeeName} /> : ''}</TD>
                 <TD>
                   {t(`integrations.providers.${o.provider}`)} · {t(`integrations.ops.${o.op}`)}
                 </TD>
