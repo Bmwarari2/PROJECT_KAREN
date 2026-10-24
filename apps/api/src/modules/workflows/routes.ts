@@ -135,7 +135,8 @@ const TaskDetail = Type.Object({
   }),
   closesItself: Type.Boolean({ description: 'The task closes when its linked record is complete' }),
   overdue: Type.Boolean({
-    description: "Open and past its due date, in the viewer's zone (`zone`, else the account's)",
+    description:
+      "Open and past its due date, in the viewer's zone (`zone`, else the account's, else the workspace's)",
   }),
   completedVia: Nullable(Type.String()),
   completionNote: Nullable(Type.String()),
@@ -415,8 +416,13 @@ export async function workflowRoutes(app: FastifyInstance) {
             if (!readable) throw new ApiError('forbidden');
           }
           const locale = req.ctx.locale;
+          // overdue in the viewer's zone: the one asked for, else their account's, else the workspace's
           const asked = (req.query as { zone?: string } | undefined)?.zone;
-          const zone = asked && isValidTimeZone(asked) ? asked : (auth.user.timeZone ?? 'UTC');
+          const zone =
+            asked && isValidTimeZone(asked)
+              ? asked
+              : (auth.user.timeZone ??
+                (await tx.one<{ z: string }>('SELECT default_time_zone AS z FROM app.tenants')).z);
           return {
             id: r.id,
             title: taskTitle(r, locale),

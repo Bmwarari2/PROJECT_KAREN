@@ -9514,7 +9514,7 @@ export interface paths {
                             };
                             /** @description The task closes when its linked record is complete */
                             closesItself: boolean;
-                            /** @description Open and past its due date, in the viewer's zone (`zone`, else the account's) */
+                            /** @description Open and past its due date, in the viewer's zone (`zone`, else the account's, else the workspace's) */
                             overdue: boolean;
                             completedVia: string | null;
                             completionNote: string | null;

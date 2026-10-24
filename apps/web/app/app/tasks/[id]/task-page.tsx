@@ -27,7 +27,7 @@ export function TaskPage({ id, initial }: { id: string; initial?: TaskDetail }) 
   const session = useSession();
   const zone = viewerZone(session?.timeZone);
   // the API says whether it is overdue in the viewer's zone, so the page needs no time library (ADR-0186)
-  const { data, error, reload } = useApi<TaskDetail>(taskPath(id, locale, zone), initial);
+  const { data, error, reload } = useApi<TaskDetail>(taskPath(id, locale, session?.timeZone), initial);
   const crumbs = [{ label: t('tasks.title'), href: '/app/tasks' }];
 
   if (error)

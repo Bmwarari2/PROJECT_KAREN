@@ -28,6 +28,9 @@ export interface TaskDetail {
   completionNote: string | null;
 }
 
-/** The task's API path for the reader's locale and zone (the server render and the page use the same one). */
-export const taskPath = (id: string, locale: string, zone: string) =>
-  `/v1/tasks/${encodeURIComponent(id)}?locale=${locale}&zone=${encodeURIComponent(zone)}`;
+/**
+ * The task's API path for the reader's locale and account zone (without one, the API uses the workspace's
+ * zone for "overdue"). The server render and the page use the same path, so the page reuses the first data.
+ */
+export const taskPath = (id: string, locale: string, zone: string | null | undefined) =>
+  `/v1/tasks/${encodeURIComponent(id)}?locale=${locale}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;

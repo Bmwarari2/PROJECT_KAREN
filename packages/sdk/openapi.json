@@ -20010,7 +20010,7 @@
                     },
                     "overdue": {
                       "type": "boolean",
-                      "description": "Open and past its due date, in the viewer's zone (`zone`, else the account's)"
+                      "description": "Open and past its due date, in the viewer's zone (`zone`, else the account's, else the workspace's)"
                     },
                     "completedVia": {
                       "anyOf": [
