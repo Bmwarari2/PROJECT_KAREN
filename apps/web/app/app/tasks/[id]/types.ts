@@ -27,3 +27,7 @@ export interface TaskDetail {
   completedVia: 'manual' | 'record' | null;
   completionNote: string | null;
 }
+
+/** The task's API path for the reader's locale and zone (the server render and the page use the same one). */
+export const taskPath = (id: string, locale: string, zone: string) =>
+  `/v1/tasks/${encodeURIComponent(id)}?locale=${locale}&zone=${encodeURIComponent(zone)}`;
