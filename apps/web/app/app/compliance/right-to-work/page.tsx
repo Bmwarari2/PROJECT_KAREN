@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Paperclip } from 'lucide-react';
 import {
   Button,
   Card,
@@ -22,12 +22,16 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
+import { IntentLink } from '@/components/intent-link';
+import { AttachDialog } from '@/components/documents/attach-dialog';
 import { selectClass, SourceLink, StatusBadge } from '../ui';
 
 interface Row {
   employeeId: string;
   employeeName: string;
   status: string;
+  checkId: string | null;
+  evidenceDocuments?: number;
   checkMethod: string | null;
   listType: string | null;
   checkedOn: string | null;
@@ -52,6 +56,8 @@ export default function RightToWorkPage() {
   const rows = useApi<Row[]>('/v1/compliance/right-to-work');
   const rules = useApi<Rules>('/v1/compliance/right-to-work/rules');
   const [open, setOpen] = React.useState<Row | null>(null);
+  // the evidence itself is attached to the person's documents and kept in the vault (ADR-0166)
+  const [attachFor, setAttachFor] = React.useState<Row | null>(null);
   const [form, setForm] = React.useState({
     checkMethod: 'manual_document_check',
     listType: 'list_a',
@@ -128,6 +134,7 @@ export default function RightToWorkPage() {
                 <TH>{t('compliance.rtw.checked')}</TH>
                 <TH>{t('compliance.rtw.followUp')}</TH>
                 <TH>{t('compliance.rtw.retainUntil')}</TH>
+                <TH>{t('docAttach.evidenceColumn')}</TH>
                 <TH>
                   <span className="sr-only">{t('common.actions')}</span>
                 </TH>
@@ -140,22 +147,42 @@ export default function RightToWorkPage() {
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>
+                  <TD label={t('compliance.rtw.checked')}>
                     {r.checkedOn ? `${d(r.checkedOn)} · ${t(`compliance.rtw.list.${r.listType}`)}` : '—'}
                   </TD>
-                  <TD>{d(r.followUpDueOn)}</TD>
-                  <TD>{d(r.retainUntil)}</TD>
+                  <TD label={t('compliance.rtw.followUp')}>{d(r.followUpDueOn)}</TD>
+                  <TD label={t('compliance.rtw.retainUntil')}>{d(r.retainUntil)}</TD>
+                  <TD label={t('docAttach.evidenceColumn')}>
+                    {r.evidenceDocuments ? (
+                      <IntentLink href={`/app/people/${r.employeeId}`} className="text-accent">
+                        {t('docAttach.evidenceCount', { count: r.evidenceDocuments })}
+                      </IntentLink>
+                    ) : (
+                      '—'
+                    )}
+                  </TD>
                   <TD className="text-right">
-                    {r.status !== 'retention' ? (
+                    <span className="inline-flex flex-wrap justify-end gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => setOpen(r)}
-                        aria-label={t('compliance.rtw.recordFor', { name: r.employeeName })}
+                        onClick={() => setAttachFor(r)}
+                        aria-label={t('docAttach.rtwAttachFor', { name: r.employeeName })}
                       >
-                        {t('compliance.rtw.record')}
+                        <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                        {t('docAttach.rtwAttach')}
                       </Button>
-                    ) : null}
+                      {r.status !== 'retention' ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setOpen(r)}
+                          aria-label={t('compliance.rtw.recordFor', { name: r.employeeName })}
+                        >
+                          {t('compliance.rtw.record')}
+                        </Button>
+                      ) : null}
+                    </span>
                   </TD>
                 </TR>
               ))}
@@ -163,6 +190,16 @@ export default function RightToWorkPage() {
           </Table>
         </Card>
       )}
+      {attachFor ? (
+        <AttachDialog
+          employeeId={attachFor.employeeId}
+          employeeName={attachFor.employeeName}
+          open
+          onOpenChange={(o) => !o && setAttachFor(null)}
+          preset={{ attachmentType: 'right_to_work', rtwCheckId: attachFor.checkId }}
+          onAttached={() => rows.reload()}
+        />
+      ) : null}
       <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
         {open && rules.data ? (
           <DialogContent

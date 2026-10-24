@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { FileText, History, Pencil, Send } from 'lucide-react';
+import { History, Pencil, Send } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -32,6 +32,7 @@ import { Avatar } from '@/components/dashboard/parts';
 import { PageTitle, hasPermission, useSession } from '../../shell';
 import type { LeaveBalance } from '@/components/leave-balances';
 import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
+import { PersonDocuments } from '@/components/documents/person-documents';
 
 interface ProfileResponse {
   employee: Record<string, unknown> & { id: string; displayName?: string };
@@ -127,9 +128,6 @@ export default function EmployeePage() {
   );
   const history = useApi<Record<string, Array<Record<string, unknown>>>>(
     data?.access.jobTitle !== 'none' ? `/v1/employees/${id}/history` : null,
-  );
-  const docs = useApi<Array<{ id: string; title: string; createdAt: string; category: string }>>(
-    `/v1/documents?employeeId=${id}`,
   );
   const [open, setOpen] = React.useState(false);
   const [values, setValues] = React.useState<Record<string, string>>({});
@@ -399,33 +397,11 @@ export default function EmployeePage() {
           </TabsContent>
         ) : null}
         <TabsContent value="documents" className="pt-5">
-          {docs.data?.length ? (
-            <ul className="flex flex-col gap-2">
-              {docs.data.map((d) => (
-                <li key={d.id} className="flex items-center gap-3 rounded-md border border-border p-3">
-                  <FileText aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                  <button
-                    type="button"
-                    className="text-left text-callout text-accent hover:underline"
-                    onClick={async () =>
-                      window.open(
-                        (await api<{ url: string }>(`/v1/documents/${d.id}/download`)).url,
-                        '_blank',
-                        'noopener',
-                      )
-                    }
-                  >
-                    {d.title}
-                  </button>
-                  <span className="ml-auto text-footnote text-text-secondary">
-                    {formatDate(d.createdAt.slice(0, 10), locale)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState icon={<FileText aria-hidden />} title={t('documents.empty')} />
-          )}
+          <PersonDocuments
+            employeeId={id}
+            name={String(e.displayName ?? '')}
+            canAttach={hasPermission(session, 'documents.manage')}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -1042,6 +1042,35 @@
     "type": {
       "right_to_work": "Work authorization evidence",
       "driving_licence": "Driver’s license"
+    },
+    "evidence": {
+      "brp_evisa": "Residence permit or visa",
+      "share_code_result": "Online status check result"
+    },
+    "vaultHint": "Kept in the vault: only people who may see work authorization records can open it.",
+    "rtwAttachFor": "Attach work authorization evidence for {name}"
+  },
+  "documents": {
+    "categoryName": {
+      "licence": "License",
+      "immigration": "Work authorization"
     }
+  },
+  "payslipView": {
+    "back": "All pay stubs",
+    "titleFor": "Pay stub: {name}",
+    "payslip": "Pay stub",
+    "pdfTitle": "Pay stub, {employer}, {date}",
+    "frequencies": {
+      "fortnightly": "Every two weeks",
+      "semi_monthly": "Semi-monthly"
+    },
+    "methods": {
+      "bank_transfer": "Direct deposit",
+      "cheque": "Check"
+    },
+    "taxCode": "Filing status",
+    "notFound": "This pay stub does not exist or you cannot open it",
+    "ytdAsOf": "As on your pay stub of {date} (tax year {year}), from {provider}."
   }
 }

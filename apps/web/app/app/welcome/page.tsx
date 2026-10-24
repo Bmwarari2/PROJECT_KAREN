@@ -10,8 +10,9 @@ import {
   EmptyState,
   Field,
   Input,
+  ListItem,
+  ListSection,
   Skeleton,
-  buttonVariants,
   useToast,
 } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
@@ -198,34 +199,36 @@ export default function WelcomePage() {
         </div>
       </header>
 
-      <Card>
-        <CardTitle as={sec.heading}>{t('onboarding.documentsTitle')}</CardTitle>
-        {data.documents.length ? (
-          <ul className="mt-3 flex flex-col gap-2">
-            {data.documents.map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center gap-3">
-                <FileSignature aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                <span className="flex-1 text-callout">{d.title}</span>
-                {d.status === 'signed' ? (
-                  <Badge tone="success">
-                    {t('onboarding.signedOn', { date: formatDate((d.signedAt ?? '').slice(0, 10), locale) })}
-                  </Badge>
-                ) : (
-                  <Link
-                    href={`/app/documents?sign=${d.id}`}
-                    className={buttonVariants({ size: 'sm' }) + ' no-underline'}
-                    aria-label={t('documents.signTitle', { title: d.title })}
-                  >
-                    {t('documents.sign')}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
+      {data.documents.length ? (
+        <ListSection
+          title={t('onboarding.documentsTitle')}
+          headingLevel={sec.level}
+          id="onboarding-documents"
+        >
+          {data.documents.map((d) => (
+            <ListItem
+              key={d.id}
+              href={`/app/documents/${d.documentId}`}
+              linkAs={Link}
+              leading={<FileSignature />}
+              title={d.title}
+              subtitle={
+                d.status === 'signed'
+                  ? t('onboarding.signedOn', { date: formatDate((d.signedAt ?? '').slice(0, 10), locale) })
+                  : undefined
+              }
+              accessory={
+                d.status === 'signed' ? undefined : <Badge tone="accent">{t('documents.sign')}</Badge>
+              }
+            />
+          ))}
+        </ListSection>
+      ) : (
+        <Card>
+          <CardTitle as={sec.heading}>{t('onboarding.documentsTitle')}</CardTitle>
           <p className="mt-2 text-callout text-text-secondary">{t('onboarding.documentsEmpty')}</p>
-        )}
-      </Card>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
