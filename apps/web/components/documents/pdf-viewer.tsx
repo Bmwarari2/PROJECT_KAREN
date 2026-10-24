@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 // the legacy build: it carries polyfills for the newest built-ins, so older phone browsers work too
-import { getDocument, GlobalWorkerOptions, TextLayer, version } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { loadPdfJs, PDFJS_BASE as BASE, type PdfJs } from './pdfjs';
 import { Skeleton } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import styles from './pdf-viewer.module.css';
@@ -17,10 +17,8 @@ import { PdfToolbar } from './pdf-toolbar';
  * One page is shown at a time (light on low-cost phones): previous and next, a page number, zoom in and out and
  * fit to width, with the page change announced politely.
  */
-const BASE = `/pdfjs/${version}/`;
-GlobalWorkerOptions.workerSrc = `${BASE}pdf.worker.min.mjs`;
 
-type PdfDocument = Awaited<ReturnType<typeof getDocument>['promise']>;
+type PdfDocument = Awaited<ReturnType<PdfJs['getDocument']>['promise']>;
 type Zoom = 'fit' | number;
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 /** The largest canvas (in device pixels) we draw: big pages on small phones would otherwise run out of memory. */
@@ -56,7 +54,7 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
   // load the document once per source
   React.useEffect(() => {
     let cancelled = false;
-    let task: ReturnType<typeof getDocument> | null = null;
+    let task: ReturnType<PdfJs['getDocument']> | null = null;
     // without workers or canvas there is nothing to draw with: the download stays
     if (typeof Worker === 'undefined' || !document.createElement('canvas').getContext) {
       setError('unsupported');
@@ -66,8 +64,12 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
       try {
         const res = await fetch(src, { credentials: 'same-origin' });
         if (!res.ok) throw new Error(String(res.status));
-        const data = new Uint8Array(await res.arrayBuffer());
-        task = getDocument({
+        const [data, pdfjs] = await Promise.all([
+          res.arrayBuffer().then((b) => new Uint8Array(b)),
+          loadPdfJs(),
+        ]);
+        if (cancelled) return;
+        task = pdfjs.getDocument({
           data,
           standardFontDataUrl: `${BASE}standard_fonts/`,
           cMapUrl: `${BASE}cmaps/`,
@@ -107,7 +109,7 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
     if (!doc || !width || !canvasRef.current || !textRef.current) return;
     let cancelled = false;
     let renderTask: { cancel(): void; promise: Promise<void> } | null = null;
-    let textLayer: TextLayer | null = null;
+    let textLayer: InstanceType<PdfJs['TextLayer']> | null = null;
     setRendering(true);
     (async () => {
       try {
@@ -135,6 +137,8 @@ export default function PdfViewer({ src, title, fallback, onPages, onPage }: Pdf
         if (cancelled) return;
         const text = textRef.current!;
         text.replaceChildren();
+        const { TextLayer } = await loadPdfJs();
+        if (cancelled) return;
         textLayer = new TextLayer({ textContentSource: p.streamTextContent(), container: text, viewport });
         await textLayer.render();
         if (cancelled) return;

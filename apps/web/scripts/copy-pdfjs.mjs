@@ -14,14 +14,16 @@ const { version } = JSON.parse(readFileSync(pkgJson, 'utf8'));
 const root = join(web, 'public', 'pdfjs');
 const out = join(root, version);
 const MARK = join(out, 'build.txt'); // which build was copied, so a switch of build copies again
-if (!existsSync(MARK) || readFileSync(MARK, 'utf8') !== 'legacy\n') {
+if (!existsSync(MARK) || readFileSync(MARK, 'utf8') !== 'legacy-module\n') {
   rmSync(root, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   // the legacy build, like the viewer's library: it polyfills the newest built-ins for older phone browsers
   cpSync(join(src, 'legacy', 'build', 'pdf.worker.min.mjs'), join(out, 'pdf.worker.min.mjs'));
+  // the library too: the viewer imports it as a native module, compiled off the main thread
+  cpSync(join(src, 'legacy', 'build', 'pdf.min.mjs'), join(out, 'pdf.min.mjs'));
   for (const dir of ['standard_fonts', 'cmaps', 'wasm'])
     cpSync(join(src, dir), join(out, dir), { recursive: true });
   cpSync(join(src, 'LICENSE'), join(out, 'LICENSE'));
-  writeFileSync(MARK, 'legacy\n');
+  writeFileSync(MARK, 'legacy-module\n');
 }
-console.log(`pdf.js ${version} worker and data in public/pdfjs/${version}`);
+console.log(`pdf.js ${version} library, worker and data in public/pdfjs/${version}`);

@@ -220,7 +220,12 @@
     background: transparent;
     box-shadow: none;
   }
-  /* a row whose title cell is one link is tapped as a whole */
+  /* a row whose title cell is one link is tapped as a whole, and its title reads like any list row's */
+  .thr-stack > tbody > tr > :first-child > a:only-of-type,
+  .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * > a:only-of-type {
+    color: var(--color-text);
+    text-decoration: none;
+  }
   .thr-stack > tbody > tr > :first-child > a:only-of-type::after,
   .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * > a:only-of-type::after {
     content: '';
