@@ -264,26 +264,46 @@ export function EmptyState({
   );
 }
 
-// ---- Table -----------------------------------------------------------------------------------
+// ---- Table ----------------------------------------------------------------------------------
 /**
  * `scrollLabel` names the scroll area and makes it focusable, so keyboard users can scroll a table
  * that is wider than the screen (WCAG 2.1.1); pass it wherever a table may overflow on phones.
+ *
+ * On phones (below `sm`) a table is shown as a list (ADR-0180, `.thr-stack` in base.css): each row
+ * becomes a list row whose first cell is the title and whose other cells are lines under it. Cells
+ * with buttons move under the text, and a row whose first cell is one link is tapped as a whole. Pass
+ * `stack={false}` for wide numeric grids (report previews) that read better scrolled sideways. The
+ * explicit roles keep the table's semantics where a browser drops them for re-laid-out tables.
  */
 export function Table({
   className,
   dense,
   scrollLabel,
+  stack = true,
   ...props
-}: React.TableHTMLAttributes<HTMLTableElement> & { dense?: boolean; scrollLabel?: string }) {
+}: React.TableHTMLAttributes<HTMLTableElement> & {
+  dense?: boolean;
+  scrollLabel?: string;
+  stack?: boolean;
+}) {
   const scroll = scrollLabel ? { tabIndex: 0, role: 'region', 'aria-label': scrollLabel } : {};
   return (
     <div
-      className={cn('w-full overflow-x-auto rounded-lg border border-border', scrollLabel && focusRing)}
+      className={cn(
+        'w-full overflow-x-auto rounded-lg border border-border',
+        stack && 'thr-stack-wrap',
+        scrollLabel && focusRing,
+      )}
       {...scroll}
     >
       <table
+        role={stack ? 'table' : undefined}
         data-dense={dense || undefined}
-        className={cn('w-full border-collapse text-left text-callout tabular-nums', className)}
+        className={cn(
+          'w-full border-collapse text-left text-callout tabular-nums',
+          stack && 'thr-stack',
+          className,
+        )}
         {...props}
       />
     </div>
@@ -300,6 +320,7 @@ export function THead(props: React.HTMLAttributes<HTMLTableSectionElement>) {
 export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
+      role="row"
       className={cn(
         'border-b border-border last:border-b-0 hover:bg-surface/60 focus-within:bg-accent-subtle',
         className,
@@ -309,8 +330,27 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   );
 }
 export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th scope="col" className={cn('h-11 px-4 align-middle font-semibold', className)} {...props} />;
+  return (
+    <th
+      scope="col"
+      role="columnheader"
+      className={cn('h-11 px-4 align-middle font-semibold', className)}
+      {...props}
+    />
+  );
 }
-export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('h-11 px-4 align-middle text-text', className)} {...props} />;
+/** `label` names the column for the phone layout (shown before the value) where the value alone is unclear. */
+export function TD({
+  className,
+  label,
+  ...props
+}: React.TdHTMLAttributes<HTMLTableCellElement> & { label?: string }) {
+  return (
+    <td
+      role="cell"
+      data-label={label}
+      className={cn('h-11 px-4 align-middle text-text', className)}
+      {...props}
+    />
+  );
 }

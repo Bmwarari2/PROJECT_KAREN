@@ -11,8 +11,9 @@ export interface TabLink {
 }
 
 /**
- * A module's tab bar: page links with an underline on the current one, scrolling sideways on narrow
- * screens. A navigation landmark (not ARIA tabs), because each tab is its own page.
+ * A module's sections as a segmented control (ADR-0180): a grey track with the current section raised
+ * on it, scrolling sideways on narrow screens (faded at the edges) so no label is ever cut. A
+ * navigation landmark (not ARIA tabs), because each section is its own page.
  */
 export function TabNav({
   tabs,
@@ -26,27 +27,34 @@ export function TabNav({
   className?: string;
 }) {
   return (
-    <nav aria-label={label} className={cn('-mb-px overflow-x-auto', className)}>
-      <ul className="flex min-w-max gap-1">
+    <nav
+      aria-label={label}
+      data-tab-nav
+      className={cn(
+        '-mx-4 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
+      <ul className="inline-flex min-w-max gap-0.5 rounded-pill bg-segment-track p-0.5">
         {tabs.map((tab) => {
           const cls = cn(
-            'inline-flex h-11 items-center gap-2 border-b-2 px-3 text-callout no-underline transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
+            'inline-flex h-9 items-center gap-1.5 rounded-pill px-4 text-callout no-underline transition-[background-color,color,box-shadow] duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
             tab.active
-              ? 'border-accent font-semibold text-text'
-              : 'border-transparent text-text-secondary hover:text-text',
+              ? 'bg-segment-selected font-semibold text-text shadow-sm'
+              : 'text-text-secondary hover:text-text',
           );
           const children = (
             <>
               {tab.label}
               {tab.count ? (
-                <span className="rounded-full bg-accent-subtle px-1.5 text-footnote tabular-nums text-text">
+                <span className="min-w-5 rounded-pill bg-accent px-1.5 text-center text-footnote font-semibold tabular-nums text-on-accent">
                   {tab.count}
                 </span>
               ) : null}
             </>
           );
           return (
-            <li key={tab.href}>
+            <li key={tab.href} data-active={tab.active || undefined}>
               {renderLink ? (
                 renderLink(tab, cls, children)
               ) : (
@@ -62,7 +70,10 @@ export function TabNav({
   );
 }
 
-/** The band at the top of a module: its icon tile, its name (the page's h1) and its tab bar. */
+/**
+ * The top of a module page (ADR-0180): its name as one bold large title (the page's h1) on the page
+ * background, with a small icon tile from `sm` up, optional actions and the sections control.
+ */
 export function ModuleHeader({
   icon,
   title,
@@ -77,22 +88,22 @@ export function ModuleHeader({
   tabs?: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-border bg-surface-raised">
-      <div className="mx-auto flex w-full max-w-[var(--app-width)] flex-col gap-3 px-4 pt-5 md:px-8">
-        <div className="flex flex-wrap items-center gap-4">
+    <div className="bg-surface">
+      <div className="mx-auto flex w-full max-w-[var(--app-width)] flex-col gap-4 px-4 pt-5 md:px-8 md:pt-8">
+        <div className="flex flex-wrap items-center gap-3">
           <span
             aria-hidden
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-chrome text-on-chrome [&_svg]:h-6 [&_svg]:w-6 [&_svg]:stroke-[1.5]"
+            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent-subtle text-accent sm:inline-flex [&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:stroke-[1.75]"
           >
             {icon}
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="text-title-2">{title}</h1>
-            {description ? <p className="text-footnote text-text-secondary">{description}</p> : null}
+            <h1 className="text-large-title text-text">{title}</h1>
+            {description ? <p className="text-callout text-text-secondary">{description}</p> : null}
           </div>
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
-        {tabs ?? <div className="h-3" />}
+        {tabs}
       </div>
     </div>
   );

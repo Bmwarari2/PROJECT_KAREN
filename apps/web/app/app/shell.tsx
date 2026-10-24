@@ -26,7 +26,7 @@ import { useT } from '@/lib/i18n-client';
 import { useIdle } from '@/lib/use-idle';
 import { revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
-import { isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
+import { dockModules, isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
 
 // The search palette and the account menu (and the dialog and menu primitives behind them) load
 // after the page, so they add nothing to what a phone must download and run before it can show it.
@@ -274,6 +274,13 @@ export function AppShell({
   const current = here?.module ?? null;
   const inboxCount = counts.approvals + counts.tasks;
   const railCounts = React.useMemo(() => ({ inbox: inboxCount }), [inboxCount]);
+  const dock = React.useMemo(() => (viewer ? dockModules(modules, viewer) : []), [modules, viewer]);
+  // keep the current section visible in a sideways-scrolling sections control (phones)
+  React.useEffect(() => {
+    document
+      .querySelector('[data-tab-nav] [data-active]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [path]);
   const tabCounts: Record<string, number> = {
     '/app/approvals': counts.approvals,
     '/app/tasks': counts.tasks,
@@ -304,7 +311,7 @@ export function AppShell({
       <ExperienceContext.Provider value={experienceValue}>
         {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
         <div className="flex min-h-dvh flex-col bg-surface">
-          <header className="sticky top-0 z-40 flex h-[var(--topbar-height)] items-center gap-2 bg-chrome px-3 text-on-chrome md:gap-4 md:px-4">
+          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/80 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -451,7 +458,7 @@ export function AppShell({
               ) : null}
               <main
                 id="main"
-                className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 py-6 md:px-8 md:py-8"
+                className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 pb-[calc(var(--dock-height)+env(safe-area-inset-bottom)+var(--space-6))] pt-5 md:px-8 md:pt-8 lg:pb-8"
               >
                 <ModuleFrameContext.Provider value={framed}>
                   <ModuleTabVisibleContext.Provider value={tabNameVisible}>
@@ -462,6 +469,39 @@ export function AppShell({
             </div>
           </div>
         </div>
+        {session && dock.length > 1 ? (
+          // the phone tab bar (ADR-0180): the viewer's main modules, one tap away
+          <nav
+            aria-label={t('app.ws.dock.label')}
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/80 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
+          >
+            <ul className="mx-auto flex h-[var(--dock-height)] max-w-lg items-stretch">
+              {dock.map((m) => {
+                const Icon = m.icon;
+                const active = current?.key === m.key;
+                const count = m.key === 'inbox' ? inboxCount : 0;
+                return (
+                  <li key={m.key} className="flex-1">
+                    <Link
+                      href={m.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`relative flex h-full flex-col items-center justify-center gap-0.5 text-footnote no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-chrome-focus ${active ? 'font-semibold text-chrome-focus' : 'text-on-chrome-secondary'}`}
+                    >
+                      <Icon aria-hidden className="h-6 w-6 stroke-[1.75]" />
+                      {m.key === 'me' ? t('app.ws.dock.me') : t(m.label)}
+                      {count ? (
+                        <span className="absolute left-1/2 top-1 ml-2 min-w-[18px] rounded-full bg-chrome-focus px-1 text-center text-footnote font-semibold leading-[18px] text-chrome">
+                          <span className="sr-only">{t('app.ws.pending')} </span>
+                          {count > 9 ? '9+' : count}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : null}
         {session && viewer && (searchOpen || searchUsed) ? (
           <GlobalSearch
             open={searchOpen}

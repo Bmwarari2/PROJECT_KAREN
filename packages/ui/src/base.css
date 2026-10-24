@@ -101,3 +101,88 @@
     transition-duration: 0ms !important;
   }
 }
+
+/* Tables as lists on phones (ADR-0180, `Table`). Unlayered, so it wins over the cells' utilities. */
+@media (max-width: 639px) {
+  .thr-stack-wrap {
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-sm);
+  }
+  .thr-stack,
+  .thr-stack > tbody {
+    display: block;
+    width: 100%;
+  }
+  .thr-stack > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .thr-stack > tbody > tr {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-2);
+    row-gap: 2px;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .thr-stack > tbody > tr:last-child {
+    border-bottom: 0;
+  }
+  .thr-stack > tbody > tr > td,
+  .thr-stack > tbody > tr > th {
+    display: block;
+    flex: 1 1 100%;
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+    color: var(--color-text-secondary);
+    font-size: var(--text-callout);
+    line-height: var(--text-callout--line-height);
+  }
+  /* the title: the first cell, or the second when the first is a selection checkbox */
+  .thr-stack > tbody > tr > :first-child:not(:has(> input[type='checkbox'])),
+  .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * {
+    color: var(--color-text);
+    font-size: var(--text-body);
+    line-height: 1.35;
+    font-weight: 600;
+  }
+  .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) {
+    flex: 0 0 auto;
+  }
+  .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * {
+    flex: 1 1 0;
+  }
+  .thr-stack > tbody > tr > td:empty {
+    display: none;
+  }
+  .thr-stack > tbody > tr > td[data-label]::before {
+    content: attr(data-label) ': ';
+  }
+  /* buttons go under the text, above the row's stretched link */
+  .thr-stack > tbody > tr > td:not(:first-child):has(button, [role='button'], form) {
+    order: 99;
+    flex: 0 1 auto;
+    margin-top: var(--space-2);
+    position: relative;
+    z-index: 1;
+  }
+  /* a row whose title cell is one link is tapped as a whole */
+  .thr-stack > tbody > tr > :first-child > a:only-of-type::after,
+  .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * > a:only-of-type::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+}
