@@ -19780,6 +19780,7 @@
                     "recordStatus",
                     "origin",
                     "closesItself",
+                    "overdue",
                     "completedVia",
                     "completionNote"
                   ],
@@ -20006,6 +20007,10 @@
                     "closesItself": {
                       "type": "boolean",
                       "description": "The task closes when its linked record is complete"
+                    },
+                    "overdue": {
+                      "type": "boolean",
+                      "description": "Open and past its due date, in the viewer's zone (`zone`, else the account's)"
                     },
                     "completedVia": {
                       "anyOf": [

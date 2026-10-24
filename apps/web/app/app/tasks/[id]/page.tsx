@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation';
 import { ListChecks } from 'lucide-react';
 import { Badge, Card, EmptyState, Skeleton } from '@thapsus/ui';
 import { formatDate, formatDateTime } from '@thapsus/core/i18n';
-import { compareDates, today as todayIn } from '@thapsus/core/time';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/zone';
@@ -28,7 +27,11 @@ export default function TaskPage() {
   const locale = useLocale();
   const session = useSession();
   const { id } = useParams<{ id: string }>();
-  const { data, error, reload } = useApi<TaskDetail>(`/v1/tasks/${id}?locale=${locale}`);
+  const zone = viewerZone(session?.timeZone);
+  // the API says whether it is overdue in the viewer's zone, so the page needs no time library (ADR-0186)
+  const { data, error, reload } = useApi<TaskDetail>(
+    `/v1/tasks/${id}?locale=${locale}&zone=${encodeURIComponent(zone)}`,
+  );
   const crumbs = [{ label: t('tasks.title'), href: '/app/tasks' }];
 
   if (error)
@@ -42,8 +45,7 @@ export default function TaskPage() {
       </div>
     );
   if (!data) return <Skeleton className="h-64 w-full" />;
-  const zone = viewerZone(session?.timeZone);
-  const overdue = data.status === 'open' && !!data.dueOn && compareDates(data.dueOn, todayIn(zone)) < 0;
+  const overdue = data.overdue;
   const roleName = (r: string) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`));
 
   const facts: DetailItem[] = [

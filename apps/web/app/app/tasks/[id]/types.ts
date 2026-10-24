@@ -22,6 +22,8 @@ export interface TaskDetail {
   /** "Comes from": the real source, and its page when the reader may open it. */
   origin: { source: string; label: string; href: string | null };
   closesItself: boolean;
+  /** Open and past its due date, in the viewer's zone. */
+  overdue: boolean;
   completedVia: 'manual' | 'record' | null;
   completionNote: string | null;
 }

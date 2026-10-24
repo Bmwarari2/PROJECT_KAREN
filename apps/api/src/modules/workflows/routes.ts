@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
 import { closesItself, parseDueRule, parseTaskAction } from '@thapsus/core/task-actions';
+import { compareDates, isValidTimeZone, today } from '@thapsus/core/time';
 import { enqueueJob } from '@thapsus/db';
 import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
@@ -133,6 +134,9 @@ const TaskDetail = Type.Object({
     href: Nullable(Type.String()),
   }),
   closesItself: Type.Boolean({ description: 'The task closes when its linked record is complete' }),
+  overdue: Type.Boolean({
+    description: "Open and past its due date, in the viewer's zone (`zone`, else the account's)",
+  }),
   completedVia: Nullable(Type.String()),
   completionNote: Nullable(Type.String()),
 });
@@ -411,6 +415,8 @@ export async function workflowRoutes(app: FastifyInstance) {
             if (!readable) throw new ApiError('forbidden');
           }
           const locale = req.ctx.locale;
+          const asked = (req.query as { zone?: string } | undefined)?.zone;
+          const zone = asked && isValidTimeZone(asked) ? asked : (auth.user.timeZone ?? 'UTC');
           return {
             id: r.id,
             title: taskTitle(r, locale),
@@ -439,6 +445,7 @@ export async function workflowRoutes(app: FastifyInstance) {
             recordStatus: await taskRecordStatus(tx, r, locale),
             origin: taskOrigin(r, auth.principal, locale, auth.principal.employeeId ?? null),
             closesItself: !!r.record_id && r.source !== 'hr_request' && closesItself(r.record_type),
+            overdue: r.status === 'open' && !!r.due_on && compareDates(r.due_on, today(zone)) < 0,
             completedVia: r.completed_via ?? null,
             completionNote: r.completion_note ?? null,
           };

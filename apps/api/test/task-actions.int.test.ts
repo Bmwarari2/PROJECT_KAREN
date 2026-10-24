@@ -636,6 +636,8 @@ describe('16.7 tasks close themselves when their record completes', () => {
       title: 'Return-to-work conversation: Eli Example',
       description: expect.stringContaining('fit to return'),
       dueOn: '2026-10-16',
+      // past its due date in the viewer's zone (the page needs no time library for it)
+      overdue: true,
       origin: { label: 'Absence', href: `/app/people/${emp}?tab=time-off` },
       action: { kind: 'form', opens: 'open_person', label: 'Open their time off', landed: false },
       recordStatus: { text: 'Conversation not recorded yet' },
