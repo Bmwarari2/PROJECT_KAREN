@@ -31,7 +31,7 @@ export async function staffReauthenticate() {
 }
 
 /**
- * The back office's API call (ADR-0174): when the API asks for a fresh key assertion, the browser's passkey
+ * The back office's API call (ADR-0173): when the API asks for a fresh key assertion, the browser's passkey
  * prompt appears and the call is retried once; a missing elevation gets a message that says where to ask.
  */
 export function useStaffApi() {

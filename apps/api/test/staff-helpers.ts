@@ -10,7 +10,7 @@ import {
 import { ELEVATION_ROLES } from '../src/modules/backoffice/elevations';
 
 /**
- * Thapsus staff in API tests (ADR-0174): accounts come from the operator path (createStaff, as the CLI does),
+ * Thapsus staff in API tests (ADR-0173): accounts come from the operator path (createStaff, as the CLI does),
  * the one-time enrolment link registers a software passkey (user verification on), and sign-in is a WebAuthn
  * assertion. Elevations are requested and then approved by a second, freshly enrolled staff member.
  */

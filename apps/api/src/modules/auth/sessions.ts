@@ -75,7 +75,7 @@ export async function loadSecurity(tx: Tx): Promise<TenantSecurity> {
 }
 
 /**
- * Admin sessions are shorter than the workspace's (plan 2.1.5, ADR-0173): at most 15 idle minutes and 8
+ * Admin sessions are shorter than the workspace's (plan 2.1.5, ADR-0170): at most 15 idle minutes and 8
  * hours in all, whatever the sign-in policy allows, because an admin session can change everyone's data.
  */
 export const ADMIN_IDLE_MINUTES = 15;
@@ -118,7 +118,7 @@ export interface AuthContext {
   requireMfaForEveryone?: boolean;
   /**
    * An admin session whose network (autonomous system) differs from the one it last authenticated
-   * from; it must re-authenticate before anything else (ADR-0173). Only set when the cell has the signal.
+   * from; it must re-authenticate before anything else (ADR-0170). Only set when the cell has the signal.
    */
   networkChanged?: boolean;
   principal: Principal;

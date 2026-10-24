@@ -20,8 +20,8 @@ import { ADMIN_ABSOLUTE_HOURS, ADMIN_IDLE_MINUTES, securityFrom } from '../src/m
 import { onSecurityEvent, type SecurityEvent } from '../src/lib/security-events';
 
 /**
- * Customer identity hardening (PROGRESS 15.3, 15.5, 15.8; plan 2.1.2, 2.1.5, 2.1.6; ADR-0170, ADR-0172,
- * ADR-0173): two-step verification for everyone in new workspaces, per-account and per-workspace
+ * Customer identity hardening (PROGRESS 15.3, 15.5, 15.7; plan 2.1.2, 2.1.5, 2.1.6; ADR-0170, ADR-0172):
+ * two-step verification for everyone in new workspaces, per-account and per-workspace
  * throttles next to the per-IP ones, auth.* security events, and shorter admin sessions.
  */
 let ctx: TestContext;

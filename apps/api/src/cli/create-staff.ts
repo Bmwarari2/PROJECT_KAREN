@@ -2,7 +2,7 @@ import { depsFromEnv } from '../deps';
 import { createStaff, STAFF_ENROLMENT_HOURS, type StaffRole } from '../modules/backoffice/auth';
 
 /**
- * Creates a Thapsus back-office staff account and prints its one-time enrolment link (ADR-0174). Staff
+ * Creates a Thapsus back-office staff account and prints its one-time enrolment link (ADR-0173). Staff
  * sign in only with a passkey or security key, registered through that link; there is no password.
  * Only an operator with database access can run this (docs/runbooks/staff-access.md).
  */

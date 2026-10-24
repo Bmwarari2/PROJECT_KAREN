@@ -87,7 +87,7 @@ export async function userSession(
   return { cookie: cookieFrom(res), userId, email };
 }
 
-/** Staff sign-in with a passkey (ADR-0174); see staff-helpers.ts for elevations and re-authentication. */
+/** Staff sign-in with a passkey (ADR-0173); see staff-helpers.ts for elevations and re-authentication. */
 export { staffSession } from './staff-helpers';
 
 /** Runs the queued jobs of one kind for a tenant (as the worker would) and marks them done. */

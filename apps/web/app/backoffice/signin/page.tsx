@@ -9,7 +9,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 
 /**
- * Thapsus staff sign-in (ADR-0174): a passkey or a hardware security key only, with user verification.
+ * Thapsus staff sign-in (ADR-0173): a passkey or a hardware security key only, with user verification.
  * There is no staff password; the first key is registered from a one-time enrolment link.
  */
 export default function StaffSignIn() {

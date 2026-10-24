@@ -1,4 +1,4 @@
--- Security hardening P0, Thapsus staff (docs/SECURITY_HARDENING.md §2.2, ADR-0174). Expand only: the
+-- Security hardening P0, Thapsus staff (docs/SECURITY_HARDENING.md §2.2, ADR-0173). Expand only: the
 -- staff password and TOTP columns stay (nothing reads them any more) until a later contract migration
 -- drops them. Safe to re-run.
 

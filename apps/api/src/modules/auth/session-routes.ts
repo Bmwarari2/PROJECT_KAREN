@@ -51,7 +51,7 @@ export function requireRecentAuth(auth: AuthContext, now: Date) {
  * Who may reset another person's sign-in (a lost second factor, a forgotten password, a changed SSO
  * identity): someone whose company-wide grants include settings.manage AND cover every permission the
  * person holds, who re-authenticated recently, and never for themselves. So an HR admin can help an
- * employee, but only an owner can help another owner (docs/guides/admin.md "Who can reset sign-ins").
+ * employee, but only an owner can help another owner (docs/guides/admin-guide.md "Who can reset sign-ins").
  */
 export async function assertAccountAuthority(
   tx: Tx,
@@ -140,7 +140,7 @@ export async function sessionRoutes(app: FastifyInstance) {
         if (ok) {
           // re-authentication issues a new session token and the old one stops working (ASVS V7.2.4)
           const secret = newToken();
-          // the network it re-authenticated from becomes the session's network (ADR-0173)
+          // the network it re-authenticated from becomes the session's network (ADR-0170)
           await tx.exec(
             'UPDATE app.sessions SET reauthenticated_at = $2, token_hash = $3, network = coalesce($4, network) WHERE id = $1',
             [auth.sessionId, deps.now(), hashToken(secret), req.ctx.network ?? null],

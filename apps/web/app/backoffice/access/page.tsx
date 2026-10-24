@@ -53,7 +53,7 @@ const TONE = {
 const PROBLEMS = ['ownRequest', 'scopeNotForYourRole', 'elevationRequired'];
 
 /**
- * Just-in-time access for Thapsus staff (plan 2.2.3, ADR-0174): ask for a scope with a reason and a
+ * Just-in-time access for Thapsus staff (plan 2.2.3, ADR-0173): ask for a scope with a reason and a
  * duration, approve other people's requests (after a fresh key assertion), and see what is in force.
  */
 export default function AccessPage() {

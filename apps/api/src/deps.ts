@@ -81,7 +81,7 @@ export interface Deps {
   siemS3?: CrossAccountS3;
   /**
    * The client's network (autonomous system) from a header a trusted proxy in front of the cell sets and
-   * overwrites; undefined when the cell has no such signal (ADR-0173). Admin sessions re-authenticate
+   * overwrites; undefined when the cell has no such signal (ADR-0170). Admin sessions re-authenticate
    * when it changes.
    */
   clientNetwork?: (headers: Record<string, string | string[] | undefined>) => string | undefined;

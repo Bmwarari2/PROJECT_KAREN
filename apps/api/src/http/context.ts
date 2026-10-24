@@ -17,7 +17,7 @@ export interface RequestCtx {
   locale: Locale;
   ip: string;
   userAgent: string | undefined;
-  /** The client's network (autonomous system), when a trusted proxy supplies it (ADR-0173). */
+  /** The client's network (autonomous system), when a trusted proxy supplies it (ADR-0170). */
   network?: string;
 }
 

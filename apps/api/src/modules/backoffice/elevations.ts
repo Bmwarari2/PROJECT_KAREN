@@ -13,7 +13,7 @@ import {
 } from './auth';
 
 /**
- * Just-in-time elevation for Thapsus staff (plan 2.2.3, 2.2.6; ADR-0174). Nobody holds standing access to
+ * Just-in-time elevation for Thapsus staff (plan 2.2.3, 2.2.6; ADR-0173). Nobody holds standing access to
  * super-admin actions, rule publishing or the use of a customer's support grant. A staff member asks for a
  * scope with a reason and a duration; a DIFFERENT staff member who could hold that scope approves it after
  * re-authenticating with their key; it then lasts until it expires (at most 4 hours) or is revoked.

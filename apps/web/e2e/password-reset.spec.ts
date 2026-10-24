@@ -56,7 +56,9 @@ test.describe('forgotten password', () => {
     await expectAccessible(p);
     await p.getByLabel('New password').fill('qwertyuiopasdfgh');
     await p.getByRole('button', { name: 'Save new password' }).click();
-    await expect(p.getByText('That password is too common. Choose one that is harder to guess.')).toBeVisible();
+    await expect(
+      p.getByText('That password is too common. Choose one that is harder to guess.'),
+    ).toBeVisible();
     await p.getByLabel('New password').fill(NEW_PASSWORD);
     await p.getByRole('button', { name: 'Save new password' }).click();
     await expect(p.getByRole('heading', { level: 1, name: 'Password changed' })).toBeVisible();

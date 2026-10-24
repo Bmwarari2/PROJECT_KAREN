@@ -20,8 +20,8 @@ import {
 import { onSecurityEvent, type SecurityEvent } from '../src/lib/security-events';
 
 /**
- * Thapsus back office (PROGRESS 10.2, 10.5, 15.7): staff sign-in with a passkey only, just-in-time
- * elevation and short sessions (ADR-0174), tenants of this cell
+ * Thapsus back office (PROGRESS 10.2, 10.5, 15.8, 15.9): staff sign-in with a passkey only, just-in-time
+ * elevation and short sessions (ADR-0173), tenants of this cell
  * and the cross-region directory view, usage aggregates, enterprise contracts with custom pricing,
  * invoice collection, PO numbers and multi-entity billing accounts, the staff audit trail — and
  * personal data only through granted, logged support access.

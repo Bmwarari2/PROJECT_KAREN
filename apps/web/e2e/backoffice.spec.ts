@@ -6,7 +6,7 @@ import { createStaff, staffContext, staffSignIn } from './phase10-helpers';
 test.use({ locale: 'en-GB', reducedMotion: 'reduce' });
 
 /**
- * Back office (ADR-0174): staff sign in only with a passkey or security key (a virtual authenticator here),
+ * Back office (ADR-0173): staff sign in only with a passkey or security key (a virtual authenticator here),
  * registered from a one-time enrolment link; then the support queue (ticket content view is audited), and
  * just-in-time elevation approved by a second staff member.
  */

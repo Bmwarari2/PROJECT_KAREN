@@ -16,7 +16,7 @@ import { hashToken, newToken } from '../auth/tokens';
 import { staffCookie, STAFF_COOKIE_DEV } from '../../http/security';
 
 /**
- * Thapsus staff authentication for the back office (plan 2.2.1, 2.2.5; ADR-0174):
+ * Thapsus staff authentication for the back office (plan 2.2.1, 2.2.5; ADR-0173):
  *  - sign-in ONLY with a passkey or hardware security key (WebAuthn, user verification required): there
  *    is no staff password and no authenticator-app code any more;
  *  - the first key is registered through a one-time enrolment link that only the operator CLI issues

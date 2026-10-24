@@ -9,7 +9,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 
 /**
- * One-time staff enrolment (ADR-0174). The link from the operator CLI carries its token in the fragment,
+ * One-time staff enrolment (ADR-0173). The link from the operator CLI carries its token in the fragment,
  * which never reaches a server log; it is read here and removed from the address bar at once.
  */
 export default function StaffEnrol() {

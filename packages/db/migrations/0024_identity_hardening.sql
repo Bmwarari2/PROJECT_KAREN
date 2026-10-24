@@ -47,6 +47,6 @@ CREATE INDEX IF NOT EXISTS sso_identities_user ON app.sso_identities (tenant_id,
 SELECT app.enable_tenant_rls('app.sso_identities');
 GRANT SELECT, INSERT, UPDATE, DELETE ON app.sso_identities TO thapsus_app;
 
--- Admin sessions re-authenticate when the network changes (ADR-0173): the autonomous system the session
+-- Admin sessions re-authenticate when the network changes (ADR-0170): the autonomous system the session
 -- was last authenticated from, when the cell has that signal (NULL otherwise).
 ALTER TABLE app.sessions ADD COLUMN IF NOT EXISTS network text;
