@@ -254,11 +254,16 @@ export function AppShell({
   const inboxCount = counts.approvals + counts.tasks;
   const railCounts = React.useMemo(() => ({ inbox: inboxCount }), [inboxCount]);
   const dock = React.useMemo(() => (viewer ? dockModules(modules, viewer) : []), [modules, viewer]);
-  // keep the current section visible in a sideways-scrolling sections control (phones)
+  // Keep the current section visible in a sideways-scrolling sections control (phones). The strip is scrolled
+  // itself: scrollIntoView would also move the browser's Tab starting point to the section, so the first Tab
+  // would skip the skip link and the top bar (2.4.1, caught by a11y-sweep.spec.ts).
   React.useEffect(() => {
-    document
-      .querySelector('[data-tab-nav] [data-active]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const strip = document.querySelector<HTMLElement>('[data-tab-nav]');
+    const active = strip?.querySelector<HTMLElement>('[data-active]');
+    if (!strip || !active || strip.scrollWidth <= strip.clientWidth) return;
+    const s = strip.getBoundingClientRect();
+    const a = active.getBoundingClientRect();
+    strip.scrollLeft += a.left + a.width / 2 - (s.left + s.width / 2);
   }, [path]);
   const tabCounts: Record<string, number> = {
     '/app/approvals': counts.approvals,
