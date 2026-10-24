@@ -51,6 +51,7 @@ describe('built-in roles', () => {
       'employee',
       'entity_hr_admin',
       'hr_admin',
+      'it_admin',
       'manager',
       'owner',
       'payroll_admin',

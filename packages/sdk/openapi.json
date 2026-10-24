@@ -8834,7 +8834,7 @@
             }
           }
         },
-        "x-capability": "people.add",
+        "x-capability": "people.create",
         "x-permission": {
           "any": [
             "employees.create"
@@ -17053,7 +17053,7 @@
             "required": true
           }
         ],
-        "x-capability": "documents.sign",
+        "x-capability": "documents.signOwn",
         "x-permission": {
           "any": [
             "documents.sign"
@@ -25899,7 +25899,7 @@
             "required": true
           }
         ],
-        "x-capability": "people.invite",
+        "x-capability": "people.inviteSignIn",
         "x-permission": {
           "any": [
             "users.invite"
@@ -84552,7 +84552,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.run",
+        "x-capability": "reports.use",
         "x-permission": {
           "any": [
             "reports.run",
@@ -85512,7 +85512,7 @@
             }
           }
         },
-        "x-capability": "reports.run",
+        "x-capability": "reports.use",
         "x-permission": {
           "any": [
             "reports.run",
@@ -86455,7 +86455,7 @@
             }
           }
         },
-        "x-capability": "reports.run",
+        "x-capability": "reports.use",
         "x-permission": {
           "any": [
             "reports.run",
@@ -88411,7 +88411,7 @@
             }
           }
         },
-        "x-capability": "reports.run",
+        "x-capability": "reports.use",
         "x-permission": {
           "any": [
             "reports.run",
@@ -89159,7 +89159,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.run",
+        "x-capability": "reports.use",
         "x-permission": {
           "any": [
             "reports.run",
@@ -89856,7 +89856,7 @@
             }
           }
         },
-        "x-capability": "reports.schedules",
+        "x-capability": "reports.scheduled",
         "x-permission": {
           "any": [
             "reports.schedule"
@@ -90232,7 +90232,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.schedules",
+        "x-capability": "reports.scheduled",
         "x-permission": {
           "any": [
             "reports.schedule"
@@ -90467,7 +90467,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.schedules",
+        "x-capability": "reports.scheduled",
         "x-permission": {
           "any": [
             "reports.schedule"
@@ -91131,7 +91131,7 @@
             }
           }
         },
-        "x-capability": "reports.exports.destinations",
+        "x-capability": "reports.dataExports.destinations",
         "x-permission": {
           "any": [
             "exports.destinations"
@@ -91459,7 +91459,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.exports.destinations",
+        "x-capability": "reports.dataExports.destinations",
         "x-permission": {
           "any": [
             "exports.destinations"
@@ -91689,7 +91689,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.exports.destinations",
+        "x-capability": "reports.dataExports.destinations",
         "x-permission": {
           "any": [
             "exports.destinations"
@@ -92228,7 +92228,7 @@
             }
           }
         },
-        "x-capability": "reports.exports.schedule",
+        "x-capability": "reports.dataExports.schedule",
         "x-permission": {
           "any": [
             "exports.schedule"
@@ -92581,7 +92581,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.exports.schedule",
+        "x-capability": "reports.dataExports.schedule",
         "x-permission": {
           "any": [
             "exports.schedule"
@@ -92853,7 +92853,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.exports.schedule",
+        "x-capability": "reports.dataExports.schedule",
         "x-permission": {
           "any": [
             "exports.schedule"
@@ -93005,7 +93005,7 @@
             "required": true
           }
         ],
-        "x-capability": "reports.exports.schedule",
+        "x-capability": "reports.dataExports.schedule",
         "x-permission": {
           "any": [
             "exports.schedule"
@@ -103199,7 +103199,7 @@
             }
           }
         },
-        "x-capability": "privacy.closure",
+        "x-capability": "privacy.closeAccount",
         "x-permission": {
           "any": [
             "account.close"
@@ -103480,7 +103480,7 @@
         "tags": [
           "privacy"
         ],
-        "x-capability": "privacy.closure",
+        "x-capability": "privacy.closeAccount",
         "x-permission": {
           "any": [
             "account.close"
@@ -140621,7 +140621,7 @@
             }
           }
         },
-        "x-capability": "askHr.ask",
+        "x-capability": "askHr.use",
         "x-permission": {
           "any": [
             "ai.ask"
@@ -141001,7 +141001,7 @@
             "required": true
           }
         ],
-        "x-capability": "askHr.ask",
+        "x-capability": "askHr.use",
         "x-permission": {
           "any": [
             "ai.ask"

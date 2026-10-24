@@ -69,7 +69,7 @@ export function SignPanel({
     requestAnimationFrame(() => heading.current?.focus());
   };
 
-  if (!can('documents.sign')) return null;
+  if (!can('documents.signOwn')) return null;
   if (request.status === 'signed')
     return (
       <section className={panel} aria-labelledby="sign-title">
@@ -91,7 +91,7 @@ export function SignPanel({
     try {
       const r = await api<{ status: string; signedDocumentId: string | null }>(
         `/v1/signature-requests/${request.id}/sign`,
-        { method: 'POST', json: { consent: true, typedName: name }, capability: 'documents.sign' },
+        { method: 'POST', json: { consent: true, typedName: name }, capability: 'documents.signOwn' },
       );
       setDone(r.status);
       move(3);

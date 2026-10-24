@@ -391,14 +391,14 @@ export const ACTIONS: QuickAction[] = [
     label: 'app.ws.action.addPerson',
     href: '/app/people/new',
     icon: UserPlus,
-    capability: 'people.add',
+    capability: 'people.create',
   },
   {
     key: 'buildReport',
     label: 'app.ws.action.buildReport',
     href: '/app/reports/builder',
     icon: BarChart3,
-    capability: 'reports.builder',
+    capability: 'reports.build',
   },
   {
     key: 'import',
@@ -433,7 +433,7 @@ export const ACTIONS: QuickAction[] = [
     label: 'app.ws.action.askHr',
     href: '/app/ask',
     icon: MessageCircleQuestionMark,
-    capability: 'askHr.ask',
+    capability: 'askHr.use',
   },
 ];
 

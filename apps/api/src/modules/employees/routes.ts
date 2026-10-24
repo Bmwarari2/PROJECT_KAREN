@@ -363,7 +363,7 @@ export async function employeeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/employees',
     {
-      config: { selfAudited: true, capability: 'people.add' },
+      config: { selfAudited: true, capability: 'people.create' },
       schema: {
         tags: ['employees'],
         summary: 'Hire (create) an employee with effective-dated personal, job, pay and contract records',

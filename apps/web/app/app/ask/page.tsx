@@ -89,7 +89,7 @@ export default function AskHrPage() {
       const result = await api<Answer>('/v1/ai/ask', {
         method: 'POST',
         json: { question: q },
-        capability: 'askHr.ask',
+        capability: 'askHr.use',
       });
       setExchanges((xs) => [{ key: result.id, question: q, result }, ...xs]);
       setQuestion('');
@@ -105,7 +105,7 @@ export default function AskHrPage() {
       await api(`/v1/ai/questions/${x.result.id}/feedback`, {
         method: 'POST',
         json: { rating },
-        capability: 'askHr.ask',
+        capability: 'askHr.use',
       });
       setExchanges((xs) => xs.map((y) => (y.key === x.key ? { ...y, feedback: rating } : y)));
     } catch (err) {

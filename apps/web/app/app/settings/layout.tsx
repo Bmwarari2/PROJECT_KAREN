@@ -19,6 +19,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         'platform.secretOnce',
         'platform.errors',
         'platform.featureOff',
+        'visibility',
       ]}
     >
       <SettingsFrame>{children}</SettingsFrame>

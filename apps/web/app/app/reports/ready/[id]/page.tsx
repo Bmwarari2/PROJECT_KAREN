@@ -108,7 +108,7 @@ export default function ReadyReportPage() {
         await api<ReportResult>(`/v1/reports/ready/${def!.id}/run`, {
           method: 'POST',
           json: { params: params() },
-          capability: 'reports.run',
+          capability: 'reports.use',
         }),
       );
     } catch (err) {
@@ -139,7 +139,7 @@ export default function ReadyReportPage() {
         await api(`/v1/reports/saved/${saved.data.id}`, {
           method: 'PUT',
           json: body,
-          capability: 'reports.run',
+          capability: 'reports.use',
         });
         savedReport = saved.data.id;
       } else
@@ -147,7 +147,7 @@ export default function ReadyReportPage() {
           await api<{ id: string }>('/v1/reports/saved', {
             method: 'POST',
             json: body,
-            capability: 'reports.run',
+            capability: 'reports.use',
           })
         ).id;
       toast({ title: t('reports.saved.done'), tone: 'success' });

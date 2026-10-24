@@ -129,7 +129,7 @@ describe('STAGING_LOGINS contract', () => {
       join(import.meta.dirname, '..', '..', '..', 'infra', 'gcp', 'staging', 'locals.tf'),
       'utf8',
     );
-    const block = /test_logins = \{([\s\S]*?)\n  \}/.exec(tf)![1]!;
+    const block = /test_logins = \{([\s\S]*?)\n {2}\}/.exec(tf)![1]!;
     const entries = [...block.matchAll(/^\s+(\w+)\s+= "([^"]+)"/gm)].map(
       (m) => [m[1]!, m[2]!.replace('${var.workspace_slug}', 'kestrel')] as const,
     );

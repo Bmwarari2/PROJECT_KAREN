@@ -227,7 +227,7 @@ export default function ExportsPage() {
                     () =>
                       api('/v1/privacy/closure/cancel', {
                         method: 'POST',
-                        capability: 'privacy.closure',
+                        capability: 'privacy.closeAccount',
                       }).then(closure.reload),
                     t('privacy.ui.closure.cancelled'),
                   )
@@ -249,7 +249,7 @@ export default function ExportsPage() {
                   api('/v1/privacy/closure', {
                     method: 'POST',
                     json: { confirmWorkspace: confirm, reason: reason || undefined },
-                    capability: 'privacy.closure',
+                    capability: 'privacy.closeAccount',
                   }).then(closure.reload),
                 t('privacy.ui.closure.scheduledToast'),
               );

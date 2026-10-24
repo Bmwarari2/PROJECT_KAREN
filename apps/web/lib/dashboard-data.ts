@@ -120,7 +120,7 @@ const preview = (spec: Spec) =>
   api<PreviewResult>('/v1/reports/builder/preview', {
     method: 'POST',
     json: spec,
-    capability: 'reports.run',
+    capability: 'reports.use',
   }).then((r) => r.rows);
 const count = (row: Record<string, unknown>) => Number(row.count_rows ?? 0) || 0;
 
@@ -148,7 +148,7 @@ interface Loaded<T> {
 function usePreview<T>(wanted: string | null, run: () => Promise<T>): Loaded<T> {
   // only for someone who may run reports (the preview route's capability, ADR-0188)
   const can = useCan();
-  const key = can('reports.run') ? wanted : null;
+  const key = can('reports.use') ? wanted : null;
   const [state, setState] = React.useState<Loaded<T>>({ data: undefined, failed: false });
   const runRef = React.useRef(run);
   runRef.current = run;

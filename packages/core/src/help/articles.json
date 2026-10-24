@@ -6,7 +6,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app"],
-      "features": ["settings.organisation", "people.add"],
+      "features": ["settings.organisation", "people.create"],
       "permissions": ["org.manage", "employees.create"],
       "locales": {
         "en-GB": {
@@ -34,7 +34,7 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/people", "/app/imports"],
-      "features": ["people.add", "people.imports"],
+      "features": ["people.create", "people.imports"],
       "permissions": ["employees.create", "imports.run"],
       "locales": {
         "en-GB": {
@@ -293,7 +293,7 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/documents", "/app/welcome"],
-      "features": ["documents.sign"],
+      "features": ["documents.signOwn"],
       "permissions": ["documents.sign"],
       "locales": {
         "en-GB": {
@@ -436,7 +436,7 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/ask"],
-      "features": ["askHr.ask"],
+      "features": ["askHr.use"],
       "permissions": ["ai.ask"],
       "locales": {
         "en-GB": {

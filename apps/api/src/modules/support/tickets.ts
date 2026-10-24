@@ -32,7 +32,6 @@ import {
   type TicketRow,
 } from './service';
 import './jobs';
-import { canSome } from '@thapsus/core/permissions';
 
 /** Newest back-office override of the contact channels (per region and plan), if any. */
 export async function contactOverrides(

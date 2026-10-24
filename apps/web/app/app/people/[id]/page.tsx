@@ -144,7 +144,7 @@ export default function EmployeePage() {
   const [inviting, setInviting] = React.useState(false);
   // each action's capability in the permission map (ADR-0188); the API still checks the person's scope
   const can = useCan();
-  const canInvite = can('people.invite');
+  const canInvite = can('people.inviteSignIn');
   const balances = useApi<LeaveBalance[]>(`/v1/leave/balances/${id}`);
   // the tab is part of the address, so a link can open the profile on it and the back button returns to it
   const path = usePathname();
@@ -330,7 +330,7 @@ export default function EmployeePage() {
                     await api(`/v1/employees/${id}/invite`, {
                       method: 'POST',
                       json: {},
-                      capability: 'people.invite',
+                      capability: 'people.inviteSignIn',
                     });
                     toast({ title: t('people.invited'), tone: 'success' });
                   } catch (err) {

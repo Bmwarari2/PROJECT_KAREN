@@ -58,7 +58,7 @@ describe('the permission map', () => {
     expect(implies('people.edit', 'people.changes')).toBe(true);
     expect(implies('people.changes', 'people.edit')).toBe(false);
     expect(implies('settings.sso.manage', 'settings.signInPolicy.manage')).toBe(true);
-    expect(implies({ all: ['exports.schedule', 'exports.destinations'] }, 'reports.exports.schedule')).toBe(true);
+    expect(implies({ all: ['exports.schedule', 'exports.destinations'] }, 'reports.dataExports.schedule')).toBe(true);
     expect(implies('home', 'settings.features.manage')).toBe(false);
     expect(implies('settings.features.manage', 'home')).toBe(true);
   });
@@ -69,7 +69,7 @@ describe('the permission map', () => {
     expect(allows(role('owner'), 'help.contactHr')).toBe(false); // admins contact support instead
     expect(permits(role('owner').has, 'help.contactHr')).toBe(true); // the API does not enforce `none`
     expect(allows({ ...employee, employeeId: null }, 'me.profile')).toBe(false);
-    expect(allows({ ...employee, askHr: false }, 'askHr.ask')).toBe(false);
+    expect(allows({ ...employee, askHr: false }, 'askHr.use')).toBe(false);
     const owner = role('owner');
     expect(allows(owner, 'settings.webhooks')).toBe(true); // flags unknown: shown
     expect(allows({ ...owner, features: { webhooks: false } }, 'settings.webhooks')).toBe(false);

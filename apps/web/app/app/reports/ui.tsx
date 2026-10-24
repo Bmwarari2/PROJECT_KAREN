@@ -347,7 +347,7 @@ export function useBackgroundRun() {
       const r = await api<RunStatus>('/v1/reports/runs', {
         method: 'POST',
         json: { source, format },
-        capability: 'reports.run',
+        capability: 'reports.use',
       });
       setRun(r);
       return poll(r.id);

@@ -395,7 +395,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post(
     '/v1/ai/ask',
     {
-      config: { selfAudited: true, capability: 'askHr.ask' },
+      config: { selfAudited: true, capability: 'askHr.use' },
       schema: {
         tags: ['ai'],
         body: Type.Object(
@@ -586,7 +586,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post(
     '/v1/ai/questions/:id/feedback',
     {
-      config: { selfAudited: true, capability: 'askHr.ask' },
+      config: { selfAudited: true, capability: 'askHr.use' },
       schema: {
         tags: ['ai'],
         params: Type.Object({ id: Uuid }),

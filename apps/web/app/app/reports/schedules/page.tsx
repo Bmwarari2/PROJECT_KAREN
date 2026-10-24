@@ -180,7 +180,7 @@ export default function SchedulesPage() {
           format: form.format,
           recipientUserIds: form.recipients.map((r) => r.id),
         },
-        capability: 'reports.schedules',
+        capability: 'reports.scheduled',
       });
       toast({ title: t('reports.schedules.created'), tone: 'success' });
       setOpen(false);
@@ -195,7 +195,7 @@ export default function SchedulesPage() {
       await api(`/v1/reports/schedules/${s.id}`, {
         method: 'PATCH',
         json: { enabled: !s.enabled },
-        capability: 'reports.schedules',
+        capability: 'reports.scheduled',
       });
       await schedules.reload();
     } catch (err) {
@@ -204,7 +204,7 @@ export default function SchedulesPage() {
   }
   async function remove(s: Schedule) {
     try {
-      await api(`/v1/reports/schedules/${s.id}`, { method: 'DELETE', capability: 'reports.schedules' });
+      await api(`/v1/reports/schedules/${s.id}`, { method: 'DELETE', capability: 'reports.scheduled' });
       toast({ title: t('reports.schedules.deleted'), tone: 'success' });
       await schedules.reload();
     } catch (err) {

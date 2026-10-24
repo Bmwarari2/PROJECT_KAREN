@@ -62,13 +62,13 @@ const BASE = {
   // ---- people ----------------------------------------------------------------------------------------
   'people.directory': anyOf('employees.read'),
   /** A person's profile: the API decides per record (ADR-0161). */
-  'people.profile': {},
-  'people.add': anyOf('employees.create'),
+  'people.record': {},
+  'people.create': anyOf('employees.create'),
   /** The change route HR and self-service share; each page asks for its own capability. */
   'people.changes': anyOf('employees.update', 'self.update_contact'),
   'people.edit': anyOf('employees.update'),
   'people.terminate': anyOf('employees.terminate'),
-  'people.invite': anyOf('users.invite'),
+  'people.inviteSignIn': anyOf('users.invite'),
   /** Emergency contacts: the API checks write access to the field on that person. */
   'people.emergencyContacts': {},
   'people.visibility': anyOf('self.read'),
@@ -78,7 +78,7 @@ const BASE = {
   'people.imports': anyOf('imports.run'),
   'people.compliance': anyOf('compliance.read'),
   'documents.manage': { any: ['documents.manage'], workspace: true },
-  'documents.sign': anyOf('documents.sign'),
+  'documents.signOwn': anyOf('documents.sign'),
   /** Countersigning: the API checks that the caller is the named countersigner. */
   'documents.countersign': {},
 
@@ -131,13 +131,13 @@ const BASE = {
   // ---- reports ---------------------------------------------------------------------------------------
   'reports.catalogue': anyOf('reports.run', 'reports.read_team'),
   /** Running, previewing and saving reports (rows are always limited by scope). */
-  'reports.run': { any: ['reports.run', 'reports.read_team'], alsoChecks: ['reports.manage'] },
-  'reports.builder': anyOf('reports.run'),
-  'reports.schedules': anyOf('reports.schedule'),
+  'reports.use': { any: ['reports.run', 'reports.read_team'], alsoChecks: ['reports.manage'] },
+  'reports.build': anyOf('reports.run'),
+  'reports.scheduled': anyOf('reports.schedule'),
   /** The data exports page lists destinations and scheduled exports, so it needs both. */
-  'reports.exports': { all: ['exports.schedule', 'exports.destinations'] },
-  'reports.exports.schedule': anyOf('exports.schedule'),
-  'reports.exports.destinations': anyOf('exports.destinations'),
+  'reports.dataExports': { all: ['exports.schedule', 'exports.destinations'] },
+  'reports.dataExports.schedule': anyOf('exports.schedule'),
+  'reports.dataExports.destinations': anyOf('exports.destinations'),
 
   // ---- compliance ------------------------------------------------------------------------------------
   'compliance.overview': anyOf('compliance.read'),
@@ -160,7 +160,7 @@ const BASE = {
   /** The account exports and closure page loads both, so it needs both (owners). */
   'privacy.exports': { all: ['account.export', 'account.close'], workspace: true },
   'privacy.companyExport': { any: ['account.export'], workspace: true },
-  'privacy.closure': { any: ['account.close'], workspace: true },
+  'privacy.closeAccount': { any: ['account.close'], workspace: true },
 
   // ---- company and help ------------------------------------------------------------------------------
   'company.billing': { any: ['billing.manage'], workspace: true },
@@ -172,7 +172,7 @@ const BASE = {
   'help.contactHr': { all: ['hr.contact'], none: ['support.ticket'] },
   'help.contactHr.ask': anyOf('hr.contact'),
   /** Ask HR: the staff-managed flag, and the customer's opt-in and the region (askHr, from the API). */
-  'askHr.ask': { any: ['ai.ask'], feature: 'aiAssistant', askHr: true },
+  'askHr.use': { any: ['ai.ask'], feature: 'aiAssistant', askHr: true },
 
   // ---- settings --------------------------------------------------------------------------------------
   'settings.organisation': { any: ['org.manage'], workspace: true },
@@ -250,12 +250,12 @@ export const PAGES: readonly PageAccess[] = [
   { path: '/app/approvals/[id]', view: 'inbox.approvals', manage: 'inbox.approvals.decide' },
   { path: '/app/tasks', view: 'inbox.tasks', manage: 'inbox.tasks.complete' },
   { path: '/app/tasks/[id]', view: 'inbox.tasks', manage: 'inbox.tasks.complete' },
-  { path: '/app/people', view: 'people.directory', manage: 'people.add' },
-  { path: '/app/people/new', view: 'people.add' },
-  { path: '/app/people/[id]', view: 'people.profile', manage: 'people.edit' },
+  { path: '/app/people', view: 'people.directory', manage: 'people.create' },
+  { path: '/app/people/new', view: 'people.create' },
+  { path: '/app/people/[id]', view: 'people.record', manage: 'people.edit' },
   { path: '/app/org-chart', view: 'people.orgChart' },
   { path: '/app/documents', view: 'people.documents' },
-  { path: '/app/documents/[id]', view: 'people.documents', manage: 'documents.sign' },
+  { path: '/app/documents/[id]', view: 'people.documents', manage: 'documents.signOwn' },
   { path: '/app/imports', view: 'people.imports' },
   { path: '/app/time', view: 'time.overview' },
   { path: '/app/time-off', view: 'time.timeOff', manage: 'time.timeOff.requestOwn' },
@@ -273,9 +273,9 @@ export const PAGES: readonly PageAccess[] = [
   { path: '/app/integrations', view: 'it.integrations', manage: 'it.integrations.manage' },
   { path: '/app/automation', view: 'it.automation', manage: 'it.automation.manage' },
   { path: '/app/reports', view: 'reports.catalogue' },
-  { path: '/app/reports/builder', view: 'reports.builder' },
-  { path: '/app/reports/schedules', view: 'reports.schedules' },
-  { path: '/app/reports/exports', view: 'reports.exports' },
+  { path: '/app/reports/builder', view: 'reports.build' },
+  { path: '/app/reports/schedules', view: 'reports.scheduled' },
+  { path: '/app/reports/exports', view: 'reports.dataExports' },
   { path: '/app/reports/ready/[id]', view: 'reports.catalogue' },
   { path: '/app/reports/runs/[id]', view: 'reports.catalogue' },
   { path: '/app/compliance', view: 'compliance.overview' },
@@ -303,7 +303,7 @@ export const PAGES: readonly PageAccess[] = [
   { path: '/app/support/[id]', view: 'help.support' },
   { path: '/app/contact-hr', view: 'help.contactHr', manage: 'help.contactHr.ask' },
   { path: '/app/contact-hr/[id]', view: 'help.contactHr.ask' },
-  { path: '/app/ask', view: 'askHr.ask' },
+  { path: '/app/ask', view: 'askHr.use' },
   { path: '/app/settings', view: 'settings.index' },
   { path: '/app/settings/organisation', view: 'settings.organisation' },
   { path: '/app/settings/roles', view: 'settings.roles', manage: 'settings.roles.manage' },

@@ -885,7 +885,7 @@ export async function documentRoutes(app: FastifyInstance) {
   app.post(
     '/v1/signature-requests/:id/sign',
     {
-      config: { selfAudited: true, capability: 'documents.sign' },
+      config: { selfAudited: true, capability: 'documents.signOwn' },
       schema: {
         tags: ['documents'],
         summary:
@@ -932,7 +932,7 @@ export async function documentRoutes(app: FastifyInstance) {
         if (!sr) throw new ApiError('notFound');
         if (
           sr.signer_employee_id !== auth.principal.employeeId ||
-          !can(auth.principal, 'documents.sign', { employeeId: sr.signer_employee_id })
+          !can(auth.principal, 'documents.signOwn', { employeeId: sr.signer_employee_id })
         )
           throw new ApiError('forbidden');
         if (sr.status !== 'pending') throw new ApiError('conflict');

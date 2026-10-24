@@ -1491,7 +1491,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/closure',
     {
-      config: { selfAudited: true, capability: 'privacy.closure' },
+      config: { selfAudited: true, capability: 'privacy.closeAccount' },
       schema: {
         tags: ['privacy'],
         summary: 'Schedule account closure after the grace period (cancellable until then)',
@@ -1550,7 +1550,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/closure/cancel',
     {
-      config: { selfAudited: true, capability: 'privacy.closure' },
+      config: { selfAudited: true, capability: 'privacy.closeAccount' },
       schema: { tags: ['privacy'], response: { 200: ClosureOut, 403: Problem, 409: Problem } },
     },
     async (req) => {

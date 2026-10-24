@@ -173,7 +173,7 @@ export default function BuilderPage() {
         const data = await api<ReportResult>('/v1/reports/builder/preview', {
           method: 'POST',
           json: s,
-          capability: 'reports.builder',
+          capability: 'reports.build',
         });
         setResult({ data, groups: s.groupBy?.length ?? 0 });
         setStale(false);
@@ -272,7 +272,7 @@ export default function BuilderPage() {
         await api(`/v1/reports/saved/${savedReport.id}`, {
           method: 'PUT',
           json: body,
-          capability: 'reports.builder',
+          capability: 'reports.build',
         });
         id = savedReport.id;
         saved.reload();
@@ -281,7 +281,7 @@ export default function BuilderPage() {
           await api<{ id: string }>('/v1/reports/saved', {
             method: 'POST',
             json: body,
-            capability: 'reports.builder',
+            capability: 'reports.build',
           })
         ).id;
       toast({ title: t('reports.saved.done'), tone: 'success' });

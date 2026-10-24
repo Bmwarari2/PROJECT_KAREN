@@ -158,7 +158,7 @@ function DestinationForm({
       await api('/v1/data-exports/destinations', {
         method: 'POST',
         json: body,
-        capability: 'reports.exports.destinations',
+        capability: 'reports.dataExports.destinations',
       });
       toast({ title: t('reports.exports.destinationAdded'), tone: 'success' });
       onDone();
@@ -411,7 +411,7 @@ function ExportForm({
           ...(form.frequency === 'monthly' ? { dayOfMonth: form.dayOfMonth } : {}),
           datasets: selected.map(([dataset, f]) => ({ dataset, fields: f })),
         },
-        capability: 'reports.exports.schedule',
+        capability: 'reports.dataExports.schedule',
       });
       toast({ title: t('reports.exports.exportCreated'), tone: 'success' });
       onDone();
@@ -806,7 +806,7 @@ export default function ExportsPage() {
                             () =>
                               api(`/v1/data-exports/destinations/${d.id}/test`, {
                                 method: 'POST',
-                                capability: 'reports.exports.destinations',
+                                capability: 'reports.dataExports.destinations',
                               }),
                             'reports.exports.testOk',
                             errorText,
@@ -825,7 +825,7 @@ export default function ExportsPage() {
                             () =>
                               api(`/v1/data-exports/destinations/${d.id}`, {
                                 method: 'DELETE',
-                                capability: 'reports.exports.destinations',
+                                capability: 'reports.dataExports.destinations',
                               }),
                             'reports.exports.deleted',
                           )
@@ -905,7 +905,7 @@ export default function ExportsPage() {
                             () =>
                               api(`/v1/data-exports/${x.id}/run`, {
                                 method: 'POST',
-                                capability: 'reports.exports.schedule',
+                                capability: 'reports.dataExports.schedule',
                               }),
                             'reports.exports.runQueued',
                           )
@@ -923,7 +923,7 @@ export default function ExportsPage() {
                               api(`/v1/data-exports/${x.id}`, {
                                 method: 'PATCH',
                                 json: { enabled: !x.enabled },
-                                capability: 'reports.exports.schedule',
+                                capability: 'reports.dataExports.schedule',
                               }),
                             x.enabled ? 'reports.schedules.paused' : 'reports.schedules.resumed',
                           )
@@ -940,7 +940,7 @@ export default function ExportsPage() {
                             () =>
                               api(`/v1/data-exports/${x.id}`, {
                                 method: 'DELETE',
-                                capability: 'reports.exports.schedule',
+                                capability: 'reports.dataExports.schedule',
                               }),
                             'reports.exports.deleted',
                           )

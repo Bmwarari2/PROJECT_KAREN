@@ -51,7 +51,7 @@ export default function NewEmployeePage() {
       const r = await api<{ id: string }>('/v1/employees', {
         method: 'POST',
         json: body,
-        capability: 'people.add',
+        capability: 'people.create',
       });
       toast({ title: t('people.hired'), tone: 'success' });
       router.push(`/app/people/${r.id}`);

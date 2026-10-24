@@ -234,7 +234,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/data-exports/destinations',
     {
-      config: { selfAudited: true, capability: 'reports.exports.destinations' },
+      config: { selfAudited: true, capability: 'reports.dataExports.destinations' },
       schema: {
         tags: ['data-exports'],
         summary: 'Add an S3 (home-region bucket, cross-account role) or SFTP (pinned host key) destination',
@@ -341,7 +341,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/data-exports/destinations/:id/test',
     {
-      config: { selfAudited: true, capability: 'reports.exports.destinations' },
+      config: { selfAudited: true, capability: 'reports.dataExports.destinations' },
       schema: {
         tags: ['data-exports'],
         summary: 'Check the destination is reachable and writable',
@@ -387,7 +387,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/data-exports/destinations/:id',
     {
-      config: { selfAudited: true, capability: 'reports.exports.destinations' },
+      config: { selfAudited: true, capability: 'reports.dataExports.destinations' },
       schema: {
         tags: ['data-exports'],
         params: Type.Object({ id: Uuid }),
@@ -487,7 +487,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/data-exports',
     {
-      config: { selfAudited: true, capability: 'reports.exports.schedule' },
+      config: { selfAudited: true, capability: 'reports.dataExports.schedule' },
       schema: {
         tags: ['data-exports'],
         summary:
@@ -558,7 +558,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/data-exports/:id',
     {
-      config: { selfAudited: true, capability: 'reports.exports.schedule' },
+      config: { selfAudited: true, capability: 'reports.dataExports.schedule' },
       schema: {
         tags: ['data-exports'],
         params: Type.Object({ id: Uuid }),
@@ -588,7 +588,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/data-exports/:id',
     {
-      config: { selfAudited: true, capability: 'reports.exports.schedule' },
+      config: { selfAudited: true, capability: 'reports.dataExports.schedule' },
       schema: {
         tags: ['data-exports'],
         params: Type.Object({ id: Uuid }),
@@ -639,7 +639,7 @@ export async function dataExportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/data-exports/:id/run',
     {
-      config: { selfAudited: true, capability: 'reports.exports.schedule' },
+      config: { selfAudited: true, capability: 'reports.dataExports.schedule' },
       schema: {
         tags: ['data-exports'],
         summary: 'Deliver now (a manual delivery for the current period)',
