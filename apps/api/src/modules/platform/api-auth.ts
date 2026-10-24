@@ -87,7 +87,7 @@ export async function resolveApiCredential(deps: Deps, token: string): Promise<A
               last_used_at: string | null;
             }>(
               `SELECT id, id AS credential_id, name, scopes, role_id, scope_type, scope_values, last_used_at FROM app.api_keys
-                WHERE key_hash = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > $2)`,
+                WHERE key_hash = $1 AND revoked_at IS NULL AND suspended_at IS NULL AND (expires_at IS NULL OR expires_at > $2)`,
               [hash, now],
             )
           : await tx.maybe<{

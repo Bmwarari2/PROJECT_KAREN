@@ -1814,3 +1814,84 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - One insert per API process per minute (about one row per active route group), plus one per database per minute from the worker.
 - Figures cover the API only. The web server's own page renders are not counted; the Lighthouse budgets in `scripts/lighthouse.mjs` remain the page-speed gate.
 - Percentiles are bucket upper bounds, so a p95 of "500 ms" means somewhere between 250 and 500 ms.
+
+## ADR-0177 — Security detections: signals in the cell, a versioned rule catalogue and incidents with dedupe windows (2026-10-24)
+
+**Context.** The approved hardening plan (§3.1, P0) asks for unauthorised-activity monitoring: detections from the app's security and audit events, a versioned rule catalogue with MITRE ATT&CK mappings and test fixtures, and incidents. It must be residency-safe (everything in the cell, pseudonymous) and cheap on the request path. The identity half of the plan (Agent C, ADR-0170 to ADR-0174) emits `auth.*` and `staff.*` events through `onSecurityEvent`, and is not merged yet.
+
+**Decision.**
+
+- **One signal contract** (`@thapsus/core/security`, `signals.ts`) names every event type a rule may use and where it comes from:
+  - request outcomes from the API's response hook (`authn.failed` on sign-in routes, `authz.denied`, `input.rejected`, `antiautomation.limited` and `.locked`, `http.not_found`, `route.not_found`, `ip.blocked`);
+  - the identity work's events, under their own names (`auth.login_failed` with keyed account hashes, `auth.session_network_changed`, `auth.sso_subject_mismatch`, `staff.elevation_*`…);
+  - watched customer audit actions, copied as `audit.<action>` by an `AFTER INSERT` trigger on `audit.events` (privilege changes, exports and downloads, vault reads, SSO and API credential changes, Ask HR questions);
+  - watched staff audit actions, copied as `staffaudit.<action>`;
+  - honeytoken touches.
+
+  The triggers keep only allowlisted codes, flags and counts of a diff (`security.audit_detail`) and the /24 or /48 network of the address. They run in the writer's own transaction, so a rolled-back change leaves no signal, and no application code changed.
+
+- **Storage** (migration 0027, schema `security`, a non-tenant schema of the isolation suite). Tables: `events` (30 days), `detections`, `incidents`, `incident_events` (the append-only timeline), `containment_actions`, `honeytokens`, `rule_settings`, `rule_tests`, `pipeline_state` and `alert_log`. Pseudonymous only:
+  - workspaces, people and staff by UUID;
+  - client addresses as a keyed HMAC (`pseudonym`, the same derivation as the identity work, so both streams agree) plus the truncated network for display;
+  - route patterns, never URLs;
+  - details limited to codes, numbers and booleans (`cleanSignal` drops anything else, including anything that looks like an id in a route).
+- **Cheap request path.** The API pushes signals into an in-memory buffer that writes in one `INSERT` every two seconds or at 500 queued. Blocks and honeytoken fingerprints are checked against caches refreshed every 30 and 60 seconds.
+- **Rule catalogue** (`@thapsus/core/security`, `catalogue.ts`): versioned and effective-dated like the jurisdiction packs (half-open validity, version chains checked). Each rule carries its signal types, logic (threshold with optional distinct count, sequence, or failure ratio), group fields, severity, MITRE ATT&CK technique, dedupe window, automated containment, whether customers see it, a fixture and its tuning notes.
+  - 21 active rules cover credential attacks, account takeover, privilege changes, exfiltration, probing, staff, deception and Ask HR abuse.
+  - Eight are listed as planned with what they need: GuardDuty, Security Hub, CloudTrail root, IAM and key policies, open security groups, risk-based sign-in, break-glass accounts and injection canaries.
+  - Names and summaries are in the message catalogues. MITRE technique names and the tuning notes are English reference data shown as such, like the source titles of rule versions.
+- **Engine** (`modules/security/engine.ts`). Once a minute, in one worker at a time (a `FOR UPDATE SKIP LOCKED` row), each active rule is one aggregate query over its window. The query is limited to groups that received an event since the cursor; every value is a parameter and columns come from a fixed map.
+  - The cursor lags ten seconds behind, so events still committing out of id order are looked at again. Re-evaluation extends the open detection instead of repeating it.
+  - A hit extends its detection within the rule's dedupe window, or creates one that joins (or opens) the incident for the same address, person, staff member or workspace. The incident takes the highest severity and records an escalation.
+- **Fixtures are tests.** `apps/api/test/security-engine.int.test.ts` runs every active rule's fixture against the real engine: it must fire exactly once, and its near miss never. The back office's "Test every rule" runs the same fixtures in rolled-back transactions on the live cell and records the result.
+- **Merge note.** Until the identity work is merged, its `auth.*` and `staff.*` events have no producer here. `modules/security/http.ts` marks the one line that subscribes the buffer with `onSecurityEvent`. Until then the rules that need them (THR-CRED-002, THR-ATO-002, THR-ATO-004) are inert and their fixtures still pass.
+
+**Consequences.**
+
+- Detection latency is about a minute (the worker drains every minute on Google Cloud), within the plan's five-minute target for high severity.
+- One extra `INSERT` every two seconds per busy API process; one row per watched audit action.
+- The thresholds are fixed per rule. Per-person baselines (for exports, for example) need a month of history and are recorded as tuning notes.
+- Internal addresses (loopback, private, link-local, carrier-grade NAT, unique-local) are never blocked: a request that reaches the API without its forwarded client address must not lock everyone out.
+
+## ADR-0178 — Containment, the back-office Security module and the customer's Security centre (2026-10-24)
+
+**Context.** The plan (§3.1 to §3.3) asks for automated containment that is audited, reversible and never deletes customer data; a back-office Security module for a new `security_analyst` role and super admins; and a "Security centre" in the customer's Settings.
+
+**Decision.**
+
+- **Containment** (`modules/security/containment.ts`). Each action is a row in `security.containment_actions` and an entry on the incident's timeline. An action that touches a workspace also goes into that workspace's own audit log (actor `system` when automated, `support` when staff act).
+  - **Block an address:** the API refuses its keyed hash with `403 blocked` until the block expires (rule-defined, 30 minutes to a day) or is lifted.
+  - **End a person's sessions:** they sign in again; there is nothing to reverse.
+  - **Suspend an API key:** `app.api_keys.suspended_at`; the key stops resolving until it is restored.
+  - **Freeze a staff account:** it is deactivated and its sessions end. Unfreezing takes two staff members: the first records the request, a different one approves (a check constraint enforces it too). The last active super admin is never frozen, and nobody can unfreeze their own account.
+  - Rules may contain automatically: addresses for credential, probing and decoy rules; staff freezes for repeated staff sign-in failures. Everything else is one click from the incident view.
+- **Security module** (Back office → Security; `security_analyst` and super admins). Reads declare `noElevation`; containment, reversal and rule toggles declare `reauth`, which the identity work enforces with a fresh staff key proof. Every view and action is in the staff trail. Screens, all grouped lists (ADR-0180):
+  - **Overview:** detections in 24 hours and by severity, open incidents, mean time to acknowledge and resolve over 30 days, this region's sign-in health (successes, failures and rate, lockouts, two-step verification adoption), the top offending networks, the staff elevation log and the pipeline state (last run, waiting events, alert recipients).
+  - **Incidents:** open or all, worst first.
+  - **Incident:** status and assignee, containment and its reversal, detections, affected workspaces and the timeline with notes.
+  - **Rules:** the catalogue by area, on or off per cell, fixture results and tuning notes.
+  - **Honeytokens:** the registry (ADR-0179).
+
+  Other regions keep their security data in their own back office.
+
+- **Security centre** (Settings → Security centre, `audit.read` to view, `settings.manage` to change). Everything is read under the workspace's own row level security:
+  - its security alerts (`app.security_alerts`, a copy of each customer-visible detection about the workspace, with its own user id);
+  - failed and successful sign-ins and locked accounts, and recent failed sign-ins with their /24 network;
+  - admin changes from its audit log;
+  - two-step verification adoption;
+  - alert recipients (`app.security_alert_recipients`, admins only; the owners when none are chosen).
+
+  Both tables follow the tenant-table checklist (RLS, tenant-leading keys, privacy subject map, sandbox class).
+
+- **Email alerts** (`modules/security/alerts.ts`, plan §3.3), from the cell's own mailer in its home region (staging writes them to the mail bucket):
+  - critical and high: at once when an incident opens or escalates, to the staff list;
+  - medium: an hourly digest; low: a daily digest;
+  - the admins of an affected workspace get the same routing for customer-visible rules (at once for high and critical, digests otherwise), in their own language, to the recipients chosen in their Security centre (the owners by default);
+  - a daily test alert, and a dead-man's switch when no detection run completed for ten minutes. The API checks it every minute, so a dead worker cannot silence it.
+
+  Each alert is claimed once in `security.alert_log` under a dedupe key before it is sent, so several workers never send it twice; recipients are counted, never stored. The staff list is `SECURITY_ALERT_EMAILS`, set per cell from configuration (`security_alert_emails` in OpenTofu, from a GitHub variable); it is never in code. Alerts carry severity, rule, region, workspace ids, counts, first and last seen (UTC) and a link to the incident or the Security centre. They carry no names, emails, addresses, secrets or sign-in links, and they say they never ask for a password or a code. SMS or paging for critical alerts needs a sub-processor and is P1.
+
+**Consequences.**
+
+- The back office's calls for containment go through `securityCall` (apps/web/app/backoffice/security/nav.tsx). Once the identity work is merged it becomes `useStaffApi`, so the browser asks for the staff key when the API wants a fresh proof.
+- Blocking is at the app (Fastify `onRequest`), not at the WAF or Cloud Armor, so blocked requests still reach the cell; the WAF IP set is P1.

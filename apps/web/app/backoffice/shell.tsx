@@ -14,6 +14,7 @@ import {
   Newspaper,
   ScrollText,
   Settings2,
+  ShieldAlert,
   Timer,
 } from 'lucide-react';
 import {
@@ -65,6 +66,12 @@ function navItems(t: (k: string) => string, s: StaffSession, path: string): NavI
       label: t('backoffice.nav.performance'),
       icon: <Timer aria-hidden />,
       show: staffCan(s, 'support', 'billing', 'security_analyst'),
+    },
+    {
+      href: '/backoffice/security',
+      label: t('backoffice.nav.security'),
+      icon: <ShieldAlert aria-hidden />,
+      show: staffCan(s, 'security_analyst'),
     },
     {
       href: '/backoffice/status',

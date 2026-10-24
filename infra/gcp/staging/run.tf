@@ -19,6 +19,8 @@ locals {
     LOG_FORMAT        = "gcp"
     LOG_LEVEL         = "info"
     OTEL_SDK_DISABLED = "true"
+    # security alert recipients for the API (dead-man's switch) and the worker (alerts and digests)
+    SECURITY_ALERT_EMAILS = join(",", var.security_alert_emails)
   }
 
   # env name => secret key in secrets.tf

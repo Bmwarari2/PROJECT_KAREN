@@ -39,6 +39,13 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   },
   { key: 'domains', href: '/app/settings/domains', group: 'signIn', visible: (has) => has('settings.read') },
   { key: 'scim', href: '/app/settings/scim', group: 'signIn', visible: (has) => has('settings.read') },
+  // the workspace's own security alerts and admin changes (ADR-0178): whoever may read its audit log
+  {
+    key: 'securityCentre',
+    href: '/app/settings/security-centre',
+    group: 'signIn',
+    visible: (has) => has('audit.read'),
+  },
   {
     key: 'supportAccess',
     href: '/app/settings/support-access',

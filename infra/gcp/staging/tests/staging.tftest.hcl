@@ -185,3 +185,42 @@ run "unknown_cell_is_refused" {
 
   expect_failures = [var.cell]
 }
+
+run "the_back_office_and_security_alerts_reach_the_api_and_the_worker" {
+  command = apply
+
+  variables {
+    security_alert_emails = ["security@thapsus.example.test", "founder@thapsus.example.test"]
+  }
+
+  assert {
+    condition = alltrue([
+      for c in concat(
+        [for x in google_cloud_run_v2_service.app.template[0].containers : x if x.name == "api"],
+        google_cloud_run_v2_service.worker.template[0].containers,
+      ) :
+      contains([for e in c.env : e.name if e.value_source != null && length(e.value_source) > 0], "BACKOFFICE_DATABASE_SECRET")
+    ])
+    error_message = "the API and the worker need the back-office database secret (founder's console, security module)"
+  }
+  assert {
+    condition = alltrue([
+      for c in concat(
+        [for x in google_cloud_run_v2_service.app.template[0].containers : x if x.name == "api"],
+        google_cloud_run_v2_service.worker.template[0].containers,
+      ) :
+      contains([for e in c.env : "${e.name}=${e.value}" if e.value != null], "SECURITY_ALERT_EMAILS=security@thapsus.example.test,founder@thapsus.example.test")
+    ])
+    error_message = "the API and the worker get the security alert recipients"
+  }
+}
+
+run "security_alert_recipients_must_be_addresses" {
+  command = plan
+
+  variables {
+    security_alert_emails = ["not an address"]
+  }
+
+  expect_failures = [var.security_alert_emails]
+}

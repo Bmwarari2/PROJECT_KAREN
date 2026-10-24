@@ -155,4 +155,73 @@ test.describe("founder's console", () => {
     );
     await expectAccessible(page);
   });
+  test('security analysts see detections, work an incident, test the rules and check the honeytokens', async ({
+    page,
+  }) => {
+    // a scanner asks the web host for a honey endpoint and tries the decoy API key from the documentation
+    expect((await page.request.get('/.env')).status()).toBe(404);
+    const decoy = await page.request.get('/v1/employees', {
+      headers: {
+        authorization:
+          'Bearer thr_sk_0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e.decoyKeyDoNotUseXq7Lm2Np9Rs4Tv6Wy8Za0Bc3Df5Gh',
+      },
+    });
+    expect(decoy.status()).toBe(401);
+
+    await staffSignIn(page, createStaff('security_analyst'));
+    await page.getByRole('link', { name: 'Security' }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Security' })).toBeVisible();
+    await page.getByRole('button', { name: 'Run detections now' }).click();
+    await expect(page.getByText('Detections run', { exact: true })).toBeVisible();
+    await expect(page.getByText('Detections in 24 hours')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Top offending addresses' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Staff elevation log' })).toBeVisible();
+    await expectAccessible(page);
+
+    const sections = page.getByRole('navigation', { name: 'Security sections' });
+    await sections.getByRole('link', { name: 'Incidents' }).click();
+    // both decoys were touched from one address, so they roll up into one incident, critical because of the key
+    const row = page
+      .getByRole('region', { name: 'Incidents' })
+      .getByRole('listitem')
+      .filter({ hasText: 'Critical' })
+      .first();
+    await expect(row).toContainText('Deception');
+    await expectAccessible(page);
+    await row.getByRole('link').click();
+    await expect(page.getByRole('heading', { level: 1, name: /SEC-\d{5}/ })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Detections' })).toContainText('Decoy key or object used');
+    // the request came through this region's own proxy: its address is internal and never blocked
+    await page
+      .getByRole('region', { name: 'Containment' })
+      .getByRole('listitem')
+      .filter({ hasText: 'Block the address' })
+      .getByRole('button', { name: 'Apply' })
+      .click();
+    await expect(
+      page.getByText(/Nothing to do: it is one of this region's own internal addresses/).first(),
+    ).toBeVisible();
+    await page.getByLabel('Note', { exact: true }).fill('Fictional scanner; nothing reached a workspace.');
+    await page.getByRole('button', { name: 'Add a note' }).click();
+    await expect(page.getByText('Note added', { exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Timeline' })).toContainText('Fictional scanner');
+    await page.getByLabel('Status').selectOption('resolved');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Incident updated', { exact: true })).toBeVisible();
+    await expectAccessible(page);
+
+    await sections.getByRole('link', { name: 'Rules' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Detection rules' })).toBeVisible();
+    await page.getByRole('button', { name: 'Test every rule' }).click();
+    await expect(page.getByText(/Rules tested: (\d+) of \1 passed/).first()).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Cloud' })).toContainText('Planned');
+    await expectAccessible(page);
+
+    await sections.getByRole('link', { name: 'Honeytokens' }).click();
+    const key = page.getByRole('region', { name: 'Decoy API key' }).getByRole('listitem').first();
+    await expect(key).toContainText(/touch(es)? in 30 days/);
+    await expect(key).not.toContainText('0 touches');
+    await expect(page.getByText(/No fake employees are planted/)).toBeVisible();
+    await expectAccessible(page);
+  });
 });

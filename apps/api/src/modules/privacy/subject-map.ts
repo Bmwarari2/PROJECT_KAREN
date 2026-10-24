@@ -485,6 +485,14 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
     category: 'accountability',
     erase: { keep: 'company record' },
   },
+  // security monitoring (ADR-0178): the workspace's copy of a detection names the person it concerns
+  'app.security_alerts': {
+    subject: [U('subject_user_id')],
+    actor: ['acknowledged_by'],
+    category: 'accountability',
+    erase: { anonymise: { subject_user_id: null } },
+  },
+  'app.security_alert_recipients': { subject: [U()], actor: ['created_by'], category: 'account', erase: DEL },
 };
 
 /**

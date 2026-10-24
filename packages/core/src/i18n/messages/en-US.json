@@ -42,6 +42,9 @@
       },
       "absence": {
         "body": "Doctor’s notes, trigger alerts and minimum staff on duty."
+      },
+      "securityCentre": {
+        "title": "Security center"
       }
     },
     "sso": {
@@ -87,6 +90,9 @@
       "title": "Record a departure for {name}",
       "confirm": "Record departure",
       "done": "Departure recorded for {name}. Last working day: {date}."
+    },
+    "securityCentre": {
+      "title": "Security center"
     }
   },
   "timeOff": {
@@ -1287,6 +1293,11 @@
     },
     "support": {
       "noHr": "Ask an administrator in your organization for help."
+    }
+  },
+  "securityAlerts": {
+    "tenant": {
+      "open": "Details in your Security center"
     }
   }
 }

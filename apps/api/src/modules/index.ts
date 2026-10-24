@@ -29,6 +29,9 @@ import { statusRoutes } from './status/routes';
 import { backofficeRoutes } from './backoffice/routes';
 import { backofficeMetricsRoutes } from './backoffice/metrics';
 import { backofficePerformanceRoutes } from './backoffice/performance';
+import { securityRoutes } from './security/routes';
+import { securityCentreRoutes } from './security/centre';
+import './security/alerts';
 import { platformRoutes } from './platform';
 import { aiRoutes } from './ai/routes';
 import { roleRoutes } from './authz/routes';
@@ -73,6 +76,8 @@ export async function registerModules(app: FastifyInstance) {
   // Founder's console: business figures, platform performance and security monitoring (ADR-0175 to ADR-0179)
   await app.register(backofficeMetricsRoutes);
   await app.register(backofficePerformanceRoutes);
+  await app.register(securityRoutes);
+  await app.register(securityCentreRoutes);
   // Phase 11: Ask HR assistant
   await app.register(aiRoutes);
   // Role and access management

@@ -58,8 +58,11 @@ export class InMemoryDirectory implements TenantDirectory {
   async register(e: DirectoryEntry) {
     for (const x of this.entries.values())
       if (x.slug === e.slug && x.tenantId !== e.tenantId) throw new SlugTakenError();
-    this.entries.set(e.tenantId, { ...e, createdAt: e.createdAt ?? new Date().toISOString() });
+    this.entries.set(e.tenantId, { ...e });
+    if (!this.created.has(e.tenantId)) this.created.set(e.tenantId, e.createdAt ?? new Date().toISOString());
   }
+  /** Sign-up times, kept beside the entries (a stored directory keeps them in its created_at column). */
+  private readonly created = new Map<string, string>();
   async bySlug(slug: string) {
     return [...this.entries.values()].find((e) => e.slug === slug);
   }
@@ -75,7 +78,9 @@ export class InMemoryDirectory implements TenantDirectory {
     if (e) this.entries.set(id, { ...e, ...patch, tenantId: id });
   }
   async list(limit = 5000) {
-    return [...this.entries.values()].slice(0, limit).map((e) => ({ ...e }));
+    return [...this.entries.values()]
+      .slice(0, limit)
+      .map((e) => ({ ...e, createdAt: this.created.get(e.tenantId) }));
   }
 }
 

@@ -16,6 +16,8 @@ const NON_TENANT_SCHEMAS: Record<string, string> = {
   public: 'schema_migrations bookkeeping only',
   platform:
     'per-cell request and queue counters by route group and database key (ADR-0176); no tenant id, no personal data',
+  security:
+    'security signals, detections and incidents (ADR-0177): pseudonymous ids and keyed address hashes; tenants only as subject_tenant_id',
 };
 
 /** Registry tables are routing metadata; any new column must be added here deliberately (no personal data). */

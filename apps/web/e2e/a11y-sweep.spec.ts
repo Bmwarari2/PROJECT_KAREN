@@ -106,6 +106,8 @@ interface Fixture {
   ticketId: string;
   runId: string;
   tenantId: string;
+  /** A security incident about the workspace, for the back office's Security module (ADR-0177). */
+  incidentId: string;
   kioskToken: string;
   owner: { slug: string; email: string; secret: string; employeeNumber: string };
 }
@@ -130,6 +132,7 @@ function concrete(route: string, f: Fixture): string {
     '/app/support/[id]': `/app/support/${f.ticketId}`,
     '/backoffice/tenants/[id]': `/backoffice/tenants/${f.tenantId}`,
     '/backoffice/support/[tenantId]/[ticketId]': `/backoffice/support/${f.tenantId}/${f.ticketId}`,
+    '/backoffice/security/incidents/[id]': `/backoffice/security/incidents/${f.incidentId}`,
   };
   if (!route.includes('[')) return route;
   const path = map[route];
@@ -279,6 +282,18 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
   );
   await page.goto('/app/help');
   const helpHref = await page.locator('main a[href^="/app/help/"]').first().getAttribute('href');
+  // a security incident about the workspace (a decoy-key detection with its timeline), as the engine records one
+  const [incident] = await sql<{ id: string }>(
+    `WITH i AS (
+       INSERT INTO security.incidents (reference, dedupe_key, rule_id, area, severity, status, first_seen_at, last_seen_at, detection_count, event_count, tenant_ids, ip_key, ip_net)
+       VALUES ('SEC-' || lpad(nextval('security.incident_reference')::text, 5, '0'), 'sweep:' || gen_random_uuid(), 'THR-PRIV-001', 'privilege', 'medium', 'open', now(), now(), 1, 1, ARRAY[$1::uuid], 'sweep-fixture-key', '192.0.2.0/24')
+       RETURNING id),
+     d AS (
+       INSERT INTO security.detections (rule_id, rule_version, severity, group_key, first_seen_at, last_seen_at, event_count, subject_tenant_id, actor_id, incident_id)
+       SELECT 'THR-PRIV-001', 1, 'medium', $1, now(), now(), 1, $1::uuid, $2::uuid, i.id FROM i RETURNING incident_id)
+     INSERT INTO security.incident_events (incident_id, kind, detail) SELECT incident_id, 'opened', '{"ruleId": "THR-PRIV-001"}' FROM d RETURNING incident_id AS id`,
+    [session.tenantId, session.userId],
+  );
   return {
     employeeId: co.staff[1]!,
     taskId: hrRequest.id,
@@ -294,6 +309,7 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
     ticketId: ticket.id,
     runId: run.id,
     tenantId: session.tenantId,
+    incidentId: incident!.id,
     kioskToken: kiosk.token,
     owner: { slug: co.slug, email: co.email, secret: co.secret, employeeNumber: co.employeeNumber },
   };

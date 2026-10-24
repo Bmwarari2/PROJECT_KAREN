@@ -17,6 +17,13 @@ Machine clients use one of two credentials. Both are created by a company admin 
 | Scoped API key   | `thr_sk_<workspace id>.<secret>`        | `Authorization: Bearer thr_sk_…`. Revocable. It can have an expiry date, and its last-used time is recorded.                                         |
 | OAuth 2.0 client | client id `thr_ci_…`, secret `thr_cs_…` | Exchange it for a short-lived access token (`thr_at_…`, 1 hour by default) with the client credentials grant, then `Authorization: Bearer thr_at_…`. |
 
+**Calling the API with a key.** An example request (the key below is an example only and does not work; it is registered as a decoy, so using it raises a security alert):
+
+```http
+GET /v1/employees?limit=50
+Authorization: Bearer thr_sk_0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e.decoyKeyDoNotUseXq7Lm2Np9Rs4Tv6Wy8Za0Bc3Df5Gh
+```
+
 **Token request** (RFC 6749 §4.4). Authenticate with HTTP Basic (`client_secret_basic`, preferred) or with form fields (`client_secret_post`):
 
 ```http

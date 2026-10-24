@@ -1299,6 +1299,10 @@
       "users": {
         "title": "Users and access",
         "body": "Who can sign in and the roles they hold."
+      },
+      "securityCentre": {
+        "title": "Security centre",
+        "body": "Suspicious sign-ins, admin changes, two-step verification and security alerts."
       }
     },
     "name": "Name",
@@ -1925,6 +1929,65 @@
       "confirm": "Transfer",
       "nothing": "Choose at least one thing to change.",
       "done": "{name} transfers on {date}."
+    },
+    "securityCentre": {
+      "title": "Security centre",
+      "lead": "What Thapsus-HR's security monitoring has noticed in your workspace, recent failed sign-ins and admin changes, and who is told about it.",
+      "alerts": "Security alerts",
+      "alertsHint": "Raised by Thapsus-HR's monitoring about your workspace.",
+      "noAlerts": "No security alerts.",
+      "alertLine": "{severity} · {events}",
+      "events_one": "{count} event",
+      "events_other": "{count} events",
+      "seen": "First {first} · last {last}",
+      "about": "About {name}",
+      "acknowledge": "Acknowledge",
+      "acknowledged": "Acknowledged {at}",
+      "acknowledgedToast": "Alert acknowledged",
+      "signIns": "Sign-ins in the last 7 days",
+      "succeeded": "Successful",
+      "failed": "Failed",
+      "locked": "Locked accounts now",
+      "recentFailures": "Recent failed sign-ins",
+      "noFailures": "No failed sign-ins in 7 days.",
+      "unknownPerson": "Unknown account",
+      "failureLine": "From {network}",
+      "networkUnknown": "Network not recorded",
+      "adminChanges": "Admin changes in the last 30 days",
+      "noChanges": "No admin changes in 30 days.",
+      "changeBy": "By {name}",
+      "changeBySystem": "By Thapsus-HR",
+      "changeTarget": "For {name}",
+      "action": {
+        "role.assigned": "Role given",
+        "role.revoked": "Role removed",
+        "role.created": "Role created",
+        "role.updated": "Role changed",
+        "role.deleted": "Role deleted",
+        "user.invited": "Person invited",
+        "auth.mfa_reset": "Two-step verification reset",
+        "sso.connection_created": "Single sign-on connection added",
+        "sso.connection_updated": "Single sign-on connection changed",
+        "sso.connection_deleted": "Single sign-on connection removed",
+        "settings.security_updated": "Sign-in policy changed",
+        "api_key.created": "API key created",
+        "api_key.revoked": "API key revoked",
+        "oauth_client.created": "OAuth client created",
+        "scim.token_created": "SCIM token created",
+        "support.grant_created": "Support access granted",
+        "security.sessions_ended": "Sessions ended by Thapsus-HR security",
+        "security.api_key_suspended": "API key suspended by Thapsus-HR security",
+        "security.api_key_restored": "API key restored"
+      },
+      "mfa": "Two-step verification",
+      "mfaUsers": "Users with it: {withMfa} of {users}",
+      "mfaAdmins": "Admins without it: {count}",
+      "recipients": "Who is told",
+      "recipientsHint": "Security alert emails about your workspace go to these admins. With nobody chosen, they go to the owners.",
+      "recipientsDefault": "Nobody is chosen, so the owners are told.",
+      "chooseRecipients": "Admins who receive security alerts",
+      "saveRecipients": "Save recipients",
+      "recipientsSaved": "Recipients saved"
     }
   },
   "timeOff": {
@@ -3530,6 +3593,339 @@
         "major": "Major",
         "critical": "Critical",
         "maintenance": "Maintenance"
+      }
+    },
+    "security": {
+      "rules": {
+        "THR-CRED-001": {
+          "name": "Password spraying from one address",
+          "summary": "Many refused sign-ins from one network address in a few minutes."
+        },
+        "THR-CRED-002": {
+          "name": "Credential stuffing across many accounts",
+          "summary": "Failed sign-ins for many different accounts from one address."
+        },
+        "THR-CRED-003": {
+          "name": "Sign-in failure spike in a workspace",
+          "summary": "Most of a workspace's recent sign-ins are failing."
+        },
+        "THR-CRED-004": {
+          "name": "Sign-in after many failures",
+          "summary": "A person signed in after several failed attempts: a guess may have worked."
+        },
+        "THR-ATO-001": {
+          "name": "Second factor reset",
+          "summary": "An admin reset someone's two-step verification."
+        },
+        "THR-ATO-002": {
+          "name": "Session used from another network",
+          "summary": "A signed-in session was used from a second network."
+        },
+        "THR-ATO-003": {
+          "name": "New sign-in factor after a password reset",
+          "summary": "A new passkey or authenticator was added soon after a password reset."
+        },
+        "THR-ATO-004": {
+          "name": "Single sign-on identity mismatch",
+          "summary": "The identity provider sent a different identity for a person already linked to one."
+        },
+        "THR-PRIV-001": {
+          "name": "Admin role granted",
+          "summary": "Someone was given a role with admin permissions."
+        },
+        "THR-PRIV-002": {
+          "name": "Owner role granted",
+          "summary": "Someone was made an owner of a workspace."
+        },
+        "THR-PRIV-003": {
+          "name": "Machine access or sign-in settings changed",
+          "summary": "An API key, OAuth client or SCIM token was created, or single sign-on or the sign-in policy changed."
+        },
+        "THR-EXFIL-001": {
+          "name": "Burst of exports and downloads",
+          "summary": "One person exported or downloaded far more than usual in an hour."
+        },
+        "THR-EXFIL-002": {
+          "name": "Bulk reads of special-category data",
+          "summary": "One person opened many health, immigration or other special-category records in minutes."
+        },
+        "THR-PROBE-001": {
+          "name": "Permission probing",
+          "summary": "Many refused requests from one address: someone trying records they may not see."
+        },
+        "THR-PROBE-002": {
+          "name": "Scanning for pages and records",
+          "summary": "Many not-found answers for one address: a scanner or someone guessing ids."
+        },
+        "THR-PROBE-003": {
+          "name": "Malformed request burst",
+          "summary": "Many rejected requests from one address: an automated fuzzer or a broken integration."
+        },
+        "THR-STAFF-001": {
+          "name": "Staff sign-in failures",
+          "summary": "Repeated failed sign-in or verification steps for one Thapsus staff account."
+        },
+        "THR-STAFF-002": {
+          "name": "Staff opening many workspaces",
+          "summary": "One Thapsus staff member opened many different customer workspaces in an hour."
+        },
+        "THR-DECEPT-001": {
+          "name": "Decoy key or object used",
+          "summary": "The decoy API key from the documentation, or a decoy file, was used."
+        },
+        "THR-DECEPT-002": {
+          "name": "Honey endpoint requested",
+          "summary": "A trap address such as /.env or /wp-login.php was requested."
+        },
+        "THR-AI-001": {
+          "name": "Ask HR question burst",
+          "summary": "One person asked Ask HR an unusual number of questions in an hour."
+        },
+        "THR-CLOUD-001": {
+          "name": "GuardDuty high or critical finding",
+          "summary": "Planned: a high or critical threat finding from the cloud provider."
+        },
+        "THR-CLOUD-002": {
+          "name": "Security controls or logging switched off",
+          "summary": "Planned: a critical posture control failed, or an audit trail or detector stopped."
+        },
+        "THR-CLOUD-003": {
+          "name": "Cloud root account sign-in",
+          "summary": "Planned: the cloud account root user signed in."
+        },
+        "THR-CLOUD-004": {
+          "name": "Cloud access or key policy changed",
+          "summary": "Planned: an access or encryption key policy changed outside a deployment."
+        },
+        "THR-CLOUD-005": {
+          "name": "Network opened to the internet",
+          "summary": "Planned: a firewall rule opened a service to the whole internet."
+        },
+        "THR-ATO-005": {
+          "name": "Unusual sign-in location",
+          "summary": "Planned: a sign-in from a new country or network, or travel that is not possible."
+        },
+        "THR-STAFF-003": {
+          "name": "Break-glass account used",
+          "summary": "Planned: a sealed emergency staff account was used."
+        },
+        "THR-AI-002": {
+          "name": "Ask HR injection canary echoed",
+          "summary": "Planned: Ask HR repeated a hidden canary planted in its documents."
+        },
+        "title": "Detection rules",
+        "lead": "The catalogue in force (version {version}): versioned in the repository with a test fixture and tuning notes. Rules can be turned off in this region; their logic changes only through a new version.",
+        "test": "Test every rule",
+        "tested": "Rules tested: {passed} of {total} passed",
+        "planned": "Planned",
+        "active": "Active",
+        "off": "Off in this region",
+        "on": "On",
+        "turnOff": "Turn off",
+        "turnOn": "Turn on",
+        "toggled": "Rule updated",
+        "line": "{severity} · {mitre}",
+        "logic": "Window {window} min · threshold {threshold} · dedupe {dedupe} min",
+        "needs": "Needs: {needs}",
+        "customer": "Customers see it",
+        "containment": "Automatic: {kinds}",
+        "lastTest": "Fixture test: {result} {at}",
+        "passed": "passed",
+        "failed": "failed",
+        "notTested": "Fixture not tested in this region yet",
+        "detections30d_one": "{count} detection in 30 days",
+        "detections30d_other": "{count} detections in 30 days",
+        "tuning": "Tuning notes (analysts' record, in English)"
+      },
+      "title": "Security",
+      "lead": "Attacks and misuse detected in this region: sign-in attacks, account takeover, privilege changes, data exfiltration, probing, staff activity, decoys and Ask HR abuse. Workspaces and people appear by id; addresses as a network range.",
+      "sections": "Security sections",
+      "tab": {
+        "overview": "Overview",
+        "incidents": "Incidents",
+        "rules": "Rules",
+        "honeytokens": "Honeytokens"
+      },
+      "severity": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "status": {
+        "open": "Open",
+        "acknowledged": "Acknowledged",
+        "contained": "Contained",
+        "resolved": "Resolved",
+        "false_positive": "False positive"
+      },
+      "area": {
+        "credential": "Credential attacks",
+        "takeover": "Account takeover",
+        "privilege": "Privilege changes",
+        "exfiltration": "Exfiltration",
+        "probing": "Probing",
+        "staff": "Thapsus staff",
+        "deception": "Deception",
+        "ai": "Ask HR",
+        "cloud": "Cloud"
+      },
+      "containment": {
+        "block_ip": "Block the address",
+        "end_sessions": "End the person's sessions",
+        "suspend_api_key": "Suspend the API key",
+        "freeze_staff": "Freeze the staff account"
+      },
+      "containmentDone": {
+        "block_ip": "Address blocked",
+        "end_sessions": "Sessions ended",
+        "suspend_api_key": "API key suspended",
+        "freeze_staff": "Staff account frozen"
+      },
+      "overview": {
+        "detections": "Detections in 24 hours",
+        "detectionsHint": "{critical} critical · {high} high",
+        "open": "Open incidents",
+        "openHint": "{critical} critical · {high} high",
+        "mtta": "Time to acknowledge",
+        "mttr": "Time to resolve",
+        "mttHint": "Average over the last 30 days",
+        "minutes": "{value} min",
+        "none": "—",
+        "authTitle": "Sign-in health in {region}",
+        "authHint": "Last 24 hours, every workspace in this region.",
+        "signIns": "Successful sign-ins",
+        "failures": "Failed sign-ins",
+        "failureRate": "{rate} of attempts",
+        "lockouts": "Lockouts",
+        "mfa": "Two-step verification",
+        "mfaHint": "Users with it: {withMfa} of {users}",
+        "bySeverity": "Detections by severity",
+        "topIps": "Top offending addresses",
+        "topIpsHint": "Refused, rejected or decoy requests in 24 hours. Addresses are shown as their network range and stored as keyed hashes.",
+        "topIpEvents_one": "{count} event",
+        "topIpEvents_other": "{count} events",
+        "blocked": "Blocked",
+        "unknownNetwork": "Network not recorded",
+        "lastSeen": "Last {at}",
+        "noTopIps": "No offending addresses in 24 hours.",
+        "elevations": "Staff elevation log",
+        "elevationsHint": "Just-in-time elevations asked for, approved, denied and revoked in the last 30 days.",
+        "noElevations": "No elevations in 30 days.",
+        "elevation": {
+          "staff.elevation_requested": "Asked for elevation",
+          "staff.elevation_approved": "Elevation approved",
+          "staff.elevation_denied": "Elevation denied",
+          "staff.elevation_revoked": "Elevation revoked"
+        },
+        "elevationScope": "Scope: {scope}",
+        "pipeline": "Detection pipeline",
+        "pipelineRan": "Last run {at}",
+        "pipelineNever": "Not run yet",
+        "pipelineStale": "No run for over 10 minutes: the dead-man's switch has alerted",
+        "pipelineWaiting_one": "{count} event waiting",
+        "pipelineWaiting_other": "{count} events waiting",
+        "recipients_one": "Alerts go to {count} staff address",
+        "recipients_other": "Alerts go to {count} staff addresses",
+        "noRecipients": "No staff alert recipients are configured for this region (SECURITY_ALERT_EMAILS)",
+        "runNow": "Run detections now",
+        "ran": "Detections run",
+        "otherRegions": "Other regions keep their security data in their own back office."
+      },
+      "incidents": {
+        "title": "Incidents",
+        "filterLabel": "Which incidents",
+        "open": "Open",
+        "all": "All",
+        "none": "No incidents.",
+        "noneOpen": "No open incidents.",
+        "line": "{area} · {status}",
+        "detections_one": "{count} detection",
+        "detections_other": "{count} detections",
+        "events_one": "{count} event",
+        "events_other": "{count} events",
+        "workspaces_one": "{count} workspace",
+        "workspaces_other": "{count} workspaces",
+        "lastSeen": "Last seen {at}",
+        "assigned": "Assigned to {name}",
+        "unassigned": "Unassigned"
+      },
+      "incident": {
+        "back": "Incidents",
+        "lead": "{severity} · {status} · first seen {first}, last seen {last}",
+        "manage": "Status and owner",
+        "statusLabel": "Status",
+        "assignee": "Assigned to",
+        "nobody": "Nobody",
+        "save": "Save",
+        "saved": "Incident updated",
+        "detections": "Detections",
+        "detectionLine": "{events} · first {first}, last {last}",
+        "workspace": "Workspace {id}",
+        "person": "Person {id}",
+        "apiKey": "API key {id}",
+        "staffMember": "Staff member {id}",
+        "network": "Network {net}",
+        "affected": "Affected workspaces",
+        "noAffected": "No workspace is affected.",
+        "actions": "Containment",
+        "actionsHint": "Every action is recorded on the timeline, in the staff trail and, when it touches a workspace, in that workspace's audit log. Nothing is deleted.",
+        "noActions": "No containment applies to this incident.",
+        "apply": "Apply",
+        "applied": "Done",
+        "skipped": "Nothing to do: {reason}",
+        "skipReason": {
+          "alreadyBlocked": "the address is already blocked",
+          "noAddress": "no address is known",
+          "noTarget": "nothing to act on",
+          "alreadyFrozen": "the account is already frozen",
+          "lastSuperAdmin": "it is the last active super admin",
+          "internalAddress": "it is one of this region's own internal addresses"
+        },
+        "automated": "Automatic",
+        "manual": "By staff",
+        "expires": "Until {at}",
+        "reversed": "Reversed {at}",
+        "awaitingSecond": "Unfreeze requested: a second staff member must approve",
+        "reverse": "Reverse",
+        "approveReverse": "Approve unfreeze",
+        "reversedToast": "Reversed",
+        "awaitingToast": "Requested: a second staff member must approve",
+        "timeline": "Timeline",
+        "event": {
+          "opened": "Incident opened",
+          "detection": "Detection: {rule}",
+          "escalated": "Escalated: {rule}",
+          "containment": "Containment: {kind}",
+          "reversal": "Reversal: {kind}",
+          "status": "Status changed to {to}",
+          "assignment": "Assigned",
+          "note": "Note",
+          "alert": "Alert sent"
+        },
+        "by": "by {name}",
+        "system": "automatic",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteHint": "Refer to people and workspaces by id. No names, emails or addresses.",
+        "noteSaved": "Note added",
+        "appliedList": "Applied"
+      },
+      "honeytokens": {
+        "title": "Honeytokens",
+        "lead": "Decoys that nobody has a reason to touch: a fake API key in the documentation, trap addresses and decoy file names. Only their fingerprints are stored; any touch is a detection.",
+        "kind": {
+          "api_key": "Decoy API key",
+          "endpoint": "Honey endpoint",
+          "object_key": "Decoy object"
+        },
+        "planted": "Planted in {where} · {date}",
+        "touches_one": "{count} touch in 30 days",
+        "touches_other": "{count} touches in 30 days",
+        "lastTouched": "Last touched {at}",
+        "never": "Never touched",
+        "retired": "Retired",
+        "noFakeEmployees": "No fake employees are planted in customer workspaces: decoy records would appear in their reports, exports and headcount."
       }
     }
   },
@@ -5929,6 +6325,52 @@
       "adminsOnly": "Thapsus-HR support is for your workspace’s administrators",
       "askHr": "Your HR team can help with questions about your job, pay, time off and documents.",
       "noHr": "Ask an administrator in your organisation for help."
+    }
+  },
+  "securityAlerts": {
+    "footer": "This alert contains no personal data and never asks for a password or a code. Sign in to Thapsus-HR the usual way to see more.",
+    "none": "none",
+    "events_one": "{count} event",
+    "events_other": "{count} events",
+    "detections_one": "{count} detection",
+    "detections_other": "{count} detections",
+    "workspaces_one": "{count} workspace",
+    "workspaces_other": "{count} workspaces",
+    "field": {
+      "severity": "Severity",
+      "rule": "Rule",
+      "region": "Region",
+      "workspaces": "Workspaces affected (ids)",
+      "events": "Events",
+      "firstSeen": "First seen (UTC)",
+      "lastSeen": "Last seen (UTC)",
+      "incident": "Incident",
+      "incidents": "Incidents"
+    },
+    "incident": {
+      "subject": "[Thapsus-HR security] {severity}: {rule} ({region})",
+      "opened": "A new security incident was opened.",
+      "escalated": "A security incident became more severe."
+    },
+    "digest": {
+      "subject": "[Thapsus-HR security] Detections digest: {severity} ({region})",
+      "intro": "Detections in {region} from {from} to {to}:"
+    },
+    "test": {
+      "subject": "[Thapsus-HR security] Daily test alert ({region}, {day})",
+      "body": "This is the daily test of the security alert path for {region}. If it stops arriving, alerts are not reaching you."
+    },
+    "deadman": {
+      "subject": "[Thapsus-HR security] CRITICAL: detections stopped ({region})",
+      "body_one": "No detection run has completed in {region} for more than {count} minute (last run {at}). Attacks are not being detected until the worker runs again.",
+      "body_other": "No detection run has completed in {region} for more than {count} minutes (last run {at}). Attacks are not being detected until the worker runs again."
+    },
+    "tenant": {
+      "subject": "Security alert for {workspace}: {severity}",
+      "digestSubject": "Security alerts for {workspace}",
+      "intro": "Thapsus-HR's security monitoring noticed this in your workspace {workspace}:",
+      "digestIntro": "Thapsus-HR's security monitoring noticed these in your workspace {workspace}:",
+      "open": "Details in your Security centre"
     }
   }
 }

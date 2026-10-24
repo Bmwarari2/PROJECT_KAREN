@@ -25,6 +25,7 @@ import { mockIdpKeys, mockIdpPlugin } from './dev/mock-idp';
 import { registerModules } from './modules';
 import { platformHttpPlugin } from './modules/platform/http';
 import { requestMetricsPlugin } from './http/request-metrics-plugin';
+import { securityHttpPlugin } from './modules/security/http';
 import { MemoryObjectStore } from './lib/object-store';
 
 export const API_VERSION = '1.0.0';
@@ -149,6 +150,8 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
   await app.register(platformHttpPlugin, { deps });
   // Platform performance (ADR-0176): request counts and latency by route group, flushed once a minute.
   if (deps.serviceRole === 'cell') await app.register(requestMetricsPlugin, { deps });
+  // Security signals, address blocks, the decoy API key and honey endpoints (ADR-0177 to ADR-0179).
+  if (deps.serviceRole === 'cell') await app.register(securityHttpPlugin, { deps });
 
   for (const path of ['/health', '/health/api']) {
     app.get(path, { config: { auth: 'public' }, schema: { hide: true } }, async () => ({

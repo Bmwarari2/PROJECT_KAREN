@@ -138,6 +138,9 @@ const OPERATIONAL = [
   'app.billing_subscriptions',
   'app.billing_invoices',
   'app.billing_webhook_events',
+  // security monitoring (ADR-0178): a sandbox has no security history of its own production workspace
+  'app.security_alerts',
+  'app.security_alert_recipients',
 ] as const;
 
 const SECRET = [

@@ -281,3 +281,11 @@ This replaces the AWS staging steps in §1 for testing. It is one UK cell in Lon
   3. Keep these passwords private. The site is reachable from the internet, though the data is fictional.
 - [ ] 9.8 **(Optional, if the project is in a Google Cloud organisation) location policy.** Go to IAM & Admin → Organization policies → "Resource Location Restriction" (`gcp.resourceLocations`). On the project, allow only `in:europe-west2-locations`. This is the Google Cloud equivalent of the AWS region allow-list. A personal project without an organisation cannot set it; the OpenTofu tests check locations instead.
 - [ ] 9.9 **(Optional) restrict who can reach the app.** The sign-in page is public; the app's sign-in, MFA, lockout and rate limits protect it. To limit it to named Google accounts, set `public_access = false` in `infra/gcp/staging/variables.tf` (ask engineering). People then need the Cloud Run Invoker role, or an Identity-Aware Proxy, which adds a step.
+- [ ] 9.10 **Security alert recipients (founder's console, ADR-0178).** Security alerts (critical and high at once, hourly and daily digests, a daily test alert and the dead-man's switch) go to a list of Thapsus staff addresses that only you can choose.
+  1. Go to GitHub → Settings → Secrets and variables → Actions → Variables → New repository variable.
+  2. Name it `SECURITY_ALERT_EMAILS_JSON` and set it to a JSON list of work addresses, for example `["security@your-domain.example", "founder@your-domain.example"]` (at most 20).
+  3. Deploy as usual. Until it is set, Back office → Security → Overview says "No staff alert recipients are configured", and alerts are recorded without being sent.
+  4. On staging, emails land in the mail bucket (`MAIL_TRANSPORT=bucket`), not in an inbox, until an email provider is chosen (§2).
+- [ ] 9.11 **Decoy objects (honeytokens, ADR-0179; optional).** The app already raises a critical detection when anything asks it for a decoy object key. To catch someone reading the bucket directly with stolen cloud credentials, also:
+  1. Upload two small files with fictional content to the cell's files bucket at `exports/backup/all-employees-full.csv` and `payroll/archive/payroll-all-tenants.zip`.
+  2. Turn on Data Access audit logs for Cloud Storage on that bucket, and create a log-based alert on any read of those two objects that emails the security list.
