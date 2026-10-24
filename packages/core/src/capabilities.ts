@@ -144,7 +144,8 @@ const BASE = {
   'compliance.record': anyOf('compliance.record'),
   'compliance.manage': { any: ['compliance.manage'], workspace: true },
   'compliance.reports': anyOf('compliance.reports'),
-  'compliance.lawChanges': anyOf('compliance.read', 'compliance.law_changes'),
+  /** The law-change feed (the API lists it for compliance.law_changes). */
+  'compliance.lawChanges': anyOf('compliance.law_changes'),
   'compliance.lawChanges.acknowledge': anyOf('compliance.law_changes'),
 
   // ---- privacy ---------------------------------------------------------------------------------------

@@ -216,6 +216,10 @@ for (const role of ROLES) {
         }
       }
       for (const d of dock) if (!seen.has(d)) problems.push(`tab bar: ${d} is not in the navigation`);
+      // the sweep followed the tabs and settings lists beyond the rail (the owner sees nearly every page)
+      test.info().annotations.push({ type: 'pages opened', description: `${role}: ${seen.size}` });
+      expect(seen.size, role).toBeGreaterThan(rail.length);
+      if (role === 'owner') expect(seen.size).toBeGreaterThanOrEqual(60);
       // the rail never offers a page the role may not open (it would show the not-allowed state)
       for (const href of seen) {
         const entry = pageFor(href);
