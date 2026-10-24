@@ -237,10 +237,10 @@ export default function BulkSendPage() {
               }))}
             />
           ) : null}
-          <Field id="bulk-due" label={`${t('docSend.dueOn')} ${t('admin.optional')}`}>
+          <Field id="bulk-due" label={t('docSend.dueOn')} hint={t('admin.optional')}>
             {(p) => <Input {...p} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />}
           </Field>
-          <Field id="bulk-message" label={`${t('docSend.message')} ${t('admin.optional')}`}>
+          <Field id="bulk-message" label={t('docSend.message')} hint={t('admin.optional')}>
             {(p) => (
               <Textarea
                 {...p}

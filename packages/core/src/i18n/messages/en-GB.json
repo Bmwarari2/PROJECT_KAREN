@@ -971,7 +971,7 @@
     },
     "dueOn": "Sign by",
     "message": "Message",
-    "messageHint": "Shown to {name} with the document.",
+    "messageHint": "Optional. Shown to {name} with the document.",
     "nobody": "Choose at least one person to sign.",
     "send": "Send for signature",
     "blocked": "Sending is blocked until every value is filled in.",

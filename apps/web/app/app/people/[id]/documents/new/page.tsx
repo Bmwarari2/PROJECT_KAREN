@@ -251,7 +251,8 @@ export default function NewDocumentPage() {
                   <Field
                     key={a.key}
                     id={`ask-${a.key}`}
-                    label={a.required ? a.label : `${a.label} ${t('admin.optional')}`}
+                    label={a.label}
+                    hint={a.required ? undefined : t('admin.optional')}
                   >
                     {(p) => (
                       <Input
@@ -453,12 +454,12 @@ export default function NewDocumentPage() {
                   }))}
                 />
               ) : null}
-              <Field id="send-due" label={`${t('docSend.dueOn')} ${t('admin.optional')}`}>
+              <Field id="send-due" label={t('docSend.dueOn')} hint={t('admin.optional')}>
                 {(p) => <Input {...p} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />}
               </Field>
               <Field
                 id="send-message"
-                label={`${t('docSend.message')} ${t('admin.optional')}`}
+                label={t('docSend.message')}
                 hint={t('docSend.messageHint', { name })}
               >
                 {(p) => (
