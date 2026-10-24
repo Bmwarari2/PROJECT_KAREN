@@ -67,9 +67,9 @@ describe('overlays before they are first opened', () => {
           Dialog,
           null,
           h(DialogTrigger, null, 'Open'),
-          h(DialogContent, { title: 'Title', closeLabel: 'Close' }, 'Body'),
+          h(DialogContent, { title: 'Title', closeLabel: 'Close', children: 'Body' }),
         ),
-        h(Sheet, { open: false }, h(SheetContent, { title: 'Menu', closeLabel: 'Close' }, 'Links')),
+        h(Sheet, { open: false }, h(SheetContent, { title: 'Menu', closeLabel: 'Close', children: 'Links' })),
       ),
     );
     expect(html).toContain('aria-haspopup="dialog"');
