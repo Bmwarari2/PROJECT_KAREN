@@ -103,6 +103,7 @@ export function PageSection({
   headingLevel = 2,
   headingId,
   id,
+  landmark = true,
 }: {
   title?: React.ReactNode;
   description?: React.ReactNode;
@@ -114,11 +115,20 @@ export function PageSection({
   /** The heading's id (defaults to a generated one), which also names the region. */
   headingId?: string;
   id?: string;
+  /**
+   * false when the body is already a landmark with the same name (a scrollable table labelled like the
+   * section), so the page has no two regions called the same (WCAG 1.3.1, axe landmark-unique).
+   */
+  landmark?: boolean;
 }) {
   const generated = React.useId();
   const hid = title ? (headingId ?? `${generated}-title`) : undefined;
   return (
-    <section className={cn('flex min-w-0 flex-col gap-2', className)} aria-labelledby={hid} id={id}>
+    <section
+      className={cn('flex min-w-0 flex-col gap-2', className)}
+      aria-labelledby={landmark ? hid : undefined}
+      id={id}
+    >
       <SectionHead
         title={title}
         description={description}
