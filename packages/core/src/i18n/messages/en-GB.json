@@ -4320,7 +4320,7 @@
     "statementsFile": "Statements from the payroll provider (optional)",
     "statementsHint": "A JSON file in the statement format (docs/integrations.md). Each statement is matched by employee number; a PDF for the same person is attached to it.",
     "quantityAtRate": "{quantity} at {rate}",
-    "quantityOnly": "{quantity} hours or units",
+    "quantityOnly": "Quantity: {quantity}",
     "publishedOn": "Published {date}"
   },
   "integrations": {
