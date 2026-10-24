@@ -17,7 +17,7 @@ import {
 } from '@thapsus/ui';
 import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
 import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
-import type { CapabilityKey } from '@thapsus/core/capabilities';
+import { pageFor, type CapabilityKey } from '@thapsus/core/capabilities';
 import { Logo } from '@/components/logo';
 import { RailNav, RailToggle, useRailCollapsed } from '@/components/workspace/rail';
 import { UserMenuButton } from '@/components/workspace/user-menu-button';
@@ -313,8 +313,8 @@ export function AppShell({
     [session, askHr, experience],
   );
   // A page the viewer may not open is not in their navigation; opened directly, it shows the not-allowed
-  // state instead of controls that would be refused (ADR-0188).
-  const blocked = !!viewer && !mayOpenPage(viewer, path);
+  // state instead of controls that would be refused (ADR-0188), or its own when it explains itself.
+  const blocked = !!viewer && !mayOpenPage(viewer, path) && !pageFor(path)?.ownRefusal;
   const modules = React.useMemo(() => (viewer ? visibleModules(viewer) : []), [viewer]);
   const here = locate(modules, path);
   const current = here?.module ?? null;

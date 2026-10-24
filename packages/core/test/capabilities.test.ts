@@ -46,6 +46,11 @@ describe('the permission map', () => {
     expect(pageFor('/app/unknown')).toBeUndefined();
   });
 
+  it('lets only the directory show its own not-allowed state (it points to the org chart)', () => {
+    expect(PAGES.filter((p) => p.ownRefusal).map((p) => p.path)).toEqual(['/app/people']);
+    expect(namedPermissions(pageFor('/app/people')!.view)).toEqual(['employees.read']);
+  });
+
   it('opens the settings index to anyone who may open one of its pages', () => {
     const any = CAPABILITIES['settings.index'].any ?? [];
     for (const p of PAGES.filter((x) => x.path.startsWith('/app/settings/')))

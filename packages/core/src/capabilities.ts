@@ -237,6 +237,11 @@ export interface PageAccess {
   path: string;
   view: CapabilityKey;
   manage?: CapabilityKey;
+  /**
+   * The page explains itself to someone who may not open it, and offers another way (the directory points
+   * to the org chart); the app shell lets it render instead of its general not-allowed state.
+   */
+  ownRefusal?: true;
 }
 
 export const PAGES: readonly PageAccess[] = [
@@ -250,7 +255,7 @@ export const PAGES: readonly PageAccess[] = [
   { path: '/app/approvals/[id]', view: 'inbox.approvals', manage: 'inbox.approvals.decide' },
   { path: '/app/tasks', view: 'inbox.tasks', manage: 'inbox.tasks.complete' },
   { path: '/app/tasks/[id]', view: 'inbox.tasks', manage: 'inbox.tasks.complete' },
-  { path: '/app/people', view: 'people.directory', manage: 'people.create' },
+  { path: '/app/people', view: 'people.directory', manage: 'people.create', ownRefusal: true },
   { path: '/app/people/new', view: 'people.create' },
   { path: '/app/people/[id]', view: 'people.record', manage: 'people.edit' },
   { path: '/app/org-chart', view: 'people.orgChart' },
