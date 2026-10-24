@@ -1753,11 +1753,13 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
   - It reuses the existing certificate page (`documents/pdf.ts`).
   - After signing, the viewer shows the signed copy.
   - The stepper follows EasyUI's `stepper` (MIT, © 2026 Suraj Maurya; reference only, rebuilt from our tokens).
+- **First data in the HTML.** The viewer and the payslip pages fetch their first data on the web server with the viewer's own cookie (`serverApiView` in `apps/web/lib/server-api.ts`), so the title and details arrive with the page. The API audits that fetch as the view, so a router prefetch (someone pointing at a link) fetches nothing: a hover is never recorded as a view or marks a payslip as seen.
+- **No layout shift.** While PDF.js loads, the viewer shows its page controls (disabled) over a page-shaped placeholder. It draws the first page out of the flow and only then swaps it in, so nothing around the document moves.
 - **Mobile layout** follows ADR-0180. Titles take the width, with dates and badges under them and buttons below them at 44 px or more. Lists are `ListSection` rows.
 
 **Consequences.**
 
-- PDF.js loads on the first document view only: about 150 KB gzipped of library in the page and about 380 KB gzipped of worker, both cached for good after that. Other pages are unaffected.
+- PDF.js loads on the first document view only: about 150 KB gzipped of library in the page and about 380 KB gzipped of worker, both cached for good after that. Other pages are unaffected. Evaluating the library is one long task of about 350 ms on the build machine, so the viewer is the app screen closest to the Lighthouse performance threshold (79 to 89 under load, docs/PERFORMANCE.md).
 - A PDF.js upgrade changes the versioned folder and the pinned version together. The copy script re-copies when the version or build changes.
 - The CSP unit test covers the worker route's policy and the proxy exclusion, and `documents-sign.spec.ts` fails on any CSP violation while a PDF renders and is signed.
 
