@@ -157,7 +157,7 @@ function Body({ p }: { p: Performance }) {
     format: (v: number) => string,
     integer = true,
   ) => (
-    <Panel level={3} title={title} data-testid={`${key}-chart`}>
+    <Panel level={2} title={title} data-testid={`${key}-chart`}>
       <ChartWithTable
         label={t(labelKey, span)}
         categories={p.series.map((s) => short(s.start))}
