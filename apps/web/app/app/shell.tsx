@@ -84,7 +84,9 @@ export function PageTitle({ children, className }: { children: React.ReactNode; 
   // in a drill-down module the page's own title is the large title on phones (the module's is hidden)
   const drilled = React.useContext(DrilledContext);
   return inModule ? (
-    <h2 className={className ?? (drilled ? 'text-large-title lg:text-title-2' : 'text-title-3')}>{children}</h2>
+    <h2 className={className ?? (drilled ? 'text-large-title lg:text-title-2' : 'text-title-3')}>
+      {children}
+    </h2>
   ) : (
     <h1 className={className ?? 'text-title-2'}>{children}</h1>
   );
@@ -321,7 +323,7 @@ export function AppShell({
       <ExperienceContext.Provider value={experienceValue}>
         {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
         <div className="flex min-h-dvh flex-col bg-surface">
-          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/80 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
+          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -487,7 +489,7 @@ export function AppShell({
           // the phone tab bar (ADR-0180): the viewer's main modules, one tap away
           <nav
             aria-label={t('app.ws.dock.label')}
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/80 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
           >
             <ul className="mx-auto flex h-[var(--dock-height)] max-w-lg items-stretch">
               {dock.map((m) => {

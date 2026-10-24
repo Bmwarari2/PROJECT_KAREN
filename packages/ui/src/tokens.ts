@@ -23,7 +23,7 @@ export const colors = {
   danger: { light: '#b42318', dark: '#ff7b72' },
   'on-danger': { light: '#ffffff', dark: '#2a0705' },
   // App chrome (ADR-0180): the top and bottom bars, light and translucent like the page under them
-  // (a blurred `chrome` at 80% in the bars), with the controls on them.
+  // (a blurred `chrome` at 90% in the bars, ADR-0182), with the controls on them.
   chrome: { light: '#f9f9fb', dark: '#161618' },
   'chrome-raised': { light: '#ececf0', dark: '#2a2a2e' },
   'on-chrome': { light: '#1d1d1f', dark: '#f5f5f7' },
