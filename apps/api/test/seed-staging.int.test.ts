@@ -387,6 +387,28 @@ describe('staging seed', () => {
     expect((await get(owner, '/v1/employees?limit=200')).json().data.length).toBe(200);
   });
 
+  it('gives the IT admin login the asset register, the device and access tasks and SCIM (ADR-0189)', async () => {
+    const itAdmin = await session('it_admin');
+    const me = (await get(itAdmin, '/v1/auth/session')).json() as { roles: string[] };
+    expect(me.roles.sort()).toEqual(['employee', 'it_admin']);
+    expect((await get(itAdmin, '/v1/assets')).json().length).toBeGreaterThan(0);
+    expect((await get(itAdmin, '/v1/settings/scim-tokens')).statusCode).toBe(200);
+    expect((await get(itAdmin, '/v1/integrations/it')).statusCode).toBe(200);
+    type Task = { title: string; assigneeRole: string | null };
+    const tasks = (await get(itAdmin, '/v1/tasks?status=open')).json() as Task[];
+    for (const title of ['Order laptop, phone or site access card', 'Remove system and building access'])
+      expect(
+        tasks.some((t) => t.title === title && t.assigneeRole === 'it_admin'),
+        title,
+      ).toBe(true);
+    // never pay or sensitive records
+    expect((await get(itAdmin, '/v1/payroll/periods')).statusCode).toBe(403);
+    expect((await get(itAdmin, '/v1/compliance/right-to-work')).statusCode).toBe(403);
+    // the HR admins' queue no longer holds them
+    const hrTasks = (await get(await session('hr_admin'), '/v1/tasks?status=open')).json() as Task[];
+    expect(hrTasks.some((t) => t.title === 'Remove system and building access')).toBe(false);
+  });
+
   it('keeps every booked annual leave within the employee’s balance (leave engine, packs)', async () => {
     const book = rules();
     const asOf = today('Europe/London');

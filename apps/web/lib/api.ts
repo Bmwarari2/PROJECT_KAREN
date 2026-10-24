@@ -93,4 +93,6 @@ export interface SessionInfo {
   mustUseMfa?: boolean;
   roles: string[];
   permissions: string[];
+  /** Permissions of the roles assigned for the whole workspace (absent from older sessions). */
+  workspacePermissions?: string[];
 }

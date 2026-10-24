@@ -50,12 +50,13 @@ export interface WorkspaceViewer extends CapabilityViewer {
 }
 
 export function viewerFromSession(
-  s: Pick<SessionInfo, 'permissions' | 'employeeId'>,
+  s: Pick<SessionInfo, 'permissions' | 'employeeId' | 'workspacePermissions'>,
   askHr = false,
   workspace: { features?: Partial<Record<FeatureKey, boolean>>; sandbox?: boolean } = {},
 ): WorkspaceViewer {
   const base: CapabilityViewer = {
     has: hasFromGrants(s.permissions),
+    hasWorkspace: hasFromGrants(s.workspacePermissions ?? s.permissions),
     employeeId: s.employeeId,
     askHr,
     features: workspace.features,
@@ -70,9 +71,9 @@ export function viewerFromSession(
 }
 
 /** Whether the viewer may open a page at all (permissions only): pages they may not show the not-allowed state. */
-export function mayOpenPage(v: Pick<CapabilityViewer, 'has'>, path: string): boolean {
+export function mayOpenPage(v: Pick<CapabilityViewer, 'has' | 'hasWorkspace'>, path: string): boolean {
   const page = pageFor(path);
-  return !page || permits(v.has, page.view);
+  return !page || permits(v.has, page.view, v.hasWorkspace);
 }
 
 export type GroupKey = 'you' | 'workforce' | 'insights' | 'governance' | 'company' | 'support';

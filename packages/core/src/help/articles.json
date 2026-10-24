@@ -1,12 +1,13 @@
 {
-  "$comment": "In-app help centre articles: versioned content (bump `version` and `updatedOn` on every change), localised per locale. `contexts` are app paths the article is linked from. Fictional examples only.",
+  "$comment": "In-app help centre articles: versioned content (bump `version` and `updatedOn` on every change), localised per locale. `contexts` are app paths the article is linked from. `features` are the capabilities of the permission map (packages/core/src/capabilities.ts) the article covers and `permissions` the permissions it describes: a reader sees the article only with all of them, with each feature on for the workspace; `countries` limits it to workspaces with a legal entity in one of them. Only the general articles (signing in, accounts: GENERAL_HELP_SLUGS) have no feature. Fictional examples only.",
   "articles": [
     {
       "slug": "getting-started",
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app"],
-      "audience": [],
+      "features": ["settings.organisation", "people.add"],
+      "permissions": ["org.manage", "employees.create"],
       "locales": {
         "en-GB": {
           "title": "Getting started with your workspace",
@@ -33,7 +34,8 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/people", "/app/imports"],
-      "audience": ["employees.create", "imports.run"],
+      "features": ["people.add", "people.imports"],
+      "permissions": ["employees.create", "imports.run"],
       "locales": {
         "en-GB": {
           "title": "Adding and importing people",
@@ -60,7 +62,8 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/time-off", "/app/approvals"],
-      "audience": [],
+      "features": ["time.timeOff.requestOwn"],
+      "permissions": ["leave.request"],
       "locales": {
         "en-GB": {
           "title": "Requesting and approving time off",
@@ -87,7 +90,8 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/rota", "/app/clock", "/app/timesheets"],
-      "audience": ["time.clock", "rota.view_own", "rota.view"],
+      "features": ["time.rota", "time.clock", "time.timesheets"],
+      "permissions": ["time.clock"],
       "locales": {
         "en-GB": {
           "title": "Rotas, clocking in and timesheets",
@@ -114,7 +118,8 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/support", "/app/help"],
-      "audience": ["support.ticket"],
+      "features": ["help.support"],
+      "permissions": ["support.ticket"],
       "locales": {
         "en-GB": {
           "title": "Contacting Thapsus-HR support",
@@ -141,7 +146,8 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/billing"],
-      "audience": ["billing.manage"],
+      "features": ["company.billing"],
+      "permissions": ["billing.manage"],
       "locales": {
         "en-GB": {
           "title": "Plans, billing and cancelling",
@@ -168,7 +174,8 @@
       "version": 2,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/security", "/app/settings"],
-      "audience": ["settings.manage"],
+      "features": ["settings.sso.manage", "settings.signInPolicy.manage"],
+      "permissions": ["settings.manage"],
       "locales": {
         "en-GB": {
           "title": "Sign-in security, SSO and passkeys",
@@ -197,7 +204,9 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/settings", "/app/security"],
-      "audience": [],
+      "features": [],
+      "permissions": [],
+      "general": true,
       "locales": {
         "en-GB": {
           "title": "Who can reset passwords and two-step verification",
@@ -230,7 +239,8 @@
       "version": 1,
       "updatedOn": "2026-10-18",
       "contexts": ["/app/settings", "/app/support"],
-      "audience": ["settings.manage"],
+      "features": ["settings.supportAccess.manage"],
+      "permissions": ["settings.manage"],
       "locales": {
         "en-GB": {
           "title": "Giving Thapsus-HR support temporary access",
@@ -255,7 +265,8 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/payslips"],
-      "audience": ["payslips.read_own", "payslips.manage"],
+      "features": ["pay.payslips"],
+      "permissions": [],
       "locales": {
         "en-GB": {
           "title": "Viewing your payslips",
@@ -282,7 +293,8 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/documents", "/app/welcome"],
-      "audience": ["documents.sign", "documents.read_own"],
+      "features": ["documents.sign"],
+      "permissions": ["documents.sign"],
       "locales": {
         "en-GB": {
           "title": "Signing documents",
@@ -309,7 +321,8 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/me", "/app/me/details"],
-      "audience": ["self.update_contact"],
+      "features": ["me.details.edit"],
+      "permissions": ["self.update_contact"],
       "locales": {
         "en-GB": {
           "title": "Updating your details",
@@ -336,7 +349,8 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/notifications"],
-      "audience": [],
+      "features": ["me.notifications"],
+      "permissions": [],
       "locales": {
         "en-GB": {
           "title": "Notifications and what to do with them",
@@ -363,7 +377,8 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/contact-hr", "/app/help"],
-      "audience": ["hr.contact"],
+      "features": ["help.contactHr"],
+      "permissions": ["hr.contact"],
       "locales": {
         "en-GB": {
           "title": "Asking HR a question",
@@ -381,6 +396,183 @@
             "Open Help → Contact HR, choose a subject and describe what you need. Your HR team gets it in their inbox, with your name on it.",
             "Your requests are listed on the same page with their status. When HR marks one as done you get a notification.",
             "Do not include medical or other sensitive details here. HR will ask for them in the right place if they need them."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "signing-in",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app", "/app/security", "/app/me"],
+      "features": [],
+      "permissions": [],
+      "general": true,
+      "locales": {
+        "en-GB": {
+          "title": "Signing in and your account",
+          "summary": "Sign in, use two-step verification, see where you are signed in and choose your language and theme.",
+          "body": [
+            "Sign in with your work email and password, or with single sign-on if your organisation uses it. Your workspace may ask for a second step: a code from an authenticator app or a passkey on this device.",
+            "Open Security to change your password, add or remove a passkey, set up a new authenticator app and see where you are signed in. You can sign out of every other device from there.",
+            "The account menu in the top bar sets your language and the light or dark theme, and signs you out.",
+            "Forgot your password? Choose “Forgot your password?” on the sign-in page and follow the emailed link."
+          ]
+        },
+        "en-US": {
+          "title": "Signing in and your account",
+          "summary": "Sign in, use two-step verification, see where you are signed in and choose your language and theme.",
+          "body": [
+            "Sign in with your work email and password, or with single sign-on if your organization uses it. Your workspace may ask for a second step: a code from an authenticator app or a passkey on this device.",
+            "Open Security to change your password, add or remove a passkey, set up a new authenticator app and see where you are signed in. You can sign out of every other device from there.",
+            "The account menu in the top bar sets your language and the light or dark theme, and signs you out.",
+            "Forgot your password? Choose “Forgot your password?” on the sign-in page and follow the emailed link."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "ask-hr",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/ask"],
+      "features": ["askHr.ask"],
+      "permissions": ["ai.ask"],
+      "locales": {
+        "en-GB": {
+          "title": "Asking Ask HR about company policies",
+          "summary": "Ask a question about your company’s own policies and see where each answer comes from.",
+          "body": [
+            "Open Help → Ask HR and type a question about a company policy, such as how to book time off for a medical appointment. Ask HR answers only from the policy documents your HR team has chosen, and lists the passages it used.",
+            "Answers are written by an AI model. Check the cited policy before you rely on an answer, and ask your HR team when something is unclear.",
+            "Ask HR declines questions about colleagues’ personal matters, and it never makes or recommends decisions about anyone’s employment."
+          ]
+        },
+        "en-US": {
+          "title": "Asking Ask HR about company policies",
+          "summary": "Ask a question about your company’s own policies and see where each answer comes from.",
+          "body": [
+            "Open Help → Ask HR and type a question about a company policy, such as how to book time off for a medical appointment. Ask HR answers only from the policy documents your HR team has chosen, and lists the passages it used.",
+            "Answers are written by an AI model. Check the cited policy before you rely on an answer, and ask your HR team when something is unclear.",
+            "Ask HR declines questions about colleagues’ personal matters, and it never makes or recommends decisions about anyone’s employment."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "custom-branding",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/settings/branding"],
+      "features": ["settings.branding.manage"],
+      "permissions": ["settings.manage"],
+      "locales": {
+        "en-GB": {
+          "title": "Your logo and accent colour",
+          "summary": "Show your logo in the navigation and use your own accent colour for links and buttons.",
+          "body": [
+            "Open Settings → Branding and enter your accent colour as a six-digit hex value, for example #1F3A8A. You can choose a different colour for dark mode.",
+            "To keep the app readable for everyone, a colour is saved only when it meets WCAG 2.2 AA contrast on every background in light and dark mode. If it does not, you see which pairs fall short.",
+            "Upload a PNG, JPEG or WebP logo of up to 512 KB. It is stored in your home region.",
+            "People who can view the workspace settings see Branding read-only; admins who manage the workspace settings change it."
+          ]
+        },
+        "en-US": {
+          "title": "Your logo and accent color",
+          "summary": "Show your logo in the navigation and use your own accent color for links and buttons.",
+          "body": [
+            "Open Settings → Branding and enter your accent color as a six-digit hex value, for example #1F3A8A. You can choose a different color for dark mode.",
+            "To keep the app readable for everyone, a color is saved only when it meets WCAG 2.2 AA contrast on every background in light and dark mode. If it does not, you see which pairs fall short.",
+            "Upload a PNG, JPEG or WebP logo of up to 512 KB. It is stored in your home region.",
+            "People who can view the workspace settings see Branding read-only; admins who manage the workspace settings change it."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "form-i9",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/compliance/i9"],
+      "features": ["compliance.overview"],
+      "permissions": ["compliance.read"],
+      "countries": ["US"],
+      "locales": {
+        "en-GB": {
+          "title": "Form I-9 records",
+          "summary": "Track Section 1, Section 2 and reverification for people employed in the United States.",
+          "body": [
+            "Open Compliance → Form I-9 to see each person employed by a US entity, with the dates Section 1 and Section 2 were completed, any reverification due and how long the form must be kept.",
+            "The deadlines shown come from the US rules pack, each with its official source, so they follow the rules when the rules change.",
+            "People who may record compliance information choose Update to enter the dates. Everyone else with access to Compliance sees the list read-only."
+          ]
+        },
+        "en-US": {
+          "title": "Form I-9 records",
+          "summary": "Track Section 1, Section 2 and reverification for people employed in the United States.",
+          "body": [
+            "Open Compliance → Form I-9 to see each person employed by a US entity, with the dates Section 1 and Section 2 were completed, any reverification due and how long the form must be kept.",
+            "The deadlines shown come from the US rules pack, each with its official source, so they follow the rules when the rules change.",
+            "People who may record compliance information choose Update to enter the dates. Everyone else with access to Compliance sees the list read-only."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "right-to-work-checks",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/compliance/right-to-work"],
+      "features": ["compliance.overview"],
+      "permissions": ["compliance.read"],
+      "countries": ["GB"],
+      "locales": {
+        "en-GB": {
+          "title": "Right to work checks",
+          "summary": "Record right to work checks for people employed in the United Kingdom and see which need attention.",
+          "body": [
+            "Open Compliance → Right to work to see each person employed by a UK entity and the status of their check: valid, follow-up due, expiring, expired or missing.",
+            "The check methods, the evidence each one needs and any follow-up dates come from the UK rules pack, each with its official source.",
+            "People who may record compliance information choose Record check, and can attach the evidence to the person’s documents. Everyone else with access to Compliance sees the list read-only."
+          ]
+        },
+        "en-US": {
+          "title": "Right to work checks",
+          "summary": "Record right to work checks for people employed in the United Kingdom and see which need attention.",
+          "body": [
+            "Open Compliance → Right to work to see each person employed by a UK entity and the status of their check: valid, follow-up due, expiring, expired or missing.",
+            "The check methods, the evidence each one needs and any follow-up dates come from the UK rules pack, each with its official source.",
+            "People who may record compliance information choose Record check, and can attach the evidence to the person’s documents. Everyone else with access to Compliance sees the list read-only."
+          ]
+        }
+      }
+    },
+    {
+      "slug": "devices-and-access",
+      "version": 1,
+      "updatedOn": "2026-10-24",
+      "contexts": ["/app/assets", "/app/integrations", "/app/settings/scim"],
+      "features": ["it.assets.manage", "it.integrations"],
+      "permissions": ["assets.manage", "integrations.read"],
+      "locales": {
+        "en-GB": {
+          "title": "Equipment, accounts and leavers’ access",
+          "summary": "Issue equipment, record returns and connect your directory: the IT admin’s work.",
+          "body": [
+            "IT admins keep the register under IT → Equipment: they add equipment, issue it to a person, who confirms they received it, and record each return with the checklist for its type.",
+            "Ordering a laptop, phone or site access card for a starter, removing a leaver’s system and building access, and recording what a leaver hands back are tasks in the IT admins’ inbox. While no one holds the IT admin role, they go to the role chosen in Settings → Workflow templates.",
+            "Under IT → Integrations, connect Microsoft 365 or Google Workspace to create and remove accounts when people join and leave. Settings → User provisioning (SCIM) gives your identity provider a token to provision sign-ins.",
+            "HR admins see the register read-only, so they can check what a leaver still holds. IT admins never see pay, contracts or sensitive records."
+          ]
+        },
+        "en-US": {
+          "title": "Equipment, accounts and leavers’ access",
+          "summary": "Issue equipment, record returns and connect your directory: the IT admin’s work.",
+          "body": [
+            "IT admins keep the register under IT → Equipment: they add equipment, issue it to a person, who confirms they received it, and record each return with the checklist for its type.",
+            "Ordering a laptop, phone or site access card for a starter, removing a leaver’s system and building access, and recording what a leaver hands back are tasks in the IT admins’ inbox. While no one holds the IT admin role, they go to the role chosen in Settings → Workflow templates.",
+            "Under IT → Integrations, connect Microsoft 365 or Google Workspace to create and remove accounts when people join and leave. Settings → User provisioning (SCIM) gives your identity provider a token to provision sign-ins.",
+            "HR admins see the register read-only, so they can check what a leaver still holds. IT admins never see pay, contracts or sensitive records."
           ]
         }
       }

@@ -19,6 +19,7 @@ locals {
     owner         = "owner@${var.workspace_slug}.example.test"
     hr_admin      = "hr.admin@${var.workspace_slug}.example.test"
     payroll_admin = "payroll@${var.workspace_slug}.example.test"
+    it_admin      = "it.admin@${var.workspace_slug}.example.test"
     manager       = "manager@${var.workspace_slug}.example.test"
     employee      = "employee@${var.workspace_slug}.example.test"
   }

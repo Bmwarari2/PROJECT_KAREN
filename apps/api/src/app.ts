@@ -102,7 +102,7 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
     route.schema = {
       ...route.schema,
       'x-capability': capability,
-      'x-permission': { any: req.any ?? [], all: req.all ?? [] },
+      'x-permission': { any: req.any ?? [], all: req.all ?? [], workspace: !!req.workspace },
     } as typeof route.schema;
   });
 

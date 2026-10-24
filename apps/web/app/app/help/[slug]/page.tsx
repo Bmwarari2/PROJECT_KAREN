@@ -1,27 +1,34 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { helpArticle } from '@thapsus/core/help';
+import { helpArticle, type HelpArticleView } from '@thapsus/core/help';
 import { formatDate } from '@thapsus/core/i18n';
 import { buttonVariants } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
+import { serverApiResult } from '@/lib/server-api';
 import { PageTitle } from '../../shell';
 import { serverSession } from '@/lib/server-session';
 import { viewerFromSession } from '../../workspace';
+import { fallbackReader } from '../reader';
 
 export default async function HelpArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const [{ t, locale }, session] = await Promise.all([serverContext(), serverSession()]);
   const { slug } = await params;
-  // an article that is not for this reader is not found (ADR-0162)
-  const can = session ? viewerFromSession(session).has : () => false;
-  const a = /^[a-z0-9-]{1,80}$/.test(slug) ? helpArticle(slug, locale, can) : undefined;
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) notFound();
+  // an article that is not for this reader is not found (ADR-0162, ADR-0190): the API decides with the
+  // workspace's features and countries; the stricter local reader only if the API does not answer
+  const fromApi = await serverApiResult<HelpArticleView>(
+    `/v1/help/articles/${slug}?${new URLSearchParams({ locale })}`,
+  );
+  const a = fromApi ? fromApi.data : helpArticle(slug, locale, fallbackReader(session));
   if (!a) notFound();
-  const stuck = can('support.ticket')
+  const viewer = session ? viewerFromSession(session) : null;
+  const stuck = viewer?.can('help.support')
     ? {
         href: `/app/support?new=1&context=${encodeURIComponent(a.contexts[0] ?? '/app')}`,
         label: t('help.raiseTicket'),
       }
-    : can('hr.contact')
+    : viewer?.can('help.contactHr')
       ? { href: '/app/contact-hr', label: t('actionable.hr.contact') }
       : null;
   return (

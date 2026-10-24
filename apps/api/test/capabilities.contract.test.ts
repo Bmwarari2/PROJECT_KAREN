@@ -15,7 +15,10 @@ import { routesFor, webActionCalls, type RouteRef, type WebActionCall } from './
  * declares its own (`config.capability`, published as `x-capability`). A UI action may never need less
  * than its route: whoever the app shows the action to must also pass the route's permission check.
  */
-type Op = { 'x-capability'?: string; 'x-permission'?: { any: string[]; all: string[] } };
+type Op = {
+  'x-capability'?: string;
+  'x-permission'?: { any: string[]; all: string[]; workspace: boolean };
+};
 let ops: Map<string, Op>;
 let routes: RouteRef[];
 let calls: WebActionCall[];
@@ -46,7 +49,11 @@ describe('UI actions and the API routes they call (ADR-0188)', () => {
     for (const [key, op] of declared) {
       expect(isCapabilityKey(op['x-capability']), key).toBe(true);
       const req = CAPABILITIES[op['x-capability'] as CapabilityKey];
-      expect(op['x-permission'], key).toEqual({ any: req.any ?? [], all: req.all ?? [] });
+      expect(op['x-permission'], key).toEqual({
+        any: req.any ?? [],
+        all: req.all ?? [],
+        workspace: !!req.workspace,
+      });
     }
   });
 

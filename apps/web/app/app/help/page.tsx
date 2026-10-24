@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { BookOpen, Search } from 'lucide-react';
-import { articlesForContext, helpArticles, searchHelp } from '@thapsus/core/help';
+import { articlesForContext, helpArticles, searchHelp, type HelpArticleView } from '@thapsus/core/help';
 import { buttonVariants, EmptyState, Input, ListItem, ListSection } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
+import { serverApi } from '@/lib/server-api';
 import { PageIntro } from '@/components/module-page';
 import { serverSession } from '@/lib/server-session';
 import { viewerFromSession } from '../workspace';
+import { fallbackReader } from './reader';
 
 /** In-app help centre: versioned, localised articles from the repo, searched with a local index (ADR-0108). */
 export default async function HelpPage({
@@ -16,14 +18,26 @@ export default async function HelpPage({
   const [{ t, locale }, session] = await Promise.all([serverContext(), serverSession()]);
   const { q = '', context } = await searchParams;
   const query = q.slice(0, 200);
-  // only articles about what the reader may do (ADR-0162); without a session, the ones for everyone
-  const can = session ? viewerFromSession(session).has : () => false;
-  const contextual = context?.startsWith('/app') ? articlesForContext(context, locale, can) : [];
-  const results = query.trim() ? searchHelp(query, locale, 10, can) : helpArticles(locale, can);
+  const inApp = !!context?.startsWith('/app') && context.length <= 300;
+  // The API filters for this reader: only articles about features they can see, on for the workspace, in
+  // its countries (ADR-0190); the local fallback is stricter and is used only if the API does not answer.
+  const qs = (p: Record<string, string>) => new URLSearchParams({ ...p, locale }).toString();
+  const [fromApiContext, fromApi] = await Promise.all([
+    inApp && !query.trim()
+      ? serverApi<HelpArticleView[]>(`/v1/help/articles?${qs({ context: context! })}`)
+      : Promise.resolve([] as HelpArticleView[]),
+    serverApi<HelpArticleView[]>(`/v1/help/articles?${qs(query.trim() ? { q: query } : {})}`),
+  ]);
+  const reader = fallbackReader(session);
+  const contextual =
+    fromApiContext ?? (inApp && !query.trim() ? articlesForContext(context!, locale, reader) : []);
+  const results =
+    fromApi ?? (query.trim() ? searchHelp(query, locale, 10, reader) : helpArticles(locale, reader));
   // admins contact Thapsus-HR support; everyone else asks their own HR team (ADR-0163)
-  const contact = can('support.ticket')
+  const viewer = session ? viewerFromSession(session) : null;
+  const contact = viewer?.can('help.support')
     ? { href: '/app/support', label: t('help.contactSupport') }
-    : can('hr.contact')
+    : viewer?.can('help.contactHr')
       ? { href: '/app/contact-hr', label: t('actionable.hr.contact') }
       : null;
   return (

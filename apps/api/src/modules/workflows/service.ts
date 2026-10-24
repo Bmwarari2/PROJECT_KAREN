@@ -2,6 +2,7 @@ import { addDays } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
 import { personHref, safeAppLink, targetHref } from '@thapsus/core/links';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
+import { taskRoleFor } from '../it/task-routing';
 
 /** Reminder lead time for tasks whose template does not set `reminderDaysBefore`. */
 export const DEFAULT_REMINDER_DAYS_BEFORE = 2;
@@ -64,8 +65,9 @@ export async function startWorkflow(
     if (task.assignee.type === 'manager') person = emp.manager_id;
     if (person) assignees = [await userForEmployee(tx, person)].filter(Boolean) as string[];
     if (task.assignee.type === 'role' && task.assignee.value) {
-      role = task.assignee.value;
-      assignees = await usersWithRole(tx, task.assignee.value);
+      // IT admin tasks fall back to the workspace's chosen role while no one is an IT admin (ADR-0189)
+      role = await taskRoleFor(tx, task.assignee.value);
+      assignees = await usersWithRole(tx, role);
     }
     const dueOn = addDays(anchorDate, task.dueOffsetDays);
     // Role tasks are one shared task visible to the role; person tasks are assigned individually.

@@ -200,6 +200,8 @@ export async function authRoutes(app: FastifyInstance) {
             mustUseMfa: Type.Boolean(),
             roles: Type.Array(Type.String()),
             permissions: Type.Array(Type.String()),
+            /** Permissions of the roles assigned for the whole workspace (the permission map's company-wide test). */
+            workspacePermissions: Type.Array(Type.String()),
           }),
         },
       },
@@ -231,6 +233,9 @@ export async function authRoutes(app: FastifyInstance) {
         mustUseMfa: mustUseMfa(a.principal, { requireMfaForEveryone: !!a.requireMfaForEveryone }),
         roles: [...new Set(a.principal.grants.map((g) => g.roleKey))],
         permissions: [...new Set(a.principal.grants.flatMap((g) => g.permissions))],
+        workspacePermissions: [
+          ...new Set(a.principal.grants.filter((g) => g.scope.type === 'all').flatMap((g) => g.permissions)),
+        ],
       };
     },
   );

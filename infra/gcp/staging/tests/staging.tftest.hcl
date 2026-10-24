@@ -121,6 +121,20 @@ run "nothing_is_open_that_should_not_be" {
     ])
     error_message = "only the jobs service account may read test-logins, staff-invitee and db-owner"
   }
+  # One sign-in per role of the staging seed (LOGIN_ROLES in apps/api/src/cli/staging/config.ts), each with
+  # its own generated password: the seed refuses a secret without exactly these roles (ADR-0189).
+  assert {
+    condition     = toset(keys(local.test_logins)) == toset(["owner", "hr_admin", "payroll_admin", "it_admin", "manager", "employee"])
+    error_message = "the test logins must be exactly the staging seed's six roles, the IT admin included"
+  }
+  assert {
+    condition     = toset(keys(random_password.login)) == toset(keys(local.test_logins))
+    error_message = "every test login needs its own generated password"
+  }
+  assert {
+    condition     = local.test_logins.it_admin == "it.admin@kestrel.example.test"
+    error_message = "the IT admin login uses the seed's default address"
+  }
   # The enrolment link is written and read by the jobs account only; the job reads just two secrets.
   assert {
     condition = alltrue([

@@ -101,9 +101,12 @@ export function sectionFeature(s: SettingsSection): FeatureKey | undefined {
 export function visibleSections(
   has: (permission: string) => boolean,
   context?: { feature: (key: FeatureKey) => boolean; sandbox: boolean },
+  hasWorkspace: (permission: string) => boolean = has,
 ): SettingsSection[] {
   const viewer: CapabilityViewer = {
     has,
+    // workspace settings need their permissions company-wide (ADR-0188)
+    hasWorkspace,
     // a section is about the workspace, not the viewer's own record
     employeeId: 'any',
     askHr: true,

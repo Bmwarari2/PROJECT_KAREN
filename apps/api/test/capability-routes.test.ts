@@ -41,6 +41,23 @@ describe('routes that declare a capability (ADR-0188)', () => {
     expect(problems).toEqual([]);
   });
 
+  it('say "company-wide" where the handler checks the permission without a record to scope it', () => {
+    // authorize(req, p) without a target passes only a role assigned for the whole workspace; the app
+    // would otherwise show the action to a country or entity HR admin whom the route refuses
+    const problems: string[] = [];
+    for (const b of blocks) {
+      if (!isCapabilityKey(b.capability)) continue;
+      const req = CAPABILITIES[b.capability];
+      const declared = new Set([...(req.any ?? []), ...(req.all ?? [])]);
+      for (const p of b.workspaceChecks)
+        if (declared.has(p) && !req.workspace)
+          problems.push(
+            `${b.file}:${b.line} ${b.method} ${b.url}: checks ${p} company-wide; mark ${b.capability} workspace`,
+          );
+    }
+    expect(problems).toEqual([]);
+  });
+
   it('would catch a route stricter than its capability (the Settings → Branding case)', () => {
     const put = blocks.find((b) => b.method === 'PUT' && b.url === '/v1/settings/branding')!;
     expect(put.capability).toBe('settings.branding.manage');

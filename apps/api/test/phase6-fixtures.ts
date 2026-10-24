@@ -90,7 +90,7 @@ export async function phase6Company(ctx: TestContext) {
     });
     expect(res.statusCode, res.body).toBeLessThan(300);
     const cookie = cookieFrom(res);
-    if (['payroll_admin', 'hr_admin', 'entity_hr_admin', 'owner'].includes(role))
+    if (['payroll_admin', 'hr_admin', 'entity_hr_admin', 'it_admin', 'owner'].includes(role))
       await enrolTotp(ctx, cookie);
     return cookie;
   }

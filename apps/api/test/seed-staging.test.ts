@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { addDays, compareDates } from '@thapsus/core/time';
 import { rules } from '@thapsus/rules';
@@ -112,13 +114,28 @@ describe('STAGING_LOGINS contract', () => {
       'owner@kestrel.example.test',
       'hr.admin@kestrel.example.test',
       'payroll@kestrel.example.test',
+      'it.admin@kestrel.example.test',
       'manager@kestrel.example.test',
       'employee@kestrel.example.test',
     ]);
     expect(a.logins.map((l) => l.email)).toEqual(LOGIN_ROLES.map((r) => defaultEmail(r)));
     for (const l of a.logins)
       expect(passwordProblems(l.password, { workspaceSlug: 'kestrel', email: l.email })).toEqual([]);
-    expect(new Set([...a.logins, ...b.logins].map((l) => l.password)).size).toBe(10);
+    expect(new Set([...a.logins, ...b.logins].map((l) => l.password)).size).toBe(12);
+  });
+
+  it('matches the logins the staging infrastructure generates (infra/gcp/staging/locals.tf)', () => {
+    const tf = readFileSync(
+      join(import.meta.dirname, '..', '..', '..', 'infra', 'gcp', 'staging', 'locals.tf'),
+      'utf8',
+    );
+    const block = /test_logins = \{([\s\S]*?)\n  \}/.exec(tf)![1]!;
+    const entries = [...block.matchAll(/^\s+(\w+)\s+= "([^"]+)"/gm)].map(
+      (m) => [m[1]!, m[2]!.replace('${var.workspace_slug}', 'kestrel')] as const,
+    );
+    expect(entries.map(([role]) => role)).toEqual([...LOGIN_ROLES]);
+    for (const [role, email] of entries)
+      expect(email).toBe(defaultEmail(role as (typeof LOGIN_ROLES)[number]));
   });
 
   it('bounds the roster size', () => {
@@ -187,6 +204,7 @@ describe('staging company plan', () => {
     expect(at(plan.people[plan.logins.owner]!).title).toBe('Chief executive officer');
     expect(at(plan.people[plan.logins.hr_admin]!).title).toBe('Head of people operations');
     expect(at(plan.people[plan.logins.payroll_admin]!).title).toBe('Payroll manager');
+    expect(at(plan.people[plan.logins.it_admin]!).title).toBe('Security engineer');
     // a smaller roster (CI) keeps the manager's whole team
     const small = buildPlan({ book, anchor: ANCHOR, size: MIN_SIZE });
     expect(small.people.filter((p) => p.kind === 'roster')).toHaveLength(MIN_SIZE);

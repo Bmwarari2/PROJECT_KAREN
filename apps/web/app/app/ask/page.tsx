@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import Link from 'next/link';
 import { Bot, BotOff, FileText, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Field, Skeleton, Textarea, useToast } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
@@ -27,6 +28,8 @@ interface Answer {
   citations: Citation[];
   disclosure: string;
   model: string | null;
+  /** Help centre articles for this reader that match the question (ADR-0190). */
+  helpArticles?: Array<{ slug: string; title: string; summary: string }>;
 }
 interface Exchange {
   key: string;
@@ -221,6 +224,18 @@ export default function AskHrPage() {
                       </li>
                     ))}
                   </ol>
+                </div>
+              ) : null}
+              {x.result.helpArticles?.length ? (
+                <div>
+                  <h3 className="text-footnote font-semibold">{t('visibility.help.askHrArticles')}</h3>
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {x.result.helpArticles.map((a) => (
+                      <li key={a.slug} className="text-callout">
+                        <Link href={`/app/help/${a.slug}`}>{a.title}</Link>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : null}
               <p className="text-footnote text-text-secondary">{x.result.disclosure}</p>

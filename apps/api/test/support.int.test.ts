@@ -67,8 +67,8 @@ describe('help centre', () => {
       headers: { cookie: owner.cookie, 'accept-language': 'en-US' },
     });
     expect(us.json().title).toMatch(/canceling/);
-    const c = await api('GET', '/v1/help/articles?context=/app/time-off', undefined, employee.cookie);
-    expect(c.json().map((a: { slug: string }) => a.slug)).toContain('requesting-time-off');
+    const c = await api('GET', '/v1/help/articles?context=/app/notifications', undefined, employee.cookie);
+    expect(c.json().map((a: { slug: string }) => a.slug)).toContain('notifications');
     expect((await api('GET', '/v1/help/articles/nope', undefined, employee.cookie)).statusCode).toBe(404);
   });
 
@@ -78,9 +78,17 @@ describe('help centre', () => {
       ((await api('GET', url, undefined, cookie)).json() as Array<{ slug: string }>).map((a) => a.slug);
     const all = await slugs('/v1/help/articles', plain.cookie);
     expect(all).toEqual(
-      expect.arrayContaining(['getting-started', 'requesting-time-off', 'notifications', 'contacting-hr']),
+      expect.arrayContaining(['signing-in', 'resetting-sign-in', 'notifications', 'contacting-hr']),
     );
-    for (const admin of ['plans-and-billing', 'adding-people', 'support-access', 'security-and-sign-in'])
+    // setting up the workspace is for admins (ADR-0190); booking time off needs an employee record
+    for (const admin of [
+      'getting-started',
+      'plans-and-billing',
+      'adding-people',
+      'support-access',
+      'security-and-sign-in',
+      'requesting-time-off',
+    ])
       expect(all).not.toContain(admin);
     expect(all).not.toContain('contacting-support');
     // searching and opening behave the same: an article that is not for the reader is not found
@@ -89,10 +97,51 @@ describe('help centre', () => {
       (await api('GET', '/v1/help/articles/plans-and-billing', undefined, plain.cookie)).statusCode,
     ).toBe(404);
     // the contextual link on a page they cannot use falls back to an article for them
-    expect(await slugs('/v1/help/articles?context=/app/billing', plain.cookie)).toEqual(['getting-started']);
+    expect(await slugs('/v1/help/articles?context=/app/billing', plain.cookie)).toEqual(['signing-in']);
     expect(await slugs('/v1/help/articles', owner.cookie)).toEqual(
       expect.arrayContaining(['plans-and-billing']),
     );
+  });
+
+  it('shows an article only where its feature is on for the workspace and its country applies (ADR-0190)', async () => {
+    const slugs = async (url = '/v1/help/articles') =>
+      ((await api('GET', url, undefined, owner.cookie)).json() as Array<{ slug: string }>).map((a) => a.slug);
+    // no legal entity yet: neither country's article
+    let all = await slugs();
+    expect(all).not.toContain('form-i9');
+    expect(all).not.toContain('right-to-work-checks');
+    const entity = (country: string, currency: string, timeZone: string) =>
+      api(
+        'POST',
+        '/v1/org/legal-entities',
+        { name: `Fictional ${country} Ltd`, country, currency, timeZone },
+        owner.cookie,
+      );
+    expect((await entity('US', 'USD', 'America/New_York')).statusCode).toBe(201);
+    all = await slugs();
+    expect(all).toContain('form-i9');
+    expect(all).not.toContain('right-to-work-checks');
+    expect(
+      (await api('GET', '/v1/help/articles/right-to-work-checks', undefined, owner.cookie)).statusCode,
+    ).toBe(404);
+    expect((await entity('GB', 'GBP', 'Europe/London')).statusCode).toBe(201);
+    expect(await slugs()).toEqual(expect.arrayContaining(['form-i9', 'right-to-work-checks']));
+    // a feature the workspace turns off hides its article, in search and on its page too
+    expect(await slugs()).toContain('custom-branding');
+    const off = await api('PUT', '/v1/settings/features/customBranding', { enabled: false }, owner.cookie);
+    expect(off.statusCode, off.body).toBe(200);
+    expect(await slugs()).not.toContain('custom-branding');
+    expect(await slugs('/v1/help/articles?q=accent%20colour')).not.toContain('custom-branding');
+    expect(await slugs('/v1/help/articles?context=/app/settings/branding')).not.toContain('custom-branding');
+    await api('PUT', '/v1/settings/features/customBranding', { enabled: null }, owner.cookie);
+    // Ask HR: the staff-managed entitlement and the customer's opt-in
+    expect(await slugs()).not.toContain('ask-hr');
+    await withTenant(ctx.deps.router, owner.tenantId, (tx) =>
+      tx.exec(
+        `UPDATE app.tenants SET features = jsonb_set(jsonb_set(features, '{flags}', coalesce(features->'flags', '{}'::jsonb) || '{"aiAssistant": true}'::jsonb), '{ai}', '{"enabled": true}'::jsonb)`,
+      ),
+    );
+    expect(await slugs()).toContain('ask-hr');
   });
 
   it('shows the contact channels and SLA targets for the plan and region', async () => {

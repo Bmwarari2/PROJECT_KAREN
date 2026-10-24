@@ -11,6 +11,7 @@ import {
 } from '@thapsus/core/billing';
 import type { HomeRegion } from '@thapsus/core';
 import { articlesForContext, helpArticle, helpArticles, searchHelp } from '@thapsus/core/help';
+import { helpReaderFor } from './help-reader';
 import { can } from '@thapsus/core/permissions';
 import type { TenantRouter } from '@thapsus/db';
 import { authorizeSome, requireAuth } from '../../http/context';
@@ -186,13 +187,13 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     },
     async (req) => {
       const auth = authorizeSome(req, 'help.read');
-      // only articles about what the reader may do (ADR-0162)
-      const can = (p: string) => canSome(auth.principal, p);
+      // only articles about features the reader can see, on for the workspace, in its countries (ADR-0190)
+      const reader = await app.tenantTx(req, (tx) => helpReaderFor(tx, auth.principal), { readOnly: true });
       const q = req.query as { q?: string; context?: string };
       const locale = req.ctx.locale;
-      if (q.q?.trim()) return searchHelp(q.q, locale, 10, can);
-      if (q.context) return articlesForContext(q.context, locale, can);
-      return helpArticles(locale, can);
+      if (q.q?.trim()) return searchHelp(q.q, locale, 10, reader);
+      if (q.context) return articlesForContext(q.context, locale, reader);
+      return helpArticles(locale, reader);
     },
   );
   app.get(
@@ -207,9 +208,8 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     async (req) => {
       const auth = authorizeSome(req, 'help.read');
       // an article that is not for this reader is not found, like one that does not exist
-      const a = helpArticle((req.params as { slug: string }).slug, req.ctx.locale, (p) =>
-        canSome(auth.principal, p),
-      );
+      const reader = await app.tenantTx(req, (tx) => helpReaderFor(tx, auth.principal), { readOnly: true });
+      const a = helpArticle((req.params as { slug: string }).slug, req.ctx.locale, reader);
       if (!a) throw new ApiError('notFound');
       return a;
     },

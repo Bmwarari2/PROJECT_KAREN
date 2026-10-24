@@ -21,6 +21,8 @@ const task = (
 });
 const HR = { type: 'role' as const, value: 'hr_admin' };
 const PAYROLL = { type: 'role' as const, value: 'payroll_admin' };
+// device and access tasks: the IT admins' queue, or the fallback role while there is none (ADR-0189)
+const IT = { type: 'role' as const, value: 'it_admin' };
 const MANAGER = { type: 'manager' as const };
 const EMPLOYEE = { type: 'employee' as const };
 
@@ -41,7 +43,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
         task('rtw', 'Check right to work before day one', HR, -3, 5),
         task('contract', 'Send the statement of main terms', HR, -7, 3),
         task('details', 'Complete your personal details and emergency contacts', EMPLOYEE, -2),
-        task('kit', 'Order laptop, phone or site access card', MANAGER, -5, 3),
+        task('kit', 'Order laptop, phone or site access card', IT, -5, 3),
         task('payroll', 'Set up on payroll (starter checklist)', PAYROLL, 5),
         task('buddy', 'Introduce a buddy and plan the first week', MANAGER, 0),
         task('checkin', '30-day check-in', MANAGER, 30, 5),
@@ -82,7 +84,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
         task('exit', 'Hold an exit interview', HR, -5),
         task('handover', 'Agree a handover plan', MANAGER, -10),
         task('final_pay', 'Calculate final pay and holiday pay owed', PAYROLL, -3),
-        task('access', 'Remove system and building access', HR, 0),
+        task('access', 'Remove system and building access', IT, 0),
       ],
     },
     {

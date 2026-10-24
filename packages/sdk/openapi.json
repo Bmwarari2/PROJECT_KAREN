@@ -595,7 +595,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -632,7 +633,8 @@
                     "isAdmin",
                     "mustUseMfa",
                     "roles",
-                    "permissions"
+                    "permissions",
+                    "workspacePermissions"
                   ],
                   "properties": {
                     "tenantId": {
@@ -709,6 +711,12 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "workspacePermissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   }
                 }
@@ -726,7 +734,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -785,7 +794,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -941,7 +951,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -1442,7 +1453,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -1738,7 +1750,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -1958,7 +1971,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -2096,7 +2110,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -2202,7 +2217,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -2357,7 +2373,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -2486,7 +2503,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -3231,7 +3249,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -3443,7 +3462,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -3502,7 +3522,8 @@
         "x-capability": "me.security",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -4579,7 +4600,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -4815,7 +4837,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -5173,7 +5196,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -5462,7 +5486,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -5747,7 +5772,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -6372,7 +6398,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -6560,7 +6587,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -6818,7 +6846,8 @@
             "settings.manage",
             "scim.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -6915,7 +6944,8 @@
             "settings.read",
             "scim.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -7055,7 +7085,8 @@
             "settings.manage",
             "scim.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -7880,7 +7911,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -8016,7 +8048,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -8257,7 +8290,8 @@
         "x-capability": "me.notifications",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -8289,7 +8323,8 @@
         "x-capability": "me.notifications",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "202": {
@@ -8804,7 +8839,8 @@
           "any": [
             "employees.create"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -9173,7 +9209,8 @@
           "any": [
             "self.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -9588,7 +9625,8 @@
             "employees.update",
             "self.update_contact"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -9958,7 +9996,8 @@
           "any": [
             "employees.terminate"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -10469,7 +10508,8 @@
         "x-capability": "people.emergencyContacts",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -11666,7 +11706,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -11949,7 +11990,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -12220,7 +12262,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -12527,7 +12570,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -12755,7 +12799,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -13021,7 +13066,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -13244,7 +13290,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -13504,7 +13551,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -13749,7 +13797,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -14031,7 +14080,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -14313,7 +14363,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -14633,7 +14684,8 @@
           "any": [
             "org.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -17006,7 +17058,8 @@
           "any": [
             "documents.sign"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -17468,7 +17521,8 @@
           "any": [
             "documents.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -18818,7 +18872,8 @@
         "x-capability": "documents.countersign",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -19204,7 +19259,8 @@
           "any": [
             "workflows.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -19915,7 +19971,8 @@
         "x-capability": "inbox.tasks.complete",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -20102,7 +20159,8 @@
           "any": [
             "hr.contact"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -20855,7 +20913,8 @@
           "any": [
             "approvals.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -21574,7 +21633,8 @@
           "any": [
             "approvals.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -22475,7 +22535,8 @@
         "x-capability": "inbox.approvals.decide",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -22737,7 +22798,8 @@
         "x-capability": "inbox.approvals.decide",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -22822,7 +22884,8 @@
         "x-capability": "settings.delegations.manage",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -23000,7 +23063,8 @@
         "x-capability": "settings.delegations.manage",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -23334,7 +23398,8 @@
           "any": [
             "employees.update"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -23920,7 +23985,8 @@
           "any": [
             "automation.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -24047,7 +24113,8 @@
           "any": [
             "automation.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -24309,7 +24376,8 @@
           "any": [
             "imports.run"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -24521,7 +24589,8 @@
           "any": [
             "imports.run"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -24681,7 +24750,8 @@
           "any": [
             "imports.run"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "202": {
@@ -25834,7 +25904,8 @@
           "any": [
             "users.invite"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -29741,7 +29812,8 @@
           "any": [
             "leave.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -30195,7 +30267,8 @@
           "any": [
             "leave.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -30543,7 +30616,8 @@
           "any": [
             "leave.adjust"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -31203,7 +31277,8 @@
             "leave.request",
             "leave.record"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -31892,7 +31967,8 @@
         "x-capability": "time.timeOff.cancel",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -32180,7 +32256,8 @@
         "x-capability": "time.timeOff.calendarFeed",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -32450,7 +32527,8 @@
           "any": [
             "absence.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -32666,7 +32744,8 @@
           "any": [
             "absence.record"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -34120,7 +34199,8 @@
           "any": [
             "absence.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -34531,7 +34611,8 @@
           "any": [
             "leave.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -34768,7 +34849,8 @@
           "any": [
             "leave.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -35068,7 +35150,8 @@
           "any": [
             "rota.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -35756,7 +35839,8 @@
           "any": [
             "rota.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -36120,7 +36204,8 @@
           "any": [
             "rota.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -37052,7 +37137,8 @@
           "any": [
             "rota.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -37501,7 +37587,8 @@
           "any": [
             "rota.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -38238,7 +38325,8 @@
           "any": [
             "rota.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -38966,7 +39054,8 @@
           "any": [
             "rota.swap_request"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -39319,7 +39408,8 @@
           "any": [
             "rota.swap_request"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -39565,7 +39655,8 @@
         "x-capability": "time.rota.swapRespond",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -39853,7 +39944,8 @@
         "x-capability": "time.rota.swapRespond",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -41165,7 +41257,8 @@
           "any": [
             "time.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -41517,7 +41610,8 @@
           "any": [
             "time.clock"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -42392,7 +42486,8 @@
           "any": [
             "time.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -42637,7 +42732,8 @@
           "any": [
             "time.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -42866,7 +42962,8 @@
             "time.clock",
             "time.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -44296,7 +44393,8 @@
             "time.clock",
             "time.correct"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -47629,7 +47727,8 @@
           "any": [
             "compliance.record"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -48853,7 +48952,8 @@
           "any": [
             "compliance.record"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -49219,7 +49319,8 @@
           "any": [
             "compliance.record"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -49955,7 +50056,8 @@
           "any": [
             "compliance.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -50586,7 +50688,8 @@
           "any": [
             "compliance.record"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -57030,7 +57133,8 @@
           "any": [
             "compliance.law_changes"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -61323,7 +61427,8 @@
           "any": [
             "payroll.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -70562,7 +70667,8 @@
           "any": [
             "payroll.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -70871,7 +70977,8 @@
           "any": [
             "payroll.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -71420,7 +71527,8 @@
           "any": [
             "payroll.export"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -72097,7 +72205,8 @@
           "any": [
             "payroll.export"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -72651,7 +72760,8 @@
           "any": [
             "payslips.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -74116,7 +74226,8 @@
           "any": [
             "payslips.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -76105,7 +76216,8 @@
           "any": [
             "integrations.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -76450,7 +76562,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -76774,7 +76887,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -77015,7 +77129,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -77467,7 +77582,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -77827,7 +77943,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -78127,7 +78244,8 @@
           "any": [
             "integrations.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -78395,7 +78513,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -78710,7 +78829,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -78925,7 +79045,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -79118,7 +79239,8 @@
           "any": [
             "integrations.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -79390,7 +79512,8 @@
           "any": [
             "integrations.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -79642,7 +79765,8 @@
           "any": [
             "integrations.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -79757,6 +79881,286 @@
             }
           },
           "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/task-routing": {
+      "get": {
+        "summary": "Where device and access tasks go when no one holds the IT admin role",
+        "tags": [
+          "workflows"
+        ],
+        "x-capability": "settings.workflows",
+        "x-permission": {
+          "any": [
+            "workflows.read"
+          ],
+          "all": [],
+          "workspace": true
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "itFallbackRole",
+                    "itAdmins"
+                  ],
+                  "properties": {
+                    "itFallbackRole": {
+                      "type": "string"
+                    },
+                    "itAdmins": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Choose the role that receives device and access tasks while no one is an IT admin",
+        "tags": [
+          "workflows"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itFallbackRole"
+                ],
+                "properties": {
+                  "itFallbackRole": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9_]+$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-capability": "settings.workflows.manage",
+        "x-permission": {
+          "any": [
+            "workflows.manage"
+          ],
+          "all": [],
+          "workspace": true
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "itFallbackRole",
+                    "itAdmins"
+                  ],
+                  "properties": {
+                    "itFallbackRole": {
+                      "type": "string"
+                    },
+                    "itAdmins": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -80367,7 +80771,8 @@
           "any": [
             "assets.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -81436,7 +81841,8 @@
           "any": [
             "assets.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -81936,7 +82342,8 @@
           "any": [
             "assets.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -82440,7 +82847,8 @@
           "any": [
             "assets.acknowledge"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -82947,7 +83355,8 @@
           "any": [
             "assets.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -84149,7 +84558,8 @@
             "reports.run",
             "reports.read_team"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -85108,7 +85518,8 @@
             "reports.run",
             "reports.read_team"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -86050,7 +86461,8 @@
             "reports.run",
             "reports.read_team"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "202": {
@@ -88005,7 +88417,8 @@
             "reports.run",
             "reports.read_team"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -88752,7 +89165,8 @@
             "reports.run",
             "reports.read_team"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -89447,7 +89861,8 @@
           "any": [
             "reports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -89822,7 +90237,8 @@
           "any": [
             "reports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -90056,7 +90472,8 @@
           "any": [
             "reports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -90719,7 +91136,8 @@
           "any": [
             "exports.destinations"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -91046,7 +91464,8 @@
           "any": [
             "exports.destinations"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -91275,7 +91694,8 @@
           "any": [
             "exports.destinations"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -91813,7 +92233,8 @@
           "any": [
             "exports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -92165,7 +92586,8 @@
           "any": [
             "exports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -92436,7 +92858,8 @@
           "any": [
             "exports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -92587,7 +93010,8 @@
           "any": [
             "exports.schedule"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "202": {
@@ -93495,7 +93919,8 @@
           "any": [
             "self.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "202": {
@@ -93951,7 +94376,8 @@
         "x-capability": "me.notifications",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -94147,7 +94573,8 @@
         "x-capability": "me.notifications",
         "x-permission": {
           "any": [],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -94862,7 +95289,8 @@
           "any": [
             "privacy.dsr"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -95878,7 +96306,8 @@
           "any": [
             "privacy.dsr"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -97003,7 +97432,8 @@
           "any": [
             "privacy.dsr"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -97576,7 +98006,8 @@
           "any": [
             "privacy.dsr"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -98303,7 +98734,8 @@
           "any": [
             "privacy.dsr"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -99178,7 +99610,8 @@
           "any": [
             "privacy.erase"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -99884,7 +100317,8 @@
           "any": [
             "privacy.dsr"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -100626,7 +101060,8 @@
           "any": [
             "privacy.retention"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -100796,7 +101231,8 @@
           "any": [
             "privacy.retention"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -101379,7 +101815,8 @@
           "any": [
             "privacy.retention"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -101622,7 +102059,8 @@
           "any": [
             "privacy.retention"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -101835,7 +102273,8 @@
           "any": [
             "privacy.retention"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -102248,7 +102687,8 @@
           "any": [
             "account.export"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -102764,7 +103204,8 @@
           "any": [
             "account.close"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -103044,7 +103485,8 @@
           "any": [
             "account.close"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -103420,7 +103862,8 @@
           "any": [
             "account.dpa"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -103869,7 +104312,8 @@
           "any": [
             "privacy.read"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -104257,7 +104701,8 @@
           "any": [
             "privacy.notices"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -104868,7 +105313,8 @@
           "any": [
             "privacy.incidents"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -105808,7 +106254,8 @@
           "any": [
             "privacy.incidents"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -107659,7 +108106,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -107964,7 +108412,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -108570,7 +109019,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -108906,7 +109356,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -109164,7 +109615,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -109778,7 +110230,8 @@
           "any": [
             "webhooks.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -110142,7 +110595,8 @@
           "any": [
             "webhooks.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -110505,7 +110959,8 @@
           "any": [
             "webhooks.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -110673,7 +111128,8 @@
           "any": [
             "webhooks.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -110922,7 +111378,8 @@
           "any": [
             "webhooks.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -111702,7 +112159,8 @@
           "any": [
             "webhooks.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -112416,7 +112874,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -112923,7 +113382,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -113263,7 +113723,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -113414,7 +113875,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -114015,7 +114477,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -114585,7 +115048,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -115081,7 +115545,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -115504,7 +115969,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -115832,7 +116298,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -116157,7 +116624,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -119366,7 +119834,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -119635,7 +120104,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -120137,7 +120607,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -120595,7 +121066,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -121087,7 +121559,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -121242,7 +121715,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -121398,7 +121872,8 @@
           "any": [
             "billing.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -122807,7 +123282,8 @@
           "any": [
             "support.ticket"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -123449,7 +123925,8 @@
           "any": [
             "support.ticket"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -123675,7 +124152,8 @@
           "any": [
             "support.ticket"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -123825,7 +124303,8 @@
           "any": [
             "support.ticket"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -138597,7 +139076,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -138807,7 +139287,8 @@
           "any": [
             "settings.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "204": {
@@ -139452,7 +139933,8 @@
             "settings.manage",
             "documents.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "200": {
@@ -139831,7 +140313,8 @@
           "any": [
             "documents.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "202": {
@@ -139958,7 +140441,8 @@
           "any": [
             "documents.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": true
         },
         "responses": {
           "201": {
@@ -140142,7 +140626,8 @@
           "any": [
             "ai.ask"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -140160,7 +140645,8 @@
                     "citations",
                     "disclosure",
                     "aiGenerated",
-                    "model"
+                    "model",
+                    "helpArticles"
                   ],
                   "properties": {
                     "id": {
@@ -140288,6 +140774,28 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "helpArticles": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "slug",
+                          "title",
+                          "summary"
+                        ],
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "string"
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -140498,7 +141006,8 @@
           "any": [
             "ai.ask"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -141049,7 +141558,8 @@
           "any": [
             "roles.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -141640,7 +142150,8 @@
           "any": [
             "roles.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "200": {
@@ -141994,7 +142505,8 @@
           "any": [
             "roles.manage"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {
@@ -142753,7 +143265,8 @@
           "any": [
             "roles.assign"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "201": {
@@ -143117,7 +143630,8 @@
           "any": [
             "roles.assign"
           ],
-          "all": []
+          "all": [],
+          "workspace": false
         },
         "responses": {
           "204": {

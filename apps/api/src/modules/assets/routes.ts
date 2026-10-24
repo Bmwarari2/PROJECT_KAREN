@@ -10,6 +10,7 @@ import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { createTask, notify, userForEmployee } from '../../lib/notify';
 import { loadTarget } from '../employees/service';
 import { maybeCompleteInstance, workflowStartHooks } from '../workflows/service';
+import { IT_ROLE, taskRoleFor } from '../it/task-routing';
 
 /**
  * Asset register (PROGRESS 6.5): assets with purchase cost in integer minor units, assignment to an
@@ -759,7 +760,8 @@ workflowStartHooks.push(async (tx, inst) => {
     `SELECT features->'assets' AS assets, default_locale FROM app.tenants`,
   );
   const locale = isLocale(settings.default_locale) ? settings.default_locale : 'en-GB';
-  const role = settings.assets?.returnAssigneeRole ?? 'hr_admin';
+  // the IT admins' queue (or the workspace's fallback role) unless the workspace chose another (ADR-0189)
+  const role = await taskRoleFor(tx, settings.assets?.returnAssigneeRole ?? IT_ROLE);
   for (const s of active) {
     const taskId = await createTask(tx, {
       source: 'workflow',

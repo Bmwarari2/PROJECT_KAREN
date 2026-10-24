@@ -125,7 +125,8 @@ export function webActionCalls(files = webAppFiles()): WebActionCall[] {
       ts.forEachChild(n, visit);
     };
     visit(src);
-    for (const c of calls) if (c.paths?.every((p) => p.startsWith('/v1/')) ?? true) out.push({ ...c, checked });
+    for (const c of calls)
+      if (c.paths?.every((p) => p.startsWith('/v1/')) ?? true) out.push({ ...c, checked });
   }
   return out;
 }
@@ -176,6 +177,8 @@ export interface RouteBlock {
   capability: string;
   /** Permission strings passed to a check in the route's handler (authorize, can, need…). */
   checks: string[];
+  /** Of those, the ones checked without a record to scope them (company-wide: authorize(req, p), can(principal, p)). */
+  workspaceChecks: string[];
 }
 
 const PERMISSION = /^[a-z_]+\.[a-z_*]+(?::[a-z_*]+)?$/;
@@ -207,9 +210,22 @@ export function routeBlocks(): RouteBlock[] {
             : undefined;
         if (cap && ts.isStringLiteral(cap.initializer)) {
           const checks = new Set<string>();
+          const workspaceChecks = new Set<string>();
           const scan = (x: ts.Node) => {
-            if (ts.isCallExpression(x) && CHECK_CALL.test(x.expression.getText(src)))
-              for (const a of x.arguments) if (ts.isStringLiteral(a) && PERMISSION.test(a.text)) checks.add(a.text);
+            if (ts.isCallExpression(x) && CHECK_CALL.test(x.expression.getText(src))) {
+              for (const a of x.arguments)
+                if (ts.isStringLiteral(a) && PERMISSION.test(a.text)) checks.add(a.text);
+              const callee = x.expression.getText(src);
+              const second = x.arguments[1];
+              if (
+                /(^|\.)(authorize|can)$/.test(callee) &&
+                x.arguments.length === 2 &&
+                second &&
+                ts.isStringLiteral(second) &&
+                PERMISSION.test(second.text)
+              )
+                workspaceChecks.add(second.text);
+            }
             ts.forEachChild(x, scan);
           };
           for (const a of n.arguments.slice(2)) scan(a);
@@ -221,6 +237,7 @@ export function routeBlocks(): RouteBlock[] {
             url: ts.isStringLiteral(url) ? url.text : url.getText(src),
             capability: cap.initializer.text,
             checks: [...checks],
+            workspaceChecks: [...workspaceChecks],
           });
         }
       }

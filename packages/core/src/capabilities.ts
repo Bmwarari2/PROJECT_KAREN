@@ -19,6 +19,12 @@ export interface Requirement {
   readonly all?: readonly string[];
   /** None of these (shown only to people without them; the API does not enforce this part). */
   readonly none?: readonly string[];
+  /**
+   * The permissions must be held company-wide, by a role assigned for the whole workspace: settings and
+   * lists the API checks without a person (or other record) to scope them by. A country or entity HR
+   * admin holds privacy.read for their entity only, so the workspace's privacy pages are not theirs.
+   */
+  readonly workspace?: boolean;
   /** The viewer has an employee record (self-service). */
   readonly employee?: boolean;
   /** The workspace feature flag is on (features.ts). */
@@ -71,7 +77,7 @@ const BASE = {
   'people.documents.attach': anyOf('documents.manage'),
   'people.imports': anyOf('imports.run'),
   'people.compliance': anyOf('compliance.read'),
-  'documents.manage': anyOf('documents.manage'),
+  'documents.manage': { any: ['documents.manage'], workspace: true },
   'documents.sign': anyOf('documents.sign'),
   /** Countersigning: the API checks that the caller is the named countersigner. */
   'documents.countersign': {},
@@ -119,8 +125,8 @@ const BASE = {
   'it.assets.acknowledge': anyOf('assets.acknowledge'),
   'it.integrations': anyOf('integrations.read'),
   'it.integrations.manage': anyOf('integrations.manage'),
-  'it.automation': anyOf('automation.read'),
-  'it.automation.manage': anyOf('automation.manage'),
+  'it.automation': { any: ['automation.read'], workspace: true },
+  'it.automation.manage': { any: ['automation.manage'], workspace: true },
 
   // ---- reports ---------------------------------------------------------------------------------------
   'reports.catalogue': anyOf('reports.run', 'reports.read_team'),
@@ -136,27 +142,27 @@ const BASE = {
   // ---- compliance ------------------------------------------------------------------------------------
   'compliance.overview': anyOf('compliance.read'),
   'compliance.record': anyOf('compliance.record'),
-  'compliance.manage': anyOf('compliance.manage'),
+  'compliance.manage': { any: ['compliance.manage'], workspace: true },
   'compliance.reports': anyOf('compliance.reports'),
   'compliance.lawChanges': anyOf('compliance.read', 'compliance.law_changes'),
   'compliance.lawChanges.acknowledge': anyOf('compliance.law_changes'),
 
   // ---- privacy ---------------------------------------------------------------------------------------
-  'privacy.overview': anyOf('privacy.read'),
-  'privacy.requests.manage': anyOf('privacy.dsr'),
-  'privacy.requests.erase': anyOf('privacy.erase'),
-  'privacy.incidents.manage': anyOf('privacy.incidents'),
-  'privacy.retention.manage': anyOf('privacy.retention'),
-  'privacy.notices.manage': anyOf('privacy.notices'),
-  'privacy.subprocessors.subscribe': anyOf('privacy.read'),
-  'privacy.dpa.accept': anyOf('account.dpa'),
+  'privacy.overview': { any: ['privacy.read'], workspace: true },
+  'privacy.requests.manage': { any: ['privacy.dsr'], workspace: true },
+  'privacy.requests.erase': { any: ['privacy.erase'], workspace: true },
+  'privacy.incidents.manage': { any: ['privacy.incidents'], workspace: true },
+  'privacy.retention.manage': { any: ['privacy.retention'], workspace: true },
+  'privacy.notices.manage': { any: ['privacy.notices'], workspace: true },
+  'privacy.subprocessors.subscribe': { any: ['privacy.read'], workspace: true },
+  'privacy.dpa.accept': { any: ['account.dpa'], workspace: true },
   /** The account exports and closure page loads both, so it needs both (owners). */
-  'privacy.exports': { all: ['account.export', 'account.close'] },
-  'privacy.companyExport': anyOf('account.export'),
-  'privacy.closure': anyOf('account.close'),
+  'privacy.exports': { all: ['account.export', 'account.close'], workspace: true },
+  'privacy.companyExport': { any: ['account.export'], workspace: true },
+  'privacy.closure': { any: ['account.close'], workspace: true },
 
   // ---- company and help ------------------------------------------------------------------------------
-  'company.billing': anyOf('billing.manage'),
+  'company.billing': { any: ['billing.manage'], workspace: true },
   'help.centre': anyOf('help.read'),
   /** Admin roles contact Thapsus-HR support (ADR-0163). */
   'help.support': anyOf('support.ticket'),
@@ -164,53 +170,58 @@ const BASE = {
   /** Employees and managers ask their own HR team instead (ADR-0163). */
   'help.contactHr': { all: ['hr.contact'], none: ['support.ticket'] },
   'help.contactHr.ask': anyOf('hr.contact'),
-  'askHr.ask': { any: ['ai.ask'], askHr: true },
+  /** Ask HR: the staff-managed flag, and the customer's opt-in and the region (askHr, from the API). */
+  'askHr.ask': { any: ['ai.ask'], feature: 'aiAssistant', askHr: true },
 
   // ---- settings --------------------------------------------------------------------------------------
-  'settings.organisation': anyOf('org.manage'),
+  'settings.organisation': { any: ['org.manage'], workspace: true },
   'settings.roles': anyOf('roles.read'),
   'settings.roles.manage': anyOf('roles.manage'),
   'settings.users': anyOf('roles.read'),
   'settings.users.assign': anyOf('roles.assign'),
-  'settings.users.manage': anyOf('settings.manage'),
-  'settings.sso': anyOf('settings.read'),
-  'settings.sso.manage': anyOf('settings.manage'),
-  'settings.signInPolicy': anyOf('settings.read'),
-  'settings.signInPolicy.manage': anyOf('settings.manage'),
-  'settings.domains': anyOf('settings.read'),
-  'settings.domains.manage': anyOf('settings.manage'),
+  'settings.users.manage': { any: ['settings.manage'], workspace: true },
+  'settings.sso': { any: ['settings.read'], workspace: true },
+  'settings.sso.manage': { any: ['settings.manage'], workspace: true },
+  'settings.signInPolicy': { any: ['settings.read'], workspace: true },
+  'settings.signInPolicy.manage': { any: ['settings.manage'], workspace: true },
+  'settings.domains': { any: ['settings.read'], workspace: true },
+  'settings.domains.manage': { any: ['settings.manage'], workspace: true },
   /** SCIM provisioning: workspace settings admins and IT admins (ADR-0189). */
   'settings.scim': anyOf('settings.read', 'scim.manage'),
   'settings.scim.manage': anyOf('settings.manage', 'scim.manage'),
-  'settings.securityCentre': anyOf('audit.read'),
-  'settings.securityCentre.manage': anyOf('settings.manage'),
-  'settings.supportAccess': anyOf('settings.read'),
-  'settings.supportAccess.manage': anyOf('settings.manage'),
-  'settings.approvalChains': anyOf('approvals.manage'),
-  'settings.workflows': anyOf('workflows.read'),
-  'settings.workflows.manage': anyOf('workflows.manage'),
+  'settings.securityCentre': { any: ['audit.read'], workspace: true },
+  'settings.securityCentre.manage': { any: ['settings.manage'], workspace: true },
+  'settings.supportAccess': { any: ['settings.read'], workspace: true },
+  'settings.supportAccess.manage': { any: ['settings.manage'], workspace: true },
+  'settings.approvalChains': { any: ['approvals.manage'], workspace: true },
+  'settings.workflows': { any: ['workflows.read'], workspace: true },
+  'settings.workflows.manage': { any: ['workflows.manage'], workspace: true },
   /** Anyone who approves things can hand their approvals to a colleague while they are away. */
   'settings.delegations': anyOf('approvals.act', 'approvals.manage', 'leave.approve', 'time.approve'),
   /** Your own delegations (the API keeps them to the caller's own approvals). */
   'settings.delegations.manage': {},
-  'settings.leave': anyOf('leave.manage'),
-  'settings.calendars': anyOf('leave.manage'),
-  'settings.absence': anyOf('absence.manage', 'leave.manage'),
-  'settings.absence.manage': anyOf('absence.manage'),
-  'settings.coverRules': anyOf('leave.manage'),
-  'settings.time': anyOf('time.manage'),
-  'settings.api': { any: ['settings.manage'], feature: 'publicApi' },
-  'settings.webhooks': { any: ['webhooks.manage'], feature: 'webhooks' },
-  'settings.streams': { any: ['settings.manage'], feature: 'auditStreaming' },
-  'settings.sandbox': { any: ['settings.manage'], feature: 'sandboxes', notInSandbox: true },
-  'settings.branding': { any: ['settings.read'], feature: 'customBranding' },
-  'settings.branding.manage': { any: ['settings.manage'], feature: 'customBranding' },
-  'settings.askHr': { any: ['settings.read'], feature: 'aiAssistant' },
-  'settings.askHr.manage': { any: ['settings.manage', 'documents.manage'], feature: 'aiAssistant' },
-  'settings.askHr.sources': { any: ['documents.manage'], feature: 'aiAssistant' },
-  'settings.features': anyOf('settings.read'),
-  'settings.features.manage': anyOf('settings.manage'),
-  'settings.developers': anyOf('settings.read'),
+  'settings.leave': { any: ['leave.manage'], workspace: true },
+  'settings.calendars': { any: ['leave.manage'], workspace: true },
+  'settings.absence': { any: ['absence.manage', 'leave.manage'], workspace: true },
+  'settings.absence.manage': { any: ['absence.manage'], workspace: true },
+  'settings.coverRules': { any: ['leave.manage'], workspace: true },
+  'settings.time': { any: ['time.manage'], workspace: true },
+  'settings.api': { any: ['settings.manage'], feature: 'publicApi', workspace: true },
+  'settings.webhooks': { any: ['webhooks.manage'], feature: 'webhooks', workspace: true },
+  'settings.streams': { any: ['settings.manage'], feature: 'auditStreaming', workspace: true },
+  'settings.sandbox': { any: ['settings.manage'], feature: 'sandboxes', notInSandbox: true, workspace: true },
+  'settings.branding': { any: ['settings.read'], feature: 'customBranding', workspace: true },
+  'settings.branding.manage': { any: ['settings.manage'], feature: 'customBranding', workspace: true },
+  'settings.askHr': { any: ['settings.read'], feature: 'aiAssistant', workspace: true },
+  'settings.askHr.manage': {
+    any: ['settings.manage', 'documents.manage'],
+    feature: 'aiAssistant',
+    workspace: true,
+  },
+  'settings.askHr.sources': { any: ['documents.manage'], feature: 'aiAssistant', workspace: true },
+  'settings.features': { any: ['settings.read'], workspace: true },
+  'settings.features.manage': { any: ['settings.manage'], workspace: true },
+  'settings.developers': { any: ['settings.read'], workspace: true },
 } satisfies Record<string, Requirement>;
 
 export type CapabilityKey = keyof typeof BASE | 'settings.index';
@@ -246,7 +257,7 @@ export const PAGES: readonly PageAccess[] = [
   { path: '/app/documents/[id]', view: 'people.documents', manage: 'documents.sign' },
   { path: '/app/imports', view: 'people.imports' },
   { path: '/app/time', view: 'time.overview' },
-  { path: '/app/time-off', view: 'time.timeOff', manage: 'time.timeOff.request' },
+  { path: '/app/time-off', view: 'time.timeOff', manage: 'time.timeOff.requestOwn' },
   { path: '/app/time-off/[id]', view: 'time.timeOff', manage: 'time.timeOff.cancel' },
   { path: '/app/rota', view: 'time.rota', manage: 'time.rota.manage' },
   { path: '/app/clock', view: 'time.clock', manage: 'time.clock.punch' },
@@ -371,6 +382,8 @@ export function hasFromGrants(grants: readonly string[]): HasPermission {
  */
 export interface CapabilityViewer {
   has: HasPermission;
+  /** The same test over the roles assigned for the whole workspace only (absent: `has`). */
+  hasWorkspace?: HasPermission;
   employeeId?: string | null;
   features?: Partial<Record<FeatureKey, boolean>>;
   askHr?: boolean;
@@ -384,17 +397,22 @@ const requirementOf = (c: CapabilityKey | Requirement): Requirement =>
  * Whether the permission parts (any, all) hold: what the API enforces before a route's handler, and what
  * the app's not-allowed state for a page checks.
  */
-export function permits(has: HasPermission, c: CapabilityKey | Requirement): boolean {
+export function permits(
+  has: HasPermission,
+  c: CapabilityKey | Requirement,
+  hasWorkspace: HasPermission = has,
+): boolean {
   const r = requirementOf(c);
-  if (r.any?.length && !r.any.some((p) => has(p))) return false;
-  if (r.all?.length && !r.all.every((p) => has(p))) return false;
+  const test = r.workspace ? hasWorkspace : has;
+  if (r.any?.length && !r.any.some((p) => test(p))) return false;
+  if (r.all?.length && !r.all.every((p) => test(p))) return false;
   return true;
 }
 
 /** Whether the viewer can see or do it: the permissions, plus none, employee, feature, Ask HR and sandbox. */
 export function allows(v: CapabilityViewer, c: CapabilityKey | Requirement): boolean {
   const r = requirementOf(c);
-  if (!permits(v.has, r)) return false;
+  if (!permits(v.has, r, v.hasWorkspace)) return false;
   if (r.none?.some((p) => v.has(p))) return false;
   if (r.employee && !v.employeeId) return false;
   if (r.feature && v.features && !(v.features[r.feature] ?? FEATURE_FLAGS[r.feature].default)) return false;
@@ -417,6 +435,8 @@ export function namedPermissions(c: CapabilityKey | Requirement): string[] {
 export function implies(ui: CapabilityKey | Requirement, route: CapabilityKey | Requirement): boolean {
   const u = requirementOf(ui);
   const r = requirementOf(route);
+  // a route that needs company-wide permissions is not covered by an action that accepts a scoped role
+  if (r.workspace && !u.workspace) return false;
   const uAll = new Set(u.all ?? []);
   if (!(r.all ?? []).every((p) => uAll.has(p))) return false;
   if (!r.any?.length) return true;

@@ -627,6 +627,8 @@ const LOGIN_SEATS: Record<LoginRole, { exec?: string; team?: string; member?: nu
   owner: { exec: 'ceo' },
   hr_admin: { team: 'hr' },
   payroll_admin: { team: 'payroll' },
+  // the IT admin login (ADR-0189): a security engineer, who looks after devices, accounts and SCIM
+  it_admin: { team: 'security', member: 0 },
   manager: { team: 'wh_a' },
   employee: { team: 'wh_a', member: 0 },
 };

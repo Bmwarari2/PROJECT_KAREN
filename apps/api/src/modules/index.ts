@@ -20,6 +20,7 @@ import { complianceRoutes } from './compliance/routes';
 import { payrollRoutes } from './payroll/routes';
 import { payslipRoutes } from './payslips/routes';
 import { itRoutes } from './it/routes';
+import { taskRoutingRoutes } from './it/task-routing';
 import { assetRoutes } from './assets/routes';
 import { reportRoutes } from './reports/routes';
 import { dataExportRoutes } from './data-export/routes';
@@ -65,6 +66,8 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(payrollRoutes);
   await app.register(payslipRoutes);
   await app.register(itRoutes);
+  // device and access tasks go to IT admins, or a fallback role (ADR-0189)
+  await app.register(taskRoutingRoutes);
   await app.register(assetRoutes);
   // Phase 7: reports, analytics, data export and employee self-service
   await app.register(reportRoutes);

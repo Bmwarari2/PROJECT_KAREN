@@ -7,7 +7,7 @@ import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
 import { BackLink } from '@/components/breadcrumbs';
 import { useT } from '@/lib/i18n-client';
 import { revealIn } from '@/lib/reveal';
-import { useExperience } from '../shell';
+import { useExperience, ViewerContext } from '../shell';
 import { sectionFor, SETTINGS_GROUPS, visibleSections } from './sections';
 import { sectionMessages } from './section-text';
 import { usePermission } from './kit';
@@ -23,14 +23,19 @@ const linkClass = (active: boolean) =>
 /** The settings sections this viewer may open, with the workspace's features applied. */
 export function useSettingsSections() {
   const has = usePermission();
+  const viewer = React.useContext(ViewerContext);
   const { experience } = useExperience();
   return React.useMemo(
     () =>
-      visibleSections(has, {
-        feature: (k: FeatureKey) => experience?.features[k] ?? FEATURE_FLAGS[k].default,
-        sandbox: experience?.kind === 'sandbox',
-      }),
-    [has, experience],
+      visibleSections(
+        has,
+        {
+          feature: (k: FeatureKey) => experience?.features[k] ?? FEATURE_FLAGS[k].default,
+          sandbox: experience?.kind === 'sandbox',
+        },
+        viewer?.hasWorkspace,
+      ),
+    [has, experience, viewer],
   );
 }
 

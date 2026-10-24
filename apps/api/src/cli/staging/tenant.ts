@@ -122,6 +122,10 @@ export const LOGIN_GRANTS: Record<LoginRole, Array<[string, { type: 'all' | 'own
     ['payroll_admin', { type: 'all' }],
     ['employee', { type: 'self' }],
   ],
+  it_admin: [
+    ['it_admin', { type: 'all' }],
+    ['employee', { type: 'self' }],
+  ],
   manager: [
     ['manager', { type: 'own_team' }],
     ['employee', { type: 'self' }],

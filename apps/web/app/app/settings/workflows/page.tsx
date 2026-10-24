@@ -33,6 +33,7 @@ import {
 } from '../kit';
 import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
+import { TaskRoutingCard } from './task-routing';
 
 type Kind = 'onboarding' | 'offboarding' | 'transfer' | 'custom';
 interface TaskDef {
@@ -433,6 +434,7 @@ export default function WorkflowsPage() {
           <TemplateCard key={tpl.id} tpl={tpl} entityName={entityName(tpl.entityId)} />
         ))
       )}
+      <TaskRoutingCard />
     </>
   );
 }

@@ -95,9 +95,16 @@ export function authorizeSome(req: FastifyRequest, action: string): AuthContext 
   return auth;
 }
 
-/** Whether the caller holds a capability's permissions somewhere (any scope), as the map defines them. */
+/**
+ * Whether the caller holds a capability's permissions as the map defines them: at some scope, or for the
+ * whole workspace where the capability says so (the same test as authorize() without a record).
+ */
 export function holdsCapability(auth: AuthContext, key: CapabilityKey): boolean {
-  return permits((p) => canSome(auth.principal, p), CAPABILITIES[key]);
+  return permits(
+    (p) => canSome(auth.principal, p),
+    CAPABILITIES[key],
+    (p) => can(auth.principal, p),
+  );
 }
 
 export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps }) => {

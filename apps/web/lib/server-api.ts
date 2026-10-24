@@ -27,6 +27,28 @@ export async function serverApi<T>(path: string): Promise<T | undefined> {
 }
 
 /**
+ * Like serverApi, with the status: `{ status }` when the API answered with an error (a 404 is an answer,
+ * not a failure), undefined when it is not configured or did not answer quickly.
+ */
+export async function serverApiResult<T>(path: string): Promise<{ status: number; data?: T } | undefined> {
+  const base = process.env.API_INTERNAL_URL ?? process.env.API_PROXY_URL;
+  if (!base) return undefined;
+  const h = await headers();
+  const cookie = h.get('cookie');
+  if (!cookie) return undefined;
+  try {
+    const res = await fetch(`${base}${path}`, {
+      headers: { cookie, accept: 'application/json', ...clientIpHeaders(h) },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(2000),
+    });
+    return res.ok ? { status: res.status, data: (await res.json()) as T } : { status: res.status };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Like serverApi, for a GET the API audits as a view (a document, a payslip): a router prefetch (a link the
  * person only pointed at) fetches nothing, so it is never recorded as a view; the page then fetches in the
  * browser when it is really opened. Only a UUID id is ever put into the path.

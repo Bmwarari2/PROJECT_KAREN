@@ -15,6 +15,7 @@ let employee: string;
 let employeeCookie: string;
 let colleagueCookie: string;
 let hrCookie: string;
+let itCookie: string;
 let laptop: string;
 let assignment: string;
 
@@ -26,6 +27,8 @@ beforeAll(async () => {
   employeeCookie = await c.login(employee);
   colleagueCookie = await c.login(await c.hire());
   hrCookie = await c.login(await c.hire(), 'hr_admin');
+  // IT admins manage the register; HR admins see it read-only (ADR-0189)
+  itCookie = await c.login(await c.hire(), 'it_admin');
 });
 afterAll(async () => {
   await ctx.close();
@@ -86,10 +89,18 @@ describe('asset register', () => {
         conditionOut: 'New in box',
         handoverNote: 'Includes charger',
       },
-      hrCookie,
+      itCookie,
     );
     expect(r.statusCode, r.body).toBe(201);
     assignment = r.json().id;
+    // HR admins see the register but no longer issue, change or take back equipment (ADR-0189)
+    for (const [method, url, body] of [
+      ['POST', '/v1/assets', { assetTag: 'HR-1', type: 'phone', name: 'Fictional Phone' }],
+      ['PATCH', `/v1/assets/${laptop}`, { notes: 'HR note' }],
+      ['POST', `/v1/assets/${laptop}/assign`, { employeeId: employee, assignedOn: '2026-09-02' }],
+      ['POST', `/v1/asset-assignments/${assignment}/return`, { returnedOn: '2026-09-20', checklist: [] }],
+    ] as const)
+      expect((await c.api(method, url, body, hrCookie)).statusCode, `${method} ${url}`).toBe(403);
     expect(r.json()).toMatchObject({
       status: 'active',
       employeeId: employee,
@@ -106,7 +117,7 @@ describe('asset register', () => {
           'POST',
           `/v1/assets/${laptop}/assign`,
           { employeeId: employee, assignedOn: '2026-09-02' },
-          hrCookie,
+          itCookie,
         )
       ).statusCode,
     ).toBe(409);
@@ -251,21 +262,26 @@ describe('return checklist tied to offboarding', () => {
     ]);
     const laptopTask = tasks.find((t) => t.title.includes('LT-0001'))!;
     expect(laptopTask).toMatchObject({
-      assignee_role: 'hr_admin',
+      // the IT admins' queue: this workspace has one (ADR-0189)
+      assignee_role: 'it_admin',
       due_on: end,
       link: `/app/assets?return=${assignment}`,
       source: 'workflow',
     });
     returnTask = laptopTask.id;
     expect(
+      // HR keeps a read-only view of what a leaver holds (ADR-0189)
       (await c.api('GET', `/v1/asset-assignments?employeeId=${employee}&status=active`, undefined, hrCookie))
         .json()
         .find((a: { id: string }) => a.id === assignment),
     ).toMatchObject({ returnTaskId: returnTask, returnRequestedOn: end });
-    // HR sees the return tasks in their queue
+    // the IT admins see the return tasks in their queue (ADR-0189); HR admins no longer do
+    expect(
+      (await c.api('GET', '/v1/tasks', undefined, itCookie)).json().map((t: { id: string }) => t.id),
+    ).toContain(returnTask);
     expect(
       (await c.api('GET', '/v1/tasks', undefined, hrCookie)).json().map((t: { id: string }) => t.id),
-    ).toContain(returnTask);
+    ).not.toContain(returnTask);
     // starting the same workflow again does not duplicate them
     await c.api('POST', '/v1/workflows', {
       templateId: tpl.json().id,
@@ -290,7 +306,7 @@ describe('return checklist tied to offboarding', () => {
           { key: 'charger', done: true },
         ],
       },
-      hrCookie,
+      itCookie,
     );
     expect(partial.statusCode).toBe(422);
     expect(partial.json().missing).toEqual(['dataWiped']);
@@ -316,7 +332,7 @@ describe('return checklist tied to offboarding', () => {
           { key: 'dataWiped', done: true },
         ],
       },
-      hrCookie,
+      itCookie,
     );
     expect(ok.statusCode, ok.body).toBe(200);
     expect(ok.json()).toMatchObject({
@@ -345,7 +361,7 @@ describe('return checklist tied to offboarding', () => {
           'POST',
           `/v1/asset-assignments/${assignment}/return`,
           { returnedOn: '2026-09-21', checklist: [] },
-          hrCookie,
+          itCookie,
         )
       ).statusCode,
     ).toBe(409);
@@ -359,7 +375,7 @@ describe('return checklist tied to offboarding', () => {
       'POST',
       `/v1/asset-assignments/${phoneAssignment.id}/return`,
       { returnedOn: '2026-09-20', outcome: 'lost', checklist: [] },
-      hrCookie,
+      itCookie,
     );
     expect(r.statusCode, r.body).toBe(200);
     expect(

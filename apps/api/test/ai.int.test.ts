@@ -456,6 +456,19 @@ describe('ask: answers with citations and the AI disclosure', () => {
         : 'NO_ANSWER';
   });
 
+  it('suggests help centre articles filtered for the asker, like the help centre (ADR-0190)', async () => {
+    const slugs = (r: { json(): { helpArticles: Array<{ slug: string }> } }) =>
+      r.json().helpArticles.map((a) => a.slug);
+    // an employee asking how to book time off gets the article they can use
+    expect(slugs(await ask('How do I request time off?'))).toContain('requesting-time-off');
+    // never an admin's article: the employee cannot see billing
+    expect(slugs(await ask('How do I cancel the plan?'))).not.toContain('plans-and-billing');
+    // the owner can, so the same question suggests it to them
+    expect(slugs(await ask('How do I cancel the plan?', owner.cookie))).toContain('plans-and-billing');
+    // and a refused question suggests nothing
+    expect(slugs(await ask('Which candidate should we hire, Ana or Ben?'))).toEqual([]);
+  });
+
   it('does not call the model when no policy excerpt matches', async () => {
     provider.calls = [];
     const res = (await ask('Is there a quantum flux capacitor allowance?')).json();

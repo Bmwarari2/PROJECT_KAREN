@@ -1282,6 +1282,21 @@
     "off": "Off",
     "assets": {
       "readOnly": "You can see who holds each item. IT admins issue equipment, record returns and change the register."
+    },
+    "routing": {
+      "title": "Device and access tasks",
+      "body": "Ordering a laptop, phone or site access card for a starter, removing a leaver's system and building access, and recording equipment a leaver returns go to IT admins.",
+      "itAdmins_one": "{count} person holds the IT admin role, so these tasks go to them.",
+      "itAdmins_other": "{count} people hold the IT admin role, so these tasks go to them.",
+      "noItAdmin": "No one holds the IT admin role yet, so these tasks go to the role below.",
+      "fallbackLabel": "While there is no IT admin, send them to",
+      "fallbackHint": "Choose people who can issue and take back equipment. HR admins see the asset register but cannot change it.",
+      "fallbackIs": "While there is no IT admin, they go to: {role}",
+      "save": "Save",
+      "saved": "Saved. New device and access tasks go to {role} while there is no IT admin."
+    },
+    "help": {
+      "askHrArticles": "From the help centre"
     }
   }
 }

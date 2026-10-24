@@ -31,6 +31,8 @@ import {
 } from './guard';
 import { buildUserTurn, parseModelAnswer, SYSTEM_PROMPT, type Excerpt } from './prompt';
 import { redactPeople } from './redact';
+import { searchHelp } from '@thapsus/core/help';
+import { helpReaderFor } from '../support/help-reader';
 import {
   buildChunks,
   eligiblePolicyDocs,
@@ -67,6 +69,11 @@ const AskOut = Type.Object({
   disclosure: Type.String(),
   aiGenerated: Type.Literal(true),
   model: Nullable(Type.String()),
+  /**
+   * Help centre articles that match the question (ADR-0190), filtered for the reader like the help centre:
+   * only about features they can see, on for the workspace, in its countries. Searched locally.
+   */
+  helpArticles: Type.Array(Type.Object({ slug: Type.String(), title: Type.String(), summary: Type.String() })),
 });
 const StatusOut = Type.Object({
   enabled: Type.Boolean(),
@@ -492,7 +499,13 @@ export async function aiRoutes(app: FastifyInstance) {
 
       const latencyMs = Math.round(performance.now() - started);
       const citedIds = [...new Set(cited.map((c) => c.documentId))];
+      let helpLinks: Array<{ slug: string; title: string; summary: string }> = [];
       const row = await app.tenantTx(req, async (tx) => {
+        // the help centre's own articles for this reader, never for a refused question (ADR-0190)
+        if (outcome !== 'refused')
+          helpLinks = searchHelp(question, locale, 3, await helpReaderFor(tx, auth.principal)).map(
+            ({ slug, title, summary }) => ({ slug, title, summary }),
+          );
         if (answer)
           answer = (await redactPeople(tx, [scrubString(answer)], auth.principal.employeeId ?? null))
             .texts[0]!;
@@ -565,6 +578,7 @@ export async function aiRoutes(app: FastifyInstance) {
         disclosure: disclosure(locale),
         aiGenerated: true as const,
         model: prepared.kind === 'model' ? deps.ai!.modelName : null,
+        helpArticles: helpLinks,
       };
     },
   );
