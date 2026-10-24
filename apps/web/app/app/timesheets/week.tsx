@@ -104,7 +104,7 @@ export function WeekBody({ d, label }: { d: Timesheet; label: string }) {
         ).map(([k, v]) => (
           <div key={k} className="rounded-md bg-surface p-3">
             <dt className="text-footnote text-text-secondary">{t(`timesheets.${k}`)}</dt>
-            <dd className="text-title-3 tabular-nums" data-testid={`ts-${k}`}>
+            <dd className="whitespace-nowrap text-title-3 tabular-nums" data-testid={`ts-${k}`}>
               <Hours minutes={v} />
             </dd>
           </div>

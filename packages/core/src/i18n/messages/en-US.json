@@ -1053,7 +1053,8 @@
     "ui": {
       "noChart": {
         "list": "Choose Summarize and group the rows to see a chart."
-      }
+      },
+      "moreRows": "Show more rows"
     }
   },
   "ess": {

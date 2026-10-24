@@ -4896,7 +4896,8 @@
       "truncated": "Only the first rows are shown here. Download the report to get every row.",
       "notRun": "Run the report to see the results",
       "notRunBody": "Choose the options above, then run the report. You can also download it or save it to run again later.",
-      "runDetails": "Export details"
+      "runDetails": "Export details",
+      "moreRows": "Show more rows"
     }
   },
   "ess": {

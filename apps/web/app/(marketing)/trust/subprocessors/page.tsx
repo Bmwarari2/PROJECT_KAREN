@@ -126,8 +126,10 @@ export default async function SubprocessorsPage({
                   {changes.map((c) => (
                     <TR key={c.id}>
                       <TD className="tabular-nums">{formatDate(c.announced, locale)}</TD>
-                      <TD className="tabular-nums">{formatDate(c.effectiveFrom, locale)}</TD>
-                      <TD>{c.change}</TD>
+                      <TD className="tabular-nums" label={t('trust.sub.effective')}>
+                        {formatDate(c.effectiveFrom, locale)}
+                      </TD>
+                      <TD label={t('trust.sub.change')}>{c.change}</TD>
                     </TR>
                   ))}
                 </tbody>

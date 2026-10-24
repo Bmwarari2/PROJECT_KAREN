@@ -620,16 +620,22 @@ function DeliveryLog({ exp }: { exp: DataExport }) {
                 </span>
               ) : null}
             </TD>
-            <TD className="text-right tabular-nums">{n(d.rows)}</TD>
-            <TD className="text-right tabular-nums">{n(d.bytes)}</TD>
-            <TD className="text-right tabular-nums">
+            <TD className="text-right tabular-nums" label={t('reports.runs.rows')}>
+              {n(d.rows)}
+            </TD>
+            <TD className="text-right tabular-nums" label={t('reports.exports.bytes')}>
+              {n(d.bytes)}
+            </TD>
+            <TD className="text-right tabular-nums" label={t('reports.exports.duration')}>
               {d.durationMs === null
                 ? '—'
                 : t('reports.exports.seconds', {
                     n: numberFormat(locale, { maximumFractionDigits: 1 }).format(d.durationMs / 1000),
                   })}
             </TD>
-            <TD className="whitespace-nowrap">{formatDateTime(d.createdAt, locale, zone)}</TD>
+            <TD className="whitespace-nowrap" label={t('reports.runs.requested')}>
+              {formatDateTime(d.createdAt, locale, zone)}
+            </TD>
           </TR>
         ))}
       </tbody>

@@ -93,6 +93,7 @@ const statusTone = {
   retired: 'neutral',
   lost: 'danger',
 } as const;
+const REGISTER_PAGE = 50;
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export default function AssetsPage() {
@@ -152,6 +153,9 @@ export default function AssetsPage() {
       matches(query, a.assetTag, a.name, a.serialNumber, a.holder?.employeeName),
   );
   const filtered = !!typeFilter || !!statusFilter || !!query.trim();
+  // a long register shows a page at a time (a phone does not lay out hundreds of rows at once)
+  const [limit, setLimit] = React.useState(REGISTER_PAGE);
+  React.useEffect(() => setLimit(REGISTER_PAGE), [typeFilter, statusFilter, query]);
   const clearFilters = () => {
     setQuery('');
     setTypeFilter('');
@@ -256,7 +260,8 @@ export default function AssetsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageIntro title={t('assets.title')} titleIsTab />
+      {/* without the register the page is just "Equipment issued to me", which is its heading */}
+      {canManage ? <PageIntro title={t('assets.title')} titleIsTab /> : null}
 
       {session?.employeeId ? (
         !mine.data ? (
@@ -384,17 +389,17 @@ export default function AssetsPage() {
               </tr>
             </THead>
             <tbody>
-              {shown.map((a) => (
+              {shown.slice(0, limit).map((a) => (
                 <TR key={a.id}>
                   {/* the name first: on phones it is the row's title and the whole row opens the asset */}
                   <TD>
                     <EntityLink href={`/app/assets/${a.id}`}>{a.name}</EntityLink>
                   </TD>
-                  <TD className="font-mono text-footnote" phone="inline">
+                  <TD className="font-mono text-footnote" phone="inline" label={t('assets.tag')}>
                     {a.assetTag}
                   </TD>
                   <TD phone="inline">{t(`assets.types.${a.type}`)}</TD>
-                  <TD className="text-right" phone="inline">
+                  <TD className="text-right" phone="inline" label={t('assets.cost')}>
                     {a.costMinor !== null && a.currency
                       ? formatMoney(money(BigInt(a.costMinor), a.currency), locale)
                       : ''}
@@ -442,6 +447,13 @@ export default function AssetsPage() {
               ))}
             </tbody>
           </Table>
+          {shown.length > limit ? (
+            <div className="flex justify-center border-t border-border p-3">
+              <Button variant="secondary" onClick={() => setLimit((n) => n + REGISTER_PAGE)}>
+                {t('common.loadMore')}
+              </Button>
+            </div>
+          ) : null}
         </ListCard>
       ) : null}
 

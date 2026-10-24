@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   CardTitle,
+  PageSection,
   EmptyState,
   Field,
   Input,
@@ -120,11 +121,9 @@ export default function Eeo1Page() {
             <p className="text-footnote text-text-secondary">{t('compliance.eeo1.privacy')}</p>
             <SourceLink source={r.data.source} verifiedOn={r.data.verifiedOn} />
           </Card>
-          <Card className="p-0">
-            <Table dense scrollLabel={t('compliance.eeo1.tableCaption')}>
-              <caption className="px-4 py-3 text-left text-callout font-semibold">
-                {t('compliance.eeo1.tableCaption')}
-              </caption>
+          <PageSection headingLevel={sec.level} title={t('compliance.eeo1.tableCaption')}>
+            <Table dense scrollLabel={t('compliance.eeo1.tableCaption')} stack={false}>
+              <caption className="sr-only">{t('compliance.eeo1.tableCaption')}</caption>
               <THead>
                 <tr>
                   <TH>{t('compliance.eeo1.jobCategory')}</TH>
@@ -158,7 +157,7 @@ export default function Eeo1Page() {
                 ))}
               </tbody>
             </Table>
-          </Card>
+          </PageSection>
         </>
       )}
     </div>

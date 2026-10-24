@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { CreditCard, FileText, Receipt } from 'lucide-react';
+import { ChevronDown, CreditCard, FileText, Receipt } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -16,6 +16,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate, formatDateTime, formatMoney, type Locale } from '@thapsus/core/i18n';
 import { money } from '@thapsus/core/money';
@@ -200,19 +201,20 @@ export default function BillingPage() {
       />
 
       {b.contract ? (
-        <Card>
-          <CardTitle>{t('billing.contractTitle')}</CardTitle>
-          <p className="mt-2 text-callout">
-            {t('billing.contractBody', {
-              reference: b.contract.reference,
-              plan: planName(b.contract.planId),
-              start: formatDate(b.contract.startsOn, locale),
-              end: formatDate(b.contract.endsOn, locale),
-              days: b.contract.paymentTermsDays,
-              count: b.contract.paymentTermsDays,
-            })}
-          </p>
-        </Card>
+        <PageSection headingLevel={2} title={t('billing.contractTitle')}>
+          <Card>
+            <p className="text-callout">
+              {t('billing.contractBody', {
+                reference: b.contract.reference,
+                plan: planName(b.contract.planId),
+                start: formatDate(b.contract.startsOn, locale),
+                end: formatDate(b.contract.endsOn, locale),
+                days: b.contract.paymentTermsDays,
+                count: b.contract.paymentTermsDays,
+              })}
+            </p>
+          </Card>
+        </PageSection>
       ) : null}
 
       {b.accounts.map((a) => (
@@ -325,185 +327,189 @@ export default function BillingPage() {
       ))}
 
       {b.selfServe ? (
-        <Card>
-          <CardTitle>{live ? t('billing.changeTitle') : t('billing.chooseTitle')}</CardTitle>
-          <p className="mt-1 text-callout text-text-secondary">
-            {live
+        <PageSection
+          headingLevel={2}
+          title={live ? t('billing.changeTitle') : t('billing.chooseTitle')}
+          description={
+            live
               ? t('billing.changeRules')
-              : t('billing.chooseLead', { days: plans.data.trialDays, count: plans.data.trialDays })}
-          </p>
-          <form
-            className="mt-4 grid gap-4 md:grid-cols-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(
-                () =>
-                  live
-                    ? api('/v1/billing/subscription/change', {
-                        method: 'POST',
-                        json: { planId: target.planId, term: target.term },
-                      })
-                    : api('/v1/billing/subscription', {
-                        method: 'POST',
-                        json: {
-                          planId: target.planId,
-                          term: target.term,
-                          currency: target.currency,
-                          discountCode: target.discountCode || null,
-                        },
-                      }),
-                live ? t('billing.changed') : t('billing.started'),
-              );
-            }}
-          >
-            <Field id="b-plan" label={t('billing.plan')}>
-              {(p) => (
-                <select
-                  {...p}
-                  className={selectClass}
-                  value={target.planId}
-                  onChange={(e) => setTarget({ ...target, planId: e.target.value })}
-                >
-                  {plans
-                    .data!.plans.filter((x) => x.selfServe)
-                    .map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {planName(x.id)}
-                      </option>
-                    ))}
-                </select>
-              )}
-            </Field>
-            <Field id="b-term" label={t('billing.term')}>
-              {(p) => (
-                <select
-                  {...p}
-                  className={selectClass}
-                  value={target.term}
-                  onChange={(e) => setTarget({ ...target, term: e.target.value })}
-                >
-                  {['monthly', 'annual'].map((x) => (
-                    <option key={x} value={x}>
-                      {t(`pricing.term.${x}`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field
-              id="b-currency"
-              label={t('billing.currency')}
-              hint={live ? t('billing.currencyLocked') : undefined}
+              : t('billing.chooseLead', { days: plans.data.trialDays, count: plans.data.trialDays })
+          }
+        >
+          <Card>
+            <form
+              className="mt-4 grid gap-4 md:grid-cols-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run(
+                  () =>
+                    live
+                      ? api('/v1/billing/subscription/change', {
+                          method: 'POST',
+                          json: { planId: target.planId, term: target.term },
+                        })
+                      : api('/v1/billing/subscription', {
+                          method: 'POST',
+                          json: {
+                            planId: target.planId,
+                            term: target.term,
+                            currency: target.currency,
+                            discountCode: target.discountCode || null,
+                          },
+                        }),
+                  live ? t('billing.changed') : t('billing.started'),
+                );
+              }}
             >
-              {(p) => (
-                <select
-                  {...p}
-                  className={selectClass}
-                  value={target.currency}
-                  disabled={live}
-                  onChange={(e) => setTarget({ ...target, currency: e.target.value })}
-                >
-                  {plans.data!.currencies.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            {!live ? (
-              <Field id="b-code" label={t('billing.discountCode')}>
+              <Field id="b-plan" label={t('billing.plan')}>
                 {(p) => (
-                  <Input
+                  <select
                     {...p}
-                    value={target.discountCode}
-                    onChange={(e) => setTarget({ ...target, discountCode: e.target.value })}
-                  />
+                    className={selectClass}
+                    value={target.planId}
+                    onChange={(e) => setTarget({ ...target, planId: e.target.value })}
+                  >
+                    {plans
+                      .data!.plans.filter((x) => x.selfServe)
+                      .map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {planName(x.id)}
+                        </option>
+                      ))}
+                  </select>
                 )}
               </Field>
-            ) : null}
-            <div className="md:col-span-4" aria-live="polite" data-testid="quote">
-              {preview ? (
-                <div className="rounded-md bg-surface p-4 text-callout">
-                  <p className="font-semibold">
-                    {t(`billing.perInterval.${target.term}`, { amount: fmt(preview.quote.totalAmount) })}
-                  </p>
-                  <p className="text-text-secondary">
-                    {t('billing.quoteLine', {
-                      unit: fmt(preview.quote.unitAmount),
-                      quantity: preview.quote.quantity,
-                    })}{' '}
-                    {t('billing.taxNote')}
-                  </p>
-                  {live ? (
-                    <p className="mt-1">
-                      {preview.kind === 'none'
-                        ? t('billing.noChange')
-                        : ['upgrade', 'term_upgrade'].includes(preview.kind) || sub?.status === 'trialing'
-                          ? preview.proration
-                            ? t('billing.nowProrated', { amount: fmt(preview.proration.net) })
-                            : t('billing.now')
-                          : t('billing.atPeriodEnd', { date: when(preview.effectiveAt) })}
+              <Field id="b-term" label={t('billing.term')}>
+                {(p) => (
+                  <select
+                    {...p}
+                    className={selectClass}
+                    value={target.term}
+                    onChange={(e) => setTarget({ ...target, term: e.target.value })}
+                  >
+                    {['monthly', 'annual'].map((x) => (
+                      <option key={x} value={x}>
+                        {t(`pricing.term.${x}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field
+                id="b-currency"
+                label={t('billing.currency')}
+                hint={live ? t('billing.currencyLocked') : undefined}
+              >
+                {(p) => (
+                  <select
+                    {...p}
+                    className={selectClass}
+                    value={target.currency}
+                    disabled={live}
+                    onChange={(e) => setTarget({ ...target, currency: e.target.value })}
+                  >
+                    {plans.data!.currencies.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              {!live ? (
+                <Field id="b-code" label={t('billing.discountCode')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      value={target.discountCode}
+                      onChange={(e) => setTarget({ ...target, discountCode: e.target.value })}
+                    />
+                  )}
+                </Field>
+              ) : null}
+              <div className="md:col-span-4" aria-live="polite" data-testid="quote">
+                {preview ? (
+                  <div className="rounded-md bg-surface p-4 text-callout">
+                    <p className="font-semibold">
+                      {t(`billing.perInterval.${target.term}`, { amount: fmt(preview.quote.totalAmount) })}
                     </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            <div className="md:col-span-4 flex flex-wrap gap-3">
-              <Button
-                type="submit"
-                loading={busy}
-                disabled={!def.detailsComplete || (live && preview?.kind === 'none')}
-              >
-                {live ? t('billing.applyChange') : t('billing.start')}
-              </Button>
-              {!def.detailsComplete ? (
-                <p className="text-footnote text-text-secondary">{t('billing.detailsFirst')}</p>
-              ) : null}
-            </div>
-          </form>
-          {live ? (
-            <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-4">
-              <Button
-                variant="secondary"
-                loading={busy}
-                onClick={() =>
-                  run(async () => {
-                    const { url } = await api<{ url: string }>('/v1/billing/payment-method', {
-                      method: 'POST',
-                      json: {},
-                    });
-                    window.location.assign(url);
-                  }, t('billing.redirecting'))
-                }
-              >
-                <CreditCard aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {def.hasPaymentMethod ? t('billing.updateCard') : t('billing.addCard')}
-              </Button>
-              {!sub?.cancelEffectiveAt ? (
+                    <p className="text-text-secondary">
+                      {t('billing.quoteLine', {
+                        unit: fmt(preview.quote.unitAmount),
+                        quantity: preview.quote.quantity,
+                      })}{' '}
+                      {t('billing.taxNote')}
+                    </p>
+                    {live ? (
+                      <p className="mt-1">
+                        {preview.kind === 'none'
+                          ? t('billing.noChange')
+                          : ['upgrade', 'term_upgrade'].includes(preview.kind) || sub?.status === 'trialing'
+                            ? preview.proration
+                              ? t('billing.nowProrated', { amount: fmt(preview.proration.net) })
+                              : t('billing.now')
+                            : t('billing.atPeriodEnd', { date: when(preview.effectiveAt) })}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <div className="md:col-span-4 flex flex-wrap gap-3">
                 <Button
-                  variant="ghost"
+                  type="submit"
                   loading={busy}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        t('billing.cancelConfirm', {
-                          days: plans.data!.terms[sub?.term ?? 'monthly']?.cancellationNoticeDays ?? 0,
-                        }),
-                      )
-                    )
-                      void run(
-                        () => api('/v1/billing/subscription/cancel', { method: 'POST' }),
-                        t('billing.cancelled'),
-                      );
-                  }}
+                  disabled={!def.detailsComplete || (live && preview?.kind === 'none')}
                 >
-                  {t('billing.cancel')}
+                  {live ? t('billing.applyChange') : t('billing.start')}
                 </Button>
-              ) : null}
-            </div>
-          ) : null}
-        </Card>
+                {!def.detailsComplete ? (
+                  <p className="text-footnote text-text-secondary">{t('billing.detailsFirst')}</p>
+                ) : null}
+              </div>
+            </form>
+            {live ? (
+              <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-4">
+                <Button
+                  variant="secondary"
+                  loading={busy}
+                  onClick={() =>
+                    run(async () => {
+                      const { url } = await api<{ url: string }>('/v1/billing/payment-method', {
+                        method: 'POST',
+                        json: {},
+                      });
+                      window.location.assign(url);
+                    }, t('billing.redirecting'))
+                  }
+                >
+                  <CreditCard aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {def.hasPaymentMethod ? t('billing.updateCard') : t('billing.addCard')}
+                </Button>
+                {!sub?.cancelEffectiveAt ? (
+                  <Button
+                    variant="ghost"
+                    loading={busy}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          t('billing.cancelConfirm', {
+                            days: plans.data!.terms[sub?.term ?? 'monthly']?.cancellationNoticeDays ?? 0,
+                          }),
+                        )
+                      )
+                        void run(
+                          () => api('/v1/billing/subscription/cancel', { method: 'POST' }),
+                          t('billing.cancelled'),
+                        );
+                    }}
+                  >
+                    {t('billing.cancel')}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </Card>
+        </PageSection>
       ) : null}
 
       <section aria-labelledby="inv-title" className="flex flex-col gap-3">
@@ -531,12 +537,12 @@ export default function BillingPage() {
               {(invoices.data ?? []).map((i) => (
                 <TR key={i.id}>
                   <TD>{i.number ?? '—'}</TD>
-                  <TD className="text-footnote">
+                  <TD className="text-footnote" label={t('billing.period')}>
                     {i.periodStart && i.periodEnd ? `${when(i.periodStart)} – ${when(i.periodEnd)}` : '—'}
                   </TD>
-                  <TD>{fmt(i.total)}</TD>
+                  <TD label={t('billing.total')}>{fmt(i.total)}</TD>
                   <TD>{t(`billing.invoiceStatus.${i.status}`)}</TD>
-                  <TD>{i.poNumber ?? '—'}</TD>
+                  <TD label={t('billing.po')}>{i.poNumber ?? '—'}</TD>
                   <TD>
                     {i.hostedUrl ? (
                       <a
@@ -622,8 +628,12 @@ function BillingDetails({ account, onSaved }: { account: Account; onSaved: () =>
   const id = (k: string) => `${account.id.slice(0, 8)}-${k}`;
   return (
     <div className="mt-4 border-t border-border pt-4">
-      <Button variant="link" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen(!open)}>
         {t('billing.detailsTitle')}
+        <ChevronDown
+          aria-hidden
+          className={`h-4 w-4 stroke-[1.5] transition-transform duration-[var(--duration-fast)] ${open ? 'rotate-180' : ''}`}
+        />
       </Button>
       {open ? (
         <form onSubmit={save} className="mt-3 grid gap-4 md:grid-cols-2">

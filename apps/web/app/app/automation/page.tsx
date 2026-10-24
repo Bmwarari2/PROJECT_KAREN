@@ -5,13 +5,13 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
   EmptyState,
   Field,
   Input,
   ListItem,
   Skeleton,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
@@ -77,34 +77,35 @@ export default function AutomationPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageIntro title={t('automation.title')} titleIsTab lead={t('automation.lead')} />
-      <Card>
-        <CardTitle>{t('automation.new')}</CardTitle>
-        <form onSubmit={create} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
-          <Field id="name" label={t('automation.name')}>
-            {(p) => <Input {...p} required value={name} onChange={(e) => setName(e.target.value)} />}
-          </Field>
-          <Field id="trigger" label={t('automation.trigger')}>
-            {(p) => (
-              <select
-                {...p}
-                value={trigger}
-                onChange={(e) => setTrigger(e.target.value)}
-                className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
-              >
-                {['record.created', 'record.changed', 'date.reached', 'document.expiring'].map((x) => (
-                  <option key={x} value={x}>
-                    {t(`automation.triggers.${x}`)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field id="title" label={t('automation.taskTitle')}>
-            {(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}
-          </Field>
-          <Button type="submit">{t('common.add')}</Button>
-        </form>
-      </Card>
+      <PageSection headingLevel={2} title={t('automation.new')}>
+        <Card>
+          <form onSubmit={create} className="grid gap-3 md:grid-cols-4 md:items-end">
+            <Field id="name" label={t('automation.name')}>
+              {(p) => <Input {...p} required value={name} onChange={(e) => setName(e.target.value)} />}
+            </Field>
+            <Field id="trigger" label={t('automation.trigger')}>
+              {(p) => (
+                <select
+                  {...p}
+                  value={trigger}
+                  onChange={(e) => setTrigger(e.target.value)}
+                  className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
+                >
+                  {['record.created', 'record.changed', 'date.reached', 'document.expiring'].map((x) => (
+                    <option key={x} value={x}>
+                      {t(`automation.triggers.${x}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field id="title" label={t('automation.taskTitle')}>
+              {(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}
+            </Field>
+            <Button type="submit">{t('common.add')}</Button>
+          </form>
+        </Card>
+      </PageSection>
       <ListCard
         title={t('automation.list.title')}
         count={data ? t('automation.list.count', { count: data.length }) : undefined}

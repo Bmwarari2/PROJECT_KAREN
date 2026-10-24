@@ -218,6 +218,8 @@ export default function TimeOffPage() {
   }>(`/v1/leave/calendar?from=${today}&to=${in30}`);
   const [form, setForm] = React.useState({ leaveTypeId: '', startDate: today, endDate: today, note: '' });
   const [busy, setBusy] = React.useState(false);
+  // the newest requests first, ten at a time
+  const [mineLimit, setMineLimit] = React.useState(10);
   const typeName = (key: string) => {
     const lt = types.data?.find((x) => x.key === key);
     return lt ? (lt.name[locale] ?? lt.name['en-GB'] ?? key) : t(`timeOff.kind.${key}`);
@@ -392,7 +394,7 @@ export default function TimeOffPage() {
                   </tr>
                 </THead>
                 <tbody>
-                  {mine.data.map((r) => (
+                  {mine.data.slice(0, mineLimit).map((r) => (
                     <TR key={r.id}>
                       <TD>
                         <EntityLink href={`/app/time-off/${r.id}`}>{typeName(r.leaveType)}</EntityLink>
@@ -433,6 +435,11 @@ export default function TimeOffPage() {
                 <p className="text-callout text-text-secondary">{t('timeOff.none')}</p>
               </Card>
             )}
+            {(mine.data?.length ?? 0) > mineLimit ? (
+              <Button variant="secondary" className="self-center" onClick={() => setMineLimit((n) => n + 10)}>
+                {t('common.loadMore')}
+              </Button>
+            ) : null}
           </PageSection>
         </>
       )}

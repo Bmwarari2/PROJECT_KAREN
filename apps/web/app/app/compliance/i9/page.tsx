@@ -155,7 +155,10 @@ export default function I9Page() {
                   <TD phone="inline" label={t('compliance.i9.section2Due')}>
                     {d(r.section2DueOn)}
                   </TD>
-                  <TD phone="inline" label={t('compliance.i9.reverificationDue')}>
+                  <TD
+                    phone={r.reverificationDueOn ? 'inline' : 'hide'}
+                    label={t('compliance.i9.reverificationDue')}
+                  >
                     {d(r.reverificationDueOn)}
                   </TD>
                   <TD phone="hide">

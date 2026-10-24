@@ -15,6 +15,7 @@ import {
   Skeleton,
   buttonVariants,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -207,34 +208,39 @@ export default function WelcomePage() {
         </div>
       </header>
 
-      <Card>
-        <CardTitle as={sec.heading}>{t('onboarding.documentsTitle')}</CardTitle>
+      <ListSection headingLevel={sec.level} title={t('onboarding.documentsTitle')}>
         {data.documents.length ? (
-          <ul className="mt-3 flex flex-col gap-2">
-            {data.documents.map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center gap-3">
-                <FileSignature aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                <span className="flex-1 text-callout">{d.title}</span>
-                {d.status === 'signed' ? (
+          data.documents.map((d) => (
+            <ListItem
+              key={d.id}
+              leading={<FileSignature aria-hidden />}
+              title={d.title}
+              meta={
+                d.status === 'signed' ? (
                   <Badge tone="success">
-                    {t('onboarding.signedOn', { date: formatDate((d.signedAt ?? '').slice(0, 10), locale) })}
+                    {t('onboarding.signedOn', {
+                      date: formatDate((d.signedAt ?? '').slice(0, 10), locale),
+                    })}
                   </Badge>
-                ) : (
+                ) : undefined
+              }
+              actions={
+                d.status === 'signed' ? undefined : (
                   <Link
                     href={`/app/documents?sign=${d.id}`}
-                    className={buttonVariants({ size: 'sm' }) + ' no-underline'}
+                    className={buttonVariants({ size: 'sm' }) + ' min-h-11 no-underline sm:min-h-8'}
                     aria-label={t('documents.signTitle', { title: d.title })}
                   >
                     {t('documents.sign')}
                   </Link>
-                )}
-              </li>
-            ))}
-          </ul>
+                )
+              }
+            />
+          ))
         ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('onboarding.documentsEmpty')}</p>
+          <ListItem leading={<FileSignature aria-hidden />} title={t('onboarding.documentsEmpty')} />
         )}
-      </Card>
+      </ListSection>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -381,14 +387,15 @@ export default function WelcomePage() {
           ))}
         </ListSection>
       ) : (
-        <Card>
-          <CardTitle as={sec.heading}>{t('onboarding.checklistTitle')}</CardTitle>
-          <EmptyState
-            level={sec.level}
-            icon={<ListChecks aria-hidden />}
-            title={t('onboarding.checklistEmpty')}
-          />
-        </Card>
+        <PageSection headingLevel={sec.level} title={t('onboarding.checklistTitle')}>
+          <Card>
+            <EmptyState
+              level={sec.level}
+              icon={<ListChecks aria-hidden />}
+              title={t('onboarding.checklistEmpty')}
+            />
+          </Card>
+        </PageSection>
       )}
     </div>
   );
