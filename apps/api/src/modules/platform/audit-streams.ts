@@ -386,7 +386,7 @@ export async function auditStreamRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/audit-streams',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.streams' },
       schema: {
         tags: ['audit-streams'],
         summary:
@@ -512,7 +512,7 @@ export async function auditStreamRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/settings/audit-streams/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.streams' },
       schema: {
         tags: ['audit-streams'],
         summary: 'Rename, re-filter, pause or resume a stream',
@@ -552,7 +552,7 @@ export async function auditStreamRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/settings/audit-streams/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.streams' },
       schema: {
         tags: ['audit-streams'],
         summary: 'Delete a stream and its delivery log',
@@ -579,7 +579,7 @@ export async function auditStreamRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/audit-streams/:id/sync',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.streams' },
       schema: {
         tags: ['audit-streams'],
         summary: 'Deliver pending audit events now instead of waiting for the next sweep',

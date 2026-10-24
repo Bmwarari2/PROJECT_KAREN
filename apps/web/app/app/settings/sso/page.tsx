@@ -16,8 +16,8 @@ import {
   SettingsCard,
   useAction,
   useFormat,
-  usePermission,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 interface SsoConnection {
@@ -86,7 +86,15 @@ function ConnectionItem({
   const action = useAction();
   const patch = (body: Record<string, unknown>, success: string) =>
     action
-      .run(() => api(`/v1/settings/sso-connections/${c.id}`, { method: 'PATCH', json: body }), success)
+      .run(
+        () =>
+          api(`/v1/settings/sso-connections/${c.id}`, {
+            method: 'PATCH',
+            json: body,
+            capability: 'settings.sso.manage',
+          }),
+        success,
+      )
       .then((ok) => ok && onChanged());
   return (
     <li className="flex flex-col gap-3 rounded-md border border-border p-4">
@@ -162,7 +170,10 @@ function ConnectionItem({
               body={t('admin.sso.deleteBody')}
               confirmLabel={t('common.delete')}
               onConfirm={async () => {
-                await api(`/v1/settings/sso-connections/${c.id}`, { method: 'DELETE' });
+                await api(`/v1/settings/sso-connections/${c.id}`, {
+                  method: 'DELETE',
+                  capability: 'settings.sso.manage',
+                });
                 onChanged();
               }}
             />
@@ -221,6 +232,7 @@ function AddConnection({ onCreated }: { onCreated: () => void }) {
       const r = await api<Omit<Created, 'protocol'>>('/v1/settings/sso-connections', {
         method: 'POST',
         json: body,
+        capability: 'settings.sso.manage',
       });
       setCreated({ ...r, protocol });
       // the client secret is sealed by the API and never shown again
@@ -420,7 +432,12 @@ function Enforcement({
           loading={action.busy}
           onClick={async () =>
             (await action.run(
-              () => api('/v1/settings/security', { method: 'PATCH', json: { ssoEnforced: false } }),
+              () =>
+                api('/v1/settings/security', {
+                  method: 'PATCH',
+                  json: { ssoEnforced: false },
+                  capability: 'settings.sso.manage',
+                }),
               t('admin.sso.enforcedOff'),
             )) && onChanged()
           }
@@ -436,7 +453,11 @@ function Enforcement({
             confirmLabel={t('admin.sso.require')}
             disabled={!anyEnabled}
             onConfirm={async () => {
-              await api('/v1/settings/security', { method: 'PATCH', json: { ssoEnforced: true } });
+              await api('/v1/settings/security', {
+                method: 'PATCH',
+                json: { ssoEnforced: true },
+                capability: 'settings.sso.manage',
+              });
               toast({ title: t('admin.sso.enforcedOn'), tone: 'success' });
               onChanged();
             }}
@@ -453,8 +474,8 @@ function Enforcement({
 export default function SsoPage() {
   const t = useT();
   const sec = useSectionLevel();
-  const has = usePermission();
-  const canManage = has('settings.manage');
+  const can = useCan();
+  const canManage = can('settings.sso.manage');
   const connections = useApi<SsoConnection[]>('/v1/settings/sso-connections');
   const security = useApi<Security>('/v1/settings/security');
   const reload = () => (connections.reload(), security.reload());

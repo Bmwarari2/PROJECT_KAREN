@@ -325,7 +325,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Log a data subject request; the deadline is computed from the jurisdiction packs',
@@ -438,7 +438,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests/:id/identity',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Record how the requester identity was verified (a note, never document copies)',
@@ -517,7 +517,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests/:id/extend',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Extend the deadline where the law allows it (notice before the initial deadline)',
@@ -563,7 +563,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests/:id/export',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Generate the access export (JSON and PDF) into the home-region object store',
@@ -640,7 +640,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests/:id/correction',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Apply a correction as an effective-dated change to the employee record',
@@ -745,7 +745,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests/:id/erase',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.erase' },
       schema: {
         tags: ['privacy'],
         summary: 'Erase or anonymise the person, honouring legal holds and statutory retention',
@@ -857,7 +857,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/requests/:id/close',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.requests.manage' },
       schema: {
         tags: ['privacy'],
         params: Type.Object({ id: Uuid }),
@@ -944,7 +944,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/legal-holds',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.retention.manage' },
       schema: {
         tags: ['privacy'],
         body: Type.Object({
@@ -986,7 +986,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/legal-holds/:id/release',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.retention.manage' },
       schema: {
         tags: ['privacy'],
         params: Type.Object({ id: Uuid }),
@@ -1108,7 +1108,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.put(
     '/v1/privacy/retention/policies',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.retention.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Set a tenant retention policy (never shorter than a statutory minimum)',
@@ -1179,7 +1179,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/retention/dry-run',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.retention.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Show what retention would delete today (logged, nothing deleted)',
@@ -1213,7 +1213,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/retention/run',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.retention.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Apply enabled retention policies now (background job)',
@@ -1359,7 +1359,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/company-exports',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.companyExport' },
       schema: {
         tags: ['privacy'],
         summary: 'Export all company data (background job with progress)',
@@ -1491,7 +1491,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/closure',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.closure' },
       schema: {
         tags: ['privacy'],
         summary: 'Schedule account closure after the grace period (cancellable until then)',
@@ -1550,7 +1550,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/closure/cancel',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.closure' },
       schema: { tags: ['privacy'], response: { 200: ClosureOut, 403: Problem, 409: Problem } },
     },
     async (req) => {
@@ -1632,7 +1632,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/dpa/accept',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.dpa.accept' },
       schema: {
         tags: ['privacy'],
         body: Type.Object({ version: Type.String() }),
@@ -1717,7 +1717,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.put(
     '/v1/privacy/subprocessors/subscription',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.subprocessors.subscribe' },
       schema: {
         tags: ['privacy'],
         summary: 'Subscribe to sub-processor change notices',
@@ -1817,7 +1817,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.put(
     '/v1/privacy/notices/:template',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.notices.manage' },
       schema: {
         tags: ['privacy'],
         params: Type.Object({
@@ -1895,7 +1895,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/incidents',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.incidents.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Log an incident; breach deadlines come from the jurisdiction packs',
@@ -2038,7 +2038,7 @@ export async function privacyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/privacy/incidents/:id/notifications',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'privacy.incidents.manage' },
       schema: {
         tags: ['privacy'],
         summary: 'Record that a regulator, individuals or agencies were notified',

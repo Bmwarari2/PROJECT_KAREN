@@ -25,6 +25,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi, useDebounced } from '@/lib/use-api';
 import { SELECT_CLASS, type Dsr, type ErasurePlan } from './types';
 import { PersonLink } from '@/components/person-link';
+import { useCan } from '../shell';
 
 const KINDS = ['access', 'correction', 'deletion'] as const;
 const CHANNELS = ['email', 'portal', 'letter', 'phone', 'in_person', 'other'] as const;
@@ -80,6 +81,8 @@ export default function PrivacyRequestsPage() {
   const toast = useToast();
   const problem = useProblem();
   const [status, setStatus] = React.useState('open');
+  const can = useCan();
+  const canHandle = can('privacy.requests.manage');
   const list = useApi<Dsr[]>(`/v1/privacy/requests?status=${status}`);
   const [selected, setSelected] = React.useState<string | null>(null);
   React.useEffect(() => {
@@ -120,6 +123,7 @@ export default function PrivacyRequestsPage() {
             ? { method: form.identityMethod, note: form.identityNote || undefined }
             : undefined,
         },
+        capability: 'privacy.requests.manage',
       });
       toast({
         title: r.effectiveDueOn
@@ -138,141 +142,145 @@ export default function PrivacyRequestsPage() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <PageSection
-        headingLevel={2}
-        title={t('privacy.ui.form.title')}
-        description={t('privacy.ui.form.lead')}
-      >
-        <Card>
-          <form onSubmit={create} className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field id="dsr-kind" label={t('privacy.ui.form.kind')}>
-              {(p) => (
-                <select
-                  {...p}
-                  className={`${SELECT_CLASS} w-full`}
-                  value={form.kind}
-                  onChange={(e) => setForm({ ...form, kind: e.target.value as (typeof KINDS)[number] })}
-                >
-                  {KINDS.map((k) => (
-                    <option key={k} value={k}>
-                      {t(`privacy.ui.kind.${k}`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field
-              id="dsr-search"
-              label={t('privacy.ui.form.findPerson')}
-              hint={t('privacy.ui.form.findHint')}
-            >
-              {(p) => (
-                <Input
-                  {...p}
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  autoComplete="off"
-                />
-              )}
-            </Field>
-            <Field id="dsr-subject" label={t('privacy.ui.form.subject')}>
-              {(p) => (
-                <select
-                  {...p}
-                  className={`${SELECT_CLASS} w-full`}
-                  value={form.subjectEmployeeId}
-                  onChange={(e) => setForm({ ...form, subjectEmployeeId: e.target.value })}
-                >
-                  <option value="">{t('privacy.ui.form.choose')}</option>
-                  {(people.data?.data ?? []).map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.displayName}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field id="dsr-received" label={t('privacy.ui.form.received')}>
-              {(p) => (
-                <Input
-                  {...p}
-                  type="date"
-                  required
-                  max={today}
-                  value={form.receivedOn}
-                  onChange={(e) => setForm({ ...form, receivedOn: e.target.value })}
-                />
-              )}
-            </Field>
-            <Field id="dsr-channel" label={t('privacy.ui.form.channel')}>
-              {(p) => (
-                <select
-                  {...p}
-                  className={`${SELECT_CLASS} w-full`}
-                  value={form.channel}
-                  onChange={(e) => setForm({ ...form, channel: e.target.value })}
-                >
-                  {CHANNELS.map((k) => (
-                    <option key={k} value={k}>
-                      {t(`privacy.ui.channel.${k}`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field id="dsr-identity" label={t('privacy.ui.form.identity')}>
-              {(p) => (
-                <select
-                  {...p}
-                  className={`${SELECT_CLASS} w-full`}
-                  value={form.identityMethod}
-                  onChange={(e) => setForm({ ...form, identityMethod: e.target.value })}
-                >
-                  <option value="">{t('privacy.ui.form.notYet')}</option>
-                  {IDENTITY.map((k) => (
-                    <option key={k} value={k}>
-                      {t(`privacy.ui.identity.${k}`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field
-              id="dsr-identity-note"
-              label={t('privacy.ui.form.identityNote')}
-              hint={t('privacy.ui.form.identityNoteHint')}
-              className="md:col-span-3"
-            >
-              {(p) => (
-                <Input
-                  {...p}
-                  maxLength={1000}
-                  value={form.identityNote}
-                  onChange={(e) => setForm({ ...form, identityNote: e.target.value })}
-                />
-              )}
-            </Field>
-            <Field id="dsr-details" label={t('privacy.ui.form.details')} className="md:col-span-3">
-              {(p) => (
-                <Textarea
-                  {...p}
-                  rows={2}
-                  maxLength={4000}
-                  value={form.details}
-                  onChange={(e) => setForm({ ...form, details: e.target.value })}
-                />
-              )}
-            </Field>
-            <div className="md:col-span-3">
-              <Button type="submit" loading={busy}>
-                <FilePlus2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('privacy.ui.form.submit')}
-              </Button>
-            </div>
-          </form>
-        </Card>
-      </PageSection>
+      {canHandle ? (
+        <PageSection
+          headingLevel={2}
+          title={t('privacy.ui.form.title')}
+          description={t('privacy.ui.form.lead')}
+        >
+          <Card>
+            <form onSubmit={create} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field id="dsr-kind" label={t('privacy.ui.form.kind')}>
+                {(p) => (
+                  <select
+                    {...p}
+                    className={`${SELECT_CLASS} w-full`}
+                    value={form.kind}
+                    onChange={(e) => setForm({ ...form, kind: e.target.value as (typeof KINDS)[number] })}
+                  >
+                    {KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`privacy.ui.kind.${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field
+                id="dsr-search"
+                label={t('privacy.ui.form.findPerson')}
+                hint={t('privacy.ui.form.findHint')}
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    autoComplete="off"
+                  />
+                )}
+              </Field>
+              <Field id="dsr-subject" label={t('privacy.ui.form.subject')}>
+                {(p) => (
+                  <select
+                    {...p}
+                    className={`${SELECT_CLASS} w-full`}
+                    value={form.subjectEmployeeId}
+                    onChange={(e) => setForm({ ...form, subjectEmployeeId: e.target.value })}
+                  >
+                    <option value="">{t('privacy.ui.form.choose')}</option>
+                    {(people.data?.data ?? []).map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.displayName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field id="dsr-received" label={t('privacy.ui.form.received')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="date"
+                    required
+                    max={today}
+                    value={form.receivedOn}
+                    onChange={(e) => setForm({ ...form, receivedOn: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field id="dsr-channel" label={t('privacy.ui.form.channel')}>
+                {(p) => (
+                  <select
+                    {...p}
+                    className={`${SELECT_CLASS} w-full`}
+                    value={form.channel}
+                    onChange={(e) => setForm({ ...form, channel: e.target.value })}
+                  >
+                    {CHANNELS.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`privacy.ui.channel.${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field id="dsr-identity" label={t('privacy.ui.form.identity')}>
+                {(p) => (
+                  <select
+                    {...p}
+                    className={`${SELECT_CLASS} w-full`}
+                    value={form.identityMethod}
+                    onChange={(e) => setForm({ ...form, identityMethod: e.target.value })}
+                  >
+                    <option value="">{t('privacy.ui.form.notYet')}</option>
+                    {IDENTITY.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`privacy.ui.identity.${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field
+                id="dsr-identity-note"
+                label={t('privacy.ui.form.identityNote')}
+                hint={t('privacy.ui.form.identityNoteHint')}
+                className="md:col-span-3"
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    maxLength={1000}
+                    value={form.identityNote}
+                    onChange={(e) => setForm({ ...form, identityNote: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field id="dsr-details" label={t('privacy.ui.form.details')} className="md:col-span-3">
+                {(p) => (
+                  <Textarea
+                    {...p}
+                    rows={2}
+                    maxLength={4000}
+                    value={form.details}
+                    onChange={(e) => setForm({ ...form, details: e.target.value })}
+                  />
+                )}
+              </Field>
+              <div className="md:col-span-3">
+                <Button type="submit" loading={busy}>
+                  <FilePlus2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {t('privacy.ui.form.submit')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </PageSection>
+      ) : (
+        <p className="text-callout text-text-secondary">{t('visibility.readOnly')}</p>
+      )}
 
       <Card>
         <div className="flex flex-wrap items-center gap-3">
@@ -362,6 +370,8 @@ export default function PrivacyRequestsPage() {
 
 function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void }) {
   const t = useT();
+  const can = useCan();
+  const canHandle = can('privacy.requests.manage');
   const locale = useLocale();
   const toast = useToast();
   const problem = useProblem();
@@ -412,7 +422,8 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
 
   if (!r.data) return <Skeleton className="h-48" />;
   const d = r.data;
-  const open = !['completed', 'rejected', 'cancelled'].includes(d.status);
+  // readers (privacy.read) follow a request; handling it needs privacy.dsr, erasing privacy.erase (ADR-0188)
+  const open = !['completed', 'rejected', 'cancelled'].includes(d.status) && canHandle;
   return (
     <Card aria-labelledby="dsr-detail-title">
       <h2 id="dsr-detail-title" className="text-title-3">
@@ -467,6 +478,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
                     note: identity.note || undefined,
                     informationReceivedOn: identity.informationReceivedOn || undefined,
                   },
+                  capability: 'privacy.requests.manage',
                 }),
               t('privacy.ui.detail.identitySaved'),
             );
@@ -520,7 +532,12 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
             e.preventDefault();
             void act(
               'extend',
-              () => api(`/v1/privacy/requests/${id}/extend`, { method: 'POST', json: { reason } }),
+              () =>
+                api(`/v1/privacy/requests/${id}/extend`, {
+                  method: 'POST',
+                  json: { reason },
+                  capability: 'privacy.requests.manage',
+                }),
               t('privacy.ui.detail.extended'),
             );
           }}
@@ -573,7 +590,11 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
                 onClick={() =>
                   act(
                     'export',
-                    () => api(`/v1/privacy/requests/${id}/export`, { method: 'POST' }),
+                    () =>
+                      api(`/v1/privacy/requests/${id}/export`, {
+                        method: 'POST',
+                        capability: 'privacy.requests.manage',
+                      }),
                     t('privacy.ui.detail.exportReady'),
                   )
                 }
@@ -582,7 +603,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
                 {d.exportReady ? t('privacy.ui.detail.regenerate') : t('privacy.ui.detail.generate')}
               </Button>
             ) : null}
-            {d.exportReady ? (
+            {d.exportReady && canHandle ? (
               <>
                 <Button size="sm" variant="secondary" onClick={() => download('json')}>
                   <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
@@ -612,6 +633,7 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
                     effectiveDate: correction.effectiveDate,
                     changes: { [correction.field]: correction.value },
                   },
+                  capability: 'privacy.requests.manage',
                 }),
               t('privacy.ui.detail.corrected'),
             );
@@ -723,26 +745,29 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
                     />
                     {t('privacy.ui.detail.confirmErase')}
                   </label>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    disabled={!confirmErase}
-                    loading={busy === 'erase'}
-                    onClick={() =>
-                      act(
-                        'erase',
-                        () =>
-                          api(`/v1/privacy/requests/${id}/erase`, {
-                            method: 'POST',
-                            json: { confirm: true },
-                          }),
-                        t('privacy.ui.detail.erased'),
-                      )
-                    }
-                  >
-                    <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    {t('privacy.ui.detail.erase')}
-                  </Button>
+                  {can('privacy.requests.erase') ? (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      disabled={!confirmErase}
+                      loading={busy === 'erase'}
+                      onClick={() =>
+                        act(
+                          'erase',
+                          () =>
+                            api(`/v1/privacy/requests/${id}/erase`, {
+                              method: 'POST',
+                              json: { confirm: true },
+                              capability: 'privacy.requests.erase',
+                            }),
+                          t('privacy.ui.detail.erased'),
+                        )
+                      }
+                    >
+                      <Trash2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      {t('privacy.ui.detail.erase')}
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -760,7 +785,11 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
               act(
                 'complete',
                 () =>
-                  api(`/v1/privacy/requests/${id}/close`, { method: 'POST', json: { outcome: 'completed' } }),
+                  api(`/v1/privacy/requests/${id}/close`, {
+                    method: 'POST',
+                    json: { outcome: 'completed' },
+                    capability: 'privacy.requests.manage',
+                  }),
                 t('privacy.ui.detail.closed'),
               )
             }
@@ -775,7 +804,11 @@ function RequestDetail({ id, onChanged }: { id: string; onChanged: () => void })
               act(
                 'reject',
                 () =>
-                  api(`/v1/privacy/requests/${id}/close`, { method: 'POST', json: { outcome: 'rejected' } }),
+                  api(`/v1/privacy/requests/${id}/close`, {
+                    method: 'POST',
+                    json: { outcome: 'rejected' },
+                    capability: 'privacy.requests.manage',
+                  }),
                 t('privacy.ui.detail.closed'),
               )
             }

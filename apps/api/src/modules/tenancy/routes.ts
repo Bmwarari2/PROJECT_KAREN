@@ -255,7 +255,7 @@ export async function tenancyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/domains',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.domains.manage' },
       schema: {
         tags: ['settings'],
         body: Type.Object({
@@ -292,7 +292,7 @@ export async function tenancyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/domains/:id/verify',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.domains.manage' },
       schema: {
         tags: ['settings'],
         params: Type.Object({ id: Type.String({ format: 'uuid' }) }),

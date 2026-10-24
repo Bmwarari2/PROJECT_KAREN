@@ -158,6 +158,7 @@ export default function BillingPage() {
         currency: target.currency,
         discountCode: target.discountCode || null,
       },
+      capability: 'company.billing',
     })
       .then((p) => !cancelled && setPreview(p))
       .catch(() => !cancelled && setPreview(null));
@@ -303,7 +304,11 @@ export default function BillingPage() {
                   loading={busy}
                   onClick={() =>
                     run(
-                      () => api('/v1/billing/subscription/reactivate', { method: 'POST' }),
+                      () =>
+                        api('/v1/billing/subscription/reactivate', {
+                          method: 'POST',
+                          capability: 'company.billing',
+                        }),
                       t('billing.reactivated'),
                     )
                   }
@@ -347,6 +352,7 @@ export default function BillingPage() {
                       ? api('/v1/billing/subscription/change', {
                           method: 'POST',
                           json: { planId: target.planId, term: target.term },
+                          capability: 'company.billing',
                         })
                       : api('/v1/billing/subscription', {
                           method: 'POST',
@@ -356,6 +362,7 @@ export default function BillingPage() {
                             currency: target.currency,
                             discountCode: target.discountCode || null,
                           },
+                          capability: 'company.billing',
                         }),
                   live ? t('billing.changed') : t('billing.started'),
                 );
@@ -477,6 +484,7 @@ export default function BillingPage() {
                       const { url } = await api<{ url: string }>('/v1/billing/payment-method', {
                         method: 'POST',
                         json: {},
+                        capability: 'company.billing',
                       });
                       window.location.assign(url);
                     }, t('billing.redirecting'))
@@ -498,7 +506,11 @@ export default function BillingPage() {
                         )
                       )
                         void run(
-                          () => api('/v1/billing/subscription/cancel', { method: 'POST' }),
+                          () =>
+                            api('/v1/billing/subscription/cancel', {
+                              method: 'POST',
+                              capability: 'company.billing',
+                            }),
                           t('billing.cancelled'),
                         );
                     }}
@@ -615,6 +627,7 @@ function BillingDetails({ account, onSaved }: { account: Account; onSaved: () =>
           companyTaxId: f.taxType && f.taxValue ? { type: f.taxType, value: f.taxValue } : null,
           contacts,
         },
+        capability: 'company.billing',
       });
       toast({ title: t('billing.detailsSaved'), tone: 'success' });
       setOpen(false);

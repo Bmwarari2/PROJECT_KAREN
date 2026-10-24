@@ -294,7 +294,7 @@ export async function essRoutes(app: FastifyInstance) {
   app.post(
     '/v1/me/change-requests',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.details.request' },
       schema: {
         tags: ['me'],
         summary: 'Ask HR to change personal details I cannot edit myself (approval flow)',
@@ -491,7 +491,7 @@ export async function essRoutes(app: FastifyInstance) {
   app.post(
     '/v1/me/notifications/read',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.notifications' },
       schema: {
         tags: ['me'],
         summary: 'Mark notifications as read (some, or all)',
@@ -564,7 +564,7 @@ export async function essRoutes(app: FastifyInstance) {
   app.put(
     '/v1/me/notification-preferences',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.notifications' },
       schema: {
         tags: ['me'],
         body: Type.Object(

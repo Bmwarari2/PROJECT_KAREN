@@ -77,7 +77,7 @@ export default function LeaveRequestPage() {
   async function cancel() {
     setBusy(true);
     try {
-      await api(`/v1/leave/requests/${id}/cancel`, { method: 'POST' });
+      await api(`/v1/leave/requests/${id}/cancel`, { method: 'POST', capability: 'time.timeOff.cancel' });
       toast({ title: t('actionable.leave.cancelled'), tone: 'success' });
       reload();
     } catch (err) {

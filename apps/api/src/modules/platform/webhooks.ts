@@ -330,7 +330,7 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.post(
     '/v1/webhooks',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.webhooks' },
       schema: {
         tags: ['webhooks'],
         summary: 'Create a webhook endpoint (https only); the signing secret is returned once',
@@ -385,7 +385,7 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/webhooks/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.webhooks' },
       schema: {
         tags: ['webhooks'],
         summary: 'Update an endpoint (URL, event types, description, or disable/enable it)',
@@ -443,7 +443,7 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/webhooks/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.webhooks' },
       schema: {
         tags: ['webhooks'],
         summary: 'Delete an endpoint and its delivery log',
@@ -466,7 +466,7 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.post(
     '/v1/webhooks/:id/rotate-secret',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.webhooks' },
       schema: {
         tags: ['webhooks'],
         summary: 'Rotate the signing secret; the old secret keeps signing (a second v1) for graceHours',
@@ -515,7 +515,7 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.post(
     '/v1/webhooks/:id/ping',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.webhooks' },
       schema: {
         tags: ['webhooks'],
         summary: 'Send a signed webhook.ping event to this endpoint',
@@ -638,7 +638,7 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.post(
     '/v1/webhooks/deliveries/:deliveryId/replay',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.webhooks' },
       schema: {
         tags: ['webhooks'],
         summary:

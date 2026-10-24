@@ -302,7 +302,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.post(
     '/v1/assets',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.assets.manage' },
       schema: {
         tags: ['assets'],
         body: AssetBody,
@@ -405,7 +405,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/assets/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.assets.manage' },
       schema: {
         tags: ['assets'],
         params: Type.Object({ id: Uuid }),
@@ -456,7 +456,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.post(
     '/v1/assets/:id/assign',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.assets.manage' },
       schema: {
         tags: ['assets'],
         summary: 'Issue an asset to an employee; the employee is asked to acknowledge the handover',
@@ -551,7 +551,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.post(
     '/v1/asset-assignments/:id/acknowledge',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.assets.acknowledge' },
       schema: {
         tags: ['assets'],
         summary: 'The employee confirms they received the asset (handover sign-off)',
@@ -597,7 +597,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.post(
     '/v1/asset-assignments/:id/return',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.assets.manage' },
       schema: {
         tags: ['assets'],
         summary: 'Record the return against the checklist (completes the offboarding return task)',

@@ -15,11 +15,11 @@ import {
   TR,
   useToast,
 } from '@thapsus/ui';
-import { api, ApiProblem } from '@/lib/api';
+import { api, apiFetch, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { MyPayslips, type MyPayslip } from '@/components/payslips/my-payslips';
-import { useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 import { PersonLink } from '@/components/person-link';
 
 interface Item {
@@ -63,9 +63,8 @@ export function PayslipsPage({ initialPayslips }: { initialPayslips?: MyPayslip[
   const t = useT();
   const toast = useToast();
   const session = useSession();
-  const canManage = !!session?.permissions.some(
-    (g) => g === '*' || g === 'payslips.*' || g === 'payslips.manage',
-  );
+  const can = useCan();
+  const canManage = can('pay.payslips.manage');
   const batches = useApi<Batch[]>(canManage ? '/v1/payslips/batches' : null);
   const [form, setForm] = React.useState({
     kind: 'payslip',
@@ -96,7 +95,11 @@ export function PayslipsPage({ initialPayslips }: { initialPayslips?: MyPayslip[
     for (const f of Array.from(files ?? [])) body.append('files', f);
     if (statements) body.append('statements', statements, statements.name);
     try {
-      const res = await fetch('/v1/payslips/batches', { method: 'POST', body, credentials: 'same-origin' });
+      const res = await apiFetch('/v1/payslips/batches', {
+        method: 'POST',
+        body,
+        capability: 'pay.payslips.manage',
+      });
       const json = await res.json();
       if (!res.ok) throw new ApiProblem(res.status, json.code ?? 'error', json.title ?? '', json);
       setPreview(json);
@@ -114,7 +117,7 @@ export function PayslipsPage({ initialPayslips }: { initialPayslips?: MyPayslip[
     try {
       const r = await api<{ published: number; notified: number; unmatched: number }>(
         `/v1/payslips/batches/${preview.id}/publish`,
-        { method: 'POST' },
+        { method: 'POST', capability: 'pay.payslips.manage' },
       );
       toast({
         title: t('payslips.publishedToast', { count: r.published, notified: r.notified }),

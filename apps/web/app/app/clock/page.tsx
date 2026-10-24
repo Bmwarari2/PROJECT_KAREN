@@ -19,7 +19,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/zone';
 import { PageIntro } from '@/components/module-page';
-import { hasPermission, useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 
 interface Status {
   employeeId: string | null;
@@ -50,6 +50,7 @@ function currentPosition(): Promise<{ lat: number; lng: number } | undefined> {
 
 function ClockCard({ userId }: { userId: string }) {
   const t = useT();
+  const can = useCan();
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
@@ -67,16 +68,16 @@ function ClockCard({ userId }: { userId: string }) {
     }
   }, []);
   const sync = React.useCallback(async () => {
-    let r = await syncQueue(userId);
+    let r = await syncQueue(userId, can);
     // a punch made while a batch was in flight goes in the next batch
-    if (r && readQueue(userId).length) r = (await syncQueue(userId)) ?? r;
+    if (r && readQueue(userId).length) r = (await syncQueue(userId, can)) ?? r;
     setQueue(readQueue(userId));
     if (r) {
       const rejected = r.results.filter((x) => x.status === 'rejected');
       if (rejected.length) toast({ title: t('clock.rejected', { count: rejected.length }), tone: 'danger' });
       await refresh();
     }
-  }, [userId, refresh, t, toast]);
+  }, [userId, refresh, t, toast, can]);
 
   React.useEffect(() => {
     setQueue(readQueue(userId));
@@ -242,7 +243,11 @@ function PinCard({ employeeId }: { employeeId: string }) {
     e.preventDefault();
     setBusy(true);
     try {
-      await api(`/v1/kiosk-pins/${employeeId}`, { method: 'PUT', json: { pin } });
+      await api(`/v1/kiosk-pins/${employeeId}`, {
+        method: 'PUT',
+        json: { pin },
+        capability: 'time.clock.pin',
+      });
       setPin('');
       toast({ title: t('clock.pinSaved'), tone: 'success' });
     } catch (err) {
@@ -304,6 +309,7 @@ function KiosksCard() {
     const r = await api<{ token: string }>('/v1/kiosks', {
       method: 'POST',
       json: { name, locationId: locationId || null },
+      capability: 'time.clock.kiosks',
     });
     setLink(`${window.location.origin}/kiosk#pair=${r.token}`);
     setName('');
@@ -375,7 +381,10 @@ function KiosksCard() {
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      await api(`/v1/kiosks/${k.id}/revoke`, { method: 'POST' });
+                      await api(`/v1/kiosks/${k.id}/revoke`, {
+                        method: 'POST',
+                        capability: 'time.clock.kiosks',
+                      });
                       kiosks.reload();
                     }}
                   >
@@ -394,12 +403,13 @@ function KiosksCard() {
 export default function ClockPage() {
   const t = useT();
   const session = useSession();
+  const can = useCan();
   if (!session) return null;
-  const canManage = hasPermission(session, 'time.manage');
+  const canManage = can('time.clock.kiosks');
   return (
     <div className="flex flex-col gap-5">
       <PageIntro title={t('clock.title')} titleIsTab />
-      {session.employeeId ? (
+      {session.employeeId && can('time.clock.punch') ? (
         <ClockCard userId={session.userId} />
       ) : (
         <EmptyState title={t('clock.noEmployee')} />

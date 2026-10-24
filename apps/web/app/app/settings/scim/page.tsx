@@ -15,8 +15,8 @@ import {
   SettingsCard,
   useAction,
   useFormat,
-  usePermission,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 interface ScimToken {
@@ -32,8 +32,8 @@ export default function ScimPage() {
   const t = useT();
   const sec = useSectionLevel();
   const fmt = useFormat();
-  const has = usePermission();
-  const canManage = has('settings.manage');
+  const can = useCan();
+  const canManage = can('settings.scim.manage');
   const tokens = useApi<ScimToken[]>('/v1/settings/scim-tokens');
   const [name, setName] = React.useState('');
   const [secret, setSecret] = React.useState<string | null>(null);
@@ -47,6 +47,7 @@ export default function ScimPage() {
       const r = await api<{ id: string; token: string }>('/v1/settings/scim-tokens', {
         method: 'POST',
         json: { name: name.trim() },
+        capability: 'settings.scim.manage',
       });
       setSecret(r.token);
       setName('');
@@ -145,7 +146,10 @@ export default function ScimPage() {
                         body={t('admin.scim.revokeBody')}
                         confirmLabel={t('admin.revoke')}
                         onConfirm={async () => {
-                          await api(`/v1/settings/scim-tokens/${k.id}`, { method: 'DELETE' });
+                          await api(`/v1/settings/scim-tokens/${k.id}`, {
+                            method: 'DELETE',
+                            capability: 'settings.scim.manage',
+                          });
                           tokens.reload();
                         }}
                       />

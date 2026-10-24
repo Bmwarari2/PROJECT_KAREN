@@ -61,7 +61,7 @@ export async function meRoutes(app: FastifyInstance) {
   app.post(
     '/v1/me/push-subscriptions',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.notifications' },
       schema: {
         tags: ['me'],
         body: Type.Object({
@@ -97,7 +97,7 @@ export async function meRoutes(app: FastifyInstance) {
   app.post(
     '/v1/me/push-test',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.notifications' },
       schema: { tags: ['me'], response: { 202: Type.Object({ sent: Type.Integer() }), 422: Problem } },
     },
     async (req, reply) => {

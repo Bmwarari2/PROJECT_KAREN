@@ -88,7 +88,7 @@ function NotificationList() {
     setUnread(page.data.unread);
   }, [page.data, cursor]);
   async function mark(body: { ids?: string[]; all?: boolean }) {
-    await api('/v1/me/notifications/read', { method: 'POST', json: body });
+    await api('/v1/me/notifications/read', { method: 'POST', json: body, capability: 'me.notifications' });
     setItems((cur) => cur.map((n) => (body.all || body.ids?.includes(n.id) ? { ...n, read: true } : n)));
     setUnread((u) => (body.all ? 0 : Math.max(0, u - (body.ids?.length ?? 0))));
   }
@@ -175,6 +175,7 @@ function Preferences() {
       const next = await api<Omit<Prefs, 'available' | 'pushConfigured'>>('/v1/me/notification-preferences', {
         method: 'PUT',
         json: body,
+        capability: 'me.notifications',
       });
       prefs.setData((cur) => (cur ? { ...cur, ...next } : cur));
       toast({ title: t('ess.notifications.prefsSaved'), tone: 'success' });
@@ -296,12 +297,16 @@ export default function NotificationsPage() {
     await api('/v1/me/push-subscriptions', {
       method: 'POST',
       json: { endpoint: json.endpoint, keys: json.keys },
+      capability: 'me.notifications',
     });
     setState('subscribed');
   }
 
   async function test() {
-    const r = await api<{ sent: number }>('/v1/me/push-test', { method: 'POST' });
+    const r = await api<{ sent: number }>('/v1/me/push-test', {
+      method: 'POST',
+      capability: 'me.notifications',
+    });
     toast({ title: t('app.notifications.testSent', { count: r.sent }) });
   }
 

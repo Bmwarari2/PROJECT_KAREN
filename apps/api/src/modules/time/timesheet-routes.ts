@@ -171,7 +171,7 @@ export async function timesheetRoutes(app: FastifyInstance) {
   app.post(
     '/v1/timesheets/employees/:employeeId/weeks/:weekStart/submit',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.timesheets.submit' },
       schema: {
         tags: ['time'],
         summary: 'Submits a week for approval (snapshot frozen until decided)',

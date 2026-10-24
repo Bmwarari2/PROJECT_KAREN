@@ -275,7 +275,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
   app.post(
     '/v1/users/:userId/password-reset',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.users.manage' },
       schema: {
         tags: ['roles'],
         summary: 'Email a person a link to set a new password (you never see or set it)',

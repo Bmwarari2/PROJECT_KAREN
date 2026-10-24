@@ -31,7 +31,7 @@ export async function passkeyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/passkeys/register/options',
     {
-      config: { auth: 'mfa-setup', selfAudited: true },
+      config: { auth: 'mfa-setup', selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         response: { 200: Type.Object({ challengeId: Type.String(), options: Type.Any() }) },
@@ -72,7 +72,7 @@ export async function passkeyRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/passkeys/register/verify',
     {
-      config: { auth: 'mfa-setup', selfAudited: true },
+      config: { auth: 'mfa-setup', selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         body: Type.Object({

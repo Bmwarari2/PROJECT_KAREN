@@ -53,6 +53,7 @@ export function useStepUp() {
       await api('/v1/auth/reauth', {
         method: 'POST',
         json: factor === 'password' ? { password: secret } : { code: secret },
+        capability: 'me.security',
       });
       await pending.action();
       close(true);

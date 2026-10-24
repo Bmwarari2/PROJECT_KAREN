@@ -30,7 +30,7 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
-import { useSession } from '../../shell';
+import { useCan, useSession } from '../../shell';
 import { problemText } from '../../reports/ui';
 
 interface Profile {
@@ -124,6 +124,7 @@ export default function MyDetailsPage() {
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
+  const can = useCan();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const profile = useApi<Profile>('/v1/me/profile');
   const requests = useApi<ChangeRequest[]>('/v1/me/change-requests');
@@ -150,8 +151,11 @@ export default function MyDetailsPage() {
       </div>
     );
   const e = profile.data.employee;
-  const editable = SELF_EDITABLE.filter((f) => profile.data!.access[f] === 'write');
-  const requestable = profile.data.requestable;
+  // the fields the API says are writable, for someone who may update their own details (ADR-0188)
+  const editable = can('me.details.edit')
+    ? SELF_EDITABLE.filter((f) => profile.data!.access[f] === 'write')
+    : [];
+  const requestable = can('me.details.request') ? profile.data.requestable : [];
 
   async function saveContact(ev: React.FormEvent) {
     ev.preventDefault();
@@ -162,6 +166,7 @@ export default function MyDetailsPage() {
       await api(`/v1/employees/${e.id}/changes`, {
         method: 'POST',
         json: { effectiveDate: today(zone), ...changes },
+        capability: 'me.details.edit',
       });
       toast({ title: t('ess.details.saved'), tone: 'success' });
       setEditOpen(false);
@@ -179,7 +184,7 @@ export default function MyDetailsPage() {
     const body = Object.fromEntries(Object.entries(ask).filter(([, v]) => v.trim() !== ''));
     setBusy(true);
     try {
-      await api('/v1/me/change-requests', { method: 'POST', json: body });
+      await api('/v1/me/change-requests', { method: 'POST', json: body, capability: 'me.details.request' });
       toast({ title: t('ess.details.requestSent'), tone: 'success' });
       setReqOpen(false);
       setAsk({});

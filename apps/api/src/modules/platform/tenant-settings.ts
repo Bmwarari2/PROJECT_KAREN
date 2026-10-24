@@ -160,7 +160,7 @@ export async function tenantSettingsRoutes(app: FastifyInstance) {
   app.put(
     '/v1/settings/features/:key',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.features.manage' },
       schema: {
         tags: ['settings'],
         summary: 'Turn a company-managed feature on or off (null restores the default)',
@@ -207,7 +207,7 @@ export async function tenantSettingsRoutes(app: FastifyInstance) {
   app.put(
     '/v1/settings/branding',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.branding.manage' },
       schema: {
         tags: ['settings'],
         summary:
@@ -263,7 +263,7 @@ export async function tenantSettingsRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/branding/logo',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.branding.manage' },
       schema: {
         tags: ['settings'],
         summary: 'Upload a logo (PNG, JPEG or WebP; stored in the home-region bucket)',
@@ -315,7 +315,7 @@ export async function tenantSettingsRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/settings/branding/logo',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.branding.manage' },
       schema: {
         tags: ['settings'],
         summary: 'Remove the logo',

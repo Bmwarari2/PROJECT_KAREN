@@ -592,6 +592,11 @@
         "tags": [
           "auth"
         ],
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -718,6 +723,11 @@
         "tags": [
           "auth"
         ],
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -771,6 +781,11 @@
               }
             }
           }
+        },
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
         },
         "responses": {
           "204": {
@@ -922,6 +937,11 @@
               }
             }
           }
+        },
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
         },
         "responses": {
           "204": {
@@ -1419,6 +1439,11 @@
             }
           }
         },
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -1710,6 +1735,11 @@
             }
           }
         },
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -1925,6 +1955,11 @@
             "required": true
           }
         ],
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -2058,6 +2093,11 @@
         "tags": [
           "auth"
         ],
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -2157,6 +2197,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.users.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -2305,6 +2352,13 @@
         "tags": [
           "settings"
         ],
+        "x-capability": "settings.signInPolicy.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -2427,6 +2481,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.users.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -3165,6 +3226,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.users.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -3372,6 +3440,11 @@
         "tags": [
           "auth"
         ],
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -3425,6 +3498,11 @@
               }
             }
           }
+        },
+        "x-capability": "me.security",
+        "x-permission": {
+          "any": [],
+          "all": []
         },
         "responses": {
           "204": {
@@ -4496,6 +4574,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.users.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -4724,6 +4809,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.sso.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -5076,6 +5168,13 @@
             }
           }
         },
+        "x-capability": "settings.signInPolicy.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -5358,6 +5457,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.sso.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -5636,6 +5742,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.sso.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -6254,6 +6367,13 @@
             }
           }
         },
+        "x-capability": "settings.domains.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -6435,6 +6555,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.domains.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -6685,6 +6812,14 @@
             }
           }
         },
+        "x-capability": "settings.scim.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage",
+            "scim.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -6774,6 +6909,14 @@
         "tags": [
           "settings"
         ],
+        "x-capability": "settings.scim",
+        "x-permission": {
+          "any": [
+            "settings.read",
+            "scim.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -6906,6 +7049,14 @@
             "required": true
           }
         ],
+        "x-capability": "settings.scim.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage",
+            "scim.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -7724,6 +7875,13 @@
             }
           }
         },
+        "x-capability": "settings.supportAccess.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -7853,6 +8011,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.supportAccess.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -8089,6 +8254,11 @@
             }
           }
         },
+        "x-capability": "me.notifications",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -8116,6 +8286,11 @@
         "tags": [
           "me"
         ],
+        "x-capability": "me.notifications",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -8624,6 +8799,13 @@
             }
           }
         },
+        "x-capability": "people.add",
+        "x-permission": {
+          "any": [
+            "employees.create"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -8985,6 +9167,13 @@
               }
             }
           }
+        },
+        "x-capability": "people.visibility",
+        "x-permission": {
+          "any": [
+            "self.read"
+          ],
+          "all": []
         },
         "responses": {
           "200": {
@@ -9393,6 +9582,14 @@
             "required": true
           }
         ],
+        "x-capability": "people.changes",
+        "x-permission": {
+          "any": [
+            "employees.update",
+            "self.update_contact"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -9756,6 +9953,13 @@
             "required": true
           }
         ],
+        "x-capability": "people.terminate",
+        "x-permission": {
+          "any": [
+            "employees.terminate"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -10262,6 +10466,11 @@
             "required": true
           }
         ],
+        "x-capability": "people.emergencyContacts",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -11452,6 +11661,13 @@
             }
           }
         },
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -11728,6 +11944,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -11991,6 +12214,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -12292,6 +12522,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -12512,6 +12749,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -12772,6 +13016,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -12987,6 +13238,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -13241,6 +13499,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -13478,6 +13743,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -13754,6 +14026,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -14028,6 +14307,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -14342,6 +14628,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.organisation",
+        "x-permission": {
+          "any": [
+            "org.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -16708,6 +17001,13 @@
             "required": true
           }
         ],
+        "x-capability": "documents.sign",
+        "x-permission": {
+          "any": [
+            "documents.sign"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -17162,6 +17462,13 @@
               }
             }
           }
+        },
+        "x-capability": "documents.manage",
+        "x-permission": {
+          "any": [
+            "documents.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -18508,6 +18815,11 @@
             "required": true
           }
         ],
+        "x-capability": "documents.countersign",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -18886,6 +19198,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.workflows.manage",
+        "x-permission": {
+          "any": [
+            "workflows.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -19593,6 +19912,11 @@
             "required": true
           }
         ],
+        "x-capability": "inbox.tasks.complete",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -19772,6 +20096,13 @@
               }
             }
           }
+        },
+        "x-capability": "help.contactHr.ask",
+        "x-permission": {
+          "any": [
+            "hr.contact"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -20519,6 +20850,13 @@
             }
           }
         },
+        "x-capability": "settings.approvalChains",
+        "x-permission": {
+          "any": [
+            "approvals.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -21231,6 +21569,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.approvalChains",
+        "x-permission": {
+          "any": [
+            "approvals.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -22127,6 +22472,11 @@
             "required": true
           }
         ],
+        "x-capability": "inbox.approvals.decide",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -22384,6 +22734,11 @@
             }
           }
         },
+        "x-capability": "inbox.approvals.decide",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -22463,6 +22818,11 @@
               }
             }
           }
+        },
+        "x-capability": "settings.delegations.manage",
+        "x-permission": {
+          "any": [],
+          "all": []
         },
         "responses": {
           "201": {
@@ -22637,6 +22997,11 @@
             "required": true
           }
         ],
+        "x-capability": "settings.delegations.manage",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -22964,6 +23329,13 @@
             "required": true
           }
         ],
+        "x-capability": "people.edit",
+        "x-permission": {
+          "any": [
+            "employees.update"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -23543,6 +23915,13 @@
             }
           }
         },
+        "x-capability": "it.automation.manage",
+        "x-permission": {
+          "any": [
+            "automation.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -23663,6 +24042,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.automation.manage",
+        "x-permission": {
+          "any": [
+            "automation.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -23918,6 +24304,13 @@
         "tags": [
           "imports"
         ],
+        "x-capability": "people.imports",
+        "x-permission": {
+          "any": [
+            "imports.run"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -24123,6 +24516,13 @@
             "required": true
           }
         ],
+        "x-capability": "people.imports",
+        "x-permission": {
+          "any": [
+            "imports.run"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -24276,6 +24676,13 @@
             "required": true
           }
         ],
+        "x-capability": "people.imports",
+        "x-permission": {
+          "any": [
+            "imports.run"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -25422,6 +25829,13 @@
             "required": true
           }
         ],
+        "x-capability": "people.invite",
+        "x-permission": {
+          "any": [
+            "users.invite"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -29322,6 +29736,13 @@
             }
           }
         },
+        "x-capability": "settings.leave",
+        "x-permission": {
+          "any": [
+            "leave.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -29769,6 +30190,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.leave",
+        "x-permission": {
+          "any": [
+            "leave.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -30109,6 +30537,13 @@
               }
             }
           }
+        },
+        "x-capability": "time.leave.adjust",
+        "x-permission": {
+          "any": [
+            "leave.adjust"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -30761,6 +31196,14 @@
               }
             }
           }
+        },
+        "x-capability": "time.timeOff.request",
+        "x-permission": {
+          "any": [
+            "leave.request",
+            "leave.record"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -31446,6 +31889,11 @@
             "required": true
           }
         ],
+        "x-capability": "time.timeOff.cancel",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -31729,6 +32177,11 @@
             }
           }
         },
+        "x-capability": "time.timeOff.calendarFeed",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -31992,6 +32445,13 @@
             }
           }
         },
+        "x-capability": "settings.absence.manage",
+        "x-permission": {
+          "any": [
+            "absence.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -32200,6 +32660,13 @@
               }
             }
           }
+        },
+        "x-capability": "time.sickness.record",
+        "x-permission": {
+          "any": [
+            "absence.record"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -33648,6 +34115,13 @@
             }
           }
         },
+        "x-capability": "settings.absence.manage",
+        "x-permission": {
+          "any": [
+            "absence.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -34052,6 +34526,13 @@
             }
           }
         },
+        "x-capability": "settings.coverRules",
+        "x-permission": {
+          "any": [
+            "leave.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -34281,6 +34762,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.calendars",
+        "x-permission": {
+          "any": [
+            "leave.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -34574,6 +35062,13 @@
               }
             }
           }
+        },
+        "x-capability": "time.rota.manage",
+        "x-permission": {
+          "any": [
+            "rota.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -35256,6 +35751,13 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.manage",
+        "x-permission": {
+          "any": [
+            "rota.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -35612,6 +36114,13 @@
               }
             }
           }
+        },
+        "x-capability": "time.rota.manage",
+        "x-permission": {
+          "any": [
+            "rota.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -36538,6 +37047,13 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.manage",
+        "x-permission": {
+          "any": [
+            "rota.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -36980,6 +37496,13 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.manage",
+        "x-permission": {
+          "any": [
+            "rota.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -37710,6 +38233,13 @@
             }
           }
         },
+        "x-capability": "time.rota.manage",
+        "x-permission": {
+          "any": [
+            "rota.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -38431,6 +38961,13 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.swap",
+        "x-permission": {
+          "any": [
+            "rota.swap_request"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -38777,6 +39314,13 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.swap",
+        "x-permission": {
+          "any": [
+            "rota.swap_request"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -39018,6 +39562,11 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.swapRespond",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -39301,6 +39850,11 @@
             "required": true
           }
         ],
+        "x-capability": "time.rota.swapRespond",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -40606,6 +41160,13 @@
             }
           }
         },
+        "x-capability": "settings.time",
+        "x-permission": {
+          "any": [
+            "time.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -40950,6 +41511,13 @@
               }
             }
           }
+        },
+        "x-capability": "time.clock.punch",
+        "x-permission": {
+          "any": [
+            "time.clock"
+          ],
+          "all": []
         },
         "responses": {
           "200": {
@@ -41819,6 +42387,13 @@
             }
           }
         },
+        "x-capability": "time.clock.kiosks",
+        "x-permission": {
+          "any": [
+            "time.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -42057,6 +42632,13 @@
             "required": true
           }
         ],
+        "x-capability": "time.clock.kiosks",
+        "x-permission": {
+          "any": [
+            "time.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -42278,6 +42860,14 @@
             "required": true
           }
         ],
+        "x-capability": "time.clock.pin",
+        "x-permission": {
+          "any": [
+            "time.clock",
+            "time.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -43700,6 +44290,14 @@
             "required": true
           }
         ],
+        "x-capability": "time.timesheets.submit",
+        "x-permission": {
+          "any": [
+            "time.clock",
+            "time.correct"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -47026,6 +47624,13 @@
             }
           }
         },
+        "x-capability": "compliance.record",
+        "x-permission": {
+          "any": [
+            "compliance.record"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -48243,6 +48848,13 @@
             }
           }
         },
+        "x-capability": "compliance.record",
+        "x-permission": {
+          "any": [
+            "compliance.record"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -48602,6 +49214,13 @@
             "required": true
           }
         ],
+        "x-capability": "compliance.record",
+        "x-permission": {
+          "any": [
+            "compliance.record"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -49331,6 +49950,13 @@
             }
           }
         },
+        "x-capability": "compliance.manage",
+        "x-permission": {
+          "any": [
+            "compliance.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -49954,6 +50580,13 @@
               }
             }
           }
+        },
+        "x-capability": "compliance.record",
+        "x-permission": {
+          "any": [
+            "compliance.record"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -56392,6 +57025,13 @@
             "required": true
           }
         ],
+        "x-capability": "compliance.lawChanges.acknowledge",
+        "x-permission": {
+          "any": [
+            "compliance.law_changes"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -60677,6 +61317,13 @@
               }
             }
           }
+        },
+        "x-capability": "pay.payroll.manage",
+        "x-permission": {
+          "any": [
+            "payroll.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -69910,6 +70557,13 @@
             }
           }
         },
+        "x-capability": "pay.payroll.manage",
+        "x-permission": {
+          "any": [
+            "payroll.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -70212,6 +70866,13 @@
             "required": true
           }
         ],
+        "x-capability": "pay.payroll.manage",
+        "x-permission": {
+          "any": [
+            "payroll.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -70754,6 +71415,13 @@
             "required": true
           }
         ],
+        "x-capability": "pay.payroll.export",
+        "x-permission": {
+          "any": [
+            "payroll.export"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -71424,6 +72092,13 @@
             "required": true
           }
         ],
+        "x-capability": "pay.payroll.export",
+        "x-permission": {
+          "any": [
+            "payroll.export"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -71971,6 +72646,13 @@
         "tags": [
           "payslips"
         ],
+        "x-capability": "pay.payslips.manage",
+        "x-permission": {
+          "any": [
+            "payslips.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -73429,6 +74111,13 @@
             "required": true
           }
         ],
+        "x-capability": "pay.payslips.manage",
+        "x-permission": {
+          "any": [
+            "payslips.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -75411,6 +76100,13 @@
         "tags": [
           "integrations"
         ],
+        "x-capability": "it.integrations",
+        "x-permission": {
+          "any": [
+            "integrations.read"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -75749,6 +76445,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -76066,6 +76769,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -76300,6 +77010,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -76745,6 +77462,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -77098,6 +77822,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -77391,6 +78122,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations",
+        "x-permission": {
+          "any": [
+            "integrations.read"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -77652,6 +78390,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -77960,6 +78705,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -78168,6 +78920,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -78354,6 +79113,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations",
+        "x-permission": {
+          "any": [
+            "integrations.read"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -78619,6 +79385,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.integrations.manage",
+        "x-permission": {
+          "any": [
+            "integrations.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -78864,6 +79637,13 @@
             "required": false
           }
         ],
+        "x-capability": "it.integrations",
+        "x-permission": {
+          "any": [
+            "integrations.read"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -79581,6 +80361,13 @@
               }
             }
           }
+        },
+        "x-capability": "it.assets.manage",
+        "x-permission": {
+          "any": [
+            "assets.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -80644,6 +81431,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.assets.manage",
+        "x-permission": {
+          "any": [
+            "assets.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -81137,6 +81931,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.assets.manage",
+        "x-permission": {
+          "any": [
+            "assets.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -81634,6 +82435,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.assets.acknowledge",
+        "x-permission": {
+          "any": [
+            "assets.acknowledge"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -82134,6 +82942,13 @@
             "required": true
           }
         ],
+        "x-capability": "it.assets.manage",
+        "x-permission": {
+          "any": [
+            "assets.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -83328,6 +84143,14 @@
             "required": true
           }
         ],
+        "x-capability": "reports.run",
+        "x-permission": {
+          "any": [
+            "reports.run",
+            "reports.read_team"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -84279,6 +85102,14 @@
             }
           }
         },
+        "x-capability": "reports.run",
+        "x-permission": {
+          "any": [
+            "reports.run",
+            "reports.read_team"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -85212,6 +86043,14 @@
               }
             }
           }
+        },
+        "x-capability": "reports.run",
+        "x-permission": {
+          "any": [
+            "reports.run",
+            "reports.read_team"
+          ],
+          "all": []
         },
         "responses": {
           "202": {
@@ -87160,6 +87999,14 @@
             }
           }
         },
+        "x-capability": "reports.run",
+        "x-permission": {
+          "any": [
+            "reports.run",
+            "reports.read_team"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -87899,6 +88746,14 @@
             "required": true
           }
         ],
+        "x-capability": "reports.run",
+        "x-permission": {
+          "any": [
+            "reports.run",
+            "reports.read_team"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -88587,6 +89442,13 @@
             }
           }
         },
+        "x-capability": "reports.schedules",
+        "x-permission": {
+          "any": [
+            "reports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -88955,6 +89817,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.schedules",
+        "x-permission": {
+          "any": [
+            "reports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -89182,6 +90051,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.schedules",
+        "x-permission": {
+          "any": [
+            "reports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -89838,6 +90714,13 @@
             }
           }
         },
+        "x-capability": "reports.exports.destinations",
+        "x-permission": {
+          "any": [
+            "exports.destinations"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -90158,6 +91041,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.exports.destinations",
+        "x-permission": {
+          "any": [
+            "exports.destinations"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -90380,6 +91270,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.exports.destinations",
+        "x-permission": {
+          "any": [
+            "exports.destinations"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -90911,6 +91808,13 @@
             }
           }
         },
+        "x-capability": "reports.exports.schedule",
+        "x-permission": {
+          "any": [
+            "exports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -91256,6 +92160,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.exports.schedule",
+        "x-permission": {
+          "any": [
+            "exports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -91520,6 +92431,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.exports.schedule",
+        "x-permission": {
+          "any": [
+            "exports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -91664,6 +92582,13 @@
             "required": true
           }
         ],
+        "x-capability": "reports.exports.schedule",
+        "x-permission": {
+          "any": [
+            "exports.schedule"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -92565,6 +93490,13 @@
             }
           }
         },
+        "x-capability": "me.details.request",
+        "x-permission": {
+          "any": [
+            "self.read"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -93016,6 +93948,11 @@
             }
           }
         },
+        "x-capability": "me.notifications",
+        "x-permission": {
+          "any": [],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -93206,6 +94143,11 @@
               }
             }
           }
+        },
+        "x-capability": "me.notifications",
+        "x-permission": {
+          "any": [],
+          "all": []
         },
         "responses": {
           "200": {
@@ -93914,6 +94856,13 @@
               }
             }
           }
+        },
+        "x-capability": "privacy.requests.manage",
+        "x-permission": {
+          "any": [
+            "privacy.dsr"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -94924,6 +95873,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.requests.manage",
+        "x-permission": {
+          "any": [
+            "privacy.dsr"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -96042,6 +96998,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.requests.manage",
+        "x-permission": {
+          "any": [
+            "privacy.dsr"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -96608,6 +97571,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.requests.manage",
+        "x-permission": {
+          "any": [
+            "privacy.dsr"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -97328,6 +98298,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.requests.manage",
+        "x-permission": {
+          "any": [
+            "privacy.dsr"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -98196,6 +99173,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.requests.erase",
+        "x-permission": {
+          "any": [
+            "privacy.erase"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -98895,6 +99879,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.requests.manage",
+        "x-permission": {
+          "any": [
+            "privacy.dsr"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -99630,6 +100621,13 @@
             }
           }
         },
+        "x-capability": "privacy.retention.manage",
+        "x-permission": {
+          "any": [
+            "privacy.retention"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -99793,6 +100791,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.retention.manage",
+        "x-permission": {
+          "any": [
+            "privacy.retention"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -100369,6 +101374,13 @@
             }
           }
         },
+        "x-capability": "privacy.retention.manage",
+        "x-permission": {
+          "any": [
+            "privacy.retention"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -100605,6 +101617,13 @@
             }
           }
         },
+        "x-capability": "privacy.retention.manage",
+        "x-permission": {
+          "any": [
+            "privacy.retention"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -100811,6 +101830,13 @@
         "tags": [
           "privacy"
         ],
+        "x-capability": "privacy.retention.manage",
+        "x-permission": {
+          "any": [
+            "privacy.retention"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -101217,6 +102243,13 @@
         "tags": [
           "privacy"
         ],
+        "x-capability": "privacy.companyExport",
+        "x-permission": {
+          "any": [
+            "account.export"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -101726,6 +102759,13 @@
             }
           }
         },
+        "x-capability": "privacy.closure",
+        "x-permission": {
+          "any": [
+            "account.close"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -101999,6 +103039,13 @@
         "tags": [
           "privacy"
         ],
+        "x-capability": "privacy.closure",
+        "x-permission": {
+          "any": [
+            "account.close"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -102367,6 +103414,13 @@
               }
             }
           }
+        },
+        "x-capability": "privacy.dpa.accept",
+        "x-permission": {
+          "any": [
+            "account.dpa"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -102810,6 +103864,13 @@
             }
           }
         },
+        "x-capability": "privacy.subprocessors.subscribe",
+        "x-permission": {
+          "any": [
+            "privacy.read"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -103191,6 +104252,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.notices.manage",
+        "x-permission": {
+          "any": [
+            "privacy.notices"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -103794,6 +104862,13 @@
               }
             }
           }
+        },
+        "x-capability": "privacy.incidents.manage",
+        "x-permission": {
+          "any": [
+            "privacy.incidents"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -104728,6 +105803,13 @@
             "required": true
           }
         ],
+        "x-capability": "privacy.incidents.manage",
+        "x-permission": {
+          "any": [
+            "privacy.incidents"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -106572,6 +107654,13 @@
             }
           }
         },
+        "x-capability": "settings.api",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -106870,6 +107959,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.api",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -107469,6 +108565,13 @@
             }
           }
         },
+        "x-capability": "settings.api",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -107798,6 +108901,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.api",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -108049,6 +109159,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.api",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -108656,6 +109773,13 @@
             }
           }
         },
+        "x-capability": "settings.webhooks",
+        "x-permission": {
+          "any": [
+            "webhooks.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -109013,6 +110137,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.webhooks",
+        "x-permission": {
+          "any": [
+            "webhooks.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -109369,6 +110500,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.webhooks",
+        "x-permission": {
+          "any": [
+            "webhooks.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -109530,6 +110668,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.webhooks",
+        "x-permission": {
+          "any": [
+            "webhooks.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -109772,6 +110917,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.webhooks",
+        "x-permission": {
+          "any": [
+            "webhooks.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -110545,6 +111697,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.webhooks",
+        "x-permission": {
+          "any": [
+            "webhooks.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -111252,6 +112411,13 @@
             }
           }
         },
+        "x-capability": "settings.streams",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -111752,6 +112918,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.streams",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -112085,6 +113258,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.streams",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -112229,6 +113409,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.streams",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -112823,6 +114010,13 @@
             }
           }
         },
+        "x-capability": "settings.sandbox",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -113386,6 +114580,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.sandbox",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -113875,6 +115076,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.features.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -114291,6 +115499,13 @@
             }
           }
         },
+        "x-capability": "settings.branding.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -114612,6 +115827,13 @@
         "tags": [
           "settings"
         ],
+        "x-capability": "settings.branding.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -114930,6 +116152,13 @@
         "tags": [
           "settings"
         ],
+        "x-capability": "settings.branding.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -118132,6 +119361,13 @@
             "required": true
           }
         ],
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -118393,6 +119629,13 @@
               }
             }
           }
+        },
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
         },
         "responses": {
           "200": {
@@ -118889,6 +120132,13 @@
             }
           }
         },
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -119339,6 +120589,13 @@
               }
             }
           }
+        },
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
         },
         "responses": {
           "200": {
@@ -119825,6 +121082,13 @@
         "tags": [
           "billing"
         ],
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -119973,6 +121237,13 @@
         "tags": [
           "billing"
         ],
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -120121,6 +121392,13 @@
               }
             }
           }
+        },
+        "x-capability": "company.billing",
+        "x-permission": {
+          "any": [
+            "billing.manage"
+          ],
+          "all": []
         },
         "responses": {
           "200": {
@@ -121524,6 +122802,13 @@
             }
           }
         },
+        "x-capability": "help.support",
+        "x-permission": {
+          "any": [
+            "support.ticket"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -122159,6 +123444,13 @@
             "required": true
           }
         ],
+        "x-capability": "help.support",
+        "x-permission": {
+          "any": [
+            "support.ticket"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -122378,6 +123670,13 @@
             "required": true
           }
         ],
+        "x-capability": "help.support",
+        "x-permission": {
+          "any": [
+            "support.ticket"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -122521,6 +123820,13 @@
             "required": true
           }
         ],
+        "x-capability": "help.support",
+        "x-permission": {
+          "any": [
+            "support.ticket"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -137286,6 +138592,13 @@
             }
           }
         },
+        "x-capability": "settings.securityCentre.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -137489,6 +138802,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.securityCentre.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -138126,6 +139446,14 @@
             }
           }
         },
+        "x-capability": "settings.askHr.manage",
+        "x-permission": {
+          "any": [
+            "settings.manage",
+            "documents.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -138498,6 +139826,13 @@
         "tags": [
           "ai"
         ],
+        "x-capability": "settings.askHr.sources",
+        "x-permission": {
+          "any": [
+            "documents.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "202": {
             "description": "Default Response",
@@ -138617,6 +139952,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.askHr.sources",
+        "x-permission": {
+          "any": [
+            "documents.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -138794,6 +140136,13 @@
               }
             }
           }
+        },
+        "x-capability": "askHr.ask",
+        "x-permission": {
+          "any": [
+            "ai.ask"
+          ],
+          "all": []
         },
         "responses": {
           "200": {
@@ -139144,6 +140493,13 @@
             "required": true
           }
         ],
+        "x-capability": "askHr.ask",
+        "x-permission": {
+          "any": [
+            "ai.ask"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -139687,6 +141043,13 @@
               }
             }
           }
+        },
+        "x-capability": "settings.roles.manage",
+        "x-permission": {
+          "any": [
+            "roles.manage"
+          ],
+          "all": []
         },
         "responses": {
           "201": {
@@ -140272,6 +141635,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.roles.manage",
+        "x-permission": {
+          "any": [
+            "roles.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "200": {
             "description": "Default Response",
@@ -140619,6 +141989,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.roles.manage",
+        "x-permission": {
+          "any": [
+            "roles.manage"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"
@@ -141371,6 +142748,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.users.assign",
+        "x-permission": {
+          "any": [
+            "roles.assign"
+          ],
+          "all": []
+        },
         "responses": {
           "201": {
             "description": "Default Response",
@@ -141728,6 +143112,13 @@
             "required": true
           }
         ],
+        "x-capability": "settings.users.assign",
+        "x-permission": {
+          "any": [
+            "roles.assign"
+          ],
+          "all": []
+        },
         "responses": {
           "204": {
             "description": "Default Response"

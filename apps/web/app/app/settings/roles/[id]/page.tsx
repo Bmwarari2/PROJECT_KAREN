@@ -4,13 +4,13 @@ import { useParams } from 'next/navigation';
 import { EmptyState, Skeleton } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { hasPermission, useSession } from '../../../shell';
+import { useCan } from '../../../shell';
 import { RoleEditor } from '../role-editor';
 import type { Role } from '../shared';
 
 export default function RolePage() {
   const t = useT();
-  const session = useSession();
+  const can = useCan();
   const { id } = useParams<{ id: string }>();
   const { data, error } = useApi<Role>(`/v1/roles/${id}`);
   if (error)
@@ -19,5 +19,5 @@ export default function RolePage() {
     );
   if (!data) return <Skeleton className="h-96 w-full" />;
   // keyed by version so a reload after saving re-seeds the form
-  return <RoleEditor key={data.updatedAt} role={data} canManage={hasPermission(session, 'roles.manage')} />;
+  return <RoleEditor key={data.updatedAt} role={data} canManage={can('settings.roles.manage')} />;
 }

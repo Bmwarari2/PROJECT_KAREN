@@ -30,9 +30,9 @@ import {
   SettingsCard,
   useAction,
   useOrg,
-  usePermission,
   useRoleName,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 interface Trigger {
@@ -84,7 +84,13 @@ function AbsencePolicy() {
         publicAgency: agencyValue,
       },
     };
-    if (await action.run(() => api('/v1/settings/absence', { method: 'PUT', json: body }), t('admin.saved')))
+    if (
+      await action.run(
+        () =>
+          api('/v1/settings/absence', { method: 'PUT', json: body, capability: 'settings.absence.manage' }),
+        t('admin.saved'),
+      )
+    )
       settings.reload();
   }
 
@@ -205,7 +211,8 @@ function Triggers() {
     };
     if (
       await action.run(
-        () => api('/v1/absence/triggers', { method: 'POST', json: body }),
+        () =>
+          api('/v1/absence/triggers', { method: 'POST', json: body, capability: 'settings.absence.manage' }),
         t('admin.absence.triggerCreated'),
       )
     ) {
@@ -382,7 +389,7 @@ function CoverRules() {
     };
     if (
       await action.run(
-        () => api('/v1/leave/cover-rules', { method: 'POST', json: body }),
+        () => api('/v1/leave/cover-rules', { method: 'POST', json: body, capability: 'settings.coverRules' }),
         t('admin.absence.coverCreated'),
       )
     ) {
@@ -528,17 +535,17 @@ function CoverRules() {
 /** Absence policy, trigger alerts (Bradford Factor, number of spells) and minimum-cover rules. */
 export default function AbsenceSettingsPage() {
   const t = useT();
-  const has = usePermission();
+  const can = useCan();
   return (
     <>
       <PageHeader title={t('admin.section.absence.title')} lead={t('admin.absence.lead')} />
-      {has('absence.manage') ? (
+      {can('settings.absence.manage') ? (
         <>
           <AbsencePolicy />
           <Triggers />
         </>
       ) : null}
-      {has('leave.manage') ? <CoverRules /> : null}
+      {can('settings.coverRules') ? <CoverRules /> : null}
     </>
   );
 }

@@ -26,6 +26,7 @@ import { AttachDialog } from '@/components/documents/attach-dialog';
 import { EntityLink, PersonLink, ROW_LINK } from '@/components/person-link';
 import { personHref, targetHref } from '@thapsus/core/links';
 import { selectClass, SourceLink, StatusBadge } from '../ui';
+import { useCan } from '../../shell';
 
 interface Row {
   employeeId: string;
@@ -56,6 +57,10 @@ export default function RightToWorkPage() {
   const toast = useToast();
   const rows = useApi<Row[]>('/v1/compliance/right-to-work');
   const rules = useApi<Rules>('/v1/compliance/right-to-work/rules');
+  // readers see the list; recording a check and attaching evidence need their own capabilities (ADR-0188)
+  const can = useCan();
+  const canRecord = can('compliance.record');
+  const canAttach = can('people.documents.attach');
   const [open, setOpen] = React.useState<Row | null>(null);
   // the evidence itself is attached to the person's documents and kept in the vault (ADR-0166)
   const [attachFor, setAttachFor] = React.useState<Row | null>(null);
@@ -93,6 +98,7 @@ export default function RightToWorkPage() {
           documentReference: form.documentReference || undefined,
           shareCode: form.shareCode || undefined,
         },
+        capability: 'compliance.record',
       });
       toast({
         title: r.followUpDueOn
@@ -194,16 +200,18 @@ export default function RightToWorkPage() {
                   <TD className="text-right">
                     {/* above the row's stretched name link on phones */}
                     <span className="relative z-10 inline-flex flex-wrap justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setAttachFor(r)}
-                        aria-label={t('docAttach.rtwAttachFor', { name: r.employeeName })}
-                      >
-                        <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                        {t('docAttach.rtwAttach')}
-                      </Button>
-                      {r.status !== 'retention' ? (
+                      {canAttach ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setAttachFor(r)}
+                          aria-label={t('docAttach.rtwAttachFor', { name: r.employeeName })}
+                        >
+                          <Paperclip aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                          {t('docAttach.rtwAttach')}
+                        </Button>
+                      ) : null}
+                      {r.status !== 'retention' && canRecord ? (
                         <Button
                           size="sm"
                           variant="secondary"

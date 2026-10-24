@@ -366,7 +366,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.put(
     '/v1/billing/accounts/:id/details',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Company billing details and billing contacts (failed-payment emails go to every contact)',
@@ -464,7 +464,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/billing/quote',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Price and change preview for the current headcount (nothing is changed)',
@@ -514,7 +514,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/billing/subscription',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Choose a self-serve plan, term and currency (keeps any trial days left)',
@@ -554,7 +554,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/billing/subscription/change',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Upgrade (now, prorated) or downgrade (end of the paid period)',
@@ -583,7 +583,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/billing/subscription/cancel',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Cancel with notice: ends at the first period end after the notice period',
@@ -600,7 +600,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/billing/subscription/reactivate',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Withdraw a cancellation before it takes effect',
@@ -618,7 +618,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/billing/payment-method',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'company.billing' },
       schema: {
         tags: ['billing'],
         summary: 'Start a hosted page to add a card (card details never reach Thapsus-HR)',

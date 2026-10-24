@@ -69,7 +69,7 @@ export async function hrRequestRoutes(app: FastifyInstance) {
   app.post(
     '/v1/hr-requests',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'help.contactHr.ask' },
       schema: {
         tags: ['tasks'],
         summary: 'Ask the HR team a question or make a request (lands in their task inbox)',

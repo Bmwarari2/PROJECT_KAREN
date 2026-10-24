@@ -92,7 +92,7 @@ export async function matrixRoutes(app: FastifyInstance) {
   app.post(
     '/v1/compliance/requirements',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'compliance.manage' },
       schema: { tags: ['compliance'], body: RequirementBody, response: { 201: Requirement, 403: Problem } },
     },
     async (req, reply) => {
@@ -174,7 +174,7 @@ export async function matrixRoutes(app: FastifyInstance) {
   app.post(
     '/v1/compliance/records',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'compliance.record' },
       schema: {
         tags: ['compliance'],
         summary: 'Record a licence, certificate, background check or training completion for an employee',

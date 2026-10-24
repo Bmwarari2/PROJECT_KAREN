@@ -70,7 +70,7 @@ export default function TaskPage() {
   async function complete() {
     setBusy(true);
     try {
-      await api(`/v1/tasks/${id}/complete`, { method: 'POST' });
+      await api(`/v1/tasks/${id}/complete`, { method: 'POST', capability: 'inbox.tasks.complete' });
       toast({ title: t('actionable.task.completed'), tone: 'success' });
       reload();
     } catch (err) {

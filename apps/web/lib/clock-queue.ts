@@ -1,5 +1,6 @@
 'use client';
 import { compareInstants } from '@thapsus/core/time';
+import type { CapabilityKey } from '@thapsus/core/capabilities';
 import { api, ApiProblem } from './api';
 
 /**
@@ -52,15 +53,27 @@ export function enqueue(userId: string, p: QueuedPunch): QueuedPunch[] {
 
 let inFlight: Promise<SyncResult | null> | null = null;
 
-/** Sends everything queued; entries the server answered (created, duplicate or rejected) leave the queue. */
-export function syncQueue(userId: string): Promise<SyncResult | null> {
+/**
+ * Sends everything queued; entries the server answered (created, duplicate or rejected) leave the queue.
+ * Punches are sent only for someone who may clock in (`can` from the shell, ADR-0188); otherwise they stay
+ * on the device.
+ */
+export function syncQueue(
+  userId: string,
+  can: (capability: CapabilityKey) => boolean,
+): Promise<SyncResult | null> {
+  if (!can('time.clock.punch')) return Promise.resolve(null);
   if (inFlight) return inFlight;
   const run = async (): Promise<SyncResult | null> => {
     try {
       const q = readQueue(userId);
       if (!q.length) return null;
       const batch = q.slice(0, 200);
-      const r = await api<SyncResult>('/v1/clock/events', { method: 'POST', json: { events: batch } });
+      const r = await api<SyncResult>('/v1/clock/events', {
+        method: 'POST',
+        json: { events: batch },
+        capability: 'time.clock.punch',
+      });
       const answered = new Set(r.results.map((x) => x.clientEventId));
       writeQueue(
         userId,

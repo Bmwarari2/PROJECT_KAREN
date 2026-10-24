@@ -25,13 +25,13 @@ import {
 import { formatDate, formatMoney, numberFormat, type Locale } from '@thapsus/core/i18n';
 import { money, parseDecimal } from '@thapsus/core/money';
 import { today } from '@thapsus/core/time';
-import { api, ApiProblem } from '@/lib/api';
+import { api, apiFetch, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/zone';
 import { Avatar } from '@/components/dashboard/parts';
 import { PersonLink } from '@/components/person-link';
-import { PageTitle, hasPermission, useSession } from '../../shell';
+import { PageTitle, useCan, useSession } from '../../shell';
 import type { LeaveBalance } from '@/components/leave-balances';
 import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
 import { PersonDocuments } from '@/components/documents/person-documents';
@@ -142,13 +142,15 @@ export default function EmployeePage() {
   const [effectiveDate, setEffectiveDate] = React.useState(() => today(viewerZone(session?.timeZone)));
   const [saving, setSaving] = React.useState(false);
   const [inviting, setInviting] = React.useState(false);
-  const canInvite = hasPermission(session, 'users.invite');
+  // each action's capability in the permission map (ADR-0188); the API still checks the person's scope
+  const can = useCan();
+  const canInvite = can('people.invite');
   const balances = useApi<LeaveBalance[]>(`/v1/leave/balances/${id}`);
   // the tab is part of the address, so a link can open the profile on it and the back button returns to it
   const path = usePathname();
   const search = useSearchParams();
   const asked = (search.get('tab') ?? 'overview') as Tab;
-  const canCompliance = hasPermission(session, 'compliance.read');
+  const canCompliance = can('people.compliance');
   const available: Record<Tab, boolean> = {
     overview: true,
     history: !!history.data,
@@ -172,7 +174,7 @@ export default function EmployeePage() {
     );
   if (!data) return <Skeleton className="h-96 w-full" />;
   const e = data.employee;
-  const writable = EDITABLE.filter((f) => data.access[f] === 'write');
+  const writable = can('people.changes') ? EDITABLE.filter((f) => data.access[f] === 'write') : [];
 
   async function save(ev: React.FormEvent) {
     ev.preventDefault();
@@ -188,10 +190,10 @@ export default function EmployeePage() {
             ? Number(parseDecimal(v, String(e.payCurrency ?? 'GBP')).amountMinor)
             : v;
       }
-      const res = await fetch(`/v1/employees/${id}/changes`, {
+      const res = await apiFetch(`/v1/employees/${id}/changes`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
+        json: body,
+        capability: 'people.changes',
       });
       if (!res.ok) throw new ApiProblem(res.status, 'error', (await res.json()).title, {});
       toast({
@@ -312,10 +314,10 @@ export default function EmployeePage() {
                 </DialogContent>
               </Dialog>
             ) : null}
-            {hasPermission(session, 'employees.update') && e.status !== 'leaver' ? (
+            {can('people.edit') && e.status !== 'leaver' ? (
               <TransferDialog employeeId={id} name={name} onDone={() => (reload(), history.reload())} />
             ) : null}
-            {hasPermission(session, 'employees.terminate') && e.status !== 'leaver' && !e.endDate ? (
+            {can('people.terminate') && e.status !== 'leaver' && !e.endDate ? (
               <LeaverDialog employeeId={id} name={name} onDone={reload} />
             ) : null}
             {canInvite ? (
@@ -325,7 +327,11 @@ export default function EmployeePage() {
                 onClick={async () => {
                   setInviting(true);
                   try {
-                    await api(`/v1/employees/${id}/invite`, { method: 'POST', json: {} });
+                    await api(`/v1/employees/${id}/invite`, {
+                      method: 'POST',
+                      json: {},
+                      capability: 'people.invite',
+                    });
                     toast({ title: t('people.invited'), tone: 'success' });
                   } catch (err) {
                     toast({
@@ -415,7 +421,7 @@ export default function EmployeePage() {
             <BalancesPanel
               employeeId={id}
               name={String(e.displayName ?? '')}
-              canAdjust={hasPermission(session, 'leave.adjust')}
+              canAdjust={can('time.leave.adjust')}
               balances={balances.data}
               onChanged={balances.reload}
             />
@@ -430,7 +436,7 @@ export default function EmployeePage() {
           <PersonDocuments
             employeeId={id}
             name={String(e.displayName ?? '')}
-            canAttach={hasPermission(session, 'documents.manage')}
+            canAttach={can('people.documents.attach')}
           />
         </TabsContent>
       </Tabs>

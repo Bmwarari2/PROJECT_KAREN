@@ -155,7 +155,11 @@ function DestinationForm({
             },
           };
     try {
-      await api('/v1/data-exports/destinations', { method: 'POST', json: body });
+      await api('/v1/data-exports/destinations', {
+        method: 'POST',
+        json: body,
+        capability: 'reports.exports.destinations',
+      });
       toast({ title: t('reports.exports.destinationAdded'), tone: 'success' });
       onDone();
     } catch (err) {
@@ -407,6 +411,7 @@ function ExportForm({
           ...(form.frequency === 'monthly' ? { dayOfMonth: form.dayOfMonth } : {}),
           datasets: selected.map(([dataset, f]) => ({ dataset, fields: f })),
         },
+        capability: 'reports.exports.schedule',
       });
       toast({ title: t('reports.exports.exportCreated'), tone: 'success' });
       onDone();
@@ -798,7 +803,11 @@ export default function ExportsPage() {
                         variant="secondary"
                         onClick={() =>
                           act(
-                            () => api(`/v1/data-exports/destinations/${d.id}/test`, { method: 'POST' }),
+                            () =>
+                              api(`/v1/data-exports/destinations/${d.id}/test`, {
+                                method: 'POST',
+                                capability: 'reports.exports.destinations',
+                              }),
                             'reports.exports.testOk',
                             errorText,
                           )
@@ -813,7 +822,11 @@ export default function ExportsPage() {
                         aria-label={t('reports.exports.deleteNamed', { name: d.name })}
                         onClick={() =>
                           act(
-                            () => api(`/v1/data-exports/destinations/${d.id}`, { method: 'DELETE' }),
+                            () =>
+                              api(`/v1/data-exports/destinations/${d.id}`, {
+                                method: 'DELETE',
+                                capability: 'reports.exports.destinations',
+                              }),
                             'reports.exports.deleted',
                           )
                         }
@@ -889,7 +902,11 @@ export default function ExportsPage() {
                         variant="secondary"
                         onClick={() =>
                           act(
-                            () => api(`/v1/data-exports/${x.id}/run`, { method: 'POST' }),
+                            () =>
+                              api(`/v1/data-exports/${x.id}/run`, {
+                                method: 'POST',
+                                capability: 'reports.exports.schedule',
+                              }),
                             'reports.exports.runQueued',
                           )
                         }
@@ -906,6 +923,7 @@ export default function ExportsPage() {
                               api(`/v1/data-exports/${x.id}`, {
                                 method: 'PATCH',
                                 json: { enabled: !x.enabled },
+                                capability: 'reports.exports.schedule',
                               }),
                             x.enabled ? 'reports.schedules.paused' : 'reports.schedules.resumed',
                           )
@@ -919,7 +937,11 @@ export default function ExportsPage() {
                         aria-label={t('reports.exports.deleteNamed', { name: x.name })}
                         onClick={() =>
                           act(
-                            () => api(`/v1/data-exports/${x.id}`, { method: 'DELETE' }),
+                            () =>
+                              api(`/v1/data-exports/${x.id}`, {
+                                method: 'DELETE',
+                                capability: 'reports.exports.schedule',
+                              }),
                             'reports.exports.deleted',
                           )
                         }

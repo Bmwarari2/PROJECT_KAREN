@@ -885,7 +885,7 @@ export async function documentRoutes(app: FastifyInstance) {
   app.post(
     '/v1/signature-requests/:id/sign',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'documents.sign' },
       schema: {
         tags: ['documents'],
         summary:
@@ -1092,7 +1092,7 @@ export async function documentRoutes(app: FastifyInstance) {
   app.post(
     '/v1/document-folders',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'documents.manage' },
       schema: {
         tags: ['documents'],
         body: Type.Object({

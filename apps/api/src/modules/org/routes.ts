@@ -169,7 +169,7 @@ export async function orgRoutes(app: FastifyInstance) {
     app.post(
       base,
       {
-        config: { selfAudited: true },
+        config: { selfAudited: true, capability: 'settings.organisation' },
         schema: {
           tags: ['organisation'],
           body: res.body,
@@ -205,7 +205,7 @@ export async function orgRoutes(app: FastifyInstance) {
     app.patch(
       base + '/:id',
       {
-        config: { selfAudited: true },
+        config: { selfAudited: true, capability: 'settings.organisation' },
         schema: {
           tags: ['organisation'],
           params: Type.Object({ id: Uuid }),

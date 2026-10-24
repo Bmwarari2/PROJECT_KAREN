@@ -161,6 +161,7 @@ export default function AuditStreamsPage() {
       const r = await api<Stream & { secret: string | null }>('/v1/settings/audit-streams', {
         method: 'POST',
         json: body,
+        capability: 'settings.streams',
       });
       setCreated(
         r.kind === 'https'
@@ -190,11 +191,16 @@ export default function AuditStreamsPage() {
         await api(`/v1/settings/audit-streams/${s.id}`, {
           method: 'PATCH',
           json: { status: s.status === 'active' ? 'paused' : 'active' },
+          capability: 'settings.streams',
         });
       else if (action === 'sync') {
-        await api(`/v1/settings/audit-streams/${s.id}/sync`, { method: 'POST' });
+        await api(`/v1/settings/audit-streams/${s.id}/sync`, {
+          method: 'POST',
+          capability: 'settings.streams',
+        });
         toast({ title: t('platform.streams.syncQueued'), tone: 'success' });
-      } else await api(`/v1/settings/audit-streams/${s.id}`, { method: 'DELETE' });
+      } else
+        await api(`/v1/settings/audit-streams/${s.id}`, { method: 'DELETE', capability: 'settings.streams' });
       streams.reload();
     } catch (err) {
       toast({ title: errorText(t, err), tone: 'danger' });

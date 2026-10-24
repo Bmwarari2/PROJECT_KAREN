@@ -110,7 +110,11 @@ export default function ExportsPage() {
             onClick={() =>
               act(
                 'export',
-                () => api('/v1/privacy/company-exports', { method: 'POST' }).then(exports.reload),
+                () =>
+                  api('/v1/privacy/company-exports', {
+                    method: 'POST',
+                    capability: 'privacy.companyExport',
+                  }).then(exports.reload),
                 t('privacy.ui.exports.started'),
               )
             }
@@ -220,7 +224,11 @@ export default function ExportsPage() {
                 onClick={() =>
                   act(
                     'cancel',
-                    () => api('/v1/privacy/closure/cancel', { method: 'POST' }).then(closure.reload),
+                    () =>
+                      api('/v1/privacy/closure/cancel', {
+                        method: 'POST',
+                        capability: 'privacy.closure',
+                      }).then(closure.reload),
                     t('privacy.ui.closure.cancelled'),
                   )
                 }
@@ -241,6 +249,7 @@ export default function ExportsPage() {
                   api('/v1/privacy/closure', {
                     method: 'POST',
                     json: { confirmWorkspace: confirm, reason: reason || undefined },
+                    capability: 'privacy.closure',
                   }).then(closure.reload),
                 t('privacy.ui.closure.scheduledToast'),
               );

@@ -274,8 +274,16 @@ function ChainEditor({ policy, onDone }: { policy: Policy | null; onDone: (saved
     const ok = await action.run(
       () =>
         policy
-          ? api(`/v1/approval-policies/${policy.id}`, { method: 'PUT', json: body })
-          : api('/v1/approval-policies', { method: 'POST', json: body }),
+          ? api(`/v1/approval-policies/${policy.id}`, {
+              method: 'PUT',
+              json: body,
+              capability: 'settings.approvalChains',
+            })
+          : api('/v1/approval-policies', {
+              method: 'POST',
+              json: body,
+              capability: 'settings.approvalChains',
+            }),
       t('admin.approvals.saved'),
     );
     if (ok) onDone(true);

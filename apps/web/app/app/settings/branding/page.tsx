@@ -1,11 +1,13 @@
 'use client';
 import * as React from 'react';
 import { Button, Card, colors, Field, Input, Skeleton, useToast, PageSection } from '@thapsus/ui';
-import { api, ApiProblem } from '@/lib/api';
+import { api, apiFetch, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { errorText, FeatureOff, PageHeader } from '@/components/platform';
-import { useExperience, useFeature } from '../../shell';
+import { DetailList } from '@/components/detail-list';
+import { useCan, useExperience, useFeature } from '../../shell';
+import { ReadOnlyNote } from '../kit';
 import { useSectionLevel } from '@/components/module-page';
 
 interface Palette {
@@ -64,6 +66,9 @@ export default function BrandingPage() {
   const sec = useSectionLevel();
   const toast = useToast();
   const enabled = useFeature('customBranding');
+  // an HR admin may look (settings.read) but only workspace settings admins change it (ADR-0188)
+  const can = useCan();
+  const canManage = can('settings.branding.manage');
   const { reload } = useExperience();
   const branding = useApi<Branding>(enabled ? '/v1/settings/branding' : null);
   const [light, setLight] = React.useState('');
@@ -100,6 +105,7 @@ export default function BrandingPage() {
         json: reset
           ? { accentLight: null }
           : { accentLight: light, accentDark: separateDark && dark ? dark : null },
+        capability: 'settings.branding.manage',
       });
       branding.setData(next);
       reload();
@@ -119,10 +125,10 @@ export default function BrandingPage() {
     if (!file) return;
     const body = new FormData();
     body.append('file', file);
-    const res = await fetch('/v1/settings/branding/logo', {
+    const res = await apiFetch('/v1/settings/branding/logo', {
       method: 'POST',
       body,
-      credentials: 'same-origin',
+      capability: 'settings.branding.manage',
     });
     if (res.ok) {
       branding.setData(await res.json());
@@ -136,7 +142,12 @@ export default function BrandingPage() {
     }
   }
   async function removeLogo() {
-    branding.setData(await api<Branding>('/v1/settings/branding/logo', { method: 'DELETE' }));
+    branding.setData(
+      await api<Branding>('/v1/settings/branding/logo', {
+        method: 'DELETE',
+        capability: 'settings.branding.manage',
+      }),
+    );
     reload();
   }
 
@@ -151,7 +162,34 @@ export default function BrandingPage() {
       >
         <Card>
           {!branding.data ? <Skeleton className="h-24" /> : null}
-          <form onSubmit={save} className={branding.data ? 'mt-4 flex flex-col gap-4' : 'hidden'} noValidate>
+          {branding.data && !canManage ? (
+            <div className="flex flex-col gap-4">
+              <ReadOnlyNote />
+              <DetailList
+                items={[
+                  {
+                    key: 'light',
+                    label: t('platform.branding.accentLight'),
+                    value: branding.data.accentLight ?? t('visibility.branding.defaultAccent'),
+                  },
+                  {
+                    key: 'dark',
+                    label: t('platform.branding.accentDark'),
+                    value:
+                      branding.data.accentDark ??
+                      (branding.data.accentLight
+                        ? t('visibility.branding.sameAsLight')
+                        : t('visibility.branding.defaultAccent')),
+                  },
+                ]}
+              />
+            </div>
+          ) : null}
+          <form
+            onSubmit={save}
+            className={branding.data && canManage ? 'mt-4 flex flex-col gap-4' : 'hidden'}
+            noValidate
+          >
             <div className="grid gap-4 md:grid-cols-2">
               <Field
                 id="accent-light"
@@ -247,31 +285,37 @@ export default function BrandingPage() {
                 alt={t('platform.branding.logoAlt')}
                 className="h-12 max-w-[200px] object-contain"
               />
-              <Button size="sm" variant="secondary" onClick={removeLogo}>
-                {t('platform.branding.removeLogo')}
-              </Button>
+              {canManage ? (
+                <Button size="sm" variant="secondary" onClick={removeLogo}>
+                  {t('platform.branding.removeLogo')}
+                </Button>
+              ) : null}
             </div>
+          ) : !canManage ? (
+            <p className="text-callout text-text-secondary">{t('visibility.branding.noLogo')}</p>
           ) : null}
-          <form onSubmit={upload} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field
-              id="logo-file"
-              label={t('platform.branding.logoFile')}
-              hint={t('platform.branding.logoHint')}
-            >
-              {(p) => (
-                <input
-                  {...p}
-                  ref={fileRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="text-callout"
-                />
-              )}
-            </Field>
-            <Button type="submit" variant="secondary">
-              {t('platform.branding.upload')}
-            </Button>
-          </form>
+          {canManage ? (
+            <form onSubmit={upload} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <Field
+                id="logo-file"
+                label={t('platform.branding.logoFile')}
+                hint={t('platform.branding.logoHint')}
+              >
+                {(p) => (
+                  <input
+                    {...p}
+                    ref={fileRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="text-callout"
+                  />
+                )}
+              </Field>
+              <Button type="submit" variant="secondary">
+                {t('platform.branding.upload')}
+              </Button>
+            </form>
+          ) : null}
         </Card>
       </PageSection>
     </div>

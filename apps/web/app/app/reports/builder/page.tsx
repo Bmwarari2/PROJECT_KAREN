@@ -170,7 +170,11 @@ export default function BuilderPage() {
     async (s: Spec) => {
       setBusy(true);
       try {
-        const data = await api<ReportResult>('/v1/reports/builder/preview', { method: 'POST', json: s });
+        const data = await api<ReportResult>('/v1/reports/builder/preview', {
+          method: 'POST',
+          json: s,
+          capability: 'reports.builder',
+        });
         setResult({ data, groups: s.groupBy?.length ?? 0 });
         setStale(false);
       } catch (err) {
@@ -265,10 +269,21 @@ export default function BuilderPage() {
     try {
       let id: string;
       if (savedReport?.mine) {
-        await api(`/v1/reports/saved/${savedReport.id}`, { method: 'PUT', json: body });
+        await api(`/v1/reports/saved/${savedReport.id}`, {
+          method: 'PUT',
+          json: body,
+          capability: 'reports.builder',
+        });
         id = savedReport.id;
         saved.reload();
-      } else id = (await api<{ id: string }>('/v1/reports/saved', { method: 'POST', json: body })).id;
+      } else
+        id = (
+          await api<{ id: string }>('/v1/reports/saved', {
+            method: 'POST',
+            json: body,
+            capability: 'reports.builder',
+          })
+        ).id;
       toast({ title: t('reports.saved.done'), tone: 'success' });
       setSaveOpen(false);
       if (scheduleNext) router.push(`/app/reports/schedules?report=${id}`);

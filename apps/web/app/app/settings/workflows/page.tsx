@@ -28,10 +28,10 @@ import {
   SettingsCard,
   useAction,
   useOrg,
-  usePermission,
   useRoleName,
   type AssigneeDraft,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 type Kind = 'onboarding' | 'offboarding' | 'transfer' | 'custom';
@@ -129,7 +129,12 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
     };
     if (
       await action.run(
-        () => api('/v1/workflow-templates', { method: 'POST', json: body }),
+        () =>
+          api('/v1/workflow-templates', {
+            method: 'POST',
+            json: body,
+            capability: 'settings.workflows.manage',
+          }),
         t('admin.workflows.saved'),
       )
     )
@@ -390,7 +395,7 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
 export default function WorkflowsPage() {
   const t = useT();
   const sec = useSectionLevel();
-  const has = usePermission();
+  const can = useCan();
   const templates = useApi<Template[]>('/v1/workflow-templates');
   const entities = useOrg('legal-entities');
   const [adding, setAdding] = React.useState(false);
@@ -399,7 +404,7 @@ export default function WorkflowsPage() {
   return (
     <>
       <PageHeader title={t('admin.section.workflows.title')} lead={t('admin.workflows.lead')}>
-        {has('workflows.manage') && !adding ? (
+        {can('settings.workflows.manage') && !adding ? (
           <Button onClick={() => setAdding(true)}>
             <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('admin.workflows.new')}

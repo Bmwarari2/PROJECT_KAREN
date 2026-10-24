@@ -108,6 +108,7 @@ export default function ReadyReportPage() {
         await api<ReportResult>(`/v1/reports/ready/${def!.id}/run`, {
           method: 'POST',
           json: { params: params() },
+          capability: 'reports.run',
         }),
       );
     } catch (err) {
@@ -135,10 +136,20 @@ export default function ReadyReportPage() {
     try {
       let savedReport: string;
       if (saved.data?.mine) {
-        await api(`/v1/reports/saved/${saved.data.id}`, { method: 'PUT', json: body });
+        await api(`/v1/reports/saved/${saved.data.id}`, {
+          method: 'PUT',
+          json: body,
+          capability: 'reports.run',
+        });
         savedReport = saved.data.id;
       } else
-        savedReport = (await api<{ id: string }>('/v1/reports/saved', { method: 'POST', json: body })).id;
+        savedReport = (
+          await api<{ id: string }>('/v1/reports/saved', {
+            method: 'POST',
+            json: body,
+            capability: 'reports.run',
+          })
+        ).id;
       toast({ title: t('reports.saved.done'), tone: 'success' });
       setSaveOpen(false);
       if (scheduleNext) router.push(`/app/reports/schedules?report=${savedReport}`);

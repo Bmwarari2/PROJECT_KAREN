@@ -242,7 +242,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.put(
     '/v1/ai/settings',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.askHr.manage' },
       schema: {
         tags: ['ai'],
         body: Type.Object(
@@ -300,7 +300,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post(
     '/v1/ai/reindex',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.askHr.sources' },
       schema: { tags: ['ai'], response: { 202: Type.Object({ jobId: Uuid }), 403: Problem } },
     },
     async (req, reply) => {
@@ -324,7 +324,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post(
     '/v1/ai/policy-documents',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.askHr.sources' },
       schema: {
         tags: ['ai'],
         body: Type.Object(
@@ -388,7 +388,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post(
     '/v1/ai/ask',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'askHr.ask' },
       schema: {
         tags: ['ai'],
         body: Type.Object(
@@ -572,7 +572,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post(
     '/v1/ai/questions/:id/feedback',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'askHr.ask' },
       schema: {
         tags: ['ai'],
         params: Type.Object({ id: Uuid }),

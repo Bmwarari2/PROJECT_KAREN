@@ -21,7 +21,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useInModule, useSectionLevel } from '@/components/module-page';
-import { PageTitle, useSession } from '../shell';
+import { PageTitle, useCan, useSession } from '../shell';
 
 interface Onboarding {
   employee: {
@@ -82,6 +82,9 @@ export default function WelcomePage() {
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
+  const can = useCan();
+  // the starter fills in their own details (self.update_contact, ADR-0188)
+  const canEdit = can('me.details.edit');
   const inModule = useInModule();
   const sec = useSectionLevel();
   const { data, error, reload } = useApi<Onboarding>(session?.employeeId ? '/v1/me/onboarding' : null);
@@ -149,7 +152,9 @@ export default function WelcomePage() {
     for (const f of PERSONAL) if (personal[f]) body[f] = personal[f];
     if (ADDRESS.some((f) => address[f]))
       body.address = Object.fromEntries(ADDRESS.filter((f) => address[f]).map((f) => [f, address[f]]));
-    void run('personal', () => api(`/v1/employees/${e.id}/changes`, { method: 'POST', json: body }));
+    void run('personal', () =>
+      api(`/v1/employees/${e.id}/changes`, { method: 'POST', json: body, capability: 'me.details.edit' }),
+    );
   };
   const saveContact = (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -162,6 +167,7 @@ export default function WelcomePage() {
       api(`/v1/employees/${e.id}/emergency-contacts?effectiveDate=${data.formsEffectiveDate}`, {
         method: 'PUT',
         json: [c],
+        capability: 'people.emergencyContacts',
       }),
     );
   };
@@ -238,45 +244,47 @@ export default function WelcomePage() {
             <StatusBadge complete={data.forms.personalDetails.complete} />
           </div>
           <p className="mt-1 text-callout text-text-secondary">{t('onboarding.personalBody')}</p>
-          <form onSubmit={savePersonal} className="mt-4 flex flex-col gap-4">
-            {PERSONAL.map((f) => (
-              <Field key={f} id={`pd-${f}`} label={t(`people.field.${f}`)}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    type={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'text'}
-                    autoComplete={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'off'}
-                    value={personal[f] ?? ''}
-                    onChange={(ev) => setPersonal((v) => ({ ...v, [f]: ev.target.value }))}
-                  />
-                )}
-              </Field>
-            ))}
-            {ADDRESS.map((f) => (
-              <Field key={f} id={`pd-address-${f}`} label={t(ADDRESS_LABEL[f])}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    autoComplete={
-                      f === 'line1'
-                        ? 'address-line1'
-                        : f === 'city'
-                          ? 'address-level2'
-                          : f === 'postcode'
-                            ? 'postal-code'
-                            : 'country'
-                    }
-                    maxLength={f === 'country' ? 2 : 120}
-                    value={address[f] ?? ''}
-                    onChange={(ev) => setAddress((v) => ({ ...v, [f]: ev.target.value }))}
-                  />
-                )}
-              </Field>
-            ))}
-            <Button type="submit" className="self-start" loading={busy === 'personal'}>
-              {t('common.save')}
-            </Button>
-          </form>
+          {canEdit ? (
+            <form onSubmit={savePersonal} className="mt-4 flex flex-col gap-4">
+              {PERSONAL.map((f) => (
+                <Field key={f} id={`pd-${f}`} label={t(`people.field.${f}`)}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      type={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'text'}
+                      autoComplete={f === 'personalEmail' ? 'email' : f === 'personalPhone' ? 'tel' : 'off'}
+                      value={personal[f] ?? ''}
+                      onChange={(ev) => setPersonal((v) => ({ ...v, [f]: ev.target.value }))}
+                    />
+                  )}
+                </Field>
+              ))}
+              {ADDRESS.map((f) => (
+                <Field key={f} id={`pd-address-${f}`} label={t(ADDRESS_LABEL[f])}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      autoComplete={
+                        f === 'line1'
+                          ? 'address-line1'
+                          : f === 'city'
+                            ? 'address-level2'
+                            : f === 'postcode'
+                              ? 'postal-code'
+                              : 'country'
+                      }
+                      maxLength={f === 'country' ? 2 : 120}
+                      value={address[f] ?? ''}
+                      onChange={(ev) => setAddress((v) => ({ ...v, [f]: ev.target.value }))}
+                    />
+                  )}
+                </Field>
+              ))}
+              <Button type="submit" className="self-start" loading={busy === 'personal'}>
+                {t('common.save')}
+              </Button>
+            </form>
+          ) : null}
         </Card>
 
         <Card>
@@ -363,7 +371,12 @@ export default function WelcomePage() {
                     loading={busy === k.id}
                     aria-label={t('onboarding.markDone', { title: k.title })}
                     onClick={() =>
-                      void run(k.id, () => api(`/v1/tasks/${k.id}/complete`, { method: 'POST' }))
+                      void run(k.id, () =>
+                        api(`/v1/tasks/${k.id}/complete`, {
+                          method: 'POST',
+                          capability: 'inbox.tasks.complete',
+                        }),
+                      )
                     }
                   >
                     {t('onboarding.markDoneShort')}

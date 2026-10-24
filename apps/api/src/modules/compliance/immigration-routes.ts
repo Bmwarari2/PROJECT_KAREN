@@ -199,7 +199,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
   app.post(
     '/v1/compliance/right-to-work/checks',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'compliance.record' },
       schema: {
         tags: ['compliance'],
         summary: 'Record a right-to-work check; the follow-up date is calculated from the GB pack',
@@ -616,7 +616,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
   app.post(
     '/v1/compliance/i9',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'compliance.record' },
       schema: {
         tags: ['compliance'],
         summary: 'Create or update the Form I-9 record for an employment (deadlines from the US pack)',
@@ -708,7 +708,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/compliance/i9/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'compliance.record' },
       schema: {
         tags: ['compliance'],
         summary:

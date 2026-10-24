@@ -167,6 +167,8 @@ export const PERMISSION_CATALOGUE: PermissionArea[] = [
     permissions: [p('assets.read_own'), p('assets.acknowledge'), p('assets.read'), p('assets.manage', true)],
   },
   { area: 'integrations', permissions: [p('integrations.read', true), p('integrations.manage', true)] },
+  // SCIM provisioning tokens, without the rest of the workspace settings (IT admins, ADR-0189)
+  { area: 'scim', permissions: [p('scim.manage', true)] },
   { area: 'webhooks', permissions: [p('webhooks.manage', true)] },
   { area: 'billing', permissions: [p('billing.manage', true)] },
   {

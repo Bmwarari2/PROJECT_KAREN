@@ -83,7 +83,11 @@ export default function AskHrPage() {
     if (q.length < 3) return;
     setBusy(true);
     try {
-      const result = await api<Answer>('/v1/ai/ask', { method: 'POST', json: { question: q } });
+      const result = await api<Answer>('/v1/ai/ask', {
+        method: 'POST',
+        json: { question: q },
+        capability: 'askHr.ask',
+      });
       setExchanges((xs) => [{ key: result.id, question: q, result }, ...xs]);
       setQuestion('');
     } catch (err) {
@@ -95,7 +99,11 @@ export default function AskHrPage() {
 
   async function rate(x: Exchange, rating: 'helpful' | 'not_helpful') {
     try {
-      await api(`/v1/ai/questions/${x.result.id}/feedback`, { method: 'POST', json: { rating } });
+      await api(`/v1/ai/questions/${x.result.id}/feedback`, {
+        method: 'POST',
+        json: { rating },
+        capability: 'askHr.ask',
+      });
       setExchanges((xs) => xs.map((y) => (y.key === x.key ? { ...y, feedback: rating } : y)));
     } catch (err) {
       toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });

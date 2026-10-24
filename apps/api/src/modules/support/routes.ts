@@ -46,7 +46,7 @@ export async function supportGrantRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/support-grants',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.supportAccess.manage' },
       schema: {
         tags: ['settings'],
         body: Type.Object({
@@ -82,7 +82,7 @@ export async function supportGrantRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/settings/support-grants/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.supportAccess.manage' },
       schema: {
         tags: ['settings'],
         params: Type.Object({ id: Type.String({ format: 'uuid' }) }),

@@ -1,3 +1,5 @@
+import type { CapabilityKey } from '@thapsus/core/capabilities';
+
 /** Same-origin API client for the browser (the ALB or the dev proxy routes /v1 to the API). */
 export class ApiProblem extends Error {
   constructor(
@@ -15,10 +17,14 @@ export class ApiProblem extends Error {
 // the request settles.
 const inflight = new Map<string, Promise<unknown>>();
 
-export async function api<T = unknown>(
-  path: string,
-  init: RequestInit & { json?: unknown } = {},
-): Promise<T> {
+/**
+ * Request options. A state-changing call names the capability of the UI action behind it (the
+ * permission map, ADR-0188): the contract test checks it against the capability of the route it calls,
+ * and the control is shown only to people who hold it. It is not sent.
+ */
+export type ApiInit = RequestInit & { json?: unknown; capability?: CapabilityKey };
+
+export async function api<T = unknown>(path: string, init: ApiInit = {}): Promise<T> {
   const plainGet = Object.keys(init).length === 0;
   if (plainGet && typeof window !== 'undefined') {
     let pending = inflight.get(path);
@@ -32,8 +38,23 @@ export async function api<T = unknown>(
   return request<T>(path, init);
 }
 
-async function request<T>(path: string, init: RequestInit & { json?: unknown }): Promise<T> {
-  const { json, headers, ...rest } = init;
+/**
+ * The raw response, for calls that read the status or upload a form (multipart): same-origin
+ * credentials, with the capability left out of the request like `api()`.
+ */
+export function apiFetch(path: string, init: ApiInit = {}): Promise<Response> {
+  const { json, capability: _capability, ...rest } = init;
+  return fetch(path, {
+    credentials: 'same-origin',
+    ...rest,
+    ...(json !== undefined
+      ? { body: JSON.stringify(json), headers: { 'content-type': 'application/json', ...rest.headers } }
+      : {}),
+  });
+}
+
+async function request<T>(path: string, init: ApiInit): Promise<T> {
+  const { json, headers, capability: _capability, ...rest } = init;
   const res = await fetch(path, {
     credentials: 'same-origin',
     ...rest,

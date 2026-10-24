@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { CircleHelp, Menu as MenuIcon, Search } from 'lucide-react';
 import {
   Button,
+  EmptyState,
   ModuleHeader,
   Sheet,
   SheetContent,
@@ -16,6 +17,7 @@ import {
 } from '@thapsus/ui';
 import { brandingCss, type BrandPalette } from '@thapsus/ui/branding';
 import { FEATURE_FLAGS, type FeatureKey } from '@thapsus/core/features';
+import type { CapabilityKey } from '@thapsus/core/capabilities';
 import { Logo } from '@/components/logo';
 import { RailNav, RailToggle, useRailCollapsed } from '@/components/workspace/rail';
 import { UserMenuButton } from '@/components/workspace/user-menu-button';
@@ -25,7 +27,15 @@ import { useT } from '@/lib/i18n-client';
 import { useIdle } from '@/lib/use-idle';
 import { centreIn, revealIn } from '@/lib/reveal';
 import type { ThemeChoice } from '@/lib/i18n-shared';
-import { dockModules, isTabActive, locate, viewerFromSession, visibleModules } from './workspace';
+import {
+  dockModules,
+  isTabActive,
+  locate,
+  mayOpenPage,
+  viewerFromSession,
+  visibleModules,
+  type WorkspaceViewer,
+} from './workspace';
 
 // The search palette and the account menu (and the dialog and menu primitives behind them) load
 // after the page, so they add nothing to what a phone must download and run before it can show it.
@@ -45,6 +55,18 @@ const loadNotificationPanel = () =>
 
 export const SessionContext = React.createContext<SessionInfo | null>(null);
 export const useSession = () => React.useContext(SessionContext);
+
+/** The signed-in viewer as the permission map sees them (permissions, features, Ask HR, sandbox). */
+export const ViewerContext = React.createContext<WorkspaceViewer | null>(null);
+/**
+ * `can(capability)` for the signed-in viewer (the permission map in @thapsus/core, ADR-0188): what the
+ * app shows. A page shows a control only when the viewer holds the capability of the action behind it;
+ * the API enforces the same permissions with their scope.
+ */
+export function useCan(): (capability: CapabilityKey) => boolean {
+  const viewer = React.useContext(ViewerContext);
+  return React.useCallback((capability: CapabilityKey) => !!viewer?.can(capability), [viewer]);
+}
 
 /** Workspace feature flags and branding (GET /v1/tenant/experience); the app hides disabled features. */
 export interface Experience {
@@ -273,12 +295,26 @@ export function AppShell({
   const signOut = async () => {
     // the offline clock queue (and the time library it uses) loads only here, not with every page
     if (session)
-      await import('@/lib/clock-queue').then((m) => m.syncQueue(session.userId)).catch(() => undefined);
-    await api('/v1/auth/logout', { method: 'POST' }).catch(() => undefined);
+      await import('@/lib/clock-queue')
+        .then((m) => m.syncQueue(session.userId, (c) => !!viewer?.can(c)))
+        .catch(() => undefined);
+    await api('/v1/auth/logout', { method: 'POST', capability: 'me.security' }).catch(() => undefined);
     window.location.replace('/signin');
   };
 
-  const viewer = React.useMemo(() => (session ? viewerFromSession(session, askHr) : null), [session, askHr]);
+  const viewer = React.useMemo(
+    () =>
+      session
+        ? viewerFromSession(session, askHr, {
+            features: experience?.features,
+            sandbox: experience ? experience.kind === 'sandbox' : undefined,
+          })
+        : null,
+    [session, askHr, experience],
+  );
+  // A page the viewer may not open is not in their navigation; opened directly, it shows the not-allowed
+  // state instead of controls that would be refused (ADR-0188).
+  const blocked = !!viewer && !mayOpenPage(viewer, path);
   const modules = React.useMemo(() => (viewer ? visibleModules(viewer) : []), [viewer]);
   const here = locate(modules, path);
   const current = here?.module ?? null;
@@ -321,213 +357,227 @@ export function AppShell({
 
   return (
     <SessionContext.Provider value={session}>
-      <ExperienceContext.Provider value={experienceValue}>
-        {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
-        <div className="flex min-h-dvh flex-col bg-surface">
-          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-on-chrome hover:bg-chrome-raised focus-visible:outline-chrome-focus lg:hidden"
-                  aria-label={t('common.openMenu')}
+      <ViewerContext.Provider value={viewer}>
+        <ExperienceContext.Provider value={experienceValue}>
+          {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
+          <div className="flex min-h-dvh flex-col bg-surface">
+            <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
+              <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-on-chrome hover:bg-chrome-raised focus-visible:outline-chrome-focus lg:hidden"
+                    aria-label={t('common.openMenu')}
+                  >
+                    <MenuIcon aria-hidden className="h-5 w-5 stroke-[1.5]" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" title={t('common.appName')} closeLabel={t('common.closeMenu')}>
+                  {session ? (
+                    <RailNav
+                      modules={modules}
+                      currentKey={current?.key ?? null}
+                      counts={railCounts}
+                      onNavigate={() => setMenuOpen(false)}
+                    />
+                  ) : null}
+                </SheetContent>
+              </Sheet>
+              <Link
+                href="/app"
+                className="flex shrink-0 items-center rounded-md px-1 text-on-chrome no-underline focus-visible:outline-2 focus-visible:outline-chrome-focus"
+              >
+                {experience?.branding.logoUrl ? (
+                  <img
+                    src={experience.branding.logoUrl}
+                    alt={t('platform.branding.logoAlt')}
+                    className="h-8 max-w-[140px] object-contain"
+                  />
+                ) : (
+                  // on phones the mark alone fits the bar; the name stays for screen readers
+                  <Logo
+                    label={t('common.appName')}
+                    className="!text-on-chrome [&>span]:sr-only sm:[&>span]:not-sr-only [&_svg]:!text-chrome-focus"
+                  />
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                onPointerEnter={() => void loadSearch()}
+                onFocus={() => void loadSearch()}
+                disabled={!ready}
+                aria-keyshortcuts="Control+K Meta+K"
+                className="ml-auto flex h-10 min-w-10 items-center justify-center gap-2 rounded-md bg-chrome-raised px-2.5 text-left text-callout text-on-chrome-secondary hover:text-on-chrome focus-visible:outline-2 focus-visible:outline-chrome-focus disabled:opacity-60 sm:ml-2 sm:max-w-[560px] sm:flex-1 sm:justify-start sm:px-3"
+              >
+                <Search aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5]" />
+                <span className="sr-only sm:not-sr-only sm:truncate">{t('app.ws.search.placeholder')}</span>
+                <kbd
+                  aria-hidden
+                  className="ml-auto hidden rounded border border-on-chrome-secondary px-1.5 text-footnote md:inline"
                 >
-                  <MenuIcon aria-hidden className="h-5 w-5 stroke-[1.5]" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" title={t('common.appName')} closeLabel={t('common.closeMenu')}>
+                  {mac ? t('app.ws.search.shortcutMac') : t('app.ws.search.shortcut')}
+                </kbd>
+              </button>
+              <div className="flex items-center gap-1 sm:ml-auto">
+                {/* Contextual help: articles linked from the page the user is on. */}
+                <Link
+                  href={`/app/help?context=${encodeURIComponent(path)}`}
+                  className="hidden h-10 w-10 items-center justify-center rounded-md text-on-chrome hover:bg-chrome-raised focus-visible:outline-2 focus-visible:outline-chrome-focus sm:inline-flex"
+                  aria-label={t('app.nav.helpForPage')}
+                  title={t('app.nav.helpForPage')}
+                >
+                  <CircleHelp aria-hidden className="h-5 w-5 stroke-[1.5]" />
+                </Link>
+                {/* The bell opens a panel of recent notifications, each a link to what it is about. */}
+                {Panel ? (
+                  <Panel
+                    unread={counts.unread}
+                    onUnreadChange={setUnread}
+                    defaultOpen={panelLoad === 'open'}
+                  />
+                ) : (
+                  <NotificationBellButton
+                    unread={counts.unread}
+                    onIntent={() => void loadNotificationPanel()}
+                    onOpen={() => setPanelLoad('open')}
+                  />
+                )}
                 {session ? (
-                  <RailNav
-                    modules={modules}
-                    currentKey={current?.key ?? null}
-                    counts={railCounts}
-                    onNavigate={() => setMenuOpen(false)}
+                  UserMenu ? (
+                    <UserMenu
+                      session={session}
+                      theme={theme}
+                      onSignOut={signOut}
+                      defaultOpen={userMenuLoad === 'open'}
+                    />
+                  ) : (
+                    <UserMenuButton
+                      session={session}
+                      onIntent={() => void loadUserMenu()}
+                      onOpen={() => setUserMenuLoad('open')}
+                    />
+                  )
+                ) : null}
+              </div>
+            </header>
+            <div className="flex flex-1">
+              {/* the rail column runs the page's full height; the menu inside it is sticky and scrolls on its own */}
+              <aside
+                className={`hidden shrink-0 border-r border-border bg-surface-raised lg:block ${collapsed ? 'w-[var(--rail-collapsed-width)]' : 'w-[var(--sidebar-width)]'}`}
+              >
+                <div
+                  id="app-rail"
+                  className="sticky top-[var(--topbar-height)] flex h-[calc(100dvh-var(--topbar-height))] flex-col gap-4 overflow-y-auto p-3 [scroll-padding-block:12px]"
+                >
+                  {session && wide ? (
+                    <RailNav
+                      modules={modules}
+                      currentKey={current?.key ?? null}
+                      collapsed={collapsed}
+                      counts={railCounts}
+                    />
+                  ) : (
+                    <Skeleton className="h-40" />
+                  )}
+                  <div className="mt-auto">
+                    <RailToggle collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+                  </div>
+                </div>
+              </aside>
+              <div className="flex min-w-0 flex-1 flex-col">
+                {experience?.kind === 'sandbox' ? (
+                  <p
+                    role="status"
+                    className="border-b border-border bg-accent-subtle px-4 py-2 text-center text-footnote text-text"
+                  >
+                    {t('platform.sandbox.banner')}
+                  </p>
+                ) : null}
+                {framed && CurrentIcon ? (
+                  <ModuleHeader
+                    icon={<CurrentIcon aria-hidden />}
+                    title={t(current.label)}
+                    drilled={drilled}
+                    tabs={
+                      tabs.length ? (
+                        <TabNav
+                          tabs={tabs}
+                          label={t('app.ws.sections', { module: t(current.label) })}
+                          renderLink={renderTab}
+                        />
+                      ) : undefined
+                    }
                   />
                 ) : null}
-              </SheetContent>
-            </Sheet>
-            <Link
-              href="/app"
-              className="flex shrink-0 items-center rounded-md px-1 text-on-chrome no-underline focus-visible:outline-2 focus-visible:outline-chrome-focus"
-            >
-              {experience?.branding.logoUrl ? (
-                <img
-                  src={experience.branding.logoUrl}
-                  alt={t('platform.branding.logoAlt')}
-                  className="h-8 max-w-[140px] object-contain"
-                />
-              ) : (
-                // on phones the mark alone fits the bar; the name stays for screen readers
-                <Logo
-                  label={t('common.appName')}
-                  className="!text-on-chrome [&>span]:sr-only sm:[&>span]:not-sr-only [&_svg]:!text-chrome-focus"
-                />
-              )}
-            </Link>
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              onPointerEnter={() => void loadSearch()}
-              onFocus={() => void loadSearch()}
-              disabled={!ready}
-              aria-keyshortcuts="Control+K Meta+K"
-              className="ml-auto flex h-10 min-w-10 items-center justify-center gap-2 rounded-md bg-chrome-raised px-2.5 text-left text-callout text-on-chrome-secondary hover:text-on-chrome focus-visible:outline-2 focus-visible:outline-chrome-focus disabled:opacity-60 sm:ml-2 sm:max-w-[560px] sm:flex-1 sm:justify-start sm:px-3"
-            >
-              <Search aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5]" />
-              <span className="sr-only sm:not-sr-only sm:truncate">{t('app.ws.search.placeholder')}</span>
-              <kbd
-                aria-hidden
-                className="ml-auto hidden rounded border border-on-chrome-secondary px-1.5 text-footnote md:inline"
-              >
-                {mac ? t('app.ws.search.shortcutMac') : t('app.ws.search.shortcut')}
-              </kbd>
-            </button>
-            <div className="flex items-center gap-1 sm:ml-auto">
-              {/* Contextual help: articles linked from the page the user is on. */}
-              <Link
-                href={`/app/help?context=${encodeURIComponent(path)}`}
-                className="hidden h-10 w-10 items-center justify-center rounded-md text-on-chrome hover:bg-chrome-raised focus-visible:outline-2 focus-visible:outline-chrome-focus sm:inline-flex"
-                aria-label={t('app.nav.helpForPage')}
-                title={t('app.nav.helpForPage')}
-              >
-                <CircleHelp aria-hidden className="h-5 w-5 stroke-[1.5]" />
-              </Link>
-              {/* The bell opens a panel of recent notifications, each a link to what it is about. */}
-              {Panel ? (
-                <Panel unread={counts.unread} onUnreadChange={setUnread} defaultOpen={panelLoad === 'open'} />
-              ) : (
-                <NotificationBellButton
-                  unread={counts.unread}
-                  onIntent={() => void loadNotificationPanel()}
-                  onOpen={() => setPanelLoad('open')}
-                />
-              )}
-              {session ? (
-                UserMenu ? (
-                  <UserMenu
-                    session={session}
-                    theme={theme}
-                    onSignOut={signOut}
-                    defaultOpen={userMenuLoad === 'open'}
-                  />
-                ) : (
-                  <UserMenuButton
-                    session={session}
-                    onIntent={() => void loadUserMenu()}
-                    onOpen={() => setUserMenuLoad('open')}
-                  />
-                )
-              ) : null}
-            </div>
-          </header>
-          <div className="flex flex-1">
-            {/* the rail column runs the page's full height; the menu inside it is sticky and scrolls on its own */}
-            <aside
-              className={`hidden shrink-0 border-r border-border bg-surface-raised lg:block ${collapsed ? 'w-[var(--rail-collapsed-width)]' : 'w-[var(--sidebar-width)]'}`}
-            >
-              <div
-                id="app-rail"
-                className="sticky top-[var(--topbar-height)] flex h-[calc(100dvh-var(--topbar-height))] flex-col gap-4 overflow-y-auto p-3 [scroll-padding-block:12px]"
-              >
-                {session && wide ? (
-                  <RailNav
-                    modules={modules}
-                    currentKey={current?.key ?? null}
-                    collapsed={collapsed}
-                    counts={railCounts}
-                  />
-                ) : (
-                  <Skeleton className="h-40" />
-                )}
-                <div className="mt-auto">
-                  <RailToggle collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-                </div>
-              </div>
-            </aside>
-            <div className="flex min-w-0 flex-1 flex-col">
-              {experience?.kind === 'sandbox' ? (
-                <p
-                  role="status"
-                  className="border-b border-border bg-accent-subtle px-4 py-2 text-center text-footnote text-text"
+                <main
+                  id="main"
+                  data-shell="app"
+                  className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 pb-[calc(var(--dock-height)+env(safe-area-inset-bottom)+var(--space-6))] pt-5 md:px-8 md:pt-8 lg:pb-8"
                 >
-                  {t('platform.sandbox.banner')}
-                </p>
-              ) : null}
-              {framed && CurrentIcon ? (
-                <ModuleHeader
-                  icon={<CurrentIcon aria-hidden />}
-                  title={t(current.label)}
-                  drilled={drilled}
-                  tabs={
-                    tabs.length ? (
-                      <TabNav
-                        tabs={tabs}
-                        label={t('app.ws.sections', { module: t(current.label) })}
-                        renderLink={renderTab}
-                      />
-                    ) : undefined
-                  }
-                />
-              ) : null}
-              <main
-                id="main"
-                data-shell="app"
-                className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 pb-[calc(var(--dock-height)+env(safe-area-inset-bottom)+var(--space-6))] pt-5 md:px-8 md:pt-8 lg:pb-8"
-              >
-                <ModuleFrameContext.Provider value={framed}>
-                  <ModuleTabVisibleContext.Provider value={tabNameVisible}>
-                    <DrilledContext.Provider value={drilled}>
-                      {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
-                    </DrilledContext.Provider>
-                  </ModuleTabVisibleContext.Provider>
-                </ModuleFrameContext.Provider>
-              </main>
+                  <ModuleFrameContext.Provider value={framed}>
+                    <ModuleTabVisibleContext.Provider value={tabNameVisible}>
+                      <DrilledContext.Provider value={drilled}>
+                        {session && !mfaSetupPending ? (
+                          blocked ? (
+                            <EmptyState level={framed ? 2 : 1} title={t('errors.forbidden')} />
+                          ) : (
+                            children
+                          )
+                        ) : (
+                          <Skeleton className="h-64 w-full" />
+                        )}
+                      </DrilledContext.Provider>
+                    </ModuleTabVisibleContext.Provider>
+                  </ModuleFrameContext.Provider>
+                </main>
+              </div>
             </div>
           </div>
-        </div>
-        {session && dock.length > 1 ? (
-          // the phone tab bar (ADR-0180): the viewer's main modules, one tap away
-          <nav
-            aria-label={t('app.ws.dock.label')}
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
-          >
-            <ul className="mx-auto flex h-[var(--dock-height)] max-w-lg items-stretch">
-              {dock.map((m) => {
-                const Icon = m.icon;
-                const active = current?.key === m.key;
-                const count = m.key === 'inbox' ? inboxCount : 0;
-                return (
-                  <li key={m.key} className="flex-1">
-                    <Link
-                      href={m.href}
-                      aria-current={active ? 'page' : undefined}
-                      className={`relative flex h-full flex-col items-center justify-center gap-0.5 text-footnote no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-chrome-focus ${active ? 'font-semibold text-chrome-focus' : 'text-on-chrome-secondary'}`}
-                    >
-                      <Icon aria-hidden className="h-6 w-6 stroke-[1.75]" />
-                      {m.key === 'me' ? t('app.ws.dock.me') : t(m.label)}
-                      {count ? (
-                        <span className="absolute left-1/2 top-1 ml-2 min-w-[18px] rounded-full bg-chrome-focus px-1 text-center text-footnote font-semibold leading-[18px] text-chrome">
-                          <span className="sr-only">{t('app.ws.pending')} </span>
-                          {count > 9 ? '9+' : count}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        ) : null}
-        {session && viewer && (searchOpen || searchUsed) ? (
-          <GlobalSearch
-            open={searchOpen}
-            onOpenChange={setSearchOpen}
-            viewer={viewer}
-            userId={session.userId}
-          />
-        ) : null}
-      </ExperienceContext.Provider>
+          {session && dock.length > 1 ? (
+            // the phone tab bar (ADR-0180): the viewer's main modules, one tap away
+            <nav
+              aria-label={t('app.ws.dock.label')}
+              className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
+            >
+              <ul className="mx-auto flex h-[var(--dock-height)] max-w-lg items-stretch">
+                {dock.map((m) => {
+                  const Icon = m.icon;
+                  const active = current?.key === m.key;
+                  const count = m.key === 'inbox' ? inboxCount : 0;
+                  return (
+                    <li key={m.key} className="flex-1">
+                      <Link
+                        href={m.href}
+                        aria-current={active ? 'page' : undefined}
+                        className={`relative flex h-full flex-col items-center justify-center gap-0.5 text-footnote no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-chrome-focus ${active ? 'font-semibold text-chrome-focus' : 'text-on-chrome-secondary'}`}
+                      >
+                        <Icon aria-hidden className="h-6 w-6 stroke-[1.75]" />
+                        {m.key === 'me' ? t('app.ws.dock.me') : t(m.label)}
+                        {count ? (
+                          <span className="absolute left-1/2 top-1 ml-2 min-w-[18px] rounded-full bg-chrome-focus px-1 text-center text-footnote font-semibold leading-[18px] text-chrome">
+                            <span className="sr-only">{t('app.ws.pending')} </span>
+                            {count > 9 ? '9+' : count}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          ) : null}
+          {session && viewer && (searchOpen || searchUsed) ? (
+            <GlobalSearch
+              open={searchOpen}
+              onOpenChange={setSearchOpen}
+              viewer={viewer}
+              userId={session.userId}
+            />
+          ) : null}
+        </ExperienceContext.Provider>
+      </ViewerContext.Provider>
     </SessionContext.Provider>
   );
 }

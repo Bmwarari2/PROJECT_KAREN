@@ -179,7 +179,7 @@ export async function clockRoutes(app: FastifyInstance) {
   app.put(
     '/v1/settings/time',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.time' },
       schema: {
         tags: ['time'],
         body: Type.Partial(
@@ -232,7 +232,7 @@ export async function clockRoutes(app: FastifyInstance) {
   app.post(
     '/v1/clock/events',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.clock.punch' },
       schema: {
         tags: ['time'],
         summary:
@@ -534,7 +534,7 @@ export async function clockRoutes(app: FastifyInstance) {
   app.post(
     '/v1/kiosks',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.clock.kiosks' },
       schema: {
         tags: ['time'],
         summary: 'Registers a shared kiosk device. The token is returned once; only its hash is stored.',
@@ -591,7 +591,7 @@ export async function clockRoutes(app: FastifyInstance) {
   app.post(
     '/v1/kiosks/:id/revoke',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.clock.kiosks' },
       schema: {
         tags: ['time'],
         params: Type.Object({ id: Uuid }),
@@ -617,7 +617,7 @@ export async function clockRoutes(app: FastifyInstance) {
   app.put(
     '/v1/kiosk-pins/:employeeId',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.clock.pin' },
       schema: {
         tags: ['time'],
         summary: 'Sets an employee kiosk PIN (stored as an Argon2id hash)',

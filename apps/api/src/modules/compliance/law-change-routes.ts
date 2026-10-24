@@ -407,7 +407,7 @@ export async function lawChangeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/compliance/law-changes/:id/acknowledge',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'compliance.lawChanges.acknowledge' },
       schema: {
         tags: ['compliance'],
         summary: 'Acknowledge an entry (audited)',

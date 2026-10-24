@@ -75,7 +75,7 @@ export async function onboardingRoutes(app: FastifyInstance) {
   app.post(
     '/v1/employees/:id/invite',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.invite' },
       schema: {
         tags: ['employees'],
         summary:

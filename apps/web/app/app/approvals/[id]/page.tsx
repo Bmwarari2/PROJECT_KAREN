@@ -98,6 +98,7 @@ export default function ApprovalPage() {
       await api(`/v1/approvals/${id}/decide`, {
         method: 'POST',
         json: { decision, ...(comment.trim() ? { comment: comment.trim() } : {}) },
+        capability: 'inbox.approvals.decide',
       });
       toast({
         title: t(decision === 'approve' ? 'actionable.approval.approved' : 'actionable.approval.declined'),

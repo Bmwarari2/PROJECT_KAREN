@@ -8,6 +8,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
 import { SourceLink } from '../ui';
+import { useCan } from '../../shell';
 
 interface Item {
   id: string;
@@ -38,11 +39,16 @@ export default function LawChangesPage() {
     `/v1/compliance/law-changes${onlyOpen ? '?unacknowledgedOnly=true' : ''}`,
   );
   const [busy, setBusy] = React.useState<string | null>(null);
+  const can = useCan();
+  const canAcknowledge = can('compliance.lawChanges.acknowledge');
 
   async function acknowledge(id: string) {
     setBusy(id);
     try {
-      await api(`/v1/compliance/law-changes/${id}/acknowledge`, { method: 'POST' });
+      await api(`/v1/compliance/law-changes/${id}/acknowledge`, {
+        method: 'POST',
+        capability: 'compliance.lawChanges.acknowledge',
+      });
       toast({ title: t('compliance.law.acknowledgedToast'), tone: 'success' });
       feed.reload();
     } catch (err) {
@@ -130,7 +136,7 @@ export default function LawChangesPage() {
                     })}
                   </p>
                 ) : null}
-                {!i.acknowledgedAt ? (
+                {!i.acknowledgedAt && canAcknowledge ? (
                   <div>
                     <Button
                       size="sm"

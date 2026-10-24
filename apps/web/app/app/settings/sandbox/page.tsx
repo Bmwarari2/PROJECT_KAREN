@@ -60,7 +60,11 @@ export default function SandboxPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api('/v1/sandboxes', { method: 'POST', json: { syntheticPeople: people } });
+      await api('/v1/sandboxes', {
+        method: 'POST',
+        json: { syntheticPeople: people },
+        capability: 'settings.sandbox',
+      });
       toast({ title: t('platform.sandbox.queued'), tone: 'success' });
       list.reload();
     } catch (err) {
@@ -73,6 +77,7 @@ export default function SandboxPage() {
     try {
       const r = await api<{ url: string; email: string }>(`/v1/sandboxes/${s.id}/sign-in-link`, {
         method: 'POST',
+        capability: 'settings.sandbox',
       });
       setLink(r);
     } catch (err) {

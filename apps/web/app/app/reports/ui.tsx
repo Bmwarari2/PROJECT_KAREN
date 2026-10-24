@@ -344,7 +344,11 @@ export function useBackgroundRun() {
   }, []);
   const start = React.useCallback(
     async (source: unknown, format: 'csv' | 'xlsx' | 'pdf' | 'json') => {
-      const r = await api<RunStatus>('/v1/reports/runs', { method: 'POST', json: { source, format } });
+      const r = await api<RunStatus>('/v1/reports/runs', {
+        method: 'POST',
+        json: { source, format },
+        capability: 'reports.run',
+      });
       setRun(r);
       return poll(r.id);
     },

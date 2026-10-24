@@ -29,7 +29,7 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useSectionLevel } from '@/components/module-page';
-import { PageTitle } from '../../shell';
+import { PageTitle, useCan } from '../../shell';
 import {
   adminGrade,
   fieldLabel,
@@ -63,8 +63,11 @@ interface Props {
   canManage: boolean;
 }
 
-export function RoleEditor({ role, copyFrom, canManage }: Props) {
+export function RoleEditor({ role, copyFrom, canManage: allowed }: Props) {
   const t = useT();
+  // what the page allows, and the capability of the role routes it calls (ADR-0188)
+  const can = useCan();
+  const canManage = allowed && can('settings.roles.manage');
   const sec = useSectionLevel();
   const locale = useLocale();
   const toast = useToast();
@@ -125,11 +128,19 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
         isAdmin: isAdmin || forcedAdmin,
       };
       if (creating) {
-        const created = await api<Role>('/v1/roles', { method: 'POST', json: { ...body, key: autoKey } });
+        const created = await api<Role>('/v1/roles', {
+          method: 'POST',
+          json: { ...body, key: autoKey },
+          capability: 'settings.roles.manage',
+        });
         toast({ title: t('access.editor.created'), tone: 'success' });
         router.push(`/app/settings/roles/${created.id}`);
       } else {
-        await api<Role>(`/v1/roles/${role!.id}`, { method: 'PATCH', json: body });
+        await api<Role>(`/v1/roles/${role!.id}`, {
+          method: 'PATCH',
+          json: body,
+          capability: 'settings.roles.manage',
+        });
         toast({ title: t('access.editor.saved'), tone: 'success' });
       }
     } catch (err) {
@@ -141,7 +152,7 @@ export function RoleEditor({ role, copyFrom, canManage }: Props) {
 
   async function remove() {
     try {
-      await api(`/v1/roles/${role!.id}`, { method: 'DELETE' });
+      await api(`/v1/roles/${role!.id}`, { method: 'DELETE', capability: 'settings.roles.manage' });
       toast({ title: t('access.editor.deleted'), tone: 'success' });
       router.push('/app/settings/roles');
     } catch (err) {

@@ -7,6 +7,7 @@ import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { createLogger } from '@thapsus/core/logger';
 import { API_SCOPE_KEYS, API_SCOPES } from '@thapsus/core/api-scopes';
+import { CAPABILITIES, isCapabilityKey } from '@thapsus/core/capabilities';
 import type { Deps } from './deps';
 import { contextPlugin } from './http/context';
 import { errorHandler } from './http/errors';
@@ -89,6 +90,21 @@ export async function buildApp(deps: Deps, opts: { logger?: boolean } = {}): Pro
       requestId: req.id,
     }),
   );
+
+  // The permission map (ADR-0188): a route's capability must exist, and the published document names it
+  // and its permissions on the operation. Added before the OpenAPI plugin, so the plugin sees them.
+  app.addHook('onRoute', (route) => {
+    const capability = route.config?.capability;
+    if (capability === undefined) return;
+    if (!isCapabilityKey(capability))
+      throw new Error(`${String(route.method)} ${route.url}: unknown capability ${String(capability)}`);
+    const req = CAPABILITIES[capability];
+    route.schema = {
+      ...route.schema,
+      'x-capability': capability,
+      'x-permission': { any: req.any ?? [], all: req.all ?? [] },
+    } as typeof route.schema;
+  });
 
   await app.register(swagger, {
     openapi: {

@@ -8,6 +8,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { LeaveBalancesTable, type LeaveBalance } from '@/components/leave-balances';
 import { FormError, selectClass, useAction, useFormat, useOrg } from '../../settings/kit';
+import { useCan } from '../../shell';
 
 interface Person {
   id: string;
@@ -27,6 +28,7 @@ export function LeaverDialog({
   onDone: () => void;
 }) {
   const t = useT();
+  const can = useCan();
   const fmt = useFormat();
   const [open, setOpen] = React.useState(false);
   const reports = useApi<{ data: Person[] }>(
@@ -48,7 +50,12 @@ export function LeaverDialog({
     };
     if (
       await action.run(
-        () => api(`/v1/employees/${employeeId}/terminate`, { method: 'POST', json: body }),
+        () =>
+          api(`/v1/employees/${employeeId}/terminate`, {
+            method: 'POST',
+            json: body,
+            capability: 'people.terminate',
+          }),
         t('admin.leaver.done', { name, date: fmt.date(endDate) }),
       )
     ) {
@@ -57,6 +64,7 @@ export function LeaverDialog({
     }
   }
 
+  if (!can('people.terminate')) return null;
   return (
     <Dialog open={open} onOpenChange={(o) => (setOpen(o), action.setError(null))}>
       <DialogTrigger asChild>
@@ -143,6 +151,7 @@ export function TransferDialog({
   onDone: () => void;
 }) {
   const t = useT();
+  const can = useCan();
   const fmt = useFormat();
   const [open, setOpen] = React.useState(false);
   const entities = useOrg('legal-entities');
@@ -182,7 +191,12 @@ export function TransferDialog({
     };
     if (
       await action.run(
-        () => api(`/v1/employees/${employeeId}/transfer`, { method: 'POST', json: body }),
+        () =>
+          api(`/v1/employees/${employeeId}/transfer`, {
+            method: 'POST',
+            json: body,
+            capability: 'people.edit',
+          }),
         t('admin.transfer.done', { name, date: fmt.date(v.effectiveDate) }),
       )
     ) {
@@ -210,6 +224,7 @@ export function TransferDialog({
     </Field>
   );
 
+  if (!can('people.edit')) return null;
   return (
     <Dialog open={open} onOpenChange={(o) => (setOpen(o), action.setError(null))}>
       <DialogTrigger asChild>
@@ -284,6 +299,7 @@ export function BalancesPanel({
   onChanged: () => void;
 }) {
   const t = useT();
+  const can = useCan();
   const locale = useLocale();
   const fmt = useFormat();
   const types = useApi<LeaveType[]>('/v1/leave/types');
@@ -313,7 +329,7 @@ export function BalancesPanel({
     };
     if (
       await action.run(
-        () => api('/v1/leave/adjustments', { method: 'POST', json: body }),
+        () => api('/v1/leave/adjustments', { method: 'POST', json: body, capability: 'time.leave.adjust' }),
         t('admin.balances.adjusted'),
       )
     ) {
@@ -329,7 +345,7 @@ export function BalancesPanel({
         typeName={typeName}
         caption={t('admin.balances.caption', { name })}
       />
-      {canAdjust ? (
+      {canAdjust && can('time.leave.adjust') ? (
         <form
           onSubmit={submit}
           className="flex flex-col gap-4 rounded-lg bg-surface-raised p-5 shadow-sm"

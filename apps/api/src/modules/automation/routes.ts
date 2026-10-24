@@ -104,7 +104,7 @@ export async function automationRoutes(app: FastifyInstance) {
   app.post(
     '/v1/automation/rules',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.automation.manage' },
       schema: {
         tags: ['automation'],
         body: Type.Object({
@@ -162,7 +162,7 @@ export async function automationRoutes(app: FastifyInstance) {
   app.post(
     '/v1/automation/rules/:id/dry-run',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.automation.manage' },
       schema: {
         tags: ['automation'],
         params: Type.Object({ id: Uuid }),

@@ -57,7 +57,12 @@ export default function DelegationsPage() {
     const endsAt = startOfDayInstant(addDays(until, 1), fmt.zone);
     if (
       await create.run(
-        () => api('/v1/delegations', { method: 'POST', json: { toUserId, startsAt, endsAt } }),
+        () =>
+          api('/v1/delegations', {
+            method: 'POST',
+            json: { toUserId, startsAt, endsAt },
+            capability: 'settings.delegations.manage',
+          }),
         t('admin.delegations.created'),
       )
     ) {
@@ -116,7 +121,10 @@ export default function DelegationsPage() {
                           : t('admin.delegations.cancelDelegation')
                       }
                       onConfirm={async () => {
-                        await api(`/v1/delegations/${d.id}`, { method: 'DELETE' });
+                        await api(`/v1/delegations/${d.id}`, {
+                          method: 'DELETE',
+                          capability: 'settings.delegations.manage',
+                        });
                         list.reload();
                       }}
                     />

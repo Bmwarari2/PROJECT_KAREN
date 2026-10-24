@@ -87,7 +87,7 @@ export async function sessionRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/reauth',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         summary: 'Prove your identity again before a sensitive change (password or authenticator code)',
@@ -218,7 +218,7 @@ export async function sessionRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/auth/sessions/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         summary: 'End one of your other sessions (needs a recent sign-in or re-authentication)',
@@ -246,7 +246,7 @@ export async function sessionRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/sessions/end-others',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         summary: 'End all your sessions except this one (needs a recent sign-in or re-authentication)',
@@ -273,7 +273,7 @@ export async function sessionRoutes(app: FastifyInstance) {
   app.post(
     '/v1/users/:userId/sessions/end',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.users.manage' },
       schema: {
         tags: ['roles'],
         summary: 'Sign a person out everywhere (company-wide settings.manage)',
@@ -306,7 +306,7 @@ export async function sessionRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/sessions/end-all',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.signInPolicy.manage' },
       schema: {
         tags: ['settings'],
         summary: 'Sign everyone in the workspace out, except your own current session',
@@ -334,7 +334,7 @@ export async function sessionRoutes(app: FastifyInstance) {
   app.post(
     '/v1/users/:userId/mfa/reset',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.users.manage' },
       schema: {
         tags: ['roles'],
         summary:

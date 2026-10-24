@@ -285,7 +285,7 @@ export async function countersignRoutes(app: FastifyInstance) {
   app.post(
     '/v1/signature-requests/:id/countersign',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'documents.countersign' },
       schema: {
         tags: ['documents'],
         summary:

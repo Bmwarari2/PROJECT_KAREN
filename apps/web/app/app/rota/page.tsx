@@ -36,7 +36,7 @@ import { useApi, useDebounced } from '@/lib/use-api';
 import { dayLong, thisWeek, viewerZone, weekDays, weekStartOf } from '@/lib/week';
 import { FindingList, type FindingDto } from '@/components/findings';
 import { PageIntro } from '@/components/module-page';
-import { hasPermission, useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 import { RotaGrid, shiftRange, type GridRowDto, type ShiftDto } from './rota-grid';
 
 const PAGE = 200;
@@ -139,7 +139,11 @@ function ShiftDialog({
         notes: form.notes || null,
       };
       const r = form.id
-        ? await api<{ warnings: FindingDto[] }>(`/v1/shifts/${form.id}`, { method: 'PATCH', json: body })
+        ? await api<{ warnings: FindingDto[] }>(`/v1/shifts/${form.id}`, {
+            method: 'PATCH',
+            json: body,
+            capability: 'time.rota.manage',
+          })
         : await api<{ warnings: FindingDto[] }>('/v1/shifts', {
             method: 'POST',
             json: {
@@ -147,6 +151,7 @@ function ShiftDialog({
               employeeId: form.employeeId,
               ...(form.employeeId ? {} : locationId ? { locationId } : { zone }),
             },
+            capability: 'time.rota.manage',
           });
       toast({
         title: t('rota.saved'),
@@ -167,7 +172,7 @@ function ShiftDialog({
     if (!form?.id) return;
     setBusy(true);
     try {
-      await api(`/v1/shifts/${form.id}/cancel`, { method: 'POST' });
+      await api(`/v1/shifts/${form.id}/cancel`, { method: 'POST', capability: 'time.rota.manage' });
       onSaved();
       onClose();
     } catch (err) {
@@ -273,8 +278,8 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
-  const session = useSession();
-  const canEdit = hasPermission(session, 'rota.manage');
+  const can = useCan();
+  const canEdit = can('time.rota.manage');
   const locations = useApi<Array<{ id: string; name: string }>>('/v1/org/locations');
   const templates = useApi<Template[]>('/v1/rota/templates');
   const [locationId, setLocationId] = React.useState('');
@@ -384,6 +389,7 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
       const r = await api<{ published: number; notified: number }>('/v1/rota/publish', {
         method: 'POST',
         json: { from: days[0], to: days[6], ...(locationId ? { locationId } : {}) },
+        capability: 'time.rota.manage',
       });
       toast({
         title: t('rota.publishedToast', {
@@ -404,6 +410,7 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
       const r = await api<{ created: number; openedInstead: unknown[] }>(`/v1/rota/templates/${id}/apply`, {
         method: 'POST',
         json: { weekStart: days[0] },
+        capability: 'time.rota.manage',
       });
       toast({
         title: t('rota.appliedToast', { count: r.created }),
@@ -447,6 +454,7 @@ function TeamRota({ week, zone }: { week: string; zone: string }) {
           locationId: locationId || null,
           slots: slots.slice(0, 500),
         },
+        capability: 'time.rota.manage',
       });
       toast({ title: t('rota.templateSaved'), tone: 'success' });
       templates.reload();
@@ -602,7 +610,11 @@ function SwapDialog({
   if (!shift) return null;
   async function offer(toEmployeeId: string) {
     try {
-      await api(`/v1/shifts/${shift!.id}/swap`, { method: 'POST', json: { toEmployeeId } });
+      await api(`/v1/shifts/${shift!.id}/swap`, {
+        method: 'POST',
+        json: { toEmployeeId },
+        capability: 'time.rota.swap',
+      });
       toast({ title: t('rota.swapSent'), tone: 'success' });
       onDone();
       onClose();
@@ -654,7 +666,8 @@ function MyRota({ week }: { week: string }) {
   );
   const swaps = useApi<Swap[]>('/v1/shift-swaps');
   const [swapFor, setSwapFor] = React.useState<ShiftDto | null>(null);
-  const canSwap = hasPermission(session, 'rota.swap_request');
+  const can = useCan();
+  const canSwap = can('time.rota.swap');
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     try {
       await fn();
@@ -727,7 +740,12 @@ function MyRota({ week }: { week: string }) {
                       variant="secondary"
                       onClick={() =>
                         run(
-                          () => api(`/v1/shifts/${s.id}/claim`, { method: 'POST', json: {} }),
+                          () =>
+                            api(`/v1/shifts/${s.id}/claim`, {
+                              method: 'POST',
+                              json: {},
+                              capability: 'time.rota.swap',
+                            }),
                           t('rota.claimSent'),
                         )
                       }
@@ -780,6 +798,7 @@ function MyRota({ week }: { week: string }) {
                                   api(`/v1/shift-swaps/${w.id}/respond`, {
                                     method: 'POST',
                                     json: { accept: true },
+                                    capability: 'time.rota.swapRespond',
                                   }),
                                 t('rota.swapAccepted'),
                               )
@@ -796,6 +815,7 @@ function MyRota({ week }: { week: string }) {
                                   api(`/v1/shift-swaps/${w.id}/respond`, {
                                     method: 'POST',
                                     json: { accept: false },
+                                    capability: 'time.rota.swapRespond',
                                   }),
                                 t('rota.swapDeclinedToast'),
                               )
@@ -811,7 +831,11 @@ function MyRota({ week }: { week: string }) {
                           variant="ghost"
                           onClick={() =>
                             run(
-                              () => api(`/v1/shift-swaps/${w.id}/cancel`, { method: 'POST' }),
+                              () =>
+                                api(`/v1/shift-swaps/${w.id}/cancel`, {
+                                  method: 'POST',
+                                  capability: 'time.rota.swapRespond',
+                                }),
                               t('rota.requestCancelled'),
                             )
                           }
@@ -849,7 +873,8 @@ export default function RotaPage() {
       asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) ? weekStartOf(asked, startsOn) : thisWeek(zone, startsOn),
     );
   }, [settings.data, week, zone, startsOn]);
-  const canView = hasPermission(session, 'rota.view');
+  const can = useCan();
+  const canView = can('time.rota.team');
 
   return (
     <div className="flex flex-col gap-5">

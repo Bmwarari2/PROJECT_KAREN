@@ -32,8 +32,8 @@ import {
   SettingsCard,
   useAction,
   useOrg,
-  usePermission,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 interface TimeSettings {
@@ -52,7 +52,7 @@ interface Location {
 }
 
 const put = (body: Partial<TimeSettings>) =>
-  api<TimeSettings>('/v1/settings/time', { method: 'PUT', json: body });
+  api<TimeSettings>('/v1/settings/time', { method: 'PUT', json: body, capability: 'settings.time' });
 
 function WorkingTime({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
   const t = useT();
@@ -298,6 +298,7 @@ function SiteDialog({ loc, onClose, onSaved }: { loc: Location; onClose: () => v
           api(`/v1/org/locations/${loc.id}`, {
             method: 'PATCH',
             json: { geofence: { lat: Number(v.lat), lng: Number(v.lng), radiusMetres: Number(v.radius) } },
+            capability: 'settings.organisation',
           }),
         t('admin.saved'),
       )
@@ -371,7 +372,12 @@ function SiteDialog({ loc, onClose, onSaved }: { loc: Location; onClose: () => v
                 variant="secondary"
                 onClick={async () =>
                   (await action.run(
-                    () => api(`/v1/org/locations/${loc.id}`, { method: 'PATCH', json: { geofence: null } }),
+                    () =>
+                      api(`/v1/org/locations/${loc.id}`, {
+                        method: 'PATCH',
+                        json: { geofence: null },
+                        capability: 'settings.organisation',
+                      }),
                     t('admin.saved'),
                   )) && onSaved()
                 }
@@ -549,7 +555,7 @@ function Clocking({ s, onSaved }: { s: TimeSettings; onSaved: () => void }) {
 /** Time and attendance: working-time rule strictness, geofencing per country, kiosks and clocking. */
 export default function TimeSettingsPage() {
   const t = useT();
-  const has = usePermission();
+  const can = useCan();
   const settings = useApi<TimeSettings>('/v1/settings/time');
   const s = settings.data;
   return (
@@ -561,7 +567,7 @@ export default function TimeSettingsPage() {
         <>
           <WorkingTime s={s} onSaved={settings.reload} />
           <Geofencing s={s} onSaved={settings.reload} />
-          {has('org.manage') ? <Sites countries={s.geofence.countries} /> : null}
+          {can('settings.organisation') ? <Sites countries={s.geofence.countries} /> : null}
           <Clocking s={s} onSaved={settings.reload} />
         </>
       )}

@@ -271,7 +271,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/rota/templates',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.manage' },
       schema: { tags: ['rota'], body: TemplateIn, response: { 201: Template, 403: Problem } },
     },
     async (req, reply) => {
@@ -358,7 +358,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/rota/templates/:id/apply',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.manage' },
       schema: {
         tags: ['rota'],
         summary:
@@ -461,7 +461,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/shifts',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.manage' },
       schema: {
         tags: ['rota'],
         summary:
@@ -531,7 +531,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/shifts/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.manage' },
       schema: {
         tags: ['rota'],
         params: Type.Object({ id: Uuid }),
@@ -624,7 +624,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/shifts/:id/cancel',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.manage' },
       schema: {
         tags: ['rota'],
         params: Type.Object({ id: Uuid }),
@@ -883,7 +883,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/rota/publish',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.manage' },
       schema: {
         tags: ['rota'],
         summary:
@@ -1054,7 +1054,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/shifts/:id/claim',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.swap' },
       schema: {
         tags: ['rota'],
         summary:
@@ -1130,7 +1130,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/shifts/:id/swap',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.swap' },
       schema: {
         tags: ['rota'],
         summary:
@@ -1207,7 +1207,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/shift-swaps/:id/respond',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.swapRespond' },
       schema: {
         tags: ['rota'],
         params: Type.Object({ id: Uuid }),
@@ -1289,7 +1289,7 @@ export async function rotaRoutes(app: FastifyInstance) {
   app.post(
     '/v1/shift-swaps/:id/cancel',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.rota.swapRespond' },
       schema: {
         tags: ['rota'],
         params: Type.Object({ id: Uuid }),

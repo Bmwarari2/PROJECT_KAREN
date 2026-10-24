@@ -23,7 +23,7 @@ import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { useSession } from '../../shell';
+import { useCan } from '../../shell';
 import { PageIntro } from '@/components/module-page';
 import { selectClass, StatusBadge } from '../ui';
 import { PersonLink, ROW_LINK } from '@/components/person-link';
@@ -69,10 +69,9 @@ export default function MatrixPage() {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
-  const session = useSession();
-  const canManage = !!session?.permissions.some(
-    (p) => p === '*' || p === 'compliance.*' || p === 'compliance.manage',
-  );
+  const can = useCan();
+  const canManage = can('compliance.manage');
+  const canRecord = can('compliance.record');
   const [status, setStatus] = React.useState('');
   const [kind, setKind] = React.useState('');
   const [requirementId, setRequirementId] = React.useState('');
@@ -129,6 +128,7 @@ export default function MatrixPage() {
             reminderDays: days,
             evidenceRequired: reqForm.evidenceRequired,
           },
+          capability: 'compliance.manage',
         }),
       t('compliance.matrix.added'),
     );
@@ -148,6 +148,7 @@ export default function MatrixPage() {
             expiresOn: recForm.expiresOn || undefined,
             reference: recForm.reference || undefined,
           },
+          capability: 'compliance.record',
         }),
       t('compliance.matrix.recorded'),
     );
@@ -279,20 +280,22 @@ export default function MatrixPage() {
                       : '—'}
                   </TD>
                   <TD className="text-right">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        setRecForm({ issuedOn: '', expiresOn: '', reference: '' });
-                        setRecording(r);
-                      }}
-                      aria-label={t('compliance.matrix.recordFor', {
-                        requirement: r.requirementName,
-                        name: r.employeeName,
-                      })}
-                    >
-                      {t('compliance.matrix.record')}
-                    </Button>
+                    {canRecord ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setRecForm({ issuedOn: '', expiresOn: '', reference: '' });
+                          setRecording(r);
+                        }}
+                        aria-label={t('compliance.matrix.recordFor', {
+                          requirement: r.requirementName,
+                          name: r.employeeName,
+                        })}
+                      >
+                        {t('compliance.matrix.record')}
+                      </Button>
+                    ) : null}
                   </TD>
                 </TR>
               ))}

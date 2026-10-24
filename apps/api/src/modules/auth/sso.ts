@@ -653,7 +653,7 @@ export async function ssoRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/users/:userId/sso-identities',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.users.manage' },
       schema: {
         tags: ['roles'],
         summary:
@@ -714,7 +714,7 @@ export async function ssoRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/sso-connections',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.sso.manage' },
       schema: {
         tags: ['settings'],
         body: ConnectionBody,
@@ -771,7 +771,7 @@ export async function ssoRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/settings/security',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.signInPolicy.manage' },
       schema: {
         tags: ['settings'],
         body: Type.Object(
@@ -929,7 +929,7 @@ export async function ssoRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/settings/sso-connections/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.sso.manage' },
       schema: {
         tags: ['settings'],
         params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
@@ -977,7 +977,7 @@ export async function ssoRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/settings/sso-connections/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.sso.manage' },
       schema: {
         tags: ['settings'],
         params: Type.Object({ id: Type.String({ format: 'uuid' }) }),

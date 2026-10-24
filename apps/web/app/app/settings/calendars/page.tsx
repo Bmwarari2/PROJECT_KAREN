@@ -48,7 +48,12 @@ function AddCalendar({ onCreated }: { onCreated: () => void }) {
     };
     if (
       await action.run(
-        () => api('/v1/settings/company-calendars', { method: 'POST', json: body }),
+        () =>
+          api('/v1/settings/company-calendars', {
+            method: 'POST',
+            json: body,
+            capability: 'settings.calendars',
+          }),
         t('admin.calendars.created'),
       )
     ) {

@@ -181,7 +181,7 @@ export async function apiClientRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/api-keys',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.api' },
       schema: {
         tags: ['api-access'],
         summary: 'Create a scoped API key (the key is returned once and never again)',
@@ -249,7 +249,7 @@ export async function apiClientRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/api-keys/:id/revoke',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.api' },
       schema: {
         tags: ['api-access'],
         summary: 'Revoke an API key immediately',
@@ -317,7 +317,7 @@ export async function apiClientRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/oauth-clients',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.api' },
       schema: {
         tags: ['api-access'],
         summary: 'Create an OAuth 2.0 client for the client credentials grant (the secret is returned once)',
@@ -372,7 +372,7 @@ export async function apiClientRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/oauth-clients/:id/rotate-secret',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.api' },
       schema: {
         tags: ['api-access'],
         summary: 'Issue a new client secret; the previous one keeps working for graceHours (0 = revoke now)',
@@ -418,7 +418,7 @@ export async function apiClientRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/oauth-clients/:id/revoke',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.api' },
       schema: {
         tags: ['api-access'],
         summary: 'Revoke a client and every access token it holds',

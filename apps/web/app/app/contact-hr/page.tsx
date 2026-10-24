@@ -63,7 +63,11 @@ export default function ContactHrPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api('/v1/hr-requests', { method: 'POST', json: { subject, message } });
+      await api('/v1/hr-requests', {
+        method: 'POST',
+        json: { subject, message },
+        capability: 'help.contactHr.ask',
+      });
       toast({ title: t('actionable.hr.sent'), tone: 'success' });
       setSubject('');
       setMessage('');

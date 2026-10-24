@@ -61,7 +61,10 @@ function DeliveryLog({ endpoint }: { endpoint: Endpoint }) {
   const log = useApi<Page<Delivery>>(`/v1/webhooks/${endpoint.id}/deliveries?limit=50`);
   async function replay(d: Delivery) {
     try {
-      await api(`/v1/webhooks/deliveries/${d.id}/replay`, { method: 'POST' });
+      await api(`/v1/webhooks/deliveries/${d.id}/replay`, {
+        method: 'POST',
+        capability: 'settings.webhooks',
+      });
       toast({ title: t('platform.webhooks.replayed'), tone: 'success' });
       log.reload();
     } catch (err) {
@@ -156,6 +159,7 @@ export default function WebhooksPage() {
       const r = await api<Endpoint & { secret: string }>('/v1/webhooks', {
         method: 'POST',
         json: { url: url.trim(), eventTypes: events, description: description || undefined },
+        capability: 'settings.webhooks',
       });
       setSecret({ title: t('platform.webhooks.createdTitle'), value: r.secret });
       setUrl('');
@@ -170,21 +174,23 @@ export default function WebhooksPage() {
   async function act(ep: Endpoint, action: 'ping' | 'rotate' | 'toggle' | 'delete') {
     try {
       if (action === 'ping') {
-        await api(`/v1/webhooks/${ep.id}/ping`, { method: 'POST' });
+        await api(`/v1/webhooks/${ep.id}/ping`, { method: 'POST', capability: 'settings.webhooks' });
         toast({ title: t('platform.webhooks.pinged'), tone: 'success' });
       } else if (action === 'rotate') {
         const r = await api<{ secret: string }>(`/v1/webhooks/${ep.id}/rotate-secret`, {
           method: 'POST',
           json: { graceHours: 24 },
+          capability: 'settings.webhooks',
         });
         setSecret({ title: t('platform.webhooks.rotated'), value: r.secret });
       } else if (action === 'toggle') {
         await api(`/v1/webhooks/${ep.id}`, {
           method: 'PATCH',
           json: { status: ep.status === 'active' ? 'disabled' : 'active' },
+          capability: 'settings.webhooks',
         });
       } else {
-        await api(`/v1/webhooks/${ep.id}`, { method: 'DELETE' });
+        await api(`/v1/webhooks/${ep.id}`, { method: 'DELETE', capability: 'settings.webhooks' });
       }
       endpoints.reload();
     } catch (err) {

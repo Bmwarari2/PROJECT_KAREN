@@ -25,7 +25,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageHeader } from '@/components/platform';
-import { useSession } from '../../shell';
+import { useCan, useSession } from '../../shell';
 import { useInModule, useSectionLevel } from '@/components/module-page';
 
 interface Settings {
@@ -68,6 +68,7 @@ export default function AskHrSettingsPage() {
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
+  const can = useCan();
   const settings = useApi<Settings>('/v1/ai/settings');
   const [folders, setFolders] = React.useState<string[]>([]);
   const [docs, setDocs] = React.useState<string[]>([]);
@@ -108,7 +109,9 @@ export default function AskHrSettingsPage() {
 
   const put = (json: Record<string, unknown>) =>
     run('save', async () => {
-      settings.setData(await api<Settings>('/v1/ai/settings', { method: 'PUT', json }));
+      settings.setData(
+        await api<Settings>('/v1/ai/settings', { method: 'PUT', json, capability: 'settings.askHr.manage' }),
+      );
       toast({ title: t('askHr.settings.saved'), tone: 'success' });
     });
 
@@ -117,7 +120,10 @@ export default function AskHrSettingsPage() {
   if (!s) return <Skeleton className="h-96 w-full" />;
   const toggle = (list: string[], id: string, on: boolean) =>
     on ? [...new Set([...list, id])] : list.filter((x) => x !== id);
-  const canToggle = s.available && s.entitled && s.canManageFlag;
+  // the API says what this person may change; the map says the same (ADR-0188)
+  const manageFlag = s.canManageFlag && can('settings.askHr.manage');
+  const manageSources = s.canManageSources && can('settings.askHr.sources');
+  const canToggle = s.available && s.entitled && manageFlag;
 
   return (
     <div className="flex flex-col gap-6">
@@ -142,7 +148,7 @@ export default function AskHrSettingsPage() {
               type="checkbox"
               role="switch"
               aria-checked={s.enabled}
-              aria-describedby={!s.canManageFlag ? 'ai-enabled-hint' : undefined}
+              aria-describedby={!manageFlag ? 'ai-enabled-hint' : undefined}
               checked={s.enabled}
               disabled={!canToggle || busy === 'save'}
               onChange={(e) => put({ enabled: e.target.checked })}
@@ -155,7 +161,7 @@ export default function AskHrSettingsPage() {
               {s.enabled ? t('askHr.settings.on') : t('askHr.settings.off')}
             </Badge>
           </div>
-          {!s.canManageFlag ? (
+          {!manageFlag ? (
             <p id="ai-enabled-hint" className="text-footnote text-text-secondary">
               {t('askHr.settings.ownerOnly')}
             </p>
@@ -163,7 +169,7 @@ export default function AskHrSettingsPage() {
         </Card>
       </PageSection>
 
-      {s.canManageSources ? (
+      {manageSources ? (
         <PageSection
           headingLevel={sec.level}
           title={t('askHr.settings.folders')}
@@ -196,12 +202,14 @@ export default function AskHrSettingsPage() {
                   const { id } = await api<{ id: string }>('/v1/document-folders', {
                     method: 'POST',
                     json: { name: newFolder.trim(), visibility: 'everyone' },
+                    capability: 'settings.askHr.sources',
                   });
                   setNewFolder('');
                   settings.setData(
                     await api<Settings>('/v1/ai/settings', {
                       method: 'PUT',
                       json: { policyFolderIds: [...folders, id], policyDocumentIds: docs },
+                      capability: 'settings.askHr.manage',
                     }),
                   );
                 });
@@ -254,7 +262,7 @@ export default function AskHrSettingsPage() {
         </PageSection>
       ) : null}
 
-      {s.canManageSources && s.policyFolderIds.length ? (
+      {manageSources && s.policyFolderIds.length ? (
         <PageSection
           headingLevel={sec.level}
           title={t('askHr.settings.addText')}
@@ -266,7 +274,11 @@ export default function AskHrSettingsPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 void run('policy', async () => {
-                  await api('/v1/ai/policy-documents', { method: 'POST', json: policy });
+                  await api('/v1/ai/policy-documents', {
+                    method: 'POST',
+                    json: policy,
+                    capability: 'settings.askHr.sources',
+                  });
                   setPolicy((p) => ({ ...p, title: '', body: '' }));
                   toast({ title: t('askHr.settings.saved'), tone: 'success' });
                   settings.reload();
@@ -326,14 +338,14 @@ export default function AskHrSettingsPage() {
           <CardTitle as={sec.heading} className="mr-auto">
             {t('askHr.settings.indexed')}
           </CardTitle>
-          {s.canManageSources ? (
+          {manageSources ? (
             <Button
               size="sm"
               variant="secondary"
               loading={busy === 'reindex'}
               onClick={() =>
                 run('reindex', async () => {
-                  await api('/v1/ai/reindex', { method: 'POST' });
+                  await api('/v1/ai/reindex', { method: 'POST', capability: 'settings.askHr.sources' });
                   toast({ title: t('askHr.settings.reindexStarted'), tone: 'success' });
                 })
               }

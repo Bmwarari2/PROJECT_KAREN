@@ -81,6 +81,7 @@ export function NotificationPanel({
     void api('/v1/me/notifications/read', {
       method: 'POST',
       json: ids === 'all' ? { all: true } : { ids },
+      capability: 'me.notifications',
     }).catch(() => undefined);
     setItems((cur) =>
       cur ? cur.map((n) => (ids === 'all' || ids.includes(n.id) ? { ...n, read: true } : n)) : cur,

@@ -34,7 +34,7 @@ import {
   PageIntro,
   type AppliedFilter,
 } from '@/components/module-page';
-import { useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 import { EntityLink, PersonLink } from '@/components/person-link';
 
 interface Assignment {
@@ -103,11 +103,13 @@ export default function AssetsPage() {
   const router = useRouter();
   const params = useSearchParams();
   const session = useSession();
-  const canManage = !!session?.permissions.some(
-    (g) => g === '*' || g === 'assets.*' || g === 'assets.manage',
-  );
+  // IT admins manage the register; HR admins see it read-only, enough to see what a leaver holds (ADR-0189)
+  const can = useCan();
+  const canManage = can('it.assets.manage');
+  const canSeeRegister = can('it.assets.register');
+  const canAcknowledge = can('it.assets.acknowledge');
   const mine = useApi<Assignment[]>(session?.employeeId ? '/v1/me/assets' : null);
-  const assets = useApi<Asset[]>(canManage ? '/v1/assets' : null);
+  const assets = useApi<Asset[]>(canSeeRegister ? '/v1/assets' : null);
   const people = useApi<{ data: Employee[] }>(canManage ? '/v1/employees?limit=200' : null);
   const [form, setForm] = React.useState({
     assetTag: '',
@@ -141,8 +143,8 @@ export default function AssetsPage() {
     const a = params.get('ack');
     if (a && mine.data) setAck(mine.data.find((m) => m.id === a && !m.acknowledgedAt) ?? null);
     const r = params.get('return');
-    if (r && assets.data) setRet(assets.data.find((x) => x.holder?.assignmentId === r) ?? null);
-  }, [params, mine.data, assets.data]);
+    if (r && assets.data && canManage) setRet(assets.data.find((x) => x.holder?.assignmentId === r) ?? null);
+  }, [params, mine.data, assets.data, canManage]);
 
   // The register is filtered on the page: the API returns every asset it holds for the workspace.
   const rows = assets.data ?? [];
@@ -209,6 +211,7 @@ export default function AssetsPage() {
           serialNumber: form.serialNumber || undefined,
           ...(costMinor !== undefined ? { costMinor, currency: form.currency } : {}),
         },
+        capability: 'it.assets.manage',
       });
       setForm({ ...form, assetTag: '', name: '', serialNumber: '', cost: '' });
       setAdding(false);
@@ -220,7 +223,11 @@ export default function AssetsPage() {
     e.preventDefault();
     if (!ack) return;
     void run('ack', async () => {
-      await api(`/v1/asset-assignments/${ack.id}/acknowledge`, { method: 'POST', json: { confirm: true } });
+      await api(`/v1/asset-assignments/${ack.id}/acknowledge`, {
+        method: 'POST',
+        json: { confirm: true },
+        capability: 'it.assets.acknowledge',
+      });
       toast({ title: t('assets.acknowledged'), tone: 'success' });
       setAck(null);
       setAccepted(false);
@@ -232,7 +239,11 @@ export default function AssetsPage() {
     e.preventDefault();
     if (!assign) return;
     void run('assign', async () => {
-      await api(`/v1/assets/${assign.id}/assign`, { method: 'POST', json: assignForm });
+      await api(`/v1/assets/${assign.id}/assign`, {
+        method: 'POST',
+        json: assignForm,
+        capability: 'it.assets.manage',
+      });
       toast({ title: t('assets.assigned'), tone: 'success' });
       setAssign(null);
       assets.reload();
@@ -249,6 +260,7 @@ export default function AssetsPage() {
           outcome,
           checklist: ret.returnChecklist.map((i) => ({ key: i.key, done: !!ticks[i.key] })),
         },
+        capability: 'it.assets.manage',
       });
       toast({ title: t(outcome === 'lost' ? 'assets.markedLost' : 'assets.returned'), tone: 'success' });
       setRet(null);
@@ -261,7 +273,7 @@ export default function AssetsPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* without the register the page is just "Equipment issued to me", which is its heading */}
-      {canManage ? <PageIntro title={t('assets.title')} titleIsTab /> : null}
+      {canSeeRegister ? <PageIntro title={t('assets.title')} titleIsTab /> : null}
 
       {session?.employeeId ? (
         !mine.data ? (
@@ -289,7 +301,7 @@ export default function AssetsPage() {
                   ) : undefined
                 }
                 actions={
-                  a.acknowledgedAt ? undefined : (
+                  a.acknowledgedAt || !canAcknowledge ? undefined : (
                     <Button
                       size="sm"
                       className="min-h-11 sm:min-h-8"
@@ -311,7 +323,10 @@ export default function AssetsPage() {
         )
       ) : null}
 
-      {canManage ? (
+      {canSeeRegister && !canManage ? (
+        <p className="text-callout text-text-secondary">{t('visibility.assets.readOnly')}</p>
+      ) : null}
+      {canSeeRegister ? (
         <ListCard
           title={t('assets.register')}
           count={
@@ -353,10 +368,12 @@ export default function AssetsPage() {
             ) : undefined
           }
           actions={
-            <Button size="sm" onClick={() => setAdding(true)}>
-              <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              {t('assets.add')}
-            </Button>
+            canManage ? (
+              <Button size="sm" onClick={() => setAdding(true)}>
+                <Plus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('assets.add')}
+              </Button>
+            ) : undefined
           }
           applied={applied}
           empty={
@@ -383,9 +400,11 @@ export default function AssetsPage() {
                 <TH className="text-right">{t('assets.cost')}</TH>
                 <TH>{t('common.status')}</TH>
                 <TH>{t('assets.holder')}</TH>
-                <TH>
-                  <span className="sr-only">{t('common.actions')}</span>
-                </TH>
+                {canManage ? (
+                  <TH>
+                    <span className="sr-only">{t('common.actions')}</span>
+                  </TH>
+                ) : null}
               </tr>
             </THead>
             <tbody>
@@ -421,28 +440,30 @@ export default function AssetsPage() {
                       ''
                     )}
                   </TD>
-                  <TD className="text-right">
-                    {a.status === 'in_stock' ? (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setAssign(a)}
-                        aria-label={t('assets.assignNamed', { asset: a.name })}
-                      >
-                        <UserPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                        {t('assets.assign')}
-                      </Button>
-                    ) : a.holder ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setRet(a)}
-                        aria-label={t('assets.recordReturnNamed', { asset: a.name })}
-                      >
-                        {t('assets.recordReturn')}
-                      </Button>
-                    ) : null}
-                  </TD>
+                  {canManage ? (
+                    <TD className="text-right">
+                      {a.status === 'in_stock' ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setAssign(a)}
+                          aria-label={t('assets.assignNamed', { asset: a.name })}
+                        >
+                          <UserPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                          {t('assets.assign')}
+                        </Button>
+                      ) : a.holder ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setRet(a)}
+                          aria-label={t('assets.recordReturnNamed', { asset: a.name })}
+                        >
+                          {t('assets.recordReturn')}
+                        </Button>
+                      ) : null}
+                    </TD>
+                  ) : null}
                 </TR>
               ))}
             </tbody>

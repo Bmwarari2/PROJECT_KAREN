@@ -153,7 +153,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/logout',
     {
-      config: { auth: 'mfa-setup', selfAudited: true },
+      config: { auth: 'mfa-setup', selfAudited: true, capability: 'me.security' },
       schema: { tags: ['auth'], response: { 204: Type.Null() } },
     },
     async (req, reply) => {
@@ -241,7 +241,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/mfa/totp/enroll',
     {
-      config: { auth: 'mfa-setup', selfAudited: true },
+      config: { auth: 'mfa-setup', selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         response: {
@@ -282,7 +282,7 @@ export async function authRoutes(app: FastifyInstance) {
     app.post(
       path,
       {
-        config: { auth: 'mfa-setup', selfAudited: true },
+        config: { auth: 'mfa-setup', selfAudited: true, capability: 'me.security' },
         schema: {
           tags: ['auth'],
           body: Type.Object({ code: Type.String({ pattern: '^[0-9]{6}$' }) }),
@@ -463,7 +463,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post(
     '/v1/auth/password',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'me.security' },
       schema: {
         tags: ['auth'],
         summary: 'Change (or set a first) password; ends your other sessions',

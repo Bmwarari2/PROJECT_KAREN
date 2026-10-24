@@ -119,11 +119,16 @@ function SupportDesk() {
       const created = await api<TicketSummary>('/v1/support/tickets', {
         method: 'POST',
         json: { ...form, contextPath: params.get('context') ?? null },
+        capability: 'help.support',
       });
       if (file) {
         const fd = new FormData();
         fd.append('file', file);
-        await api(`/v1/support/tickets/${created.id}/attachments`, { method: 'POST', body: fd });
+        await api(`/v1/support/tickets/${created.id}/attachments`, {
+          method: 'POST',
+          body: fd,
+          capability: 'help.support',
+        });
       }
       toast({ title: t('support.created', { reference: created.reference }), tone: 'success' });
       router.push(`/app/support/${created.id}`);

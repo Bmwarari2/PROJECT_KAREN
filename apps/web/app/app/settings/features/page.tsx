@@ -6,7 +6,8 @@ import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { errorText, PageHeader } from '@/components/platform';
-import { useExperience, useSession } from '../../shell';
+import { useCan, useExperience } from '../../shell';
+import { ReadOnlyNote } from '../kit';
 
 interface Flag {
   key: FeatureKey;
@@ -19,18 +20,17 @@ interface Flag {
 export default function FeaturesPage() {
   const t = useT();
   const toast = useToast();
-  const session = useSession();
   const { reload } = useExperience();
   const flags = useApi<Flag[]>('/v1/settings/features');
-  const canManage = !!session?.permissions.some(
-    (p) => p === '*' || p === 'settings.manage' || p === 'settings.*',
-  );
+  const can = useCan();
+  const canManage = can('settings.features.manage');
 
   async function toggle(f: Flag, enabled: boolean) {
     try {
       const next = await api<Flag[]>(`/v1/settings/features/${f.key}`, {
         method: 'PUT',
         json: { enabled: enabled === f.default ? null : enabled },
+        capability: 'settings.features.manage',
       });
       flags.setData(next);
       reload();
@@ -48,6 +48,7 @@ export default function FeaturesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('platform.features.title')} lead={t('platform.features.lead')} />
+      {!canManage ? <ReadOnlyNote /> : null}
       <Card>
         {!flags.data ? (
           <Skeleton className="h-40" />
@@ -60,9 +61,13 @@ export default function FeaturesPage() {
               return (
                 <li key={f.key} className="flex items-start gap-4 py-4">
                   <div className="mr-auto">
-                    <label htmlFor={id} className="text-callout font-semibold">
-                      {t(def.labelKey)}
-                    </label>
+                    {canManage ? (
+                      <label htmlFor={id} className="text-callout font-semibold">
+                        {t(def.labelKey)}
+                      </label>
+                    ) : (
+                      <p className="text-callout font-semibold">{t(def.labelKey)}</p>
+                    )}
                     <p
                       id={`${id}-desc`}
                       className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary"
@@ -75,17 +80,24 @@ export default function FeaturesPage() {
                       </Badge>
                     ) : null}
                   </div>
-                  <input
-                    id={id}
-                    type="checkbox"
-                    role="switch"
-                    aria-describedby={`${id}-desc`}
-                    aria-checked={f.enabled}
-                    checked={f.enabled}
-                    disabled={locked}
-                    onChange={(e) => toggle(f, e.target.checked)}
-                    className="mt-1 h-6 w-6 accent-[var(--color-accent)]"
-                  />
+                  {canManage ? (
+                    <input
+                      id={id}
+                      type="checkbox"
+                      role="switch"
+                      aria-describedby={`${id}-desc`}
+                      aria-checked={f.enabled}
+                      checked={f.enabled}
+                      disabled={locked}
+                      onChange={(e) => toggle(f, e.target.checked)}
+                      className="mt-1 h-6 w-6 accent-[var(--color-accent)]"
+                    />
+                  ) : (
+                    // read-only (ADR-0188): the state, without a control that would be refused
+                    <Badge tone={f.enabled ? 'success' : 'neutral'} className="mt-1 shrink-0">
+                      {t(f.enabled ? 'visibility.on' : 'visibility.off')}
+                    </Badge>
+                  )}
                 </li>
               );
             })}

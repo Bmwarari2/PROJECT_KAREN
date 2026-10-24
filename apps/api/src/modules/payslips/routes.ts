@@ -244,7 +244,7 @@ export async function payslipRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payslips/batches',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payslips.manage' },
       schema: {
         tags: ['payslips'],
         summary:
@@ -563,7 +563,7 @@ export async function payslipRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payslips/batches/:id/publish',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payslips.manage' },
       schema: {
         tags: ['payslips'],
         summary: 'Publish every matched file to its employee and notify them',

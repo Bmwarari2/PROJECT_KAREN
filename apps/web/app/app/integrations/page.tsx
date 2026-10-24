@@ -30,7 +30,7 @@ import {
   PageIntro,
   type AppliedFilter,
 } from '@/components/module-page';
-import { useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 import { PersonLink } from '@/components/person-link';
 
 type Provider = 'microsoft365' | 'google_workspace';
@@ -128,6 +128,7 @@ function ProviderCard({
           clientId: form.clientId || null,
           ...(google ? { adminSubject: form.adminSubject || null } : {}),
         },
+        capability: 'it.integrations.manage',
       });
       toast({ title: t('integrations.saved'), tone: 'success' });
     });
@@ -138,6 +139,7 @@ function ProviderCard({
       await api(`/v1/integrations/it/${c.provider}/credentials`, {
         method: 'PUT',
         json: google ? { serviceAccountKey: secret } : { clientSecret: secret },
+        capability: 'it.integrations.manage',
       });
       setSecret('');
       toast({ title: t('integrations.secretSaved'), tone: 'success' });
@@ -147,14 +149,17 @@ function ProviderCard({
     run('consent', async () => {
       const r = await api<{ url: string | null; clientId: string | null }>(
         `/v1/integrations/it/${c.provider}/consent`,
-        { method: 'POST' },
+        { method: 'POST', capability: 'it.integrations.manage' },
       );
       if (r.url) window.location.assign(r.url);
       else toast({ title: t('integrations.googleDelegation', { clientId: r.clientId ?? '' }) });
     });
   const verify = () =>
     run('verify', async () => {
-      await api(`/v1/integrations/it/${c.provider}/verify`, { method: 'POST' });
+      await api(`/v1/integrations/it/${c.provider}/verify`, {
+        method: 'POST',
+        capability: 'it.integrations.manage',
+      });
       toast({ title: t('integrations.verified'), tone: 'success' });
     });
   const addRule = (e: React.FormEvent) => {
@@ -168,6 +173,7 @@ function ProviderCard({
           licences: rule.skuId ? [{ skuId: rule.skuId }] : [],
           groups: rule.group ? [rule.group] : [],
         },
+        capability: 'it.integrations.manage',
       });
       setRule({ name: '', skuId: '', group: '' });
       rules.reload();
@@ -374,10 +380,10 @@ export default function IntegrationsPage() {
   const t = useT();
   const locale = useLocale();
   const toast = useToast();
+  // IT admins connect accounts (ADR-0189); readers see the connections, read-only
   const session = useSession();
-  const canManage = !!session?.permissions.some(
-    (g) => g === '*' || g === 'integrations.*' || g === 'integrations.manage',
-  );
+  const can = useCan();
+  const canManage = can('it.integrations.manage');
   const connections = useApi<Connection[]>('/v1/integrations/it');
   const people = useApi<{ data: Array<{ id: string; displayName: string }> }>(
     '/v1/employees?limit=200&status=all',

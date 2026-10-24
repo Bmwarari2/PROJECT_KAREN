@@ -65,7 +65,11 @@ export default function TicketPage() {
     run(async () => {
       const fd = new FormData();
       fd.append('file', file);
-      await api(`/v1/support/tickets/${id}/attachments`, { method: 'POST', body: fd });
+      await api(`/v1/support/tickets/${id}/attachments`, {
+        method: 'POST',
+        body: fd,
+        capability: 'help.support',
+      });
     }, t('support.attached'));
 
   if (!tk) return <Skeleton className="h-64 w-full" />;
@@ -139,7 +143,11 @@ export default function TicketPage() {
             onSubmit={(e) => {
               e.preventDefault();
               void run(async () => {
-                await api(`/v1/support/tickets/${id}/messages`, { method: 'POST', json: { body: reply } });
+                await api(`/v1/support/tickets/${id}/messages`, {
+                  method: 'POST',
+                  json: { body: reply },
+                  capability: 'help.support',
+                });
                 setReply('');
               }, t('support.replied'));
             }}
@@ -175,7 +183,8 @@ export default function TicketPage() {
                 variant="secondary"
                 onClick={() =>
                   run(
-                    () => api(`/v1/support/tickets/${id}/close`, { method: 'POST' }),
+                    () =>
+                      api(`/v1/support/tickets/${id}/close`, { method: 'POST', capability: 'help.support' }),
                     t('support.closedToast'),
                   )
                 }

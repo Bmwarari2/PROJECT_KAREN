@@ -5,6 +5,7 @@ import { Button, Field, Input, Textarea, useToast } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
+import { useCan } from '@/app/app/shell';
 import { Stepper } from './stepper';
 
 export interface Signature {
@@ -54,6 +55,8 @@ export function SignPanel({
   const [busy, setBusy] = React.useState(false);
   const [done, setDone] = React.useState<string | null>(null);
   const heading = React.useRef<HTMLHeadingElement>(null);
+  // signing is offered to people who may sign documents (ADR-0188)
+  const can = useCan();
   const steps = [
     t('docSign.steps.review'),
     t('docSign.steps.confirm'),
@@ -66,6 +69,7 @@ export function SignPanel({
     requestAnimationFrame(() => heading.current?.focus());
   };
 
+  if (!can('documents.sign')) return null;
   if (request.status === 'signed')
     return (
       <section className={panel} aria-labelledby="sign-title">
@@ -87,7 +91,7 @@ export function SignPanel({
     try {
       const r = await api<{ status: string; signedDocumentId: string | null }>(
         `/v1/signature-requests/${request.id}/sign`,
-        { method: 'POST', json: { consent: true, typedName: name } },
+        { method: 'POST', json: { consent: true, typedName: name }, capability: 'documents.sign' },
       );
       setDone(r.status);
       move(3);
@@ -222,6 +226,7 @@ export function CountersignPanel({
             choice === 'approve'
               ? { decision: 'approve', consent: true, typedName: name }
               : { decision: 'return', reason },
+          capability: 'documents.countersign',
         },
       );
       setDone(r.status);

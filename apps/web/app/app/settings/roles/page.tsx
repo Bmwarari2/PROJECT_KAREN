@@ -5,7 +5,7 @@ import { Plus, ShieldCheck } from 'lucide-react';
 import { Badge, buttonVariants, cn, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { hasPermission, ModuleFrameContext, PageTitle, useSession } from '../../shell';
+import { ModuleFrameContext, PageTitle, useCan } from '../../shell';
 import { RolesNav } from './nav';
 import { roleName, type Role } from './shared';
 import { selectClass } from '../kit';
@@ -13,10 +13,10 @@ import { ListCard } from '@/components/module-page';
 
 export default function RolesPage() {
   const t = useT();
-  const session = useSession();
+  const can = useCan();
   const inModule = React.useContext(ModuleFrameContext);
   const { data, error } = useApi<Role[]>('/v1/roles');
-  const canManage = hasPermission(session, 'roles.manage');
+  const canManage = can('settings.roles.manage');
   const [type, setType] = React.useState<'all' | 'builtIn' | 'custom'>('all');
 
   if (error)

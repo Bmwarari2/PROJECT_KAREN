@@ -22,7 +22,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
-import { useSession } from '../shell';
+import { useSession, useCan } from '../shell';
 import { EntityLink } from '@/components/person-link';
 
 interface Period {
@@ -80,12 +80,10 @@ export default function PayrollPage() {
   const locale = useLocale();
   const toast = useToast();
   const session = useSession();
-  const has = (p: string) =>
-    !!session?.permissions.some(
-      (g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))),
-    );
-  const canManage = has('payroll.manage');
-  const canExport = has('payroll.export');
+  // HR admins read payroll; payroll admins run and export it (ADR-0188)
+  const can = useCan();
+  const canManage = can('pay.payroll.manage');
+  const canExport = can('pay.payroll.export');
   const periods = useApi<Period[]>('/v1/payroll/periods');
   const connectors = useApi<Connector[]>('/v1/payroll/connectors');
   const exports = useApi<ExportRow[]>('/v1/payroll/exports');
@@ -127,6 +125,7 @@ export default function PayrollPage() {
       await api('/v1/payroll/periods', {
         method: 'POST',
         json: { ...period, payDate: period.payDate || null },
+        capability: 'pay.payroll.manage',
       });
       setPeriod({ name: '', frequency: 'monthly', startDate: '', endDate: '', payDate: '' });
       toast({ title: t('payroll.periodCreated'), tone: 'success' });
@@ -136,7 +135,11 @@ export default function PayrollPage() {
   const createConnector = (e: React.FormEvent) => {
     e.preventDefault();
     void run('connector', async () => {
-      await api('/v1/payroll/connectors', { method: 'POST', json: connector });
+      await api('/v1/payroll/connectors', {
+        method: 'POST',
+        json: connector,
+        capability: 'pay.payroll.manage',
+      });
       setConnector({ name: '', kind: 'csv' });
       toast({ title: t('payroll.connectorCreated'), tone: 'success' });
       connectors.reload();
@@ -144,7 +147,7 @@ export default function PayrollPage() {
   };
   const close = (p: Period) =>
     run(`close:${p.id}`, async () => {
-      await api(`/v1/payroll/periods/${p.id}/close`, { method: 'POST' });
+      await api(`/v1/payroll/periods/${p.id}/close`, { method: 'POST', capability: 'pay.payroll.manage' });
       toast({ title: t('payroll.closed', { name: p.name }), tone: 'success' });
       periods.reload();
     });
@@ -152,7 +155,11 @@ export default function PayrollPage() {
     run(`export:${p.id}`, async () => {
       const connectorId = chosen[p.id] ?? usable[0]?.id;
       if (!connectorId) return;
-      await api(`/v1/payroll/periods/${p.id}/exports`, { method: 'POST', json: { connectorId } });
+      await api(`/v1/payroll/periods/${p.id}/exports`, {
+        method: 'POST',
+        json: { connectorId },
+        capability: 'pay.payroll.export',
+      });
       toast({ title: t('payroll.exported'), tone: 'success' });
       exports.reload();
     });
@@ -164,7 +171,11 @@ export default function PayrollPage() {
     });
   const deliver = (x: ExportRow) =>
     run(`deliver:${x.id}`, async () => {
-      await api(`/v1/payroll/exports/${x.id}/deliver`, { method: 'POST', json: {} });
+      await api(`/v1/payroll/exports/${x.id}/deliver`, {
+        method: 'POST',
+        json: {},
+        capability: 'pay.payroll.export',
+      });
       toast({ title: t('payroll.deliveryQueued'), tone: 'success' });
       deliveries.reload();
     });

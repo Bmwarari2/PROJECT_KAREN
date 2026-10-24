@@ -212,6 +212,7 @@ function AssignDialog({
           api(`/v1/leave/policies/${policy.id}/assign`, {
             method: 'POST',
             json: { employeeIds: [...selected], validFrom },
+            capability: 'settings.leave',
           }),
         t('admin.leave.assigned', { n: selected.size }),
       )
@@ -373,6 +374,7 @@ function AddPolicy({ types, onCreated }: { types: LeaveType[]; onCreated: () => 
       const r = await api<{ id: string; warnings: string[] }>('/v1/leave/policies', {
         method: 'POST',
         json: body,
+        capability: 'settings.leave',
       });
       setWarnings(r.warnings);
       setD({ ...EMPTY, leaveTypeId: d.leaveTypeId });

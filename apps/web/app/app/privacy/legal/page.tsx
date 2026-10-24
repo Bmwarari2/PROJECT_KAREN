@@ -8,6 +8,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { SELECT_CLASS } from '../types';
+import { useCan } from '../../shell';
 
 interface Dpa {
   template: string;
@@ -45,6 +46,9 @@ export default function LegalPage() {
   const [template, setTemplate] = React.useState<Notice['template']>('uk');
   const [draft, setDraft] = React.useState<{ title: string; body: string } | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
+  // readers see the agreement, the sub-processor notices and the privacy notices (ADR-0188)
+  const can = useCan();
+  const canEditNotices = can('privacy.notices.manage');
   const current = notices.data?.find((n) => n.template === template);
   React.useEffect(() => {
     if (current)
@@ -99,7 +103,7 @@ export default function LegalPage() {
                   })}
                 </p>
               ))}
-              {dpa.data.reacceptanceRequired ? (
+              {dpa.data.reacceptanceRequired && can('privacy.dpa.accept') ? (
                 <div className="flex flex-wrap items-center gap-3">
                   <Badge tone="danger">{t('privacy.ui.legal.reaccept')}</Badge>
                   <Button
@@ -112,6 +116,7 @@ export default function LegalPage() {
                           api('/v1/privacy/dpa/accept', {
                             method: 'POST',
                             json: { version: dpa.data!.currentVersion },
+                            capability: 'privacy.dpa.accept',
                           }),
                         t('privacy.ui.legal.acceptedToast'),
                         dpa.reload,
@@ -156,6 +161,7 @@ export default function LegalPage() {
                         api('/v1/privacy/subprocessors/subscription', {
                           method: 'PUT',
                           json: { subscribed: !subs.data!.subscribed },
+                          capability: 'privacy.subprocessors.subscribe',
                         }),
                       t(
                         subs.data!.subscribed
@@ -193,6 +199,37 @@ export default function LegalPage() {
         <Card>
           {!notices.data || !draft ? (
             <Skeleton className="mt-3 h-40" />
+          ) : !canEditNotices ? (
+            <div className="mt-4 grid gap-3">
+              <Field id="notice-template" label={t('privacy.ui.legal.templateLabel')}>
+                {(p) => (
+                  <select
+                    {...p}
+                    className={`${SELECT_CLASS} w-full md:w-1/2`}
+                    value={template}
+                    onChange={(e) => setTemplate(e.target.value as Notice['template'])}
+                  >
+                    {notices.data!.map((n) => (
+                      <option key={n.template} value={n.template}>
+                        {t(`privacy.ui.legal.template.${n.template}`)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <div className="flex flex-wrap items-center gap-2 text-callout">
+                {current?.tenantCopy ? (
+                  <Badge tone={current.tenantCopy.status === 'published' ? 'success' : 'neutral'}>
+                    {t(`privacy.ui.legal.noticeStatus.${current.tenantCopy.status}`)}
+                  </Badge>
+                ) : (
+                  <Badge>{t('privacy.ui.legal.notStarted')}</Badge>
+                )}
+              </div>
+              <h3 className="text-callout font-semibold">{draft.title}</h3>
+              <p className="whitespace-pre-wrap text-callout">{draft.body}</p>
+              <p className="text-callout text-text-secondary">{t('visibility.readOnly')}</p>
+            </div>
           ) : (
             <form
               className="mt-4 grid gap-3"
@@ -202,7 +239,11 @@ export default function LegalPage() {
                 void act(
                   'notice',
                   () =>
-                    api(`/v1/privacy/notices/${template}`, { method: 'PUT', json: { ...draft, publish } }),
+                    api(`/v1/privacy/notices/${template}`, {
+                      method: 'PUT',
+                      json: { ...draft, publish },
+                      capability: 'privacy.notices.manage',
+                    }),
                   t(publish ? 'privacy.ui.legal.published' : 'privacy.ui.legal.savedDraft'),
                   notices.reload,
                 );

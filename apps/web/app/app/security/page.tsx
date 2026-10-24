@@ -119,7 +119,7 @@ function SessionsCard() {
                   aria-label={t('app.security.sessions.endOneLabel', { device: label(s) })}
                   onClick={() =>
                     act(
-                      () => api(`/v1/auth/sessions/${s.id}`, { method: 'DELETE' }),
+                      () => api(`/v1/auth/sessions/${s.id}`, { method: 'DELETE', capability: 'me.security' }),
                       t('app.security.sessions.ended'),
                     )
                   }
@@ -137,7 +137,7 @@ function SessionsCard() {
           variant="secondary"
           onClick={() =>
             act(
-              () => api('/v1/auth/sessions/end-others', { method: 'POST' }),
+              () => api('/v1/auth/sessions/end-others', { method: 'POST', capability: 'me.security' }),
               t('app.security.sessions.endedOthers'),
             )
           }
@@ -174,6 +174,7 @@ function PasswordCard() {
         api('/v1/auth/password', {
           method: 'POST',
           json: needsCurrent ? { currentPassword: current, newPassword: next } : { newPassword: next },
+          capability: 'me.security',
         }),
       );
       if (ok) {
@@ -274,7 +275,9 @@ export default function SecurityPage() {
     setError(null);
     try {
       // replacing an existing authenticator needs a fresh proof of identity (ASVS V7.5.1)
-      await stepUp.run(async () => setEnrol(await api('/v1/auth/mfa/totp/enroll', { method: 'POST' })));
+      await stepUp.run(async () =>
+        setEnrol(await api('/v1/auth/mfa/totp/enroll', { method: 'POST', capability: 'me.security' })),
+      );
     } catch (err) {
       setError(err instanceof ApiProblem ? err.title : t('common.error'));
     }
@@ -288,6 +291,7 @@ export default function SecurityPage() {
       await api(session?.hasMfaFactor && !enrol ? '/v1/auth/mfa/totp/verify' : '/v1/auth/mfa/totp/confirm', {
         method: 'POST',
         json: { code },
+        capability: 'me.security',
       });
       toast({ title: t('app.security.mfaDone'), tone: 'success' });
       router.replace('/app');
@@ -306,9 +310,13 @@ export default function SecurityPage() {
         const { challengeId, options } = await api<{
           challengeId: string;
           options: Parameters<typeof startRegistration>[0]['optionsJSON'];
-        }>('/v1/auth/passkeys/register/options', { method: 'POST' });
+        }>('/v1/auth/passkeys/register/options', { method: 'POST', capability: 'me.security' });
         const response = await startRegistration({ optionsJSON: options });
-        await api('/v1/auth/passkeys/register/verify', { method: 'POST', json: { challengeId, response } });
+        await api('/v1/auth/passkeys/register/verify', {
+          method: 'POST',
+          json: { challengeId, response },
+          capability: 'me.security',
+        });
       });
       if (!added) return;
       toast({ title: t('app.security.passkeyAdded'), tone: 'success' });

@@ -232,7 +232,7 @@ export async function employeeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/people/visibility',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.visibility' },
       schema: {
         tags: ['employees'],
         summary: 'Which of these people the caller may open (their profile page), in one batch',
@@ -363,7 +363,7 @@ export async function employeeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/employees',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.add' },
       schema: {
         tags: ['employees'],
         summary: 'Hire (create) an employee with effective-dated personal, job, pay and contract records',
@@ -444,7 +444,7 @@ export async function employeeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/employees/:id/changes',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.changes' },
       schema: {
         tags: ['employees'],
         summary: 'Apply an effective-dated change (past, today or future-dated)',
@@ -525,7 +525,7 @@ export async function employeeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/employees/:id/terminate',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.terminate' },
       schema: {
         tags: ['employees'],
         params: Type.Object({ id: Uuid }),
@@ -655,7 +655,7 @@ export async function employeeRoutes(app: FastifyInstance) {
   app.put(
     '/v1/employees/:id/emergency-contacts',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.emergencyContacts' },
       schema: {
         tags: ['employees'],
         summary:

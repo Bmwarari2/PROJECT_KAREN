@@ -188,7 +188,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/policies',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.leave' },
       schema: {
         tags: ['leave'],
         body: Type.Object({
@@ -326,7 +326,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/policies/:id/assign',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.leave' },
       schema: {
         tags: ['leave'],
         params: Type.Object({ id: Uuid }),
@@ -417,7 +417,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/adjustments',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.leave.adjust' },
       schema: {
         tags: ['leave'],
         description:
@@ -627,7 +627,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/requests',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.timeOff.request' },
       schema: {
         tags: ['leave'],
         body: Type.Object({
@@ -1002,7 +1002,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/requests/:id/cancel',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.timeOff.cancel' },
       schema: {
         tags: ['leave'],
         params: Type.Object({ id: Uuid }),
@@ -1145,7 +1145,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/ics-tokens',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.timeOff.calendarFeed' },
       schema: {
         tags: ['leave'],
         body: Type.Object({ scope: Type.Union([Type.Literal('me'), Type.Literal('team')]) }),
@@ -1285,7 +1285,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.put(
     '/v1/settings/absence',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.absence.manage' },
       schema: {
         tags: ['absence'],
         description:
@@ -1329,7 +1329,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/sickness',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'time.sickness.record' },
       schema: {
         tags: ['absence'],
         body: Type.Object({
@@ -2165,7 +2165,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/absence/triggers',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.absence.manage' },
       schema: {
         tags: ['absence'],
         body: Type.Object({
@@ -2357,7 +2357,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/leave/cover-rules',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.coverRules' },
       schema: {
         tags: ['leave'],
         body: Type.Object({
@@ -2399,7 +2399,7 @@ export async function leaveRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/company-calendars',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.calendars' },
       schema: {
         tags: ['leave'],
         body: Type.Object({

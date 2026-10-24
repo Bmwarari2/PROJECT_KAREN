@@ -25,7 +25,7 @@ import { thisWeek, viewerZone } from '@/lib/week';
 import { PageIntro } from '@/components/module-page';
 import { EntityLink, PersonLink } from '@/components/person-link';
 import { Hours, tone, WeekBody, type Timesheet } from './week';
-import { hasPermission, useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 
 interface TeamRow {
   id: string;
@@ -44,10 +44,14 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
   const toast = useToast();
   const ts = useApi<Timesheet>(`/v1/timesheets/employees/${employeeId}/weeks/${week}`);
   const [busy, setBusy] = React.useState(false);
+  const can = useCan();
   async function submit() {
     setBusy(true);
     try {
-      await api(`/v1/timesheets/employees/${employeeId}/weeks/${week}/submit`, { method: 'POST' });
+      await api(`/v1/timesheets/employees/${employeeId}/weeks/${week}/submit`, {
+        method: 'POST',
+        capability: 'time.timesheets.submit',
+      });
       toast({ title: t('timesheets.submitted'), tone: 'success' });
       ts.reload();
       onChange();
@@ -69,7 +73,7 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
         <Badge tone={tone[d.status as keyof typeof tone] ?? 'neutral'}>
           {t(`timesheets.status.${d.status}`)}
         </Badge>
-        {['open', 'rejected'].includes(d.status) ? (
+        {['open', 'rejected'].includes(d.status) && can('time.timesheets.submit') ? (
           <Button size="sm" onClick={submit} loading={busy}>
             <Send aria-hidden className="h-4 w-4 stroke-[1.5]" />
             {t('timesheets.submit')}
@@ -84,16 +88,20 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
 function TeamWeek({ week }: { week: string }) {
   const t = useT();
   const toast = useToast();
-  const session = useSession();
   const list = useApi<{ data: TeamRow[] }>(`/v1/timesheets?weekStart=${week}&limit=200`);
   const mine = useApi<Array<{ id: string; payload: { timesheetId?: string } }>>('/v1/approvals?view=mine');
   const approvable = new Map(
     (mine.data ?? []).filter((a) => a.payload.timesheetId).map((a) => [a.payload.timesheetId!, a.id]),
   );
-  const canExport = hasPermission(session, 'time.export');
+  const can = useCan();
+  const canExport = can('time.timesheets.export');
   async function decide(approvalId: string, decision: 'approve' | 'reject') {
     try {
-      await api(`/v1/approvals/${approvalId}/decide`, { method: 'POST', json: { decision } });
+      await api(`/v1/approvals/${approvalId}/decide`, {
+        method: 'POST',
+        json: { decision },
+        capability: 'inbox.approvals.decide',
+      });
       toast({ title: t('timesheets.decided'), tone: 'success' });
     } catch (err) {
       toast({
@@ -216,7 +224,8 @@ export default function TimesheetsPage() {
     if (settings.data && !week) setWeek(addDays(thisWeek(zone, settings.data.workweekStartsOn), -7));
   }, [settings.data, week, zone]);
   if (!session) return null;
-  const canTeam = hasPermission(session, 'time.read');
+  const can = useCan();
+  const canTeam = can('time.timesheets.team');
   return (
     <div className="flex flex-col gap-5">
       <PageIntro

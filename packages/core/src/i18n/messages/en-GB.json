@@ -266,7 +266,8 @@
     "entity_hr_admin": "Country or entity HR admin",
     "payroll_admin": "Payroll admin",
     "manager": "Manager",
-    "employee": "Employee"
+    "employee": "Employee",
+    "it_admin": "IT admin"
   },
   "app": {
     "nav": {
@@ -6035,7 +6036,8 @@
       "webhooks": "Webhooks",
       "billing": "Billing",
       "account": "Workspace account",
-      "hr": "Requests to HR"
+      "hr": "Requests to HR",
+      "scim": "SCIM provisioning"
     },
     "perm": {
       "self": {
@@ -6206,6 +6208,9 @@
       },
       "hr": {
         "contact": "Ask the HR team a question or make a request"
+      },
+      "scim": {
+        "manage": "Manage SCIM provisioning tokens"
       }
     },
     "section": {
@@ -6780,6 +6785,19 @@
       "intro": "Thapsus-HR's security monitoring noticed this in your workspace {workspace}:",
       "digestIntro": "Thapsus-HR's security monitoring noticed these in your workspace {workspace}:",
       "open": "Details in your Security centre"
+    }
+  },
+  "visibility": {
+    "readOnly": "You can view this page. Ask an admin who manages it if something needs to change.",
+    "branding": {
+      "defaultAccent": "Not set: the Thapsus-HR accent colour is used",
+      "noLogo": "No logo uploaded",
+      "sameAsLight": "The same colour as in light mode"
+    },
+    "on": "On",
+    "off": "Off",
+    "assets": {
+      "readOnly": "You can see who holds each item. IT admins issue equipment, record returns and change the register."
     }
   }
 }

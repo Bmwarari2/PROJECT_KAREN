@@ -84,7 +84,7 @@ export async function workflowRoutes(app: FastifyInstance) {
   app.post(
     '/v1/workflow-templates',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.workflows.manage' },
       schema: {
         tags: ['workflows'],
         body: Type.Object({
@@ -287,7 +287,7 @@ export async function workflowRoutes(app: FastifyInstance) {
   app.post(
     '/v1/tasks/:id/complete',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'inbox.tasks.complete' },
       schema: {
         tags: ['tasks'],
         params: Type.Object({ id: Uuid }),

@@ -226,7 +226,7 @@ export async function payrollRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payroll/connectors',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payroll.manage' },
       schema: {
         tags: ['payroll'],
         body: ConnectorBody,
@@ -555,7 +555,7 @@ export async function payrollRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payroll/periods',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payroll.manage' },
       schema: {
         tags: ['payroll'],
         body: PeriodBody,
@@ -597,7 +597,7 @@ export async function payrollRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payroll/periods/:id/close',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payroll.manage' },
       schema: {
         tags: ['payroll'],
         summary: 'Close a period: snapshot its inputs so every later export is reproducible',
@@ -673,7 +673,7 @@ export async function payrollRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payroll/periods/:id/exports',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payroll.export' },
       schema: {
         tags: ['payroll'],
         summary: 'Render a pay-period export with a connector (reproducible once the period is closed)',
@@ -805,7 +805,7 @@ export async function payrollRoutes(app: FastifyInstance) {
   app.post(
     '/v1/payroll/exports/:id/deliver',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'pay.payroll.export' },
       schema: {
         tags: ['payroll'],
         summary: 'Deliver an export by SFTP or API push (background job; idempotent)',

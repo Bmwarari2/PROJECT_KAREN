@@ -18,7 +18,8 @@ import {
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { FormError, PageHeader, ReadOnlyNote, SettingsCard, useAction, usePermission } from '../kit';
+import { FormError, PageHeader, ReadOnlyNote, SettingsCard, useAction } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 interface Domain {
@@ -33,8 +34,8 @@ interface Domain {
 export default function DomainsPage() {
   const t = useT();
   const sec = useSectionLevel();
-  const has = usePermission();
-  const canManage = has('settings.manage');
+  const can = useCan();
+  const canManage = can('settings.domains.manage');
   const domains = useApi<Domain[]>('/v1/settings/domains');
   const [domain, setDomain] = React.useState('');
   const add = useAction();
@@ -43,7 +44,11 @@ export default function DomainsPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const ok = await add.run(() =>
-      api('/v1/settings/domains', { method: 'POST', json: { domain: domain.trim().toLowerCase() } }),
+      api('/v1/settings/domains', {
+        method: 'POST',
+        json: { domain: domain.trim().toLowerCase() },
+        capability: 'settings.domains.manage',
+      }),
     );
     if (ok) {
       setDomain('');
@@ -100,7 +105,11 @@ export default function DomainsPage() {
                         aria-label={t('admin.domains.verifyLabel', { domain: d.domain })}
                         onClick={async () =>
                           (await verify.run(
-                            () => api(`/v1/settings/domains/${d.id}/verify`, { method: 'POST' }),
+                            () =>
+                              api(`/v1/settings/domains/${d.id}/verify`, {
+                                method: 'POST',
+                                capability: 'settings.domains.manage',
+                              }),
                             t('app.settings.domainVerified'),
                           )) && domains.reload()
                         }

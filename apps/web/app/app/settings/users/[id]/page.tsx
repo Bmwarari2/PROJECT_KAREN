@@ -25,7 +25,7 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useInModule, useSectionLevel } from '@/components/module-page';
-import { hasPermission, PageTitle, useSession } from '../../../shell';
+import { PageTitle, useCan, useSession } from '../../../shell';
 import {
   problemMessage,
   roleName,
@@ -112,9 +112,10 @@ function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () 
             triggerVariant="secondary"
             triggerClassName={button}
             onConfirm={() =>
-              api(`/v1/users/${user.id}/sessions/end`, { method: 'POST' }).then(() =>
-                done(t('access.users.signIn.sessionsEnded')),
-              )
+              api(`/v1/users/${user.id}/sessions/end`, {
+                method: 'POST',
+                capability: 'settings.users.manage',
+              }).then(() => done(t('access.users.signIn.sessionsEnded')))
             }
           />
         }
@@ -133,7 +134,11 @@ function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () 
               triggerVariant="secondary"
               triggerClassName={button}
               onConfirm={guarded(
-                () => api(`/v1/users/${user.id}/password-reset`, { method: 'POST' }),
+                () =>
+                  api(`/v1/users/${user.id}/password-reset`, {
+                    method: 'POST',
+                    capability: 'settings.users.manage',
+                  }),
                 t('access.users.signIn.resetSent'),
               )}
             />
@@ -158,6 +163,7 @@ function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () 
                   api(`/v1/users/${user.id}/mfa/reset`, {
                     method: 'POST',
                     json: { identityConfirmed: true },
+                    capability: 'settings.users.manage',
                   }),
                 t('access.users.signIn.mfaReset'),
               )}
@@ -181,7 +187,10 @@ function SignInControls({ user, onChanged }: { user: UserSummary; onChanged: () 
               triggerVariant="secondary"
               triggerClassName={button}
               onConfirm={guarded(async () => {
-                await api(`/v1/users/${user.id}/sso-identities`, { method: 'DELETE' });
+                await api(`/v1/users/${user.id}/sso-identities`, {
+                  method: 'DELETE',
+                  capability: 'settings.users.manage',
+                });
                 identities.reload();
               }, t('access.users.signIn.unlinked'))}
             />
@@ -205,7 +214,8 @@ export default function UserAccessPage() {
     `/v1/users/${id}/role-assignments`,
   );
   const roles = useApi<Role[]>('/v1/roles');
-  const canAssign = hasPermission(session, 'roles.assign');
+  const can = useCan();
+  const canAssign = can('settings.users.assign');
   const [roleId, setRoleId] = React.useState('');
   const [scopeType, setScopeType] = React.useState<ScopeType>('all');
   const [values, setValues] = React.useState<string[]>([]);
@@ -231,6 +241,7 @@ export default function UserAccessPage() {
       await api(`/v1/users/${id}/role-assignments`, {
         method: 'POST',
         json: { roleId, scope: { type: scopeType, values: VALUED.includes(scopeType) ? values : [] } },
+        capability: 'settings.users.assign',
       });
       toast({ title: t('access.users.assigned'), tone: 'success' });
       setRoleId('');
@@ -244,7 +255,10 @@ export default function UserAccessPage() {
   }
   async function revoke(a: Assignment) {
     try {
-      await api(`/v1/users/${id}/role-assignments/${a.id}`, { method: 'DELETE' });
+      await api(`/v1/users/${id}/role-assignments/${a.id}`, {
+        method: 'DELETE',
+        capability: 'settings.users.assign',
+      });
       toast({ title: t('access.users.revoked'), tone: 'success' });
       reload();
     } catch (err) {
@@ -279,7 +293,7 @@ export default function UserAccessPage() {
         </div>
       </div>
 
-      {hasPermission(session, 'settings.manage') && user.id !== session?.userId ? (
+      {can('settings.users.manage') && user.id !== session?.userId ? (
         <SignInControls user={user} onChanged={reload} />
       ) : null}
 

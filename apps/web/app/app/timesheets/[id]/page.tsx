@@ -54,7 +54,11 @@ export default function TimesheetPage() {
     if (!approval) return;
     setBusy(decision);
     try {
-      await api(`/v1/approvals/${approval}/decide`, { method: 'POST', json: { decision } });
+      await api(`/v1/approvals/${approval}/decide`, {
+        method: 'POST',
+        json: { decision },
+        capability: 'inbox.approvals.decide',
+      });
       toast({ title: t('timesheets.decided'), tone: 'success' });
       reload();
       mine.reload();

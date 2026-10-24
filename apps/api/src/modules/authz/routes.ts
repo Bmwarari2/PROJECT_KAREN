@@ -235,7 +235,7 @@ export async function roleRoutes(app: FastifyInstance) {
   app.post(
     '/v1/roles',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.roles.manage' },
       schema: {
         tags: TAGS,
         summary: 'Create a custom role (no more than you hold yourself)',
@@ -282,7 +282,7 @@ export async function roleRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/roles/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.roles.manage' },
       schema: {
         tags: TAGS,
         summary: 'Change a custom role; takes effect on its holders’ next request',
@@ -364,7 +364,7 @@ export async function roleRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/roles/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.roles.manage' },
       schema: {
         tags: TAGS,
         summary: 'Delete a custom role that nobody holds',
@@ -546,7 +546,7 @@ export async function roleRoutes(app: FastifyInstance) {
   app.post(
     '/v1/users/:userId/role-assignments',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.users.assign' },
       schema: {
         tags: TAGS,
         summary: 'Give a person a role at a scope (no wider than your own); applies from their next request',
@@ -638,7 +638,7 @@ export async function roleRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/users/:userId/role-assignments/:assignmentId',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.users.assign' },
       schema: {
         tags: TAGS,
         summary: 'Revoke an assignment you could have made; the last owner cannot be removed',

@@ -19,6 +19,7 @@
     "./permissions": "./src/permissions.ts",
     "./roles": "./src/roles.ts",
     "./access": "./src/access.ts",
+    "./capabilities": "./src/capabilities.ts",
     "./residency": "./src/residency.ts",
     "./billing": "./src/billing/index.ts",
     "./help": "./src/help/index.ts",

@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Upload } from 'lucide-react';
 import { Button, Card, Table, TD, TH, THead, TR, useToast, PageSection } from '@thapsus/ui';
-import { api, ApiProblem } from '@/lib/api';
+import { api, apiFetch, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { PageIntro } from '@/components/module-page';
 
@@ -42,7 +42,7 @@ export default function ImportsPage() {
     setBusy(true);
     const form = new FormData();
     form.set('file', file);
-    const res = await fetch('/v1/imports', { method: 'POST', body: form });
+    const res = await apiFetch('/v1/imports', { method: 'POST', body: form, capability: 'people.imports' });
     const body = await res.json();
     setBusy(false);
     if (!res.ok) return toast({ title: body.title, tone: 'danger' });
@@ -56,7 +56,13 @@ export default function ImportsPage() {
     if (!up) return;
     setBusy(true);
     try {
-      setPreview(await api<Preview>(`/v1/imports/${up.id}/preview`, { method: 'POST', json: { mapping } }));
+      setPreview(
+        await api<Preview>(`/v1/imports/${up.id}/preview`, {
+          method: 'POST',
+          json: { mapping },
+          capability: 'people.imports',
+        }),
+      );
     } catch (e) {
       toast({ title: e instanceof ApiProblem ? e.title : t('common.error'), tone: 'danger' });
     } finally {
@@ -66,7 +72,11 @@ export default function ImportsPage() {
 
   async function run(dryRun: boolean) {
     if (!up) return;
-    const r = await api<{ jobId: string }>(`/v1/imports/${up.id}/run`, { method: 'POST', json: { dryRun } });
+    const r = await api<{ jobId: string }>(`/v1/imports/${up.id}/run`, {
+      method: 'POST',
+      json: { dryRun },
+      capability: 'people.imports',
+    });
     const poll = async () => {
       const j = await api<{ status: string; progressDone: string; progressTotal: string | null }>(
         `/v1/jobs/${r.jobId}`,

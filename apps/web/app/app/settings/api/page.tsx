@@ -93,6 +93,7 @@ export default function ApiAccessPage() {
         const r = await api<ApiKey & { key: string }>('/v1/settings/api-keys', {
           method: 'POST',
           json: { name, scopes, roleKey },
+          capability: 'settings.api',
         });
         setSecret({
           title: t('platform.api.keyCreated'),
@@ -103,6 +104,7 @@ export default function ApiAccessPage() {
         const r = await api<OAuthClient & { clientSecret: string }>('/v1/settings/oauth-clients', {
           method: 'POST',
           json: { name, scopes, roleKey },
+          capability: 'settings.api',
         });
         setSecret({
           title: t('platform.api.clientCreated'),
@@ -121,9 +123,9 @@ export default function ApiAccessPage() {
     }
   }
 
-  async function revoke(path: string, reload: () => void) {
+  async function revoke(kind: 'api-keys' | 'oauth-clients', id: string, reload: () => void) {
     try {
-      await api(path, { method: 'POST' });
+      await api(`/v1/settings/${kind}/${id}/revoke`, { method: 'POST', capability: 'settings.api' });
       toast({ title: t('platform.api.revoked'), tone: 'success' });
       reload();
     } catch (err) {
@@ -135,7 +137,7 @@ export default function ApiAccessPage() {
     try {
       const r = await api<OAuthClient & { clientSecret: string }>(
         `/v1/settings/oauth-clients/${c.id}/rotate-secret`,
-        { method: 'POST', json: { graceHours: 24 } },
+        { method: 'POST', json: { graceHours: 24 }, capability: 'settings.api' },
       );
       setSecret({
         title: t('platform.api.secretRotated'),
@@ -280,7 +282,7 @@ export default function ApiAccessPage() {
                       <Button
                         size="sm"
                         variant="danger"
-                        onClick={() => revoke(`/v1/settings/api-keys/${k.id}/revoke`, keys.reload)}
+                        onClick={() => revoke('api-keys', k.id, keys.reload)}
                         aria-label={t('platform.api.revokeNamed', { name: k.name })}
                       >
                         {t('platform.api.revoke')}
@@ -351,7 +353,7 @@ export default function ApiAccessPage() {
                         <Button
                           size="sm"
                           variant="danger"
-                          onClick={() => revoke(`/v1/settings/oauth-clients/${c.id}/revoke`, clients.reload)}
+                          onClick={() => revoke('oauth-clients', c.id, clients.reload)}
                           aria-label={t('platform.api.revokeNamed', { name: c.name })}
                         >
                           {t('platform.api.revoke')}

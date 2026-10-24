@@ -229,7 +229,7 @@ export async function securityCentreRoutes(app: FastifyInstance) {
   app.put(
     '/v1/settings/security-centre/recipients',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.securityCentre.manage' },
       schema: {
         tags: ['settings'],
         summary:
@@ -268,7 +268,7 @@ export async function securityCentreRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/security-centre/alerts/:id/acknowledge',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.securityCentre.manage' },
       schema: {
         tags: ['settings'],
         params: Type.Object({ id: Uuid }),

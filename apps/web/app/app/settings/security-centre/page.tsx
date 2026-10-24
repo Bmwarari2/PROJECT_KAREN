@@ -6,16 +6,8 @@ import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { useSectionLevel } from '@/components/module-page';
-import {
-  Checkbox,
-  FormError,
-  PageHeader,
-  ReadOnlyNote,
-  SettingsCard,
-  useAction,
-  useFormat,
-  usePermission,
-} from '../kit';
+import { Checkbox, FormError, PageHeader, ReadOnlyNote, SettingsCard, useAction, useFormat } from '../kit';
+import { useCan } from '../../shell';
 
 interface Person {
   userId: string;
@@ -57,8 +49,8 @@ export default function SecurityCentrePage() {
   const t = useT();
   const fmt = useFormat();
   const sec = useSectionLevel();
-  const has = usePermission();
-  const canManage = has('settings.manage');
+  const can = useCan();
+  const canManage = can('settings.securityCentre.manage');
   const c = useApi<Centre>('/v1/settings/security-centre');
   const action = useAction();
   const [chosen, setChosen] = React.useState<Set<string> | null>(null);
@@ -121,6 +113,7 @@ export default function SecurityCentrePage() {
                           () =>
                             api(`/v1/settings/security-centre/alerts/${a.id}/acknowledge`, {
                               method: 'POST',
+                              capability: 'settings.securityCentre.manage',
                             }),
                           t('admin.securityCentre.acknowledgedToast'),
                         )
@@ -233,6 +226,7 @@ export default function SecurityCentrePage() {
                     api('/v1/settings/security-centre/recipients', {
                       method: 'PUT',
                       json: { userIds: [...picked] },
+                      capability: 'settings.securityCentre.manage',
                     }),
                   t('admin.securityCentre.recipientsSaved'),
                 )

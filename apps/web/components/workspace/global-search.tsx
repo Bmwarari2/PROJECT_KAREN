@@ -132,10 +132,11 @@ export function GlobalSearch({
         const top = rows.slice(0, 6);
         // a profile only where the viewer may open it (ADR-0161); everyone else on the org chart
         let open = new Set<string>(viewer.employeeId ? [viewer.employeeId] : []);
-        if (viewer.has('employees.read') && top.length) {
+        if (viewer.can('people.directory') && viewer.can('people.visibility') && top.length) {
           const r = await api<{ all: boolean; visible: string[] }>('/v1/people/visibility', {
             method: 'POST',
             json: { ids: top.map((p) => p.id) },
+            capability: 'people.visibility',
           }).catch(() => ({ all: false, visible: [] as string[] }));
           open = r.all ? new Set(top.map((p) => p.id)) : new Set([...open, ...r.visible]);
         }

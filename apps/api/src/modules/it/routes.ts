@@ -211,6 +211,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.get(
     '/v1/integrations/it',
     {
+      config: { capability: 'it.integrations' },
       schema: {
         tags: ['integrations'],
         summary: 'Microsoft 365 and Google Workspace connection status',
@@ -234,7 +235,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.put(
     '/v1/integrations/it/:provider',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         params: ProviderParam,
@@ -309,7 +310,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.put(
     '/v1/integrations/it/:provider/credentials',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         summary:
@@ -375,7 +376,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.post(
     '/v1/integrations/it/:provider/consent',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         summary:
@@ -480,7 +481,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.post(
     '/v1/integrations/it/:provider/verify',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         summary: 'Prove the consent / delegation works by obtaining a token; marks the connection connected',
@@ -522,7 +523,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.post(
     '/v1/integrations/it/:provider/disable',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         params: ProviderParam,
@@ -549,6 +550,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.get(
     '/v1/integrations/it/:provider/rules',
     {
+      config: { capability: 'it.integrations' },
       schema: {
         tags: ['integrations'],
         params: ProviderParam,
@@ -578,7 +580,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.post(
     '/v1/integrations/it/:provider/rules',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         params: ProviderParam,
@@ -626,7 +628,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.put(
     '/v1/integrations/it/rules/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         params: Type.Object({ id: Uuid }),
@@ -673,7 +675,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/integrations/it/rules/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         params: Type.Object({ id: Uuid }),
@@ -696,7 +698,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.get(
     '/v1/integrations/it/:provider/preview/:employeeId',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations' },
       schema: {
         tags: ['integrations'],
         summary: 'Dry run: the exact provider calls for this employee, without calling the provider',
@@ -728,7 +730,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.post(
     '/v1/integrations/it/:provider/run/:employeeId',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'it.integrations.manage' },
       schema: {
         tags: ['integrations'],
         summary: 'Run (or re-run) the joiner or leaver steps for one employee now',
@@ -780,6 +782,7 @@ export async function itRoutes(app: FastifyInstance) {
   app.get(
     '/v1/integrations/it/operations',
     {
+      config: { capability: 'it.integrations' },
       schema: {
         tags: ['integrations'],
         summary: 'Execution log of provider calls',

@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import { allows, hasFromGrants, type CapabilityKey } from '@thapsus/core/capabilities';
 import { api, type SessionInfo } from './api';
 
 /**
@@ -41,6 +42,7 @@ async function flush() {
       const r = await api<{ all: boolean; visible: string[] }>('/v1/people/visibility', {
         method: 'POST',
         json: { ids: chunk },
+        capability: 'people.visibility',
       });
       if (forUser !== owner) return;
       if (r.all) state.all = true;
@@ -72,12 +74,11 @@ const snapshot = () => version;
 
 /** True when the session's grants can open a profile at all (any scope), or this one is their own. */
 function possible(session: SessionInfo, id: string): boolean | 'ask' {
-  const has = (p: string) =>
-    session.permissions.some(
-      (g) => g === '*' || g === p || (g.endsWith('.*') && p.startsWith(g.slice(0, -1))),
-    );
-  if (id === session.employeeId && (has('self.read') || has('employees.read'))) return true;
-  if (!has('employees.read')) return false;
+  const viewer = { has: hasFromGrants(session.permissions), employeeId: session.employeeId };
+  const can = (c: CapabilityKey) => allows(viewer, c);
+  if (id === session.employeeId && (can('people.visibility') || can('people.directory'))) return true;
+  // asking needs the directory (to see anyone else) and the visibility check itself (the permission map)
+  if (!can('people.directory') || !can('people.visibility')) return false;
   return 'ask';
 }
 

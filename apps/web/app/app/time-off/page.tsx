@@ -27,7 +27,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
 import { EntityLink, PersonLink } from '@/components/person-link';
-import { useSession } from '../shell';
+import { useCan, useSession } from '../shell';
 
 interface Balance {
   leaveType: string;
@@ -98,6 +98,7 @@ function SicknessCard() {
           startDate: form.startDate,
           endDate: form.endDate || undefined,
         },
+        capability: 'time.sickness.record',
       });
       toast({
         title: t(r.fitNoteRequired ? 'timeOff.sickness.fitNoteRequired' : 'timeOff.sickness.recorded'),
@@ -197,9 +198,8 @@ export default function TimeOffPage() {
   const toast = useToast();
   const session = useSession();
   const employeeId = session?.employeeId;
-  const canRecordSickness = !!session?.permissions.some(
-    (p) => p === '*' || p === 'absence.*' || p === 'absence.record',
-  );
+  const can = useCan();
+  const canRecordSickness = can('time.sickness.record');
   const balances = useApi<Balance[]>(employeeId ? `/v1/leave/balances/${employeeId}` : null);
   const types = useApi<LeaveType[]>('/v1/leave/types');
   const mine = useApi<Req[]>(employeeId ? `/v1/leave/requests?employeeId=${employeeId}` : null);
@@ -237,6 +237,7 @@ export default function TimeOffPage() {
           leaveTypeId: form.leaveTypeId || types.data?.find((x) => x.key === 'annual')?.id,
           note: form.note || undefined,
         },
+        capability: 'time.timeOff.requestOwn',
       });
       toast({
         title: t(r.status === 'approved' ? 'timeOff.bookedToast' : 'timeOff.requested', {
@@ -258,7 +259,11 @@ export default function TimeOffPage() {
   }
 
   async function subscribe() {
-    const r = await api<{ url: string }>('/v1/leave/ics-tokens', { method: 'POST', json: { scope: 'me' } });
+    const r = await api<{ url: string }>('/v1/leave/ics-tokens', {
+      method: 'POST',
+      json: { scope: 'me' },
+      capability: 'time.timeOff.calendarFeed',
+    });
     await navigator.clipboard?.writeText(r.url).catch(() => undefined);
     toast({ title: t('timeOff.icsCopied') });
   }
@@ -314,72 +319,74 @@ export default function TimeOffPage() {
               <Skeleton className="h-40" />
             )}
           </div>
-          <PageSection title={t('timeOff.request')}>
-            <Card>
-              <form onSubmit={submit} className="grid gap-3 md:grid-cols-5 md:items-end">
-                <Field id="type" label={t('timeOff.type')}>
-                  {(p) => (
-                    <select
-                      {...p}
-                      value={form.leaveTypeId}
-                      onChange={(e) => setForm({ ...form, leaveTypeId: e.target.value })}
-                      className={nativeSelectClass}
-                    >
-                      {(types.data ?? [])
-                        .filter((x) => x.category !== 'sickness')
-                        .map((x) => (
-                          <option key={x.id} value={x.id}>
-                            {x.name[locale] ?? x.name['en-GB']}
-                          </option>
-                        ))}
-                    </select>
-                  )}
-                </Field>
-                <Field id="start" label={t('timeOff.from')}>
-                  {(p) => (
-                    <Input
-                      {...p}
-                      type="date"
-                      required
-                      value={form.startDate}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          startDate: e.target.value,
-                          endDate: e.target.value > form.endDate ? e.target.value : form.endDate,
-                        })
-                      }
-                    />
-                  )}
-                </Field>
-                <Field id="end" label={t('timeOff.to')}>
-                  {(p) => (
-                    <Input
-                      {...p}
-                      type="date"
-                      required
-                      min={form.startDate}
-                      value={form.endDate}
-                      onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                    />
-                  )}
-                </Field>
-                <Field id="note" label={t('timeOff.note')}>
-                  {(p) => (
-                    <Input
-                      {...p}
-                      value={form.note}
-                      onChange={(e) => setForm({ ...form, note: e.target.value })}
-                    />
-                  )}
-                </Field>
-                <Button type="submit" loading={busy}>
-                  <CalendarPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                  {t('timeOff.send')}
-                </Button>
-              </form>
-            </Card>
-          </PageSection>
+          {can('time.timeOff.requestOwn') ? (
+            <PageSection title={t('timeOff.request')}>
+              <Card>
+                <form onSubmit={submit} className="grid gap-3 md:grid-cols-5 md:items-end">
+                  <Field id="type" label={t('timeOff.type')}>
+                    {(p) => (
+                      <select
+                        {...p}
+                        value={form.leaveTypeId}
+                        onChange={(e) => setForm({ ...form, leaveTypeId: e.target.value })}
+                        className={nativeSelectClass}
+                      >
+                        {(types.data ?? [])
+                          .filter((x) => x.category !== 'sickness')
+                          .map((x) => (
+                            <option key={x.id} value={x.id}>
+                              {x.name[locale] ?? x.name['en-GB']}
+                            </option>
+                          ))}
+                      </select>
+                    )}
+                  </Field>
+                  <Field id="start" label={t('timeOff.from')}>
+                    {(p) => (
+                      <Input
+                        {...p}
+                        type="date"
+                        required
+                        value={form.startDate}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            startDate: e.target.value,
+                            endDate: e.target.value > form.endDate ? e.target.value : form.endDate,
+                          })
+                        }
+                      />
+                    )}
+                  </Field>
+                  <Field id="end" label={t('timeOff.to')}>
+                    {(p) => (
+                      <Input
+                        {...p}
+                        type="date"
+                        required
+                        min={form.startDate}
+                        value={form.endDate}
+                        onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                      />
+                    )}
+                  </Field>
+                  <Field id="note" label={t('timeOff.note')}>
+                    {(p) => (
+                      <Input
+                        {...p}
+                        value={form.note}
+                        onChange={(e) => setForm({ ...form, note: e.target.value })}
+                      />
+                    )}
+                  </Field>
+                  <Button type="submit" loading={busy}>
+                    <CalendarPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                    {t('timeOff.send')}
+                  </Button>
+                </form>
+              </Card>
+            </PageSection>
+          ) : null}
           <PageSection title={t('timeOff.mine')}>
             {mine.data?.length ? (
               <Table dense>
@@ -418,7 +425,10 @@ export default function TimeOffPage() {
                             size="sm"
                             variant="ghost"
                             onClick={async () => {
-                              await api(`/v1/leave/requests/${r.id}/cancel`, { method: 'POST' });
+                              await api(`/v1/leave/requests/${r.id}/cancel`, {
+                                method: 'POST',
+                                capability: 'time.timeOff.cancel',
+                              });
                               mine.reload();
                               balances.reload();
                             }}

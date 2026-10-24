@@ -23,6 +23,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
 import { StatusBadge } from '../ui';
+import { useCan } from '../../shell';
 import { PersonLink, ROW_LINK } from '@/components/person-link';
 
 interface Row {
@@ -44,6 +45,9 @@ export default function I9Page() {
   const locale = useLocale();
   const toast = useToast();
   const rows = useApi<Row[]>('/v1/compliance/i9');
+  // readers see the list; recording needs compliance.record (ADR-0188)
+  const can = useCan();
+  const canRecord = can('compliance.record');
   const [open, setOpen] = React.useState<Row | null>(null);
   const [form, setForm] = React.useState({
     firstDayOfEmployment: '',
@@ -85,6 +89,7 @@ export default function I9Page() {
         ? await api<{ section2DueOn: string }>(`/v1/compliance/i9/${open.recordId}`, {
             method: 'PATCH',
             json: body,
+            capability: 'compliance.record',
           })
         : await api<{ section2DueOn: string }>('/v1/compliance/i9', {
             method: 'POST',
@@ -93,6 +98,7 @@ export default function I9Page() {
               firstDayOfEmployment: v(form.firstDayOfEmployment),
               ...body,
             },
+            capability: 'compliance.record',
           });
       toast({
         title: t('compliance.i9.saved', { date: formatDate(r.section2DueOn, locale) }),
@@ -169,14 +175,16 @@ export default function I9Page() {
                         : '—'}
                   </TD>
                   <TD className="text-right">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => edit(r)}
-                      aria-label={t('compliance.i9.updateFor', { name: r.employeeName })}
-                    >
-                      {t('compliance.i9.update')}
-                    </Button>
+                    {canRecord ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => edit(r)}
+                        aria-label={t('compliance.i9.updateFor', { name: r.employeeName })}
+                      >
+                        {t('compliance.i9.update')}
+                      </Button>
+                    ) : null}
                   </TD>
                 </TR>
               ))}

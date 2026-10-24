@@ -359,7 +359,7 @@ export async function sandboxRoutes(app: FastifyInstance) {
   app.post(
     '/v1/sandboxes',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.sandbox' },
       schema: {
         tags: ['sandboxes'],
         summary:
@@ -457,7 +457,7 @@ export async function sandboxRoutes(app: FastifyInstance) {
   app.post(
     '/v1/sandboxes/:id/sign-in-link',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.sandbox' },
       schema: {
         tags: ['sandboxes'],
         summary: 'One-time sign-in link (15 minutes) for the sandbox’s synthetic owner account',

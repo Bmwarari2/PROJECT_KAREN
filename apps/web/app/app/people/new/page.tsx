@@ -48,7 +48,11 @@ export default function NewEmployeePage() {
       };
       delete body.salary;
       for (const k of Object.keys(body)) if (body[k] === '') delete body[k];
-      const r = await api<{ id: string }>('/v1/employees', { method: 'POST', json: body });
+      const r = await api<{ id: string }>('/v1/employees', {
+        method: 'POST',
+        json: body,
+        capability: 'people.add',
+      });
       toast({ title: t('people.hired'), tone: 'success' });
       router.push(`/app/people/${r.id}`);
     } catch (err) {

@@ -315,7 +315,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
   app.post(
     '/v1/support/tickets',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'help.support' },
       schema: {
         tags: ['support'],
         summary: 'Raise a support ticket (stored in the home region; SLA targets from the plan)',
@@ -401,7 +401,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
   app.post(
     '/v1/support/tickets/:id/messages',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'help.support' },
       schema: {
         tags: ['support'],
         params: Type.Object({ id: Uuid }),
@@ -441,7 +441,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
   app.post(
     '/v1/support/tickets/:id/close',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'help.support' },
       schema: {
         tags: ['support'],
         params: Type.Object({ id: Uuid }),
@@ -476,7 +476,7 @@ export async function supportTicketRoutes(app: FastifyInstance) {
     sub.post(
       '/v1/support/tickets/:id/attachments',
       {
-        config: { selfAudited: true },
+        config: { selfAudited: true, capability: 'help.support' },
         schema: {
           tags: ['support'],
           consumes: ['multipart/form-data'],

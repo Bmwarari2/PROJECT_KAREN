@@ -1098,7 +1098,8 @@
       "rota": "Schedules",
       "absence": "Sick leave and absence",
       "help": "Help center",
-      "payslips": "Pay stubs"
+      "payslips": "Pay stubs",
+      "scim": "SCIM provisioning"
     },
     "perm": {
       "org": {
@@ -1122,6 +1123,9 @@
         "read_own": "View own pay stubs",
         "read": "View people’s pay stubs",
         "manage": "Upload and publish pay stubs"
+      },
+      "scim": {
+        "manage": "Manage SCIM provisioning tokens"
       }
     },
     "field": {
@@ -1262,6 +1266,22 @@
   "securityAlerts": {
     "tenant": {
       "open": "Details in your Security center"
+    }
+  },
+  "roles": {
+    "it_admin": "IT admin"
+  },
+  "visibility": {
+    "readOnly": "You can view this page. Ask an admin who manages it if something needs to change.",
+    "branding": {
+      "defaultAccent": "Not set: the Thapsus-HR accent color is used",
+      "noLogo": "No logo uploaded",
+      "sameAsLight": "The same color as in light mode"
+    },
+    "on": "On",
+    "off": "Off",
+    "assets": {
+      "readOnly": "You can see who holds each item. IT admins issue equipment, record returns and change the register."
     }
   }
 }

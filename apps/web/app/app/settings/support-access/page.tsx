@@ -29,8 +29,8 @@ import {
   SettingsCard,
   useAction,
   useFormat,
-  usePermission,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useSectionLevel } from '@/components/module-page';
 
 interface Grant {
@@ -58,8 +58,8 @@ export default function SupportAccessPage() {
   const sec = useSectionLevel();
   const locale = useLocale();
   const fmt = useFormat();
-  const has = usePermission();
-  const canManage = has('settings.manage');
+  const can = useCan();
+  const canManage = can('settings.supportAccess.manage');
   const grants = useApi<Grant[]>('/v1/settings/support-grants');
   const [v, setV] = React.useState({
     staffId: '',
@@ -82,6 +82,7 @@ export default function SupportAccessPage() {
             hours: Number(v.hours),
             reason: v.reason.trim(),
           },
+          capability: 'settings.supportAccess.manage',
         }),
       t('admin.support.granted'),
     );
@@ -232,7 +233,10 @@ export default function SupportAccessPage() {
                           body={t('admin.support.revokeBody')}
                           confirmLabel={t('admin.revoke')}
                           onConfirm={async () => {
-                            await api(`/v1/settings/support-grants/${g.id}`, { method: 'DELETE' });
+                            await api(`/v1/settings/support-grants/${g.id}`, {
+                              method: 'DELETE',
+                              capability: 'settings.supportAccess.manage',
+                            });
                             grants.reload();
                           }}
                         />

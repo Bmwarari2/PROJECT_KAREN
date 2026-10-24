@@ -200,7 +200,10 @@ export default function TasksPage() {
                       className="min-h-11 sm:min-h-8"
                       aria-label={t('actionable.task.completeNamed', { title: task.title })}
                       onClick={async () => {
-                        await api(`/v1/tasks/${task.id}/complete`, { method: 'POST' });
+                        await api(`/v1/tasks/${task.id}/complete`, {
+                          method: 'POST',
+                          capability: 'inbox.tasks.complete',
+                        });
                         reload();
                       }}
                     >

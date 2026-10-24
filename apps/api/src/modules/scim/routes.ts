@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { withTenant, writeAudit, type Tx } from '@thapsus/db';
-import { authorize } from '../../http/context';
+import { requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { Problem } from '../../http/schemas';
 import { composeToken, hashToken, newToken, parseToken } from '../auth/tokens';
@@ -517,7 +517,7 @@ export async function scimRoutes(app: FastifyInstance) {
   app.post(
     '/v1/settings/scim-tokens',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.scim.manage' },
       schema: {
         tags: ['settings'],
         body: Type.Object({ name: Type.String({ minLength: 1, maxLength: 80 }) }),
@@ -525,7 +525,8 @@ export async function scimRoutes(app: FastifyInstance) {
       },
     },
     async (req, reply) => {
-      const auth = authorize(req, 'settings.manage');
+      // settings admins and IT admins (the route's capability, ADR-0189)
+      const auth = requireAuth(req);
       const secret = newToken();
       const row = await app.tenantTx(req, async (tx) => {
         const r = await tx.one<{ id: string }>(
@@ -549,9 +550,12 @@ export async function scimRoutes(app: FastifyInstance) {
   });
   app.get(
     '/v1/settings/scim-tokens',
-    { schema: { tags: ['settings'], response: { 200: Type.Array(TokenOut), 403: Problem } } },
+    {
+      config: { capability: 'settings.scim' },
+      schema: { tags: ['settings'], response: { 200: Type.Array(TokenOut), 403: Problem } },
+    },
     async (req) => {
-      authorize(req, 'settings.read');
+      requireAuth(req);
       const rows = await app.tenantTx(
         req,
         (tx) =>
@@ -579,7 +583,7 @@ export async function scimRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/settings/scim-tokens/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.scim.manage' },
       schema: {
         tags: ['settings'],
         summary: 'Revokes a SCIM token (it stops working immediately)',
@@ -588,7 +592,7 @@ export async function scimRoutes(app: FastifyInstance) {
       },
     },
     async (req, reply) => {
-      authorize(req, 'settings.manage');
+      requireAuth(req);
       const { id } = req.params as { id: string };
       await app.tenantTx(req, async (tx) => {
         const n = await tx.exec(

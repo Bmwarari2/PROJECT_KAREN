@@ -12,8 +12,8 @@ import {
   ReadOnlyNote,
   SettingsCard,
   useAction,
-  usePermission,
 } from '../kit';
+import { useCan } from '../../shell';
 import { useStepUp } from '../../step-up';
 
 interface Security {
@@ -68,7 +68,13 @@ function PolicyForm({
     let saved = false;
     if (
       await action.run(async () => {
-        saved = await stepUp.run(() => api('/v1/settings/security', { method: 'PATCH', json: body }));
+        saved = await stepUp.run(() =>
+          api('/v1/settings/security', {
+            method: 'PATCH',
+            json: body,
+            capability: 'settings.signInPolicy.manage',
+          }),
+        );
       }, undefined)
     )
       if (saved) {
@@ -175,7 +181,10 @@ function EndAllSessions() {
           onConfirm={async () => {
             void stepUp
               .run(async () => {
-                const r = await api<{ ended: number }>('/v1/settings/sessions/end-all', { method: 'POST' });
+                const r = await api<{ ended: number }>('/v1/settings/sessions/end-all', {
+                  method: 'POST',
+                  capability: 'settings.signInPolicy.manage',
+                });
                 toast({ title: t('admin.policy.endAllDone', { count: r.ended }), tone: 'success' });
               })
               .catch(() => toast({ title: t('common.error'), tone: 'danger' }));
@@ -189,17 +198,21 @@ function EndAllSessions() {
 
 export default function SignInPolicyPage() {
   const t = useT();
-  const has = usePermission();
+  const can = useCan();
   const security = useApi<Security>('/v1/settings/security');
   return (
     <>
       <PageHeader title={t('admin.section.signInPolicy.title')} lead={t('admin.policy.lead')} />
       {security.data ? (
-        <PolicyForm initial={security.data} canManage={has('settings.manage')} onSaved={security.reload} />
+        <PolicyForm
+          initial={security.data}
+          canManage={can('settings.signInPolicy.manage')}
+          onSaved={security.reload}
+        />
       ) : (
         <Skeleton className="h-64" />
       )}
-      {has('settings.manage') ? <EndAllSessions /> : null}
+      {can('settings.signInPolicy.manage') ? <EndAllSessions /> : null}
     </>
   );
 }

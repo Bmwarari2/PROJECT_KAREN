@@ -36,6 +36,7 @@ function OrgSection({ kind }: { kind: Kind }) {
       await api(`/v1/org/${kind}`, {
         method: 'POST',
         json: Object.fromEntries(Object.entries(v).filter(([, x]) => x !== '')),
+        capability: 'settings.organisation',
       });
       setV({});
       reload();

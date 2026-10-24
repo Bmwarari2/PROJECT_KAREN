@@ -298,7 +298,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/reports/ready/:id/run',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.run' },
       schema: {
         tags: ['reports'],
         summary:
@@ -337,7 +337,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/reports/builder/preview',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.run' },
       schema: {
         tags: ['reports'],
         summary: `Preview a report-builder specification (first ${PREVIEW_ROWS} rows, permission-masked, on the reporting reader)`,
@@ -369,7 +369,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/reports/runs',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.run' },
       schema: {
         tags: ['reports'],
         summary:
@@ -609,7 +609,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/reports/saved',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.run' },
       schema: { tags: ['reports'], body: SavedBody, response: { 201: SavedOut, 400: Problem, 403: Problem } },
     },
     async (req, reply) => {
@@ -656,7 +656,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.put(
     '/v1/reports/saved/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.run' },
       schema: {
         tags: ['reports'],
         params: Type.Object({ id: Uuid }),
@@ -832,7 +832,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.post(
     '/v1/reports/schedules',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.schedules' },
       schema: {
         tags: ['reports'],
         summary:
@@ -902,7 +902,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.patch(
     '/v1/reports/schedules/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.schedules' },
       schema: {
         tags: ['reports'],
         params: Type.Object({ id: Uuid }),
@@ -933,7 +933,7 @@ export async function reportRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/reports/schedules/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'reports.schedules' },
       schema: {
         tags: ['reports'],
         params: Type.Object({ id: Uuid }),

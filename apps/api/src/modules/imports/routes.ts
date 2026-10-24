@@ -66,7 +66,7 @@ export async function importRoutes(app: FastifyInstance) {
   app.post(
     '/v1/imports',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.imports' },
       schema: {
         tags: ['imports'],
         consumes: ['multipart/form-data'],
@@ -142,7 +142,7 @@ export async function importRoutes(app: FastifyInstance) {
   app.post(
     '/v1/imports/:id/preview',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.imports' },
       schema: {
         tags: ['imports'],
         params: Type.Object({ id: Uuid }),
@@ -215,7 +215,7 @@ export async function importRoutes(app: FastifyInstance) {
   app.post(
     '/v1/imports/:id/run',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.imports' },
       schema: {
         tags: ['imports'],
         params: Type.Object({ id: Uuid }),

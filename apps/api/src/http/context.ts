@@ -4,6 +4,7 @@ import type {} from '@fastify/cookie';
 import fp from 'fastify-plugin';
 import { resolveLocale, isLocale, type Locale } from '@thapsus/core/i18n';
 import { can, canSome, type Target } from '@thapsus/core/permissions';
+import { CAPABILITIES, permits, type CapabilityKey } from '@thapsus/core/capabilities';
 import { withTenant, writeAudit, type AuditEntry, type Tx } from '@thapsus/db';
 import type { Deps } from '../deps';
 import { ApiError } from './errors';
@@ -60,6 +61,13 @@ declare module 'fastify' {
      * other origins (ADR-0130).
      */
     crossSite?: boolean;
+    /**
+     * The capability this route serves in the permission map (`@thapsus/core/capabilities`, ADR-0188).
+     * Its permissions are enforced before the handler (held at some scope; the handler still checks
+     * the record's scope) and published as `x-capability` / `x-permission`, and the UI actions that
+     * call the route are tested against it.
+     */
+    capability?: CapabilityKey;
   }
 }
 
@@ -85,6 +93,11 @@ export function authorizeSome(req: FastifyRequest, action: string): AuthContext 
   const auth = requireAuth(req);
   if (!canSome(auth.principal, action)) throw new ApiError('forbidden');
   return auth;
+}
+
+/** Whether the caller holds a capability's permissions somewhere (any scope), as the map defines them. */
+export function holdsCapability(auth: AuthContext, key: CapabilityKey): boolean {
+  return permits((p) => canSome(auth.principal, p), CAPABILITIES[key]);
 }
 
 export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps }) => {
@@ -143,6 +156,9 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
       const gate = mfaGate(auth);
       if (gate !== 'ok') throw new ApiError(gate);
     }
+    // The route's capability (ADR-0188): the same permissions the app checks before it shows the action.
+    const capability = req.routeOptions.config?.capability;
+    if (capability && !holdsCapability(auth, capability)) throw new ApiError('forbidden');
   });
 
   // Authenticated responses are never cacheable anywhere (no CDN/edge caching).

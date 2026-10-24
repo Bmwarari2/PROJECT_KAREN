@@ -36,7 +36,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.post(
     '/v1/approval-policies',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.approvalChains' },
       schema: {
         tags: ['approvals'],
         body: Type.Object({
@@ -147,7 +147,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.put(
     '/v1/approval-policies/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.approvalChains' },
       schema: {
         tags: ['approvals'],
         summary: 'Replaces an approval chain. Requests already in progress keep the steps they started with.',
@@ -299,7 +299,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.post(
     '/v1/approvals/:id/decide',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'inbox.approvals.decide' },
       schema: {
         tags: ['approvals'],
         params: Type.Object({ id: Uuid }),
@@ -330,7 +330,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.post(
     '/v1/approvals/bulk',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'inbox.approvals.decide' },
       schema: {
         tags: ['approvals'],
         body: Type.Object({
@@ -369,7 +369,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.post(
     '/v1/delegations',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.delegations.manage' },
       schema: {
         tags: ['approvals'],
         body: Type.Object({
@@ -460,7 +460,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.delete(
     '/v1/delegations/:id',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'settings.delegations.manage' },
       schema: {
         tags: ['approvals'],
         summary: 'Ends a delegation you gave: an active one ends now, a future one is removed',
@@ -610,7 +610,7 @@ export async function approvalRoutes(app: FastifyInstance) {
   app.post(
     '/v1/employees/:id/transfer',
     {
-      config: { selfAudited: true },
+      config: { selfAudited: true, capability: 'people.edit' },
       schema: {
         tags: ['employees'],
         params: Type.Object({ id: Uuid }),

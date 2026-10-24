@@ -69,6 +69,7 @@ export default function ApprovalsPage() {
     const r = await api<{ succeeded: string[]; failed: unknown[] }>('/v1/approvals/bulk', {
       method: 'POST',
       json: { ids: picked, decision },
+      capability: 'inbox.approvals.decide',
     });
     toast({
       title: t('approvals.bulkResult', { ok: r.succeeded.length, failed: r.failed.length }),
