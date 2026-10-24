@@ -132,4 +132,27 @@ test.describe("founder's console", () => {
     await expect(page.getByRole('listitem').filter({ hasText: owner.slug })).toContainText('UK');
     await expectAccessible(page);
   });
+  test('platform performance shows requests, errors, response times, queues and incidents for this region', async ({
+    page,
+  }) => {
+    await staffSignIn(page, createStaff('support'));
+    await page.getByRole('link', { name: 'Performance' }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Performance' })).toBeVisible();
+    const range = page.getByRole('navigation', { name: 'Time range' });
+    await expect(range.getByRole('link', { name: 'Last 24 hours' })).toHaveAttribute('aria-current', 'page');
+    // the back office's own requests are counted (by route group, never by path)
+    await expect(page.getByTestId('requests-chart').getByRole('img')).toBeVisible();
+    const routes = page.getByRole('region', { name: 'By area of the product' });
+    await expect(routes.getByRole('listitem').filter({ hasText: 'backoffice' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Background queues' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Incidents and maintenance' })).toBeVisible();
+    await expectAccessible(page);
+    await range.getByRole('link', { name: 'Last 7 days' }).click();
+    await expect(page).toHaveURL(/window=7d/);
+    await expect(page.getByTestId('requests-chart').getByRole('img')).toHaveAttribute(
+      'aria-label',
+      /per day/,
+    );
+    await expectAccessible(page);
+  });
 });

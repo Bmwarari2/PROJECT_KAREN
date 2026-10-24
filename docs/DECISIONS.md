@@ -1795,3 +1795,22 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - The snapshot is at most a day old; the page says when it was taken and how many customers have none yet.
 - The directory `list()` is bounded (5,000 entries) and scanned per request; past a few thousand workspaces the global figures should move to counters kept by the directory (recorded here, not built).
 - On the one-region Google Cloud staging cell only the UK has data; EU and US show zero and a link.
+
+## ADR-0176 — Platform performance per cell: in-memory request counters flushed once a minute, and a worker queue sample (2026-10-24)
+
+**Context.** The founder's console needs the platform's performance (requests, errors, response times, queues, database size) per cell, without adding work to every request and without any tenant id or personal data. Cloud dashboards (CloudWatch, Cloud Monitoring) exist per provider but are outside the back office and differ between AWS and Google Cloud.
+
+**Decision.**
+
+- **API counters** (`apps/api/src/lib/request-metrics.ts`): an `onResponse` hook adds each response to an in-memory counter keyed by minute and route group, the first segment of the route pattern (`employees`, `backoffice`, `scim`, `unmatched`), never the URL. It keeps requests, 4xx, 5xx, the latency sum and a histogram over fixed bounds (10 ms to 10 s, plus overflow; `HISTOGRAM_BOUNDS_MS`). Once a minute (unref'd timer) and on shutdown each process writes its finished minutes in one `INSERT … ON CONFLICT DO UPDATE` into `platform.request_metrics` (migration 0026). The request path never waits on the database; a failed flush keeps the counts for the next one.
+- **Queue sample** (`platform.queue_snapshot()`): row level security keeps the application role to one tenant per transaction, so the worker's cross-tenant counts come from a `SECURITY DEFINER` function owned by a new NOLOGIN role, `thapsus_metrics`. That role may read four columns of `app.outbox` and five of `app.jobs` through a `FOR SELECT` policy and nothing else (no topic, payload or job input), and the function returns counts and ages only, plus `pg_database_size`. It is the pattern of `thapsus_lookup`. Both the policy and the function are on the reviewed allowlists of the isolation suite. Partial indexes on running and failed jobs keep the sample cheap.
+- **Cell tasks.** The worker now runs cell-wide tasks that carry no tenant context (`registerCellTask`, `CellTaskRunner`): the queue sample every minute and retention every hour. A task is safe to run in several workers at once; the queue sample dedupes on its minute.
+- **Retention:** 30 days for both tables. They are operational counters, not customer data.
+- **Screen.** Back office → Performance: 24-hour (hourly) and 7-day (daily) views, with tiles for requests, server errors, the 95th percentile response time, the oldest due job, database size and the worker heartbeat. Column charts for requests, server errors, p95 latency and jobs due each have a table twin. Grouped lists cover route groups (p50 and p95 from the summed histograms), queues per database and the status-page incidents. Percentiles are read as the upper bound of the bucket that reaches them. Opening the page first flushes the serving process's current minute.
+- **Access.** Support, billing, security analysts and super admins; read-only (`noElevation`).
+
+**Consequences.**
+
+- One insert per API process per minute (about one row per active route group), plus one per database per minute from the worker.
+- Figures cover the API only. The web server's own page renders are not counted; the Lighthouse budgets in `scripts/lighthouse.mjs` remain the page-speed gate.
+- Percentiles are bucket upper bounds, so a p95 of "500 ms" means somewhere between 250 and 500 ms.

@@ -3028,7 +3028,9 @@
       "rules": "Rule data",
       "lawChanges": "Law changes",
       "audit": "Staff audit trail",
-      "settings": "Contact channels"
+      "settings": "Contact channels",
+      "performance": "Performance",
+      "security": "Security"
     },
     "signin": {
       "title": "Staff sign-in",
@@ -3450,6 +3452,85 @@
       "privacy": "Customer personal data is only visible through support access that the customer grants, and every access is logged in their audit log and in the staff trail.",
       "other": "Other",
       "mrrIn": "Monthly recurring revenue ({currency})"
+    },
+    "performance": {
+      "title": "Performance",
+      "lead": "How this region's service is running: requests, server errors and response times by area of the product, background queues and the database. Counts only; times in UTC.",
+      "windowLabel": "Time range",
+      "window": {
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days"
+      },
+      "requests": "Requests",
+      "requestsHint": "Answered by the API in this region",
+      "errors": "Server errors",
+      "errorsHint": "{rate} of requests",
+      "errorsNone": "No requests yet",
+      "p95": "Response time (95th percentile)",
+      "p95Hint": "Half of requests within {p50}",
+      "oldestJob": "Oldest waiting job",
+      "oldestJobHint_one": "{count} job due now",
+      "oldestJobHint_other": "{count} jobs due now",
+      "noQueueSample": "No queue sample yet",
+      "databaseSize": "Database size",
+      "databaseSizeHint_one": "Across {count} database",
+      "databaseSizeHint_other": "Across {count} databases",
+      "worker": "Background worker",
+      "workerBeat": "Last seen {at}",
+      "workerNone": "Not seen yet",
+      "requestsChart": "Requests",
+      "requestsChartLabel": "Requests per {unit} from {from} to {to}",
+      "errorsChart": "Server errors",
+      "errorsChartLabel": "Server errors per {unit} from {from} to {to}",
+      "latencyChart": "Response time, 95th percentile",
+      "latencyChartLabel": "95th percentile response time in milliseconds per {unit} from {from} to {to}",
+      "queueChart": "Jobs due",
+      "queueChartLabel": "Most jobs due at once per {unit} from {from} to {to}",
+      "unit": {
+        "hour": "hour",
+        "day": "day"
+      },
+      "slot": {
+        "hour": "Hour starting",
+        "day": "Day"
+      },
+      "showTable": "Show as a table",
+      "noTraffic": "No requests in this time range yet.",
+      "series": {
+        "requests": "Requests",
+        "errors": "Server errors",
+        "p95": "Milliseconds",
+        "jobs": "Jobs due"
+      },
+      "routes": "By area of the product",
+      "routesHint": "Grouped by the first part of the API path. No identifiers or addresses are recorded.",
+      "routeRequests_one": "{count} request",
+      "routeRequests_other": "{count} requests",
+      "routeErrors_one": "{count} server error",
+      "routeErrors_other": "{count} server errors",
+      "routeClientErrors_one": "{count} refused",
+      "routeClientErrors_other": "{count} refused",
+      "routeLatency": "Typical {p50} · slowest 5% above {p95}",
+      "noLatency": "No timings",
+      "queues": "Background queues",
+      "queuesHint": "Sampled by the worker once a minute for every database of this region.",
+      "database": "Database: {key}",
+      "queueLine": "Events waiting: {outbox} · jobs queued: {queued}, due: {due}, running: {running}",
+      "failedLine": "Failed jobs: {hour} in the last hour, {day} in 24 hours",
+      "oldestLine": "Oldest due job: {age}",
+      "noneDue": "Nothing due",
+      "incidents": "Incidents and maintenance",
+      "incidentsHint": "Posted on this region's status page.",
+      "noIncidents": "No incidents in this time range.",
+      "incidentLine": "{status} · started {at}",
+      "resolved": "Resolved {at}",
+      "manage": "Status page",
+      "impact": {
+        "minor": "Minor",
+        "major": "Major",
+        "critical": "Critical",
+        "maintenance": "Maintenance"
+      }
     }
   },
   "privacy": {

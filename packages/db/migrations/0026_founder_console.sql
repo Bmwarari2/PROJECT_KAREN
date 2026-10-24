@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS platform.queue_metrics (
   PRIMARY KEY (at, db_key)
 );
 
-GRANT SELECT, INSERT, DELETE ON platform.request_metrics, platform.queue_metrics TO thapsus_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON platform.request_metrics TO thapsus_app;
+GRANT SELECT, INSERT, DELETE ON platform.queue_metrics TO thapsus_app;
 GRANT SELECT ON platform.request_metrics, platform.queue_metrics TO thapsus_backoffice;
 
 -- Partial indexes for the queue sample (running and failed jobs are few; queued jobs use jobs_runnable).
@@ -91,10 +92,10 @@ CREATE OR REPLACE FUNCTION platform.queue_snapshot(p_now timestamptz)
 $$
   SELECT
     (SELECT count(*)::int FROM app.outbox WHERE published_at IS NULL),
-    (SELECT extract(epoch FROM p_now - min(created_at))::int FROM app.outbox WHERE published_at IS NULL),
+    (SELECT greatest(0, extract(epoch FROM p_now - min(created_at)))::int FROM app.outbox WHERE published_at IS NULL),
     (SELECT count(*)::int FROM app.jobs WHERE status = 'queued'),
     (SELECT count(*)::int FROM app.jobs WHERE status = 'queued' AND run_after <= p_now),
-    (SELECT extract(epoch FROM p_now - min(run_after))::int FROM app.jobs WHERE status = 'queued' AND run_after <= p_now),
+    (SELECT greatest(0, extract(epoch FROM p_now - min(run_after)))::int FROM app.jobs WHERE status = 'queued' AND run_after <= p_now),
     (SELECT count(*)::int FROM app.jobs WHERE status = 'running'),
     (SELECT count(*)::int FROM app.jobs WHERE status = 'failed' AND finished_at >= p_now - interval '1 hour'),
     (SELECT count(*)::int FROM app.jobs WHERE status = 'failed' AND finished_at >= p_now - interval '24 hours'),

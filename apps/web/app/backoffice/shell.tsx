@@ -14,6 +14,7 @@ import {
   Newspaper,
   ScrollText,
   Settings2,
+  Timer,
 } from 'lucide-react';
 import {
   Badge,
@@ -58,6 +59,12 @@ function navItems(t: (k: string) => string, s: StaffSession, path: string): NavI
       label: t('backoffice.nav.plans'),
       icon: <CreditCard aria-hidden />,
       show: staffCan(s, 'billing'),
+    },
+    {
+      href: '/backoffice/performance',
+      label: t('backoffice.nav.performance'),
+      icon: <Timer aria-hidden />,
+      show: staffCan(s, 'support', 'billing', 'security_analyst'),
     },
     {
       href: '/backoffice/status',
