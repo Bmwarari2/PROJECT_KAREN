@@ -1,11 +1,17 @@
 'use client';
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { ArrowRight, CheckCircle2, CircleDot, MessageSquareReply } from 'lucide-react';
 import { Button, buttonVariants, cn } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { IntentLink } from '@/components/intent-link';
-import { MarkDoneDialog } from './mark-done-dialog';
 import type { TaskDetail } from './types';
+
+// The note dialog (and the dialog primitive behind it) loads when someone first reaches for it, so the
+// task page adds nothing to what a phone must download and run before it can show it (ADR-0186).
+const MarkDoneDialog = dynamic(() => import('./mark-done-dialog').then((m) => m.MarkDoneDialog), {
+  ssr: false,
+});
 
 const TONE: Record<string, string> = {
   success: 'text-success',
@@ -23,6 +29,7 @@ const TONE: Record<string, string> = {
 export function TaskWork({ data, onChanged }: { data: TaskDetail; onChanged: () => void }) {
   const t = useT();
   const [marking, setMarking] = React.useState(false);
+  const [reached, setReached] = React.useState(false);
   const open = data.status === 'open';
   const isRequest = data.source === 'hr_request';
   const main = open && data.action && !isRequest ? data.action : null;
@@ -45,7 +52,11 @@ export function TaskWork({ data, onChanged }: { data: TaskDetail; onChanged: () 
           {fallback ? (
             <Button
               variant={main ? 'secondary' : 'primary'}
-              onClick={() => setMarking(true)}
+              onClick={() => {
+                setReached(true);
+                setMarking(true);
+              }}
+              onPointerEnter={() => void import('./mark-done-dialog')}
               data-testid="task-mark-done"
             >
               {isRequest ? (
@@ -80,7 +91,7 @@ export function TaskWork({ data, onChanged }: { data: TaskDetail; onChanged: () 
       {open && data.closesItself ? (
         <p className="text-footnote text-text-secondary">{t('taskActions.page.closesItself')}</p>
       ) : null}
-      {fallback ? (
+      {fallback && reached ? (
         <MarkDoneDialog
           taskId={data.id}
           open={marking}
