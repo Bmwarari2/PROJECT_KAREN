@@ -1,10 +1,8 @@
 import { scrubString } from '@thapsus/core/scrub';
-import { closeAllPools, TenantRouter } from '@thapsus/db';
-import { depsFromEnv } from '../deps';
-import { directoryFromEnv } from '../lib/directory';
-import { keyProviderFromEnv } from '../lib/kms';
-import { MemoryObjectStore, objectStoreFromEnv } from '../lib/object-store';
+import { closeAllPools } from '@thapsus/db';
+import { MemoryObjectStore } from '../lib/object-store';
 import { StagingConfigError, stagingConfigFromEnv } from './staging/config';
+import { stagingDepsFromEnv } from './staging/deps';
 import { RESET_CONFIRMATION, resetStagingWorkspace } from './staging/reset';
 import { seedStaging } from './staging/seed';
 
@@ -25,9 +23,10 @@ const log = (m: string) => console.log(`[${((Date.now() - started) / 1000).toFix
 try {
   const cfg = stagingConfigFromEnv(process.env);
   const local = cfg.appEnv === 'dev' || cfg.appEnv === 'test';
-  const objects = objectStoreFromEnv('uk');
+  // the job's own stores, not the API's dependencies (it is not given the API's secrets)
+  const deps = await stagingDepsFromEnv(cfg.appEnv);
   // Files written to an in-memory store vanish with this process: only acceptable for local development.
-  if (objects instanceof MemoryObjectStore && !local)
+  if (deps.seed.objects instanceof MemoryObjectStore && !local)
     throw new StagingConfigError('No object store is configured: documents and payslips would be lost');
   // STAGING_RESET deletes the fictional test workspace first, so the seed builds it again (ADR-0185).
   if (process.env.STAGING_RESET) {
@@ -35,17 +34,14 @@ try {
       throw new StagingConfigError(
         `STAGING_RESET must be "${RESET_CONFIRMATION}" to delete the test workspace`,
       );
-    log(`reset: ${await resetStagingWorkspace(await depsFromEnv(), cfg.workspace, log)}`);
+    log(`reset: ${await resetStagingWorkspace(deps.purge, cfg.workspace, log)}`);
   }
-  const result = await seedStaging(
-    {
-      router: TenantRouter.fromEnv(),
-      directory: await directoryFromEnv(),
-      keys: keyProviderFromEnv('uk'),
-      objects,
-    },
-    { workspace: cfg.workspace, logins: cfg.logins, size: cfg.size, log },
-  );
+  const result = await seedStaging(deps.seed, {
+    workspace: cfg.workspace,
+    logins: cfg.logins,
+    size: cfg.size,
+    log,
+  });
   log(result.dataSeeded ? 'data seeded' : 'data already present: left as it is');
   for (const [entity, n] of Object.entries(result.employeesByEntity)) log(`  ${entity}: ${n} employees`);
   log(

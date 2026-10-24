@@ -12,6 +12,7 @@ import {
   type StagingLogin,
 } from '../src/cli/staging/config';
 import { resetStagingWorkspace } from '../src/cli/staging/reset';
+import type { PurgeDeps } from '../src/modules/privacy/company';
 import { seedStaging, type StagingSeedResult } from '../src/cli/staging/seed';
 import { closeDb, randomIp, signup, startTestApp, type TestContext } from './helpers';
 
@@ -39,6 +40,8 @@ let directory: InMemoryDirectory;
 let objects: MemoryObjectStore;
 let ctx: TestContext;
 let first: StagingSeedResult;
+// only what the purge uses, as the seed job builds it (cli/staging/deps.ts): not the API's dependencies
+let purge: PurgeDeps;
 const noLog = () => {};
 const seed = () =>
   seedStaging(
@@ -57,6 +60,15 @@ beforeAll(async () => {
     directory,
     overrides: { router, keys: new LocalKeyProvider('6b'.repeat(32)), objects },
   });
+  purge = {
+    router,
+    directory,
+    objects,
+    limiter: ctx.deps.limiter,
+    mailer: ctx.deps.mailer,
+    now: () => new Date(),
+    config: { env: 'test' },
+  };
 }, 600_000);
 afterAll(async () => {
   await ctx?.close();
@@ -66,20 +78,20 @@ afterAll(async () => {
 describe('staging reset', () => {
   it('never deletes a workspace the staging seed did not create', async () => {
     const other = await signup(ctx, 'kestrel-lookalike');
-    await expect(resetStagingWorkspace(ctx.deps, 'kestrel-lookalike', noLog)).rejects.toBeInstanceOf(
+    await expect(resetStagingWorkspace(purge, 'kestrel-lookalike', noLog)).rejects.toBeInstanceOf(
       StagingConfigError,
     );
     expect((await directory.byId(other.tenantId))?.status).toBe('active');
   });
 
   it('reports nothing to do for a name that is not in use', async () => {
-    expect(await resetStagingWorkspace(ctx.deps, 'kestrel-unused', noLog)).toBe('nothing to reset');
+    expect(await resetStagingWorkspace(purge, 'kestrel-unused', noLog)).toBe('nothing to reset');
   });
 
   it('deletes the seeded workspace everywhere, then the seed builds it again under the same name', async () => {
     expect(first.dataSeeded).toBe(true);
     expect((await objects.list(`${first.tenantId}/`)).length).toBeGreaterThan(0);
-    expect(await resetStagingWorkspace(ctx.deps, 'kestrel', noLog)).toBe('reset');
+    expect(await resetStagingWorkspace(purge, 'kestrel', noLog)).toBe('reset');
 
     // the old workspace: purged, certified, and its name retired
     const old = await withRegistry(router, (tx) =>
