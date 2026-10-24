@@ -52,7 +52,7 @@ test.describe('sessions and passwords (V7.4, V7.5, V6.2)', () => {
     await page.goto('/app/security');
     await expect(page.getByRole('heading', { name: 'Where you are signed in' })).toBeVisible();
     await expect(
-      page.getByRole('list', { name: 'Where you are signed in' }).getByRole('listitem'),
+      page.getByRole('region', { name: 'Where you are signed in' }).getByRole('listitem'),
     ).toHaveCount(2);
     await expect(page.getByText('This device')).toBeVisible();
     await axeBoth(page);

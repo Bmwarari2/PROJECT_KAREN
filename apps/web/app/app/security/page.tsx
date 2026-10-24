@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound, Laptop, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { startRegistration } from '@simplewebauthn/browser';
-import { Badge, Button, Card, CardTitle, Field, Input, useToast } from '@thapsus/ui';
+import { Badge, Button, Card, CardTitle, Field, Input, ListItem, ListSection, useToast } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
@@ -77,54 +77,63 @@ function SessionsCard() {
     }
   }
 
+  // a grouped list (ADR-0180): the device on top, when it signed in and was last active under it, and
+  // the sign-out button under the text on phones (44px), at the end of the row from `sm`
   return (
-    <Card>
-      <div className="flex items-center gap-3">
-        <Laptop aria-hidden className="h-6 w-6 stroke-[1.5] text-accent" />
-        <CardTitle>{t('app.security.sessions.title')}</CardTitle>
-      </div>
-      <p className="mt-2 text-callout text-text-secondary">{t('app.security.sessions.body')}</p>
-      <ul className="mt-4 flex flex-col divide-y divide-border" aria-label={t('app.security.sessions.title')}>
+    <div className="flex flex-col gap-3">
+      <ListSection
+        id="sessions"
+        title={t('app.security.sessions.title')}
+        description={t('app.security.sessions.body')}
+        footer={!others.length && sessions.data ? t('app.security.sessions.onlyThis') : undefined}
+      >
         {list.map((s) => (
-          <li key={s.id} className="flex flex-wrap items-center gap-3 py-3">
-            <div className="mr-auto flex min-w-0 flex-col">
-              <span className="flex flex-wrap items-center gap-2 text-callout font-semibold">
-                {label(s)}
-                {s.current ? <Badge tone="success">{t('app.security.sessions.current')}</Badge> : null}
-              </span>
-              <span className="text-footnote text-text-secondary">
-                {t('app.security.sessions.signedIn', {
-                  when: formatDateTime(s.createdAt, locale, zone),
-                  method: METHODS.includes(s.method)
-                    ? t(`app.security.sessions.method.${s.method}`)
-                    : s.method,
-                })}
-              </span>
-              <span className="text-footnote text-text-secondary">
-                {t('app.security.sessions.lastActive', { when: formatDateTime(s.lastSeenAt, locale, zone) })}
-              </span>
-            </div>
-            {s.current ? null : (
-              <Button
-                size="sm"
-                variant="secondary"
-                aria-label={t('app.security.sessions.endOneLabel', { device: label(s) })}
-                onClick={() =>
-                  act(
-                    () => api(`/v1/auth/sessions/${s.id}`, { method: 'DELETE' }),
-                    t('app.security.sessions.ended'),
-                  )
-                }
-              >
-                {t('app.security.sessions.endOne')}
-              </Button>
-            )}
-          </li>
+          <ListItem
+            key={s.id}
+            leading={<Laptop />}
+            title={label(s)}
+            subtitle={
+              <>
+                <span className="block">
+                  {t('app.security.sessions.signedIn', {
+                    when: formatDateTime(s.createdAt, locale, zone),
+                    method: METHODS.includes(s.method)
+                      ? t(`app.security.sessions.method.${s.method}`)
+                      : s.method,
+                  })}
+                </span>
+                <span className="block">
+                  {t('app.security.sessions.lastActive', {
+                    when: formatDateTime(s.lastSeenAt, locale, zone),
+                  })}
+                </span>
+              </>
+            }
+            meta={s.current ? <Badge tone="success">{t('app.security.sessions.current')}</Badge> : null}
+            actions={
+              s.current ? null : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-11 sm:h-8"
+                  aria-label={t('app.security.sessions.endOneLabel', { device: label(s) })}
+                  onClick={() =>
+                    act(
+                      () => api(`/v1/auth/sessions/${s.id}`, { method: 'DELETE' }),
+                      t('app.security.sessions.ended'),
+                    )
+                  }
+                >
+                  {t('app.security.sessions.endOne')}
+                </Button>
+              )
+            }
+          />
         ))}
-      </ul>
+      </ListSection>
       {others.length ? (
         <Button
-          className="mt-4"
+          className="h-11 self-start"
           variant="secondary"
           onClick={() =>
             act(
@@ -135,11 +144,9 @@ function SessionsCard() {
         >
           {t('app.security.sessions.endOthers')}
         </Button>
-      ) : sessions.data ? (
-        <p className="mt-2 text-footnote text-text-secondary">{t('app.security.sessions.onlyThis')}</p>
       ) : null}
       {stepUp.dialog}
-    </Card>
+    </div>
   );
 }
 
