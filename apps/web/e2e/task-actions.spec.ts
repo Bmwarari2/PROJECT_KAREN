@@ -83,6 +83,7 @@ test('a task explains itself, opens the work and closes itself when the work is 
   await expect(page.getByTestId('task-origin')).toHaveText('Asset register');
   await axeBoth(page);
   // the main button opens the handover, already chosen
+  const taskUrl = page.url();
   await page.getByTestId('task-main-action').click();
   await page.waitForURL(/\/app\/assets\?ack=/);
   const dialog = page.getByRole('dialog', { name: 'Confirm you received Fictional Book 14' });
@@ -91,8 +92,7 @@ test('a task explains itself, opens the work and closes itself when the work is 
   await dialog.getByRole('button', { name: 'Confirm receipt' }).click();
   await expect(page.getByText('Thank you. Your confirmation is recorded.').first()).toBeVisible();
   // back on the task: it closed itself
-  await page.goBack();
-  await page.goto(page.url());
+  await page.goto(taskUrl);
   await settle(page);
   await expect(page.getByTestId('task-detail').getByText('Done', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('By itself, when the work was recorded')).toBeVisible();
