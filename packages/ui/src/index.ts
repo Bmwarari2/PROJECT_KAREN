@@ -11,3 +11,4 @@ export * from './components/popover';
 export * from './components/module-nav';
 export * from './components/table-toolbar';
 export * from './components/command';
+export * from './components/list';

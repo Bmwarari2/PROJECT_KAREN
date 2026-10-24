@@ -1668,3 +1668,31 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - About 25 KB gzipped less JavaScript, and less start-up work, on every app page.
 - The first open of either menu can wait for one small chunk on a very slow connection; pointing at the button usually covers that time. A keyboard user who opens it waits for the same chunk, and the menu takes the focus when it opens.
 - When the platform ships Temporal natively everywhere we support, the import in `time.ts` is the one line to remove.
+
+## ADR-0180 — The app follows phone-app conventions: grouped lists, large titles, a light translucent bar and a bottom tab bar (2026-10-24)
+
+**Context.** The product owner tested staging on an iPhone and found the UI bad. The screenshots (notifications, equipment) showed three problems:
+
+- rows laid out side by side (icon, text, date, button), which squeezed the text to one word per line;
+- desktop tables on phones;
+- cards inside cards under two or three stacked headings.
+
+They asked for Apple's design principles and the EasyUI collection (ADR-0154 follow-up, MIT) to be used. CLAUDE.md already takes Apple's principles, never its assets.
+
+**Decision.**
+
+- **Grouped lists are the default for collections.**
+  - `ListSection` and `ListItem` in `packages/ui` (DESIGN.md §6): the text column always takes the width. Dates and badges go under it, and text buttons go below it on phones.
+  - A row that leads somewhere is one tap target: a stretched link, a chevron and a 52px minimum height.
+  - Unread rows show an accent dot.
+- **Tables become lists on phones** in the `Table` primitive itself (`.thr-stack`, CSS only), so the existing table screens change without per-screen code. Explicit table roles keep the semantics where Safari drops them for re-laid-out tables. Wide numeric grids opt out.
+- **Page headers** are one bold large title (34/41) on the page background. Module sections are a segmented control (track plus raised segment) that scrolls sideways and keeps the current section in view.
+- **Bars.** The top bar is light and translucent like the page (blurred `chrome` at 80%), replacing the dark band of ADR-0154. Below `lg`, a bottom tab bar holds up to five modules: Home, Inbox, People or Time, Time or Pay, and Me (`dockModules`). The viewport uses `viewport-fit=cover`, and both bars pad for the device's safe areas.
+- **EasyUI** (MIT, © 2026 Suraj Maurya) is a reference for patterns, not a dependency. We rebuild what we take (segmented pill navigation, notification stacks, expandable rows, file upload, stepper) from our tokens with CSS transitions. Its `framer-motion` dependency would cost every page JavaScript on low-cost phones and is not added.
+- `scripts/phone-tour.mjs` seeds the staging organisation locally and saves phone-size screenshots per role and theme for UI reviews.
+
+**Consequences.**
+
+- Every phone screenshot baseline changes once (visual regression is re-baselined with this change).
+- Screens move to `ListSection`/`ListItem` as they are touched; the agents of this round convert the screens they own, and the rest follow in the same release.
+- Two colour tokens (`segment-track`, `segment-selected`) and two layout values (`large-title`, `--dock-height`) are added. The chrome tokens change value, with their contrast pairs still tested.
