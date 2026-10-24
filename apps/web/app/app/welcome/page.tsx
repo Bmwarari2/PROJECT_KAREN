@@ -217,9 +217,7 @@ export default function WelcomePage() {
                   ? t('onboarding.signedOn', { date: formatDate((d.signedAt ?? '').slice(0, 10), locale) })
                   : undefined
               }
-              accessory={
-                d.status === 'signed' ? undefined : <Badge tone="accent">{t('documents.sign')}</Badge>
-              }
+              meta={d.status === 'signed' ? undefined : <Badge tone="accent">{t('documents.sign')}</Badge>}
             />
           ))}
         </ListSection>

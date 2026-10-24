@@ -108,7 +108,8 @@ export default function DocumentsPage() {
                   ? t('docSign.returnedShort')
                   : t('docSign.requested', { date: day(s.requestedAt) })
               }
-              accessory={<Badge tone="accent">{t('docSign.signAction')}</Badge>}
+              // the badge goes under the text on phones, so a long title keeps the width (ADR-0180)
+              meta={<Badge tone="accent">{t('docSign.signAction')}</Badge>}
             />
           ))}
         </ListSection>
@@ -123,7 +124,7 @@ export default function DocumentsPage() {
               leading={<PenLine />}
               title={a.payload.documentTitle ?? t('documents.title')}
               subtitle={t('docSign.signedBy', { name: a.subjectName ?? '', date: day(a.requestedAt) })}
-              accessory={<Badge tone="accent">{t('docSign.countersignAction')}</Badge>}
+              meta={<Badge tone="accent">{t('docSign.countersignAction')}</Badge>}
             />
           ))}
         </ListSection>
