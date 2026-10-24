@@ -72,6 +72,7 @@ const PAGES = {
     '/app/compliance',
     '/app/compliance/right-to-work',
     ':countersign',
+    ':evidence',
     '/app/approvals',
     '/app/tasks',
     '/app/documents',
@@ -193,11 +194,14 @@ async function colleagueProfile(cookie) {
   const r = await fetch(`${base}/v1/employees?limit=5`, { headers: { cookie } });
   if (!r.ok) return null;
   const body = await r.json();
-  const list = Array.isArray(body) ? body : (body.items ?? body.employees ?? []);
+  const list = Array.isArray(body) ? body : (body.data ?? body.items ?? body.employees ?? []);
   return list[1]?.id ? `/app/people/${list[1].id}` : null;
 }
 
-/** A document waiting for the employee's signature, their latest payslip, or one waiting for HR's countersignature. */
+/**
+ * A document waiting for the employee's signature, their latest payslip, one waiting for HR's countersignature, or a
+ * person's documents with right-to-work evidence.
+ */
 async function seededPage(token, cookie) {
   const get = async (url) => (await fetch(`${base}${url}`, { headers: { cookie } })).json();
   if (token === ':toSign') {
@@ -208,6 +212,11 @@ async function seededPage(token, cookie) {
     const p = (await get('/v1/me/payslips')).find((x) => x.hasStatement);
     return p ? `/app/payslips/${p.id}` : null;
   }
+  if (token === ':evidence') {
+    // a person with right-to-work evidence, on their profile's Documents tab
+    const d = (await get('/v1/documents')).find((x) => x.attachmentType === 'right_to_work');
+    return d ? `/app/people/${d.employeeId}?tab=documents` : null;
+  }
   if (token === ':countersign') {
     const a = (await get('/v1/approvals?view=mine')).find((x) => x.subject === 'document.countersign');
     return a ? `/app/documents/${a.payload.documentId}` : null;
@@ -215,7 +224,7 @@ async function seededPage(token, cookie) {
   return null;
 }
 
-const slugOf = (path) => path.replace(/^\/app\/?/, '').replace(/[/:]+/g, '-') || 'home';
+const slugOf = (path) => path.replace(/^\/app\/?/, '').replace(/[/:?=&]+/g, '-') || 'home';
 
 try {
   for (const port of [WEB, API]) {

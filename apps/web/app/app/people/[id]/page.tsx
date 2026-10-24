@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { History, Pencil, Send } from 'lucide-react';
 import {
   Badge,
@@ -122,6 +122,8 @@ export default function EmployeePage() {
   const locale = useLocale();
   const toast = useToast();
   const { id } = useParams<{ id: string }>();
+  // ?tab=documents opens the Documents tab (links from right-to-work evidence and expiry reminders)
+  const openTab = useSearchParams().get('tab') === 'documents' ? 'documents' : 'overview';
   const [asOf, setAsOf] = React.useState<string>('');
   const { data, error, reload } = useApi<ProfileResponse>(
     `/v1/employees/${id}${asOf ? `?asOf=${asOf}` : ''}`,
@@ -330,7 +332,7 @@ export default function EmployeePage() {
         ) : null}
       </Card>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue={openTab}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <TabsList>
             <TabsTrigger value="overview">{t('people.tab.overview')}</TabsTrigger>
