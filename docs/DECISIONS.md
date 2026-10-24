@@ -1837,3 +1837,30 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - Every phone screenshot baseline changes once (visual regression is re-baselined with this change).
 - Screens move to `ListSection`/`ListItem` as they are touched; the agents of this round convert the screens they own, and the rest follow in the same release.
 - Two colour tokens (`segment-track`, `segment-selected`) and two layout values (`large-title`, `--dock-height`) are added. The chrome tokens change value, with their contrast pairs still tested.
+
+## ADR-0181 — Settings work like a phone's settings app: an index of grouped lists, back links and one large title (2026-10-24)
+
+**Context.** On the owner's iPhone every settings page showed the large "Settings" title, then a native-select-like disclosure as the sub-navigation (which read "Overview" on API access, branding, features and webhooks, because those pages were not in the section list), then the page's own title. Platform settings were a separate grid of cards on the index.
+
+**Decision.**
+
+- **One registry.** `settings/sections.ts` lists every settings page, the platform ones too (group `platform`, gated by `settings.manage` or `settings.read`, their workspace feature, and never sandboxes in a sandbox). Message keys stay out of that module, which every page loads through the workspace map; `section-text.ts` names them. The developer documentation is an index row only.
+- **Phones and tablets (below `lg`).** The index is grouped `ListSection`s with an icon, title and summary per row; it is the navigation. A section opens with a "‹ Settings" back link (`BackLink`, a `Breadcrumb` landmark with a 44px target) and its own title in the large-title style; a page inside a section (a role, a person) goes back to its section. The module's name stays the page's only h1 for screen readers (`ModuleHeader drilled`, `WorkspaceModule.drillDown`), and the page title is its h2, so headings never skip and `expectPageTitle(page, 'Settings', …)` still holds.
+- **Large screens.** The side list stays, with the platform group added; pages inside a section keep the back link (it replaces the "All roles" / "All users" / "Back to settings" links).
+- **Sections.** `SettingsCard` puts its heading above the content (`PageSection`); `container="none"` lets a table or a list of cards stand on its own, so no settings page has a card inside a card.
+
+**Consequences.** `platform-links.tsx` is gone (its entries live in `sections.ts`); a new settings page (such as a security centre) is one entry there and appears on the index, the side list and the role preview. `e2e/settings-security.spec.ts` checks the phone layout; links on the index are found within their group, because the side list names the same pages.
+
+## ADR-0182 — Phone layout rules for the rest of the app: sections above containers, labelled rows, tables that are their own container, and touch-size forms (2026-10-24)
+
+**Context.** After ADR-0180 the owner still found stacked tables with bare values ("Yes / Yes / No", "Everything / 1"), cards inside cards under two titles, narrow inline forms, and coded values ("full_time", "annual") on phones.
+
+**Decision.**
+
+- **`PageSection`** (`packages/ui`, beside `ListSection`): the same `title-3` heading, lead and action above the content, for sections whose body is a table, a form card or a chart. Titles inside cards move above them where a card is a section of the page.
+- **Tables are their own container** (`surface-raised` with a hairline). A table placed directly in a card with the standard padding runs to the card's edges (`[data-card] > .thr-table`), and inside a list card it draws no second container on phones. `EmptyState` has no box of its own.
+- **Labels.** On phones every stacked cell whose value alone is unclear has a `label`; short values are joined with `phone="inline"` (the dot ends the earlier value, so a wrapped line never starts with one, and labels are kept), and empty or desktop-only cells use `phone="hide"`. Report results label every column and show 50 rows at a time, as does the asset register; wide numeric grids (EEO-1) scroll sideways (`stack={false}`).
+- **Forms on phones** (below `sm`, inside the app's `main` and dialogs, `base.css`): every control is at least 44px tall, inputs and selects take the full width, `Field` takes the whole line in a wrapping row, and the submit button is full width (search forms excepted). `nativeSelectClass` gives native selects the input metrics. Forms keep one primary action.
+- **Coded values** read in words: My details uses the same `reports.enum.*` names as the profile, formats numbers for the locale, and names the nationality (`regionName`, `Intl.DisplayNames`).
+
+**Consequences.** Screens owned by other agents (documents, payslips, payroll, the back office) pick up the container, empty-state and form rules without code changes; their own conversions stay theirs. Phone visual baselines change again (re-baselined by the coordinator).
