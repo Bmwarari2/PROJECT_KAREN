@@ -9,6 +9,7 @@
 // TOUR_PAGES=/app,/app/me (limit the pages). Needs the local Postgres and S3 mock (docker compose up).
 // Every name, email and password here is fictional and local-only.
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -32,7 +33,8 @@ const WEB = Number(process.env.TOUR_WEB_PORT ?? 3300);
 const API = Number(process.env.TOUR_API_PORT ?? 4300);
 const OUT = process.env.TOUR_OUT ?? '.verify/phone-tour';
 const base = `http://127.0.0.1:${WEB}`;
-const LOGIN_PASSWORD = 'Amber-Lantern-Orbit-9157';
+// A fresh password for each run, so none is kept in the repository (it only lives in the local tour database).
+const LOGIN_PASSWORD = `Tour-${randomBytes(12).toString('base64url')}-7q`;
 const ROLES = ['owner', 'hr_admin', 'payroll_admin', 'manager', 'employee'];
 const LOGINS = {
   workspace: 'kestrel',
@@ -66,7 +68,7 @@ const PAGES = {
     '/app/rota',
     '/app/assets',
     '/app/help',
-    '/app/support',
+    '/app/contact-hr',
   ],
   manager: ['/app', '/app/people', '/app/approvals', '/app/time-off', '/app/rota', '/app/timesheets'],
   hr_admin: [
@@ -200,7 +202,7 @@ async function colleagueProfile(cookie) {
   const r = await fetch(`${base}/v1/employees?limit=5`, { headers: { cookie } });
   if (!r.ok) return null;
   const body = await r.json();
-  const list = Array.isArray(body) ? body : (body.items ?? body.employees ?? []);
+  const list = body.data ?? [];
   return list[1]?.id ? `/app/people/${list[1].id}` : null;
 }
 
