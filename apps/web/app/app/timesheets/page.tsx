@@ -121,14 +121,16 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
           {d.days.map((day) => (
             <TR key={day.date} className={day.flagged ? 'bg-accent-subtle' : undefined}>
               <TD>{dayLong(day.date, locale)}</TD>
-              <TD className="text-right">
+              <TD className="text-right" label={t('timesheets.scheduled')} phone="inline">
                 <Hours minutes={day.scheduledMinutes} />
               </TD>
-              <TD className="text-right">
+              <TD className="text-right" label={t('timesheets.worked')} phone="inline">
                 <Hours minutes={day.workedMinutes} />
               </TD>
               <TD
                 className={`text-right ${day.flagged ? 'font-semibold text-warning' : 'text-text-secondary'}`}
+                label={t('timesheets.variance')}
+                phone="inline"
               >
                 <Hours minutes={day.varianceMinutes} signed />
                 {day.flagged ? <span className="sr-only"> {t('timesheets.flagged')}</span> : null}
@@ -137,13 +139,13 @@ function MyWeek({ employeeId, week, onChange }: { employeeId: string; week: stri
           ))}
           <TR>
             <TD className="font-semibold">{t('timesheets.total')}</TD>
-            <TD className="text-right font-semibold">
+            <TD className="text-right font-semibold" label={t('timesheets.scheduled')} phone="inline">
               <Hours minutes={d.scheduledMinutes} />
             </TD>
-            <TD className="text-right font-semibold">
+            <TD className="text-right font-semibold" label={t('timesheets.worked')} phone="inline">
               <Hours minutes={d.workedMinutes} />
             </TD>
-            <TD className="text-right font-semibold">
+            <TD className="text-right font-semibold" label={t('timesheets.variance')} phone="inline">
               <Hours minutes={d.workedMinutes - d.scheduledMinutes} signed />
             </TD>
           </TR>
@@ -251,13 +253,19 @@ function TeamWeek({ week }: { week: string }) {
                       {t(`timesheets.status.${r.status}`)}
                     </Badge>
                   </TD>
-                  <TD className="text-right">
+                  <TD className="text-right" label={t('timesheets.worked')} phone="inline">
                     <Hours minutes={r.workedMinutes} />
                   </TD>
-                  <TD className="text-right">
+                  <TD className="text-right" label={t('timesheets.overtime')} phone="inline">
                     <Hours minutes={r.overtimeMinutes + r.doubleMinutes} />
                   </TD>
-                  <TD className={`text-right ${r.violations ? 'text-warning' : ''}`}>{r.violations}</TD>
+                  <TD
+                    className={`text-right ${r.violations ? 'text-warning' : ''}`}
+                    label={t('timesheets.issues')}
+                    phone="inline"
+                  >
+                    {r.violations}
+                  </TD>
                   <TD className="text-right">
                     {approval && r.status === 'submitted' ? (
                       <span className="inline-flex gap-2">
