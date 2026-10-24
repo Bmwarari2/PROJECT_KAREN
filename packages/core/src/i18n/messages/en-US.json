@@ -1047,8 +1047,7 @@
       "brp_evisa": "Residence permit or visa",
       "share_code_result": "Online status check result"
     },
-    "vaultHint": "Kept in the vault: only people who may see work authorization records can open it.",
-    "rtwAttachFor": "Attach work authorization evidence for {name}"
+    "vaultHint": "Kept in the vault: only people who may see work authorization records can open it."
   },
   "documents": {
     "categoryName": {

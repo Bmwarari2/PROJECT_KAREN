@@ -674,7 +674,7 @@
     "evidenceCount_one": "{count} document",
     "evidenceCount_other": "{count} documents",
     "rtwAttach": "Attach evidence",
-    "rtwAttachFor": "Attach right-to-work evidence for {name}"
+    "rtwAttachFor": "Attach evidence for {name}"
   },
   "docSign": {
     "policyName": "Countersign signed documents",

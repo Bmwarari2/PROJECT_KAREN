@@ -166,8 +166,13 @@ test('an employee sees and downloads only their own payslip', async ({ page }) =
   await expect(page.getByText('New', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Upload payslips or year-end documents' })).toHaveCount(0);
   await expectAccessible(page);
+  // each payslip opens on its own page (ADR-0167), where the provider's PDF downloads
+  await page.getByRole('link', { name: /March 2026/ }).click();
+  await page.waitForURL(/\/app\/payslips\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole('heading', { name: 'Payslip: March 2026' })).toBeVisible();
+  await expectAccessible(page);
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download: March 2026' }).click();
+  await page.getByRole('link', { name: 'Download the provider’s PDF' }).first().click();
   const download = await downloading;
   expect(download.suggestedFilename()).toBe(`${person.number}_2026-03.pdf`);
   expect((await readFile((await download.path())!)).equals(PDF)).toBe(true);
