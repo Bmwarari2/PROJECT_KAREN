@@ -256,10 +256,14 @@ export function AppShell({
   const railCounts = React.useMemo(() => ({ inbox: inboxCount }), [inboxCount]);
   const dock = React.useMemo(() => (viewer ? dockModules(modules, viewer) : []), [modules, viewer]);
   // keep the current section visible in a sideways-scrolling sections control (phones)
+  // by scrolling the control itself: scrollIntoView would also move the browser's sequential focus
+  // starting point there, so the first Tab would skip the skip link and the top bar (WCAG 2.4.1, 2.1.1)
   React.useEffect(() => {
-    document
-      .querySelector('[data-tab-nav] [data-active]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const item = document.querySelector<HTMLElement>('[data-tab-nav] [data-active]');
+    const nav = item?.closest<HTMLElement>('[data-tab-nav]');
+    if (!item || !nav || nav.scrollWidth <= nav.clientWidth) return;
+    const offset = item.getBoundingClientRect().left - nav.getBoundingClientRect().left;
+    nav.scrollLeft += offset - (nav.clientWidth - item.offsetWidth) / 2;
   }, [path]);
   const tabCounts: Record<string, number> = {
     '/app/approvals': counts.approvals,
