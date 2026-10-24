@@ -11,9 +11,12 @@ import { periodic, registerJob, subscribe } from '../../jobs/registry';
 import {
   autoStart,
   DEFAULT_REMINDER_DAYS_BEFORE,
+  hrefOfRow,
   listTasks,
   maybeCompleteInstance,
   startWorkflow,
+  TASK_HREF_COLUMNS,
+  TASK_HREF_JOINS,
   taskRoles,
 } from './service';
 
@@ -41,6 +44,24 @@ const Task = Type.Object({
   subjectName: Nullable(Type.String()),
   assigneeRole: Nullable(Type.String()),
   link: Nullable(Type.String()),
+  href: Type.String({ description: 'The page the task is about (its request, document or its own page)' }),
+});
+const TaskDetail = Type.Object({
+  id: Uuid,
+  title: Type.String(),
+  description: Nullable(Type.String()),
+  source: Type.String(),
+  status: Type.String(),
+  dueOn: Nullable(Type.String()),
+  createdAt: Type.String(),
+  completedAt: Nullable(Type.String()),
+  completedByName: Nullable(Type.String()),
+  subject: Nullable(Type.Object({ id: Uuid, name: Type.String() })),
+  assigneeRole: Nullable(Type.String()),
+  assigneeName: Nullable(Type.String()),
+  workflow: Nullable(Type.Object({ id: Uuid, kind: Type.String(), name: Type.String() })),
+  href: Type.String(),
+  canComplete: Type.Boolean(),
 });
 
 export async function workflowRoutes(app: FastifyInstance) {
@@ -191,6 +212,78 @@ export async function workflowRoutes(app: FastifyInstance) {
     },
   );
 
+  app.get(
+    '/v1/tasks/:id',
+    {
+      schema: {
+        tags: ['tasks'],
+        summary:
+          'One task: what it asks, when it is due, who it is about and the page it opens. Visible to its assignee, its role queue and people who manage workflows.',
+        params: Type.Object({ id: Uuid }),
+        response: { 200: TaskDetail, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      const auth = requireAuth(req);
+      const { id } = req.params as { id: string };
+      const roles = taskRoles(auth.principal.grants.map((g) => g.roleKey));
+      return app.tenantTx(
+        req,
+        async (tx) => {
+          const r = await tx.maybe<Record<string, string | null>>(
+            `SELECT k.*, e.display_name AS subject_name, a.display_name AS assignee_name, c.display_name AS completed_by_name,
+                    wt.name AS workflow_name, ${TASK_HREF_COLUMNS}
+               FROM app.tasks k
+               LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
+               LEFT JOIN app.users a ON a.tenant_id = k.tenant_id AND a.id = k.assignee_user_id
+               LEFT JOIN app.users c ON c.tenant_id = k.tenant_id AND c.id = k.completed_by
+               ${TASK_HREF_JOINS}
+               LEFT JOIN app.workflow_templates wt ON wt.tenant_id = wi.tenant_id AND wt.id = wi.template_id
+              WHERE k.id = $1`,
+            [id],
+          );
+          if (!r) throw new ApiError('notFound');
+          const mine =
+            r.assignee_user_id === auth.userId ||
+            (!r.assignee_user_id && !!r.assignee_role && roles.includes(r.assignee_role));
+          const manages = canSome(auth.principal, 'workflows.manage');
+          if (!mine && !manages) {
+            const readable =
+              !!r.subject_employee_id &&
+              can(auth.principal, 'workflows.read', await loadTarget(tx, r.subject_employee_id));
+            if (!readable) throw new ApiError('forbidden');
+          }
+          return {
+            id: r.id!,
+            title: r.title!,
+            description: r.description ?? null,
+            source: r.source!,
+            status: r.status!,
+            dueOn: r.due_on ?? null,
+            createdAt: r.created_at!,
+            completedAt: r.completed_at ?? null,
+            completedByName: r.completed_by_name ?? null,
+            subject:
+              r.subject_employee_id && r.subject_name
+                ? { id: r.subject_employee_id, name: r.subject_name }
+                : null,
+            assigneeRole: r.assignee_role ?? null,
+            assigneeName: r.assignee_name ?? null,
+            workflow:
+              r.source === 'workflow' && r.source_id && r.workflow_name
+                ? { id: r.source_id, kind: r.href_workflow_kind ?? 'custom', name: r.workflow_name }
+                : null,
+            href: hrefOfRow(r),
+            // requests and signatures close their tasks when they are decided or signed
+            canComplete:
+              r.status === 'open' && (mine || manages) && r.source !== 'approval' && r.source !== 'document',
+          };
+        },
+        { readOnly: true },
+      );
+    },
+  );
+
   app.post(
     '/v1/tasks/:id/complete',
     {
@@ -281,7 +374,7 @@ registerJob('tasks.reminders', async (ctx) => {
         kind: t.overdue ? 'task.overdue' : 'task.due',
         titleKey: t.overdue ? 'notify.taskOverdue' : 'notify.taskDueSoon',
         params: { title: t.title },
-        link: '/app/tasks',
+        target: { type: 'task', id: t.id },
         dedupeKey: t.overdue ? `overdue:${t.id}` : `due:${t.id}`,
       });
       sent += ids.length;

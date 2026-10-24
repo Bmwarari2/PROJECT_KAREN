@@ -1,6 +1,7 @@
 import webpush from 'web-push';
 import { enqueueJob } from '@thapsus/db';
 import { isLocale, t } from '@thapsus/core/i18n';
+import { notificationHref } from '@thapsus/core/links';
 import { periodic, registerJob } from './registry';
 import { channelEnabled, type NotificationPrefs } from '../lib/notification-prefs';
 
@@ -40,20 +41,31 @@ registerJob('notifications.deliver', async (ctx) => {
       title_key: string;
       params: Record<string, string>;
       link: string | null;
+      target_type: string | null;
+      target_id: string | null;
+      dedupe_key: string | null;
       emailed_at: string | null;
       email: string;
       locale: string | null;
       user_id: string;
       prefs: NotificationPrefs;
     }>(
-      `SELECT n.id, n.kind, n.title_key, n.params, n.link, n.emailed_at, u.email, u.locale, n.user_id, u.notification_prefs AS prefs FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE n.id = $1`,
+      `SELECT n.id, n.kind, n.title_key, n.params, n.link, n.target_type, n.target_id, n.dedupe_key, n.emailed_at, u.email, u.locale, n.user_id, u.notification_prefs AS prefs FROM app.notifications n JOIN app.users u ON u.tenant_id = n.tenant_id AND u.id = n.user_id WHERE n.id = $1`,
       [id],
     ),
   );
   if (!n || n.emailed_at) return { skipped: true };
   const locale = isLocale(n.locale) ? n.locale : 'en-GB';
   const title = t(locale, n.title_key, n.params);
-  const link = n.link ? `${ctx.deps.config.appBaseUrl}${n.link}` : ctx.deps.config.appBaseUrl;
+  // the page the notification is about (ADR-0160), as in the app's bell
+  const href = notificationHref({
+    kind: n.kind,
+    targetType: n.target_type,
+    targetId: n.target_id,
+    link: n.link,
+    dedupeKey: n.dedupe_key,
+  });
+  const link = `${ctx.deps.config.appBaseUrl}${href}`;
   // the user's self-service preferences decide the channels (phase 7); the in-app notification always exists
   const email = channelEnabled(n.prefs, n.kind, 'email');
   const push = channelEnabled(n.prefs, n.kind, 'push');
@@ -69,7 +81,7 @@ registerJob('notifications.deliver', async (ctx) => {
       await webpush
         .sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ title: t(locale, 'common.appName'), body: title, url: n.link ?? '/app' }),
+          JSON.stringify({ title: t(locale, 'common.appName'), body: title, url: href }),
           { vapidDetails: ctx.deps.webPush, TTL: 3600 },
         )
         .catch(() => undefined);

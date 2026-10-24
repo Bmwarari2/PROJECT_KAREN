@@ -166,7 +166,7 @@ export async function privacyBackofficeRoutes(app: FastifyInstance) {
               kind: 'privacy.incident',
               titleKey: 'notify.processorBreach',
               params: { title: r.title },
-              link: '/app/privacy/incidents',
+              target: { type: 'privacy_incident', id: inc.id },
               dedupeKey: `processor-breach:${r.id}`,
             });
             await writeAudit(tx, {

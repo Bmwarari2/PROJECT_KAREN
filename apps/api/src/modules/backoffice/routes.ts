@@ -1058,7 +1058,7 @@ export async function backofficeRoutes(app: FastifyInstance) {
             kind: 'support.reply',
             titleKey: 'notify.supportReply',
             params: { reference: cur.reference },
-            link: `/app/support/${ticketId}`,
+            target: { type: 'support_ticket', id: ticketId },
             dedupeKey: `support-reply:${m.id}`,
           });
           return { msg: m, t: u };

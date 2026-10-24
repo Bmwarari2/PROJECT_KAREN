@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
+import type { LinkTarget } from '@thapsus/core/links';
 import {
   addDays,
   compareDates,
@@ -56,6 +57,9 @@ async function usersFor(tx: Tx, employeeIds: string[]): Promise<Map<string, stri
 }
 
 type Params = Record<string, string | number>;
+
+/** The rota opened at the week of a shift (ADR-0160): the page reads `?week=` and starts on that week. */
+export const rotaWeekLink = (date: string) => `/app/rota?week=${date}`;
 export async function notifyEmployees(
   tx: Tx,
   employeeIds: string[],
@@ -63,7 +67,8 @@ export async function notifyEmployees(
     kind: string;
     titleKey: string;
     params?: Params | ((employeeId: string) => Params);
-    link: string;
+    link?: string;
+    target?: LinkTarget;
     dedupe: (employeeId: string) => string;
   },
 ) {
@@ -78,6 +83,7 @@ export async function notifyEmployees(
         titleKey: n.titleKey,
         params,
         link: n.link,
+        target: n.target,
         dedupeKey: n.dedupe(employeeId),
       })
     ).length;
@@ -595,7 +601,7 @@ export async function rotaRoutes(app: FastifyInstance) {
             kind: 'rota.changed',
             titleKey: 'notify.shiftChanged',
             params: { date },
-            link: '/app/rota',
+            link: rotaWeekLink(date),
             dedupe: (e) => `shift-changed:${id}:${row.updated_at}:${e}`,
           });
         }
@@ -648,7 +654,7 @@ export async function rotaRoutes(app: FastifyInstance) {
             kind: 'rota.cancelled',
             titleKey: 'notify.shiftCancelled',
             params: { date: cur.shift_date },
-            link: '/app/rota',
+            link: rotaWeekLink(cur.shift_date),
             dedupe: (e) => `shift-cancelled:${id}:${e}`,
           });
         await app.audit(tx, req, {
@@ -926,7 +932,7 @@ export async function rotaRoutes(app: FastifyInstance) {
             shifts: byEmp.get(e)!.length,
             count: byEmp.get(e)!.length,
           }),
-          link: '/app/rota',
+          link: rotaWeekLink(b.from),
           dedupe: (e) => `rota-published:${e}:${digest(e)}`,
         });
         await app.audit(tx, req, {
@@ -1183,7 +1189,7 @@ export async function rotaRoutes(app: FastifyInstance) {
           kind: 'rota.swap_offered',
           titleKey: 'notify.swapOffered',
           params: { date: s.shift_date },
-          link: '/app/rota',
+          link: rotaWeekLink(s.shift_date),
           dedupe: () => `swap-offered:${sw.id}`,
         });
         await app.audit(tx, req, {
@@ -1533,7 +1539,7 @@ export async function rotaRoutes(app: FastifyInstance) {
       kind: 'rota.claim_approved',
       titleKey: 'notify.shiftClaimApproved',
       params: { date: s.shift_date },
-      link: '/app/rota',
+      link: rotaWeekLink(s.shift_date),
       dedupe: () => `claim-ok:${swapId}`,
     });
   }
@@ -1571,7 +1577,7 @@ export async function rotaRoutes(app: FastifyInstance) {
       kind: 'rota.swap_approved',
       titleKey: 'notify.swapApproved',
       params: { date: a.shift_date },
-      link: '/app/rota',
+      link: rotaWeekLink(a.shift_date),
       dedupe: (e) => `swap-ok:${swapId}:${e}`,
     });
   }

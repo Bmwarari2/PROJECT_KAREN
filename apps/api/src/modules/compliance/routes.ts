@@ -10,6 +10,7 @@ import { ruleBook } from '../rules/routes';
 import { eeo1SnapshotWindow, gpgDates, type Eeo1Rule, type PayTransparencyRule } from './engine';
 import { immigrationRoutes } from './immigration-routes';
 import { matrixRoutes } from './matrix-routes';
+import { personComplianceRoutes } from './person-routes';
 import { reportRoutes } from './report-routes';
 import { lawChangeRoutes, relevantLawChanges } from './law-change-routes';
 import {
@@ -360,6 +361,7 @@ export async function complianceRoutes(app: FastifyInstance) {
 
   await immigrationRoutes(app);
   await matrixRoutes(app);
+  await personComplianceRoutes(app);
   await reportRoutes(app);
   await lawChangeRoutes(app);
 }

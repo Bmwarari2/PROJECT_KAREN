@@ -1,5 +1,6 @@
 import { addDays } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
+import { personHref, safeAppLink, targetHref } from '@thapsus/core/links';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 
 /** Reminder lead time for tasks whose template does not set `reminderDaysBefore`. */
@@ -69,8 +70,9 @@ export async function startWorkflow(
     const dueOn = addDays(anchorDate, task.dueOffsetDays);
     // Role tasks are one shared task visible to the role; person tasks are assigned individually.
     const targets = role ? [null] : assignees.length ? assignees : [null];
+    const created = new Map<string | null, string>();
     for (const user of targets) {
-      await createTask(tx, {
+      const taskId = await createTask(tx, {
         source: 'workflow',
         sourceId: inst.id,
         title: task.title,
@@ -81,10 +83,10 @@ export async function startWorkflow(
         assigneeEmployeeId: person,
         dueOn,
         reminderDaysBefore: task.reminderDaysBefore ?? null,
-        link: `/app/tasks`,
         // person tasks dedupe on the person, so a sign-in created later does not duplicate them
         dedupeKey: `wf:${inst.id}:${task.key}:${person ? `emp:${person}` : (user ?? role ?? 'unassigned')}`,
       });
+      if (taskId) created.set(user, taskId);
     }
     if (assignees.length)
       await notify(tx, {
@@ -92,7 +94,11 @@ export async function startWorkflow(
         kind: 'task.assigned',
         titleKey: 'notify.taskAssigned',
         params: { title: task.title },
-        link: '/app/tasks',
+        // each assignee's own task (a role task is one shared task)
+        target: (userId) => {
+          const id = created.get(userId) ?? created.get(null);
+          return id ? { type: 'task', id } : undefined;
+        },
         dedupeKey: `wf:${inst.id}:${task.key}`,
       });
   }
@@ -164,7 +170,66 @@ export interface TaskView {
   subjectName: string | null;
   assigneeRole: string | null;
   link: string | null;
+  /** The page the task is about (ADR-0160): its request, document, onboarding step or its own page. */
+  href: string;
 }
+
+/** Stored links that only name a list (or no page at all), so the task's own page is more useful. */
+const GENERIC_TASK_LINKS = new Set(['/app', '/app/tasks', '/app/approvals', '/app/documents', '/app/absence']);
+const COMPLIANCE_LISTS = new Set(['/app/compliance/right-to-work', '/app/compliance/i9', '/app/compliance/matrix']);
+
+/** What a task opens (ADR-0160). `documentId` is the signature request's document for e-signature tasks. */
+export function taskHref(r: {
+  id: string;
+  source: string;
+  sourceId: string | null;
+  link: string | null;
+  documentId?: string | null;
+  workflowKind?: string | null;
+  subjectEmployeeId?: string | null;
+  assigneeEmployeeId?: string | null;
+}): string {
+  if (r.source === 'approval' && r.sourceId)
+    return targetHref({ type: 'approval_request', id: r.sourceId }) ?? `/app/tasks/${r.id}`;
+  if (r.source === 'document' && r.documentId && r.sourceId) {
+    const doc = targetHref({ type: 'document', id: r.documentId });
+    if (doc) return `${doc}?sign=${r.sourceId}`;
+  }
+  // a joiner's own onboarding step is on the welcome page, next to the forms it asks for
+  if (
+    r.source === 'workflow' &&
+    r.workflowKind === 'onboarding' &&
+    r.assigneeEmployeeId &&
+    r.assigneeEmployeeId === r.subjectEmployeeId
+  )
+    return `/app/welcome#task-${r.id}`;
+  const own = safeAppLink(r.link);
+  // compliance reminders made before ADR-0160 name only a list: open the record or the person instead
+  if (r.source === 'compliance' && own && COMPLIANCE_LISTS.has(own)) {
+    if (own === '/app/compliance/right-to-work' && r.sourceId)
+      return targetHref({ type: 'rtw_check', id: r.sourceId }) ?? `/app/tasks/${r.id}`;
+    if (r.subjectEmployeeId) return personHref(r.subjectEmployeeId, 'compliance');
+  }
+  if (own && !GENERIC_TASK_LINKS.has(own.split('#')[0]!)) return own;
+  return `/app/tasks/${r.id}`;
+}
+
+/** Joins for `taskHref`: the signed document and the workflow's kind (alias `k` is app.tasks). */
+export const TASK_HREF_JOINS = `LEFT JOIN app.signature_requests sr ON k.source = 'document' AND sr.tenant_id = k.tenant_id AND sr.id = k.source_id
+  LEFT JOIN app.workflow_instances wi ON k.source = 'workflow' AND wi.tenant_id = k.tenant_id AND wi.id = k.source_id`;
+export const TASK_HREF_COLUMNS = `sr.document_id AS href_document_id, wi.kind AS href_workflow_kind`;
+
+export const hrefOfRow = (r: Record<string, string | null>) =>
+  taskHref({
+    id: r.id!,
+    source: r.source!,
+    sourceId: r.source_id ?? null,
+    link: r.link ?? null,
+    documentId: r.href_document_id ?? null,
+    workflowKind: r.href_workflow_kind ?? null,
+    subjectEmployeeId: r.subject_employee_id ?? null,
+    assigneeEmployeeId: r.assignee_employee_id ?? null,
+  });
 
 /** The caller's tasks: assigned to them, or to a role queue they work from. Shared by the list and export. */
 export async function listTasks(
@@ -175,7 +240,8 @@ export async function listTasks(
   limit = 500,
 ): Promise<TaskView[]> {
   const rows = await tx.query<Record<string, string | null>>(
-    `SELECT k.*, e.display_name AS subject_name FROM app.tasks k LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
+    `SELECT k.*, e.display_name AS subject_name, ${TASK_HREF_COLUMNS} FROM app.tasks k LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
+      ${TASK_HREF_JOINS}
       WHERE (k.assignee_user_id = $1 OR (k.assignee_user_id IS NULL AND k.assignee_role = ANY($2::text[])))
         AND ($3 = 'all' OR k.status = $3) ORDER BY k.due_on NULLS LAST, k.created_at LIMIT ${Math.trunc(limit)}`,
     [userId, taskRoles(roleKeys), status],
@@ -191,5 +257,6 @@ export async function listTasks(
     subjectName: r.subject_name ?? null,
     assigneeRole: r.assignee_role ?? null,
     link: r.link ?? null,
+    href: hrefOfRow(r),
   }));
 }

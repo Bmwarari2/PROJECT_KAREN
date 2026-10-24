@@ -1,10 +1,16 @@
 import { enqueueJob, type Tx } from '@thapsus/db';
+import { targetHref, type LinkTarget } from '@thapsus/core/links';
 
 export interface NotifyInput {
   userIds: string[];
   kind: string;
   titleKey: string;
   params?: Record<string, string | number>;
+  /**
+   * What the notification is about (ADR-0160). The bell, the notifications page, e-mails and web push
+   * open its page (`@thapsus/core/links`); `link` is only needed for a page that is not a target's own.
+   */
+  target?: LinkTarget | ((userId: string) => LinkTarget | undefined);
   link?: string;
   /** Prevents duplicates (e.g. one reminder per document per threshold). */
   dedupeKey?: string;
@@ -19,11 +25,21 @@ export interface NotifyInput {
 export async function notify(tx: Tx, n: NotifyInput): Promise<string[]> {
   const ids: string[] = [];
   for (const userId of n.userIds) {
+    const target = typeof n.target === 'function' ? n.target(userId) : n.target;
     const row = await tx.maybe<{ id: string }>(
-      `INSERT INTO app.notifications (tenant_id, user_id, kind, title_key, params, link, dedupe_key)
-       VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6)
+      `INSERT INTO app.notifications (tenant_id, user_id, kind, title_key, params, link, dedupe_key, target_type, target_id)
+       VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (tenant_id, user_id, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING RETURNING id`,
-      [userId, n.kind, n.titleKey, JSON.stringify(n.params ?? {}), n.link ?? null, n.dedupeKey ?? null],
+      [
+        userId,
+        n.kind,
+        n.titleKey,
+        JSON.stringify(n.params ?? {}),
+        n.link ?? targetHref(target) ?? null,
+        n.dedupeKey ?? null,
+        target?.type ?? null,
+        target?.id ?? null,
+      ],
     );
     if (!row) continue;
     ids.push(row.id);

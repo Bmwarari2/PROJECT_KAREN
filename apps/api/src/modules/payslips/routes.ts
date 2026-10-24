@@ -426,7 +426,7 @@ export async function payslipRoutes(app: FastifyInstance) {
                 kind: b.kind === 'payslip' ? 'payslip.published' : 'payslip.year_end_published',
                 titleKey: b.kind === 'payslip' ? 'notify.payslipAvailable' : 'notify.yearEndAvailable',
                 params: { label: b.label },
-                link: '/app/payslips',
+                target: { type: 'payslip', id: p.id },
                 dedupeKey: `payslip:${p.id}`,
               })
             ).length;

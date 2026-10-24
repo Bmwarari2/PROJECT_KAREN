@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { Type } from 'typebox';
-import { can } from '@thapsus/core/permissions';
+import { can, canSome } from '@thapsus/core/permissions';
 import { enqueueJob } from '@thapsus/db';
 import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
@@ -9,7 +9,7 @@ import { periodic, registerJob } from '../../jobs/registry';
 import { applyEmployeeChange, assertWritable, loadTarget } from '../employees/service';
 import { FIELDS } from '../employees/model';
 import { loadPrincipal } from '../authz/principal';
-import { approvalHandlers, decide, escalateOverdue, listApprovals } from './service';
+import { approvalDetail, approvalHandlers, decide, escalateOverdue, listApprovals } from './service';
 
 const Approver = Type.Object({
   type: Type.Union(['manager', 'skip_level', 'role', 'user'].map((t) => Type.Literal(t))),
@@ -220,6 +220,7 @@ export async function approvalRoutes(app: FastifyInstance) {
               subject: Type.String(),
               status: Type.String(),
               policy: Type.String(),
+              subjectEmployeeId: Nullable(Uuid),
               subjectName: Nullable(Type.String()),
               requestedAt: Type.String(),
               currentStep: Type.Integer(),
@@ -234,6 +235,64 @@ export async function approvalRoutes(app: FastifyInstance) {
       const view = (req.query as { view?: string }).view ?? 'mine';
       if (view === 'all') authorizeSome(req, 'approvals.manage');
       return app.tenantTx(req, (tx) => listApprovals(tx, auth.userId, view), { readOnly: true });
+    },
+  );
+
+  app.get(
+    '/v1/approvals/:id',
+    {
+      schema: {
+        tags: ['approvals'],
+        summary:
+          'One approval request with its steps and the record it is about. Visible to its approvers, whoever made it and people who manage approvals.',
+        params: Type.Object({ id: Uuid }),
+        response: {
+          200: Type.Object({
+            id: Uuid,
+            subject: Type.String(),
+            status: Type.String(),
+            policy: Type.String(),
+            subjectEmployeeId: Nullable(Uuid),
+            subjectName: Nullable(Type.String()),
+            requestedAt: Type.String(),
+            decidedAt: Nullable(Type.String()),
+            currentStep: Type.Integer(),
+            payload: Type.Any(),
+            requestedBy: Nullable(Type.Object({ userId: Uuid, name: Type.String() })),
+            steps: Type.Array(
+              Type.Object({
+                index: Type.Integer(),
+                status: Type.String(),
+                approvers: Type.Array(Type.String()),
+                decidedByName: Nullable(Type.String()),
+                decidedAt: Nullable(Type.String()),
+                comment: Nullable(Type.String()),
+                dueAt: Nullable(Type.String()),
+              }),
+            ),
+            related: Nullable(Type.Object({ type: Type.String(), id: Uuid, href: Type.String() })),
+            canDecide: Type.Boolean(),
+          }),
+          403: Problem,
+          404: Problem,
+        },
+      },
+    },
+    async (req) => {
+      const auth = requireAuth(req);
+      const { id } = req.params as { id: string };
+      return app.tenantTx(
+        req,
+        async (tx) => {
+          const detail = await approvalDetail(tx, id, {
+            userId: auth.userId,
+            manages: canSome(auth.principal, 'approvals.manage'),
+          });
+          if (!detail) throw new ApiError('forbidden');
+          return detail;
+        },
+        { readOnly: true },
+      );
     },
   );
 

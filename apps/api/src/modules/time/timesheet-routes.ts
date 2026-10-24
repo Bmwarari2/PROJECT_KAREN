@@ -136,6 +136,38 @@ export async function timesheetRoutes(app: FastifyInstance) {
     },
   );
 
+  app.get(
+    '/v1/timesheets/:id',
+    {
+      schema: {
+        tags: ['time'],
+        summary:
+          'One stored timesheet by id (ADR-0160): the same week as GET /v1/timesheets/employees/{employeeId}/weeks/{weekStart}',
+        params: Type.Object({ id: Uuid }),
+        response: { 200: TimesheetOut, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      const auth = requireAuth(req);
+      const { id } = req.params as { id: string };
+      const book = await ruleBook(app);
+      return app.tenantTx(
+        req,
+        async (tx) => {
+          const stored = await tx.maybe<TimesheetRow>('SELECT * FROM app.timesheets WHERE id = $1', [id]);
+          if (!stored) throw new ApiError('notFound');
+          if (!(await mayRead(tx, auth, stored.employee_id))) throw new ApiError('forbidden');
+          const settings = await timeSettings(tx);
+          return present(
+            await buildTimesheet(tx, book, stored.employee_id, stored.week_start, settings),
+            stored,
+          );
+        },
+        { readOnly: true },
+      );
+    },
+  );
+
   app.post(
     '/v1/timesheets/employees/:employeeId/weeks/:weekStart/submit',
     {
@@ -609,7 +641,7 @@ export async function timesheetRoutes(app: FastifyInstance) {
         kind: 'time.timesheet_approved',
         titleKey: 'notify.timesheetApproved',
         params: { week: ts.week_start },
-        link: '/app/timesheets',
+        target: { type: 'timesheet', id: String(r.payload.timesheetId) },
         dedupe: () => `ts-ok:${r.id}`,
       });
   };
@@ -623,7 +655,7 @@ export async function timesheetRoutes(app: FastifyInstance) {
         kind: 'time.timesheet_rejected',
         titleKey: 'notify.timesheetRejected',
         params: { week: ts.week_start },
-        link: '/app/timesheets',
+        target: { type: 'timesheet', id: String(r.payload.timesheetId) },
         dedupe: () => `ts-no:${r.id}`,
       });
   };
