@@ -197,6 +197,7 @@
       "version": 1,
       "updatedOn": "2026-10-24",
       "contexts": ["/app/settings", "/app/security"],
+      "audience": [],
       "locales": {
         "en-GB": {
           "title": "Who can reset passwords and two-step verification",
