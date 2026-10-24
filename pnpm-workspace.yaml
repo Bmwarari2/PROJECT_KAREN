@@ -8,3 +8,29 @@ allowBuilds:
   # ssh2 (SFTP payroll delivery) runs in pure JS; its optional native crypto/cpu-features builds are not needed.
   cpu-features: false
   ssh2: false
+# Supply-chain install policy (SECURITY.md "Dependency and secret scanning"; checked by
+# scripts/supply-chain.mjs in pnpm verify). Only versions published at least seven days ago are installed:
+# an explicit value is strict, so a younger version fails the install instead of being let in.
+minimumReleaseAge: 10080
+# Exact versions only. These were already in the lockfile when the cooldown was added (2026-10-24),
+# published on 2026-10-20 and 2026-10-21 and reviewed with their lockfile changes; remove the entries
+# after 2026-10-28, when they are seven days old.
+minimumReleaseAgeExclude:
+  - '@google-cloud/projectify@6.2.1'
+  - '@google-cloud/promisify@6.2.1'
+  - '@napi-rs/canvas-android-arm64@1.0.13'
+  - '@napi-rs/canvas-darwin-arm64@1.0.13'
+  - '@napi-rs/canvas-darwin-x64@1.0.13'
+  - '@napi-rs/canvas-linux-arm-gnueabihf@1.0.13'
+  - '@napi-rs/canvas-linux-arm64-gnu@1.0.13'
+  - '@napi-rs/canvas-linux-arm64-musl@1.0.13'
+  - '@napi-rs/canvas-linux-riscv64-gnu@1.0.13'
+  - '@napi-rs/canvas-linux-x64-gnu@1.0.13'
+  - '@napi-rs/canvas-linux-x64-musl@1.0.13'
+  - '@napi-rs/canvas-win32-arm64-msvc@1.0.13'
+  - '@napi-rs/canvas-win32-x64-msvc@1.0.13'
+  - '@napi-rs/canvas@1.0.13'
+  - 'gcp-metadata@9.2.2'
+  - 'google-gax@6.13.0'
+# Install scripts run only for the packages approved in allowBuilds; any other fails the install.
+strictDepBuilds: true
