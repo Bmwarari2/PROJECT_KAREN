@@ -13721,6 +13721,62 @@
                       },
                       "createdAt": {
                         "type": "string"
+                      },
+                      "attachmentType": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "visibility": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "issuedOn": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "note": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "sensitive": {
+                        "type": "boolean"
+                      },
+                      "scanStatus": {
+                        "type": "string"
+                      },
+                      "expiryStatus": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -14106,6 +14162,62 @@
                     },
                     "createdAt": {
                       "type": "string"
+                    },
+                    "attachmentType": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "visibility": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "issuedOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "note": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sensitive": {
+                      "type": "boolean"
+                    },
+                    "scanStatus": {
+                      "type": "string"
+                    },
+                    "expiryStatus": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }
@@ -14425,6 +14537,9 @@
                   "category": {
                     "type": "string",
                     "maxLength": 40
+                  },
+                  "requiresCountersign": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -14537,7 +14652,8 @@
                       "id",
                       "name",
                       "locale",
-                      "category"
+                      "category",
+                      "requiresCountersign"
                     ],
                     "properties": {
                       "id": {
@@ -14552,6 +14668,9 @@
                       },
                       "category": {
                         "type": "string"
+                      },
+                      "requiresCountersign": {
+                        "type": "boolean"
                       }
                     }
                   }
@@ -14582,6 +14701,9 @@
                     "format": "uuid"
                   },
                   "requireSignature": {
+                    "type": "boolean"
+                  },
+                  "requireCountersign": {
                     "type": "boolean"
                   },
                   "title": {
@@ -15046,7 +15168,12 @@
                       "title",
                       "status",
                       "requestedAt",
-                      "signedAt"
+                      "signedAt",
+                      "requiresCountersign",
+                      "approvalStatus",
+                      "returnedReason",
+                      "completedAt",
+                      "signedDocumentId"
                     ],
                     "properties": {
                       "id": {
@@ -15075,6 +15202,50 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "requiresCountersign": {
+                        "type": "boolean"
+                      },
+                      "approvalStatus": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "returnedReason": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "completedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "signedDocumentId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -15087,6 +15258,7 @@
     },
     "/v1/signature-requests/{id}/sign": {
       "post": {
+        "summary": "Sign a document (consent and typed name). It is complete straight away, or goes to the approver when it needs a countersignature.",
         "tags": [
           "documents"
         ],
@@ -15136,14 +15308,25 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "status",
                     "signedDocumentId",
                     "documentSha256",
                     "signedSha256"
                   ],
                   "properties": {
+                    "status": {
+                      "type": "string"
+                    },
                     "signedDocumentId": {
-                      "type": "string",
-                      "format": "uuid"
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "documentSha256": {
                       "type": "string"
@@ -15367,7 +15550,10 @@
                     "signedAt",
                     "signerName",
                     "documentSha256",
-                    "signedSha256"
+                    "signedSha256",
+                    "countersignerName",
+                    "countersignedAt",
+                    "completedAt"
                   ],
                   "properties": {
                     "valid": {
@@ -15404,6 +15590,36 @@
                       ]
                     },
                     "signedSha256": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "countersignerName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "countersignedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "completedAt": {
                       "anyOf": [
                         {
                           "type": "string"
@@ -15560,6 +15776,1482 @@
             }
           },
           "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/employees/{id}/documents": {
+      "post": {
+        "summary": "Attach a document to a person (multipart: file + attachmentType, visibility, optional evidenceType, title, issuedOn, expiresOn, note, rtwCheckId). Right-to-work evidence is sealed and kept in the vault.",
+        "tags": [
+          "documents"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "title",
+                    "category",
+                    "employeeId",
+                    "folderId",
+                    "fileName",
+                    "contentType",
+                    "sizeBytes",
+                    "sha256",
+                    "status",
+                    "expiresOn",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "employeeId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "folderId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "fileName": {
+                      "type": "string"
+                    },
+                    "contentType": {
+                      "type": "string"
+                    },
+                    "sizeBytes": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sha256": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "expiresOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "attachmentType": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "visibility": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "issuedOn": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "note": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sensitive": {
+                      "type": "boolean"
+                    },
+                    "scanStatus": {
+                      "type": "string"
+                    },
+                    "expiryStatus": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/{id}": {
+      "get": {
+        "summary": "One document for the viewer: its details, whether the browser can show it, and the signature request waiting for the caller",
+        "tags": [
+          "documents"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "document",
+                    "employeeName",
+                    "viewable",
+                    "canManage",
+                    "evidence",
+                    "signature",
+                    "countersign",
+                    "signedCopyOf"
+                  ],
+                  "properties": {
+                    "document": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "title",
+                        "category",
+                        "employeeId",
+                        "folderId",
+                        "fileName",
+                        "contentType",
+                        "sizeBytes",
+                        "sha256",
+                        "status",
+                        "expiresOn",
+                        "createdAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "employeeId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "folderId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "fileName": {
+                          "type": "string"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "sha256": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "expiresOn": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "attachmentType": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "visibility": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "issuedOn": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "sensitive": {
+                          "type": "boolean"
+                        },
+                        "scanStatus": {
+                          "type": "string"
+                        },
+                        "expiryStatus": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "employeeName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "viewable": {
+                      "type": "boolean"
+                    },
+                    "canManage": {
+                      "type": "boolean"
+                    },
+                    "evidence": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "evidenceType",
+                            "fileName",
+                            "note",
+                            "issuedOn"
+                          ],
+                          "properties": {
+                            "evidenceType": {
+                              "type": "string"
+                            },
+                            "fileName": {
+                              "type": "string"
+                            },
+                            "note": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "issuedOn": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "signature": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "status",
+                            "requestedAt",
+                            "signedAt",
+                            "signedDocumentId",
+                            "requiresCountersign",
+                            "approvalStatus",
+                            "returnedReason",
+                            "completedAt"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "requestedAt": {
+                              "type": "string"
+                            },
+                            "signedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "signedDocumentId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "requiresCountersign": {
+                              "type": "boolean"
+                            },
+                            "approvalStatus": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "returnedReason": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "countersign": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "signatureRequestId",
+                            "signerName",
+                            "signedAt",
+                            "documentSha256",
+                            "signedSha256"
+                          ],
+                          "properties": {
+                            "signatureRequestId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "signerName": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "signedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "documentSha256": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "signedSha256": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "signedCopyOf": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "documentId",
+                            "signerName",
+                            "signedAt"
+                          ],
+                          "properties": {
+                            "documentId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "signerName": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "signedAt": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/{id}/content": {
+      "get": {
+        "summary": "The file itself, for the viewer (inline) or as a download (download=true). Every view and download is audited; right-to-work evidence is opened from its sealed copy and audited in the vault.",
+        "tags": [
+          "documents"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "download",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/signature-requests/{id}/countersign": {
+      "post": {
+        "summary": "The approver countersigns a signed document (consent and typed name, like the signer) or returns it to the signer with a reason",
+        "tags": [
+          "documents"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "decision",
+                      "consent",
+                      "typedName"
+                    ],
+                    "properties": {
+                      "decision": {
+                        "type": "string",
+                        "enum": [
+                          "approve"
+                        ]
+                      },
+                      "consent": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "typedName": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 120
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "decision",
+                      "reason"
+                    ],
+                    "properties": {
+                      "decision": {
+                        "type": "string",
+                        "enum": [
+                          "return"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 1000
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "signedDocumentId"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "signedDocumentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -38550,6 +40242,7 @@
                     "matrixReminderDays",
                     "probationReminderDays",
                     "serviceReminderDays",
+                    "documentReminderDays",
                     "smallCellThreshold",
                     "businessWeekdays",
                     "gpgSector"
@@ -38596,6 +40289,16 @@
                       "maxItems": 10
                     },
                     "serviceReminderDays": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 730
+                      },
+                      "minItems": 1,
+                      "maxItems": 10
+                    },
+                    "documentReminderDays": {
                       "type": "array",
                       "items": {
                         "type": "integer",
@@ -38764,6 +40467,16 @@
                     "minItems": 1,
                     "maxItems": 10
                   },
+                  "documentReminderDays": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 730
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  },
                   "smallCellThreshold": {
                     "type": "integer",
                     "minimum": 3,
@@ -38813,6 +40526,7 @@
                     "matrixReminderDays",
                     "probationReminderDays",
                     "serviceReminderDays",
+                    "documentReminderDays",
                     "smallCellThreshold",
                     "businessWeekdays",
                     "gpgSector"
@@ -38859,6 +40573,16 @@
                       "maxItems": 10
                     },
                     "serviceReminderDays": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 730
+                      },
+                      "minItems": 1,
+                      "maxItems": 10
+                    },
+                    "documentReminderDays": {
                       "type": "array",
                       "items": {
                         "type": "integer",
@@ -39909,6 +41633,9 @@
                       },
                       "hasEvidence": {
                         "type": "boolean"
+                      },
+                      "evidenceDocuments": {
+                        "type": "integer"
                       }
                     }
                   }
@@ -64590,7 +66317,7 @@
     },
     "/v1/payslips/batches": {
       "post": {
-        "summary": "Bulk upload payslips or year-end documents (PDFs or a zip of PDFs); returns the matching preview",
+        "summary": "Bulk upload payslips or year-end documents (PDFs or a zip of PDFs) and/or the payroll provider’s structured statements (a JSON file in the `statements` part, StatementImport); returns the matching preview",
         "tags": [
           "payslips"
         ],
@@ -64614,6 +66341,9 @@
                     "matchedCount",
                     "createdAt",
                     "publishedAt",
+                    "source",
+                    "providerName",
+                    "sample",
                     "items",
                     "rejected"
                   ],
@@ -64676,6 +66406,22 @@
                         }
                       ]
                     },
+                    "source": {
+                      "type": "string"
+                    },
+                    "providerName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    },
                     "items": {
                       "type": "array",
                       "items": {
@@ -64685,6 +66431,9 @@
                           "fileName",
                           "sizeBytes",
                           "sha256",
+                          "hasStatement",
+                          "currency",
+                          "netMinor",
                           "matchStatus",
                           "employeeId",
                           "employeeNumber",
@@ -64698,13 +66447,57 @@
                             "format": "uuid"
                           },
                           "fileName": {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "sizeBytes": {
-                            "type": "integer"
+                            "anyOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "sha256": {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "hasStatement": {
+                            "type": "boolean"
+                          },
+                          "currency": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "netMinor": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "matchStatus": {
                             "type": "string"
@@ -64919,7 +66712,10 @@
                       "fileCount",
                       "matchedCount",
                       "createdAt",
-                      "publishedAt"
+                      "publishedAt",
+                      "source",
+                      "providerName",
+                      "sample"
                     ],
                     "properties": {
                       "id": {
@@ -64979,6 +66775,22 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "source": {
+                        "type": "string"
+                      },
+                      "providerName": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "sample": {
+                        "type": "boolean"
                       }
                     }
                   }
@@ -65085,6 +66897,9 @@
                     "matchedCount",
                     "createdAt",
                     "publishedAt",
+                    "source",
+                    "providerName",
+                    "sample",
                     "items",
                     "rejected"
                   ],
@@ -65147,6 +66962,22 @@
                         }
                       ]
                     },
+                    "source": {
+                      "type": "string"
+                    },
+                    "providerName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    },
                     "items": {
                       "type": "array",
                       "items": {
@@ -65156,6 +66987,9 @@
                           "fileName",
                           "sizeBytes",
                           "sha256",
+                          "hasStatement",
+                          "currency",
+                          "netMinor",
                           "matchStatus",
                           "employeeId",
                           "employeeNumber",
@@ -65169,13 +67003,57 @@
                             "format": "uuid"
                           },
                           "fileName": {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "sizeBytes": {
-                            "type": "integer"
+                            "anyOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "sha256": {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "hasStatement": {
+                            "type": "boolean"
+                          },
+                          "currency": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "netMinor": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "matchStatus": {
                             "type": "string"
@@ -65588,6 +67466,9 @@
                     "fileName",
                     "sizeBytes",
                     "sha256",
+                    "hasStatement",
+                    "currency",
+                    "netMinor",
                     "matchStatus",
                     "employeeId",
                     "employeeNumber",
@@ -65601,13 +67482,57 @@
                       "format": "uuid"
                     },
                     "fileName": {
-                      "type": "string"
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "sizeBytes": {
-                      "type": "integer"
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "sha256": {
-                      "type": "string"
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hasStatement": {
+                      "type": "boolean"
+                    },
+                    "currency": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "netMinor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "matchStatus": {
                       "type": "string"
@@ -66251,9 +68176,21 @@
     },
     "/v1/me/payslips": {
       "get": {
-        "summary": "My payslips and year-end documents",
+        "summary": "My payslips and year-end documents (optionally one calendar year of pay dates)",
         "tags": [
           "payslips"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 2999
+            },
+            "in": "query",
+            "name": "year",
+            "required": false
+          }
         ],
         "responses": {
           "200": {
@@ -66273,7 +68210,18 @@
                       "taxYear",
                       "fileName",
                       "publishedAt",
-                      "viewed"
+                      "viewed",
+                      "hasStatement",
+                      "hasFile",
+                      "periodStart",
+                      "periodEnd",
+                      "currency",
+                      "grossMinor",
+                      "netMinor",
+                      "providerName",
+                      "sample",
+                      "ytd",
+                      "ytdTaxYear"
                     ],
                     "properties": {
                       "id": {
@@ -66310,13 +68258,128 @@
                         ]
                       },
                       "fileName": {
-                        "type": "string"
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       },
                       "publishedAt": {
                         "type": "string"
                       },
                       "viewed": {
                         "type": "boolean"
+                      },
+                      "hasStatement": {
+                        "type": "boolean"
+                      },
+                      "hasFile": {
+                        "type": "boolean"
+                      },
+                      "periodStart": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "periodEnd": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "currency": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "grossMinor": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "netMinor": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "providerName": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "sample": {
+                        "type": "boolean"
+                      },
+                      "ytd": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "key",
+                                "label",
+                                "amountMinor"
+                              ],
+                              "properties": {
+                                "key": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "amountMinor": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "ytdTaxYear": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -66333,6 +68396,16 @@
           "payslips"
         ],
         "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 2999
+            },
+            "in": "query",
+            "name": "year",
+            "required": false
+          },
           {
             "schema": {
               "type": "string",
@@ -66361,7 +68434,18 @@
                       "taxYear",
                       "fileName",
                       "publishedAt",
-                      "viewed"
+                      "viewed",
+                      "hasStatement",
+                      "hasFile",
+                      "periodStart",
+                      "periodEnd",
+                      "currency",
+                      "grossMinor",
+                      "netMinor",
+                      "providerName",
+                      "sample",
+                      "ytd",
+                      "ytdTaxYear"
                     ],
                     "properties": {
                       "id": {
@@ -66398,13 +68482,128 @@
                         ]
                       },
                       "fileName": {
-                        "type": "string"
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       },
                       "publishedAt": {
                         "type": "string"
                       },
                       "viewed": {
                         "type": "boolean"
+                      },
+                      "hasStatement": {
+                        "type": "boolean"
+                      },
+                      "hasFile": {
+                        "type": "boolean"
+                      },
+                      "periodStart": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "periodEnd": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "currency": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "grossMinor": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "netMinor": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "providerName": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "sample": {
+                        "type": "boolean"
+                      },
+                      "ytd": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "key",
+                                "label",
+                                "amountMinor"
+                              ],
+                              "properties": {
+                                "key": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "amountMinor": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "ytdTaxYear": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -66535,8 +68734,867 @@
         }
       }
     },
+    "/v1/payslips/{id}": {
+      "get": {
+        "summary": "One payslip with the provider’s structured statement (every view is audited as sensitive); amounts are the provider’s",
+        "tags": [
+          "payslips"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "kind",
+                    "docType",
+                    "label",
+                    "payDate",
+                    "taxYear",
+                    "fileName",
+                    "publishedAt",
+                    "viewed",
+                    "hasStatement",
+                    "hasFile",
+                    "periodStart",
+                    "periodEnd",
+                    "currency",
+                    "grossMinor",
+                    "netMinor",
+                    "providerName",
+                    "sample",
+                    "ytd",
+                    "ytdTaxYear",
+                    "employeeId",
+                    "employeeName",
+                    "statement"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "kind": {
+                      "type": "string"
+                    },
+                    "docType": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "payDate": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "taxYear": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "fileName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "publishedAt": {
+                      "type": "string"
+                    },
+                    "viewed": {
+                      "type": "boolean"
+                    },
+                    "hasStatement": {
+                      "type": "boolean"
+                    },
+                    "hasFile": {
+                      "type": "boolean"
+                    },
+                    "periodStart": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "periodEnd": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "currency": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "grossMinor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "netMinor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "providerName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    },
+                    "ytd": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "key",
+                              "label",
+                              "amountMinor"
+                            ],
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "amountMinor": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "ytdTaxYear": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "employeeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "employeeName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "statement": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "employeeNumber",
+                            "currency",
+                            "employer",
+                            "employee",
+                            "period",
+                            "payment",
+                            "payments",
+                            "deductions",
+                            "totals"
+                          ],
+                          "properties": {
+                            "employeeNumber": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "employer": {
+                              "type": "object",
+                              "required": [
+                                "name"
+                              ],
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 160
+                                },
+                                "address": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 120
+                                  },
+                                  "maxItems": 6
+                                },
+                                "taxReference": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "employee": {
+                              "type": "object",
+                              "required": [
+                                "name"
+                              ],
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 160
+                                },
+                                "address": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 120
+                                  },
+                                  "maxItems": 6
+                                },
+                                "department": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "jobTitle": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "taxCode": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 20
+                                },
+                                "nationalId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 30
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "period": {
+                              "type": "object",
+                              "required": [
+                                "start",
+                                "end",
+                                "payDate",
+                                "frequency"
+                              ],
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                },
+                                "payDate": {
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                },
+                                "frequency": {
+                                  "enum": [
+                                    "weekly",
+                                    "fortnightly",
+                                    "four_weekly",
+                                    "semi_monthly",
+                                    "monthly",
+                                    "other"
+                                  ]
+                                },
+                                "number": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 20
+                                },
+                                "taxYear": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 20
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "payment": {
+                              "type": "object",
+                              "required": [
+                                "method"
+                              ],
+                              "properties": {
+                                "method": {
+                                  "enum": [
+                                    "bank_transfer",
+                                    "cheque",
+                                    "cash",
+                                    "other"
+                                  ]
+                                },
+                                "account": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "payments": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "label",
+                                  "amountMinor"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "basic",
+                                      "overtime",
+                                      "bonus",
+                                      "commission",
+                                      "allowance",
+                                      "holiday",
+                                      "sick",
+                                      "parental",
+                                      "back_pay",
+                                      "expenses",
+                                      "other"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "code": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "quantity": {
+                                    "type": "string",
+                                    "pattern": "^-?\\d{1,7}(\\.\\d{1,4})?$"
+                                  },
+                                  "rateMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  },
+                                  "amountMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "minItems": 1,
+                              "maxItems": 60
+                            },
+                            "deductions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "label",
+                                  "amountMinor"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "income_tax",
+                                      "social_security",
+                                      "pension",
+                                      "student_loan",
+                                      "benefit",
+                                      "union",
+                                      "attachment_of_earnings",
+                                      "other"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "code": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "quantity": {
+                                    "type": "string",
+                                    "pattern": "^-?\\d{1,7}(\\.\\d{1,4})?$"
+                                  },
+                                  "rateMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  },
+                                  "amountMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "maxItems": 60
+                            },
+                            "employerContributions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "label",
+                                  "amountMinor"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "pension",
+                                      "social_security",
+                                      "benefit",
+                                      "other"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "code": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "quantity": {
+                                    "type": "string",
+                                    "pattern": "^-?\\d{1,7}(\\.\\d{1,4})?$"
+                                  },
+                                  "rateMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  },
+                                  "amountMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "maxItems": 30
+                            },
+                            "totals": {
+                              "type": "object",
+                              "required": [
+                                "grossMinor",
+                                "deductionsMinor",
+                                "netMinor"
+                              ],
+                              "properties": {
+                                "grossMinor": {
+                                  "type": "integer",
+                                  "minimum": -1000000000000,
+                                  "maximum": 1000000000000
+                                },
+                                "deductionsMinor": {
+                                  "type": "integer",
+                                  "minimum": -1000000000000,
+                                  "maximum": 1000000000000
+                                },
+                                "netMinor": {
+                                  "type": "integer",
+                                  "minimum": -1000000000000,
+                                  "maximum": 1000000000000
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "ytd": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "key",
+                                  "label",
+                                  "amountMinor"
+                                ],
+                                "properties": {
+                                  "key": {
+                                    "enum": [
+                                      "gross",
+                                      "taxable_pay",
+                                      "income_tax",
+                                      "social_security",
+                                      "pension_employee",
+                                      "pension_employer",
+                                      "student_loan",
+                                      "net",
+                                      "other"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "amountMinor": {
+                                    "type": "integer",
+                                    "minimum": -1000000000000,
+                                    "maximum": 1000000000000
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "maxItems": 20
+                            },
+                            "notes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "maxItems": 5
+                            },
+                            "illustrative": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payslips/{id}/file": {
+      "get": {
+        "summary": "The payroll provider’s PDF, for the in-app viewer (inline) or as a download (download=true)",
+        "tags": [
+          "payslips"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "download",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payslips/{id}/pdf": {
+      "get": {
+        "summary": "A PDF of the provider’s statement, for payslips that came without the provider’s own PDF (the provider’s figures, laid out; nothing is calculated)",
+        "tags": [
+          "payslips"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/payslips/{id}/download": {
       "get": {
+        "summary": "A download link: the provider’s PDF when there is one, otherwise a PDF of the provider’s statement",
         "tags": [
           "payslips"
         ],
