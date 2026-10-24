@@ -2,7 +2,7 @@ import { createServer } from 'node:net';
 import type { FastifyInstance } from 'fastify';
 import * as OTPAuth from 'otpauth';
 import type { HomeRegion } from '@thapsus/core';
-import { closeAllPools } from '@thapsus/db';
+import { closeAllPools, withTenant } from '@thapsus/db';
 import { appUrl, testRouter, TEST_DBS } from '@thapsus/db/testing';
 import { buildApp } from '../src/app';
 import type { Deps } from '../src/deps';
@@ -127,11 +127,19 @@ export function cookieFrom(res: { headers: Record<string, unknown> }): string {
 
 export const PASSWORD = 'Correct-Horse-Battery-9';
 
-/** Signs up a fictional company and returns the owner's session cookie. */
+/**
+ * Signs up a fictional company and returns the owner's session cookie.
+ *
+ * New workspaces require two-step verification for everyone (ADR-0170). The suites for other modules sign
+ * fictional employees in with a password only, so this helper turns that setting off afterwards unless
+ * `mfaForEveryone` is true; the identity suites (password-reset, identity-hardening, seed-staging) keep the
+ * real default and prove it.
+ */
 export async function signup(
   ctx: TestContext,
   slug = uniq('acme'),
   region: HomeRegion = ctx.deps.config.cell,
+  opts: { mfaForEveryone?: boolean } = {},
 ) {
   const email = `owner@${slug}.example.test`;
   const res = await ctx.app.inject({
@@ -150,6 +158,10 @@ export async function signup(
   });
   if (res.statusCode !== 201) throw new Error(`signup failed ${res.statusCode} ${res.body}`);
   const body = res.json() as { tenantId: string; userId: string };
+  if (!opts.mfaForEveryone)
+    await withTenant(ctx.deps.router, body.tenantId, (tx) =>
+      tx.exec(`UPDATE app.tenants SET security = security || '{"requireMfaForEveryone": false}'::jsonb`),
+    );
   return { ...body, slug, email, cookie: cookieFrom(res) };
 }
 
@@ -182,8 +194,8 @@ export async function enrolTotp(ctx: TestContext, cookie: string) {
 }
 
 /** Signs up and completes MFA, returning a fully privileged owner session. */
-export async function ownerSession(ctx: TestContext, slug?: string) {
-  const s = await signup(ctx, slug);
+export async function ownerSession(ctx: TestContext, slug?: string, opts: { mfaForEveryone?: boolean } = {}) {
+  const s = await signup(ctx, slug, ctx.deps.config.cell, opts);
   const secret = await enrolTotp(ctx, s.cookie);
   return { ...s, totpSecret: secret };
 }

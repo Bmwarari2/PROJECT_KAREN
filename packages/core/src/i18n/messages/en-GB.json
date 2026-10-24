@@ -61,7 +61,7 @@
     "conflict": "That change conflicts with an existing record.",
     "offline": "You are offline. We will sync when you reconnect.",
     "invalidCredentials": "That email and password combination did not work.",
-    "mfaEnrollmentRequired": "Administrators must set up two-step verification before continuing.",
+    "mfaEnrollmentRequired": "Set up two-step verification before continuing.",
     "tenantUnavailable": "This workspace is temporarily unavailable.",
     "gone": "This is no longer available.",
     "unprocessable": "We could not process that request.",
@@ -86,7 +86,8 @@
       "findWorkspace": "Find my workspace",
       "createWorkspace": "Create a workspace",
       "needWorkspace": "Enter your workspace name first.",
-      "needWorkspaceAndEmail": "Enter your workspace name and email first."
+      "needWorkspaceAndEmail": "Enter your workspace name and email first.",
+      "forgotPassword": "Forgot your password?"
     },
     "fields": {
       "workspace": "Workspace",
@@ -130,7 +131,43 @@
       "invalid": "This link has expired or has already been used."
     },
     "mfaResetSubject": "Your two-step verification was reset",
-    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away."
+    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away.",
+    "passwordResetSubject": "Reset your Thapsus-HR password",
+    "passwordResetBody": "Someone asked to reset the password for your Thapsus-HR account. Use this link to choose a new one. It works once and expires in {minutes} minutes:\n\n{link}\n\nThe link does not sign you in. If you use two-step verification, you will still need it when you sign in.\n\nIf you did not ask for this, you can ignore this email. Your password has not changed.",
+    "passwordResetByAdminSubject": "Set a new password for Thapsus-HR",
+    "passwordResetByAdminBody": "An administrator at {company} sent you a link to set a new password for your Thapsus-HR account. They cannot see or choose your password. The link works once and expires in {hours} hours:\n\n{link}\n\nThe link does not sign you in, and your two-step verification stays as it is.\n\nIf you did not expect this, contact your administrator.",
+    "passwordChangedSubject": "Your Thapsus-HR password was changed",
+    "passwordChangedBody": "The password for your Thapsus-HR account was just changed, and you have been signed out on every device. Sign in with your new password here:\n\n{link}\n\nIf you did not do this, reset your password straight away and tell your administrator.",
+    "forgot": {
+      "title": "Reset your password",
+      "lead": "Enter your workspace and your work email. If you have an account, we will email you a link to choose a new password.",
+      "submit": "Email me a reset link",
+      "sentTitle": "Check your email",
+      "sent": "If {email} has an account in this workspace, a reset link is on its way. It works once and expires in 30 minutes. If it does not arrive, check your spam folder or ask your administrator to send one.",
+      "ssoRequired": "Your workspace signs in with single sign-on, so there is no password to reset here. Use your organisation's sign-in instead.",
+      "backToSignIn": "Back to sign in",
+      "needWorkspaceAndEmail": "Enter your workspace and email."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "lead": "Your new password replaces the old one and signs you out on every device.",
+      "newPassword": "New password",
+      "hint": "At least 12 characters. Avoid common passwords and your own or your company’s name.",
+      "submit": "Save new password",
+      "doneTitle": "Password changed",
+      "done": "Your password has been changed and you have been signed out everywhere. Sign in with your new password.",
+      "mfaNote": "If you use two-step verification, you will still need it when you sign in.",
+      "signIn": "Sign in",
+      "invalidTitle": "This link no longer works",
+      "invalid": "Reset links work once and expire after 30 minutes (24 hours when an administrator sent them). Ask for a new one.",
+      "requestNew": "Ask for a new link",
+      "problem": {
+        "tooShort": "Use at least 12 characters.",
+        "tooLong": "Use 128 characters or fewer.",
+        "tooCommon": "That password is too common. Choose one that is harder to guess.",
+        "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
+      }
+    }
   },
   "push": {
     "testBody": "Notifications are working on this device."
@@ -282,7 +319,7 @@
     "security": {
       "title": "Security",
       "verifyRequired": "Enter a code from your authenticator app to continue.",
-      "setupRequired": "Administrators must set up two-step verification before continuing.",
+      "setupRequired": "Set up two-step verification to continue. Your workspace requires it.",
       "mfaDone": "Two-step verification is on.",
       "passkeyAdded": "Passkey added.",
       "passkeyFailed": "We could not add the passkey. Please try again.",
@@ -338,7 +375,8 @@
           "tooLong": "Use 128 characters or fewer.",
           "tooCommon": "That password is too common. Choose one that is harder to guess.",
           "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
-        }
+        },
+        "viaLinkBody": "You signed in with an emailed link, so you can choose a new password without your current one for the next few minutes. Every other session is signed out."
       }
     },
     "notifications": {
@@ -1408,14 +1446,16 @@
       "mfaTitle": "Two-step verification",
       "mfaBody": "Two-step verification is always required for administrator roles.",
       "trustIdpMfa": "Trust two-step verification done by the identity provider",
-      "trustIdpMfaHint": "People who sign in with single sign-on are not asked again.",
+      "trustIdpMfaHint": "Count a single sign-on as two-step verification only when your identity provider confirms it used more than one factor. Otherwise people also use their own authenticator here.",
       "range": "Between {min} and {max}.",
       "endAllTitle": "Sign everyone out",
       "endAllBody": "Ends every session in the workspace except yours, for example after a suspected compromise.",
       "endAll": "Sign everyone out",
       "endAllConfirm": "Everyone else will need to sign in again on every device.",
       "endAllDone_one": "{count} session has been signed out.",
-      "endAllDone_other": "{count} sessions have been signed out."
+      "endAllDone_other": "{count} sessions have been signed out.",
+      "requireMfaForEveryone": "Require two-step verification for everyone",
+      "requireMfaForEveryoneHint": "Everyone sets up an authenticator app or a passkey the first time they sign in. When this is off, only administrators must. Turning it off asks you to confirm it is you."
     },
     "scim": {
       "lead": "Connect your directory (for example Microsoft Entra ID or Okta) so accounts are created, updated and deactivated automatically.",
@@ -3022,11 +3062,12 @@
       "rules": "Rule data",
       "lawChanges": "Law changes",
       "audit": "Staff audit trail",
-      "settings": "Contact channels"
+      "settings": "Contact channels",
+      "access": "Access"
     },
     "signin": {
       "title": "Staff sign-in",
-      "lead": "For Thapsus staff only. Every action is recorded.",
+      "lead": "Thapsus staff only. Sign in with your passkey or security key.",
       "totpLead": "Enter the six-digit code from your authenticator app.",
       "email": "Work email",
       "password": "Password",
@@ -3034,7 +3075,9 @@
       "codeHint": "Six digits. Codes change every 30 seconds.",
       "continue": "Continue",
       "verify": "Verify and sign in",
-      "note": "Multi-factor authentication is required for every staff session."
+      "note": "There are no staff passwords. New staff get a one-time enrolment link from an operator.",
+      "passkey": "Sign in with a passkey or security key",
+      "failed": "That key was not accepted. Try again, or ask an operator for a new enrolment link."
     },
     "overview": {
       "title": "Overview",
@@ -3292,6 +3335,65 @@
       "addChannel": "Add channel",
       "save": "Save channels",
       "saved": "Contact channels saved"
+    },
+    "enrol": {
+      "title": "Register your security key",
+      "lead": "This one-time link registers the passkey or security key you will sign in with. It expires 2 hours after it was issued.",
+      "keyName": "Name for this key (optional)",
+      "submit": "Register key",
+      "invalid": "This enrolment link has expired or was already used. Ask an operator for a new one.",
+      "missing": "Open the enrolment link exactly as you received it."
+    },
+    "elevation": {
+      "title": "Access",
+      "lead": "Nobody holds standing access to super-admin actions, rule publishing or a customer's support grant. Ask for time-boxed access with a reason; another staff member must approve it.",
+      "banner": "You have no active super-admin access. Ask for it on the Access page; another super admin must approve it.",
+      "openAccess": "Go to Access",
+      "requestTitle": "Ask for access",
+      "scope": "What for",
+      "scopes": {
+        "super_admin": "Super-admin actions",
+        "rules_publish": "Publishing rules and law changes",
+        "support_grant": "Using a customer's support grant"
+      },
+      "reason": "Reason",
+      "reasonHint": "At least 10 characters, for example the ticket or incident it is for.",
+      "minutes": "For how long",
+      "duration": "{count, plural, one {# minute} other {# minutes}}",
+      "hours": "{count, plural, one {# hour} other {# hours}}",
+      "tenant": "Workspace ID (optional)",
+      "tenantHint": "Limit the access to one customer workspace.",
+      "submit": "Ask for approval",
+      "requested": "Request sent. Another staff member must approve it.",
+      "toApproveTitle": "Waiting for your approval",
+      "noneToApprove": "Nothing is waiting for your approval.",
+      "mineTitle": "Your access",
+      "noneMine": "You have not asked for access yet.",
+      "approve": "Approve",
+      "approveLabel": "Approve {scope} for {email}",
+      "deny": "Deny",
+      "denyLabel": "Deny {scope} for {email}",
+      "revoke": "End now",
+      "approved": "Approved. The access starts now.",
+      "denied": "Request denied.",
+      "revoked": "Access ended.",
+      "requestedBy": "{email} · {when}",
+      "until": "Until {when}",
+      "status": {
+        "pending": "Waiting for approval",
+        "active": "Active",
+        "expired": "Expired",
+        "denied": "Denied",
+        "revoked": "Ended"
+      },
+      "problem": {
+        "ownRequest": "You cannot approve your own request.",
+        "scopeNotForYourRole": "Your role cannot ask for or approve this kind of access.",
+        "elevationRequired": "This needs time-boxed access approved by another staff member. Ask for it on the Access page."
+      }
+    },
+    "stepUp": {
+      "failed": "Your key was not accepted, so nothing was changed."
     }
   },
   "privacy": {
@@ -4882,7 +4984,7 @@
   },
   "onboarding": {
     "inviteSubject": "Your sign-in for {company} on Thapsus-HR",
-    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 7 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
+    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 3 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
     "title": "Onboarding",
     "heading": "Welcome to {company}, {name}",
     "startsOn": "You start on {date}.",
@@ -5282,12 +5384,27 @@
         "resetMfaTitle": "Reset two-step verification for {name}?",
         "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
         "resetMfaConfirm": "I have confirmed who they are. Reset it",
-        "mfaReset": "Two-step verification has been reset."
+        "mfaReset": "Two-step verification has been reset.",
+        "whoCan": "Who can do this: people whose company-wide role includes managing settings and every permission this person has (so only an owner can help another owner). You confirm it is you first, you can never do it for yourself, and every action is recorded in the audit log and emailed to the person.",
+        "sendReset": "Send password reset link",
+        "sendResetTitle": "Send {name} a password reset link?",
+        "sendResetBody": "They get an email with a link to choose a new password. It works once for 24 hours. You never see or set the password, and their two-step verification stays as it is.",
+        "sendResetConfirm": "Send link",
+        "resetSent": "Password reset link sent.",
+        "unlinkSso": "Unlink single sign-on",
+        "unlinkSsoTitle": "Unlink {name} from single sign-on?",
+        "unlinkSsoBody": "Do this only when your identity provider replaced their account. Their next single sign-on links the new account.",
+        "unlinked": "Single sign-on unlinked.",
+        "linkedTo": "Linked to {connection}"
       },
       "list": {
         "count_one": "{count} person",
         "count_other": "{count} people",
         "countMore": "First {count} shown"
+      },
+      "problem": {
+        "ownAccount": "You cannot do this for your own account.",
+        "companyWideSettingsRequired": "This needs a company-wide role that manages settings."
       }
     },
     "errors": {

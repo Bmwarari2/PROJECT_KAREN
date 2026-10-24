@@ -4,6 +4,8 @@ import { Redis } from 'iovalkey';
 export interface RateLimiter {
   /** Increments the counter for key and returns the count within the window. */
   hit(key: string, windowSeconds: number): Promise<{ count: number; resetSeconds: number }>;
+  /** The count within the current window, without incrementing it (0 when there is none). */
+  peek(key: string): Promise<{ count: number; resetSeconds: number }>;
   reset(key: string): Promise<void>;
   /** Removes every counter whose key starts with prefix (used by verified deletion on account closure). */
   resetPrefix(prefix: string): Promise<number>;
@@ -20,6 +22,12 @@ export class MemoryRateLimiter implements RateLimiter {
       this.buckets.set(key, b);
     }
     b.count++;
+    return { count: b.count, resetSeconds: Math.ceil((b.expires - t) / 1000) };
+  }
+  async peek(key: string) {
+    const t = this.now();
+    const b = this.buckets.get(key);
+    if (!b || b.expires <= t) return { count: 0, resetSeconds: 0 };
     return { count: b.count, resetSeconds: Math.ceil((b.expires - t) / 1000) };
   }
   async reset(key: string) {
@@ -45,6 +53,13 @@ export class ValkeyRateLimiter implements RateLimiter {
     const count = Number(res?.[0]?.[1] ?? 0);
     const ttl = Number(res?.[2]?.[1] ?? windowSeconds);
     return { count, resetSeconds: ttl > 0 ? ttl : windowSeconds };
+  }
+  async peek(key: string) {
+    const k = `rl:${key}`;
+    const res = await this.redis.multi().get(k).ttl(k).exec();
+    const count = Number(res?.[0]?.[1] ?? 0);
+    const ttl = Number(res?.[1]?.[1] ?? 0);
+    return { count: Number.isFinite(count) ? count : 0, resetSeconds: ttl > 0 ? ttl : 0 };
   }
   async reset(key: string) {
     await this.redis.del(`rl:${key}`);

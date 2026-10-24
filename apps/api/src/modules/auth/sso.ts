@@ -9,10 +9,14 @@ import { Problem } from '../../http/schemas';
 import { authorize } from '../../http/context';
 import { consumeChallenge, resolveTenantSlug, startSession, throttle } from './common';
 import { loadSecurity } from './sessions';
+import { requireRecentAuth } from './session-routes';
 import { assignRole } from '../authz/principal';
 import { open, seal, type Envelope } from '../../lib/kms';
 import { ssoBindingCookie } from '../../http/security';
+import { emitSecurityEvent } from '../../lib/security-events';
 import { hashToken, newToken, safeEqual } from './tokens';
+import { Uuid } from '../../http/schemas';
+import { assertAccountAuthority } from './session-routes';
 
 interface OidcConfig {
   issuer: string;
@@ -27,6 +31,64 @@ interface SamlConfig {
 }
 
 const oidcCache = new Map<string, { config: oidc.Configuration; at: number }>();
+
+/**
+ * Authentication strength asserted by the identity provider (ASVS V6.8.4, plan 2.1.3; ADR-0172). An SSO
+ * sign-in counts as two-step only when the workspace trusts its IdP's MFA AND the IdP says it used more
+ * than one factor: an OIDC `amr` with `mfa`, a phishing-resistant key (`hwk`, `sc`) or a knowledge factor
+ * together with a possession or biometric one (RFC 8176), or an `acr` / SAML AuthnContextClassRef that
+ * names multi-factor authentication. No signal means no: the person uses their own second factor here.
+ */
+const AMR_KNOWLEDGE = new Set(['pwd', 'pin', 'kba']);
+const AMR_OTHER = new Set([
+  'otp',
+  'sms',
+  'tel',
+  'swk',
+  'hwk',
+  'sc',
+  'pop',
+  'fpt',
+  'face',
+  'iris',
+  'retina',
+  'vbm',
+  'bio',
+  'geo',
+]);
+export const MFA_ACR = new Set([
+  'http://schemas.openid.net/pape/policies/2007/06/multi-factor',
+  'http://schemas.openid.net/pape/policies/2007/06/multi-factor-physical',
+  'phr',
+  'phrh',
+  'https://refeds.org/profile/mfa',
+  'http://schemas.microsoft.com/claims/multipleauthn',
+  'urn:okta:loa:2fa:any',
+  'urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract',
+  'urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorUnregistered',
+  'urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken',
+  'urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard',
+  'urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI',
+]);
+
+export function idpAssertedMfa(signal: { amr?: unknown; acr?: unknown }): boolean {
+  if (typeof signal.acr === 'string' && MFA_ACR.has(signal.acr)) return true;
+  if (!Array.isArray(signal.amr)) return false;
+  const amr = signal.amr.filter((v): v is string => typeof v === 'string').map((v) => v.toLowerCase());
+  if (amr.includes('mfa') || amr.includes('hwk') || amr.includes('sc')) return true;
+  const kinds = new Set(amr.map((v) => (AMR_KNOWLEDGE.has(v) ? 'k' : AMR_OTHER.has(v) ? 'o' : '')));
+  return kinds.has('k') && kinds.has('o');
+}
+
+/** The AuthnContextClassRef of a validated SAML assertion. */
+export function samlAuthnContext(assertionXml: string | undefined): string | undefined {
+  const m = /<(?:[\w-]+:)?AuthnContextClassRef[^>]*>\s*([^<\s]+)\s*<\/(?:[\w-]+:)?AuthnContextClassRef>/.exec(
+    assertionXml ?? '',
+  );
+  return m?.[1];
+}
+
+const TRANSIENT_NAMEID = 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient';
 /** XML signature and digest algorithm URIs built on SHA-1 or MD5. */
 export const WEAK_XMLDSIG =
   /Algorithm\s*=\s*["']http:\/\/www\.w3\.org\/(2000\/09\/xmldsig#(rsa-sha1|dsa-sha1|hmac-sha1|sha1)|2001\/04\/xmldsig-more#(rsa-md5|md5|hmac-md5)|2009\/xmldsig11#dsa-sha1)["']/i;
@@ -188,10 +250,20 @@ export async function ssoRoutes(app: FastifyInstance) {
           if (q.login_hint) params.login_hint = q.login_hint;
           return oidc.buildAuthorizationUrl(config, params).href;
         }
+        // SAML is bound to this browser too (ADR-0172): the IdP posts the assertion cross-site, which a
+        // SameSite=Lax cookie does not follow, so the ACS hands over to a same-site GET that must carry it.
+        const binding = newToken(16);
         const ch = await tx.one<{ id: string }>(
           `INSERT INTO app.auth_challenges (tenant_id, kind, challenge, data, expires_at) VALUES (app.current_tenant(), 'saml', 'relay', $1, now() + interval '10 minutes') RETURNING id`,
-          [JSON.stringify({ connectionId: conn.id })],
+          [JSON.stringify({ connectionId: conn.id, binding: hashToken(binding).toString('base64url') })],
         );
+        reply.setCookie(binding_.name, binding, {
+          httpOnly: true,
+          secure: binding_.secure,
+          sameSite: 'lax',
+          path: binding_.path,
+          maxAge: 600,
+        });
         const saml = samlClient(tenantId, conn.id, conn.config);
         const href = await saml.getAuthorizeUrlAsync(`${tenantId}.${ch.id}`, undefined, {});
         return q.login_hint ? `${href}&login_hint=${encodeURIComponent(q.login_hint)}` : href;
@@ -207,11 +279,18 @@ export async function ssoRoutes(app: FastifyInstance) {
       const tenantId = pick(req)?.split('.')[0];
       if (!tenantId || !/^[0-9a-f-]{36}$/i.test(tenantId)) return;
       const reason = err instanceof ApiError ? err.code : 'error';
+      const detail = err instanceof ApiError && err.message !== err.code ? err.message : undefined;
+      emitSecurityEvent(deps, req, {
+        type: 'auth.login_failed',
+        severity: detail === 'ssoSubjectChanged' ? 'high' : 'low',
+        tenantId,
+        detail: { method, reason, ...(detail ? { detail } : {}) },
+      });
       await withTenant(deps.router, tenantId, (tx) =>
         writeAudit(tx, {
           actorType: 'user',
           action: 'auth.login_failed',
-          diff: { method, reason },
+          diff: { method, reason, ...(detail ? { detail } : {}) },
           ip: req.ctx.ip,
           userAgent: req.ctx.userAgent,
           requestId: req.id,
@@ -219,20 +298,103 @@ export async function ssoRoutes(app: FastifyInstance) {
       ).catch(() => undefined);
     };
 
-  async function finish(
+  interface Asserted {
+    connectionId: string;
+    issuer: string;
+    subject: string;
+    /** false for SAML transient NameIDs, which change at every sign-in and identify nobody. */
+    bindable: boolean;
+    email: string;
+    name: string | undefined;
+    method: 'oidc' | 'saml';
+    jit: boolean;
+    idpMfa: boolean;
+  }
+
+  /**
+   * The person an IdP assertion signs in (ADR-0172, ASVS V6.8.1, V10.5.2). The first SSO sign-in through a
+   * connection links the person (found by email, or provisioned just in time) to the IdP's (issuer,
+   * subject); later sign-ins are matched on that pair. If the email arrives with a different subject for
+   * someone already linked, the sign-in is refused: the account at the IdP is not the one we linked.
+   */
+  async function userForAssertion(
     req: FastifyRequest,
-    reply: FastifyReply,
     tenantId: string,
     tx: Tx,
-    email: string,
-    name: string | undefined,
-    method: 'oidc' | 'saml',
-    jit: boolean,
-  ) {
-    const userId = await userForAssertedEmail(tx, email.toLowerCase(), name, jit);
-    const security = await loadSecurity(tx);
-    await startSession(deps, req, reply, tx, { tenantId, userId, method, mfaVerified: security.trustIdpMfa });
+    a: Asserted,
+  ): Promise<string> {
+    if (a.bindable) {
+      const bound = await tx.maybe<{ id: string; user_id: string; status: string }>(
+        `SELECT i.id, i.user_id, u.status FROM app.sso_identities i JOIN app.users u ON u.tenant_id = i.tenant_id AND u.id = i.user_id
+          WHERE i.connection_id = $1 AND i.issuer = $2 AND i.subject = $3`,
+        [a.connectionId, a.issuer, a.subject],
+      );
+      if (bound) {
+        if (bound.status !== 'active') throw new ApiError('forbidden');
+        await tx.exec('UPDATE app.sso_identities SET last_used_at = now() WHERE id = $1', [bound.id]);
+        return bound.user_id;
+      }
+    }
+    const userId = await userForAssertedEmail(tx, a.email.toLowerCase(), a.name, a.jit);
+    if (!a.bindable) return userId;
+    const linked = await tx.maybe(
+      'SELECT 1 FROM app.sso_identities WHERE connection_id = $1 AND user_id = $2',
+      [a.connectionId, userId],
+    );
+    if (linked) {
+      emitSecurityEvent(deps, req, {
+        type: 'auth.sso_subject_mismatch',
+        severity: 'high',
+        tenantId,
+        userId,
+        detail: { method: a.method },
+      });
+      throw new ApiError('forbidden', 'ssoSubjectChanged');
+    }
+    await tx.exec(
+      `INSERT INTO app.sso_identities (tenant_id, connection_id, issuer, subject, user_id) VALUES (app.current_tenant(), $1, $2, $3, $4)`,
+      [a.connectionId, a.issuer, a.subject, userId],
+    );
+    await writeAudit(tx, {
+      actorType: 'system',
+      action: 'sso.identity_bound',
+      targetType: 'user',
+      targetId: userId,
+      diff: { connectionId: a.connectionId, method: a.method },
+      requestId: req.id,
+    });
+    emitSecurityEvent(deps, req, {
+      type: 'auth.sso_identity_bound',
+      severity: 'info',
+      tenantId,
+      userId,
+      detail: { method: a.method },
+    });
+    return userId;
   }
+
+  async function finish(req: FastifyRequest, reply: FastifyReply, tenantId: string, tx: Tx, a: Asserted) {
+    const userId = await userForAssertion(req, tenantId, tx, a);
+    const security = await loadSecurity(tx);
+    await startSession(deps, req, reply, tx, {
+      tenantId,
+      userId,
+      method: a.method,
+      mfaVerified: security.trustIdpMfa && a.idpMfa,
+    });
+  }
+
+  const clearBinding = (reply: FastifyReply) =>
+    reply.clearCookie(binding_.name, {
+      path: binding_.path,
+      secure: binding_.secure,
+      httpOnly: true,
+      sameSite: 'lax',
+    });
+  const boundToThisBrowser = (req: FastifyRequest, expected: string | undefined) => {
+    const presented = req.cookies?.[binding_.name];
+    return !!expected && !!presented && safeEqual(hashToken(presented), Buffer.from(expected, 'base64url'));
+  };
 
   app.get(
     '/v1/auth/sso/oidc/callback',
@@ -258,21 +420,11 @@ export async function ssoRoutes(app: FastifyInstance) {
         challengeId,
         'oidc',
       );
-      reply.clearCookie(binding_.name, {
-        path: binding_.path,
-        secure: binding_.secure,
-        httpOnly: true,
-        sameSite: 'lax',
-      });
+      clearBinding(reply);
       if (!ch) throw new ApiError('invalidCredentials');
-      const presented = req.cookies?.[binding_.name];
-      if (
-        !ch.data.binding ||
-        !presented ||
-        !safeEqual(hashToken(presented), Buffer.from(ch.data.binding, 'base64url'))
-      ) {
+      if (!boundToThisBrowser(req, ch.data.binding)) {
         req.log.warn('oidc callback without the browser binding');
-        throw new ApiError('invalidCredentials');
+        throw new ApiError('invalidCredentials', 'browserBinding');
       }
       await withTenant(deps.router, tenantId, async (tx) => {
         const conn = await connection(tx, ch.data.connectionId);
@@ -290,17 +442,19 @@ export async function ssoRoutes(app: FastifyInstance) {
           });
         const claims = tokens.claims();
         const email = typeof claims?.email === 'string' ? claims.email : undefined;
-        if (!email || claims?.email_verified === false) throw new ApiError('invalidCredentials');
-        await finish(
-          req,
-          reply,
-          tenantId,
-          tx,
+        if (!email || claims?.email_verified === false || !claims?.sub || !claims.iss)
+          throw new ApiError('invalidCredentials');
+        await finish(req, reply, tenantId, tx, {
+          connectionId: conn.id,
+          issuer: claims.iss,
+          subject: claims.sub,
+          bindable: true,
           email,
-          typeof claims?.name === 'string' ? claims.name : undefined,
-          'oidc',
-          conn.jit_provisioning,
-        );
+          name: typeof claims.name === 'string' ? claims.name : undefined,
+          method: 'oidc',
+          jit: conn.jit_provisioning,
+          idpMfa: idpAssertedMfa({ amr: claims.amr, acr: claims.acr }),
+        });
       });
       // Redirect only after the session row has committed.
       return reply.redirect(`${deps.config.appBaseUrl}/app`, 302);
@@ -328,14 +482,19 @@ export async function ssoRoutes(app: FastifyInstance) {
       const body = req.body as { SAMLResponse: string; RelayState: string };
       const [tenantId, challengeId] = body.RelayState.split('.');
       if (!tenantId || !challengeId) throw new ApiError('invalidCredentials');
-      const ch = await consumeChallenge<{ connectionId: string }>(deps, tenantId, challengeId, 'saml');
+      const ch = await consumeChallenge<{ connectionId: string; binding?: string }>(
+        deps,
+        tenantId,
+        challengeId,
+        'saml',
+      );
       if (!ch) throw new ApiError('invalidCredentials');
       // Only SHA-2 signatures and digests: SHA-1 (or MD5) signed responses are refused (ASVS V11.4.1).
       if (WEAK_XMLDSIG.test(Buffer.from(body.SAMLResponse, 'base64').toString('utf8'))) {
         req.log.warn('saml response signed with a weak algorithm');
         throw new ApiError('invalidCredentials');
       }
-      await withTenant(deps.router, tenantId, async (tx) => {
+      const pendingId = await withTenant(deps.router, tenantId, async (tx) => {
         const conn = await connection(tx, ch.data.connectionId);
         const result = await samlClient(tenantId, conn.id, conn.config)
           .validatePostResponseAsync({ SAMLResponse: body.SAMLResponse })
@@ -358,10 +517,63 @@ export async function ssoRoutes(app: FastifyInstance) {
           );
           if (!fresh) throw new ApiError('invalidCredentials');
         }
-        const email = (profile.email as string | undefined) ?? profile.nameID;
-        const name = (profile['displayName'] as string | undefined) ?? undefined;
-        await finish(req, reply, tenantId, tx, email, name, 'saml', conn.jit_provisioning);
+        const asserted: Asserted = {
+          connectionId: conn.id,
+          issuer: profile.issuer ?? conn.config.idpIssuer ?? conn.config.entryPoint,
+          subject: profile.nameID,
+          bindable: profile.nameIDFormat !== TRANSIENT_NAMEID,
+          email: (profile.email as string | undefined) ?? profile.nameID,
+          name: (profile['displayName'] as string | undefined) ?? undefined,
+          method: 'saml',
+          jit: conn.jit_provisioning,
+          idpMfa: idpAssertedMfa({ acr: samlAuthnContext(profile.getAssertionXml?.()) }),
+        };
+        // The verified assertion waits (2 minutes, once) for the browser that started the sign-in. It holds
+        // the asserted email, so abandoned ones are deleted here and a used one is emptied in /finish.
+        await tx.exec(`DELETE FROM app.auth_challenges WHERE kind = 'saml_pending' AND expires_at < now()`);
+        const pending = await tx.one<{ id: string }>(
+          `INSERT INTO app.auth_challenges (tenant_id, kind, challenge, data, expires_at) VALUES (app.current_tenant(), 'saml_pending', 'pending', $1, now() + interval '2 minutes') RETURNING id`,
+          [JSON.stringify({ asserted, binding: ch.data.binding ?? null })],
+        );
+        return pending.id;
       });
+      return reply.redirect(`${api}/v1/auth/sso/saml/finish?state=${tenantId}.${pendingId}`, 303);
+    },
+  );
+
+  app.get(
+    '/v1/auth/sso/saml/finish',
+    {
+      config: { auth: 'public', selfAudited: true },
+      onError: auditFailure('saml', (req) => (req.query as { state?: string }).state),
+      schema: {
+        tags: ['auth'],
+        summary: 'Finish a SAML sign-in in the browser that started it (the binding cookie must come back)',
+        querystring: Type.Object({ state: Type.String({ maxLength: 80 }) }),
+        response: { 302: Type.Null(), 401: Problem, 403: Problem },
+      },
+    },
+    async (req, reply) => {
+      const [tenantId, pendingId] = (req.query as { state: string }).state.split('.');
+      if (!tenantId || !pendingId) throw new ApiError('invalidCredentials');
+      const pending = await consumeChallenge<{ asserted: Asserted; binding: string | null }>(
+        deps,
+        tenantId,
+        pendingId,
+        'saml_pending',
+      );
+      clearBinding(reply);
+      if (!pending) throw new ApiError('invalidCredentials');
+      await withTenant(deps.router, tenantId, (tx) =>
+        tx.exec(`UPDATE app.auth_challenges SET data = '{}'::jsonb WHERE id = $1`, [pendingId]),
+      );
+      if (!boundToThisBrowser(req, pending.data.binding ?? undefined)) {
+        req.log.warn('saml sign-in finished without the browser binding');
+        throw new ApiError('invalidCredentials', 'browserBinding');
+      }
+      await withTenant(deps.router, tenantId, (tx) =>
+        finish(req, reply, tenantId, tx, pending.data.asserted),
+      );
       return reply.redirect(`${deps.config.appBaseUrl}/app`, 302);
     },
   );
@@ -386,6 +598,90 @@ export async function ssoRoutes(app: FastifyInstance) {
         return samlClient(p.tenantId, conn.id, conn.config).generateServiceProviderMetadata(null, null);
       });
       return reply.type('application/samlmetadata+xml; charset=utf-8').send(xml);
+    },
+  );
+
+  // ---- Admin: a person's linked SSO identities ------------------------------------------------
+  app.get(
+    '/v1/users/:userId/sso-identities',
+    {
+      schema: {
+        tags: ['roles'],
+        summary:
+          'The identity-provider accounts a person is linked to (connection and when; never the subject)',
+        params: Type.Object({ userId: Uuid }),
+        response: {
+          200: Type.Array(
+            Type.Object({
+              connectionId: Uuid,
+              connectionName: Type.String(),
+              createdAt: Type.String(),
+              lastUsedAt: Type.String(),
+            }),
+          ),
+          403: Problem,
+        },
+      },
+    },
+    async (req) => {
+      authorize(req, 'settings.read');
+      const { userId } = req.params as { userId: string };
+      const rows = await app.tenantTx(
+        req,
+        (tx) =>
+          tx.query<{ connection_id: string; name: string; created_at: string; last_used_at: string }>(
+            `SELECT i.connection_id, c.name, i.created_at, i.last_used_at FROM app.sso_identities i
+               JOIN app.sso_connections c ON c.tenant_id = i.tenant_id AND c.id = i.connection_id
+              WHERE i.user_id = $1 ORDER BY i.created_at`,
+            [userId],
+          ),
+        { readOnly: true },
+      );
+      return rows.map((r) => ({
+        connectionId: r.connection_id,
+        connectionName: r.name,
+        createdAt: new Date(r.created_at).toISOString(),
+        lastUsedAt: new Date(r.last_used_at).toISOString(),
+      }));
+    },
+  );
+
+  app.delete(
+    '/v1/users/:userId/sso-identities',
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['roles'],
+        summary:
+          'Unlink a person from their identity-provider accounts (when the IdP reissued their account); the next SSO sign-in links again',
+        description:
+          'The same rule as resetting two-step verification: company-wide settings.manage, every permission the person holds, a recent re-authentication, never yourself.',
+        params: Type.Object({ userId: Uuid }),
+        response: { 200: Type.Object({ unlinked: Type.Integer() }), 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      const auth = authorize(req, 'settings.manage');
+      const { userId } = req.params as { userId: string };
+      const unlinked = await app.tenantTx(req, async (tx) => {
+        await assertAccountAuthority(tx, auth, userId, deps.now());
+        const n = await tx.exec('DELETE FROM app.sso_identities WHERE user_id = $1', [userId]);
+        await app.audit(tx, req, {
+          action: 'sso.identity_unlinked',
+          targetType: 'user',
+          targetId: userId,
+          diff: { unlinked: n },
+        });
+        return n;
+      });
+      emitSecurityEvent(deps, req, {
+        type: 'auth.sso_identity_unlinked',
+        severity: 'medium',
+        tenantId: auth.tenantId,
+        userId,
+        detail: { by: auth.userId, unlinked },
+      });
+      return { unlinked };
     },
   );
 
@@ -482,6 +778,7 @@ export async function ssoRoutes(app: FastifyInstance) {
             lockoutThreshold: Type.Optional(Type.Integer({ minimum: 3, maximum: 20 })),
             lockoutMinutes: Type.Optional(Type.Integer({ minimum: 1, maximum: 1440 })),
             trustIdpMfa: Type.Optional(Type.Boolean()),
+            requireMfaForEveryone: Type.Optional(Type.Boolean()),
           },
           { additionalProperties: false },
         ),
@@ -489,10 +786,16 @@ export async function ssoRoutes(app: FastifyInstance) {
       },
     },
     async (req) => {
-      authorize(req, 'settings.manage');
+      const auth = authorize(req, 'settings.manage');
       const patch = req.body as Record<string, unknown>;
       return app.tenantTx(req, async (tx) => {
         const before = await loadSecurity(tx);
+        // Weakening sign-in for everyone needs a fresh proof of identity (ASVS V7.5.1, plan 2.1.2).
+        if (
+          (patch.requireMfaForEveryone === false && before.requireMfaForEveryone) ||
+          (patch.trustIdpMfa === true && !before.trustIdpMfa)
+        )
+          requireRecentAuth(auth, deps.now());
         if (patch.ssoEnforced === true) {
           const conn = await tx.maybe('SELECT 1 FROM app.sso_connections WHERE enabled');
           if (!conn)
@@ -518,13 +821,15 @@ export async function ssoRoutes(app: FastifyInstance) {
     lockoutThreshold: Type.Integer(),
     lockoutMinutes: Type.Integer(),
     trustIdpMfa: Type.Boolean(),
+    requireMfaForEveryone: Type.Boolean(),
   });
   app.get(
     '/v1/settings/security',
     {
       schema: {
         tags: ['settings'],
-        summary: 'Tenant sign-in policy (SSO enforcement, session timeouts, lockout, IdP MFA trust)',
+        summary:
+          'Tenant sign-in policy (SSO enforcement, session timeouts, lockout, IdP MFA trust, two-step verification for everyone)',
         response: { 200: SecurityOut, 403: Problem },
       },
     },
@@ -538,6 +843,7 @@ export async function ssoRoutes(app: FastifyInstance) {
         lockoutThreshold: s.lockoutThreshold,
         lockoutMinutes: s.lockoutMinutes,
         trustIdpMfa: s.trustIdpMfa,
+        requireMfaForEveryone: s.requireMfaForEveryone,
       };
     },
   );

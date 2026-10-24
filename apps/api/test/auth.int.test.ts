@@ -12,6 +12,7 @@ import {
   type TestContext,
 } from './helpers';
 import { DIRECTORY_FIELDS } from '../src/lib/directory';
+import { userSession } from './phase10-helpers';
 
 let ctx: TestContext;
 beforeAll(async () => {
@@ -205,14 +206,15 @@ describe('sign-in protection', () => {
 describe('session lifetime', () => {
   it('expires after the idle timeout', async () => {
     const s = await ownerSession(ctx);
+    const employee = await userSession(ctx, s);
     ctx.clock.advanceMinutes(29);
     expect(
-      (await ctx.app.inject({ method: 'GET', url: '/v1/auth/session', headers: { cookie: s.cookie } }))
+      (await ctx.app.inject({ method: 'GET', url: '/v1/auth/session', headers: { cookie: employee.cookie } }))
         .statusCode,
     ).toBe(200);
     ctx.clock.advanceMinutes(31);
     expect(
-      (await ctx.app.inject({ method: 'GET', url: '/v1/auth/session', headers: { cookie: s.cookie } }))
+      (await ctx.app.inject({ method: 'GET', url: '/v1/auth/session', headers: { cookie: employee.cookie } }))
         .statusCode,
     ).toBe(401);
   });
@@ -227,14 +229,8 @@ describe('session lifetime', () => {
     });
     expect(patch.statusCode).toBe(200);
     ctx.clock.advanceMinutes(1);
-    const res = await login(s.slug, s.email, PASSWORD, '10.4.0.1');
-    const cookie = cookieFrom(res);
-    await ctx.app.inject({
-      method: 'POST',
-      url: '/v1/auth/mfa/totp/verify',
-      headers: { cookie },
-      payload: { code: totpCode(s.totpSecret, ctx.clock.now) },
-    });
+    // an employee gets the workspace's limits (admins have shorter ones: identity-hardening.int.test.ts)
+    const { cookie } = await userSession(ctx, s);
     for (let i = 0; i < 2; i++) {
       ctx.clock.advanceMinutes(50);
       expect(

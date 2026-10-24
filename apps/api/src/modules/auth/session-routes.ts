@@ -5,9 +5,13 @@ import { uncoveredPermissions } from '@thapsus/core/access';
 import { isAdmin } from '@thapsus/core/permissions';
 import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
+import type { Tx } from '@thapsus/db';
+import type { Principal } from '@thapsus/core/permissions';
 import { Problem, Uuid } from '../../http/schemas';
 import { loadPrincipal } from '../authz/principal';
-import { setSessionCookie, throttle } from './common';
+import { emitSecurityEvent } from '../../lib/security-events';
+import { assertFailureBudget, countFailure, setSessionCookie, throttle } from './common';
+import { ACCOUNT_LIMITS, AUTH_WINDOW_SECONDS, tenantBudget, tenantKey } from './throttles';
 import {
   recentlyAuthenticated,
   REAUTH_WINDOW_MINUTES,
@@ -43,6 +47,40 @@ export function requireRecentAuth(auth: AuthContext, now: Date) {
     throw new ApiError('reauthenticationRequired', undefined, { windowMinutes: REAUTH_WINDOW_MINUTES });
 }
 
+/**
+ * Who may reset another person's sign-in (a lost second factor, a forgotten password, a changed SSO
+ * identity): someone whose company-wide grants include settings.manage AND cover every permission the
+ * person holds, who re-authenticated recently, and never for themselves. So an HR admin can help an
+ * employee, but only an owner can help another owner (docs/guides/admin.md "Who can reset sign-ins").
+ */
+export async function assertAccountAuthority(
+  tx: Tx,
+  auth: AuthContext,
+  userId: string,
+  now: Date,
+): Promise<{ target: Principal; email: string; locale: string | null; status: string }> {
+  if (userId === auth.userId) throw new ApiError('forbidden', 'ownAccount', { reason: 'ownAccount' });
+  const companyWide = auth.principal.grants.filter((g) => g.scope.type === 'all');
+  if (uncoveredPermissions(companyWide, ['settings.manage']).length)
+    throw new ApiError('forbidden', 'companyWideSettingsRequired', { reason: 'companyWideSettingsRequired' });
+  requireRecentAuth(auth, now);
+  const user = await tx.maybe<{ email: string; locale: string | null; status: string }>(
+    'SELECT email, locale, status FROM app.users WHERE id = $1',
+    [userId],
+  );
+  if (!user) throw new ApiError('notFound');
+  const target = await loadPrincipal(tx, userId);
+  const missing = uncoveredPermissions(companyWide, [
+    ...new Set(target.grants.flatMap((g) => g.permissions)),
+  ]);
+  if (missing.length)
+    throw new ApiError('forbidden', 'exceedsYourAccess', {
+      reason: 'exceedsYourAccess',
+      permissions: missing,
+    });
+  return { target, ...user };
+}
+
 export async function sessionRoutes(app: FastifyInstance) {
   const deps = app.deps;
 
@@ -66,7 +104,22 @@ export async function sessionRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const auth = requireAuth(req);
       const b = req.body as { password?: string; code?: string };
-      await throttle(deps, [[`reauth:${auth.userId}`, 5, 300]]);
+      await throttle(
+        deps,
+        [
+          [`reauth:${auth.userId}`, ACCOUNT_LIMITS.mfaAttempts, 300],
+          [`reauth:ip:${req.ctx.ip}`, ACCOUNT_LIMITS.mfaAttemptsPerIp, AUTH_WINDOW_SECONDS],
+        ],
+        req,
+      );
+      const failures = tenantKey('mfa-fail', auth.tenantId);
+      await assertFailureBudget(
+        deps,
+        req,
+        failures,
+        await tenantBudget(deps, auth.tenantId, 'mfaFailures'),
+        auth.tenantId,
+      );
       let ok = false;
       if (b.password !== undefined) {
         const cred = await app.tenantTx(
@@ -87,11 +140,11 @@ export async function sessionRoutes(app: FastifyInstance) {
         if (ok) {
           // re-authentication issues a new session token and the old one stops working (ASVS V7.2.4)
           const secret = newToken();
-          await tx.exec('UPDATE app.sessions SET reauthenticated_at = $2, token_hash = $3 WHERE id = $1', [
-            auth.sessionId,
-            deps.now(),
-            hashToken(secret),
-          ]);
+          // the network it re-authenticated from becomes the session's network (ADR-0173)
+          await tx.exec(
+            'UPDATE app.sessions SET reauthenticated_at = $2, token_hash = $3, network = coalesce($4, network) WHERE id = $1',
+            [auth.sessionId, deps.now(), hashToken(secret), req.ctx.network ?? null],
+          );
           token = composeToken(SESSION_PREFIX, auth.tenantId, secret);
         }
         await app.audit(tx, req, {
@@ -102,7 +155,17 @@ export async function sessionRoutes(app: FastifyInstance) {
         });
         return token;
       });
-      if (!rotated) throw new ApiError('invalidCredentials');
+      if (!rotated) {
+        await countFailure(deps, failures, AUTH_WINDOW_SECONDS);
+        emitSecurityEvent(deps, req, {
+          type: 'auth.mfa_failed',
+          severity: 'low',
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          detail: { factor: b.password !== undefined ? 'password' : 'totp', step: 'reauthentication' },
+        });
+        throw new ApiError('invalidCredentials');
+      }
       setSessionCookie(deps, reply, rotated);
       return reply.status(204).send(null);
     },
@@ -290,24 +353,8 @@ export async function sessionRoutes(app: FastifyInstance) {
     async (req) => {
       const auth = authorize(req, 'settings.manage');
       const { userId } = req.params as { userId: string };
-      if (userId === auth.userId) throw new ApiError('forbidden', 'ownFactors');
-      requireRecentAuth(auth, deps.now());
       const out = await app.tenantTx(req, async (tx) => {
-        const user = await tx.maybe<{ email: string; locale: string | null }>(
-          'SELECT email, locale FROM app.users WHERE id = $1',
-          [userId],
-        );
-        if (!user) throw new ApiError('notFound');
-        const target = await loadPrincipal(tx, userId);
-        const companyWide = auth.principal.grants.filter((g) => g.scope.type === 'all');
-        const missing = uncoveredPermissions(companyWide, [
-          ...new Set(target.grants.flatMap((g) => g.permissions)),
-        ]);
-        if (missing.length)
-          throw new ApiError('forbidden', 'exceedsYourAccess', {
-            reason: 'exceedsYourAccess',
-            permissions: missing,
-          });
+        const { target, ...user } = await assertAccountAuthority(tx, auth, userId, deps.now());
         const totp = await tx.exec('DELETE FROM app.totp_factors WHERE user_id = $1', [userId]);
         const passkeys = await tx.exec('DELETE FROM app.passkeys WHERE user_id = $1', [userId]);
         const endedSessions = await revokeUserSessions(tx, userId);
@@ -328,6 +375,13 @@ export async function sessionRoutes(app: FastifyInstance) {
           email: user.email,
           locale: isLocale(user.locale) ? user.locale : ('en-GB' as const),
         };
+      });
+      emitSecurityEvent(deps, req, {
+        type: 'auth.mfa_reset',
+        severity: 'medium',
+        tenantId: auth.tenantId,
+        userId,
+        detail: { by: auth.userId, removedFactors: out.removedFactors },
       });
       await deps.mailer.send({
         to: out.email,

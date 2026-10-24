@@ -11,12 +11,21 @@ import { mfaGate, resolveSession, type AuthContext } from '../modules/auth/sessi
 import { crossSiteRefusal, sessionCookie, trustedOrigins } from './security';
 import { apiClientMayCall } from '@thapsus/core/api-scopes';
 import { isApiCredential, resolveApiCredential } from '../modules/platform/api-auth';
+import { emitSecurityEvent } from '../lib/security-events';
 
 export interface RequestCtx {
   locale: Locale;
   ip: string;
   userAgent: string | undefined;
+  /** The client's network (autonomous system), when a trusted proxy supplies it (ADR-0173). */
+  network?: string;
 }
+
+/**
+ * Routes an admin session may still call after its network changed: everything else answers
+ * `reauthenticationRequired` until POST /v1/auth/reauth proves the person's identity again.
+ */
+const NETWORK_CHANGE_ALLOWED = new Set(['/v1/auth/reauth', '/v1/auth/session', '/v1/auth/logout']);
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -92,6 +101,7 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
       locale: isLocale(queryLocale) ? queryLocale : resolveLocale(req.headers['accept-language']),
       ip: req.ip,
       userAgent: req.headers['user-agent'],
+      network: opts.deps.clientNetwork?.(req.headers),
     };
     // Browser request forgery (ASVS V3.5.1): state-changing requests from other origins are refused.
     if (!req.routeOptions.config?.crossSite) {
@@ -114,10 +124,19 @@ export const contextPlugin = fp(async (app: FastifyInstance, opts: { deps: Deps 
     } else {
       const token =
         req.cookies?.[cookie.name] ?? (header?.startsWith('Session ') ? header.slice(8) : undefined);
-      auth = await resolveSession(opts.deps.router, token, opts.deps.now());
+      auth = await resolveSession(opts.deps.router, token, opts.deps.now(), { network: req.ctx.network });
     }
     if (!auth) throw new ApiError('unauthorised');
     req.auth = auth;
+    if (auth.networkChanged && !NETWORK_CHANGE_ALLOWED.has(req.routeOptions.url)) {
+      emitSecurityEvent(opts.deps, req, {
+        type: 'auth.session_network_changed',
+        severity: 'medium',
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+      });
+      throw new ApiError('reauthenticationRequired', 'networkChanged', { reason: 'networkChanged' });
+    }
     if (auth.user.locale && isLocale(auth.user.locale) && !req.headers['accept-language'])
       req.ctx.locale = auth.user.locale;
     if (mode !== 'mfa-setup') {

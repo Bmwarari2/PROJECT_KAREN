@@ -148,6 +148,7 @@ const SECRET = [
   'app.sessions',
   'app.magic_links',
   'app.sso_connections',
+  'app.sso_identities',
   'app.scim_tokens',
   'app.verified_domains',
   'app.ics_tokens',
