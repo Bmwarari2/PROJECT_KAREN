@@ -102,6 +102,22 @@
   }
 }
 
+/* A table placed directly in a card (with the standard padding) runs to the card's edges: the card is
+   its container, never a box inside a box (ADR-0181). */
+[data-card] > .thr-table {
+  width: auto;
+  margin-inline: calc(-1 * var(--space-5));
+  border-inline: 0;
+  border-radius: 0;
+  background: transparent;
+}
+[data-card] > .thr-table:last-child {
+  margin-bottom: calc(-1 * var(--space-5));
+  border-bottom: 0;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
 /* Tables as lists on phones (ADR-0180, `Table`). Unlayered, so it wins over the cells' utilities. */
 @media (max-width: 639px) {
   .thr-stack-wrap {
@@ -178,19 +194,13 @@
   .thr-stack > tbody > tr > td[data-phone='inline'] {
     flex: 0 1 auto;
   }
-  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='inline']::before {
-    content: '·' / '';
-    margin-inline-end: var(--space-2);
-  }
-  /* a labelled cell joined to the line keeps its label after the dot */
-  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='inline'][data-label]::before {
-    content: '·\00a0\00a0' attr(data-label) ': ' / attr(data-label) ': ';
-    margin-inline-end: 0;
-  }
-  /* hidden cells do not break a run of inline cells */
-  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='hide'] + td[data-phone='inline']::before {
-    content: '·' / '';
-    margin-inline-end: var(--space-2);
+  /* the dot between joined cells ends the earlier value, so a wrapped line never starts with it */
+  .thr-stack > tbody > tr > td[data-phone='inline']:has(+ td[data-phone='inline']:not(:empty))::after,
+  .thr-stack
+    > tbody
+    > tr
+    > td[data-phone='inline']:has(+ td[data-phone='hide'] + td[data-phone='inline']:not(:empty))::after {
+    content: '\00a0·' / '';
   }
   /* buttons go under the text, above the row's stretched link */
   .thr-stack > tbody > tr > td:not(:first-child):has(button, [role='button'], form) {
@@ -201,6 +211,10 @@
     z-index: 1;
   }
   /* inside a card or list card that already draws the container, the list draws none of its own */
+  [data-card] > .thr-stack-wrap {
+    box-shadow: none;
+    background: transparent;
+  }
   [data-flush] > .thr-stack-wrap {
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     background: transparent;
@@ -221,7 +235,14 @@
   :is([data-shell='app'], [role='dialog'])
     form
     :is(
-      input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='hidden'], [type='file']),
+      input:not(
+        [type='checkbox'],
+        [type='radio'],
+        [type='range'],
+        [type='color'],
+        [type='hidden'],
+        [type='file']
+      ),
       select,
       textarea
     ) {

@@ -159,7 +159,8 @@ export interface FieldProps {
 export function Field({ id, label, hint, error, children, className }: FieldProps) {
   const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    // full width on phones, so a field in a wrapping row of fields takes the whole line (ADR-0181)
+    <div className={cn('flex flex-col gap-1.5 max-sm:w-full', className)}>
       <label htmlFor={id} className="text-callout font-semibold text-text">
         {label}
       </label>
@@ -184,16 +185,14 @@ export function Card({
   size = 'app',
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { size?: 'app' | 'marketing' }) {
-  return (
-    <div
-      className={cn(
-        'bg-surface-raised text-text shadow-sm',
-        size === 'marketing' ? 'rounded-xl p-8 md:p-10' : 'rounded-lg p-5',
-        className,
-      )}
-      {...props}
-    />
+  const classes = cn(
+    'bg-surface-raised text-text shadow-sm',
+    size === 'marketing' ? 'rounded-xl p-8 md:p-10' : 'rounded-lg p-5',
+    className,
   );
+  // With the standard padding, a table placed directly in the card runs to its edges (base.css), so the
+  // card is the table's container rather than a box around another box.
+  return <div data-card={/(^| )p-5( |$)/.test(classes) ? '' : undefined} className={classes} {...props} />;
 }
 /**
  * A card's title. Cards are usually the sections of a page, so the title is an h2 under the page's h1
@@ -297,7 +296,7 @@ export function Table({
     <div
       className={cn(
         // its own container (a table is never put inside a card): white with a hairline border
-        'w-full overflow-x-auto rounded-lg border border-border bg-surface-raised',
+        'thr-table w-full overflow-x-auto rounded-lg border border-border bg-surface-raised',
         stack && 'thr-stack-wrap',
         scrollLabel && focusRing,
       )}
