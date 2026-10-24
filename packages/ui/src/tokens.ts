@@ -22,12 +22,16 @@ export const colors = {
   warning: { light: '#8a5a00', dark: '#f2c14e' },
   danger: { light: '#b42318', dark: '#ff7b72' },
   'on-danger': { light: '#ffffff', dark: '#2a0705' },
-  // App chrome: the dark top bar (deep teal-black in both modes) and the controls on it.
-  chrome: { light: '#132321', dark: '#0d1716' },
-  'chrome-raised': { light: '#1f3331', dark: '#1a2826' },
-  'on-chrome': { light: '#f5f7f6', dark: '#f5f7f6' },
-  'on-chrome-secondary': { light: '#b5c4c1', dark: '#a9b8b5' },
-  'chrome-focus': { light: '#5fd3c6', dark: '#5fd3c6' },
+  // App chrome (ADR-0180): the top and bottom bars, light and translucent like the page under them
+  // (a blurred `chrome` at 80% in the bars), with the controls on them.
+  chrome: { light: '#f9f9fb', dark: '#161618' },
+  'chrome-raised': { light: '#ececf0', dark: '#2a2a2e' },
+  'on-chrome': { light: '#1d1d1f', dark: '#f5f5f7' },
+  'on-chrome-secondary': { light: '#5f5f66', dark: '#a8a8ae' },
+  'chrome-focus': { light: '#0b6b63', dark: '#5fd3c6' },
+  // Segmented controls (module tabs, ADR-0180): a grey track with the current segment raised on it.
+  'segment-track': { light: '#ececf0', dark: '#2a2a2e' },
+  'segment-selected': { light: '#ffffff', dark: '#48484e' },
   // Categorical chart series, in this fixed order (validated for colour-vision deficiency, ADR-0154).
   // Light slots 1, 5 and 6 sit below 3:1 on the surface, so every chart shows its values as text too.
   'chart-1': { light: '#1baf7a', dark: '#199e70' },
@@ -67,6 +71,8 @@ export const TEXT_PAIRS: Array<[fg: ColorToken, bg: ColorToken]> = [
   ['on-chrome', 'chrome-raised'],
   ['on-chrome-secondary', 'chrome'],
   ['on-chrome-secondary', 'chrome-raised'],
+  ['text', 'segment-selected'],
+  ['text-secondary', 'segment-track'],
 ];
 
 /** Non-text UI pairs (control borders, focus ring) that must meet 3:1. */
@@ -85,6 +91,8 @@ export const typeScale = {
   display: { size: 80, line: 84, phoneSize: 48, phoneLine: 52, weight: 700, tracking: '-0.03em' },
   headline: { size: 56, line: 60, phoneSize: 36, phoneLine: 40, weight: 700, tracking: '-0.025em' },
   'title-1': { size: 40, line: 44, phoneSize: 30, phoneLine: 34, weight: 700, tracking: '-0.02em' },
+  // App page titles: one bold large title per screen, the same size on phones and desktops (ADR-0180).
+  'large-title': { size: 34, line: 41, weight: 700, tracking: '-0.022em' },
   'title-2': { size: 28, line: 32, weight: 600, tracking: '-0.015em' },
   'title-3': { size: 21, line: 26, weight: 600, tracking: '-0.01em' },
   'body-lg': { size: 21, line: 30, weight: 400, tracking: '0' },
@@ -116,6 +124,8 @@ export const layout = {
   'sidebar-width': '248px',
   'rail-collapsed-width': '64px',
   'topbar-height': '56px',
+  // the phone tab bar (ADR-0180), without the device's safe-area inset
+  'dock-height': '56px',
   'nav-height': '48px',
 } as const;
 

@@ -279,6 +279,19 @@ export const MODULES: WorkspaceModule[] = [
   },
 ];
 
+/**
+ * The phone tab bar (ADR-0180): up to five modules, Home first and the viewer's own profile last. People
+ * who manage others get People; everyone else gets Pay. Every entry is a module the viewer can open.
+ */
+export function dockModules(modules: VisibleModule[], v: WorkspaceViewer): VisibleModule[] {
+  const middle = v.has('employees.read') ? ['inbox', 'people', 'time'] : ['inbox', 'time', 'pay'];
+  const pick = (key: string) => modules.find((m) => m.key === key);
+  return ['home', ...middle, 'me'].flatMap((k) => {
+    const m = pick(k);
+    return m ? [m] : [];
+  });
+}
+
 /** A module with only the tabs the viewer may open, or null when none is left. */
 export interface VisibleModule extends Omit<WorkspaceModule, 'tabs'> {
   tabs: ModuleTab[];
