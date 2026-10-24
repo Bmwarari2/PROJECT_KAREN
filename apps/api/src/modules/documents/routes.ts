@@ -598,6 +598,8 @@ export async function documentRoutes(app: FastifyInstance) {
         idempotencyKey?: string;
       };
       const out = await app.tenantTx(req, async (tx) => {
+        if (!(await tx.maybe('SELECT 1 FROM app.document_templates WHERE id = $1', [b.templateId])))
+          throw new ApiError('notFound');
         const params: unknown[] = [];
         const where = [scopePredicate(auth.principal, 'documents.manage', params), `e.status <> 'leaver'`];
         const add = (v: unknown) => (params.push(v), `$${params.length}`);

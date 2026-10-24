@@ -331,11 +331,14 @@ export async function orgRoutes(app: FastifyInstance) {
       const limit = (req.query as { limit?: number }).limit ?? 200;
       const rows = await app.tenantTx(
         req,
-        (tx) =>
-          tx.query<Parameters<typeof mapNode>[0]>(
+        async (tx) => {
+          if (!(await tx.maybe('SELECT 1 FROM app.employees WHERE id = $1', [id])))
+            throw new ApiError('notFound');
+          return tx.query<Parameters<typeof mapNode>[0]>(
             `${nodeSql} WHERE e.status = 'active' AND e.manager_id = $1 ORDER BY e.display_name LIMIT ${limit}`,
             [id],
-          ),
+          );
+        },
         { readOnly: true },
       );
       return rows.map(mapNode);

@@ -567,6 +567,8 @@ export async function webhookRoutes(app: FastifyInstance) {
         );
       const rows = await app.tenantTx(req, async (tx) => {
         await guard(tx, req);
+        if (!(await tx.maybe('SELECT 1 FROM app.webhook_endpoints WHERE id = $1', [id])))
+          throw new ApiError('notFound');
         return tx.query<DeliveryRow>(
           `SELECT * FROM app.webhook_deliveries WHERE ${where.join(' AND ')} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
           params,

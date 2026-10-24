@@ -632,6 +632,8 @@ export async function auditStreamRoutes(app: FastifyInstance) {
       const after = decodeCursor<[string, string]>(q.cursor);
       const rows = await app.tenantTx(req, async (tx) => {
         await guard(tx, req, 'audit.read');
+        if (!(await tx.maybe('SELECT 1 FROM app.audit_streams WHERE id = $1', [id])))
+          throw new ApiError('notFound');
         return tx.query<BatchRow>(
           `SELECT * FROM app.audit_stream_batches WHERE stream_id = $1 ${after ? 'AND (created_at, id) < ($2::timestamptz, $3::uuid)' : ''} ORDER BY created_at DESC, id DESC LIMIT ${limit + 1}`,
           after ? [id, ...after] : [id],

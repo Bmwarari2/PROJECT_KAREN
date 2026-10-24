@@ -338,15 +338,25 @@ export async function leaveRoutes(app: FastifyInstance) {
       },
     },
     async (req) => {
-      authorize(req, 'leave.manage');
+      const auth = authorize(req, 'leave.manage');
       const { id } = req.params as { id: string };
       const b = req.body as { employeeIds: string[]; validFrom: string };
+      const employeeIds = [...new Set(b.employeeIds)];
       return app.tenantTx(req, async (tx) => {
-        const p = await tx.one<{ leave_type_id: string }>(
+        const p = await tx.maybe<{ leave_type_id: string }>(
           'SELECT leave_type_id FROM app.leave_policies WHERE id = $1',
           [id],
         );
-        for (const e of b.employeeIds) {
+        if (!p) throw new ApiError('notFound');
+        // every person must exist in this workspace and be within the caller's leave.manage scope
+        const params: unknown[] = [employeeIds];
+        const scope = scopePredicate(auth.principal, 'leave.manage', params);
+        const reachable = await tx.one<{ n: number }>(
+          `SELECT count(*)::int AS n FROM app.employees e WHERE e.id = ANY($1::uuid[]) AND ${scope}`,
+          params,
+        );
+        if (reachable.n !== employeeIds.length) throw new ApiError('notFound');
+        for (const e of employeeIds) {
           await tx.exec(
             `UPDATE app.leave_policy_assignments SET valid_to = $3 WHERE employee_id = $1 AND leave_type_id = $2 AND valid_from < $3 AND (valid_to IS NULL OR valid_to > $3)`,
             [e, p.leave_type_id, b.validFrom],
@@ -360,9 +370,9 @@ export async function leaveRoutes(app: FastifyInstance) {
           action: 'leave_policy.assigned',
           targetType: 'leave_policy',
           targetId: id,
-          diff: { employees: b.employeeIds.length, validFrom: b.validFrom },
+          diff: { employees: employeeIds.length, validFrom: b.validFrom },
         });
-        return { assigned: b.employeeIds.length };
+        return { assigned: employeeIds.length };
       });
     },
   );

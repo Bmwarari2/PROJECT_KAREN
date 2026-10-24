@@ -270,11 +270,14 @@ export async function automationRoutes(app: FastifyInstance) {
       const { id } = req.params as { id: string };
       return app.tenantTx(
         req,
-        (tx) =>
-          tx.query(
+        async (tx) => {
+          if (!(await tx.maybe('SELECT 1 FROM app.automation_rules WHERE id = $1', [id])))
+            throw new ApiError('notFound');
+          return tx.query(
             `SELECT id, event_key AS "eventKey", dry_run AS "dryRun", status, detail, created_at AS "createdAt" FROM app.automation_runs WHERE rule_id = $1 ORDER BY created_at DESC LIMIT 200`,
             [id],
-          ),
+          );
+        },
         { readOnly: true },
       );
     },
