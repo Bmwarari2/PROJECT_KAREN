@@ -170,6 +170,17 @@
   .thr-stack > tbody > tr > td[data-label]::before {
     content: attr(data-label) ': ';
   }
+  .thr-stack > tbody > tr > td[data-phone='hide'],
+  .thr-stack > thead th[data-phone='hide'] {
+    display: none;
+  }
+  .thr-stack > tbody > tr > td[data-phone='inline'] {
+    flex: 0 1 auto;
+  }
+  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='inline']::before {
+    content: '·' / '';
+    margin-inline-end: var(--space-2);
+  }
   /* buttons go under the text, above the row's stretched link */
   .thr-stack > tbody > tr > td:not(:first-child):has(button, [role='button'], form) {
     order: 99;
