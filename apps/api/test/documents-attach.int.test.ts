@@ -14,8 +14,8 @@ import { runComplianceDaily } from '../src/modules/compliance/jobs';
  */
 let ctx: TestContext;
 let c: Phase6Company;
-const emp: Record<string, string> = {};
-const cookie: Record<string, string> = {};
+const emp = {} as { ada: string; bo: string };
+const cookie = {} as { hr: string; ada: string; bo: string; mgr: string; payroll: string };
 const objects = () => (ctx.deps.objects as MemoryObjectStore).objects;
 
 const PDF = (text: string) =>
