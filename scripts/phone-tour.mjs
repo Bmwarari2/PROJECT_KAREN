@@ -86,7 +86,7 @@ const PAGES = {
     '/app/documents',
     '/app/reports',
     '/app/settings',
-    '/app/settings/time-off',
+    '/app/settings/leave',
     '/app/notifications',
     '/app/imports',
     '/app/privacy',
