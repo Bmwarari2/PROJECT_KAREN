@@ -3,7 +3,7 @@ import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { apiCall, axeViolations, PASSWORD, totp } from './helpers';
-import { createStaff, staffSignIn } from './phase10-helpers';
+import { createStaff, elevateStaff, staffContext, staffSignIn } from './phase10-helpers';
 import { companyWithStaff, sql } from './time-helpers';
 
 /**
@@ -550,7 +550,7 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
     const context = await browser.newContext({ viewport: DESKTOP });
     const page = await context.newPage();
     const problems: string[] = [];
-    for (const path of ['/signin', '/signup', '/find-workspace', '/backoffice/signin']) {
+    for (const path of ['/signin', '/signup', '/find-workspace', '/forgot-password', '/backoffice/signin']) {
       await page.goto(path);
       await expect(page.locator('h1').first()).toBeVisible();
       for (const p of await authenticationProblems(page)) problems.push(`${path}: ${p}`);
@@ -616,10 +616,18 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
       let close = async () => undefined as void;
       if (area.as === 'owner') page = ownerPage!;
       else {
-        const context = await browser.newContext({ viewport: DESKTOP });
+        // staff open the back office on its own host name (their passkeys are bound to it)
+        const context =
+          area.as === 'staff'
+            ? await staffContext(browser, { viewport: DESKTOP })
+            : await browser.newContext({ viewport: DESKTOP });
         page = await context.newPage();
         close = () => context.close();
-        if (area.as === 'staff') await staffSignIn(page, createStaff('super_admin'));
+        if (area.as === 'staff') {
+          await staffSignIn(page, createStaff('super_admin'));
+          // super admins hold no standing access: a second super admin approves a time-boxed elevation
+          await elevateStaff(browser, page, 'super_admin');
+        }
       }
       const report: string[] = [];
       try {

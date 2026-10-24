@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { expectAccessible, totp } from './helpers';
-import { createStaff } from './phase10-helpers';
+import { expectAccessible } from './helpers';
+import { createStaff, staffContext, staffSignIn } from './phase10-helpers';
 import { sql } from './time-helpers';
 
 // Reduced motion: axe must not sample toasts or reveals mid-transition.
@@ -10,7 +10,7 @@ test.use({ locale: 'en-GB', reducedMotion: 'reduce' });
 test.describe('status page', () => {
   test('renders each region separately, with posted incidents, and is accessible', async ({
     page,
-    request,
+    browser,
   }) => {
     await sql(
       `INSERT INTO backoffice.service_heartbeats (service, beat_at) VALUES ('worker', now()) ON CONFLICT (service) DO UPDATE SET beat_at = now()`,
@@ -26,15 +26,10 @@ test.describe('status page', () => {
     await expectAccessible(page);
 
     // a support staff member posts an incident for this (UK) cell through the back-office API
-    const staff = createStaff('support');
-    const login = await request.post('/v1/backoffice/auth/login', {
-      data: { email: staff.email, password: staff.password },
-    });
-    expect(login.status()).toBe(200);
-    expect(
-      (await request.post('/v1/backoffice/auth/totp', { data: { code: totp(staff.secret) } })).status(),
-    ).toBe(204);
-    const post = await request.post('/v1/backoffice/status/incidents', {
+    const staffBrowser = await staffContext(browser);
+    const staffPage = await staffBrowser.newPage();
+    await staffSignIn(staffPage, createStaff('support'));
+    const post = await staffPage.request.post('/v1/backoffice/status/incidents', {
       data: {
         kind: 'incident',
         impact: 'minor',
@@ -44,6 +39,7 @@ test.describe('status page', () => {
       },
     });
     expect(post.status(), await post.text()).toBe(201);
+    await staffBrowser.close();
 
     await page.reload();
     const uk = page.getByRole('region', { name: 'United Kingdom (London)' });

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { signUpAndEnrol } from './helpers';
+import { PASSWORD, signUpAndEnrol, uniq } from './helpers';
+import { sql } from './time-helpers';
 import { axeBoth } from './settings-helpers';
 import { expectPageTitle, openModule } from './module-helpers';
 
@@ -169,5 +170,33 @@ test.describe('sign-in and security settings', () => {
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await axeBoth(page);
+  });
+
+  test('two-step verification for everyone is on in a new workspace; turning it off asks the admin to confirm it is them', async ({
+    page,
+  }) => {
+    const { email } = await signUpAndEnrol(page, uniq('mfa'), { mfaForEveryone: true });
+    await page.goto('/app/settings/sign-in-policy');
+    const everyone = page.getByLabel('Require two-step verification for everyone');
+    await expect(everyone).toBeChecked();
+    await expect(
+      page.getByLabel('Trust two-step verification done by the identity provider'),
+    ).not.toBeChecked();
+    await axeBoth(page);
+    // the sign-in is older than the re-authentication window
+    await sql(
+      `UPDATE app.sessions SET created_at = now() - interval '20 minutes' WHERE user_id = (SELECT id FROM app.users WHERE email = $1)`,
+      [email],
+    );
+    await everyone.uncheck();
+    await page.getByRole('button', { name: 'Save' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Confirm it is you' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Password').fill(PASSWORD);
+    await dialog.getByRole('button', { name: 'Confirm' }).click();
+    await expect(page.getByText('Changes saved.', { exact: true })).toBeVisible();
+    expect((await (await page.request.get('/v1/settings/security')).json()).requireMfaForEveryone).toBe(
+      false,
+    );
   });
 });
