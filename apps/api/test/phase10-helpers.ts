@@ -1,9 +1,8 @@
 import Stripe from 'stripe';
 import { withTenant, type JobRow } from '@thapsus/db';
-import { cookieFrom, PASSWORD, totpCode, type TestContext } from './helpers';
+import { cookieFrom, PASSWORD, type TestContext } from './helpers';
 import { hashPassword } from '../src/modules/auth/tokens';
 import { assignRole } from '../src/modules/authz/principal';
-import { createStaff, STAFF_COOKIE, type StaffRole } from '../src/modules/backoffice/auth';
 import { jobHandlers } from '../src/worker';
 
 /** Shared fixtures for the phase 10 suites (fictional companies, people and Stripe-style ids only). */
@@ -88,29 +87,8 @@ export async function userSession(
   return { cookie: cookieFrom(res), userId, email };
 }
 
-/** Staff sign-in: password, then the mandatory TOTP step. */
-export async function staffSession(ctx: TestContext, role: StaffRole, verify = true) {
-  const email = `${role}.${Math.random().toString(36).slice(2, 7)}@thapsus.example.test`;
-  const s = await createStaff(ctx.app, email, 'Fictional Staff Member', role);
-  const login = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/backoffice/auth/login',
-    payload: { email, password: s.password },
-    remoteAddress: `10.62.${Math.floor(Math.random() * 250)}.1`,
-  });
-  if (login.statusCode !== 200) throw new Error(`staff login ${login.statusCode} ${login.body}`);
-  const cookie = `${STAFF_COOKIE}=${String(login.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
-  if (verify) {
-    const r = await ctx.app.inject({
-      method: 'POST',
-      url: '/v1/backoffice/auth/totp',
-      headers: { cookie },
-      payload: { code: totpCode(s.totpSecret, ctx.clock.now) },
-    });
-    if (r.statusCode !== 204) throw new Error(`staff totp ${r.statusCode} ${r.body}`);
-  }
-  return { cookie, staffId: s.id, email, totpSecret: s.totpSecret };
-}
+/** Staff sign-in with a passkey (ADR-0174); see staff-helpers.ts for elevations and re-authentication. */
+export { staffSession } from './staff-helpers';
 
 /** Runs the queued jobs of one kind for a tenant (as the worker would) and marks them done. */
 export async function runQueued(ctx: TestContext, tenantId: string, kind: string) {
