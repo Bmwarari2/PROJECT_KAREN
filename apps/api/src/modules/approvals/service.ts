@@ -370,6 +370,9 @@ export function relatedTarget(
   if (subject === 'timesheet' && id('timesheetId')) return { type: 'timesheet', id: id('timesheetId')! };
   if ((subject === 'employee.change' || subject === 'employee.self_change') && subjectEmployeeId)
     return { type: 'employee', id: subjectEmployeeId };
+  // a countersignature is reviewed and signed in the document viewer (ADR-0169)
+  if (subject === 'document.countersign' && id('documentId'))
+    return { type: 'document', id: id('documentId')! };
   return null;
 }
 

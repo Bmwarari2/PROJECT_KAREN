@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
-import * as OTPAuth from 'otpauth';
 import { featureEnabled, processMoveRequests, withTenant } from '@thapsus/db';
 import { ownerUrl, TEST_DBS } from '@thapsus/db/testing';
 import {
@@ -13,8 +12,8 @@ import {
   totpCode,
   type TestContext,
 } from './helpers';
-import { createStaff, STAFF_COOKIE } from '../src/modules/backoffice/auth';
 import type { MemoryObjectStore } from '../src/lib/object-store';
+import { staffSession } from './staff-helpers';
 
 /**
  * Phase 9.5 — per-tenant feature flags (settings and back office, exposed to the app shell), custom
@@ -38,31 +37,8 @@ const api = (
   });
 
 async function staff(role: 'super_admin' | 'support') {
-  const email = `${role}.${Math.random().toString(36).slice(2, 6)}@thapsus.example.test`;
-  const s = await createStaff(ctx.app, email, 'Fictional Staff', role);
-  const login = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/backoffice/auth/login',
-    payload: { email, password: s.password },
-    remoteAddress: randomIp(),
-  });
-  const cookie = `${STAFF_COOKIE}=${String(login.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
-  const code = new OTPAuth.TOTP({
-    secret: OTPAuth.Secret.fromBase32(s.totpSecret),
-    digits: 6,
-    period: 30,
-  }).generate({ timestamp: ctx.clock.now.getTime() });
-  expect(
-    (
-      await ctx.app.inject({
-        method: 'POST',
-        url: '/v1/backoffice/auth/totp',
-        headers: { cookie },
-        payload: { code },
-      })
-    ).statusCode,
-  ).toBe(204);
-  return { cookie, id: s.id };
+  const s = await staffSession(ctx, role);
+  return { cookie: s.cookie, id: s.staffId };
 }
 
 function multipart(field: string, filename: string, contentType: string, data: Buffer) {

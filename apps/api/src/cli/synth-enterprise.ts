@@ -87,6 +87,9 @@ const { tenantId, created } = await provisionTenant(router, directory, {
   ownerEmail: 'owner@enterprise.example.test',
   ownerName: 'Ola Owner',
   password: PASSWORD,
+  // The load test signs its synthetic employees in with a password only: it measures the app, not an
+  // authenticator step (the owner still enrols one, as every admin must). ADR-0170.
+  security: { requireMfaForEveryone: false },
 });
 if (!created) {
   const n = await withTenant(router, tenantId, (tx) =>

@@ -1,9 +1,11 @@
 import { scrubString } from '@thapsus/core/scrub';
 import { closeAllPools, TenantRouter } from '@thapsus/db';
+import { depsFromEnv } from '../deps';
 import { directoryFromEnv } from '../lib/directory';
 import { keyProviderFromEnv } from '../lib/kms';
 import { MemoryObjectStore, objectStoreFromEnv } from '../lib/object-store';
 import { StagingConfigError, stagingConfigFromEnv } from './staging/config';
+import { RESET_CONFIRMATION, resetStagingWorkspace } from './staging/reset';
 import { seedStaging } from './staging/seed';
 
 /**
@@ -14,6 +16,8 @@ import { seedStaging } from './staging/seed';
  *
  * Environment: DATABASE_URL or DATABASE_SECRET (+ DATABASE_HOST); the directory, key provider and object
  * store selected by their usual variables; STAGING_LOGINS (required outside local dev). Refuses APP_ENV=prod.
+ * STAGING_RESET=delete-fictional-test-workspace first deletes the workspace the seed made before (verified
+ * purge, ADR-0185) and seeds it from scratch.
  * Output never contains personal data or secrets: outside local development it names roles only.
  */
 const started = Date.now();
@@ -25,6 +29,14 @@ try {
   // Files written to an in-memory store vanish with this process: only acceptable for local development.
   if (objects instanceof MemoryObjectStore && !local)
     throw new StagingConfigError('No object store is configured: documents and payslips would be lost');
+  // STAGING_RESET deletes the fictional test workspace first, so the seed builds it again (ADR-0185).
+  if (process.env.STAGING_RESET) {
+    if (process.env.STAGING_RESET !== RESET_CONFIRMATION)
+      throw new StagingConfigError(
+        `STAGING_RESET must be "${RESET_CONFIRMATION}" to delete the test workspace`,
+      );
+    log(`reset: ${await resetStagingWorkspace(await depsFromEnv(), cfg.workspace, log)}`);
+  }
   const result = await seedStaging(
     {
       router: TenantRouter.fromEnv(),

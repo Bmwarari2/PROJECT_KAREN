@@ -5,9 +5,9 @@
  *  - request: the API's response hook (status classes of refused requests), stored with a keyed hash of
  *    the client address and the route pattern, never the URL.
  *  - auth: authentication, session and staff events emitted by `apps/api/src/lib/security-events.ts`
- *    (`emitSecurityEvent`, the identity half of the hardening plan). Until that branch is merged they have
- *    no producer here; the pipeline subscribes with `onSecurityEvent` once it is (see the MERGE NOTE in
- *    apps/api/src/modules/security/signals.ts).
+ *    (`emitSecurityEvent`, the identity half of the hardening plan), which the security plugin subscribes
+ *    to with `onSecurityEvent`. The names below are its `SecurityEventType`, checked at compile time in
+ *    apps/api/src/modules/security/signals.ts.
  *  - audit: watched actions of the customer audit log, copied by the `audit_events_security_signals`
  *    trigger (migration 0027) as `audit.<action>` with codes and counts only.
  *  - staff: watched actions of the staff audit trail, copied as `staffaudit.<action>`.
@@ -26,7 +26,7 @@ export const REQUEST_SIGNALS = {
   'ip.blocked': 'A request from a contained address was refused',
 } as const;
 
-/** Event names of the identity work (security-events.ts); kept in step with its SecurityEventType. */
+/** Event names of the identity work (security-events.ts): exactly its SecurityEventType. */
 export const AUTH_SIGNALS = {
   'auth.login_failed': 'Failed sign-in (with keyed hashes of the address and the submitted account)',
   'auth.lockout': 'An account was locked after repeated failures',

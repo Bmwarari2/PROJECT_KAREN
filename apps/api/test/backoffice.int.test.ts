@@ -9,9 +9,19 @@ import {
 } from '../src/modules/billing/provider';
 import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
 import { hire, injector, legalEntity, staffSession, WEBHOOK_SECRET } from './phase10-helpers';
+import { elevate, enrolStaff, staffCookieFrom, staffReauth, staffSignIn } from './staff-helpers';
+import { SoftAuthenticator } from './soft-authenticator';
+import {
+  createStaff,
+  issueStaffEnrolment,
+  staffRelyingParty,
+  STAFF_ENROLMENT_HOURS,
+} from '../src/modules/backoffice/auth';
+import { onSecurityEvent, type SecurityEvent } from '../src/lib/security-events';
 
 /**
- * Thapsus back office (PROGRESS 10.2, 10.5): staff sign-in with mandatory MFA, tenants of this cell
+ * Thapsus back office (PROGRESS 10.2, 10.5, 15.8, 15.9): staff sign-in with a passkey only, just-in-time
+ * elevation and short sessions (ADR-0173), tenants of this cell
  * and the cross-region directory view, usage aggregates, enterprise contracts with custom pricing,
  * invoice collection, PO numbers and multi-entity billing accounts, the staff audit trail — and
  * personal data only through granted, logged support access.
@@ -44,7 +54,8 @@ beforeAll(async () => {
   });
   for (let i = 0; i < 3; i++)
     await hire(ctx, owner.cookie, entityB, { legalFirstName: `Ulla${i}`, legalLastName: 'Beispiel' });
-  support = await staffSession(ctx, 'support');
+  // the support-grant tests below use a customer's grant, which needs a support_grant elevation
+  support = await staffSession(ctx, 'support', { elevate: ['support_grant'] });
   billingStaff = await staffSession(ctx, 'billing');
 });
 afterAll(async () => {
@@ -53,19 +64,259 @@ afterAll(async () => {
 });
 
 describe('staff sign-in', () => {
-  it('requires the TOTP step before any back-office route, and tenant sessions never work there', async () => {
-    const half = await staffSession(ctx, 'support', false);
-    const r = await api('GET', '/v1/backoffice/auth/session', undefined, half.cookie);
-    expect(r.statusCode).toBe(403);
-    expect(r.json().code).toBe('mfaRequired');
-    expect((await api('GET', '/v1/backoffice/tenants', undefined, half.cookie)).statusCode).toBe(403);
-    expect((await api('GET', '/v1/backoffice/auth/session', undefined, support.cookie)).json()).toMatchObject(
-      { role: 'support', cell: 'uk' },
+  it('staff sign in only with a passkey: no password or code routes, a one-time enrolment link, and tenant sessions never work there', async () => {
+    // the password and authenticator-code sign-in routes are gone
+    expect(
+      (await api('POST', '/v1/backoffice/auth/login', { email: 'x@thapsus.example.test', password: 'x' }, ''))
+        .statusCode,
+    ).toBe(404);
+    expect((await api('POST', '/v1/backoffice/auth/totp', { code: '123456' }, '')).statusCode).toBe(404);
+    // an enrolment link registers one key, once, and expires
+    const email = `enrol.${Math.random().toString(36).slice(2, 7)}@thapsus.example.test`;
+    const created = await createStaff(ctx.app, email, 'Fictional Staff Member', 'support');
+    expect(created.enrolmentUrl).toMatch(/\/backoffice\/enrol#token=[A-Za-z0-9_-]{40,}$/);
+    expect(created.expiresAt.getTime() - ctx.clock.now.getTime()).toBe(STAFF_ENROLMENT_HOURS * 3_600_000);
+    const rp = staffRelyingParty(ctx.deps);
+    const key = new SoftAuthenticator(rp.rpID, rp.origin);
+    const options = (
+      await api('POST', '/v1/backoffice/auth/enrol/options', { token: created.enrolmentToken }, '')
+    ).json();
+    expect(options.options.authenticatorSelection).toMatchObject({ userVerification: 'required' });
+    const enrolled = await api(
+      'POST',
+      '/v1/backoffice/auth/enrol/verify',
+      {
+        token: created.enrolmentToken,
+        challengeId: options.challengeId,
+        response: key.register(options.options),
+      },
+      '',
     );
+    expect(enrolled.statusCode, enrolled.body).toBe(204);
+    const cookie = staffCookieFrom(enrolled);
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, cookie)).json()).toMatchObject({
+      role: 'support',
+      cell: 'uk',
+      elevations: [],
+    });
+    const again = await api(
+      'POST',
+      '/v1/backoffice/auth/enrol/options',
+      { token: created.enrolmentToken },
+      '',
+    );
+    expect(again.statusCode).toBe(401);
+    const stale = await issueStaffEnrolment({ deps: ctx.deps }, created.id);
+    ctx.clock.advanceMinutes(STAFF_ENROLMENT_HOURS * 60 + 1);
+    expect(
+      (await api('POST', '/v1/backoffice/auth/enrol/options', { token: stale.token }, '')).statusCode,
+    ).toBe(401);
+    ctx.clock.advanceMinutes(-(STAFF_ENROLMENT_HOURS * 60 + 1));
+    // sign-in is a WebAuthn assertion with user verification; without it, refused
+    const signedIn = await staffSignIn(ctx, key);
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, signedIn)).statusCode).toBe(200);
+    const o = (await api('POST', '/v1/backoffice/auth/passkey/options', {}, '')).json();
+    const noUv = await api(
+      'POST',
+      '/v1/backoffice/auth/passkey/verify',
+      { challengeId: o.challengeId, response: key.assert(o.options, { userVerified: false }) },
+      '',
+    );
+    expect(noUv.statusCode).toBe(401);
+    // a key from another (unregistered) authenticator is refused
+    const stranger = new SoftAuthenticator(rp.rpID, rp.origin);
+    stranger.userHandle = Buffer.from(created.id.replace(/-/g, ''), 'hex').toString('base64url');
+    const o2 = (await api('POST', '/v1/backoffice/auth/passkey/options', {}, '')).json();
+    expect(
+      (
+        await api(
+          'POST',
+          '/v1/backoffice/auth/passkey/verify',
+          { challengeId: o2.challengeId, response: stranger.assert(o2.options) },
+          '',
+        )
+      ).statusCode,
+    ).toBe(401);
     expect((await api('GET', '/v1/backoffice/tenants', undefined, owner.cookie)).statusCode).toBe(401);
-    const out = await api('POST', '/v1/backoffice/auth/logout', undefined, half.cookie);
+    const out = await api('POST', '/v1/backoffice/auth/logout', undefined, signedIn);
     expect(out.statusCode).toBe(204);
-    expect((await api('GET', '/v1/backoffice/auth/session', undefined, half.cookie)).statusCode).toBe(401);
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, signedIn)).statusCode).toBe(401);
+  });
+
+  it('staff sessions end after 15 idle minutes or 4 hours, and destructive actions need a fresh key', async () => {
+    const s = await enrolStaff(ctx, 'support');
+    ctx.clock.advanceMinutes(14);
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, s.cookie)).statusCode).toBe(200);
+    ctx.clock.advanceMinutes(16);
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, s.cookie)).statusCode).toBe(401);
+    const active = await staffSignIn(ctx, s.key);
+    for (let i = 0; i < 17; i++) {
+      ctx.clock.advanceMinutes(14);
+      expect((await api('GET', '/v1/backoffice/auth/session', undefined, active)).statusCode).toBe(200);
+    }
+    ctx.clock.advanceMinutes(14); // 4 h 12 min after the sign-in, though active all along
+    expect((await api('GET', '/v1/backoffice/auth/session', undefined, active)).statusCode).toBe(401);
+    // destructive: notifying controllers of a breach needs a key assertion within 5 minutes
+    const fresh = { ...s, cookie: await staffSignIn(ctx, s.key) };
+    const breach = await api(
+      'POST',
+      '/v1/backoffice/breaches',
+      {
+        title: 'Fictional drill entry',
+        summary: 'A fictional breach-register entry for the re-authentication test.',
+        awareAt: ctx.clock.now.toISOString(),
+        affectedTenantIds: [],
+      },
+      fresh.cookie,
+    );
+    expect(breach.statusCode, breach.body).toBe(201);
+    ctx.clock.advanceMinutes(6);
+    const notify = () =>
+      api('POST', `/v1/backoffice/breaches/${breach.json().id}/notify-controllers`, {}, fresh.cookie);
+    const stale = await notify();
+    expect(stale.statusCode).toBe(403);
+    expect(stale.json().code).toBe('reauthenticationRequired');
+    await staffReauth(ctx, fresh);
+    const sent = await notify();
+    expect(sent.statusCode, sent.body).toBe(200);
+    ctx.clock.advanceMinutes(-(14 + 16 + 17 * 14 + 14 + 6));
+  });
+
+  it('super admins hold no standing access: an elevation needs a reason, a second staff member and expires', async () => {
+    const events: SecurityEvent[] = [];
+    const stop = onSecurityEvent((e) => void events.push(e));
+    try {
+      const admin = await enrolStaff(ctx, 'super_admin');
+      const audit = () =>
+        api(
+          'GET',
+          '/v1/backoffice/audit?from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z',
+          undefined,
+          admin.cookie,
+        );
+      const refused = await audit();
+      expect(refused.statusCode).toBe(403);
+      expect(refused.json()).toMatchObject({ reason: 'elevationRequired', scope: 'super_admin' });
+      // overview and session stay reachable (company-level counts only)
+      expect((await api('GET', '/v1/backoffice/overview', undefined, admin.cookie)).statusCode).toBe(200);
+      const tooShort = await api(
+        'POST',
+        '/v1/backoffice/elevations',
+        { scope: 'super_admin', reason: 'short', minutes: 30 },
+        admin.cookie,
+      );
+      expect(tooShort.statusCode).toBe(400);
+      const request = await api(
+        'POST',
+        '/v1/backoffice/elevations',
+        { scope: 'super_admin', reason: 'Fictional incident 77: export the staff trail', minutes: 30 },
+        admin.cookie,
+      );
+      expect(request.statusCode).toBe(201);
+      const id = request.json().id as string;
+      // nobody approves their own request; support cannot approve a super-admin elevation
+      expect(
+        (await api('POST', `/v1/backoffice/elevations/${id}/approve`, {}, admin.cookie)).json().reason,
+      ).toBe('ownRequest');
+      expect(
+        (await api('POST', `/v1/backoffice/elevations/${id}/approve`, {}, support.cookie)).json().reason,
+      ).toBe('scopeNotForYourRole');
+      const second = await enrolStaff(ctx, 'super_admin');
+      expect(
+        (await api('GET', '/v1/backoffice/elevations', undefined, second.cookie)).json().toApprove,
+      ).toEqual([expect.objectContaining({ id, status: 'pending', staffEmail: admin.email })]);
+      // approving needs a fresh key assertion
+      ctx.clock.advanceMinutes(6);
+      const stale = await api('POST', `/v1/backoffice/elevations/${id}/approve`, {}, second.cookie);
+      expect(stale.statusCode).toBe(403);
+      expect(stale.json().code).toBe('reauthenticationRequired');
+      await staffReauth(ctx, second);
+      const approved = await api('POST', `/v1/backoffice/elevations/${id}/approve`, {}, second.cookie);
+      expect(approved.statusCode, approved.body).toBe(200);
+      expect(approved.json()).toMatchObject({ status: 'active', approvedBy: second.staffId });
+      expect((await audit()).statusCode).toBe(200);
+      ctx.clock.advanceMinutes(31);
+      const signedIn = { ...admin, cookie: await staffSignIn(ctx, admin.key) };
+      expect(
+        (
+          await api(
+            'GET',
+            '/v1/backoffice/audit?from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z',
+            undefined,
+            signedIn.cookie,
+          )
+        ).statusCode,
+      ).toBe(403);
+      // revoked elevations stop at once
+      const again = await elevate(ctx, signedIn, 'super_admin', {
+        approver: { ...second, cookie: await staffSignIn(ctx, second.key) },
+      });
+      expect(
+        (
+          await api(
+            'GET',
+            '/v1/backoffice/audit?from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z',
+            undefined,
+            signedIn.cookie,
+          )
+        ).statusCode,
+      ).toBe(200);
+      expect(
+        (await api('POST', `/v1/backoffice/elevations/${again}/revoke`, {}, signedIn.cookie)).statusCode,
+      ).toBe(204);
+      expect(
+        (
+          await api(
+            'GET',
+            '/v1/backoffice/audit?from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z',
+            undefined,
+            signedIn.cookie,
+          )
+        ).statusCode,
+      ).toBe(403);
+      ctx.clock.advanceMinutes(-37);
+      const trail = (
+        await bo().query<{ action: string }>(
+          `SELECT action FROM backoffice.staff_audit WHERE action LIKE 'staff.elevation_%' AND detail->>'id' = $1 ORDER BY id`,
+          [id],
+        )
+      ).rows.map((r) => r.action);
+      expect(trail).toEqual(['staff.elevation_requested', 'staff.elevation_approved']);
+      expect(events.map((e) => e.type)).toEqual(
+        expect.arrayContaining([
+          'staff.elevation_missing',
+          'staff.elevation_requested',
+          'staff.elevation_approved',
+          'staff.elevation_revoked',
+        ]),
+      );
+      expect(JSON.stringify(events)).not.toContain(admin.email);
+    } finally {
+      stop();
+    }
+  });
+
+  it("support-grant use needs a support_grant elevation, even with the customer's grant", async () => {
+    const plain = await enrolStaff(ctx, 'support');
+    const r = await api(
+      'GET',
+      `/v1/backoffice/tenants/${owner.tenantId}/employees/${employeeId}`,
+      undefined,
+      plain.cookie,
+    );
+    expect(r.statusCode).toBe(403);
+    expect(r.json()).toMatchObject({ reason: 'elevationRequired', scope: 'support_grant' });
+    // a billing staff member cannot ask for it
+    expect(
+      (
+        await api(
+          'POST',
+          '/v1/backoffice/elevations',
+          { scope: 'support_grant', reason: 'Fictional ticket 12: look at a record', minutes: 30 },
+          billingStaff.cookie,
+        )
+      ).json().reason,
+    ).toBe('scopeNotForYourRole');
   });
 
   it('enforces roles (support cannot manage contracts; only super admins read the staff trail)', async () => {
@@ -541,7 +792,8 @@ describe('plans, rules catalogue and the staff audit trail', () => {
     expect(json.map((r: { action: string }) => r.action)).toEqual(
       expect.arrayContaining([
         'staff.login',
-        'staff.mfa_verified',
+        'staff.enrolled',
+        'staff.elevation_approved',
         'support.view_employee',
         'contract.activated',
         'tenant.viewed',

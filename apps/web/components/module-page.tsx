@@ -191,7 +191,9 @@ export function ListCard({
       {empty ? (
         <div className="p-4">{empty}</div>
       ) : (
-        <div className="[&>div]:rounded-t-none [&>div]:border-0">{children}</div>
+        <div data-flush className="[&>div]:rounded-t-none [&>div]:border-0">
+          {children}
+        </div>
       )}
     </Card>
   );

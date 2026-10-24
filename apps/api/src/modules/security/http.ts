@@ -5,7 +5,8 @@ import type { Deps } from '../../deps';
 import { ApiError, problem } from '../../http/errors';
 import type { ObjectStore } from '../../lib/object-store';
 import { isInternalAddress, pseudonym, truncatedNetwork } from './pseudonym';
-import { SignalBuffer, type Signal } from './signals';
+import { onSecurityEvent } from '../../lib/security-events';
+import { fromAuthEvent, SignalBuffer, type Signal } from './signals';
 import { checkDeadman } from './alerts';
 
 declare module 'fastify' {
@@ -236,9 +237,10 @@ export const securityHttpPlugin = fp(async (app: FastifyInstance, opts: { deps: 
     },
   );
 
-  // MERGE NOTE: with the identity work merged, subscribe to its events here:
-  //   import { onSecurityEvent } from '../../lib/security-events';
-  //   const off = onSecurityEvent((e) => signals.push(fromAuthEvent(e)));  // and off() on close
+  // authentication, session and staff events (lib/security-events.ts) join the same buffer
+  const unsubscribe = onSecurityEvent((e) => {
+    if (e.cell === deps.config.cell) signals.push(fromAuthEvent(e));
+  });
   await caches.refresh().catch((err: unknown) => app.log.warn({ err }, 'security caches not loaded yet'));
   signals.start();
   caches.start();
@@ -249,6 +251,7 @@ export const securityHttpPlugin = fp(async (app: FastifyInstance, opts: { deps: 
       : setInterval(() => void checkDeadman(deps, deps.now()).catch(() => undefined), 60_000);
   deadman?.unref?.();
   app.addHook('onClose', async () => {
+    unsubscribe();
     if (deadman) clearInterval(deadman);
     caches.stop();
     await signals.stop();

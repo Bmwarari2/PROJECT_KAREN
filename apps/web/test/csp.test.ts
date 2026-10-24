@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { contentSecurityPolicy, newNonce, STATIC_ASSET_CSP } from '../lib/csp';
+import { contentSecurityPolicy, newNonce, PDF_WORKER_CSP, STATIC_ASSET_CSP } from '../lib/csp';
 
 /** ASVS V3.4.3 and V3.4.6: a nonce-based policy with object-src and base-uri 'none', never framed. */
 describe('content security policy', () => {
@@ -45,6 +45,20 @@ describe('content security policy', () => {
     expect(proxy).toContain("response.headers.set('content-security-policy', csp)");
     const config = readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
     expect(config).not.toContain("'unsafe-inline'");
+  });
+
+  it('the self-hosted PDF.js worker may run only its own modules and WebAssembly, never eval, and is skipped by the page proxy', () => {
+    const d = directives(PDF_WORKER_CSP);
+    expect(d.get('default-src')).toEqual(["'none'"]);
+    expect(d.get('script-src')).toEqual(["'self'", "'wasm-unsafe-eval'"]);
+    expect(d.get('connect-src')).toEqual(["'self'"]);
+    expect(PDF_WORKER_CSP).not.toMatch(/'unsafe-eval'|'unsafe-inline'/);
+    // the page policy lets the page start a worker from this origin only
+    expect(directives(contentSecurityPolicy('x')).get('worker-src')).toEqual(["'self'"]);
+    const proxy = readFileSync(new URL('../proxy.ts', import.meta.url), 'utf8');
+    expect(proxy).toContain('pdfjs/');
+    const config = readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
+    expect(config).toContain("source: '/pdfjs/:path*'");
   });
 
   it('no page opts out of per-request rendering (a prerendered page would carry no nonce and its scripts would be blocked)', () => {

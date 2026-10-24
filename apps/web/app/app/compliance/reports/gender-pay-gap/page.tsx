@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   CardTitle,
+  PageSection,
   EmptyState,
   Field,
   Input,
@@ -149,11 +150,9 @@ export default function GenderPayGapPage() {
               {fig(t('compliance.gpg.bonusWomen'), r.data.figures.bonusProportions.female)}
             </dl>
           </Card>
-          <Card className="p-0">
+          <PageSection title={t('compliance.gpg.quartiles')}>
             <Table dense>
-              <caption className="px-4 py-3 text-left text-callout font-semibold">
-                {t('compliance.gpg.quartiles')}
-              </caption>
+              <caption className="sr-only">{t('compliance.gpg.quartiles')}</caption>
               <THead>
                 <tr>
                   <TH>{t('compliance.gpg.band')}</TH>
@@ -165,13 +164,17 @@ export default function GenderPayGapPage() {
                 {r.data.figures.quartiles.map((q) => (
                   <TR key={q.band}>
                     <TD>{t(`compliance.band.${q.band}`)}</TD>
-                    <TD className="text-right">{pct(q.malePercent)}</TD>
-                    <TD className="text-right">{pct(q.femalePercent)}</TD>
+                    <TD className="text-right" label={t('compliance.gpg.men')}>
+                      {pct(q.malePercent)}
+                    </TD>
+                    <TD className="text-right" label={t('compliance.gpg.women')}>
+                      {pct(q.femalePercent)}
+                    </TD>
                   </TR>
                 ))}
               </tbody>
             </Table>
-          </Card>
+          </PageSection>
         </>
       )}
     </div>

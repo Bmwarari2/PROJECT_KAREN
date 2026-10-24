@@ -106,7 +106,7 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.documents': { subject: [E()], actor: ['created_by'], category: 'personnel_records', erase: DEL },
   'app.signature_requests': {
     subject: [E('signer_employee_id'), U('signer_user_id')],
-    actor: ['requested_by'],
+    actor: ['requested_by', 'countersigner_user_id'],
     category: 'personnel_records',
     erase: DEL,
   },
@@ -232,7 +232,8 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.passkeys': { subject: [U()], category: 'account', erase: DEL },
   'app.password_credentials': { subject: [U()], category: 'account', erase: DEL },
   'app.totp_factors': { subject: [U()], category: 'account', erase: DEL },
-  'app.magic_links': { subject: [U()], category: 'account', erase: DEL },
+  'app.magic_links': { subject: [U()], actor: ['issued_by'], category: 'account', erase: DEL },
+  'app.sso_identities': { subject: [U()], category: 'account', erase: DEL },
   'app.auth_challenges': { subject: [U()], category: 'account', erase: DEL },
   'app.ics_tokens': { subject: [U()], category: 'account', erase: DEL },
   'app.push_subscriptions': { subject: [U()], category: 'account', erase: DEL },

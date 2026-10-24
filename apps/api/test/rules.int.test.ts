@@ -1,10 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
-import * as OTPAuth from 'otpauth';
 import { ownerUrl, TEST_DBS } from '@thapsus/db/testing';
 import { closeDb, ownerSession, startTestApp, type TestContext } from './helpers';
-import { createStaff, STAFF_COOKIE } from '../src/modules/backoffice/auth';
 import { invalidateRuleBook } from '../src/modules/rules/routes';
+import { elevate, staffSession } from './staff-helpers';
 
 let ctx: TestContext;
 let cookie: string;
@@ -18,18 +17,6 @@ afterAll(async () => {
 });
 
 const get = (url: string, c = cookie) => ctx.app.inject({ method: 'GET', url, headers: { cookie: c } });
-
-async function staffSession(role: 'rules_editor' | 'support') {
-  const email = `${role}.${Math.random().toString(36).slice(2, 6)}@thapsus.example.test`;
-  const s = await createStaff(ctx.app, email, 'Fictional Staff', role);
-  const login = await ctx.app.inject({
-    method: 'POST',
-    url: '/v1/backoffice/auth/login',
-    payload: { email, password: s.password },
-  });
-  const c = `${STAFF_COOKIE}=${String(login.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
-  return { cookie: c, secret: s.totpSecret };
-}
 
 describe('rule lookups for tenants', () => {
   it('resolves layered, effective-dated rules with their official source', async () => {
@@ -103,8 +90,8 @@ describe('rule lookups for tenants', () => {
 });
 
 describe('back-office rule editing', () => {
-  it('requires staff MFA, appends versions (never overwrites) and takes effect for lookups', async () => {
-    const editor = await staffSession('rules_editor');
+  it('requires a staff passkey session and an approved elevation, appends versions (never overwrites) and takes effect for lookups', async () => {
+    const editor = await staffSession(ctx, 'rules_editor');
     const add = (c: string) =>
       ctx.app.inject({
         method: 'POST',
@@ -120,22 +107,11 @@ describe('back-office rule editing', () => {
           verifiedOn: '2026-10-18',
         },
       });
-    expect((await add(editor.cookie)).statusCode).toBe(403); // MFA not yet verified
-    const code = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(editor.secret),
-      digits: 6,
-      period: 30,
-    }).generate();
-    expect(
-      (
-        await ctx.app.inject({
-          method: 'POST',
-          url: '/v1/backoffice/auth/totp',
-          headers: { cookie: editor.cookie },
-          payload: { code },
-        })
-      ).statusCode,
-    ).toBe(204);
+    // publishing needs a time-boxed elevation approved by someone else (plan 2.2.3)
+    const refused = await add(editor.cookie);
+    expect(refused.statusCode).toBe(403);
+    expect(refused.json()).toMatchObject({ reason: 'elevationRequired', scope: 'rules_publish' });
+    await elevate(ctx, editor, 'rules_publish');
     expect((await add(editor.cookie)).statusCode).toBe(201);
     invalidateRuleBook();
     const after = (await get('/v1/rules/GB/minimum_wage.rates?date=2027-05-01')).json();
@@ -168,18 +144,7 @@ describe('back-office rule editing', () => {
   });
 
   it('support staff cannot edit rules and tenants cannot reach back-office routes', async () => {
-    const support = await staffSession('support');
-    const code = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(support.secret),
-      digits: 6,
-      period: 30,
-    }).generate();
-    await ctx.app.inject({
-      method: 'POST',
-      url: '/v1/backoffice/auth/totp',
-      headers: { cookie: support.cookie },
-      payload: { code },
-    });
+    const support = await staffSession(ctx, 'support');
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/v1/backoffice/rules/GB/minimum_wage.rates/versions',

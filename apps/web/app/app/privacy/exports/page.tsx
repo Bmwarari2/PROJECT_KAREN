@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
   Field,
   Input,
   Skeleton,
@@ -15,6 +14,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -71,10 +71,13 @@ export default function ExportsPage() {
 
   if (exports.error?.status === 403 || closure.error?.status === 403) {
     return (
-      <Card>
-        <CardTitle>{t('privacy.ui.exports.ownerOnlyTitle')}</CardTitle>
-        <p className="mt-2 text-callout text-text-secondary">{t('privacy.ui.exports.ownerOnly')}</p>
-      </Card>
+      <PageSection
+        headingLevel={2}
+        title={t('privacy.ui.exports.ownerOnlyTitle')}
+        description={t('privacy.ui.exports.ownerOnly')}
+      >
+        <Card></Card>
+      </PageSection>
     );
   }
 
@@ -94,99 +97,102 @@ export default function ExportsPage() {
   const scheduled = c && c.status === 'scheduled';
   return (
     <div className="grid grid-cols-1 gap-6">
-      <Card>
-        <CardTitle>{t('privacy.ui.exports.title')}</CardTitle>
-        <p className="mt-1 max-w-[var(--prose-width)] text-footnote text-text-secondary">
-          {t('privacy.ui.exports.lead')}
-        </p>
-        <Button
-          className="mt-4"
-          loading={busy === 'export'}
-          onClick={() =>
-            act(
-              'export',
-              () => api('/v1/privacy/company-exports', { method: 'POST' }).then(exports.reload),
-              t('privacy.ui.exports.started'),
-            )
-          }
-        >
-          <Archive aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('privacy.ui.exports.start')}
-        </Button>
-        {exports.data?.length ? (
-          <div className="mt-4">
-            <Table dense scrollLabel={t('privacy.ui.exports.title')}>
-              <THead>
-                <tr>
-                  <TH>{t('privacy.ui.exports.requested')}</TH>
-                  <TH>{t('common.status')}</TH>
-                  <TH className="text-right">{t('privacy.ui.exports.size')}</TH>
-                  <TH>
-                    <span className="sr-only">{t('common.actions')}</span>
-                  </TH>
-                </tr>
-              </THead>
-              <tbody>
-                {exports.data.map((e) => (
-                  <TR key={e.id}>
-                    <TD className="tabular-nums">{formatDate(e.createdAt.slice(0, 10), locale)}</TD>
-                    <TD>
-                      {e.status === 'ready' ? (
-                        <Badge tone="success">
-                          {t('privacy.ui.exports.ready', {
-                            tables: t('privacy.ui.exports.readyTables', { count: e.tables ?? 0 }),
-                            files: t('privacy.ui.exports.readyFiles', { count: e.files ?? 0 }),
-                          })}
-                        </Badge>
-                      ) : e.status === 'failed' ? (
-                        <Badge tone="danger">{t('privacy.ui.exports.failed')}</Badge>
-                      ) : (
-                        <span role="status">
-                          {t('privacy.ui.exports.progress', {
-                            done: e.progressDone ?? 0,
-                            total: e.progressTotal ?? '…',
-                            count: e.progressTotal ?? '…',
-                          })}
-                        </span>
-                      )}
-                    </TD>
-                    <TD className="text-right tabular-nums">
-                      {e.sizeBytes !== null
-                        ? formatNumber(e.sizeBytes / 1_000_000, locale, {
-                            style: 'unit',
-                            unit: 'megabyte',
-                            maximumFractionDigits: 1,
-                          })
-                        : '—'}
-                    </TD>
-                    <TD className="text-right">
-                      {e.status === 'ready' ? (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={async () => {
-                            try {
-                              const { url } = await api<{ url: string }>(
-                                `/v1/privacy/company-exports/${e.id}/download`,
-                              );
-                              window.location.assign(url);
-                            } catch (err) {
-                              fail(err);
-                            }
-                          }}
-                        >
-                          <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                          {t('privacy.ui.exports.download')}
-                        </Button>
-                      ) : null}
-                    </TD>
-                  </TR>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        ) : null}
-      </Card>
+      <PageSection
+        headingLevel={2}
+        title={t('privacy.ui.exports.title')}
+        landmark={false}
+        description={t('privacy.ui.exports.lead')}
+      >
+        <Card>
+          <Button
+            className="mt-4"
+            loading={busy === 'export'}
+            onClick={() =>
+              act(
+                'export',
+                () => api('/v1/privacy/company-exports', { method: 'POST' }).then(exports.reload),
+                t('privacy.ui.exports.started'),
+              )
+            }
+          >
+            <Archive aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('privacy.ui.exports.start')}
+          </Button>
+          {exports.data?.length ? (
+            <div className="mt-4">
+              <Table dense scrollLabel={t('privacy.ui.exports.title')}>
+                <THead>
+                  <tr>
+                    <TH>{t('privacy.ui.exports.requested')}</TH>
+                    <TH>{t('common.status')}</TH>
+                    <TH className="text-right">{t('privacy.ui.exports.size')}</TH>
+                    <TH>
+                      <span className="sr-only">{t('common.actions')}</span>
+                    </TH>
+                  </tr>
+                </THead>
+                <tbody>
+                  {exports.data.map((e) => (
+                    <TR key={e.id}>
+                      <TD className="tabular-nums">{formatDate(e.createdAt.slice(0, 10), locale)}</TD>
+                      <TD>
+                        {e.status === 'ready' ? (
+                          <Badge tone="success">
+                            {t('privacy.ui.exports.ready', {
+                              tables: t('privacy.ui.exports.readyTables', { count: e.tables ?? 0 }),
+                              files: t('privacy.ui.exports.readyFiles', { count: e.files ?? 0 }),
+                            })}
+                          </Badge>
+                        ) : e.status === 'failed' ? (
+                          <Badge tone="danger">{t('privacy.ui.exports.failed')}</Badge>
+                        ) : (
+                          <span role="status">
+                            {t('privacy.ui.exports.progress', {
+                              done: e.progressDone ?? 0,
+                              total: e.progressTotal ?? '…',
+                              count: e.progressTotal ?? '…',
+                            })}
+                          </span>
+                        )}
+                      </TD>
+                      <TD className="text-right tabular-nums" label={t('privacy.ui.exports.size')}>
+                        {e.sizeBytes !== null
+                          ? formatNumber(e.sizeBytes / 1_000_000, locale, {
+                              style: 'unit',
+                              unit: 'megabyte',
+                              maximumFractionDigits: 1,
+                            })
+                          : '—'}
+                      </TD>
+                      <TD className="text-right">
+                        {e.status === 'ready' ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={async () => {
+                              try {
+                                const { url } = await api<{ url: string }>(
+                                  `/v1/privacy/company-exports/${e.id}/download`,
+                                );
+                                window.location.assign(url);
+                              } catch (err) {
+                                fail(err);
+                              }
+                            }}
+                          >
+                            <Download aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                            {t('privacy.ui.exports.download')}
+                          </Button>
+                        ) : null}
+                      </TD>
+                    </TR>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          ) : null}
+        </Card>
+      </PageSection>
 
       <Card aria-labelledby="closure-title">
         <h2 id="closure-title" className="text-title-3">

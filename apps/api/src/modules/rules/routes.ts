@@ -167,7 +167,8 @@ export async function rulesRoutes(app: FastifyInstance) {
     '/v1/backoffice/rules/:jurisdiction/:key/versions',
     {
       config: { auth: 'public', selfAudited: true },
-      preHandler: requireStaff(app, ['rules_editor']),
+      // publishing a rule version changes every tenant's calculations: a time-boxed, approved elevation
+      preHandler: requireStaff(app, ['rules_editor'], { elevation: 'rules_publish' }),
       schema: {
         tags: ['backoffice'],
         params: Type.Object({ jurisdiction: JurisdictionCode, key: Type.String() }),

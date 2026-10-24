@@ -68,6 +68,11 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
     config: { auth: 'public' as const, selfAudited: true },
     preHandler: requireStaff(app, []),
   };
+  /** Destructive super-admin changes also need a fresh key assertion (plan 2.2.5). */
+  const destructive = {
+    config: { auth: 'public' as const, selfAudited: true },
+    preHandler: requireStaff(app, [], { reauth: true }),
+  };
   const TenantParams = Type.Object({ tenantId: Uuid });
 
   async function registryEntry(tenantId: string) {
@@ -120,7 +125,7 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
   app.put(
     '/v1/backoffice/tenants/:tenantId/features/:key',
     {
-      ...staffOnly,
+      ...destructive,
       schema: {
         tags: ['backoffice'],
         summary: 'Set any feature flag for a tenant (including staff-managed ones)',
@@ -160,7 +165,7 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
   app.put(
     '/v1/backoffice/tenants/:tenantId/api-settings',
     {
-      ...staffOnly,
+      ...destructive,
       schema: {
         tags: ['backoffice'],
         summary: 'Override the tenant’s public API rate limit (null restores the plan default)',
@@ -195,7 +200,7 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/backoffice/tenants/:tenantId/database-moves',
     {
-      ...staffOnly,
+      ...destructive,
       schema: {
         tags: ['backoffice'],
         summary:
@@ -294,7 +299,7 @@ export async function platformBackofficeRoutes(app: FastifyInstance) {
   app.post(
     '/v1/backoffice/database-moves/:id/cancel',
     {
-      ...staffOnly,
+      ...destructive,
       schema: {
         tags: ['backoffice'],
         summary: 'Cancel a move that has not started',

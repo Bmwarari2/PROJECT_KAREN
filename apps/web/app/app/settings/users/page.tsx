@@ -52,7 +52,8 @@ export default function UsersPage() {
       />
       {/* the search runs on the server (the list is paged), so it covers everyone, not only the rows loaded */}
       <ListCard
-        title={t('access.users.title')}
+        title={t('access.users.list.title')}
+        titleAs={inModule ? 'h3' : 'h2'}
         count={
           rows
             ? cursor
@@ -92,14 +93,14 @@ export default function UsersPage() {
                   ) : null}
                 </TD>
                 <TD className="hidden break-all text-text-secondary md:table-cell">{u.email}</TD>
-                <TD>
-                  <span className="flex flex-wrap gap-2">
+                <TD label={t('access.users.colRoles')}>
+                  <span className="inline-flex flex-wrap gap-2">
                     {u.roles.map((k) => (
                       <Badge key={k}>{names.get(k) ?? k}</Badge>
                     ))}
                   </span>
                 </TD>
-                <TD className="hidden sm:table-cell">
+                <TD className="hidden sm:table-cell" label={t('access.users.colMfa')}>
                   {u.hasMfa ? (
                     <Badge tone="success">{t('access.users.mfaOn')}</Badge>
                   ) : (

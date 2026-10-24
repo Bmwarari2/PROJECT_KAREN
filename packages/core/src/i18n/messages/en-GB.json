@@ -61,7 +61,7 @@
     "conflict": "That change conflicts with an existing record.",
     "offline": "You are offline. We will sync when you reconnect.",
     "invalidCredentials": "That email and password combination did not work.",
-    "mfaEnrollmentRequired": "Administrators must set up two-step verification before continuing.",
+    "mfaEnrollmentRequired": "Set up two-step verification before continuing.",
     "tenantUnavailable": "This workspace is temporarily unavailable.",
     "gone": "This is no longer available.",
     "unprocessable": "We could not process that request.",
@@ -86,7 +86,8 @@
       "findWorkspace": "Find my workspace",
       "createWorkspace": "Create a workspace",
       "needWorkspace": "Enter your workspace name first.",
-      "needWorkspaceAndEmail": "Enter your workspace name and email first."
+      "needWorkspaceAndEmail": "Enter your workspace name and email first.",
+      "forgotPassword": "Forgot your password?"
     },
     "fields": {
       "workspace": "Workspace",
@@ -130,7 +131,43 @@
       "invalid": "This link has expired or has already been used."
     },
     "mfaResetSubject": "Your two-step verification was reset",
-    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away."
+    "mfaResetBody": "An administrator in your workspace reset your two-step verification after confirming who you are, and signed you out on every device.\n\nSign in again and set up a new authenticator app or passkey:\n\n{link}\n\nIf you did not ask for this, contact your administrator straight away.",
+    "passwordResetSubject": "Reset your Thapsus-HR password",
+    "passwordResetBody": "Someone asked to reset the password for your Thapsus-HR account. Use this link to choose a new one. It works once and expires in 30 minutes:\n\n{link}\n\nThe link does not sign you in. If you use two-step verification, you will still need it when you sign in.\n\nIf you did not ask for this, you can ignore this email. Your password has not changed.",
+    "passwordResetByAdminSubject": "Set a new password for Thapsus-HR",
+    "passwordResetByAdminBody": "An administrator at {company} sent you a link to set a new password for your Thapsus-HR account. They cannot see or choose your password. The link works once and expires in 24 hours:\n\n{link}\n\nThe link does not sign you in, and your two-step verification stays as it is.\n\nIf you did not expect this, contact your administrator.",
+    "passwordChangedSubject": "Your Thapsus-HR password was changed",
+    "passwordChangedBody": "The password for your Thapsus-HR account was just changed, and you have been signed out on every device. Sign in with your new password here:\n\n{link}\n\nIf you did not do this, reset your password straight away and tell your administrator.",
+    "forgot": {
+      "title": "Reset your password",
+      "lead": "Enter your workspace and your work email. If you have an account, we will email you a link to choose a new password.",
+      "submit": "Email me a reset link",
+      "sentTitle": "Check your email",
+      "sent": "If {email} has an account in this workspace, a reset link is on its way. It works once and expires in 30 minutes. If it does not arrive, check your spam folder or ask your administrator to send one.",
+      "ssoRequired": "Your workspace signs in with single sign-on, so there is no password to reset here. Use your organisation's sign-in instead.",
+      "backToSignIn": "Back to sign in",
+      "needWorkspaceAndEmail": "Enter your workspace and email."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "lead": "Your new password replaces the old one and signs you out on every device.",
+      "newPassword": "New password",
+      "hint": "At least 12 characters. Avoid common passwords and your own or your company’s name.",
+      "submit": "Save new password",
+      "doneTitle": "Password changed",
+      "done": "Your password has been changed and you have been signed out everywhere. Sign in with your new password.",
+      "mfaNote": "If you use two-step verification, you will still need it when you sign in.",
+      "signIn": "Sign in",
+      "invalidTitle": "This link no longer works",
+      "invalid": "Reset links work once and expire after 30 minutes (24 hours when an administrator sent them). Ask for a new one.",
+      "requestNew": "Ask for a new link",
+      "problem": {
+        "tooShort": "Use at least 12 characters.",
+        "tooLong": "Use 128 characters or fewer.",
+        "tooCommon": "That password is too common. Choose one that is harder to guess.",
+        "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
+      }
+    }
   },
   "push": {
     "testBody": "Notifications are working on this device."
@@ -282,7 +319,7 @@
     "security": {
       "title": "Security",
       "verifyRequired": "Enter a code from your authenticator app to continue.",
-      "setupRequired": "Administrators must set up two-step verification before continuing.",
+      "setupRequired": "Set up two-step verification to continue. Your workspace requires it.",
       "mfaDone": "Two-step verification is on.",
       "passkeyAdded": "Passkey added.",
       "passkeyFailed": "We could not add the passkey. Please try again.",
@@ -338,7 +375,8 @@
           "tooLong": "Use 128 characters or fewer.",
           "tooCommon": "That password is too common. Choose one that is harder to guess.",
           "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
-        }
+        },
+        "viaLinkBody": "You signed in with an emailed link, so you can choose a new password without your current one for the next few minutes. Every other session is signed out."
       }
     },
     "notifications": {
@@ -548,7 +586,182 @@
       "categoryChip": "Category: {category}",
       "colTitle": "Document",
       "colAdded": "Added"
+    },
+    "countersignCertificate": {
+      "title": "Countersignature certificate",
+      "signer": "Countersigned by",
+      "signedAt": "Countersigned at (UTC)",
+      "ip": "IP address",
+      "userAgent": "Device",
+      "hash": "SHA-256 of the signed copy countersigned",
+      "reference": "Signature reference",
+      "statement": "The countersigner confirmed they had reviewed the document and the signature above and agreed to countersign it electronically for the company. Thapsus-HR recorded the countersigner, time, IP address, device and a SHA-256 fingerprint of the signed copy they countersigned. Any change to it changes its fingerprint.",
+      "notRecorded": "Not recorded",
+      "viaApprovals": "Approved in the approvals list"
+    },
+    "categoryName": {
+      "general": "General",
+      "policy": "Policy",
+      "health_and_safety": "Health and safety",
+      "licence": "Licence",
+      "contract": "Contract",
+      "offer": "Offer",
+      "letter": "Letter",
+      "signed": "Signed copy",
+      "immigration": "Right to work",
+      "qualification": "Qualification",
+      "background_check": "Background check",
+      "payslip": "Payslip",
+      "other": "Other"
     }
+  },
+  "docView": {
+    "back": "All documents",
+    "download": "Download",
+    "downloadNamed": "Download {title}",
+    "addedOn": "Added {date}",
+    "added": "Added",
+    "details": "Details",
+    "type": "Type",
+    "evidenceType": "Evidence",
+    "person": "About",
+    "issuedOn": "Issued",
+    "issuedOnShort": "Issued {date}",
+    "expiresOn": "Expires",
+    "expiresOnShort": "Expires {date}",
+    "expired": "Expired {date}",
+    "expiring": "Expires {date}",
+    "expiredShort": "Expired",
+    "expiringShort": "Expires soon",
+    "visibility": "Who can see it",
+    "file": "File",
+    "note": "HR note",
+    "vault": "Kept in the vault",
+    "documentRegion": "Document",
+    "toolbar": "Page controls",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pageNumber": "Page number",
+    "ofPages": "of {count}",
+    "pageOf": "Page {page} of {count}",
+    "pageRegion": "{title}, page {page} of {count}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitWidth": "Fit to width",
+    "scrollPage": "Page, scroll to see all of it",
+    "imageAlt": "{title}",
+    "notViewable": "This type of file cannot be shown here. Download it to open it.",
+    "notFound": "This document does not exist or you cannot open it",
+    "signedCopy": "This is the signed copy. {name} signed it on {date}.",
+    "justSigned": "You signed the document.",
+    "openOriginal": "Open the original",
+    "error": {
+      "unsupported": "This browser cannot show the document here. Download it to read it.",
+      "password": "This PDF is protected with a password. Download it to open it.",
+      "failed": "The document could not be shown here. Download it to read it."
+    }
+  },
+  "docAttach": {
+    "type": {
+      "right_to_work": "Right-to-work evidence",
+      "driving_licence": "Driving licence",
+      "contract": "Contract",
+      "qualification": "Qualification or certificate",
+      "background_check": "Background check",
+      "other": "Other document"
+    },
+    "attach": "Attach document",
+    "dialogTitle": "Attach a document to {name}",
+    "dialogBody": "The file is checked and stored in your home region. Right-to-work evidence is kept in the vault, and every view is recorded.",
+    "typeLabel": "Type",
+    "evidenceType": "Kind of evidence",
+    "evidence": {
+      "passport": "Passport",
+      "brp_evisa": "Biometric residence permit or eVisa",
+      "share_code_result": "Share code check result",
+      "birth_certificate": "Birth certificate",
+      "other": "Other evidence"
+    },
+    "vaultHint": "Kept in the vault: only people who may see immigration records can open it.",
+    "title": "Title",
+    "titleHint": "Shown in lists. Leave it blank to use the type.",
+    "issuedOn": "Issue date",
+    "expiresOn": "Expiry date",
+    "expiresHint": "HR is reminded before it expires.",
+    "note": "Note",
+    "noteHint": "Only HR sees the note.",
+    "visibility": "Who can see it",
+    "visibilityHr": "HR only",
+    "visibilityEmployee": "HR and {name}",
+    "sharedShort": "Shared",
+    "drop": "Drag a file here, or choose one",
+    "fileLabel": "File",
+    "acceptedImages": "A PDF or a photo (PNG, JPEG or WebP), up to {size}",
+    "acceptedWord": "A PDF, a photo (PNG, JPEG or WebP) or a Word file, up to {size}",
+    "selected": "{name}, {size}",
+    "remove": "Remove the file",
+    "progressLabel": "Upload progress",
+    "uploading": "Uploading: {percent}%",
+    "attached": "Attached: {title}",
+    "save": "Attach",
+    "tooLarge": "This file is larger than {size}.",
+    "noFile": "Choose a file to attach.",
+    "failed": "The file could not be attached.",
+    "listTitle": "Documents",
+    "evidenceColumn": "Evidence",
+    "evidenceCount_one": "{count} document",
+    "evidenceCount_other": "{count} documents",
+    "rtwAttach": "Attach evidence",
+    "rtwAttachFor": "Attach evidence for {name}"
+  },
+  "docSign": {
+    "policyName": "Countersign signed documents",
+    "signedTitle": "{title} (signed)",
+    "taskSignAgain": "Sign again: {title}",
+    "panelTitle": "Review and sign",
+    "stepsLabel": "Steps",
+    "steps": {
+      "review": "Review",
+      "confirm": "Confirm",
+      "sign": "Sign",
+      "decide": "Decide",
+      "done": "Done"
+    },
+    "stepOf": "Step {n} of {count}: {name}",
+    "reviewBody": "Read the whole document first. Use the page controls to move through it.",
+    "pagesSeen_one": "You have looked at {seen} of {count} page.",
+    "pagesSeen_other": "You have looked at {seen} of {count} pages.",
+    "read": "I have read it",
+    "confirmBody": "Your name, the time, your IP address, your device and a fingerprint of the exact document are recorded with your signature.",
+    "continue": "Continue",
+    "back": "Back",
+    "doneCompleted": "Signed. Your signed copy is ready.",
+    "doneAwaiting": "Signed. It now goes to the company for its countersignature. We will let you know when it is complete.",
+    "awaiting": "You signed this on {date}. It is waiting for the company’s countersignature.",
+    "completed": "Signed and complete on {date}.",
+    "returned": "Returned to you: {reason}",
+    "returnedNoReason": "Returned to you to sign again.",
+    "returnedShort": "Returned to you: read the note and sign again",
+    "requested": "Requested {date}",
+    "signAction": "Sign",
+    "signedOn": "Signed {date}",
+    "signedBy": "Signed by {name} on {date}",
+    "toCountersign": "Waiting for your countersignature",
+    "countersignAction": "Countersign",
+    "waitingList": "Waiting for the company’s countersignature",
+    "countersignTitle": "Countersign",
+    "countersignBody": "{name} signed this on {date}. Review the document, then countersign it for the company or return it.",
+    "fingerprint": "Fingerprint of the signed copy: {hash}",
+    "decision": "Your decision",
+    "approve": "Countersign for the company",
+    "return": "Return to {name}",
+    "countersignConsent": "I have reviewed this document and the signature on it, and I countersign it electronically for the company.",
+    "countersignNow": "Countersign document",
+    "reason": "Why you are returning it",
+    "reasonHint": "This note is shown to {name}.",
+    "returnNow": "Return document",
+    "doneCountersigned": "Countersigned. The document is complete.",
+    "doneReturned": "Returned to {name} with your note."
   },
   "notify": {
     "signatureRequested": "You have a document to sign",
@@ -607,7 +820,15 @@
     "yearEndAvailable": "Your year-end document for {label} is ready",
     "assetAssigned": "Please confirm you received {asset}",
     "reportReady": "A scheduled report is ready. Sign in to download it.",
-    "taskOverdue": "Task overdue: {title}"
+    "taskOverdue": "Task overdue: {title}",
+    "documentShared": "HR shared a document with you: {title}",
+    "attachmentExpiring_one": "{title} for {name} expires in {days} day",
+    "attachmentExpiring_other": "{title} for {name} expires in {days} days",
+    "attachmentExpiresToday": "{title} for {name} expires today",
+    "attachmentExpired": "{title} for {name} has expired",
+    "documentCompleted": "{title} is signed and complete",
+    "documentReturned": "{title} was returned to you. Read the note, then sign again",
+    "payslipReady": "Your payslip for {period:month} is ready"
   },
   "people": {
     "title": "People",
@@ -1202,6 +1423,11 @@
       "timeZone": "Time zone",
       "code": "Code",
       "regionCode": "Region code"
+    },
+    "add": {
+      "legal-entities": "Add a legal entity",
+      "departments": "Add a department",
+      "locations": "Add a location"
     }
   },
   "admin": {
@@ -1237,6 +1463,10 @@
       "time": {
         "title": "Time and attendance",
         "body": "Working-time rules, geofencing and clocking."
+      },
+      "platform": {
+        "title": "Integrations and platform",
+        "body": "API access, webhooks, audit streaming, sandboxes, branding and features."
       }
     },
     "section": {
@@ -1341,7 +1571,9 @@
     },
     "domains": {
       "hint": "For example, fictional-company.example",
-      "verifyLabel": "Verify {domain}"
+      "verifyLabel": "Verify {domain}",
+      "listTitle": "Your domains",
+      "addTitle": "Add a domain"
     },
     "sso": {
       "lead": "Let people sign in with your identity provider. Test a connection before you require it.",
@@ -1417,14 +1649,16 @@
       "mfaTitle": "Two-step verification",
       "mfaBody": "Two-step verification is always required for administrator roles.",
       "trustIdpMfa": "Trust two-step verification done by the identity provider",
-      "trustIdpMfaHint": "People who sign in with single sign-on are not asked again.",
+      "trustIdpMfaHint": "Count a single sign-on as two-step verification only when your identity provider confirms it used more than one factor. Otherwise people also use their own authenticator here.",
       "range": "Between {min} and {max}.",
       "endAllTitle": "Sign everyone out",
       "endAllBody": "Ends every session in the workspace except yours, for example after a suspected compromise.",
       "endAll": "Sign everyone out",
       "endAllConfirm": "Everyone else will need to sign in again on every device.",
       "endAllDone_one": "{count} session has been signed out.",
-      "endAllDone_other": "{count} sessions have been signed out."
+      "endAllDone_other": "{count} sessions have been signed out.",
+      "requireMfaForEveryone": "Require two-step verification for everyone",
+      "requireMfaForEveryoneHint": "Everyone sets up an authenticator app or a passkey the first time they sign in. When this is off, only administrators must. Turning it off asks you to confirm it is you."
     },
     "scim": {
       "lead": "Connect your directory (for example Microsoft Entra ID or Okta) so accounts are created, updated and deactivated automatically.",
@@ -1488,7 +1722,8 @@
         "employee.change": "Changes to employee records",
         "timesheet": "Timesheets",
         "shift.claim": "Open shift claims",
-        "shift.swap": "Shift swaps"
+        "shift.swap": "Shift swaps",
+        "document.countersign": "Countersignatures on signed documents"
       },
       "priority": "Priority",
       "priorityHint": "Lower numbers are checked first.",
@@ -1531,7 +1766,8 @@
         "violations": "Working-time issues",
         "weekStart": "Week",
         "date": "Shift date",
-        "warnings": "Working-time warnings"
+        "warnings": "Working-time warnings",
+        "documentTitle": "Document"
       },
       "conditionText": "{field} {op} {value}",
       "conditionPresent": "{field} is set",
@@ -1959,25 +2195,45 @@
       "changeBySystem": "By Thapsus-HR",
       "changeTarget": "For {name}",
       "action": {
-        "role.assigned": "Role given",
-        "role.revoked": "Role removed",
-        "role.created": "Role created",
-        "role.updated": "Role changed",
-        "role.deleted": "Role deleted",
-        "user.invited": "Person invited",
-        "auth.mfa_reset": "Two-step verification reset",
-        "sso.connection_created": "Single sign-on connection added",
-        "sso.connection_updated": "Single sign-on connection changed",
-        "sso.connection_deleted": "Single sign-on connection removed",
-        "settings.security_updated": "Sign-in policy changed",
-        "api_key.created": "API key created",
-        "api_key.revoked": "API key revoked",
-        "oauth_client.created": "OAuth client created",
-        "scim.token_created": "SCIM token created",
-        "support.grant_created": "Support access granted",
-        "security.sessions_ended": "Sessions ended by Thapsus-HR security",
-        "security.api_key_suspended": "API key suspended by Thapsus-HR security",
-        "security.api_key_restored": "API key restored"
+        "role": {
+          "assigned": "Role given",
+          "revoked": "Role removed",
+          "created": "Role created",
+          "updated": "Role changed",
+          "deleted": "Role deleted"
+        },
+        "user": {
+          "invited": "Person invited"
+        },
+        "auth": {
+          "mfa_reset": "Two-step verification reset"
+        },
+        "sso": {
+          "connection_created": "Single sign-on connection added",
+          "connection_updated": "Single sign-on connection changed",
+          "connection_deleted": "Single sign-on connection removed"
+        },
+        "settings": {
+          "security_updated": "Sign-in policy changed"
+        },
+        "api_key": {
+          "created": "API key created",
+          "revoked": "API key revoked"
+        },
+        "oauth_client": {
+          "created": "OAuth client created"
+        },
+        "scim": {
+          "token_created": "SCIM token created"
+        },
+        "support": {
+          "grant_created": "Support access granted"
+        },
+        "security": {
+          "sessions_ended": "Sessions ended by Thapsus-HR security",
+          "api_key_suspended": "API key suspended by Thapsus-HR security",
+          "api_key_restored": "API key restored"
+        }
       },
       "mfa": "Two-step verification",
       "mfaUsers": "Users with it: {withMfa} of {users}",
@@ -2693,7 +2949,8 @@
       "rtwCheck": "Right-to-work check before the first day: {name}",
       "i9Reverify": "Form I-9 reverification: {name}",
       "renew": "Renew {requirement}: {name}",
-      "missing": "Record {requirement}: {name}"
+      "missing": "Record {requirement}: {name}",
+      "renewDocument": "Renew {title}: {name}"
     },
     "coverage": {
       "title": "Statutory leave where you employ people",
@@ -3092,12 +3349,13 @@
       "lawChanges": "Law changes",
       "audit": "Staff audit trail",
       "settings": "Contact channels",
+      "access": "Access",
       "performance": "Performance",
       "security": "Security"
     },
     "signin": {
       "title": "Staff sign-in",
-      "lead": "For Thapsus staff only. Every action is recorded.",
+      "lead": "Thapsus staff only. Sign in with your passkey or security key.",
       "totpLead": "Enter the six-digit code from your authenticator app.",
       "email": "Work email",
       "password": "Password",
@@ -3105,7 +3363,9 @@
       "codeHint": "Six digits. Codes change every 30 seconds.",
       "continue": "Continue",
       "verify": "Verify and sign in",
-      "note": "Multi-factor authentication is required for every staff session."
+      "note": "There are no staff passwords. New staff get a one-time enrolment link from an operator.",
+      "passkey": "Sign in with a passkey or security key",
+      "failed": "That key was not accepted. Try again, or ask an operator for a new enrolment link."
     },
     "overview": {
       "title": "Overview",
@@ -3429,6 +3689,67 @@
       "addChannel": "Add channel",
       "save": "Save channels",
       "saved": "Contact channels saved"
+    },
+    "enrol": {
+      "title": "Register your security key",
+      "lead": "This one-time link registers the passkey or security key you will sign in with. It expires 2 hours after it was issued.",
+      "keyName": "Name for this key (optional)",
+      "submit": "Register key",
+      "invalid": "This enrolment link has expired or was already used. Ask an operator for a new one.",
+      "missing": "Open the enrolment link exactly as you received it."
+    },
+    "elevation": {
+      "title": "Access",
+      "lead": "Nobody holds standing access to super-admin actions, rule publishing or a customer's support grant. Ask for time-boxed access with a reason; another staff member must approve it.",
+      "banner": "You have no active super-admin access. Ask for it on the Access page; another super admin must approve it.",
+      "openAccess": "Go to Access",
+      "requestTitle": "Ask for access",
+      "scope": "What for",
+      "scopes": {
+        "super_admin": "Super-admin actions",
+        "rules_publish": "Publishing rules and law changes",
+        "support_grant": "Using a customer's support grant"
+      },
+      "reason": "Reason",
+      "reasonHint": "At least 10 characters, for example the ticket or incident it is for.",
+      "minutes": "For how long",
+      "tenant": "Workspace ID (optional)",
+      "tenantHint": "Limit the access to one customer workspace.",
+      "submit": "Ask for approval",
+      "requested": "Request sent. Another staff member must approve it.",
+      "toApproveTitle": "Waiting for your approval",
+      "noneToApprove": "Nothing is waiting for your approval.",
+      "mineTitle": "Your access",
+      "noneMine": "You have not asked for access yet.",
+      "approve": "Approve",
+      "approveLabel": "Approve {scope} for {email}",
+      "deny": "Deny",
+      "denyLabel": "Deny {scope} for {email}",
+      "revoke": "End now",
+      "approved": "Approved. The access starts now.",
+      "denied": "Request denied.",
+      "revoked": "Access ended.",
+      "requestedBy": "{email} · {when}",
+      "until": "Until {when}",
+      "status": {
+        "pending": "Waiting for approval",
+        "active": "Active",
+        "expired": "Expired",
+        "denied": "Denied",
+        "revoked": "Ended"
+      },
+      "problem": {
+        "ownRequest": "You cannot approve your own request.",
+        "scopeNotForYourRole": "Your role cannot ask for or approve this kind of access.",
+        "elevationRequired": "This needs time-boxed access approved by another staff member. Ask for it on the Access page."
+      },
+      "duration_one": "{count} minute",
+      "duration_other": "{count} minutes",
+      "hours_one": "{count} hour",
+      "hours_other": "{count} hours"
+    },
+    "stepUp": {
+      "failed": "Your key was not accepted, so nothing was changed."
     },
     "metrics": {
       "title": "Overview",
@@ -3813,10 +4134,12 @@
         "elevationsHint": "Just-in-time elevations asked for, approved, denied and revoked in the last 30 days.",
         "noElevations": "No elevations in 30 days.",
         "elevation": {
-          "staff.elevation_requested": "Asked for elevation",
-          "staff.elevation_approved": "Elevation approved",
-          "staff.elevation_denied": "Elevation denied",
-          "staff.elevation_revoked": "Elevation revoked"
+          "staff": {
+            "elevation_requested": "Asked for elevation",
+            "elevation_approved": "Elevation approved",
+            "elevation_denied": "Elevation denied",
+            "elevation_revoked": "Elevation revoked"
+          }
         },
         "elevationScope": "Scope: {scope}",
         "pipeline": "Detection pipeline",
@@ -4704,6 +5027,70 @@
       "discarded": "Discarded"
     }
   },
+  "payslipView": {
+    "back": "All payslips",
+    "titleFor": "Payslip: {name}",
+    "payslip": "Payslip",
+    "pdfTitle": "Payslip, {employer}, {date}",
+    "summary": "Summary",
+    "netPay": "Net pay",
+    "grossPay": "Gross pay",
+    "totalDeductions": "Total deductions",
+    "payDate": "Pay date",
+    "period": "Pay period",
+    "periodNumber": "Period",
+    "frequency": "Pay frequency",
+    "frequencies": {
+      "weekly": "Weekly",
+      "fortnightly": "Fortnightly",
+      "four_weekly": "Four-weekly",
+      "semi_monthly": "Twice a month",
+      "monthly": "Monthly",
+      "other": "Other"
+    },
+    "paymentMethod": "Paid by",
+    "methods": {
+      "bank_transfer": "Bank transfer",
+      "cheque": "Cheque",
+      "cash": "Cash",
+      "other": "Other"
+    },
+    "taxCode": "Tax code",
+    "nationalId": "National ID number (masked)",
+    "employer": "Employer",
+    "employerReference": "Employer reference",
+    "employee": "Employee",
+    "employeeNumber": "Employee number",
+    "jobTitle": "Job title",
+    "department": "Department",
+    "parties": "Employer and employee",
+    "payments": "Payments",
+    "deductions": "Deductions",
+    "employerContributions": "Paid by your employer",
+    "ytd": "Year to date",
+    "ytdFor": "Year to date ({year})",
+    "notes": "From the payroll provider",
+    "issuedBy": "Issued by {provider}",
+    "notCalculated": "Every figure comes from the payroll provider. Thapsus-HR does not calculate pay, tax or deductions.",
+    "sampleMarker": "Sample data",
+    "sampleBanner": "Sample data: illustrative figures from a fictional payroll provider for testing. They are not real pay and not correct tax.",
+    "downloadPdf": "Download PDF",
+    "downloadProvider": "Download the provider’s PDF",
+    "print": "Print",
+    "providerPdf": "The payroll provider’s PDF",
+    "showProviderPdf": "Show the provider’s PDF",
+    "notFound": "This payslip does not exist or you cannot open it",
+    "paidOn": "Paid {date}",
+    "year": "Year",
+    "ytdTitle": "Year to date",
+    "ytdAsOf": "As on your payslip of {date} (tax year {year}), from {provider}.",
+    "yearEnd": "Year-end documents",
+    "statementsFile": "Statements from the payroll provider (optional)",
+    "statementsHint": "A JSON file in the statement format (docs/integrations.md). Each statement is matched by employee number; a PDF for the same person is attached to it.",
+    "quantityAtRate": "{quantity} at {rate}",
+    "quantityOnly": "Quantity: {quantity}",
+    "publishedOn": "Published {date}"
+  },
   "integrations": {
     "title": "Integrations",
     "intro": "Create, license and block accounts in Microsoft 365 or Google Workspace when people join and leave. Your administrator grants consent, you choose the licences and groups, and every step can be previewed first.",
@@ -5411,7 +5798,8 @@
       "truncated": "Only the first rows are shown here. Download the report to get every row.",
       "notRun": "Run the report to see the results",
       "notRunBody": "Choose the options above, then run the report. You can also download it or save it to run again later.",
-      "runDetails": "Export details"
+      "runDetails": "Export details",
+      "moreRows": "Show more rows"
     }
   },
   "ess": {
@@ -5521,7 +5909,7 @@
   },
   "onboarding": {
     "inviteSubject": "Your sign-in for {company} on Thapsus-HR",
-    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 7 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
+    "inviteBody": "{company} has set up your sign-in for Thapsus-HR, where you can sign your documents and get ready for your first day.\n\nUse this link to sign in. It can be used once and expires in 3 days:\n\n{link}\n\nIf it has expired, ask your HR team for a new invitation.",
     "title": "Onboarding",
     "heading": "Welcome to {company}, {name}",
     "startsOn": "You start on {date}.",
@@ -5916,7 +6304,7 @@
       "scopeSummary": "{type}: {values}",
       "signIn": {
         "title": "Sign-in and security",
-        "body": "Sign this person out on every device, or reset two-step verification if they have lost their authenticator.",
+        "body": "Sign this person out, send them a link to choose a new password, or reset two-step verification if they lost their authenticator.",
         "endSessions": "Sign out everywhere",
         "endSessionsTitle": "Sign {name} out everywhere?",
         "endSessionsBody": "They will need to sign in again on every device.",
@@ -5925,12 +6313,31 @@
         "resetMfaTitle": "Reset two-step verification for {name}?",
         "resetMfaBody": "Only do this after you have confirmed who the person is, in the same way as when they joined (for example in person or on a video call with ID). Their authenticator app and passkeys are removed, they are signed out everywhere and told by email, and they set up a new second factor at their next sign-in.",
         "resetMfaConfirm": "I have confirmed who they are. Reset it",
-        "mfaReset": "Two-step verification has been reset."
+        "mfaReset": "Two-step verification has been reset.",
+        "whoCan": "Who can do this: people whose company-wide role includes managing settings and every permission this person has, so only an owner can help another owner. You confirm it is you first and can never do it for yourself. Every action is recorded in the audit log, and the person is told by email when their password or two-step verification is reset.",
+        "sendReset": "Send password reset link",
+        "sendResetTitle": "Send {name} a password reset link?",
+        "sendResetBody": "They get an email with a link to choose a new password. It works once for 24 hours. You never see or set the password, and their two-step verification stays as it is.",
+        "sendResetConfirm": "Send link",
+        "resetSent": "Password reset link sent.",
+        "unlinkSso": "Unlink single sign-on",
+        "unlinkSsoTitle": "Unlink {name} from single sign-on?",
+        "unlinkSsoBody": "Do this only when your identity provider replaced their account. Their next single sign-on links the new account.",
+        "unlinked": "Single sign-on unlinked.",
+        "linkedTo": "Linked to {connection}",
+        "endSessionsLead": "Ends every session on every device.",
+        "sendResetLead": "Emails a one-time link to choose a new password. You never see it.",
+        "resetMfaLead": "Removes a lost authenticator after you confirm who they are."
       },
       "list": {
         "count_one": "{count} person",
         "count_other": "{count} people",
-        "countMore": "First {count} shown"
+        "countMore": "First {count} shown",
+        "title": "Everyone who can sign in"
+      },
+      "problem": {
+        "ownAccount": "You cannot do this for your own account.",
+        "companyWideSettingsRequired": "This needs a company-wide role that manages settings."
       }
     },
     "errors": {
@@ -6198,7 +6605,8 @@
       "related": {
         "leave_request": "Open the leave request",
         "timesheet": "Open the timesheet",
-        "employee": "Open the profile"
+        "employee": "Open the profile",
+        "document": "Open the document to countersign"
       },
       "forName": "for {name}"
     },

@@ -7,8 +7,8 @@ import { Button, Card, CardTitle, Field, ListItem, ListSection, Skeleton, Textar
 import { formatDateTime, type Locale } from '@thapsus/core/i18n';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { PageTitle, selectClass } from '../../../ui';
-import { SecurityNav, SeverityBadge, securityCall, useRun } from '../../nav';
+import { PageTitle, selectClass, useStaffApi } from '../../../ui';
+import { SecurityNav, SeverityBadge, useRun } from '../../nav';
 import type { IncidentRow } from '../page';
 
 interface Detail {
@@ -63,6 +63,8 @@ export default function IncidentPage() {
   const d = useApi<Detail>(`/v1/backoffice/security/incidents/${id}`);
   const analysts = useApi<Array<{ id: string; displayName: string }>>('/v1/backoffice/security/analysts');
   const { busy, run } = useRun();
+  // re-authentication with the staff key when the API asks for it (ADR-0173)
+  const securityCall = useStaffApi();
   const [status, setStatus] = React.useState<string | null>(null);
   const [assignee, setAssignee] = React.useState<string | null>(null);
   const [note, setNote] = React.useState('');

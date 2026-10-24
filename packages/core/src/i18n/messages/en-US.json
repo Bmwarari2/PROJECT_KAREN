@@ -3,7 +3,8 @@
     "organisation": "Organization"
   },
   "errors": {
-    "ssoRequired": "Your organization requires single sign-on."
+    "ssoRequired": "Your organization requires single sign-on.",
+    "mfaEnrollmentRequired": "Set up two-step verification before continuing."
   },
   "marketing": {
     "features": {
@@ -28,12 +29,21 @@
     }
   },
   "orgSettings": {
-    "title": "Organization"
+    "title": "Organization",
+    "add": {
+      "legal-entities": "Add a legal entity",
+      "departments": "Add a department",
+      "locations": "Add a location"
+    }
   },
   "admin": {
     "group": {
       "workspace": {
         "body": "Your organization’s structure."
+      },
+      "platform": {
+        "title": "Integrations and platform",
+        "body": "API access, webhooks, audit streaming, sandboxes, branding and features."
       }
     },
     "section": {
@@ -91,6 +101,16 @@
       "confirm": "Record departure",
       "done": "Departure recorded for {name}. Last working day: {date}."
     },
+    "policy": {
+      "lead": "Rules for every sign-in to this workspace. Administrators must always use two-step verification.",
+      "requireMfaForEveryone": "Require two-step verification for everyone",
+      "requireMfaForEveryoneHint": "Everyone sets up an authenticator app or a passkey the first time they sign in. When this is off, only administrators must. Turning it off asks you to confirm it is you.",
+      "trustIdpMfaHint": "Count a single sign-on as two-step verification only when your identity provider confirms it used more than one factor. Otherwise people also use their own authenticator here."
+    },
+    "domains": {
+      "listTitle": "Your domains",
+      "addTitle": "Add a domain"
+    },
     "securityCentre": {
       "title": "Security center"
     }
@@ -132,7 +152,8 @@
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned",
     "supportReply": "Thapsus-HR support replied to ticket {reference}",
-    "payslipAvailable": "Your pay stub for {label} is ready"
+    "payslipAvailable": "Your pay stub for {label} is ready",
+    "payslipReady": "Your pay stub for {period:month} is ready"
   },
   "platform": {
     "errors": {
@@ -199,6 +220,10 @@
     "security": {
       "sessions": {
         "body": "These are the devices and browsers signed in to your account. Sign out of any you do not recognize as yours."
+      },
+      "setupRequired": "Set up two-step verification to continue. Your workspace requires it.",
+      "password": {
+        "viaLinkBody": "You signed in with an emailed link, so you can choose a new password without your current one for the next few minutes. Every other session is signed out."
       }
     },
     "ws": {
@@ -585,8 +610,7 @@
       "super_admin": "Super admin",
       "support": "Support",
       "rules_editor": "Rules editor",
-      "billing": "Billing",
-      "security_analyst": "Security analyst"
+      "billing": "Billing"
     },
     "nav": {
       "label": "Back office",
@@ -599,12 +623,11 @@
       "lawChanges": "Law changes",
       "audit": "Staff audit trail",
       "settings": "Contact channels",
-      "performance": "Performance",
-      "security": "Security"
+      "access": "Access"
     },
     "signin": {
       "title": "Staff sign-in",
-      "lead": "For Thapsus staff only. Every action is recorded.",
+      "lead": "Thapsus staff only. Sign in with your passkey or security key.",
       "totpLead": "Enter the six-digit code from your authenticator app.",
       "email": "Work email",
       "password": "Password",
@@ -612,7 +635,9 @@
       "codeHint": "Six digits. Codes change every 30 seconds.",
       "continue": "Continue",
       "verify": "Verify and sign in",
-      "note": "Multi-factor authentication is required for every staff session."
+      "note": "There are no staff passwords. New staff get a one-time enrolment link from an operator.",
+      "passkey": "Sign in with a passkey or security key",
+      "failed": "That key was not accepted. Try again, or ask an operator for a new enrolment link."
     },
     "overview": {
       "title": "Overview",
@@ -642,71 +667,11 @@
       "storage": "Storage",
       "contract": "Contract",
       "mb": "{value} MB",
-      "lead": "Every company that has signed up. This region's rows show usage totals and a health signal; other regions show what the global directory holds.",
-      "filters": "Filter companies",
-      "filterRegion": "Region",
-      "filterPlan": "Plan",
-      "filterStatus": "Status",
-      "filterTrial": "Trial",
-      "filterHealth": "Health",
-      "sortBy": "Sort by",
-      "any": "Any",
-      "allRegionsOption": "All regions",
-      "thisRegionOption": "{region} (this back office)",
-      "planNone": "No plan yet",
-      "planTrial": "Free trial",
-      "statusAll": "Open workspaces",
       "statusCancelled": "Canceled",
-      "trialActive": "On a trial",
-      "trialEnding": "Ending within 14 days",
-      "trialEnded": "Trial ended",
-      "sort": {
-        "slug": "Name",
-        "created": "Newest first",
-        "activity": "Recently active",
-        "health": "Needs attention first"
-      },
-      "count_one": "{count} company",
-      "count_other": "{count} companies",
-      "limitNote": "Showing the first 500. Narrow the search to find others.",
-      "none": "No company matches these filters.",
-      "created": "Joined {date}",
-      "employees_one": "{count} employee",
-      "employees_other": "{count} employees",
-      "activeThisWeek_one": "{count} active this week",
-      "activeThisWeek_other": "{count} active this week",
-      "lastActive": "Last active {date}",
-      "neverActive": "No sign-ins yet",
-      "noSnapshot": "No usage snapshot yet",
-      "elsewhere": "Opens the {region} back office",
       "health": {
-        "label": "Health: {level}",
-        "level": {
-          "good": "Healthy",
-          "watch": "Watch",
-          "risk": "At risk",
-          "unknown": "No data yet"
-        },
         "reason": {
-          "closing": "Workspace closing",
-          "suspended": "Workspace suspended",
-          "cancelled": "Subscription canceled",
-          "paymentOverdue": "Payment overdue",
-          "inactive": "No sign-ins for 30 days",
-          "trialEnded": "Trial ended without a plan",
-          "awaitingPayment": "Awaiting payment details",
-          "trialEndingSoon": "Trial ends within 14 days",
-          "quiet": "No sign-ins for 14 days",
-          "supportOverdue": "Overdue support tickets",
-          "noSnapshot": "No usage snapshot yet"
+          "cancelled": "Subscription canceled"
         }
-      },
-      "regionStatus": {
-        "active": "Active",
-        "moving": "Moving database",
-        "suspended": "Suspended",
-        "closing": "Closing",
-        "deleted": "Deleted"
       }
     },
     "tenant": {
@@ -931,170 +896,69 @@
       "save": "Save channels",
       "saved": "Contact channels saved"
     },
-    "metrics": {
-      "title": "Overview",
-      "lead": "How Thapsus-HR is doing: companies, trials, revenue, usage and support. Totals only — no customer or employee details.",
-      "regionsLabel": "Region",
-      "allRegions": "All regions",
-      "regionShort": {
-        "uk": "UK",
-        "eu": "EU",
-        "us": "US"
-      },
-      "thisCell": "{region} · this back office",
-      "sections": {
-        "companies": "Companies",
-        "revenue": "Revenue",
-        "usage": "Usage",
-        "service": "Support and incidents"
-      },
-      "companies": "Companies",
-      "companiesHint_one": "{count} new in the last 30 days",
-      "companiesHint_other": "{count} new in the last 30 days",
-      "new7d": "New this week",
-      "new7dHint": "Signed up in the last 7 days",
-      "new30d": "New in 30 days",
-      "trialsEnding": "Trials ending soon",
-      "trialsEndingHint_one": "In the next {count} day · {active} on a trial",
-      "trialsEndingHint_other": "In the next {count} days · {active} on a trial",
-      "conversion": "Trial to paid",
-      "conversionHint": "Ended trials: {ended} · became paying: {converted}",
-      "conversionNone": "No trial has ended yet",
-      "cancelled": "Canceled",
-      "cancelledHint_one": "{count} in the last 30 days",
-      "cancelledHint_other": "{count} in the last 30 days",
-      "signupsChart": "Sign-ups by week",
-      "signupsChartHint": "The last 12 weeks; each week starts on Monday.",
-      "signupsChartLabel": "Sign-ups per week from {from} to {to}",
-      "signupsRegionsChart": "Sign-ups by week and region",
-      "signupsSeries": "Sign-ups",
-      "week": "Week starting",
-      "showTable": "Show as a table",
-      "byPlan": "Companies by plan",
-      "byPlanHint": "From the latest usage snapshot.",
-      "byBillingStatus": "Billing status",
-      "byRegion": "Companies by region",
-      "byStatus": "Workspace status",
-      "noData": "No companies yet.",
-      "plan": {
-        "trial": "Free trial",
-        "none": "No plan yet"
-      },
-      "billingStatusNone": "Not billed yet",
-      "tenantStatus": {
-        "active": "Active",
-        "moving": "Moving database",
-        "suspended": "Suspended",
-        "closing": "Closing",
-        "deleted": "Deleted"
-      },
-      "mrrHint": "{arr} a year",
-      "noRevenue": "No paying customers yet.",
-      "revenueHint": "Live paid subscriptions and enterprise contracts, priced from the billing configuration. Each currency is shown on its own.",
-      "activeUsers7d": "Active users this week",
-      "activeUsers7dHint": "Signed in during the last 7 days",
-      "activeUsers30d": "Active users this month",
-      "activeUsers30dHint_one": "Of {count} user account",
-      "activeUsers30dHint_other": "Of {count} user accounts",
-      "employees": "Employees under management",
-      "employeesHint": "Active employee records",
-      "mfaAdoption": "Two-step verification",
-      "mfaAdoptionHint": "Users with it: {withMfa} of {users}",
-      "openTickets": "Open support tickets",
-      "openTicketsHint": "{atRisk} at risk · {breached} overdue",
-      "incidents": "Open incidents",
-      "incidentsHint": "On this region's status page",
-      "renewals": "Contract renewals due",
-      "renewalsHint_one": "Of {count} active contract",
-      "renewalsHint_other": "Of {count} active contracts",
-      "snapshot": "Usage and billing figures come from the daily snapshot, last updated {at}.",
-      "snapshotMissing_one": "{count} company has no snapshot yet.",
-      "snapshotMissing_other": "{count} companies have no snapshot yet.",
-      "elsewhere": "Revenue, usage and support figures for {region} stay in that region. Open its back office to see them.",
-      "openRegion": "Open the {region} back office",
-      "globalNote": "Counts from the global directory: region, plan, status and sign-up date only.",
-      "privacy": "Customer personal data is only visible through support access that the customer grants, and every access is logged in their audit log and in the staff trail.",
-      "other": "Other",
-      "mrrIn": "Monthly recurring revenue ({currency})"
+    "enrol": {
+      "title": "Register your security key",
+      "lead": "This one-time link registers the passkey or security key you will sign in with. It expires 2 hours after it was issued.",
+      "keyName": "Name for this key (optional)",
+      "submit": "Register key",
+      "invalid": "This enrolment link has expired or was already used. Ask an operator for a new one.",
+      "missing": "Open the enrolment link exactly as you received it."
     },
-    "performance": {
-      "title": "Performance",
-      "lead": "How this region's service is running: requests, server errors and response times by area of the product, background queues and the database. Counts only; times in UTC.",
-      "windowLabel": "Time range",
-      "window": {
-        "24h": "Last 24 hours",
-        "7d": "Last 7 days"
+    "elevation": {
+      "title": "Access",
+      "lead": "Nobody holds standing access to super-admin actions, rule publishing or a customer's support grant. Ask for time-boxed access with a reason; another staff member must approve it.",
+      "banner": "You have no active super-admin access. Ask for it on the Access page; another super admin must approve it.",
+      "openAccess": "Go to Access",
+      "requestTitle": "Ask for access",
+      "scope": "What for",
+      "scopes": {
+        "super_admin": "Super-admin actions",
+        "rules_publish": "Publishing rules and law changes",
+        "support_grant": "Using a customer's support grant"
       },
-      "requests": "Requests",
-      "requestsHint": "Answered by the API in this region",
-      "errors": "Server errors",
-      "errorsHint": "{rate} of requests",
-      "errorsNone": "No requests yet",
-      "p95": "Response time (95th percentile)",
-      "p95Hint": "Half of requests within {p50}",
-      "oldestJob": "Oldest waiting job",
-      "oldestJobHint_one": "{count} job due now",
-      "oldestJobHint_other": "{count} jobs due now",
-      "noQueueSample": "No queue sample yet",
-      "databaseSize": "Database size",
-      "databaseSizeHint_one": "Across {count} database",
-      "databaseSizeHint_other": "Across {count} databases",
-      "worker": "Background worker",
-      "workerBeat": "Last seen {at}",
-      "workerNone": "Not seen yet",
-      "requestsChart": "Requests",
-      "requestsChartLabel": "Requests per {unit} from {from} to {to}",
-      "errorsChart": "Server errors",
-      "errorsChartLabel": "Server errors per {unit} from {from} to {to}",
-      "latencyChart": "Response time, 95th percentile",
-      "latencyChartLabel": "95th percentile response time in milliseconds per {unit} from {from} to {to}",
-      "queueChart": "Jobs due",
-      "queueChartLabel": "Most jobs due at once per {unit} from {from} to {to}",
-      "unit": {
-        "hour": "hour",
-        "day": "day"
+      "reason": "Reason",
+      "reasonHint": "At least 10 characters, for example the ticket or incident it is for.",
+      "minutes": "For how long",
+      "tenant": "Workspace ID (optional)",
+      "tenantHint": "Limit the access to one customer workspace.",
+      "submit": "Ask for approval",
+      "requested": "Request sent. Another staff member must approve it.",
+      "toApproveTitle": "Waiting for your approval",
+      "noneToApprove": "Nothing is waiting for your approval.",
+      "mineTitle": "Your access",
+      "noneMine": "You have not asked for access yet.",
+      "approve": "Approve",
+      "approveLabel": "Approve {scope} for {email}",
+      "deny": "Deny",
+      "denyLabel": "Deny {scope} for {email}",
+      "revoke": "End now",
+      "approved": "Approved. The access starts now.",
+      "denied": "Request denied.",
+      "revoked": "Access ended.",
+      "requestedBy": "{email} · {when}",
+      "until": "Until {when}",
+      "status": {
+        "pending": "Waiting for approval",
+        "active": "Active",
+        "expired": "Expired",
+        "denied": "Denied",
+        "revoked": "Ended"
       },
-      "slot": {
-        "hour": "Hour starting",
-        "day": "Day"
+      "problem": {
+        "ownRequest": "You cannot approve your own request.",
+        "scopeNotForYourRole": "Your role cannot ask for or approve this kind of access.",
+        "elevationRequired": "This needs time-boxed access approved by another staff member. Ask for it on the Access page."
       },
-      "showTable": "Show as a table",
-      "noTraffic": "No requests in this time range yet.",
-      "series": {
-        "requests": "Requests",
-        "errors": "Server errors",
-        "p95": "Milliseconds",
-        "jobs": "Jobs due"
-      },
-      "routes": "By area of the product",
-      "routesHint": "Grouped by the first part of the API path. No identifiers or addresses are recorded.",
-      "routeRequests_one": "{count} request",
-      "routeRequests_other": "{count} requests",
-      "routeErrors_one": "{count} server error",
-      "routeErrors_other": "{count} server errors",
-      "routeClientErrors_one": "{count} refused",
-      "routeClientErrors_other": "{count} refused",
-      "routeLatency": "Typical {p50} · slowest 5% above {p95}",
-      "noLatency": "No timings",
-      "queues": "Background queues",
-      "queuesHint": "Sampled by the worker once a minute for every database of this region.",
-      "database": "Database: {key}",
-      "queueLine": "Events waiting: {outbox} · jobs queued: {queued}, due: {due}, running: {running}",
-      "failedLine": "Failed jobs: {hour} in the last hour, {day} in 24 hours",
-      "oldestLine": "Oldest due job: {age}",
-      "noneDue": "Nothing due",
-      "incidents": "Incidents and maintenance",
-      "incidentsHint": "Posted on this region's status page.",
-      "noIncidents": "No incidents in this time range.",
-      "incidentLine": "{status} · started {at}",
-      "resolved": "Resolved {at}",
-      "manage": "Status page",
-      "impact": {
-        "minor": "Minor",
-        "major": "Major",
-        "critical": "Critical",
-        "maintenance": "Maintenance"
-      }
+      "duration_one": "{count} minute",
+      "duration_other": "{count} minutes",
+      "hours_one": "{count} hour",
+      "hours_other": "{count} hours"
+    },
+    "stepUp": {
+      "failed": "Your key was not accepted, so nothing was changed."
+    },
+    "metrics": {
+      "cancelled": "Canceled"
     }
   },
   "privacy": {
@@ -1205,7 +1069,8 @@
     "ui": {
       "noChart": {
         "list": "Choose Summarize and group the rows to see a chart."
-      }
+      },
+      "moreRows": "Show more rows"
     }
   },
   "ess": {
@@ -1263,7 +1128,31 @@
       "costCentre": "Cost center"
     },
     "users": {
-      "noScopeValues": "There is nothing to choose yet. Add them under Organization structure."
+      "noScopeValues": "There is nothing to choose yet. Add them under Organization structure.",
+      "signIn": {
+        "whoCan": "Who can do this: people whose company-wide role includes managing settings and every permission this person has, so only an owner can help another owner. You confirm it is you first and can never do it for yourself. Every action is recorded in the audit log, and the person is told by email when their password or two-step verification is reset.",
+        "sendReset": "Send password reset link",
+        "sendResetTitle": "Send {name} a password reset link?",
+        "sendResetBody": "They get an email with a link to choose a new password. It works once for 24 hours. You never see or set the password, and their two-step verification stays as it is.",
+        "sendResetConfirm": "Send link",
+        "resetSent": "Password reset link sent.",
+        "unlinkSso": "Unlink single sign-on",
+        "unlinkSsoTitle": "Unlink {name} from single sign-on?",
+        "unlinkSsoBody": "Do this only when your identity provider replaced their account. Their next single sign-on links the new account.",
+        "unlinked": "Single sign-on unlinked.",
+        "linkedTo": "Linked to {connection}",
+        "body": "Sign this person out, send them a link to choose a new password, or reset two-step verification if they lost their authenticator.",
+        "endSessionsLead": "Ends every session on every device.",
+        "sendResetLead": "Emails a one-time link to choose a new password. You never see it.",
+        "resetMfaLead": "Removes a lost authenticator after you confirm who they are."
+      },
+      "problem": {
+        "ownAccount": "You cannot do this for your own account.",
+        "companyWideSettingsRequired": "This needs a company-wide role that manages settings."
+      },
+      "list": {
+        "title": "Everyone who can sign in"
+      }
     }
   },
   "dashboard": {
@@ -1276,6 +1165,40 @@
     "org": {
       "titleCompany": "Your organization"
     }
+  },
+  "docAttach": {
+    "type": {
+      "right_to_work": "Work authorization evidence",
+      "driving_licence": "Driver’s license"
+    },
+    "evidence": {
+      "brp_evisa": "Residence permit or visa",
+      "share_code_result": "Online status check result"
+    },
+    "vaultHint": "Kept in the vault: only people who may see work authorization records can open it."
+  },
+  "documents": {
+    "categoryName": {
+      "licence": "License",
+      "immigration": "Work authorization"
+    }
+  },
+  "payslipView": {
+    "back": "All pay stubs",
+    "titleFor": "Pay stub: {name}",
+    "payslip": "Pay stub",
+    "pdfTitle": "Pay stub, {employer}, {date}",
+    "frequencies": {
+      "fortnightly": "Every two weeks",
+      "semi_monthly": "Semi-monthly"
+    },
+    "methods": {
+      "bank_transfer": "Direct deposit",
+      "cheque": "Check"
+    },
+    "taxCode": "Filing status",
+    "notFound": "This pay stub does not exist or you cannot open it",
+    "ytdAsOf": "As on your pay stub of {date} (tax year {year}), from {provider}."
   },
   "actionable": {
     "task": {
@@ -1293,6 +1216,47 @@
     },
     "support": {
       "noHr": "Ask an administrator in your organization for help."
+    }
+  },
+  "auth": {
+    "passwordResetSubject": "Reset your Thapsus-HR password",
+    "passwordResetBody": "Someone asked to reset the password for your Thapsus-HR account. Use this link to choose a new one. It works once and expires in 30 minutes:\n\n{link}\n\nThe link does not sign you in. If you use two-step verification, you will still need it when you sign in.\n\nIf you did not ask for this, you can ignore this email. Your password has not changed.",
+    "passwordResetByAdminSubject": "Set a new password for Thapsus-HR",
+    "passwordResetByAdminBody": "An administrator at {company} sent you a link to set a new password for your Thapsus-HR account. They cannot see or choose your password. The link works once and expires in 24 hours:\n\n{link}\n\nThe link does not sign you in, and your two-step verification stays as it is.\n\nIf you did not expect this, contact your administrator.",
+    "passwordChangedSubject": "Your Thapsus-HR password was changed",
+    "passwordChangedBody": "The password for your Thapsus-HR account was just changed, and you have been signed out on every device. Sign in with your new password here:\n\n{link}\n\nIf you did not do this, reset your password straight away and tell your administrator.",
+    "signIn": {
+      "forgotPassword": "Forgot your password?"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "lead": "Enter your workspace and your work email. If you have an account, we will email you a link to choose a new password.",
+      "submit": "Email me a reset link",
+      "sentTitle": "Check your email",
+      "sent": "If {email} has an account in this workspace, a reset link is on its way. It works once and expires in 30 minutes. If it does not arrive, check your spam folder or ask your administrator to send one.",
+      "ssoRequired": "Your workspace signs in with single sign-on, so there is no password to reset here. Use your organization's sign-in instead.",
+      "backToSignIn": "Back to sign in",
+      "needWorkspaceAndEmail": "Enter your workspace and email."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "lead": "Your new password replaces the old one and signs you out on every device.",
+      "newPassword": "New password",
+      "hint": "At least 12 characters. Avoid common passwords and your own or your company’s name.",
+      "submit": "Save new password",
+      "doneTitle": "Password changed",
+      "done": "Your password has been changed and you have been signed out everywhere. Sign in with your new password.",
+      "mfaNote": "If you use two-step verification, you will still need it when you sign in.",
+      "signIn": "Sign in",
+      "invalidTitle": "This link no longer works",
+      "invalid": "Reset links work once and expire after 30 minutes (24 hours when an administrator sent them). Ask for a new one.",
+      "requestNew": "Ask for a new link",
+      "problem": {
+        "tooShort": "Use at least 12 characters.",
+        "tooLong": "Use 128 characters or fewer.",
+        "tooCommon": "That password is too common. Choose one that is harder to guess.",
+        "contextSpecific": "Do not use your name, your email address, your company’s name or the product name in your password."
+      }
     }
   },
   "securityAlerts": {

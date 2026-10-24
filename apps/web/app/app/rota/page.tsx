@@ -15,7 +15,6 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
   Dialog,
   DialogContent,
   EmptyState,
@@ -27,6 +26,7 @@ import {
   TabsList,
   TabsTrigger,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { addDays, dayOfWeek } from '@thapsus/core/time';
 import { formatDate, formatNumber } from '@thapsus/core/i18n';
@@ -676,153 +676,159 @@ function MyRota({ week }: { week: string }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
-        <CardTitle>{t('rota.myShifts')}</CardTitle>
-        {!mine.data ? (
-          <Skeleton className="mt-3 h-24" />
-        ) : mine.data.length ? (
-          <ul className="mt-3 flex flex-col divide-y divide-border">
-            {mine.data.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-3 py-2">
-                <span className="text-callout">
-                  <span className="font-semibold">{dayLong(s.date, locale)}</span>
-                  <span className="text-text-secondary"> · {shiftRange(s, locale)}</span>
-                </span>
-                {canSwap ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSwapFor(s)}
-                    aria-label={t('rota.swapFor', { day: dayLong(s.date, locale) })}
-                  >
-                    <Repeat aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    {t('rota.swap')}
-                  </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('rota.noShifts')}</p>
-        )}
-      </Card>
-      <Card>
-        <CardTitle>{t('rota.openShifts')}</CardTitle>
-        {!open.data ? (
-          <Skeleton className="mt-3 h-24" />
-        ) : open.data.length ? (
-          <ul className="mt-3 flex flex-col divide-y divide-border">
-            {open.data.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-3 py-2">
-                <span className="text-callout">
-                  <span className="font-semibold">{dayLong(s.date, locale)}</span>
-                  <span className="text-text-secondary"> · {shiftRange(s, locale)}</span>
-                </span>
-                {s.claimedByMe ? (
-                  <Badge tone="warning">{t('rota.requested')}</Badge>
-                ) : canSwap ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      run(
-                        () => api(`/v1/shifts/${s.id}/claim`, { method: 'POST', json: {} }),
-                        t('rota.claimSent'),
-                      )
-                    }
-                    aria-label={t('rota.claimFor', { day: dayLong(s.date, locale) })}
-                  >
-                    <Hand aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    {t('rota.claim')}
-                  </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('rota.noOpenShifts')}</p>
-        )}
-      </Card>
-      <Card className="lg:col-span-2">
-        <CardTitle>{t('rota.swaps')}</CardTitle>
-        {swaps.data?.length ? (
-          <ul className="mt-3 flex flex-col divide-y divide-border">
-            {swaps.data.map((w) => {
-              const incoming = w.toEmployeeId === session.employeeId && w.kind === 'swap';
-              const label =
-                w.kind === 'claim_open'
-                  ? t('rota.claimLine', { date: dayLong(w.shift.date, locale) })
-                  : incoming
-                    ? t('rota.swapFrom', {
-                        name: w.fromEmployeeName ?? '',
-                        date: dayLong(w.shift.date, locale),
-                      })
-                    : t('rota.swapTo', { name: w.toEmployeeName ?? '', date: dayLong(w.shift.date, locale) });
-              return (
-                <li key={w.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
-                  <span className="text-callout">{label}</span>
-                  <span className="flex items-center gap-2">
-                    <Badge tone={swapTone[w.status as keyof typeof swapTone] ?? 'neutral'}>
-                      {t(`rota.swapStatus.${w.status}`)}
-                    </Badge>
-                    {incoming && w.status === 'pending' && !w.acceptedAt ? (
-                      <>
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            run(
-                              () =>
-                                api(`/v1/shift-swaps/${w.id}/respond`, {
-                                  method: 'POST',
-                                  json: { accept: true },
-                                }),
-                              t('rota.swapAccepted'),
-                            )
-                          }
-                        >
-                          {t('rota.accept')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() =>
-                            run(
-                              () =>
-                                api(`/v1/shift-swaps/${w.id}/respond`, {
-                                  method: 'POST',
-                                  json: { accept: false },
-                                }),
-                              t('rota.swapDeclinedToast'),
-                            )
-                          }
-                        >
-                          {t('rota.decline')}
-                        </Button>
-                      </>
-                    ) : null}
-                    {!incoming && w.status === 'pending' && w.fromEmployeeId === session.employeeId ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          run(
-                            () => api(`/v1/shift-swaps/${w.id}/cancel`, { method: 'POST' }),
-                            t('rota.requestCancelled'),
-                          )
-                        }
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                    ) : null}
+      <PageSection headingLevel={2} title={t('rota.myShifts')}>
+        <Card>
+          {!mine.data ? (
+            <Skeleton className="mt-3 h-24" />
+          ) : mine.data.length ? (
+            <ul className="mt-3 flex flex-col divide-y divide-border">
+              {mine.data.map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="text-callout">
+                    <span className="font-semibold">{dayLong(s.date, locale)}</span>
+                    <span className="text-text-secondary"> · {shiftRange(s, locale)}</span>
                   </span>
+                  {canSwap ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSwapFor(s)}
+                      aria-label={t('rota.swapFor', { day: dayLong(s.date, locale) })}
+                    >
+                      <Repeat aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      {t('rota.swap')}
+                    </Button>
+                  ) : null}
                 </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('rota.noSwaps')}</p>
-        )}
-      </Card>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-callout text-text-secondary">{t('rota.noShifts')}</p>
+          )}
+        </Card>
+      </PageSection>
+      <PageSection headingLevel={2} title={t('rota.openShifts')}>
+        <Card>
+          {!open.data ? (
+            <Skeleton className="mt-3 h-24" />
+          ) : open.data.length ? (
+            <ul className="mt-3 flex flex-col divide-y divide-border">
+              {open.data.map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="text-callout">
+                    <span className="font-semibold">{dayLong(s.date, locale)}</span>
+                    <span className="text-text-secondary"> · {shiftRange(s, locale)}</span>
+                  </span>
+                  {s.claimedByMe ? (
+                    <Badge tone="warning">{t('rota.requested')}</Badge>
+                  ) : canSwap ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        run(
+                          () => api(`/v1/shifts/${s.id}/claim`, { method: 'POST', json: {} }),
+                          t('rota.claimSent'),
+                        )
+                      }
+                      aria-label={t('rota.claimFor', { day: dayLong(s.date, locale) })}
+                    >
+                      <Hand aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                      {t('rota.claim')}
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-callout text-text-secondary">{t('rota.noOpenShifts')}</p>
+          )}
+        </Card>
+      </PageSection>
+      <PageSection headingLevel={2} title={t('rota.swaps')}>
+        <Card className="lg:col-span-2">
+          {swaps.data?.length ? (
+            <ul className="mt-3 flex flex-col divide-y divide-border">
+              {swaps.data.map((w) => {
+                const incoming = w.toEmployeeId === session.employeeId && w.kind === 'swap';
+                const label =
+                  w.kind === 'claim_open'
+                    ? t('rota.claimLine', { date: dayLong(w.shift.date, locale) })
+                    : incoming
+                      ? t('rota.swapFrom', {
+                          name: w.fromEmployeeName ?? '',
+                          date: dayLong(w.shift.date, locale),
+                        })
+                      : t('rota.swapTo', {
+                          name: w.toEmployeeName ?? '',
+                          date: dayLong(w.shift.date, locale),
+                        });
+                return (
+                  <li key={w.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
+                    <span className="text-callout">{label}</span>
+                    <span className="flex items-center gap-2">
+                      <Badge tone={swapTone[w.status as keyof typeof swapTone] ?? 'neutral'}>
+                        {t(`rota.swapStatus.${w.status}`)}
+                      </Badge>
+                      {incoming && w.status === 'pending' && !w.acceptedAt ? (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              run(
+                                () =>
+                                  api(`/v1/shift-swaps/${w.id}/respond`, {
+                                    method: 'POST',
+                                    json: { accept: true },
+                                  }),
+                                t('rota.swapAccepted'),
+                              )
+                            }
+                          >
+                            {t('rota.accept')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() =>
+                              run(
+                                () =>
+                                  api(`/v1/shift-swaps/${w.id}/respond`, {
+                                    method: 'POST',
+                                    json: { accept: false },
+                                  }),
+                                t('rota.swapDeclinedToast'),
+                              )
+                            }
+                          >
+                            {t('rota.decline')}
+                          </Button>
+                        </>
+                      ) : null}
+                      {!incoming && w.status === 'pending' && w.fromEmployeeId === session.employeeId ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            run(
+                              () => api(`/v1/shift-swaps/${w.id}/cancel`, { method: 'POST' }),
+                              t('rota.requestCancelled'),
+                            )
+                          }
+                        >
+                          {t('common.cancel')}
+                        </Button>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-2 text-callout text-text-secondary">{t('rota.noSwaps')}</p>
+          )}
+        </Card>
+      </PageSection>
       <SwapDialog shift={swapFor} onClose={() => setSwapFor(null)} onDone={() => swaps.reload()} />
     </div>
   );

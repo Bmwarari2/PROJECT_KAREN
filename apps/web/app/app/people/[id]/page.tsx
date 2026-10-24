@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { usePathname, useSearchParams, useParams } from 'next/navigation';
-import { FileText, History, Pencil, Send } from 'lucide-react';
+import { History, Pencil, Send } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -30,11 +30,11 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
 import { Avatar } from '@/components/dashboard/parts';
-import { IntentLink } from '@/components/intent-link';
 import { PersonLink } from '@/components/person-link';
 import { PageTitle, hasPermission, useSession } from '../../shell';
 import type { LeaveBalance } from '@/components/leave-balances';
 import { BalancesPanel, LeaverDialog, TransferDialog } from './actions';
+import { PersonDocuments } from '@/components/documents/person-documents';
 import { ComplianceTab } from './compliance-tab';
 
 /** Profile tabs a link can open (`?tab=`, ADR-0161; the keys are `PROFILE_TABS` in @thapsus/core/links). */
@@ -134,9 +134,6 @@ export default function EmployeePage() {
   );
   const history = useApi<Record<string, Array<Record<string, unknown>>>>(
     data?.access.jobTitle !== 'none' ? `/v1/employees/${id}/history` : null,
-  );
-  const docs = useApi<Array<{ id: string; title: string; createdAt: string; category: string }>>(
-    `/v1/documents?employeeId=${id}`,
   );
   const [open, setOpen] = React.useState(false);
   const [values, setValues] = React.useState<Record<string, string>>({});
@@ -430,22 +427,11 @@ export default function EmployeePage() {
           </TabsContent>
         ) : null}
         <TabsContent value="documents" className="pt-5">
-          {docs.data?.length ? (
-            <ListSection>
-              {docs.data.map((d) => (
-                <ListItem
-                  key={d.id}
-                  href={`/app/documents/${d.id}`}
-                  linkAs={IntentLink}
-                  leading={<FileText aria-hidden />}
-                  title={d.title}
-                  meta={formatDate(d.createdAt.slice(0, 10), locale)}
-                />
-              ))}
-            </ListSection>
-          ) : (
-            <EmptyState icon={<FileText aria-hidden />} title={t('documents.empty')} />
-          )}
+          <PersonDocuments
+            employeeId={id}
+            name={String(e.displayName ?? '')}
+            canAttach={hasPermission(session, 'documents.manage')}
+          />
         </TabsContent>
       </Tabs>
     </div>

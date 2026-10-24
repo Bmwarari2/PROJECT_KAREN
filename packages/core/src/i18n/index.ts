@@ -9,6 +9,7 @@ export const DEFAULT_LOCALE: Locale = 'en-GB';
 export { CATALOGUES, flatten, t, type Messages } from './catalogues';
 export {
   formatMessage,
+  formatMonthYear,
   interpolate,
   lookupMessage,
   pluralBase,
@@ -83,6 +84,15 @@ export function formatHours(minutes: number, locale: Locale): string {
 
 export function formatNumber(value: number, locale: Locale, opts: Intl.NumberFormatOptions = {}): string {
   return new Intl.NumberFormat(locale, opts).format(value);
+}
+
+/** A country's or region's name in the locale ("GB" → "United Kingdom"); the code itself when unknown. */
+export function regionName(code: string, locale: Locale): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
 }
 
 /** Formats integer minor units without converting to floating point. */

@@ -1737,33 +1737,190 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 **Consequences.** Every row stays one tap target with a real link inside for keyboard and screen-reader users, while names in it remain separately reachable.
 
-## ADR-0180 — The app follows phone-app conventions: grouped lists, large titles, a light translucent bar and a bottom tab bar (2026-10-24)
+## ADR-0165 — HR attaches documents to a person; expiry reminders come from settings (2026-10-23)
 
-**Context.** The product owner tested staging on an iPhone and found the UI bad. The screenshots (notifications, equipment) showed three problems:
-
-- rows laid out side by side (icon, text, date, button), which squeezed the text to one word per line;
-- desktop tables on phones;
-- cards inside cards under two or three stacked headings.
-
-They asked for Apple's design principles and the EasyUI collection (ADR-0154 follow-up, MIT) to be used. CLAUDE.md already takes Apple's principles, never its assets.
+**Context.** HR had no way to keep a person's right-to-work evidence, driving licence, contract, qualifications or background checks with their record, or to be told before one runs out. Uploads are an attack surface (ASVS V5/V12): the file name and the declared type are both under the uploader's control.
 
 **Decision.**
 
-- **Grouped lists are the default for collections.**
-  - `ListSection` and `ListItem` in `packages/ui` (DESIGN.md §6): the text column always takes the width. Dates and badges go under it, and text buttons go below it on phones.
-  - A row that leads somewhere is one tap target: a stretched link, a chevron and a 52px minimum height.
-  - Unread rows show an accent dot.
-- **Tables become lists on phones** in the `Table` primitive itself (`.thr-stack`, CSS only), so the existing table screens change without per-screen code. Explicit table roles keep the semantics where Safari drops them for re-laid-out tables. Wide numeric grids opt out.
-- **Page headers** are one bold large title (34/41) on the page background. Module sections are a segmented control (track plus raised segment) that scrolls sideways and keeps the current section in view.
-- **Bars.** The top bar is light and translucent like the page (blurred `chrome` at 80%), replacing the dark band of ADR-0154. Below `lg`, a bottom tab bar holds up to five modules: Home, Inbox, People or Time, Time or Pay, and Me (`dockModules`). The viewport uses `viewport-fit=cover`, and both bars pad for the device's safe areas.
-- **EasyUI** (MIT, © 2026 Suraj Maurya) is a reference for patterns, not a dependency. We rebuild what we take (segmented pill navigation, notification stacks, expandable rows, file upload, stepper) from our tokens with CSS transitions. Its `framer-motion` dependency would cost every page JavaScript on low-cost phones and is not added.
-- `scripts/phone-tour.mjs` seeds the staging organisation locally and saves phone-size screenshots per role and theme for UI reviews.
+- **One route attaches a file to a person:** `POST /v1/employees/:id/documents` (multipart, one file of at most 20 MB). It takes a type (right-to-work evidence, driving licence, contract, qualification or certificate, background check, other), optional issue and expiry dates, a note (at most 1,000 characters) and a visibility: **HR only** or **HR and the person**. It needs `documents.manage` over that person (HR admins). Attachments follow their own visibility, never folder rules, so managers never see them or their notes.
+- **The bytes decide the type.** `lib/file-sniff.ts` allow-lists PDF, PNG, JPEG, WebP and DOCX by their signatures. A zip that is not a Word document, text, HTML, SVG and anything else is refused. The stored name is sanitised: last path segment, no control, reserved, zero-width or bidi characters, at most 120 characters, and the extension of the detected type.
+- **A scan hook runs before anything is stored** (`lib/upload-scan.ts`). No scanner is configured yet (HUMAN_TODO 1.7), so the verdict is `not_scanned` and is recorded on the row (`scan_status`). A later scanner can then sweep what was stored before it. An `infected` verdict refuses the upload and stores nothing.
+- **Storage.** Files go to the cell's residency-guarded object store under the tenant's prefix (`<tenant>/employees/<person>/…`). Right-to-work evidence goes to the vault instead (ADR-0166). The content is always streamed by the API (`/v1/documents/:id/content`), never through a presigned link, so every view and download is audited.
+- **Migration 0022 is expand only.** It adds nullable columns to `app.documents` (`attachment_type`, `visibility`, `issued_on`, `note`, `vault_record_id`, `scan_status`, `rtw_check_id`) with check constraints. A NULL `attachment_type` is a library, template or signed document, as before.
+- **Expiry reminders reuse the right-to-work follow-up job.** The daily compliance job (`runComplianceDaily`) also looks at attachments with an expiry date. Right-to-work evidence uses the existing `rtwReminderDays`. Every other type uses a new setting, `documentReminderDays` (default 60, 30, 7 and 0 days before expiry), editable with the other compliance settings. Each reminder is a task for HR (`compliance.task.renewDocument`), and its key makes it idempotent. The viewer, lists and the person's Documents tab show "Expiring soon" or "Expired" from the same windows.
+- **The upload dialog** offers drag and drop plus a file button (a real `<input type="file">` with its label), shows upload progress with a labelled `<progress>` and a status message, and announces errors with `role="alert"`. The drop zone follows EasyUI's `animated-file-upload` idea (MIT, © 2026 Suraj Maurya; reference only, rebuilt from our tokens without motion libraries).
 
 **Consequences.**
 
-- Every phone screenshot baseline changes once (visual regression is re-baselined with this change).
-- Screens move to `ListSection`/`ListItem` as they are touched; the agents of this round convert the screens they own, and the rest follow in the same release.
-- Two colour tokens (`segment-track`, `segment-selected`) and two layout values (`large-title`, `--dock-height`) are added. The chrome tokens change value, with their contrast pairs still tested.
+- Attachments appear in the person's Documents tab (HR) and, when shared, in the person's own documents. The right-to-work page links evidence to its check.
+- Until a scanner is configured, uploads are stored unscanned and marked as such. HUMAN_TODO 1.7 remains open.
+- A new upload type means extending the allow-list and its unit tests, not trusting a new MIME type.
+
+## ADR-0166 — Right-to-work evidence is immigration data: sealed files in the vault (2026-10-23)
+
+**Context.** CLAUDE.md puts immigration and work-authorisation documents in the sensitive store, field-level encrypted with per-region KMS keys, visible only to roles that need them, with every access audit-logged. The existing right-to-work check evidence route already used the vault for the check's details. HR now attaches passports, BRPs or eVisas, share-code results and birth certificates from the person's record as well.
+
+**Decision.**
+
+- **Classification:** an attachment of type `right_to_work` is always `immigration`, whatever its evidence kind. Every other attachment type is ordinary personnel data, including driving licences, contracts, qualifications and background-check outcomes.
+- **The file is sealed** (`lib/sealed-file.ts`, format `THRSEAL1`): a fresh 256-bit data key per file, wrapped by the cell's regional KMS key with the file's context (tenant, person, category, field) as the encryption context, and AES-256-GCM over the bytes with the same context as additional data. The header holds ids and the category only. It is stored under `<tenant>/vault/immigration/<person>/<uuid>.sealed` in the home cell. The object store, the backups and the company export see ciphertext only. The export's tooling opens it with the same key provider.
+- **The details live in the vault** (category `immigration`): evidence kind, original file name, note, issue date and SHA-256. The `app.documents` row keeps a generic title ("Right to work evidence"), a generic file name, the expiry date (needed for reminders) and a pointer to the vault record. It holds no immigration detail.
+- **Access.** Uploading needs `documents.manage` and `vault.write:immigration` over the person; reading needs `vault.read:immigration` (HR admins hold both by default). The person sees their own evidence only when HR shared it with them, through the self-disclosure path (`withSelfDisclosure`). Every view and download is an audited vault read, and a refusal is audited too.
+- **Residency.** The sealed object and the vault row stay in the tenant's home cell. `documents.residency.test.ts` proves it for every region pair.
+
+**Consequences.**
+
+- Opening right-to-work evidence costs a KMS decrypt per view, which is acceptable for how often HR opens it.
+- Search, previews and lists never show what kind of evidence a person holds. HR opens it to see.
+- If the classification of another type changes (for example, a customer's background checks), only the `sensitive` rule in `attachments.ts` and its tests change. Rows already stored stay where they are until a migration job moves them.
+
+## ADR-0167 — Payslips as the payroll provider supplies them: structured statements, a sample provider fixture and locale-formatted months (2026-10-23)
+
+**Context.** Payslips were PDFs only, with a payroll-entered label. The product owner wants an accessible, printable payslip with the provider's figures and year-to-date totals, and a staging workspace with twelve months of them. CLAUDE.md keeps running payroll and calculating tax out of scope. The notification read "Your payslip for Payslips August 2026 is ready".
+
+**Decision.**
+
+- **A statement format** (`modules/payslips/statement.ts`, documented in `docs/integrations.md`):
+  - parties and period: employer and employee, period, pay date and payment method;
+  - pay details: tax code, national identifier, payment and deduction lines (with quantities and rates when the provider gives them), employer contributions, year to date, totals and notes;
+  - money: every amount in integer minor units with an ISO 4217 currency.
+- **Import uses the existing payslip batch upload.** A `statements` JSON part sits beside the provider's PDFs, and statements are matched to people by employee number, like file names. The only arithmetic is a check that the provider's lines add up to the provider's totals. A statement that does not add up is refused and reported, never shown. Nothing is calculated.
+- **What is kept.** The national identifier is stored masked (last four characters) and the bank account as its last four digits; the provider's full values are not kept. The provider's PDF is kept unchanged when it is sent.
+- **Migration 0023 is expand only.** It adds nullable statement columns to `app.payslips` (`statement`, `pay_date`, `period_start`, `period_end`, `currency`, `gross_minor`, `net_minor`) and `source`, `provider_name` and `sample` to batches. File columns become nullable, so a statement can arrive without a PDF.
+- **The app.**
+  - **List:** one year at a time, each row named by its period, with the pay date and net pay, plus the year to date as printed on the year's latest payslip.
+  - **Payslip page:** net pay first, then payments, deductions, employer contributions and year to date as grouped lists. It has a print style sheet and opens the provider's PDF in the viewer on request.
+  - **Download:** the provider's PDF, or a PDF of the same statement when there is none (`/v1/payslips/:id/pdf`).
+  - **Audit:** every view and download is audited as sensitive.
+- **The sample payroll provider** (`cli/staging/sample-payroll-provider.ts`) is the only source of staging payslips. It is a fixture: its deductions are hand-written, illustrative figures per gross-pay band, never derived from a tax rule. Gross pay is the fictional person's contracted pay. Every statement is `illustrative`, every batch `sample`, and the app shows a "Sample data" marker and banner with the provider's name.
+- **Months are formatted in the reader's locale.** Catalogue templates gain a `{name:month}` placeholder (`interpolate` in `@thapsus/core/i18n`), which formats a stored calendar date as month and year in the reader's locale. Notifications store the period start date, not a label, and now read "Your payslip for August 2026 is ready". They target the payslip, whose own page (`@thapsus/core/links`) is `/app/payslips/<id>`.
+
+**Consequences.**
+
+- A provider integration that pushes statements (HUMAN_TODO partner programmes) reuses the same format and checks.
+- The masked identifier is all the platform can show. A person who needs the full number uses the provider's PDF.
+- Year-to-date figures are only as current as the latest statement the provider sent.
+
+## ADR-0168 — An in-app document viewer with review and sign (2026-10-23)
+
+**Context.** Documents were downloads. Signing happened in a dialog without the document in view, and lists that asked for a signature did not open the document. The viewer must work on low-cost phones and under the strict CSP (no third-party code, `worker-src 'self'`), and it must keep `e2e/security-asvs.spec.ts` green.
+
+**Decision.**
+
+- **`/app/documents/[id]` is the one place a document opens.** The documents list, onboarding, the inbox and tasks, the Me hub and notifications link to it. Old `?sign=` links redirect to it.
+  - **PDFs** render with PDF.js (`pdfjs-dist` 6.4.299, Apache-2.0) with page navigation, zoom, fit to width and a selectable text layer.
+  - **Images** show inline.
+  - **Other types** (DOCX) show their details and a download.
+  - **Download** is always offered.
+  - **Audit:** every view and download is audited. Right-to-work evidence goes through the vault (ADR-0166).
+- **Loading.** PDF.js is loaded only on the pages that show a document (`next/dynamic`, `ssr: false`). It uses the **legacy build** for both library and worker, because the modern build calls built-ins that phone browsers in our support range lack (`getOrInsertComputed`).
+- **The worker is self-hosted.** `scripts/copy-pdfjs.mjs` copies the worker, standard fonts, CMaps and wasm into `public/pdfjs/<version>/` before `next dev` and `next build` (the folder is git-ignored). Those files are served with their own policy (`PDF_WORKER_CSP`: `default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'`) and long-lived caching. They are public library code with no personal data. The document bytes always come from the API with `Cache-Control: private, no-store`. `useWorkerFetch: false` keeps font fetches in the page's `connect-src 'self'`. The text-layer CSS follows PDF.js `web/pdf_viewer.css` (Apache-2.0, Mozilla Foundation).
+- **Review and sign** is a panel beside the document (below it on phones) with four steps: review, confirm, sign, done.
+  - It reuses the existing e-signature method: consent, a typed name, and the time, IP address, device and SHA-256 recorded.
+  - It reuses the existing certificate page (`documents/pdf.ts`).
+  - After signing, the viewer shows the signed copy.
+  - The stepper follows EasyUI's `stepper` (MIT, © 2026 Suraj Maurya; reference only, rebuilt from our tokens).
+- **First data in the HTML.** The viewer and the payslip pages fetch their first data on the web server with the viewer's own cookie (`serverApiView` in `apps/web/lib/server-api.ts`), so the title and details arrive with the page. The API audits that fetch as the view, so a router prefetch (someone pointing at a link) fetches nothing: a hover is never recorded as a view or marks a payslip as seen.
+- **No layout shift.** While PDF.js loads, the viewer shows its page controls (disabled) over a page-shaped placeholder. It draws the first page out of the flow and only then swaps it in, so nothing around the document moves.
+- **Mobile layout** follows ADR-0180. Titles take the width, with dates and badges under them and buttons below them at 44 px or more. Lists are `ListSection` rows.
+
+**Consequences.**
+
+- PDF.js loads on the first document view only: about 150 KB gzipped of library in the page and about 380 KB gzipped of worker, both cached for good after that. Other pages are unaffected. Evaluating the library is one long task of about 350 ms on the build machine, so the viewer is the app screen closest to the Lighthouse performance threshold (79 to 89 under load, docs/PERFORMANCE.md).
+- A PDF.js upgrade changes the versioned folder and the pinned version together. The copy script re-copies when the version or build changes.
+- The CSP unit test covers the worker route's policy and the proxy exclusion, and `documents-sign.spec.ts` fails on any CSP violation while a PDF renders and is signed.
+
+## ADR-0169 — Countersignature through the approvals service (2026-10-23)
+
+**Context.** Contracts and some policies need a company signature after the person signs. Until now they counted as complete as soon as the person signed. The product owner asked for a countersign step that shows in the approver's inbox and approvals, and is configurable.
+
+**Decision.**
+
+- **Where it is set.** Templates carry `requires_countersign`, and each signature request keeps its own copy of the setting. A new template defaults to on for the contract, offer and policy categories and off otherwise; HR can set it when creating the template, and override it per document when sending (`requireCountersign`).
+- **Routing.** When the person signs a document that needs it, the request becomes `approval_status = 'pending'` and an approval request with subject `document.countersign` is raised through the approvals service. The default chain is created on first use: HR admins, or the owner when there are none; nobody approves their own document, and the chain escalates to the owner after 72 hours. A customer names an authorised signatory by editing that chain, like any other.
+- **The approver's view.** The approval's own page (ADR-0160) offers "Open the document to countersign". The approver reviews the document in the same viewer. They either countersign with the same e-signature method, or return it with a reason, and the person then signs again.
+- **Completion.** Countersigning appends a second certificate to the copy the person signed, so the completed copy records both signatures with their timestamps and hashes. The request is complete (`completed_at`) only then, and the person is notified. A return notifies them too, and the viewer shows the reason. Every step is audited (`document.signed`, `document.countersigned`, `document.returned`).
+- **Migration 0022** adds the countersign columns to `app.signature_requests` and `app.document_templates` (expand only). It backfills `completed_at` for signatures made before countersignatures existed, lifting forced RLS for the migrator inside the migration's transaction only.
+
+**Consequences.**
+
+- A contract shows as awaiting approval in the person's documents until it is countersigned.
+- Approver changes are approval-chain configuration, with no code change.
+- The staging seed has one document in each state: awaiting the employee, awaiting approval, and completed.
+
+## ADR-0170 — Two-step verification for everyone in new workspaces, versioned sign-in defaults, and shorter admin sessions (2026-10-24)
+
+**Context.** The approved hardening plan (docs/SECURITY_HARDENING.md 2.1.2, 2.1.5) asks for a tenant setting "require two-step verification for everyone", on by default for new workspaces, closing the accepted risk ASVS V6.3.3. Existing workspaces must keep their behaviour. The sign-in policy lives in the `app.tenants.security` JSON, filled from code defaults, so changing a default would silently change every existing workspace. A data migration cannot fix that reliably: with forced row level security, a managed-Postgres migrator (Cloud SQL, RDS) sees no tenant rows, so an `UPDATE` would quietly change nothing. Admin sessions used the workspace's limits (30 idle minutes and 12 hours by default). The plan also asks admins to re-authenticate when their network (ASN) changes.
+
+**Decision.**
+
+- **Versioned defaults.** Migration 0024 adds `app.tenants.security_defaults_version` with `DEFAULT 1` (every existing row gets 1 without a rewrite) and then sets the column default to 2. Version 1 is the old behaviour (two-step verification for admins only, Trust IdP MFA on); version 2 is the new one (everyone, Trust IdP MFA off). `securityFrom()` merges the explicit JSON choices over the defaults of the row's version. It is DDL only, so it behaves the same for every migrator.
+- **Every creation path sets it.** Sign-up, the provisioning CLI and the staging seed write `{ requireMfaForEveryone: true, trustIdpMfa: false }` and version 2 explicitly; sandboxes copy the source's version. The load-test tenant (`synth-enterprise`) turns it off, because its synthetic employees sign in with a password only.
+- **Enforcement reuses the enrolment-at-sign-in flow.** `mfaGate` asks for enrolment when the person is an admin or the workspace requires everyone; every sign-in route returns `mfaEnrollmentRequired` from one helper, and the web shell uses the session's new `mustUseMfa`. Turning the setting off (and turning Trust IdP MFA on) needs a recent re-authentication.
+- **Test fixtures.** The API `signup()` and e2e `signUpAndEnrol()` helpers turn the setting off unless asked not to, so the suites for other modules keep signing invited employees in with a link or password only. The identity suites, the staging seed test, `password-reset.spec.ts` and `settings-security.spec.ts` run with the real default and prove it.
+- **Admin sessions** last at most 15 idle minutes and 8 hours, whatever the workspace allows (`sessionLimits`); someone who becomes an admin mid-session gets the shorter limits at the next request.
+- **Network change.** No cell has a trustworthy ASN signal today: the AWS ALB and Google Cloud Run front ends do not add one, and an in-region ASN database would be a new licence and data source. The API is ready for one: `CLIENT_ASN_HEADER` names a header set (and overwritten) by a trusted proxy, such as CloudFront's `CloudFront-Viewer-ASN`. With it, an admin session whose ASN changes is refused with `reauthenticationRequired` (reason `networkChanged`) until `POST /v1/auth/reauth`, and an `auth.session_network_changed` event is emitted. Without it, nothing changes.
+
+**Consequences.** New customers' employees set up an authenticator app or a passkey at their first sign-in; the frontline-worker trade-off recorded in SECURITY.md now applies only where an admin chooses it. Existing workspaces are untouched until an admin turns the setting on. ASVS V6.3.3 is met for new workspaces. The ASN rule stays inactive until a proxy with the signal sits in front of a cell (HUMAN_TODO when the domain and CDN decision are made).
+
+## ADR-0171 — Forgotten passwords, admin-sent reset links, and purpose-scoped emailed links (2026-10-24)
+
+**Context.** The product owner asked "who is able to reset passwords and such for people". Nobody could reset another person's password, and someone who forgot theirs could sign in with an emailed link but then could not set a new one, because changing a password demanded the current one. The plan also asks for uniform responses and timing on every authentication path (2.1.7) and for URL tokens to be shortened and scoped (2.3.1). Sign-in links and invitations shared one table and one token type, and invitations lasted a week.
+
+**Decision.**
+
+- **Forgot password.** `POST /v1/auth/password-reset` always answers `202` with an empty body, no sooner than 300 ms after the request arrived, and sends the email without waiting for it, so neither the answer nor its timing shows whether the account exists. It is throttled per account (3), per IP (20) and per workspace (the shared email-link budget) in 15 minutes. The link holds a 256-bit token stored as a SHA-256 hash, works once, lasts 30 minutes, and only the newest one works.
+- **Using it.** `POST /v1/auth/password-reset/complete` applies the password policy (a refused password keeps the link usable), stores the new password, ends every session, clears a lockout, writes `auth.password_reset_completed` and emails the person. It never signs anyone in and never touches second factors, so whoever has one uses it at the next sign-in (ASVS V6.4.3).
+- **Admin-sent links.** `POST /v1/users/:id/password-reset` follows the rule of the existing two-step reset, now one function (`assertAccountAuthority`): company-wide `settings.manage`, company-wide grants covering every permission the person holds, a recent re-authentication, never yourself. The admin never sees or sets the password; the link lasts 24 hours (the person may not be at their desk); the action is audited and the person emailed. The same rule unlinks a replaced SSO identity.
+- **Setting a password after an emailed-link sign-in.** Within the 10-minute re-authentication window, a session that signed in with an emailed link may set a new password without the current one. ASVS reasoning: V6.2.3 asks for the current password so that a hijacked session cannot change it; here the session's sign-in itself was a fresh, single-use, 10-minute proof of the mailbox (the same proof a reset link gives, V6.4.3), the second-factor gate already applied to that session, the window bounds the exposure exactly as for adding a first password (V7.5.1), and the change ends every other session and emails the person (V7.4.3). Outside the window the person re-authenticates first; a password sign-in still needs the current password.
+- **Scoped, shorter links.** `app.magic_links.purpose` (`sign_in`, `invitation`, `password_reset`): only sign-in links and invitations sign someone in, and only reset links reset, and reset tokens have their own prefix (`r_`). Invitations last 3 days instead of 7. The reset and enrolment pages remove the token from the address bar at once; the staff enrolment token travels in the URL fragment, which never reaches a server log.
+- **UI.** "Forgot your password?" on the sign-in page; forgot-password and reset pages with one large title and one primary action; the profile's sign-in controls as a grouped list (ADR-0180) with who-can help text; a help-centre article "Who can reset passwords and two-step verification".
+
+**Consequences.** Everyone can recover a forgotten password without help, and admins can help without ever handling a password. Workspace slugs remain discoverable through sign-in (as they are through "Find my workspace"); account existence is not. Emailed links still work on another device (V6.6.2 stays a recorded gap).
+
+## ADR-0172 — SSO identity binding and IdP-asserted MFA, browser-bound SAML, per-account and per-workspace throttles, auth security events, and SSRF-safe automation (2026-10-24)
+
+**Context.** Accepted risks in SECURITY.md: SSO linked people by email only (V6.8.1, V10.5.2); "Trust IdP MFA" was on by default and counted every SSO sign-in as two-step (V6.8.4); the SAML response was not bound to the browser that started the sign-in; throttles were per IP and per account only, which residential-proxy credential stuffing avoids (plan 2.1.6); automation webhooks and the `http` integration checked the host name without resolving it (V1.3.6). The monitoring half of the plan (another agent) needs security events at the right places.
+
+**Decision.**
+
+- **Binding.** `app.sso_identities` links a person to (connection, issuer, subject) at their first SSO sign-in through a connection; later sign-ins are matched on that triple. If the IdP sends a linked person's email with another subject, the sign-in is refused (`ssoSubjectChanged`), audited and emitted as a high-severity `auth.sso_subject_mismatch`. SAML uses the assertion's issuer and NameID; transient NameIDs are not bound. An admin who may reset the person's sign-in (ADR-0171) unlinks them when the IdP genuinely replaced the account.
+- **IdP MFA.** A sign-in counts as two-step only when the workspace trusts its IdP (off by default, ADR-0170) and the IdP asserts more than one factor: OIDC `amr` with `mfa`, `hwk` or `sc`, or a knowledge factor with a possession or biometric one (RFC 8176), or an `acr` / SAML AuthnContextClassRef in a reviewed list of multi-factor values. No signal means no, and the person uses their own factor (the documented fallback of V6.8.4).
+- **SAML browser binding without SameSite=None.** The IdP posts the assertion cross-site, where a `SameSite=Lax` cookie is not sent. So `/v1/auth/sso/start` sets the same short-lived binding cookie as OIDC; the ACS validates the signed assertion (SHA-2 only, replay cache) and keeps the verified result for 2 minutes, then redirects (303) to `/v1/auth/sso/saml/finish`, a same-site top-level GET that does carry the cookie. Only that browser can finish; the hand-over works once and is emptied afterwards; abandoned ones are deleted.
+- **Throttles.** Per account and per IP as before, plus per workspace: a failure budget for password sign-ins (larger of 100 and 5% of the workspace's active people per 15 minutes) and for authenticator codes (50 or 2%), and a request budget for emailed links (100 or 2%), read with a non-incrementing `peek` so successful sign-ins never use it. Refusals are `429` with `Retry-After`, as before; account lockout is unchanged. Authenticator codes are also limited per IP. A malicious lockout of a whole workspace's password sign-ins is possible for one window; SSO, passkeys and existing sessions are unaffected, and the event is high severity so it is seen.
+- **Security events.** `lib/security-events.ts`: typed `auth.*` and `staff.*` events (failures, lockouts, throttles, MFA failures and resets, password resets, SSO binding, network change, staff sign-in, enrolment and elevation) written as structured log lines and handed to in-process subscribers (`onSecurityEvent`), the hook for the detection pipeline. They carry ids and keyed hashes (HMAC per cell) of the client address and of a submitted account name, never the address, email or token.
+- **SSRF.** Automation webhooks and the `http` integration send through `postOutbound` (https only, DNS resolved and every address checked at connect time, private, loopback and metadata ranges refused, no redirects), with the cell's outbound policy. `deps.outboundPost` exists only as a test seam; `depsFromEnv` never sets it.
+
+**Consequences.** ASVS V1.3.6, V6.8.1, V6.8.4 and V10.5.2 are met. SAML now costs one extra redirect. IdPs that never send `amr`/`acr` (Google Workspace OIDC, many SAML set-ups) no longer count as two-step: their users set up a factor in Thapsus-HR, which is the safe reading. The detection rules, alerts and dashboard consume the events later.
+
+## ADR-0173 — Staff sign in only with passkeys or security keys, just-in-time elevation, and short staff sessions (2026-10-24)
+
+**Context.** Plan 2.2.1, 2.2.3 and 2.2.5: staff sign in with phishing-resistant keys only (closing V6.4.1, the never-changed generated staff password), hold no standing access to super-admin actions, rule publishing or the use of a customer's support grant, and have 15-minute idle and 4-hour absolute sessions with re-authentication before destructive actions. The bootstrap must be safe, and `e2e/backoffice.spec.ts` must keep working without a test-only bypass.
+
+**Decision.**
+
+- **WebAuthn only.** `backoffice.staff_passkeys` holds each staff member's keys (user verification required, discoverable credentials); the password and TOTP sign-in routes are removed, and their columns stay unused until a contract migration. The relying party is the back office's own address (`BACKOFFICE_BASE_URL`, the app's until a separate host exists).
+- **Bootstrap.** Only the operator CLIs issue enrolment links: `create-staff` (new account) and `staff-enrolment-link [--reset-keys]` (another key, or a lost one). A link's token is hashed, single-use, valid 2 hours, the newest only, and carried in the URL fragment. Using it registers the key and starts a session. Runbook: `docs/runbooks/staff-access.md`.
+- **Elevations.** `backoffice.staff_elevations`: a staff member asks for a scope (`super_admin`, `rules_publish`, `support_grant`), with a reason (10–500 characters), a duration (up to 4 hours) and optionally one workspace. Another staff member who may hold the scope approves it after re-authenticating; nobody approves their own (also a database check). A super admin needs an active `super_admin` elevation for every route except sign-in, the overview and the elevation routes; rule versions and published law changes need `rules_publish`; routes that use a customer's support grant need `support_grant` (scoped to that workspace when the elevation names one). Every step is in `backoffice.staff_audit` and emitted as `staff.elevation_*`.
+- **Sessions.** 15 idle minutes and 4 hours. Destructive actions (contract end, feature flags and API settings, database moves, notifying breach controllers, approving elevations, support-grant writes) need a key assertion within 5 minutes; the back-office UI retries the action after the browser's passkey prompt.
+- **Tests.** API tests register a software authenticator through the real enrolment routes; e2e uses Chrome's virtual WebAuthn authenticator (DevTools Protocol). In e2e the back office is opened as `localhost`, because WebAuthn relying parties must be domains, not IP addresses. No route or flag exists that skips the ceremony in any environment.
+
+**Consequences.** A stolen staff password or code no longer exists to steal. One super admin alone cannot use super-admin actions; every cell needs at least two staff who can approve each other (HUMAN_TODO 5.1). Hardware-only keys need attestation, which is not checked yet: platform passkeys (Face ID, Windows Hello) are accepted, and HUMAN_TODO 5.1 suggests FIDO2 keys. The plan's Verified Access front door (2.2.2) is still a P1 owner step.
+
+## ADR-0174 — A staging job invites the first staff member to the back office (2026-10-24)
+
+**Context.** The product owner must reach the back office of the Google Cloud staging cell (ADR-0157), and staff can now only be bootstrapped by an operator CLI with database access (ADR-0173), which nobody runs on staging. The repository is public, so no real address may be committed or printed.
+
+**Decision.**
+
+- **Job.** `thapsus-stg-<cell>-staff-invite` (infra/gcp/staging/run.tf) mirrors the seed job: the API image with its own bundle (`node dist/staff-invite.mjs`), the jobs service account, the Cloud SQL socket, and only two secrets: the back-office database credentials and `staff-invitee`. It creates a passkey-only `super_admin` account and writes the one-time enrolment link to a new Secret Manager secret `thapsus-stg-<cell>-staff-invite` (London-only replica; the jobs account may add and read versions; no workload reads it as an environment value). It logs only the outcome and the staff id.
+- **Invitee.** The GitHub repository variables `GCP_STAFF_OWNER_EMAIL` and `GCP_STAFF_OWNER_NAME` become sensitive OpenTofu variables (never shown in the public plan logs), stored in the `staff-invitee` secret, so the address is not visible in the job's configuration either.
+- **When it runs.** The deploy runs it after the seed when the email variable is set and the job has never succeeded; the job itself does nothing while the back office has any staff. A manual run with `staff_invite` ticked sets `STAFF_INVITE_MODE=reissue`: a new link for the configured person (creating the account if missing), keeping their keys.
+- **Secrets before the job.** The deploy's targeted first step includes the job, and the offline `first-deploy` test checks that every secret it reads has a version in that step (the PR #21 failure).
+- **Writing the secret** uses the job's identity through the metadata server and the Secret Manager REST API; no new client library.
+
+**Consequences.** The owner sets two variables, re-runs the deploy, reads the secret with `gcloud` and registers Face ID or Touch ID on their iPhone (HUMAN_TODO 9.8). Inviting a second staff member (to approve elevations) is the same with other values. Old link versions stay in the secret but expire after 2 hours; only the newest works.
 
 ## ADR-0175 — The founder's console: business figures per cell, cross-region counts from the directory (2026-10-24)
 
@@ -1788,7 +1945,7 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 
   The list is a grouped list (ADR-0180) with the filters in the URL, so the overview's tiles open it filtered. Other regions' rows come from the directory and open that region's own back office (`detailUrl`).
 
-- **Access.** Support, billing and super admins. The routes declare `noElevation` (read-only aggregates), so after the just-in-time elevation work a super admin sees the home without elevating.
+- **Access.** Support, billing and super admins. The routes declare `noElevation` (read-only aggregates without personal data), so a super admin, who otherwise holds no standing access (ADR-0173), sees the home without elevating.
 
 **Consequences.**
 
@@ -1817,7 +1974,7 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 
 ## ADR-0177 — Security detections: signals in the cell, a versioned rule catalogue and incidents with dedupe windows (2026-10-24)
 
-**Context.** The approved hardening plan (§3.1, P0) asks for unauthorised-activity monitoring: detections from the app's security and audit events, a versioned rule catalogue with MITRE ATT&CK mappings and test fixtures, and incidents. It must be residency-safe (everything in the cell, pseudonymous) and cheap on the request path. The identity half of the plan (Agent C, ADR-0170 to ADR-0174) emits `auth.*` and `staff.*` events through `onSecurityEvent`, and is not merged yet.
+**Context.** The approved hardening plan (§3.1, P0) asks for unauthorised-activity monitoring: detections from the app's security and audit events, a versioned rule catalogue with MITRE ATT&CK mappings and test fixtures, and incidents. It must be residency-safe (everything in the cell, pseudonymous) and cheap on the request path. The identity half of the plan (ADR-0170 to ADR-0174) emits `auth.*` and `staff.*` events through `onSecurityEvent` (`apps/api/src/lib/security-events.ts`).
 
 **Decision.**
 
@@ -1844,7 +2001,7 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
   - The cursor lags ten seconds behind, so events still committing out of id order are looked at again. Re-evaluation extends the open detection instead of repeating it.
   - A hit extends its detection within the rule's dedupe window, or creates one that joins (or opens) the incident for the same address, person, staff member or workspace. The incident takes the highest severity and records an escalation.
 - **Fixtures are tests.** `apps/api/test/security-engine.int.test.ts` runs every active rule's fixture against the real engine: it must fire exactly once, and its near miss never. The back office's "Test every rule" runs the same fixtures in rolled-back transactions on the live cell and records the result.
-- **Merge note.** Until the identity work is merged, its `auth.*` and `staff.*` events have no producer here. `modules/security/http.ts` marks the one line that subscribes the buffer with `onSecurityEvent`. Until then the rules that need them (THR-CRED-002, THR-ATO-002, THR-ATO-004) are inert and their fixtures still pass.
+- **One event contract.** The security plugin subscribes the signal buffer with `onSecurityEvent`, so authentication, session and staff events are stored next to request and audit signals, with the same keyed address hash (the pseudonym function is the identity work's). The signal contract lists exactly the identity work's `SecurityEventType`; a compile-time check in `modules/security/signals.ts` fails when either side adds a type the other lacks.
 
 **Consequences.**
 
@@ -1893,7 +2050,7 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 
 **Consequences.**
 
-- The back office's calls for containment go through `securityCall` (apps/web/app/backoffice/security/nav.tsx). Once the identity work is merged it becomes `useStaffApi`, so the browser asks for the staff key when the API wants a fresh proof.
+- The Security screens call the API through `useStaffApi` (ADR-0173), so the browser asks for the staff key when an action needs a fresh proof. Security analysts hold standing access to the module; a super admin, who holds no standing access, reads it without elevation (`noElevation`, like the other read-only aggregate screens of the founder's console) but needs an active `super_admin` elevation for containment, reversal and rule changes.
 - Blocking is at the app (Fastify `onRequest`), not at the WAF or Cloud Armor, so blocked requests still reach the cell; the WAF IP set is P1.
 
 ## ADR-0179 — Honeytokens outside customer data, and no fake employees in customer workspaces (2026-10-24)
@@ -1913,10 +2070,82 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - **Decoy API key.** `docs/api.md` shows a key with the real format (`thr_sk_<uuid>.<secret>`), so a scraper or a leaked-docs search finds it and tries it. Its id is in no workspace. The API recognises it from its fingerprint before any key lookup and raises THR-DECEPT-001 (critical, MITRE T1552.001), which blocks the caller's address for a day. The caller then waits (below) and gets the ordinary `401`.
 - **Honey endpoints:** `/.env`, `/wp-login.php`, `/.git/config`, `/v1/admin/export-all` and `/v1/internal/debug`, for any method. No client of Thapsus-HR calls them, and they are hidden from the OpenAPI document. A request raises THR-DECEPT-002 (high, T1595.003), which blocks the address for an hour. The web host's proxy forwards its own copies of these paths to the API, so both hosts catch scanners.
 - **Slowing the caller.** Honey endpoints and the decoy key wait `HONEY_TARPIT_MS` (3 seconds by default, at most 10) and then answer like any unknown path or bad key, so the caller learns nothing.
-- **Decoy object keys:** `exports/backup/all-employees-full.csv` and `payroll/archive/payroll-all-tenants.zip`. They are outside every workspace's prefix, so no customer action can produce them. The API wraps its object store, and a request for either key raises THR-DECEPT-001 before anything is served. Catching a direct bucket read with stolen cloud credentials needs the decoy files and storage data-access logs. That is an optional human step (HUMAN_TODO 9.11) because the logs are a small recurring cost.
+- **Decoy object keys:** `exports/backup/all-employees-full.csv` and `payroll/archive/payroll-all-tenants.zip`. They are outside every workspace's prefix, so no customer action can produce them. The API wraps its object store, and a request for either key raises THR-DECEPT-001 before anything is served. Catching a direct bucket read with stolen cloud credentials needs the decoy files and storage data-access logs. That is an optional human step (HUMAN_TODO 9.12) because the logs are a small recurring cost.
 
 **Consequences.**
 
 - The decoy key is public by design. The secret scan does not match the `thr_sk_` format, and `docs/api.md` says the key is an example that never works.
 - Each honey request holds an API connection for up to the tarpit time. The address block that follows stops a scanner after its first hit.
 - A new decoy is a registry row (fingerprint only) plus, for an endpoint, an entry in `HONEY_PATHS`. Injection canaries for Ask HR (THR-AI-002) are planned, not built.
+
+## ADR-0180 — The app follows phone-app conventions: grouped lists, large titles, a light translucent bar and a bottom tab bar (2026-10-24)
+
+**Context.** The product owner tested staging on an iPhone and found the UI bad. The screenshots (notifications, equipment) showed three problems:
+
+- rows laid out side by side (icon, text, date, button), which squeezed the text to one word per line;
+- desktop tables on phones;
+- cards inside cards under two or three stacked headings.
+
+They asked for Apple's design principles and the EasyUI collection (ADR-0154 follow-up, MIT) to be used. CLAUDE.md already takes Apple's principles, never its assets.
+
+**Decision.**
+
+- **Grouped lists are the default for collections.**
+  - `ListSection` and `ListItem` in `packages/ui` (DESIGN.md §6): the text column always takes the width. Dates and badges go under it, and text buttons go below it on phones.
+  - A row that leads somewhere is one tap target: a stretched link, a chevron and a 52px minimum height.
+  - Unread rows show an accent dot.
+- **Tables become lists on phones** in the `Table` primitive itself (`.thr-stack`, CSS only), so the existing table screens change without per-screen code. Explicit table roles keep the semantics where Safari drops them for re-laid-out tables. Wide numeric grids opt out.
+- **Page headers** are one bold large title (34/41) on the page background. Module sections are a segmented control (track plus raised segment) that scrolls sideways and keeps the current section in view.
+- **Bars.** The top bar is light and translucent like the page (blurred `chrome` at 80%), replacing the dark band of ADR-0154. Below `lg`, a bottom tab bar holds up to five modules: Home, Inbox, People or Time, Time or Pay, and Me (`dockModules`). The viewport uses `viewport-fit=cover`, and both bars pad for the device's safe areas.
+- **EasyUI** (MIT, © 2026 Suraj Maurya) is a reference for patterns, not a dependency. We rebuild what we take (segmented pill navigation, notification stacks, expandable rows, file upload, stepper) from our tokens with CSS transitions. Its `framer-motion` dependency would cost every page JavaScript on low-cost phones and is not added.
+- `scripts/phone-tour.mjs` seeds the staging organisation locally and saves phone-size screenshots per role and theme for UI reviews.
+
+**Consequences.**
+
+- Every phone screenshot baseline changes once (visual regression is re-baselined with this change).
+- Screens move to `ListSection`/`ListItem` as they are touched; the agents of this round convert the screens they own, and the rest follow in the same release.
+- Two colour tokens (`segment-track`, `segment-selected`) and two layout values (`large-title`, `--dock-height`) are added. The chrome tokens change value, with their contrast pairs still tested.
+
+## ADR-0181 — Settings work like a phone's settings app: an index of grouped lists, back links and one large title (2026-10-24)
+
+**Context.** On the owner's iPhone every settings page showed the large "Settings" title, then a native-select-like disclosure as the sub-navigation (which read "Overview" on API access, branding, features and webhooks, because those pages were not in the section list), then the page's own title. Platform settings were a separate grid of cards on the index.
+
+**Decision.**
+
+- **One registry.** `settings/sections.ts` lists every settings page, the platform ones too (group `platform`, gated by `settings.manage` or `settings.read`, their workspace feature, and never sandboxes in a sandbox). Message keys stay out of that module, which every page loads through the workspace map; `section-text.ts` names them. The developer documentation is an index row only.
+- **Phones and tablets (below `lg`).** The index is grouped `ListSection`s with an icon, title and summary per row; it is the navigation. A section opens with a "‹ Settings" back link (`BackLink`, a `Breadcrumb` landmark with a 44px target) and its own title in the large-title style; a page inside a section (a role, a person) goes back to its section. The module's name stays the page's only h1 for screen readers (`ModuleHeader drilled`, `WorkspaceModule.drillDown`), and the page title is its h2, so headings never skip and `expectPageTitle(page, 'Settings', …)` still holds.
+- **Large screens.** The side list stays, with the platform group added; pages inside a section keep the back link (it replaces the "All roles" / "All users" / "Back to settings" links).
+- **Sections.** `SettingsCard` puts its heading above the content (`PageSection`); `container="none"` lets a table or a list of cards stand on its own, so no settings page has a card inside a card.
+
+**Consequences.** `platform-links.tsx` is gone (its entries live in `sections.ts`); a new settings page (such as a security centre) is one entry there and appears on the index, the side list and the role preview. `e2e/settings-security.spec.ts` checks the phone layout; links on the index are found within their group, because the side list names the same pages.
+
+## ADR-0182 — Phone layout rules for the rest of the app: sections above containers, labelled rows, tables that are their own container, and touch-size forms (2026-10-24)
+
+**Context.** After ADR-0180 the owner still found stacked tables with bare values ("Yes / Yes / No", "Everything / 1"), cards inside cards under two titles, narrow inline forms, and coded values ("full_time", "annual") on phones.
+
+**Decision.**
+
+- **`PageSection`** (`packages/ui`, beside `ListSection`): the same `title-3` heading, lead and action above the content, for sections whose body is a table, a form card or a chart. Titles inside cards move above them where a card is a section of the page. A section whose body is a scrollable table named like it passes `landmark={false}`, so no two regions share a name (axe `landmark-unique`).
+- **Tables are their own container** (`surface-raised` with a hairline). A table placed directly in a card with the standard padding runs to the card's edges (`[data-card] > .thr-table`), and inside a list card it draws no second container on phones. `EmptyState` has no box of its own.
+- **Labels.** On phones every stacked cell whose value alone is unclear has a `label`; short values are joined with `phone="inline"` (the dot ends the earlier value, so a wrapped line never starts with one, and labels are kept), and empty or desktop-only cells use `phone="hide"`. Report results label every column and show 50 rows at a time, as does the asset register; wide numeric grids (EEO-1) scroll sideways (`stack={false}`).
+- **Forms on phones** (below `sm`, inside the app's `main` and dialogs, `base.css`): every control is at least 44px tall, inputs and selects take the full width, `Field` takes the whole line in a wrapping row, and the submit button is full width (search forms excepted). `nativeSelectClass` gives native selects the input metrics. Forms keep one primary action.
+- **Bars at 90%.** The translucent top bar and phone tab bar use `chrome` at 90% instead of 80%: at 80%, secondary labels over a full-width accent button or dark text under the bar fell to 4.49:1 (the a11y sweep found it at 320px); at 90% they keep at least 4.8:1 over anything.
+- **Coded values** read in words: My details uses the same `reports.enum.*` names as the profile, formats numbers for the locale, and names the nationality (`regionName`, `Intl.DisplayNames`).
+
+**Consequences.** Screens owned by other agents (documents, payslips, payroll, the back office) pick up the container, empty-state and form rules without code changes; their own conversions stay theirs. Phone visual baselines change again (re-baselined by the coordinator).
+
+## ADR-0185 — The staging test company can be reset through the verified purge (2026-10-24)
+
+**Context.** The staging seed (ADR-0158) fills an empty workspace once and then only updates the sign-ins. This round adds new sample data: documents to sign and countersign, provider payslips, right-to-work evidence, HR requests and targeted notifications. New-workspace defaults also changed (two-step verification for everyone, ADR-0170). None of it reaches a staging workspace seeded earlier. The product owner approved deleting and recreating the fictional test company on 2026-10-24.
+
+**Decision.**
+
+- **The trigger.** `STAGING_RESET=delete-fictional-test-workspace` makes the seed delete the workspace it made, then seed it from scratch (`apps/api/src/cli/staging/reset.ts`). The deploy workflow sets it for one run of the seed job when the owner ticks **reset_test_data**. Any other value is refused.
+- **Only the seed's own workspace.** The reset refuses a workspace whose audit trail has no `staging.seed_completed` marker. The seed refuses production as before.
+- **The same verified purge as a customer's account closure** (`purgeTenant`): every tenant table, the audit trail, files with their versions and cache keys are deleted and verified empty, and a deletion certificate is stored in the registry. No deletion code is specific to staging.
+- **Retiring the name.** The deleted workspace keeps its registry and directory rows (status deleted) under a retired name, `kestrel-r<UTC minute>`, so `kestrel` is free for the new one. The Postgres directory gains slug updates for this. The DynamoDB directory refuses them, because production never renames workspaces.
+
+**Consequences.**
+
+- Anything a tester changed in the test company is lost on a reset. The sign-in passwords stay as they are, from the Secret Manager secret, but every login enrols two-step verification again.
+- `apps/api/test/seed-staging-reset.int.test.ts` covers three cases: a workspace the seed did not create is refused, the purge is certified and empty, and the workspace is rebuilt under the same name with working sign-ins.

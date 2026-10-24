@@ -1,5 +1,6 @@
 import type pg from 'pg';
-import type { SignalSource } from '@thapsus/core/security';
+import type { AUTH_SIGNALS, SignalSource } from '@thapsus/core/security';
+import type { SecurityEvent, SecurityEventType } from '../../lib/security-events';
 
 /**
  * The security signal buffer of an API process (ADR-0177). Request outcomes, the identity work's
@@ -10,8 +11,8 @@ import type { SignalSource } from '@thapsus/core/security';
  * Only pseudonymous values are accepted: ids must be UUIDs, the address must already be a keyed hash
  * (plus its truncated network), detail values must be codes, numbers or booleans. Anything else is dropped.
  *
- * MERGE NOTE (identity work, `apps/api/src/lib/security-events.ts`): once it is merged, the security plugin
- * subscribes with `onSecurityEvent((e) => signals.push(fromAuthEvent(e)))`; see http.ts.
+ * Authentication, session and staff events come from `apps/api/src/lib/security-events.ts`: the security
+ * plugin subscribes with `onSecurityEvent` (http.ts) and stores each through `fromAuthEvent`.
  */
 export interface Signal {
   at: string;
@@ -27,20 +28,14 @@ export interface Signal {
   detail?: Record<string, string | number | boolean | null>;
 }
 
-/** The shape of an identity event (SecurityEvent in security-events.ts), as far as the pipeline reads it. */
-export interface AuthEventLike {
-  type: string;
-  at: string;
-  tenantId?: string;
-  userId?: string;
-  staffId?: string;
-  ipKey?: string;
-  accountKey?: string;
-  route?: string;
-  detail?: Record<string, string | number | boolean | null>;
-}
+/**
+ * The signal contract names exactly the identity work's event types: this fails to compile when either side
+ * adds a type the other does not list (packages/core/src/security/signals.ts and lib/security-events.ts).
+ */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+export const AUTH_SIGNALS_MATCH_SECURITY_EVENTS: Same<keyof typeof AUTH_SIGNALS, SecurityEventType> = true;
 
-export function fromAuthEvent(e: AuthEventLike): Signal {
+export function fromAuthEvent(e: SecurityEvent): Signal {
   return {
     at: e.at,
     type: e.type,

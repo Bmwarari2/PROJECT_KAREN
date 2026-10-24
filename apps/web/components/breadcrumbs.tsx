@@ -59,3 +59,23 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
     </nav>
   );
 }
+
+/**
+ * A back link to the page above this one ("‹ Settings"), the phone convention for a page one step into
+ * a list (ADR-0181). It is a navigation landmark like the trail it stands in for, and a full-size tap
+ * target.
+ */
+export function BackLink({ href, label, className }: { href: string; label: string; className?: string }) {
+  const t = useT();
+  return (
+    <nav aria-label={t('actionable.crumbs.label')} className={cn('min-w-0', className)}>
+      <IntentLink
+        href={href}
+        className="-ml-1 inline-flex min-h-11 items-center gap-0.5 rounded-sm pr-2 text-callout text-accent no-underline hover:underline"
+      >
+        <ChevronLeft aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5]" />
+        {label}
+      </IntentLink>
+    </nav>
+  );
+}

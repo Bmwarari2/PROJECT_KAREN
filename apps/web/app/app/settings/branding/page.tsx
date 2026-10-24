@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { Button, Card, CardTitle, colors, Field, Input, Skeleton, useToast } from '@thapsus/ui';
+import { Button, Card, colors, Field, Input, Skeleton, useToast, PageSection } from '@thapsus/ui';
 import { api, ApiProblem } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -144,130 +144,136 @@ export default function BrandingPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('platform.branding.title')} lead={t('platform.branding.lead')} />
-      <Card>
-        <CardTitle as={sec.heading}>{t('platform.branding.accentTitle')}</CardTitle>
-        <p className="mt-2 max-w-[var(--prose-width)] text-callout text-text-secondary">
-          {t('platform.branding.accentBody')}
-        </p>
-        {!branding.data ? <Skeleton className="mt-4 h-24" /> : null}
-        <form onSubmit={save} className={branding.data ? 'mt-4 flex flex-col gap-4' : 'hidden'} noValidate>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              id="accent-light"
-              label={t('platform.branding.accentLight')}
-              hint={t('platform.branding.hexHint')}
-            >
-              {(p) => (
-                <Input
-                  {...p}
-                  value={light}
-                  onChange={(e) => setLight(e.target.value.trim())}
-                  maxLength={7}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              )}
-            </Field>
-            {separateDark ? (
+      <PageSection
+        headingLevel={sec.level}
+        title={t('platform.branding.accentTitle')}
+        description={t('platform.branding.accentBody')}
+      >
+        <Card>
+          {!branding.data ? <Skeleton className="h-24" /> : null}
+          <form onSubmit={save} className={branding.data ? 'mt-4 flex flex-col gap-4' : 'hidden'} noValidate>
+            <div className="grid gap-4 md:grid-cols-2">
               <Field
-                id="accent-dark"
-                label={t('platform.branding.accentDark')}
+                id="accent-light"
+                label={t('platform.branding.accentLight')}
                 hint={t('platform.branding.hexHint')}
               >
                 {(p) => (
                   <Input
                     {...p}
-                    value={dark}
-                    onChange={(e) => setDark(e.target.value.trim())}
+                    value={light}
+                    onChange={(e) => setLight(e.target.value.trim())}
                     maxLength={7}
                     autoComplete="off"
                     spellCheck={false}
                   />
                 )}
               </Field>
+              {separateDark ? (
+                <Field
+                  id="accent-dark"
+                  label={t('platform.branding.accentDark')}
+                  hint={t('platform.branding.hexHint')}
+                >
+                  {(p) => (
+                    <Input
+                      {...p}
+                      value={dark}
+                      onChange={(e) => setDark(e.target.value.trim())}
+                      maxLength={7}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  )}
+                </Field>
+              ) : null}
+            </div>
+            <label className="flex items-center gap-2 text-callout">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[var(--color-accent)]"
+                checked={separateDark}
+                onChange={(e) => setSeparateDark(e.target.checked)}
+              />
+              {t('platform.branding.separateDark')}
+            </label>
+            {failures ? (
+              <div role="alert" className="rounded-md border border-danger p-3">
+                <p className="text-callout font-semibold text-danger">{t('platform.branding.rejected')}</p>
+                <ul className="mt-2 list-disc pl-5 text-footnote">
+                  {failures.map((f) => (
+                    <li key={`${f.mode}-${f.pair}`}>
+                      {t('platform.branding.failure', {
+                        mode: t(`platform.branding.mode_${f.mode}`),
+                        pair: f.pair,
+                        ratio: f.ratio.toFixed(2),
+                        required: f.required,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
-          </div>
-          <label className="flex items-center gap-2 text-callout">
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-[var(--color-accent)]"
-              checked={separateDark}
-              onChange={(e) => setSeparateDark(e.target.checked)}
-            />
-            {t('platform.branding.separateDark')}
-          </label>
-          {failures ? (
-            <div role="alert" className="rounded-md border border-danger p-3">
-              <p className="text-callout font-semibold text-danger">{t('platform.branding.rejected')}</p>
-              <ul className="mt-2 list-disc pl-5 text-footnote">
-                {failures.map((f) => (
-                  <li key={`${f.mode}-${f.pair}`}>
-                    {t('platform.branding.failure', {
-                      mode: t(`platform.branding.mode_${f.mode}`),
-                      pair: f.pair,
-                      ratio: f.ratio.toFixed(2),
-                      required: f.required,
-                    })}
-                  </li>
-                ))}
-              </ul>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" loading={busy} disabled={!valid}>
+                {t('platform.branding.save')}
+              </Button>
+              {branding.data?.accentLight ? (
+                <Button type="button" variant="secondary" onClick={() => save(null, true)}>
+                  {t('platform.branding.reset')}
+                </Button>
+              ) : null}
+            </div>
+          </form>
+          {branding.data?.palette ? (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <Preview mode="light" p={branding.data.palette.light} />
+              <Preview mode="dark" p={branding.data.palette.dark} />
             </div>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" loading={busy} disabled={!valid}>
-              {t('platform.branding.save')}
-            </Button>
-            {branding.data?.accentLight ? (
-              <Button type="button" variant="secondary" onClick={() => save(null, true)}>
-                {t('platform.branding.reset')}
-              </Button>
-            ) : null}
-          </div>
-        </form>
-        {branding.data?.palette ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <Preview mode="light" p={branding.data.palette.light} />
-            <Preview mode="dark" p={branding.data.palette.dark} />
-          </div>
-        ) : null}
-      </Card>
+        </Card>
+      </PageSection>
 
-      <Card>
-        <CardTitle as={sec.heading}>{t('platform.branding.logoTitle')}</CardTitle>
-        <p className="mt-2 text-callout text-text-secondary">{t('platform.branding.logoBody')}</p>
-        {branding.data?.logo ? (
-          <div className="mt-4 flex items-center gap-4">
-            <img
-              src={branding.data.logo.url}
-              alt={t('platform.branding.logoAlt')}
-              className="h-12 max-w-[200px] object-contain"
-            />
-            <Button size="sm" variant="secondary" onClick={removeLogo}>
-              {t('platform.branding.removeLogo')}
-            </Button>
-          </div>
-        ) : null}
-        <form onSubmit={upload} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Field
-            id="logo-file"
-            label={t('platform.branding.logoFile')}
-            hint={t('platform.branding.logoHint')}
-          >
-            {(p) => (
-              <input
-                {...p}
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="text-callout"
+      <PageSection
+        headingLevel={sec.level}
+        title={t('platform.branding.logoTitle')}
+        description={t('platform.branding.logoBody')}
+      >
+        <Card>
+          {branding.data?.logo ? (
+            <div className="mt-4 flex items-center gap-4">
+              <img
+                src={branding.data.logo.url}
+                alt={t('platform.branding.logoAlt')}
+                className="h-12 max-w-[200px] object-contain"
               />
-            )}
-          </Field>
-          <Button type="submit" variant="secondary">
-            {t('platform.branding.upload')}
-          </Button>
-        </form>
-      </Card>
+              <Button size="sm" variant="secondary" onClick={removeLogo}>
+                {t('platform.branding.removeLogo')}
+              </Button>
+            </div>
+          ) : null}
+          <form onSubmit={upload} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <Field
+              id="logo-file"
+              label={t('platform.branding.logoFile')}
+              hint={t('platform.branding.logoHint')}
+            >
+              {(p) => (
+                <input
+                  {...p}
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="text-callout"
+                />
+              )}
+            </Field>
+            <Button type="submit" variant="secondary">
+              {t('platform.branding.upload')}
+            </Button>
+          </form>
+        </Card>
+      </PageSection>
     </div>
   );
 }

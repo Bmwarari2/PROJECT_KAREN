@@ -2,9 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { TRUST } from '@thapsus/core/trust';
 import { ownerUrl, TEST_DBS } from '@thapsus/db/testing';
-import { closeDb, enrolTotp, startTestApp, totpCode, type TestContext } from './helpers';
+import { closeDb, enrolTotp, startTestApp, type TestContext } from './helpers';
 import { privacyCompany, type PrivacyCompany } from './privacy-fixtures';
-import { createStaff, STAFF_COOKIE } from '../src/modules/backoffice/auth';
+import { staffSession } from './staff-helpers';
 
 let ctx: TestContext;
 let c: PrivacyCompany;
@@ -259,24 +259,7 @@ describe('incident and breach log', () => {
   });
 
   it('records the Thapsus-side breach register (staff only) and notifies affected controllers in their own log', async () => {
-    const email = `privacy.staff.${Math.random().toString(36).slice(2, 6)}@thapsus.example.test`;
-    const s = await createStaff(ctx.app, email, 'Fictional Staff', 'support');
-    const login = await ctx.app.inject({
-      method: 'POST',
-      url: '/v1/backoffice/auth/login',
-      payload: { email, password: s.password },
-    });
-    const cookie = `${STAFF_COOKIE}=${String(login.headers['set-cookie']).split(';')[0]!.split('=')[1]}`;
-    expect(
-      (
-        await ctx.app.inject({
-          method: 'POST',
-          url: '/v1/backoffice/auth/totp',
-          headers: { cookie },
-          payload: { code: totpCode(s.totpSecret, ctx.clock.now) },
-        })
-      ).statusCode,
-    ).toBe(204);
+    const { cookie, staffId } = await staffSession(ctx, 'support');
     expect((await ctx.app.inject({ method: 'GET', url: '/v1/backoffice/breaches' })).statusCode).toBe(401);
     expect((await c.api('GET', '/v1/backoffice/breaches')).statusCode).toBe(401); // tenant sessions never reach the back office
 
@@ -318,7 +301,8 @@ describe('incident and breach log', () => {
     await ownerDb.connect();
     try {
       const trail = await ownerDb.query(
-        `SELECT action FROM backoffice.staff_audit WHERE action LIKE 'breach.%' ORDER BY at`,
+        `SELECT action FROM backoffice.staff_audit WHERE action LIKE 'breach.%' AND staff_id = $1 ORDER BY at`,
+        [staffId],
       );
       expect(trail.rows.map((r) => r.action)).toEqual(['breach.recorded', 'breach.controllers_notified']);
       const cols = await ownerDb.query<{ c: string }>(

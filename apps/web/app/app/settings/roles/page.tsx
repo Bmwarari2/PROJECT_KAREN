@@ -2,26 +2,14 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Plus, ShieldCheck } from 'lucide-react';
-import {
-  Badge,
-  buttonVariants,
-  Card,
-  cn,
-  EmptyState,
-  Skeleton,
-  Table,
-  TableToolbar,
-  TD,
-  TH,
-  THead,
-  TR,
-} from '@thapsus/ui';
+import { Badge, buttonVariants, cn, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { hasPermission, ModuleFrameContext, PageTitle, useSession } from '../../shell';
 import { RolesNav } from './nav';
 import { roleName, type Role } from './shared';
 import { selectClass } from '../kit';
+import { ListCard } from '@/components/module-page';
 
 export default function RolesPage() {
   const t = useT();
@@ -61,28 +49,28 @@ export default function RolesPage() {
       ) : data.length === 0 ? (
         <EmptyState icon={<ShieldCheck aria-hidden />} title={t('access.roles.empty')} />
       ) : (
-        <Card className="overflow-hidden p-0">
-          <TableToolbar
-            title={t('access.compare.allRoles')}
-            count={t('access.compare.roleCount', { count: rows.length })}
-            filters={
-              <select
-                aria-label={t('access.compare.typeFilter')}
-                className={cn(selectClass, 'w-auto')}
-                value={type}
-                onChange={(e) => setType(e.target.value as typeof type)}
-              >
-                <option value="all">{t('access.compare.typeAll')}</option>
-                <option value="builtIn">{t('access.roles.builtIn')}</option>
-                <option value="custom">{t('access.roles.custom')}</option>
-              </select>
-            }
-            actions={
-              <Link href="/app/settings/users" className="text-callout">
-                {t('app.settings.usersLink')}
-              </Link>
-            }
-          />
+        <ListCard
+          title={t('access.compare.allRoles')}
+          titleAs={inModule ? 'h3' : 'h2'}
+          count={t('access.compare.roleCount', { count: rows.length })}
+          filters={
+            <select
+              aria-label={t('access.compare.typeFilter')}
+              className={cn(selectClass, 'w-auto')}
+              value={type}
+              onChange={(e) => setType(e.target.value as typeof type)}
+            >
+              <option value="all">{t('access.compare.typeAll')}</option>
+              <option value="builtIn">{t('access.roles.builtIn')}</option>
+              <option value="custom">{t('access.roles.custom')}</option>
+            </select>
+          }
+          actions={
+            <Link href="/app/settings/users" className="text-callout">
+              {t('app.settings.usersLink')}
+            </Link>
+          }
+        >
           <Table scrollLabel={t('access.compare.allRoles')}>
             <caption className="sr-only">{t('access.compare.allRoles')}</caption>
             <THead>
@@ -112,17 +100,19 @@ export default function RolesPage() {
                       {r.isAdmin ? <Badge tone="warning">{t('access.roles.admin')}</Badge> : null}
                     </span>
                   </TD>
-                  <TD className="text-text-secondary">
+                  <TD className="text-text-secondary" phone="inline" label={t('access.roles.colPermissions')}>
                     {r.permissions.includes('*')
                       ? t('access.roles.allPermissions')
                       : t('access.roles.permissionCount', { count: r.permissions.length })}
                   </TD>
-                  <TD className="text-right tabular-nums">{r.assignmentCount}</TD>
+                  <TD className="text-right tabular-nums" phone="inline" label={t('access.roles.colHolders')}>
+                    {r.assignmentCount}
+                  </TD>
                 </TR>
               ))}
             </tbody>
           </Table>
-        </Card>
+        </ListCard>
       )}
     </div>
   );

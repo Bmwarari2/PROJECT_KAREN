@@ -620,16 +620,22 @@ function DeliveryLog({ exp }: { exp: DataExport }) {
                 </span>
               ) : null}
             </TD>
-            <TD className="text-right tabular-nums">{n(d.rows)}</TD>
-            <TD className="text-right tabular-nums">{n(d.bytes)}</TD>
-            <TD className="text-right tabular-nums">
+            <TD className="text-right tabular-nums" label={t('reports.runs.rows')}>
+              {n(d.rows)}
+            </TD>
+            <TD className="text-right tabular-nums" label={t('reports.exports.bytes')}>
+              {n(d.bytes)}
+            </TD>
+            <TD className="text-right tabular-nums" label={t('reports.exports.duration')}>
               {d.durationMs === null
                 ? '—'
                 : t('reports.exports.seconds', {
                     n: numberFormat(locale, { maximumFractionDigits: 1 }).format(d.durationMs / 1000),
                   })}
             </TD>
-            <TD className="whitespace-nowrap">{formatDateTime(d.createdAt, locale, zone)}</TD>
+            <TD className="whitespace-nowrap" label={t('reports.runs.requested')}>
+              {formatDateTime(d.createdAt, locale, zone)}
+            </TD>
           </TR>
         ))}
       </tbody>
@@ -726,12 +732,13 @@ export default function ExportsPage() {
             </Dialog>
           }
         />
-        <div className="p-5">
+        <div className="px-5">
           {dests.data.data.length ? (
-            <ul className="grid gap-4 md:grid-cols-2">
+            // rows of the card, divided by hairlines (no boxes inside the card)
+            <ul className="flex flex-col divide-y divide-border">
               {dests.data.data.map((d) => (
                 <li key={d.id}>
-                  <div className="flex h-full flex-col gap-3 rounded-md border border-border p-4">
+                  <div className="flex h-full flex-col gap-3 py-4">
                     <div className="flex flex-wrap items-center gap-2 [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-[1.5]">
                       {d.kind === 's3' ? (
                         <Database aria-hidden className="text-accent" />
@@ -858,12 +865,12 @@ export default function ExportsPage() {
             </Dialog>
           }
         />
-        <div className="p-5">
+        <div className="px-5">
           {exports.data.length ? (
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col divide-y divide-border">
               {exports.data.map((x) => (
                 <li key={x.id}>
-                  <div className="flex flex-col gap-3 rounded-md border border-border p-4">
+                  <div className="flex flex-col gap-3 py-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <CardTitle as="h3" className="mr-auto text-callout font-semibold">
                         {x.name}

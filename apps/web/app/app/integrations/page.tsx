@@ -15,6 +15,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -459,86 +460,90 @@ export default function IntegrationsPage() {
         ))}
       </div>
 
-      <Card>
-        <CardTitle>{t('integrations.dryRun')}</CardTitle>
-        <p className="mt-1 text-callout text-text-secondary">{t('integrations.dryRunBody')}</p>
-        <form onSubmit={preview} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
-          <Field id="dry-provider" label={t('integrations.provider')}>
-            {(p) => (
-              <select
-                {...p}
-                className={select}
-                value={dry.provider}
-                onChange={(e) => setDry({ ...dry, provider: e.target.value as Provider })}
-              >
-                <option value="microsoft365">{t('integrations.providers.microsoft365')}</option>
-                <option value="google_workspace">{t('integrations.providers.google_workspace')}</option>
-              </select>
-            )}
-          </Field>
-          <Field id="dry-employee" label={t('integrations.employee')}>
-            {(p) => (
-              <select
-                {...p}
-                required
-                className={select}
-                value={dry.employeeId}
-                onChange={(e) => setDry({ ...dry, employeeId: e.target.value })}
-              >
-                <option value="">{t('integrations.chooseEmployee')}</option>
-                {(people.data?.data ?? []).map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.displayName}
-                  </option>
+      <PageSection
+        headingLevel={2}
+        title={t('integrations.dryRun')}
+        description={t('integrations.dryRunBody')}
+      >
+        <Card>
+          <form onSubmit={preview} className="grid gap-3 md:grid-cols-4 md:items-end">
+            <Field id="dry-provider" label={t('integrations.provider')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={select}
+                  value={dry.provider}
+                  onChange={(e) => setDry({ ...dry, provider: e.target.value as Provider })}
+                >
+                  <option value="microsoft365">{t('integrations.providers.microsoft365')}</option>
+                  <option value="google_workspace">{t('integrations.providers.google_workspace')}</option>
+                </select>
+              )}
+            </Field>
+            <Field id="dry-employee" label={t('integrations.employee')}>
+              {(p) => (
+                <select
+                  {...p}
+                  required
+                  className={select}
+                  value={dry.employeeId}
+                  onChange={(e) => setDry({ ...dry, employeeId: e.target.value })}
+                >
+                  <option value="">{t('integrations.chooseEmployee')}</option>
+                  {(people.data?.data ?? []).map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.displayName}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field id="dry-lifecycle" label={t('integrations.lifecycle')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={select}
+                  value={dry.lifecycle}
+                  onChange={(e) => setDry({ ...dry, lifecycle: e.target.value })}
+                >
+                  <option value="joiner">{t('integrations.joiner')}</option>
+                  <option value="leaver">{t('integrations.leaver')}</option>
+                </select>
+              )}
+            </Field>
+            <Button type="submit" variant="secondary">
+              <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('integrations.preview')}
+            </Button>
+          </form>
+          {plan ? (
+            <div className="mt-4">
+              <p className="text-callout">
+                {plan.skipped
+                  ? t('integrations.nothingToDo')
+                  : t('integrations.planFor', { name: plan.principalName })}
+              </p>
+              <ol className="mt-2 flex flex-col gap-2">
+                {plan.operations.map((o) => (
+                  <li key={o.seq} className="border-t border-border pt-2 first:border-t-0 first:pt-0">
+                    <p className="text-callout font-semibold">
+                      {o.seq}. {t(`integrations.ops.${o.op}`)}
+                    </p>
+                    <p className="break-all font-mono text-footnote text-text-secondary">
+                      {o.method} {o.url}
+                    </p>
+                    {o.body ? (
+                      <pre className="mt-2 overflow-x-auto rounded-sm bg-surface p-2 text-footnote">
+                        {JSON.stringify(o.body, null, 2)}
+                      </pre>
+                    ) : null}
+                  </li>
                 ))}
-              </select>
-            )}
-          </Field>
-          <Field id="dry-lifecycle" label={t('integrations.lifecycle')}>
-            {(p) => (
-              <select
-                {...p}
-                className={select}
-                value={dry.lifecycle}
-                onChange={(e) => setDry({ ...dry, lifecycle: e.target.value })}
-              >
-                <option value="joiner">{t('integrations.joiner')}</option>
-                <option value="leaver">{t('integrations.leaver')}</option>
-              </select>
-            )}
-          </Field>
-          <Button type="submit" variant="secondary">
-            <Play aria-hidden className="h-4 w-4 stroke-[1.5]" />
-            {t('integrations.preview')}
-          </Button>
-        </form>
-        {plan ? (
-          <div className="mt-4">
-            <p className="text-callout">
-              {plan.skipped
-                ? t('integrations.nothingToDo')
-                : t('integrations.planFor', { name: plan.principalName })}
-            </p>
-            <ol className="mt-2 flex flex-col gap-2">
-              {plan.operations.map((o) => (
-                <li key={o.seq} className="rounded-md border border-border p-3">
-                  <p className="text-callout font-semibold">
-                    {o.seq}. {t(`integrations.ops.${o.op}`)}
-                  </p>
-                  <p className="break-all font-mono text-footnote text-text-secondary">
-                    {o.method} {o.url}
-                  </p>
-                  {o.body ? (
-                    <pre className="mt-2 overflow-x-auto rounded-sm bg-surface p-2 text-footnote">
-                      {JSON.stringify(o.body, null, 2)}
-                    </pre>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : null}
-      </Card>
+              </ol>
+            </div>
+          ) : null}
+        </Card>
+      </PageSection>
 
       <ListCard
         title={t('integrations.log')}
@@ -602,7 +607,7 @@ export default function IntegrationsPage() {
               <TR key={o.id}>
                 <TD>{formatDateTime(o.executedAt ?? o.createdAt, locale, tz)}</TD>
                 <TD>{o.employeeName ? <PersonLink id={o.employeeId} name={o.employeeName} /> : ''}</TD>
-                <TD>
+                <TD label={t('integrations.step')}>
                   {t(`integrations.providers.${o.provider}`)} · {t(`integrations.ops.${o.op}`)}
                 </TD>
                 <TD>

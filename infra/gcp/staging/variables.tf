@@ -80,8 +80,31 @@ variable "security_alert_emails" {
   description = "Thapsus staff addresses that receive security alerts (critical and high at once, digests, the daily test and the dead-man's switch; ADR-0178). Configuration, never code: set it from a GitHub variable. Empty means alerts are recorded with no recipients and the back office says so."
   type        = list(string)
   default     = []
+  # staff addresses: plans in the (public) workflow logs never show them
+  sensitive = true
   validation {
     condition     = length(var.security_alert_emails) <= 20 && alltrue([for e in var.security_alert_emails : can(regex("^[^\\s@,<>]+@[^\\s@,<>]+\\.[A-Za-z]{2,24}$", e))])
     error_message = "security_alert_emails must be at most 20 email addresses."
   }
+}
+# The first Thapsus staff member (the product owner) invited to this cell's back office by the
+# staff-invite job (ADR-0174), from the GitHub repository variables GCP_STAFF_OWNER_EMAIL and
+# GCP_STAFF_OWNER_NAME. Empty: nobody is invited. Sensitive, so plans in the (public) workflow logs
+# never show them; never commit a real address here.
+variable "staff_owner_email" {
+  description = "Work email of the first staff member to invite to the back office (empty: none)."
+  type        = string
+  default     = ""
+  sensitive   = true
+  validation {
+    condition     = var.staff_owner_email == "" || can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.staff_owner_email))
+    error_message = "staff_owner_email must be an email address or empty."
+  }
+}
+
+variable "staff_owner_name" {
+  description = "Display name of that staff member."
+  type        = string
+  default     = ""
+  sensitive   = true
 }

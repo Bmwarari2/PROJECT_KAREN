@@ -14,3 +14,23 @@
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
+/* Printing one sheet (the payslip view, ADR-0167): when a page holds an element marked data-print-sheet,
+   only that element prints, without the app's bars and menus. */
+@media print {
+  body:has([data-print-sheet]) * {
+    visibility: hidden;
+  }
+  body:has([data-print-sheet]) [data-print-sheet],
+  body:has([data-print-sheet]) [data-print-sheet] * {
+    visibility: visible;
+  }
+  [data-print-sheet] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+  [data-print-hide] {
+    display: none !important;
+  }
+}

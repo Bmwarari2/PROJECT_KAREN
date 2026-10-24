@@ -14,6 +14,7 @@ import {
 } from '@thapsus/db';
 import type { Deps } from '../../deps';
 import { open, type Envelope } from '../../lib/kms';
+import { isSealedFile, openFile, sealedFileContext } from '../../lib/sealed-file';
 import { SECRET_COLUMN } from './subject-map';
 
 const sha256 = (b: Uint8Array | string) => createHash('sha256').update(b).digest('hex');
@@ -231,14 +232,36 @@ export async function buildCompanyExport(
   // Stored files under the tenant prefix (earlier exports excluded so archives do not nest).
   const keys = (await deps.objects.list(`${tenantId}/`)).filter((k) => !k.startsWith(`${tenantId}/exports/`));
   const fileLines = ['"key","bytes","sha256","archivePath"'];
+  // Sealed special-category files (right-to-work evidence, ADR-0166) are opened for the controller like the
+  // vault values above, and the decrypts are audited per category.
+  const sealedByCategory: Record<string, number> = {};
   for (const key of keys) {
-    const body = await deps.objects.get(key);
+    let body = await deps.objects.get(key);
+    if (isSealedFile(body)) {
+      const sealedCtx = sealedFileContext(body);
+      if (sealedCtx.tenant !== tenantId) throw new Error('sealed file of another tenant under this prefix');
+      body = await openFile(deps.keys, body, sealedCtx);
+      sealedByCategory[sealedCtx.category] = (sealedByCategory[sealedCtx.category] ?? 0) + 1;
+    }
     const path = `files/${key.slice(tenantId.length + 1)}`;
     out.add(path, body);
     fileLines.push([key, body.length, sha256(body), path].map(csvCell).join(','));
     manifest.files.count++;
     manifest.files.bytes += body.length;
   }
+  if (Object.keys(sealedByCategory).length)
+    await ctx.tx(async (tx) => {
+      for (const [category, n] of Object.entries(sealedByCategory))
+        await writeAudit(tx, {
+          actorType: ctx.job.created_by ? 'user' : 'system',
+          actorId: ctx.job.created_by,
+          action: 'vault.read',
+          targetType: `vault:${category}`,
+          targetId: exportId,
+          diff: { purpose: 'company_export_files', exportId, files: n },
+          sensitive: true,
+        });
+    });
   out.add(manifest.files.manifest, Buffer.from(fileLines.join('\r\n') + '\r\n'));
   out.add('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
   await ctx.progress(step + 1, total);

@@ -215,8 +215,13 @@ describe('publish, notify and self-service', () => {
         [emp.ada],
       ),
     );
+    // the notification opens the payslip itself (ADR-0167)
     expect(notes).toEqual([
-      { title_key: 'notify.payslipAvailable', link: '/app/payslips', params: { label: 'May 2026' } },
+      {
+        title_key: 'notify.payslipAvailable',
+        link: expect.stringMatching(/^\/app\/payslips\/[0-9a-f-]{36}$/),
+        params: { label: 'May 2026' },
+      },
     ]);
     // publishing again sends nothing new
     expect(

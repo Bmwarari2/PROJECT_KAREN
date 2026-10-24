@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { CalendarPlus, Link2, Stethoscope } from 'lucide-react';
+import { CalendarDays, CalendarPlus, Link2, Stethoscope } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -9,6 +9,10 @@ import {
   EmptyState,
   Field,
   Input,
+  ListItem,
+  ListSection,
+  nativeSelectClass,
+  PageSection,
   Skeleton,
   Table,
   TD,
@@ -112,73 +116,78 @@ function SicknessCard() {
   }
 
   return (
-    <Card>
-      <CardTitle>{t('timeOff.sickness.title')}</CardTitle>
-      <form onSubmit={submit} className="mt-3 grid gap-3 md:grid-cols-4 md:items-end">
-        <Field id="sick-employee" label={t('timeOff.sickness.employee')}>
-          {(p) => (
-            <select
-              {...p}
-              required
-              value={form.employeeId}
-              onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-              className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
-            >
-              {(people.data?.data ?? []).map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.displayName ?? x.id}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-        <Field id="sick-start" label={t('timeOff.sickness.firstDay')}>
-          {(p) => (
-            <Input
-              {...p}
-              type="date"
-              required
-              value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            />
-          )}
-        </Field>
-        <Field id="sick-end" label={t('timeOff.sickness.lastDay')}>
-          {(p) => (
-            <Input
-              {...p}
-              type="date"
-              min={form.startDate || undefined}
-              value={form.endDate}
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            />
-          )}
-        </Field>
-        <Button type="submit" loading={busy} disabled={!people.data?.data.length}>
-          <Stethoscope aria-hidden className="h-4 w-4 stroke-[1.5]" />
-          {t('timeOff.sickness.submit')}
-        </Button>
-      </form>
-      <h3 className="mt-5 text-callout font-semibold">{t('timeOff.sickness.recent')}</h3>
-      {recent.data?.length ? (
-        <ul className="mt-2 flex flex-col gap-2">
-          {recent.data.slice(0, 10).map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-2 text-callout">
-              <PersonLink id={r.employeeId} name={r.employeeName} tab="time-off" />
-              <span className="text-text-secondary">
-                {formatDate(r.startDate, locale)} –{' '}
-                {r.endDate ? formatDate(r.endDate, locale) : t('timeOff.sickness.ongoing')}
-              </span>
-              <Badge tone={rtwTone[r.rtwStatus as keyof typeof rtwTone] ?? 'neutral'}>
-                {t(`timeOff.sickness.rtw.${r.rtwStatus}`)}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-2 text-callout text-text-secondary">{t('timeOff.sickness.none')}</p>
-      )}
-    </Card>
+    <PageSection title={t('timeOff.sickness.title')} className="gap-3">
+      <Card>
+        <form onSubmit={submit} className="grid gap-3 md:grid-cols-4 md:items-end">
+          <Field id="sick-employee" label={t('timeOff.sickness.employee')}>
+            {(p) => (
+              <select
+                {...p}
+                required
+                value={form.employeeId}
+                onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
+                className={nativeSelectClass}
+              >
+                {(people.data?.data ?? []).map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.displayName ?? x.id}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field id="sick-start" label={t('timeOff.sickness.firstDay')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="date"
+                required
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field id="sick-end" label={t('timeOff.sickness.lastDay')}>
+            {(p) => (
+              <Input
+                {...p}
+                type="date"
+                min={form.startDate || undefined}
+                value={form.endDate}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+              />
+            )}
+          </Field>
+          <Button type="submit" loading={busy} disabled={!people.data?.data.length}>
+            <Stethoscope aria-hidden className="h-4 w-4 stroke-[1.5]" />
+            {t('timeOff.sickness.submit')}
+          </Button>
+        </form>
+      </Card>
+      <ListSection title={t('timeOff.sickness.recent')} headingLevel={3}>
+        {recent.data?.length ? (
+          recent.data
+            .slice(0, 10)
+            .map((r) => (
+              <ListItem
+                key={r.id}
+                leading={<Stethoscope aria-hidden />}
+                title={<PersonLink id={r.employeeId} name={r.employeeName} tab="time-off" />}
+                subtitle={`${formatDate(r.startDate, locale)} – ${
+                  r.endDate ? formatDate(r.endDate, locale) : t('timeOff.sickness.ongoing')
+                }`}
+                meta={
+                  <Badge tone={rtwTone[r.rtwStatus as keyof typeof rtwTone] ?? 'neutral'}>
+                    {t(`timeOff.sickness.rtw.${r.rtwStatus}`)}
+                  </Badge>
+                }
+              />
+            ))
+        ) : (
+          <ListItem title={t('timeOff.sickness.none')} />
+        )}
+      </ListSection>
+    </PageSection>
   );
 }
 
@@ -209,6 +218,9 @@ export default function TimeOffPage() {
   }>(`/v1/leave/calendar?from=${today}&to=${in30}`);
   const [form, setForm] = React.useState({ leaveTypeId: '', startDate: today, endDate: today, note: '' });
   const [busy, setBusy] = React.useState(false);
+  // the newest requests first, ten at a time
+  const [mineLimit, setMineLimit] = React.useState(10);
+  const [teamLimit, setTeamLimit] = React.useState(10);
   const typeName = (key: string) => {
     const lt = types.data?.find((x) => x.key === key);
     return lt ? (lt.name[locale] ?? lt.name['en-GB'] ?? key) : t(`timeOff.kind.${key}`);
@@ -302,75 +314,75 @@ export default function TimeOffPage() {
               <Skeleton className="h-40" />
             )}
           </div>
-          <Card>
-            <CardTitle>{t('timeOff.request')}</CardTitle>
-            <form onSubmit={submit} className="mt-3 grid gap-3 md:grid-cols-5 md:items-end">
-              <Field id="type" label={t('timeOff.type')}>
-                {(p) => (
-                  <select
-                    {...p}
-                    value={form.leaveTypeId}
-                    onChange={(e) => setForm({ ...form, leaveTypeId: e.target.value })}
-                    className="h-10 rounded-sm border border-border-strong bg-surface-raised px-2 text-callout"
-                  >
-                    {(types.data ?? [])
-                      .filter((x) => x.category !== 'sickness')
-                      .map((x) => (
-                        <option key={x.id} value={x.id}>
-                          {x.name[locale] ?? x.name['en-GB']}
-                        </option>
-                      ))}
-                  </select>
-                )}
-              </Field>
-              <Field id="start" label={t('timeOff.from')}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    type="date"
-                    required
-                    value={form.startDate}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        startDate: e.target.value,
-                        endDate: e.target.value > form.endDate ? e.target.value : form.endDate,
-                      })
-                    }
-                  />
-                )}
-              </Field>
-              <Field id="end" label={t('timeOff.to')}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    type="date"
-                    required
-                    min={form.startDate}
-                    value={form.endDate}
-                    onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                  />
-                )}
-              </Field>
-              <Field id="note" label={t('timeOff.note')}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    value={form.note}
-                    onChange={(e) => setForm({ ...form, note: e.target.value })}
-                  />
-                )}
-              </Field>
-              <Button type="submit" loading={busy}>
-                <CalendarPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('timeOff.send')}
-              </Button>
-            </form>
-          </Card>
-          <Card>
-            <CardTitle>{t('timeOff.mine')}</CardTitle>
+          <PageSection title={t('timeOff.request')}>
+            <Card>
+              <form onSubmit={submit} className="grid gap-3 md:grid-cols-5 md:items-end">
+                <Field id="type" label={t('timeOff.type')}>
+                  {(p) => (
+                    <select
+                      {...p}
+                      value={form.leaveTypeId}
+                      onChange={(e) => setForm({ ...form, leaveTypeId: e.target.value })}
+                      className={nativeSelectClass}
+                    >
+                      {(types.data ?? [])
+                        .filter((x) => x.category !== 'sickness')
+                        .map((x) => (
+                          <option key={x.id} value={x.id}>
+                            {x.name[locale] ?? x.name['en-GB']}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                </Field>
+                <Field id="start" label={t('timeOff.from')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      type="date"
+                      required
+                      value={form.startDate}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          startDate: e.target.value,
+                          endDate: e.target.value > form.endDate ? e.target.value : form.endDate,
+                        })
+                      }
+                    />
+                  )}
+                </Field>
+                <Field id="end" label={t('timeOff.to')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      type="date"
+                      required
+                      min={form.startDate}
+                      value={form.endDate}
+                      onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                    />
+                  )}
+                </Field>
+                <Field id="note" label={t('timeOff.note')}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      value={form.note}
+                      onChange={(e) => setForm({ ...form, note: e.target.value })}
+                    />
+                  )}
+                </Field>
+                <Button type="submit" loading={busy}>
+                  <CalendarPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                  {t('timeOff.send')}
+                </Button>
+              </form>
+            </Card>
+          </PageSection>
+          <PageSection title={t('timeOff.mine')}>
             {mine.data?.length ? (
-              <Table dense className="mt-3">
+              <Table dense>
                 <THead>
                   <tr>
                     <TH>{t('timeOff.type')}</TH>
@@ -383,7 +395,7 @@ export default function TimeOffPage() {
                   </tr>
                 </THead>
                 <tbody>
-                  {mine.data.map((r) => (
+                  {mine.data.slice(0, mineLimit).map((r) => (
                     <TR key={r.id}>
                       <TD>
                         <EntityLink href={`/app/time-off/${r.id}`}>{typeName(r.leaveType)}</EntityLink>
@@ -391,10 +403,10 @@ export default function TimeOffPage() {
                       <TD>
                         {formatDate(r.startDate, locale)} – {formatDate(r.endDate, locale)}
                       </TD>
-                      <TD className="text-right" label={t('timeOff.days')}>
+                      <TD className="text-right" phone="inline" label={t('timeOff.days')}>
                         {r.amountDays}
                       </TD>
-                      <TD>
+                      <TD phone="inline">
                         <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
                           {t(`timeOff.status.${r.status}`)}
                         </Badge>
@@ -420,36 +432,50 @@ export default function TimeOffPage() {
                 </tbody>
               </Table>
             ) : (
-              <p className="mt-2 text-callout text-text-secondary">{t('timeOff.none')}</p>
+              <Card>
+                <p className="text-callout text-text-secondary">{t('timeOff.none')}</p>
+              </Card>
             )}
-          </Card>
+            {(mine.data?.length ?? 0) > mineLimit ? (
+              <Button variant="secondary" className="self-center" onClick={() => setMineLimit((n) => n + 10)}>
+                {t('common.loadMore')}
+              </Button>
+            ) : null}
+          </PageSection>
         </>
       )}
       {canRecordSickness ? <SicknessCard /> : null}
-      <Card>
-        <CardTitle>{t('timeOff.team')}</CardTitle>
+      <ListSection
+        title={t('timeOff.team')}
+        footer={
+          team.data?.holidays.length
+            ? `${t('timeOff.upcomingHolidays')}: ${team.data.holidays
+                .map((h) => `${formatDate(h.date, locale, 'short')} ${h.name}`)
+                .join(' · ')}`
+            : undefined
+        }
+      >
         {team.data?.entries.length ? (
-          <ul className="mt-3 flex flex-col gap-2">
-            {team.data.entries.map((e, i) => (
-              <li key={i} className="flex flex-wrap items-center gap-2 text-callout">
-                <PersonLink id={e.employeeId} name={e.name} tab="time-off" />
-                <Badge>{typeName(e.kind)}</Badge>
-                <span className="text-text-secondary">
-                  {formatDate(e.start, locale)} – {formatDate(e.end, locale)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          team.data.entries
+            .slice(0, teamLimit)
+            .map((e, i) => (
+              <ListItem
+                key={i}
+                leading={<CalendarDays aria-hidden />}
+                title={<PersonLink id={e.employeeId} name={e.name} tab="time-off" />}
+                subtitle={`${formatDate(e.start, locale)} – ${formatDate(e.end, locale)}`}
+                meta={<Badge>{typeName(e.kind)}</Badge>}
+              />
+            ))
         ) : (
-          <p className="mt-2 text-callout text-text-secondary">{t('timeOff.teamNone')}</p>
+          <ListItem title={t('timeOff.teamNone')} />
         )}
-        {team.data?.holidays.length ? (
-          <p className="mt-3 text-footnote text-text-secondary">
-            {t('timeOff.upcomingHolidays')}:{' '}
-            {team.data.holidays.map((h) => `${formatDate(h.date, locale, 'short')} ${h.name}`).join(' · ')}
-          </p>
-        ) : null}
-      </Card>
+      </ListSection>
+      {(team.data?.entries.length ?? 0) > teamLimit ? (
+        <Button variant="secondary" className="-mt-3 self-center" onClick={() => setTeamLimit((n) => n + 10)}>
+          {t('common.loadMore')}
+        </Button>
+      ) : null}
     </div>
   );
 }

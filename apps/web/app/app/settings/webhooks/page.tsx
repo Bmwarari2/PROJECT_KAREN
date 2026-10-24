@@ -14,6 +14,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
@@ -94,15 +95,21 @@ function DeliveryLog({ endpoint }: { endpoint: Endpoint }) {
                 <span className="ml-2 text-text-secondary">{t('platform.webhooks.replay')}</span>
               ) : null}
             </TD>
-            <TD>
+            <TD phone="inline">
               <StatusBadge status={d.status} />
             </TD>
-            <TD className="tabular-nums">{d.attempts}</TD>
-            <TD className="tabular-nums text-footnote">{d.lastResponseStatus ?? d.lastError ?? '—'}</TD>
-            <TD className="tabular-nums text-footnote">
+            <TD className="tabular-nums" phone="inline" label={t('platform.webhooks.attempts')}>
+              {d.attempts}
+            </TD>
+            <TD className="tabular-nums text-footnote" label={t('platform.webhooks.response')}>
+              {d.lastResponseStatus ?? d.lastError ?? '—'}
+            </TD>
+            <TD className="tabular-nums text-footnote" phone="inline" label={t('platform.webhooks.duration')}>
               {d.lastDurationMs === null ? '—' : t('platform.webhooks.ms', { ms: d.lastDurationMs })}
             </TD>
-            <TD className="text-footnote">{when(d.createdAt)}</TD>
+            <TD className="text-footnote" phone="inline">
+              {when(d.createdAt)}
+            </TD>
             <TD>
               <Button
                 size="sm"
@@ -197,66 +204,69 @@ export default function WebhooksPage() {
         />
       ) : null}
 
-      <Card>
-        <CardTitle as={sec.heading}>{t('platform.webhooks.createTitle')}</CardTitle>
-        <form onSubmit={create} className="mt-4 flex flex-col gap-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field id="wh-url" label={t('platform.webhooks.url')} hint={t('platform.webhooks.urlHint')}>
-              {(p) => (
-                <Input
-                  {...p}
-                  type="url"
-                  required
-                  inputMode="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-              )}
-            </Field>
-            <Field id="wh-desc" label={t('platform.webhooks.description')}>
-              {(p) => (
-                <Input
-                  {...p}
-                  maxLength={300}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              )}
-            </Field>
-          </div>
-          <fieldset>
-            <legend className="mb-2 text-callout font-semibold">{t('platform.webhooks.events')}</legend>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {options.map((ev) => (
-                <label key={ev} className="flex items-center gap-2 text-callout">
-                  <input
-                    type="checkbox"
-                    className="h-5 w-5 accent-[var(--color-accent)]"
-                    checked={events.includes(ev)}
-                    onChange={(e) =>
-                      setEvents(e.target.checked ? [...events, ev] : events.filter((x) => x !== ev))
-                    }
+      <PageSection headingLevel={sec.level} title={t('platform.webhooks.createTitle')}>
+        <Card>
+          <form onSubmit={create} className="flex flex-col gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field id="wh-url" label={t('platform.webhooks.url')} hint={t('platform.webhooks.urlHint')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="url"
+                    required
+                    inputMode="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
                   />
-                  <code className="text-footnote">{ev}</code>
-                </label>
-              ))}
+                )}
+              </Field>
+              <Field id="wh-desc" label={t('platform.webhooks.description')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    maxLength={300}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                )}
+              </Field>
             </div>
-          </fieldset>
-          <div>
-            <Button type="submit" loading={busy} disabled={!events.length}>
-              {t('platform.webhooks.create')}
-            </Button>
-          </div>
-        </form>
-      </Card>
+            <fieldset>
+              <legend className="mb-2 text-callout font-semibold">{t('platform.webhooks.events')}</legend>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {options.map((ev) => (
+                  <label key={ev} className="flex items-center gap-2 text-callout">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-[var(--color-accent)]"
+                      checked={events.includes(ev)}
+                      onChange={(e) =>
+                        setEvents(e.target.checked ? [...events, ev] : events.filter((x) => x !== ev))
+                      }
+                    />
+                    <code className="text-footnote">{ev}</code>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div>
+              <Button type="submit" loading={busy} disabled={!events.length}>
+                {t('platform.webhooks.create')}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </PageSection>
 
       {endpoints.data && !endpoints.data.data.length ? (
-        <EmptyState
-          level={sec.level}
-          icon={<Webhook aria-hidden />}
-          title={t('platform.webhooks.none')}
-          body={t('platform.webhooks.noneBody')}
-        />
+        <Card>
+          <EmptyState
+            level={sec.level}
+            icon={<Webhook aria-hidden />}
+            title={t('platform.webhooks.none')}
+            body={t('platform.webhooks.noneBody')}
+          />
+        </Card>
       ) : null}
       {(endpoints.data?.data ?? []).map((ep) => (
         <Card key={ep.id}>
@@ -306,7 +316,12 @@ export default function WebhooksPage() {
             </Button>
           </div>
           {open === ep.id ? (
-            <div id={`log-${ep.id}`} className="mt-4">
+            // the log runs to the card's edges, so it is part of the card rather than a box inside it
+            <div
+              id={`log-${ep.id}`}
+              data-flush
+              className="-mx-5 -mb-5 mt-4 border-t border-border [&>div]:rounded-t-none [&>div]:border-0 [&>p]:px-5 [&>p]:py-4"
+            >
               <DeliveryLog endpoint={ep} />
             </div>
           ) : null}

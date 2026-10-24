@@ -74,6 +74,11 @@ export interface WorkspaceModule {
   tabs: ModuleTab[];
   /** Paths that belong to the module without being a tab (detail pages, wizards). */
   paths?: string[];
+  /**
+   * The module's index lists its pages (Settings, ADR-0181): on phones a page under it shows a back link
+   * to the index and its own large title instead of the module's name.
+   */
+  drillDown?: boolean;
 }
 
 const any =
@@ -248,6 +253,7 @@ export const MODULES: WorkspaceModule[] = [
     description: 'app.ws.desc.settings',
     icon: Settings,
     group: 'company',
+    drillDown: true,
     // The settings area lists and filters its own sections (settings/sections.ts).
     tabs: [
       {

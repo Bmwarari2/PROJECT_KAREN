@@ -148,34 +148,41 @@ export default function PayTransparencyPage() {
                 ))}
               </dl>
               {i.byCategory.length ? (
-                <Table dense>
-                  <caption className="px-4 py-3 text-left text-callout font-semibold">
-                    {t('compliance.pt.byCategory')}
-                  </caption>
-                  <THead>
-                    <tr>
-                      <TH>{t('compliance.pt.category')}</TH>
-                      <TH className="text-right">{t('compliance.pt.basic')}</TH>
-                      <TH className="text-right">{t('compliance.pt.variable')}</TH>
-                      <TH className="text-right">{t('compliance.pt.total')}</TH>
-                    </tr>
-                  </THead>
-                  <tbody>
-                    {i.byCategory.map((c) => (
-                      <TR key={c.category}>
-                        <TD>
-                          {c.category}{' '}
-                          {c.jointPayAssessmentIndicated ? (
-                            <Badge tone="warning">{t('compliance.pt.jpaBadge')}</Badge>
-                          ) : null}
-                        </TD>
-                        <TD className="text-right">{pct(c.basicPayGap)}</TD>
-                        <TD className="text-right">{pct(c.variablePayGap)}</TD>
-                        <TD className="text-right">{pct(c.totalPayGap)}</TD>
-                      </TR>
-                    ))}
-                  </tbody>
-                </Table>
+                <>
+                  <sec.sub className="text-callout font-semibold">{t('compliance.pt.byCategory')}</sec.sub>
+                  <Table dense>
+                    <caption className="sr-only">{t('compliance.pt.byCategory')}</caption>
+                    <THead>
+                      <tr>
+                        <TH>{t('compliance.pt.category')}</TH>
+                        <TH className="text-right">{t('compliance.pt.basic')}</TH>
+                        <TH className="text-right">{t('compliance.pt.variable')}</TH>
+                        <TH className="text-right">{t('compliance.pt.total')}</TH>
+                      </tr>
+                    </THead>
+                    <tbody>
+                      {i.byCategory.map((c) => (
+                        <TR key={c.category}>
+                          <TD>
+                            {c.category}{' '}
+                            {c.jointPayAssessmentIndicated ? (
+                              <Badge tone="warning">{t('compliance.pt.jpaBadge')}</Badge>
+                            ) : null}
+                          </TD>
+                          <TD className="text-right" label={t('compliance.pt.basic')}>
+                            {pct(c.basicPayGap)}
+                          </TD>
+                          <TD className="text-right" label={t('compliance.pt.variable')}>
+                            {pct(c.variablePayGap)}
+                          </TD>
+                          <TD className="text-right" label={t('compliance.pt.total')}>
+                            {pct(c.totalPayGap)}
+                          </TD>
+                        </TR>
+                      ))}
+                    </tbody>
+                  </Table>
+                </>
               ) : null}
               <p className="text-footnote text-text-secondary">
                 {i.jointPayAssessment.categoriesIndicated.length

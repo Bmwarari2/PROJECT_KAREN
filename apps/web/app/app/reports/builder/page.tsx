@@ -666,7 +666,10 @@ export default function BuilderPage() {
                 const f = fieldOf(flt.field);
                 const ops = f ? (OPS_FOR[f.type] ?? ['eq']) : ['eq'];
                 return (
-                  <div key={i} className="flex flex-col gap-2 rounded-md border border-border p-3">
+                  <div
+                    key={i}
+                    className="flex flex-col gap-2 border-t border-border pt-3 first:border-t-0 first:pt-0"
+                  >
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                       <select
                         aria-label={t('reports.builder.filterField', { n: i + 1 })}

@@ -1,30 +1,11 @@
-import { createHash, createHmac } from 'node:crypto';
 import { BlockList, isIP } from 'node:net';
-import type { Deps } from '../../deps';
 
 /**
- * Keyed, non-reversible ids for client addresses and submitted account names (ADR-0177). The derivation is
- * the one in apps/api/src/lib/security-events.ts (the identity work), so an address has the same key in both
- * event streams: HMAC-SHA-256 with a key derived from the cell and its internal token, 128 bits, base64url.
+ * Keyed, non-reversible ids for client addresses and submitted account names (ADR-0177): the identity work's
+ * own derivation (apps/api/src/lib/security-events.ts), so an address has the same key in request signals
+ * and in authentication events.
  */
-const keys = new Map<string, Buffer>();
-function pseudonymKey(deps: Pick<Deps, 'config'>): Buffer {
-  const id = `${deps.config.cell}:${deps.config.internalToken}`;
-  let k = keys.get(id);
-  if (!k) {
-    k = createHash('sha256').update(`thapsus-hr:security-events:${id}`).digest();
-    keys.set(id, k);
-  }
-  return k;
-}
-
-export function pseudonym(deps: Pick<Deps, 'config'>, kind: 'ip' | 'account', value: string): string {
-  return createHmac('sha256', pseudonymKey(deps))
-    .update(`${kind}:${value.toLowerCase()}`)
-    .digest()
-    .subarray(0, 16)
-    .toString('base64url');
-}
+export { pseudonym } from '../../lib/security-events';
 
 /** The /24 (IPv4) or /48 (IPv6) network of an address, for display; undefined for anything else. */
 export function truncatedNetwork(ip: string | undefined): string | undefined {

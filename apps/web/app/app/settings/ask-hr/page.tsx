@@ -18,6 +18,7 @@ import {
   TR,
   Textarea,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate, formatDateTime, formatNumber } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -122,193 +123,202 @@ export default function AskHrSettingsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('askHr.settings.title')} lead={t('askHr.settings.body')} />
 
-      <Card className="flex flex-col gap-3">
-        <CardTitle as={sec.heading}>{t('askHr.settings.status')}</CardTitle>
-        <p className="text-callout" data-testid="ai-region">
-          {s.available && s.model
-            ? t('askHr.settings.regionAvailable', { awsRegion: s.awsRegion, model: s.model.name })
-            : t('askHr.settings.regionUnavailable', { awsRegion: s.awsRegion })}
-        </p>
-        <p className="text-footnote text-text-secondary">
-          {t('askHr.settings.verified', { date: formatDate(s.verifiedOn, locale) })}
-        </p>
-        {s.available && !s.entitled ? (
-          <p className="text-callout text-text-secondary">{t('askHr.settings.notEntitled')}</p>
-        ) : null}
-        <div className="flex items-center gap-3">
-          <input
-            id="ai-enabled"
-            type="checkbox"
-            role="switch"
-            aria-checked={s.enabled}
-            aria-describedby={!s.canManageFlag ? 'ai-enabled-hint' : undefined}
-            checked={s.enabled}
-            disabled={!canToggle || busy === 'save'}
-            onChange={(e) => put({ enabled: e.target.checked })}
-            className="h-6 w-6 accent-[var(--color-accent)]"
-          />
-          <label htmlFor="ai-enabled" className="text-callout font-semibold">
-            {t('askHr.settings.switchLabel')}
-          </label>
-          <Badge tone={s.enabled ? 'success' : 'neutral'}>
-            {s.enabled ? t('askHr.settings.on') : t('askHr.settings.off')}
-          </Badge>
-        </div>
-        {!s.canManageFlag ? (
-          <p id="ai-enabled-hint" className="text-footnote text-text-secondary">
-            {t('askHr.settings.ownerOnly')}
+      <PageSection headingLevel={sec.level} title={t('askHr.settings.status')}>
+        <Card className="flex flex-col gap-3">
+          <p className="text-callout" data-testid="ai-region">
+            {s.available && s.model
+              ? t('askHr.settings.regionAvailable', { awsRegion: s.awsRegion, model: s.model.name })
+              : t('askHr.settings.regionUnavailable', { awsRegion: s.awsRegion })}
           </p>
-        ) : null}
-      </Card>
+          <p className="text-footnote text-text-secondary">
+            {t('askHr.settings.verified', { date: formatDate(s.verifiedOn, locale) })}
+          </p>
+          {s.available && !s.entitled ? (
+            <p className="text-callout text-text-secondary">{t('askHr.settings.notEntitled')}</p>
+          ) : null}
+          <div className="flex items-center gap-3">
+            <input
+              id="ai-enabled"
+              type="checkbox"
+              role="switch"
+              aria-checked={s.enabled}
+              aria-describedby={!s.canManageFlag ? 'ai-enabled-hint' : undefined}
+              checked={s.enabled}
+              disabled={!canToggle || busy === 'save'}
+              onChange={(e) => put({ enabled: e.target.checked })}
+              className="h-6 w-6 accent-[var(--color-accent)]"
+            />
+            <label htmlFor="ai-enabled" className="text-callout font-semibold">
+              {t('askHr.settings.switchLabel')}
+            </label>
+            <Badge tone={s.enabled ? 'success' : 'neutral'}>
+              {s.enabled ? t('askHr.settings.on') : t('askHr.settings.off')}
+            </Badge>
+          </div>
+          {!s.canManageFlag ? (
+            <p id="ai-enabled-hint" className="text-footnote text-text-secondary">
+              {t('askHr.settings.ownerOnly')}
+            </p>
+          ) : null}
+        </Card>
+      </PageSection>
 
       {s.canManageSources ? (
-        <Card className="flex flex-col gap-4">
-          <CardTitle as={sec.heading}>{t('askHr.settings.folders')}</CardTitle>
-          <p className="text-callout text-text-secondary">{t('askHr.settings.foldersHint')}</p>
-          <fieldset className="flex flex-col gap-2">
-            <legend className="sr-only">{t('askHr.settings.folders')}</legend>
-            {s.folders.map((f) => (
-              <label key={f.id} className="flex items-center gap-3 text-callout">
-                <input
-                  type="checkbox"
-                  checked={folders.includes(f.id)}
-                  disabled={f.visibility !== 'everyone'}
-                  onChange={(e) => setFolders(toggle(folders, f.id, e.target.checked))}
-                  className="h-5 w-5 accent-[var(--color-accent)]"
-                />
-                <span>{f.name}</span>
-                {f.visibility !== 'everyone' ? (
-                  <Badge tone="neutral">{t('askHr.settings.notEveryone')}</Badge>
-                ) : null}
-              </label>
-            ))}
-          </fieldset>
-          <form
-            className="flex flex-col gap-3 sm:flex-row sm:items-end"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run('folder', async () => {
-                const { id } = await api<{ id: string }>('/v1/document-folders', {
-                  method: 'POST',
-                  json: { name: newFolder.trim(), visibility: 'everyone' },
-                });
-                setNewFolder('');
-                settings.setData(
-                  await api<Settings>('/v1/ai/settings', {
-                    method: 'PUT',
-                    json: { policyFolderIds: [...folders, id], policyDocumentIds: docs },
-                  }),
-                );
-              });
-            }}
-          >
-            <Field id="ai-new-folder" label={t('askHr.settings.newFolder')} className="flex-1">
-              {(p) => (
-                <Input
-                  {...p}
-                  required
-                  maxLength={120}
-                  value={newFolder}
-                  onChange={(e) => setNewFolder(e.target.value)}
-                />
-              )}
-            </Field>
-            <Button type="submit" variant="secondary" loading={busy === 'folder'}>
-              <FolderPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              {t('askHr.settings.createFolder')}
-            </Button>
-          </form>
-          {s.candidateDocuments.some((d) => !d.folderId || !folders.includes(d.folderId)) ? (
+        <PageSection
+          headingLevel={sec.level}
+          title={t('askHr.settings.folders')}
+          description={t('askHr.settings.foldersHint')}
+        >
+          <Card className="flex flex-col gap-4">
             <fieldset className="flex flex-col gap-2">
-              <legend className="text-callout font-semibold">{t('askHr.settings.documents')}</legend>
-              <p className="text-footnote text-text-secondary">{t('askHr.settings.documentsHint')}</p>
-              {s.candidateDocuments
-                .filter((d) => !d.folderId || !folders.includes(d.folderId))
-                .map((d) => (
-                  <label key={d.id} className="flex items-center gap-3 text-callout">
-                    <input
-                      type="checkbox"
-                      checked={docs.includes(d.id)}
-                      onChange={(e) => setDocs(toggle(docs, d.id, e.target.checked))}
-                      className="h-5 w-5 accent-[var(--color-accent)]"
-                    />
-                    <span>{d.title}</span>
-                  </label>
-                ))}
+              <legend className="sr-only">{t('askHr.settings.folders')}</legend>
+              {s.folders.map((f) => (
+                <label key={f.id} className="flex items-center gap-3 text-callout">
+                  <input
+                    type="checkbox"
+                    checked={folders.includes(f.id)}
+                    disabled={f.visibility !== 'everyone'}
+                    onChange={(e) => setFolders(toggle(folders, f.id, e.target.checked))}
+                    className="h-5 w-5 accent-[var(--color-accent)]"
+                  />
+                  <span>{f.name}</span>
+                  {f.visibility !== 'everyone' ? (
+                    <Badge tone="neutral">{t('askHr.settings.notEveryone')}</Badge>
+                  ) : null}
+                </label>
+              ))}
             </fieldset>
-          ) : null}
-          <div>
-            <Button
-              onClick={() => put({ policyFolderIds: folders, policyDocumentIds: docs })}
-              loading={busy === 'save'}
+            <form
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run('folder', async () => {
+                  const { id } = await api<{ id: string }>('/v1/document-folders', {
+                    method: 'POST',
+                    json: { name: newFolder.trim(), visibility: 'everyone' },
+                  });
+                  setNewFolder('');
+                  settings.setData(
+                    await api<Settings>('/v1/ai/settings', {
+                      method: 'PUT',
+                      json: { policyFolderIds: [...folders, id], policyDocumentIds: docs },
+                    }),
+                  );
+                });
+              }}
             >
-              {t('askHr.settings.saveSources')}
-            </Button>
-          </div>
-        </Card>
-      ) : null}
-
-      {s.canManageSources && s.policyFolderIds.length ? (
-        <Card>
-          <CardTitle as={sec.heading}>{t('askHr.settings.addText')}</CardTitle>
-          <p className="mt-2 text-callout text-text-secondary">{t('askHr.settings.addTextHint')}</p>
-          <form
-            className="mt-4 flex flex-col gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run('policy', async () => {
-                await api('/v1/ai/policy-documents', { method: 'POST', json: policy });
-                setPolicy((p) => ({ ...p, title: '', body: '' }));
-                toast({ title: t('askHr.settings.saved'), tone: 'success' });
-                settings.reload();
-              });
-            }}
-          >
-            <Field id="ai-policy-title" label={t('askHr.settings.policyTitle')}>
-              {(p) => (
-                <Input
-                  {...p}
-                  required
-                  maxLength={200}
-                  value={policy.title}
-                  onChange={(e) => setPolicy({ ...policy, title: e.target.value })}
-                />
-              )}
-            </Field>
-            {s.policyFolderIds.length > 1 ? (
-              <Field id="ai-policy-folder" label={t('askHr.settings.policyFolder')}>
+              <Field id="ai-new-folder" label={t('askHr.settings.newFolder')} className="flex-1">
                 {(p) => (
-                  <Select
-                    id={p.id}
-                    aria-describedby={p['aria-describedby']}
-                    value={policy.folderId}
-                    onValueChange={(v) => setPolicy({ ...policy, folderId: v })}
-                    options={s.folders
-                      .filter((f) => s.policyFolderIds.includes(f.id))
-                      .map((f) => ({ value: f.id, label: f.name }))}
+                  <Input
+                    {...p}
+                    required
+                    maxLength={120}
+                    value={newFolder}
+                    onChange={(e) => setNewFolder(e.target.value)}
                   />
                 )}
               </Field>
+              <Button type="submit" variant="secondary" loading={busy === 'folder'}>
+                <FolderPlus aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('askHr.settings.createFolder')}
+              </Button>
+            </form>
+            {s.candidateDocuments.some((d) => !d.folderId || !folders.includes(d.folderId)) ? (
+              <fieldset className="flex flex-col gap-2">
+                <legend className="text-callout font-semibold">{t('askHr.settings.documents')}</legend>
+                <p className="text-footnote text-text-secondary">{t('askHr.settings.documentsHint')}</p>
+                {s.candidateDocuments
+                  .filter((d) => !d.folderId || !folders.includes(d.folderId))
+                  .map((d) => (
+                    <label key={d.id} className="flex items-center gap-3 text-callout">
+                      <input
+                        type="checkbox"
+                        checked={docs.includes(d.id)}
+                        onChange={(e) => setDocs(toggle(docs, d.id, e.target.checked))}
+                        className="h-5 w-5 accent-[var(--color-accent)]"
+                      />
+                      <span>{d.title}</span>
+                    </label>
+                  ))}
+              </fieldset>
             ) : null}
-            <Field id="ai-policy-body" label={t('askHr.settings.policyBody')}>
-              {(p) => (
-                <Textarea
-                  {...p}
-                  required
-                  rows={8}
-                  maxLength={200_000}
-                  value={policy.body}
-                  onChange={(e) => setPolicy({ ...policy, body: e.target.value })}
-                />
-              )}
-            </Field>
             <div>
-              <Button type="submit" loading={busy === 'policy'} disabled={!policy.folderId}>
-                {t('askHr.settings.addPolicy')}
+              <Button
+                onClick={() => put({ policyFolderIds: folders, policyDocumentIds: docs })}
+                loading={busy === 'save'}
+              >
+                {t('askHr.settings.saveSources')}
               </Button>
             </div>
-          </form>
-        </Card>
+          </Card>
+        </PageSection>
+      ) : null}
+
+      {s.canManageSources && s.policyFolderIds.length ? (
+        <PageSection
+          headingLevel={sec.level}
+          title={t('askHr.settings.addText')}
+          description={t('askHr.settings.addTextHint')}
+        >
+          <Card>
+            <form
+              className="mt-4 flex flex-col gap-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run('policy', async () => {
+                  await api('/v1/ai/policy-documents', { method: 'POST', json: policy });
+                  setPolicy((p) => ({ ...p, title: '', body: '' }));
+                  toast({ title: t('askHr.settings.saved'), tone: 'success' });
+                  settings.reload();
+                });
+              }}
+            >
+              <Field id="ai-policy-title" label={t('askHr.settings.policyTitle')}>
+                {(p) => (
+                  <Input
+                    {...p}
+                    required
+                    maxLength={200}
+                    value={policy.title}
+                    onChange={(e) => setPolicy({ ...policy, title: e.target.value })}
+                  />
+                )}
+              </Field>
+              {s.policyFolderIds.length > 1 ? (
+                <Field id="ai-policy-folder" label={t('askHr.settings.policyFolder')}>
+                  {(p) => (
+                    <Select
+                      id={p.id}
+                      aria-describedby={p['aria-describedby']}
+                      value={policy.folderId}
+                      onValueChange={(v) => setPolicy({ ...policy, folderId: v })}
+                      options={s.folders
+                        .filter((f) => s.policyFolderIds.includes(f.id))
+                        .map((f) => ({ value: f.id, label: f.name }))}
+                    />
+                  )}
+                </Field>
+              ) : null}
+              <Field id="ai-policy-body" label={t('askHr.settings.policyBody')}>
+                {(p) => (
+                  <Textarea
+                    {...p}
+                    required
+                    rows={8}
+                    maxLength={200_000}
+                    value={policy.body}
+                    onChange={(e) => setPolicy({ ...policy, body: e.target.value })}
+                  />
+                )}
+              </Field>
+              <div>
+                <Button type="submit" loading={busy === 'policy'} disabled={!policy.folderId}>
+                  {t('askHr.settings.addPolicy')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </PageSection>
       ) : null}
 
       <Card>
@@ -380,26 +390,27 @@ export default function AskHrSettingsPage() {
         </div>
       </Card>
 
-      <Card>
-        <CardTitle as={sec.heading}>{t('askHr.settings.stats')}</CardTitle>
-        <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {(
-            [
-              ['statQuestions', s.stats.questions],
-              ['statAnswered', s.stats.answered],
-              ['statRefused', s.stats.refused],
-              ['statNoAnswer', s.stats.noAnswer],
-              ['statHelpful', s.stats.helpful],
-              ['statNotHelpful', s.stats.notHelpful],
-            ] as const
-          ).map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-footnote text-text-secondary">{t(`askHr.settings.${k}`)}</dt>
-              <dd className="text-title-3">{formatNumber(v, locale)}</dd>
-            </div>
-          ))}
-        </dl>
-      </Card>
+      <PageSection headingLevel={sec.level} title={t('askHr.settings.stats')}>
+        <Card>
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {(
+              [
+                ['statQuestions', s.stats.questions],
+                ['statAnswered', s.stats.answered],
+                ['statRefused', s.stats.refused],
+                ['statNoAnswer', s.stats.noAnswer],
+                ['statHelpful', s.stats.helpful],
+                ['statNotHelpful', s.stats.notHelpful],
+              ] as const
+            ).map(([k, v]) => (
+              <div key={k}>
+                <dt className="text-footnote text-text-secondary">{t(`askHr.settings.${k}`)}</dt>
+                <dd className="text-title-3">{formatNumber(v, locale)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      </PageSection>
     </div>
   );
 }

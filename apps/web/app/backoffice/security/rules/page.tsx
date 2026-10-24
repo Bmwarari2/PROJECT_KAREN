@@ -4,8 +4,8 @@ import { Button, ListItem, ListSection, Skeleton } from '@thapsus/ui';
 import { formatDate, formatDateTime, type Locale } from '@thapsus/core/i18n';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { PageTitle } from '../../ui';
-import { SecurityNav, SeverityBadge, securityCall, useRun } from '../nav';
+import { PageTitle, useStaffApi } from '../../ui';
+import { SecurityNav, SeverityBadge, useRun } from '../nav';
 
 interface Rule {
   id: string;
@@ -48,6 +48,8 @@ export default function RulesPage() {
   const locale = useLocale() as Locale;
   const cat = useApi<{ catalogueVersion: number; rules: Rule[] }>('/v1/backoffice/security/rules');
   const { busy, run } = useRun();
+  // re-authentication with the staff key when the API asks for it (ADR-0173)
+  const securityCall = useStaffApi();
   const when = (iso: string) => formatDateTime(iso, locale, 'UTC');
 
   const testAll = () =>

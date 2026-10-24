@@ -4,15 +4,9 @@ import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Badge, TabNav, useToast } from '@thapsus/ui';
 import { useT } from '@/lib/i18n-client';
-import { api, ApiProblem } from '@/lib/api';
+import { ApiProblem } from '@/lib/api';
 
-/**
- * The Security module's sections (ADR-0180 segmented control of links). Containment calls go through
- * `securityCall`: the identity work's `useStaffApi` (re-authentication with the staff key) replaces it
- * when that branch is merged.
- */
-export const securityCall = api;
-
+/** The Security module's sections (ADR-0180 segmented control of links). */
 const SECTIONS = [
   ['overview', '/backoffice/security'],
   ['incidents', '/backoffice/security/incidents'],

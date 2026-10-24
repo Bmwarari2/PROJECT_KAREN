@@ -21,8 +21,8 @@ import { Panel } from '@/components/dashboard/parts';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { DashboardSection } from '../charts';
-import { PageTitle, useStaff } from '../ui';
-import { SecurityNav, securityCall, useRun } from './nav';
+import { PageTitle, useStaff, useStaffApi } from '../ui';
+import { SecurityNav, useRun } from './nav';
 
 interface Overview {
   cell: string;
@@ -60,6 +60,8 @@ export default function SecurityOverview() {
   const staff = useStaff();
   const o = useApi<Overview>('/v1/backoffice/security/overview');
   const { busy, run } = useRun();
+  // re-authentication with the staff key when the API asks for it (ADR-0173)
+  const securityCall = useStaffApi();
   const n = (v: number) => numberFormat(locale).format(v);
   const pct = (bp: number) =>
     numberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(bp / 10000);

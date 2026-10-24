@@ -4,6 +4,8 @@ import { hash as argonHash, verify as argonVerify } from '@node-rs/argon2';
 /** Opaque bearer tokens carry the tenant id so the tenant context can be set before lookup (under RLS). */
 /** Prefix of one-time sign-in (magic link and invitation) tokens. */
 export const MAGIC_PREFIX = 'm_';
+/** Prefix of one-time password-reset tokens (they never sign anyone in; ADR-0171). */
+export const RESET_PREFIX = 'r_';
 
 export function newToken(bytes = 32): string {
   return randomBytes(bytes).toString('base64url');

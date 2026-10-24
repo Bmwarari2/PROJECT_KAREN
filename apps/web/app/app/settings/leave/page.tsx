@@ -769,6 +769,7 @@ export default function LeaveSettingsPage() {
         id="leave-types"
         title={t('admin.leave.typesTitle')}
         description={t('admin.leave.typesBody')}
+        container="none"
       >
         {!types.data ? (
           <Skeleton className="h-24" />
@@ -787,10 +788,16 @@ export default function LeaveSettingsPage() {
               {types.data.map((x) => (
                 <TR key={x.id}>
                   <TD className="font-semibold">{typeName(x.key)}</TD>
-                  <TD>{t(`admin.leave.categories.${x.category}`)}</TD>
-                  <TD>{yesNo(x.paid)}</TD>
-                  <TD>{yesNo(x.requiresApproval)}</TD>
-                  <TD>{yesNo(x.deductsBalance)}</TD>
+                  <TD phone="inline">{t(`admin.leave.categories.${x.category}`)}</TD>
+                  <TD phone="inline" label={t('admin.leave.paid')}>
+                    {yesNo(x.paid)}
+                  </TD>
+                  <TD phone="inline" label={t('admin.leave.needsApproval')}>
+                    {yesNo(x.requiresApproval)}
+                  </TD>
+                  <TD phone="inline" label={t('admin.leave.usesBalance')}>
+                    {yesNo(x.deductsBalance)}
+                  </TD>
                 </TR>
               ))}
             </tbody>
@@ -801,6 +808,7 @@ export default function LeaveSettingsPage() {
         id="leave-policies"
         title={t('admin.leave.policiesTitle')}
         description={t('admin.leave.policiesBody')}
+        container="none"
       >
         {!policies.data ? (
           <Skeleton className="h-40" />
@@ -809,7 +817,7 @@ export default function LeaveSettingsPage() {
         ) : (
           <ul className="grid gap-3 xl:grid-cols-2">
             {policies.data.map((p) => (
-              <li key={p.id} className="flex flex-col gap-2 rounded-md border border-border p-4">
+              <li key={p.id} className="flex flex-col gap-2 rounded-lg bg-surface-raised p-4 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <sec.sub className="mr-auto text-callout font-semibold">{p.name}</sec.sub>
                   <Badge>{t('admin.leave.assignedN', { n: p.assignedEmployees })}</Badge>

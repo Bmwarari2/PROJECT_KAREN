@@ -63,10 +63,15 @@ const originOf = (url: string) => {
 
 /** Origins whose pages may send state-changing requests with the user's cookies. */
 export function trustedOrigins(
-  config: Pick<CellConfig, 'appBaseUrl' | 'apiBaseUrl' | 'globalBaseUrl'>,
+  config: Pick<CellConfig, 'appBaseUrl' | 'apiBaseUrl' | 'globalBaseUrl' | 'backofficeBaseUrl'>,
 ): Set<string> {
   return new Set(
-    [config.appBaseUrl, config.apiBaseUrl, config.globalBaseUrl]
+    [
+      config.appBaseUrl,
+      config.apiBaseUrl,
+      config.globalBaseUrl,
+      config.backofficeBaseUrl ?? config.appBaseUrl,
+    ]
       .map(originOf)
       .filter((o): o is string => !!o),
   );

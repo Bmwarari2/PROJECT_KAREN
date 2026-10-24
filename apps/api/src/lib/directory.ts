@@ -147,8 +147,9 @@ export class PgDirectory implements TenantDirectory {
   async update(id: string, p: Partial<DirectoryEntry>) {
     await this.pool.query(
       `UPDATE directory_tenants SET status = coalesce($2, status), plan_ref = coalesce($3, plan_ref),
-        verified_domains = coalesce($4, verified_domains), updated_at = now() WHERE tenant_id = $1`,
-      [id, p.status ?? null, p.planRef ?? null, p.verifiedDomains ?? null],
+        verified_domains = coalesce($4, verified_domains), slug = coalesce($5, slug), updated_at = now()
+        WHERE tenant_id = $1`,
+      [id, p.status ?? null, p.planRef ?? null, p.verifiedDomains ?? null, p.slug ?? null],
     );
   }
 }
@@ -252,6 +253,8 @@ export class DynamoDirectory implements TenantDirectory {
     return out.slice(0, limit).sort((a, b) => a.slug.localeCompare(b.slug));
   }
   async update(id: string, p: Partial<DirectoryEntry>) {
+    // Renaming is only used to retire a deleted staging workspace (ADR-0185), never in production.
+    if (p.slug) throw new Error('The DynamoDB directory does not rename workspaces');
     const sets: string[] = [];
     const values: Record<string, { S: string } | { SS: string[] }> = {};
     if (p.status) {

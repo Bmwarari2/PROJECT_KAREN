@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
   Dialog,
   DialogContent,
   DialogTrigger,
@@ -15,8 +14,16 @@ import {
   Skeleton,
   Textarea,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
-import { formatDate, formatDateTime, formatMoney, type Locale } from '@thapsus/core/i18n';
+import {
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatNumber,
+  regionName,
+  type Locale,
+} from '@thapsus/core/i18n';
 import { money } from '@thapsus/core/money';
 import { today } from '@thapsus/core/time';
 import { api } from '@/lib/api';
@@ -82,11 +89,32 @@ const statusTone = {
   cancelled: 'neutral',
 } as const;
 
-function display(field: string, v: unknown, emp: Record<string, unknown>, locale: Locale): string {
+const ENUM_FIELDS = new Set(['employmentType', 'contractType', 'payFrequency']);
+const NUMBER_FIELDS = new Set(['fte', 'weeklyHours', 'noticePeriodDays']);
+
+/**
+ * A field's value for reading. With `t`, coded values (employment and contract type, pay frequency,
+ * nationality) are shown in words and numbers in the locale's format; without it (form placeholders)
+ * the raw value the API expects is kept.
+ */
+function display(
+  field: string,
+  v: unknown,
+  emp: Record<string, unknown>,
+  locale: Locale,
+  t?: (key: string) => string,
+): string {
   if (v === null || v === undefined || v === '') return '—';
   if (field === 'payAmountMinor' && typeof emp.payCurrency === 'string')
     return formatMoney(money(BigInt(String(v)), emp.payCurrency), locale);
   if (/Date$|^dateOfBirth$/.test(field) && typeof v === 'string') return formatDate(v, locale);
+  if (t && ENUM_FIELDS.has(field)) {
+    const key = `reports.enum.${field}.${String(v)}`;
+    return t(key) === key ? String(v) : t(key);
+  }
+  if (t && field === 'nationality' && typeof v === 'string') return regionName(v, locale);
+  if (t && NUMBER_FIELDS.has(field) && Number.isFinite(Number(v)))
+    return formatNumber(Number(v), locale, { maximumFractionDigits: 4 });
   return String(v);
 }
 
@@ -280,17 +308,18 @@ export default function MyDetailsPage() {
           const visible = s.fields.filter((f) => f in e);
           if (!visible.length) return null;
           return (
-            <Card key={s.key}>
-              <CardTitle>{t(`people.section.${s.key}`)}</CardTitle>
-              <dl className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-x-4 gap-y-2 text-callout">
-                {visible.map((f) => (
-                  <React.Fragment key={f}>
-                    <dt className="text-text-secondary">{t(`people.field.${f}`)}</dt>
-                    <dd className="break-words">{display(f, e[f], e, locale)}</dd>
-                  </React.Fragment>
-                ))}
-              </dl>
-            </Card>
+            <PageSection key={s.key} headingLevel={2} title={t(`people.section.${s.key}`)}>
+              <Card>
+                <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-x-4 gap-y-2 text-callout">
+                  {visible.map((f) => (
+                    <React.Fragment key={f}>
+                      <dt className="text-text-secondary">{t(`people.field.${f}`)}</dt>
+                      <dd className="break-words">{display(f, e[f], e, locale, t)}</dd>
+                    </React.Fragment>
+                  ))}
+                </dl>
+              </Card>
+            </PageSection>
           );
         })}
       </div>

@@ -4,6 +4,7 @@ import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/no
 import { evaluate, type Condition } from '../approvals/service';
 import { startWorkflow } from '../workflows/service';
 import { integrationHandlers, isPublicHttpsUrl, signBody } from './integrations';
+import type { OutboundPost } from '../../lib/outbound';
 
 export type Trigger =
   | { type: 'record.created'; entity: 'employee' }
@@ -80,7 +81,7 @@ export async function runRule(
   tx: Tx,
   rule: Rule,
   subject: Subject,
-  opts: { dryRun: boolean; fetch?: typeof fetch; signingKey?: string },
+  opts: { dryRun: boolean; post?: OutboundPost; signingKey?: string },
 ): Promise<{ matched: boolean; actions: PlannedAction[]; status: string }> {
   const matched = rule.conditions.every((c) => evaluate(c, subject.values));
   const planned: PlannedAction[] = [];
@@ -158,20 +159,21 @@ export async function runRule(
             break;
           }
           const { t: tenantId } = await tx.one<{ t: string }>('SELECT app.current_tenant()::text AS t');
-          // re-checked at call time: rules saved before the check existed may hold any URL
-          const res = isPublicHttpsUrl(action.url)
-            ? await (opts.fetch ?? fetch)(action.url, {
-                method: 'POST',
-                redirect: 'error',
-                headers: {
-                  'content-type': 'application/json',
-                  'x-thapsus-signature': signBody(opts.signingKey, tenantId, body),
-                },
-                body,
-                signal: AbortSignal.timeout(5000),
-              }).catch((e: Error) => ({ ok: false, status: 0, statusText: e.message }))
-            : { ok: false, status: 0 };
+          // Re-checked at call time (rules saved before the check existed may hold any URL), then sent
+          // through postOutbound, which resolves the name and refuses private, loopback and metadata
+          // addresses at connect time, so a public name pointing inside is blocked too (ASVS V1.3.6).
+          const res =
+            isPublicHttpsUrl(action.url) && opts.post
+              ? await opts
+                  .post(action.url, body, {
+                    'content-type': 'application/json',
+                    'user-agent': 'Thapsus-HR-Automation/1.0',
+                    'x-thapsus-signature': signBody(opts.signingKey, tenantId, body),
+                  })
+                  .catch((e: Error) => ({ status: 0, error: e.message.slice(0, 40) }))
+              : { status: 0, error: 'url_not_allowed' };
           planned[planned.length - 1]!.detail.status = res.status;
+          if ('error' in res && res.error) planned[planned.length - 1]!.detail.error = res.error;
         }
         break;
       }

@@ -73,6 +73,35 @@ The output is deterministic: two runs with the same size produce byte-identical 
 
 What moved the numbers: per-route message scoping (ADR-0150) removed about 55 KB of compressed HTML from every page; each page renders its heading and intro before its data in the same elements as the loaded page (the rota's draft-shift explanation moved next to its heading, as the late largest paint there); the Inter font is preloaded; the app top bar no longer uses a backdrop filter; and fixing skipped heading levels took app screens from 98 to 100 for accessibility. On the same machine under heavy load from other jobs (load average 6 to 11) the rota, timesheets and report builder screens dropped to 84 to 89 on total blocking time alone; they are the first candidates for code splitting if CI numbers fall.
 
+#### Payslips and the document viewer (ADR-0167, ADR-0168)
+
+`scripts/lighthouse.mjs` also audits the payslip list, one payslip and the document viewer, opened last: the fresh owner is linked to a fictional employee record with a shared one-page contract and a September payslip from a fictional provider. Measured on 2026-10-24 on the shared 4-core machine while other agents' jobs ran (load average 2 to 6), with the Me hub as the control in the same runs (100 at load 1 on 2026-10-23):
+
+| Page                                 | Performance | Accessibility | LCP               | CLS   | TBT           | Load average |
+| ------------------------------------ | ----------- | ------------- | ----------------- | ----- | ------------- | ------------ |
+| Me hub `/app/me` (control)           | 94 to 96    | 100           | 1,374 to 1,673 ms | 0.000 | 244 to 272 ms | 3.6 to 5.5   |
+| Payslips `/app/payslips`             | 93          | 100           | 2,880 ms          | 0.000 | 180 ms        | 3.6          |
+| Payslip `/app/payslips/:id`          | 91 to 93    | 100           | 2,539 to 3,193 ms | 0.000 | 93 to 286 ms  | 3.6 to 5.5   |
+| Document viewer `/app/documents/:id` | 79 to 89    | 100           | 2,918 to 3,222 ms | 0.000 | 279 to 560 ms | 3.6 to 5.5   |
+
+What moved the numbers:
+
+- The three pages fetch their first data on the web server (`serverApiView`), so the observed largest paint is the first paint (150 to 225 ms).
+- The viewer keeps its controls and a page-shaped placeholder in place while PDF.js loads, which took its CLS from 0.154 to 0. The payslip list no longer moves the payroll panel below it when the list arrives, which took it from 0.087 to 0.
+
+The viewer is the page closest to the threshold. Evaluating the PDF.js display library costs about 350 ms of main thread on this machine (one long task), on top of the shell. That is the price of drawing PDFs in the page on phones that have no inline PDF viewer. Re-run it at a quiet moment before treating a failure as a regression. If CI numbers fall below 90, the next steps are moving the text layer after first paint and scoping the documents layout's message namespaces per page.
+
+#### Sign-in and security screens after security hardening P0 (Phase 15)
+
+The forgot-password page joined the audited pages. Measured on 2026-10-24 with `LIGHTHOUSE_ONLY=/signin,/forgot-password,/app/security,/app/settings` on the shared build machine at a load average of about 6 (other jobs running), so the performance scores are lower than the quiet-machine run above; all pass.
+
+| Page                               | Performance | Accessibility | Best practices | LCP      | CLS   | TBT    |
+| ---------------------------------- | ----------- | ------------- | -------------- | -------- | ----- | ------ |
+| Sign in `/signin`                  | 95          | 100           | 100            | 2,961 ms | 0.000 | 61 ms  |
+| Forgot password `/forgot-password` | 99          | 100           | 100            | 1,607 ms | 0.000 | 107 ms |
+| Settings `/app/settings`           | 94          | 100           | 100            | 3,065 ms | 0.000 | 46 ms  |
+| Security `/app/security`           | 93          | 100           | 100            | 3,076 ms | 0.000 | 124 ms |
+
 #### Message catalogue in the page payload (Phase 12, ADR-0150)
 
 Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.

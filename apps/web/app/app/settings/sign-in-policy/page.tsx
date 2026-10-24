@@ -23,6 +23,7 @@ interface Security {
   lockoutThreshold: number;
   lockoutMinutes: number;
   trustIdpMfa: boolean;
+  requireMfaForEveryone: boolean;
 }
 type NumberKey = 'sessionIdleMinutes' | 'sessionAbsoluteHours' | 'lockoutThreshold' | 'lockoutMinutes';
 
@@ -45,6 +46,8 @@ function PolicyForm({
 }) {
   const t = useT();
   const action = useAction();
+  const toast = useToast();
+  const stepUp = useStepUp();
   const [v, setV] = React.useState<Record<NumberKey, string>>({
     sessionIdleMinutes: String(initial.sessionIdleMinutes),
     sessionAbsoluteHours: String(initial.sessionAbsoluteHours),
@@ -52,14 +55,26 @@ function PolicyForm({
     lockoutMinutes: String(initial.lockoutMinutes),
   });
   const [trustIdpMfa, setTrust] = React.useState(initial.trustIdpMfa);
+  const [everyone, setEveryone] = React.useState(initial.requireMfaForEveryone);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const body = { ...Object.fromEntries(Object.entries(v).map(([k, x]) => [k, Number(x)])), trustIdpMfa };
+    const body = {
+      ...Object.fromEntries(Object.entries(v).map(([k, x]) => [k, Number(x)])),
+      trustIdpMfa,
+      requireMfaForEveryone: everyone,
+    };
+    // turning two-step verification off for everyone (or trusting the IdP) asks the admin to confirm it is them
+    let saved = false;
     if (
-      await action.run(() => api('/v1/settings/security', { method: 'PATCH', json: body }), t('admin.saved'))
+      await action.run(async () => {
+        saved = await stepUp.run(() => api('/v1/settings/security', { method: 'PATCH', json: body }));
+      }, undefined)
     )
-      onSaved();
+      if (saved) {
+        toast({ title: t('admin.saved'), tone: 'success' });
+        onSaved();
+      }
   }
 
   const number = (k: NumberKey) => (
@@ -112,6 +127,13 @@ function PolicyForm({
           description={t('admin.policy.mfaBody')}
         >
           <Checkbox
+            id="policy-mfa-everyone"
+            label={t('admin.policy.requireMfaForEveryone')}
+            hint={t('admin.policy.requireMfaForEveryoneHint')}
+            checked={everyone}
+            onChange={setEveryone}
+          />
+          <Checkbox
             id="policy-trust-idp"
             label={t('admin.policy.trustIdpMfa')}
             hint={t('admin.policy.trustIdpMfaHint')}
@@ -121,6 +143,7 @@ function PolicyForm({
         </SettingsCard>
       </fieldset>
       <FormError message={action.error} />
+      {stepUp.dialog}
       {canManage ? (
         <Button type="submit" className="self-start" loading={action.busy}>
           {t('common.save')}

@@ -14,6 +14,7 @@ import { seedLeave } from './steps/leave';
 import { seedTime } from './steps/time';
 import { seedCompliance } from './steps/compliance';
 import { seedDocuments } from './steps/documents';
+import { seedAttachments } from './steps/attachments';
 import { seedAssets } from './steps/assets';
 import { seedWorkflows } from './steps/workflows';
 import { seedPayroll } from './steps/payroll';
@@ -127,6 +128,7 @@ export async function seedStaging(
       await step('rotas, clocking and timesheets', seedTime);
       await step('compliance', seedCompliance);
       await step('documents and signatures', seedDocuments);
+      await step('documents attached to people', seedAttachments);
       await step('assets', seedAssets);
       await step('onboarding and offboarding', seedWorkflows);
       await step('payroll and payslips', seedPayroll);

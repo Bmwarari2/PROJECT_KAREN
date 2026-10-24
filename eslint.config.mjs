@@ -15,6 +15,10 @@ export default tseslint.config(
       '**/test-results/**',
       'apps/web/next-env.d.ts',
       'apps/web/public/sw.js',
+      // the self-hosted PDF.js worker and data, copied from pdfjs-dist before builds (ADR-0168)
+      'apps/web/public/pdfjs/**',
+      // local scratch files (git-ignored)
+      '.tmp/**',
       'packages/sdk/src/generated/**',
     ],
   },

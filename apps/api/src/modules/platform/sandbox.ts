@@ -96,11 +96,12 @@ async function readSourceConfig(deps: Deps, sourceTenantId: string) {
         default_currency: string;
         default_time_zone: string;
         security: Record<string, unknown>;
+        security_defaults_version: number;
         branding: Record<string, unknown>;
         features: Record<string, unknown>;
         kind: string;
       }>(
-        'SELECT name, home_region, default_locale, default_currency, default_time_zone, security, branding, features, kind FROM app.tenants',
+        'SELECT name, home_region, default_locale, default_currency, default_time_zone, security, security_defaults_version, branding, features, kind FROM app.tenants',
       );
       // Names and identifiers of source people are read ONLY to avoid collisions; they are never written.
       const taken = await tx.query<{ v: string }>(
@@ -137,8 +138,8 @@ export async function buildSandbox(deps: Deps, sourceTenantId: string, sb: Sandb
       }
     }
     await tx.exec(
-      `INSERT INTO app.tenants (tenant_id, slug, name, home_region, kind, default_locale, default_currency, default_time_zone, security, branding, features)
-       VALUES (app.current_tenant(), $1, $2, $3, 'sandbox', $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO app.tenants (tenant_id, slug, name, home_region, kind, default_locale, default_currency, default_time_zone, security, security_defaults_version, branding, features)
+       VALUES (app.current_tenant(), $1, $2, $3, 'sandbox', $4, $5, $6, $7, $10, $8, $9)`,
       [
         sb.slug,
         sb.name,
@@ -150,6 +151,8 @@ export async function buildSandbox(deps: Deps, sourceTenantId: string, sb: Sandb
         JSON.stringify({ ...src.tenant.security, ssoEnforced: false }),
         JSON.stringify(branding),
         JSON.stringify({ flags, plan: 'sandbox', sandbox: { sourceTenantId } }),
+        // the sandbox keeps the source's sign-in policy defaults (ADR-0170)
+        src.tenant.security_defaults_version,
       ],
     );
     await seedBuiltInRoles(tx);
