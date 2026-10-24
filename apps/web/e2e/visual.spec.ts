@@ -248,7 +248,8 @@ test('app screens', async ({ page }, testInfo) => {
       await apiCall(page.request, 'POST', '/v1/workflows', {
         templateId: tpl.id,
         employeeId: employee.id,
-        anchorDate: '2026-03-09',
+        // far ahead: whether it is overdue comes from the API's clock, not the page's fixed one
+        anchorDate: '2099-03-09',
       });
       const tasks = await apiCall<Array<{ id: string; title: string }>>(page.request, 'GET', '/v1/tasks');
       concrete[route] = `/app/tasks/${tasks.find((x) => x.title === 'Check the compliance record')!.id}`;
