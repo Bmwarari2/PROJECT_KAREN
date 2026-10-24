@@ -170,6 +170,8 @@ describe('account menu role line', () => {
       'employee',
     ]);
     expect(bySeniority(['manager', 'payroll_admin', 'owner'])).toEqual(['owner', 'payroll_admin', 'manager']);
+    // the IT admin is a built-in admin role (ADR-0189), shown before custom roles
+    expect(bySeniority(['employee', 'Help desk', 'it_admin'])).toEqual(['it_admin', 'Help desk', 'employee']);
   });
 });
 

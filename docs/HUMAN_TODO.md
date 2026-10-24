@@ -281,13 +281,16 @@ This replaces the AWS staging steps in §1 for testing. It is one UK cell in Lon
 - [ ] 9.7 **Sign in.**
   1. In Cloud Shell, run:
      `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`.
-     It prints the URL, the workspace `kestrel`, and the email and password for each role (owner, HR admin, payroll admin, manager, employee).
-  2. Sign in at `<url>/signin`. The workspace requires two-step verification for everyone (ADR-0170), so **every** login (owner, HR admin, payroll admin, manager and employee) is asked to set up an authenticator app or a passkey the first time. Add one entry per login to your authenticator app. This is intended: it is what new customer workspaces get.
+     It prints the URL, the workspace `kestrel`, and the email and password for each role (owner, HR admin, payroll admin, IT admin, manager, employee).
+  2. Sign in at `<url>/signin`. The workspace requires two-step verification for everyone (ADR-0170), so **every** login (owner, HR admin, payroll admin, IT admin, manager and employee) is asked to set up an authenticator app or a passkey the first time. Add one entry per login to your authenticator app. This is intended: it is what new customer workspaces get.
   3. Keep these passwords private. The site is reachable from the internet, though the data is fictional.
   4. **Reading staging email (password resets, sign-in links).** The seeded logins use `.example.test` addresses that receive nothing; staging writes every email to the mail bucket instead (`MAIL_TRANSPORT=bucket`). To try **Forgot your password?**:
      1. Request the reset on `<url>/forgot-password` for one of the logins.
      2. In Cloud Shell, list today's messages: `gcloud storage ls gs://<project-id>-thapsus-stg-uk-mail/mail/$(date -u +%F)/`.
      3. Print the newest: `gcloud storage cat gs://<project-id>-thapsus-stg-uk-mail/mail/<date>/<object>.eml`. Check the `To:` line, copy the link and open it within 30 minutes.
+- [ ] 9.7a **The IT admin login (Phase 16, ADR-0189).** The first deploy with Phase 16 adds a sixth test sign-in, the IT admin (`it.admin@kestrel.example.test`), whose password the deploy generates into the `test-logins` secret. The seed creates the sign-in only when it runs, so after that deploy:
+  1. GitHub → Actions → **Deploy staging (Google Cloud)** → Run workflow (branch `main`) with **reset_test_data** ticked, and approve the plan as usual. The reset rebuilds the test company, so its onboarding and offboarding device and access tasks are also in the IT admin's inbox (with **seed** ticked instead, the sign-in is added but tasks made earlier stay where they were).
+  2. Read the new password as in 9.7 step 1, and sign in as the IT admin (set up an authenticator the first time). It sees **IT** (equipment, integrations), the **Inbox** with device and access tasks, and **Settings** → **User provisioning (SCIM)**; it never sees pay, contracts or sensitive records.
 - [ ] 9.8 **Your back-office sign-in (staff passkey).** Thapsus staff sign in only with a passkey or a security key (ADR-0173, ADR-0174).
   1. GitHub → Settings → Secrets and variables → Actions → Variables: add `GCP_STAFF_OWNER_EMAIL` (your work email) and `GCP_STAFF_OWNER_NAME` (your name). Do not use a personal address; never put a real address in the repository.
   2. GitHub → Actions → **Deploy staging (Google Cloud)** → Run workflow (branch `main`), and approve the plan as usual. After the seed, the job creates your super-admin staff account and stores a one-time enrolment link in Secret Manager (valid 2 hours; nothing is printed).

@@ -107,7 +107,7 @@ An SSO sign-in counts as two-step verification only when **Trust two-step verifi
 
 ### SCIM provisioning (API only)
 
-Create a token with `POST /v1/settings/scim-tokens` (shown once). Point your identity provider at `/scim/v2` on your regional API address. `Users` and `Groups` support create, read, filtered list, replace, PATCH and deactivate. SCIM users get the **Employee** role.
+Workspace owners and **IT admins** create a token in **Settings** → **User provisioning (SCIM)** or with `POST /v1/settings/scim-tokens` (shown once); HR admins see the tokens read-only. Point your identity provider at `/scim/v2` on your regional API address. `Users` and `Groups` support create, read, filtered list, replace, PATCH and deactivate. SCIM users get the **Employee** role.
 
 ### Thapsus support access (API only)
 
@@ -117,16 +117,23 @@ Thapsus staff cannot see your data unless you grant access with `POST /v1/settin
 
 ### Built-in roles
 
-| Role                           | Scope                       | Main abilities                                                                                                                                                                                                                                                                  |
-| ------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Company owner**              | Everyone                    | Everything, including settings, SSO, SCIM, billing, the DPA, company export, account closure and switching Ask HR on.                                                                                                                                                           |
-| **HR admin**                   | Everyone                    | All HR areas: people, organisation, documents, workflows, approvals, automation, time off, rotas, time, compliance, reports, imports, exports, privacy, equipment, integrations, support, invitations, sensitive data and the audit log. Reads settings but cannot change them. |
-| **Country or entity HR admin** | Their legal entity          | People, documents, workflows, approvals, time off, rotas, time, compliance, imports, exports, equipment and sensitive data. Runs reports and reads privacy requests.                                                                                                            |
-| **Payroll admin**              | Everyone                    | Payroll, payslips, timesheet export and reports. Reads all employee fields; edits pay and bank fields.                                                                                                                                                                          |
-| **Manager**                    | Direct and indirect reports | Approves requests, manages the rota, records sickness, corrects clock times, reads team reports and compliance status.                                                                                                                                                          |
-| **Employee**                   | Themselves                  | Self-service: own details, time off, rota, swaps, clocking in, documents, payslips, equipment, support tickets and Ask HR.                                                                                                                                                      |
+| Role                           | Scope                       | Main abilities                                                                                                                                                                                                                                                                                              |
+| ------------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Company owner**              | Everyone                    | Everything, including settings, SSO, SCIM, billing, the DPA, company export, account closure and switching Ask HR on.                                                                                                                                                                                       |
+| **HR admin**                   | Everyone                    | All HR areas: people, organisation, documents, workflows, approvals, automation, time off, rotas, time, compliance, reports, imports, exports, privacy, integrations, support, invitations, sensitive data and the audit log. Sees the equipment register read-only. Reads settings but cannot change them. |
+| **Country or entity HR admin** | Their legal entity          | People, documents, approvals, time off, rotas, time, compliance, imports, exports and sensitive data in their entity. Sees the equipment register read-only and runs reports. Company-wide settings and privacy pages stay with company-wide admins.                                                        |
+| **Payroll admin**              | Everyone                    | Payroll, payslips, timesheet export and reports. Reads all employee fields; edits pay and bank fields.                                                                                                                                                                                                      |
+| **IT admin**                   | Everyone                    | The equipment register and returns, the IT integrations (Microsoft 365, Google Workspace) and SCIM provisioning tokens, and the device and access tasks. Sees who joins and leaves with their work details only: never pay, contracts or sensitive records.                                                 |
+| **Manager**                    | Direct and indirect reports | Approves requests, manages the rota, records sickness, corrects clock times, reads team reports and compliance status.                                                                                                                                                                                      |
+| **Employee**                   | Themselves                  | Self-service: own details, time off, rota, swaps, clocking in, documents, payslips, equipment, support tickets and Ask HR.                                                                                                                                                                                  |
 
-The first four are admin roles and need two-step verification. Everyone also has employee self-service for their own record.
+The first five are admin roles and need two-step verification. Everyone also has employee self-service for their own record.
+
+### What each person sees
+
+Each page, settings section, menu entry and button needs a permission, all listed in one permission map (ADR-0188). People see only what their roles allow: menus, the phone tab bar, the settings index, search and buttons leave out what they cannot do. A page someone may look at but not change, such as **Settings** → **Branding** for an HR admin, is read-only and has no save buttons. A page someone cannot open is not in their menus, and opening its address shows "You do not have permission to do that."
+
+Workspace-wide pages (settings and privacy) need the permission from a role assigned for the whole workspace, so a country or entity HR admin does not see them.
 
 ### Field-level access
 
@@ -352,7 +359,9 @@ In **Integrations**:
 
 Joiners are set up 3 days before their start date by default. Leavers are blocked at the end of their last working day: sign-in blocked, sessions revoked, licences removed. Hires backdated more than 7 days are never set up automatically. **Activity** lists every step.
 
-**Equipment** → **Asset register** → **Add asset**, then **Issue** to a person, who must **Confirm receipt**. When someone leaves, offboarding adds a return task per item: **Record return**, tick the **Return checklist**, then **Mark as returned** (or **Mark as lost**).
+**Equipment** → **Asset register** → **Add asset**, then **Issue** to a person, who must **Confirm receipt**. When someone leaves, offboarding adds a return task per item: **Record return**, tick the **Return checklist**, then **Mark as returned** (or **Mark as lost**). IT admins and owners manage the register; HR admins see it read-only, enough to check what a leaver still holds.
+
+**Device and access tasks** go to the **IT admins** (ADR-0189): "Order laptop, phone or site access card" for a starter, "Remove system and building access" for a leaver, and each equipment return. When no one in the workspace holds the IT admin role, they go to the role chosen in **Settings** → **Workflow templates** → **Device and access tasks** (the **Company owner** unless you choose another). The choice is made when the task is created.
 
 ## 13. Reports and data exports (in progress)
 

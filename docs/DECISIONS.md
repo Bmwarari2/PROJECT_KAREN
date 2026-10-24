@@ -2212,3 +2212,95 @@ The owner's defaults (2026-10-24):
   - Right-to-work and I-9 records past retention are listed for HR to confirm deletion, not deleted automatically.
 
 **Consequences.** Each part records its own ADRs (ranges ADR-0188 to ADR-0215) and migrations (0028 to 0045, allocated per part). The task action registry (part B) is the extension point that the other parts plug into. Thapsus-HR still never runs payroll or calculates tax: part F only gathers what the payroll provider needs and hands it over.
+
+## ADR-0188 — One permission map for pages, settings, navigation and actions, checked against the API routes (2026-10-24)
+
+**Context.** The owner found controls that fail with "You do not have permission to do that". The known case: an HR admin opens **Settings** → **Branding** (the page needs `settings.read`) and gets a refusal on **Save colour** (the route needs `settings.manage`). Permissions were written in three places that could drift: lambdas in the web's workspace map and settings sections, raw `has('…')` checks scattered over pages, and the `authorize` calls in the API handlers. PROGRESS 16.1 and 16.2 ask for one map, used by the API and the app, with a test that fails when a UI action needs less than the route it calls.
+
+**Decision.**
+
+- **The map** is `packages/core/src/capabilities.ts`.
+  - `CAPABILITIES` names each capability (for example `settings.branding`, `settings.branding.manage`, `it.assets.register`). Each one lists its requirement: `any` or `all` permissions, `none`, `employee`, a workspace `feature` flag, `askHr`, `notInSandbox`, `workspace` and `alsoChecks`.
+  - `workspace` means the permissions must come from a role assigned for the whole workspace. The API checks settings and privacy without a record (`authorize(req, p)`), so an entity-scoped HR admin cannot use them.
+  - `alsoChecks` names permissions a route consults without requiring them (an "own record, or with `reports.manage`" rule).
+  - `PAGES` lists every app page (`apps/web/app/app/**/page.tsx`, dynamic segments as `[id]`). Each page has a `view` capability and, where changing it needs more, a `manage` capability.
+- **The app reads it.**
+  - Navigation tabs show when their page's view capability is held. The rail, the phone menu sheet and the phone tab bar all derive from those tabs.
+  - Settings sections take their page's capability. Quick actions in search and on the home page name a capability.
+  - The shell shows the existing not-allowed state on a page whose view permissions are missing. It checks permissions only: flags, Ask HR and the employee record stay with the pages, as before.
+  - `useCan()` gates buttons. Pages someone may open but not change are read-only (Branding, Features, SSO, sign-in policy, domains, SCIM, support access, the security centre, roles, users, payroll, payslips, privacy, compliance, equipment, integrations and automation).
+  - The session reports `workspacePermissions`, the permissions of company-wide roles, for the `workspace` test.
+- **The API reads it.**
+  - A route the app calls declares `config.capability`.
+  - The context plugin enforces the capability's permissions before the handler. That means held at some scope, or company-wide where `workspace` says so. The handler still checks the record's scope.
+  - An `onRoute` hook refuses unknown keys at start-up and publishes `x-capability` and `x-permission` on the OpenAPI operation.
+  - SCIM token routes now rely on their capability alone (`settings.scim.manage`: `settings.manage` or the new `scim.manage`).
+- **The UI action names its capability at the call.** Every state-changing call in the signed-in app passes `capability` to `api()` or `apiFetch()` (it is not sent). Raw `fetch` uploads moved to `apiFetch`.
+- **The tests.**
+  - `apps/api/test/capabilities.contract.test.ts` parses the web sources with the TypeScript compiler and resolves each state-changing call to its route in the OpenAPI document. It fails when:
+    - a call names no capability;
+    - its route declares none;
+    - the UI capability does not imply the route's (`implies`: everyone the button is shown to passes the route's check, a `workspace` route included);
+    - the control is not gated by that capability in its file, unless its page's view capability or "everyone" already implies it.
+  - `apps/api/test/capability-routes.test.ts` parses the API modules. It fails when a handler checks a permission of its capability's area that the capability does not name (a route stricter than its map entry), or checks one company-wide without the capability saying `workspace`.
+  - `apps/web/test/capabilities.test.ts` fails when a page has no entry.
+  - `apps/web/e2e/permissions-sweep.spec.ts` signs in as every built-in role and opens every page its navigation offers. It fails on a 403, on "You do not have permission", on a save control on a read-only settings page, and on a tab-bar entry outside the navigation.
+
+**Consequences.**
+
+- A new page, settings section or button needs a map entry, or a test fails. The failure messages name what to add, which matters when parts B and C add pages and calls.
+- The sweep found and fixed these:
+  - managers were offered compliance report tabs and the law-change feed, which their routes refuse;
+  - HR admins were offered company exports, webhooks and API keys;
+  - entity HR admins were offered workspace settings and privacy pages that the API checks company-wide.
+- Uploads with `XMLHttpRequest` (the document attach dialog) are not seen by the call scan; their callers gate them with `people.documents.attach`.
+- The gating check works per file: it proves that a file which calls a route checks the route's capability, not that every button in the file is wrapped. Per-call capabilities and the e2e sweep cover the rest.
+
+## ADR-0189 — A built-in IT admin role, and device and access tasks routed to IT (2026-10-24)
+
+**Context.** HR admins held the asset register and received the IT tasks of onboarding and offboarding. The owner's defaults (ADR-0187) give devices, IT accounts and SCIM to an IT admin role, and leave HR a read-only view of what a leaver holds (PROGRESS 16.3).
+
+**Decision.**
+
+- **The role.** `it_admin` (built-in, admin, company-wide) holds:
+  - `assets.*`, `integrations.*` (the Microsoft 365 and Google Workspace connections) and the new `scim.manage`;
+  - `workflows.tasks`, `employees.read` and self-service.
+  - Its field access is the directory and employment-date fields only: never pay, contracts, personal details or vault categories.
+  - HR admins and entity HR admins have `assets.read` instead of `assets.*`.
+  - Migration 0028 inserts the role for existing workspaces (custom roles that already use the key are kept) and narrows the HR roles. `apps/api/test/it-admin.int.test.ts` runs the migration on a workspace as it was before and compares the result with the code.
+- **Routing.**
+  - The onboarding task "Order laptop, phone or site access card", the offboarding task "Remove system and building access" and each asset return are role tasks for `it_admin`.
+  - `taskRoleFor` (`apps/api/src/modules/it/task-routing.ts`) sends them to the IT admins while an active user holds the role. Otherwise they go to the fallback role chosen in **Settings** → **Workflow templates** → **Device and access tasks** (`GET` and `PUT /v1/settings/task-routing`, `workflows.manage`, audited). The fallback is stored in `features->'taskRouting'`, like other module settings, so no new table is needed.
+  - The default fallback is the **Company owner**, because HR admins can no longer record returns.
+  - The choice is made when a task is created, so existing tasks stay where they are.
+- **The staging seed** has an IT admin login (`it.admin@<workspace>.example.test`, a security engineer). It is in `LOGIN_ROLES`, the plan's seats, the login grants, `infra/gcp/staging/locals.tf` `test_logins` and the offline OpenTofu checks. A unit test compares the infrastructure's logins with `LOGIN_ROLES`.
+
+**Consequences.**
+
+- The staging seed refuses a `STAGING_LOGINS` secret without an IT admin login, so the infrastructure must be applied (it generates the sixth password) before the seed runs with this code. The deploy workflow applies the secrets and jobs before it runs the seed. An already seeded staging workspace gets the login only when the seed runs again (HUMAN_TODO 9.7a).
+- Workspaces without an IT admin see these tasks in the owner's inbox until they appoint one or choose another fallback.
+- Owners keep every permission. Their task queue still includes the HR admins' queue (`taskRoles`); the IT admins' queue is not added to it.
+
+## ADR-0190 — Help articles by feature, permission and country (2026-10-24)
+
+**Context.** Help articles declared an `audience` (any one permission, or everyone when empty), so employees saw "Getting started" (an admin setup guide), and nothing considered feature flags or the workspace's countries (PROGRESS 16.4).
+
+**Decision.**
+
+- **What an article declares.** Each article in `packages/core/src/help/articles.json` declares:
+  - `features`: capabilities of the permission map;
+  - `permissions`: each one named by one of its features;
+  - optional `countries`: ISO codes, met by a legal entity in one of them;
+  - optional `general`: only the small set in `GENERAL_HELP_SLUGS`, `resetting-sign-in` and the new `signing-in` (signing in, accounts). These are the only articles without a feature.
+- **Validation.** `validateHelpArticles` enforces this and refuses the old `audience` field.
+- **The reader.** A reader sees an article when they can see all its features (with the workspace's flags and Ask HR applied), hold all its permissions, and the country applies.
+  - The API builds the reader (`helpReaderFor`: permissions, flags, Ask HR enabled, sandbox, entity countries) for `/v1/help/articles`, the article itself, search and the in-page `?context=` links.
+  - Ask HR answers now include `helpArticles`: articles matching the question, searched locally and filtered for the asker (never for a refused question). Ask HR's own sources stay the customer's policy documents.
+  - The web help pages read the API. If it does not answer, they use a stricter local reader: no country articles, and flags at their defaults.
+- **New articles.** Signing in and your account; Ask HR; logo and accent colour; Form I-9 (US); right to work checks (GB); equipment, accounts and leavers' access (IT admins). They describe the app and point to the rules packs rather than state employment rules.
+
+**Consequences.**
+
+- Each article must name its features. Parts B and C's new articles, if any, will fail validation until they do; the message says what to declare.
+- Someone without an employee record no longer sees self-service articles such as requesting time off.
+- `packages/core/test/help.test.ts` checks, for every built-in role, that each article shown has features the role can open in its navigation. `apps/api/test/support.int.test.ts` covers flags and countries end to end, and `ai.int.test.ts` covers the Ask HR suggestions.
