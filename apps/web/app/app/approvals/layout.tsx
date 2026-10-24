@@ -11,6 +11,7 @@ export default function ApprovalsLayout({ children }: { children: React.ReactNod
         'admin.approvals.field',
         'timeOff.kind',
         'actionable.approval',
+        'taskActions.approval',
       ]}
     >
       {children}

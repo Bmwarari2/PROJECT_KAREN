@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { ListChecks, Plus, Trash2 } from 'lucide-react';
+import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -16,6 +16,7 @@ import {
   Textarea,
 } from '@thapsus/ui';
 import { formatUnit } from '@thapsus/core/i18n';
+import { taskActionKindLabel, type DueRule, type TaskAction } from '@thapsus/core/task-actions';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -33,6 +34,19 @@ import {
   type AssigneeDraft,
 } from '../kit';
 import { useSectionLevel } from '@/components/module-page';
+import {
+  actionToDraft,
+  ActionFields,
+  draftToAction,
+  draftToDue,
+  DueFields,
+  dueToDraft,
+  emptyAction,
+  emptyDue,
+  useDueText,
+  type ActionDraft,
+  type DueDraft,
+} from './task-fields';
 
 type Kind = 'onboarding' | 'offboarding' | 'transfer' | 'custom';
 interface TaskDef {
@@ -41,7 +55,11 @@ interface TaskDef {
   description?: string;
   assignee: { type: 'role' | 'manager' | 'employee' | 'user'; value?: string };
   dueOffsetDays: number;
+  /** When it is due, when it does not simply count days from the workflow's date (ADR-0193). */
+  due?: DueRule;
   reminderDaysBefore?: number;
+  /** The main button of the tasks it creates (ADR-0191). */
+  action?: TaskAction;
 }
 interface Template {
   id: string;
@@ -57,11 +75,14 @@ const ASSIGNEE_TYPES = ['manager', 'employee', 'role', 'user'];
 
 interface TaskDraft {
   key: number;
+  /** The template task's own key, kept when a template is edited. */
+  taskKey?: string;
   title: string;
   description: string;
   assignee: AssigneeDraft;
-  due: string;
+  due: DueDraft;
   reminder: string;
+  action: ActionDraft;
 }
 // Row keys (and the field ids built from them) come from a counter per form, not from module state:
 // a module counter keeps counting across server renders, so the server's ids would not match the client's
@@ -71,35 +92,37 @@ const newTask = (key: number): TaskDraft => ({
   title: '',
   description: '',
   assignee: { type: 'manager', value: '' },
-  due: '0',
+  due: emptyDue(),
   reminder: '',
+  action: emptyAction(),
+});
+const draftOf = (key: number, x: TaskDef): TaskDraft => ({
+  key,
+  taskKey: x.key,
+  title: x.title,
+  description: x.description ?? '',
+  assignee: { type: x.assignee.type, value: x.assignee.value ?? '' },
+  due: dueToDraft(x),
+  reminder: x.reminderDaysBefore === undefined ? '' : String(x.reminderDaysBefore),
+  action: actionToDraft(x.action),
 });
 
-function useDue() {
-  const t = useT();
-  const locale = useLocale();
-  return (kind: Kind, days: number) => {
-    const anchor = t(`admin.workflows.anchor.${kind}`);
-    if (days === 0) return t('admin.workflows.dueOn', { anchor });
-    const amount = formatUnit(Math.abs(days), 'day', locale);
-    return days < 0
-      ? t('admin.workflows.dueBefore', { amount, anchor })
-      : t('admin.workflows.dueAfter', { amount, anchor });
-  };
-}
-
-function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
+/** Creates a template, or edits one (`template`): edits apply to workflows started from then on. */
+function TemplateEditor({ template, onDone }: { template?: Template; onDone: (saved: boolean) => void }) {
   const t = useT();
   const sec = useSectionLevel();
   const action = useAction();
   const entities = useOrg('legal-entities');
   const heading = React.useRef<HTMLHeadingElement>(null);
-  const [kind, setKind] = React.useState<Kind>('onboarding');
-  const [name, setName] = React.useState('');
-  const [entityId, setEntityId] = React.useState('');
-  const [autoStart, setAutoStart] = React.useState(true);
-  const nextKey = React.useRef(1);
-  const [tasks, setTasks] = React.useState<TaskDraft[]>(() => [newTask(0)]);
+  const [kind, setKind] = React.useState<Kind>(template?.kind ?? 'onboarding');
+  const [name, setName] = React.useState(template?.name ?? '');
+  const [entityId, setEntityId] = React.useState(template?.entityId ?? '');
+  const [autoStart, setAutoStart] = React.useState(template?.autoStart ?? true);
+  const nextKey = React.useRef(template?.tasks.length ?? 1);
+  const [tasks, setTasks] = React.useState<TaskDraft[]>(() =>
+    template ? template.tasks.map((x, i) => draftOf(i, x)) : [newTask(0)],
+  );
+  const headingId = template ? `template-editor-${template.id}-title` : 'template-editor-title';
   React.useEffect(() => heading.current?.focus(), []);
   const setTask = (key: number, patch: Partial<TaskDraft>) =>
     setTasks((xs) => xs.map((x) => (x.key === key ? { ...x, ...patch } : x)));
@@ -110,26 +133,39 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
       action.setError(t('admin.workflows.needsAssignee'));
       return;
     }
-    const body = {
-      kind,
-      name: name.trim(),
-      autoStart,
-      entityId: entityId || null,
-      tasks: tasks.map((x, i) => ({
-        key: `task-${i + 1}`,
+    if (tasks.some((x) => draftToAction(x.action) === null)) {
+      action.setError(t('taskActions.editor.linkInvalid'));
+      return;
+    }
+    const used = new Set(tasks.map((x) => x.taskKey).filter(Boolean));
+    let n = 0;
+    const freshKey = () => {
+      do n++;
+      while (used.has(`task-${n}`));
+      return `task-${n}`;
+    };
+    const taskBodies = tasks.map((x) => {
+      const taskAction = draftToAction(x.action);
+      return {
+        key: x.taskKey ?? freshKey(),
         title: x.title.trim(),
         ...(x.description.trim() ? { description: x.description.trim() } : {}),
         assignee: {
           type: x.assignee.type,
           ...(x.assignee.type === 'role' || x.assignee.type === 'user' ? { value: x.assignee.value } : {}),
         },
-        dueOffsetDays: Number(x.due),
+        ...draftToDue(x.due),
         ...(x.reminder.trim() ? { reminderDaysBefore: Number(x.reminder) } : {}),
-      })),
-    };
+        ...(taskAction ? { action: taskAction } : {}),
+      };
+    });
+    const body = { name: name.trim(), autoStart, entityId: entityId || null, tasks: taskBodies };
     if (
       await action.run(
-        () => api('/v1/workflow-templates', { method: 'POST', json: body }),
+        () =>
+          template
+            ? api(`/v1/workflow-templates/${template.id}`, { method: 'PUT', json: body })
+            : api('/v1/workflow-templates', { method: 'POST', json: { ...body, kind } }),
         t('admin.workflows.saved'),
       )
     )
@@ -138,17 +174,17 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
 
   return (
     <section
-      aria-labelledby="template-editor-title"
+      aria-labelledby={headingId}
       className="rounded-lg border border-border bg-surface-raised p-5 shadow-sm"
     >
-      <sec.heading
-        id="template-editor-title"
-        ref={heading}
-        tabIndex={-1}
-        className="text-title-3 outline-none"
-      >
-        {t('admin.workflows.newTitle')}
+      <sec.heading id={headingId} ref={heading} tabIndex={-1} className="text-title-3 outline-none">
+        {template
+          ? t('taskActions.editor.editTitle', { name: template.name })
+          : t('admin.workflows.newTitle')}
       </sec.heading>
+      {template ? (
+        <p className="mt-1 text-callout text-text-secondary">{t('taskActions.editor.editHint')}</p>
+      ) : null}
       <form onSubmit={submit} className="mt-4 flex flex-col gap-5">
         <div className="grid gap-4 md:grid-cols-3">
           <Field id="tpl-name" label={t('admin.name')}>
@@ -162,6 +198,7 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
                 {...p}
                 className={selectClass}
                 value={kind}
+                disabled={!!template}
                 onChange={(e) => setKind(e.target.value as Kind)}
               >
                 {KINDS.map((k) => (
@@ -252,26 +289,18 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
                 value={x.assignee}
                 onChange={(assignee) => setTask(x.key, { assignee })}
               />
+              <ActionFields
+                id={`task-${x.key}`}
+                value={x.action}
+                onChange={(a) => setTask(x.key, { action: a })}
+              />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  id={`task-${x.key}-due`}
-                  label={t('admin.workflows.dueOffset', { anchor: t(`admin.workflows.anchor.${kind}`) })}
-                  hint={t('admin.workflows.dueOffsetHint')}
-                >
-                  {(p) => (
-                    <Input
-                      {...p}
-                      type="number"
-                      inputMode="numeric"
-                      required
-                      min={-365}
-                      max={365}
-                      step={1}
-                      value={x.due}
-                      onChange={(e) => setTask(x.key, { due: e.target.value })}
-                    />
-                  )}
-                </Field>
+                <DueFields
+                  id={`task-${x.key}`}
+                  kind={kind}
+                  value={x.due}
+                  onChange={(due) => setTask(x.key, { due })}
+                />
                 <Field
                   id={`task-${x.key}-reminder`}
                   label={t('admin.workflows.reminder')}
@@ -319,11 +348,19 @@ function TemplateEditor({ onDone }: { onDone: (saved: boolean) => void }) {
   );
 }
 
-function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string | null }) {
+function TemplateCard({
+  tpl,
+  entityName,
+  onEdit,
+}: {
+  tpl: Template;
+  entityName: string | null;
+  onEdit?: () => void;
+}) {
   const t = useT();
   const roleName = useRoleName();
   const locale = useLocale();
-  const due = useDue();
+  const due = useDueText();
   const assignee = (a: TaskDef['assignee']) =>
     a.type === 'role'
       ? t('admin.workflows.assigneeText.role', { role: roleName(a.value) })
@@ -336,7 +373,18 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
         entityName ? t('admin.workflows.forEntity', { entity: entityName }) : t('admin.workflows.forAll')
       }
       actions={
-        <span className="flex flex-wrap gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {onEdit ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onEdit}
+              aria-label={t('taskActions.editor.editNamed', { name: tpl.name })}
+            >
+              <Pencil aria-hidden className="h-4 w-4 stroke-[1.5]" />
+              {t('taskActions.editor.edit')}
+            </Button>
+          ) : null}
           <Badge tone="accent">{t(`admin.workflows.kind.${tpl.kind}`)}</Badge>
           {tpl.kind !== 'custom' ? (
             tpl.autoStart ? (
@@ -355,6 +403,7 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
             <TH>{t('admin.workflows.taskTitle')}</TH>
             <TH>{t('admin.workflows.assignee')}</TH>
             <TH>{t('admin.workflows.due')}</TH>
+            <TH>{t('taskActions.editor.opensCol')}</TH>
             <TH>{t('admin.workflows.reminderCol')}</TH>
           </tr>
         </THead>
@@ -368,7 +417,10 @@ function TemplateCard({ tpl, entityName }: { tpl: Template; entityName: string |
                 ) : null}
               </TD>
               <TD>{assignee(x.assignee)}</TD>
-              <TD>{due(tpl.kind, x.dueOffsetDays)}</TD>
+              <TD>{due(tpl.kind, x)}</TD>
+              <TD label={t('taskActions.editor.opensCol')} phone={x.action ? undefined : 'hide'}>
+                {x.action ? t(taskActionKindLabel(x.action.kind)) : '—'}
+              </TD>
               <TD label={t('admin.workflows.reminderCol')}>
                 {x.reminderDaysBefore === undefined
                   ? t('admin.workflows.defaultReminder')
@@ -394,6 +446,7 @@ export default function WorkflowsPage() {
   const templates = useApi<Template[]>('/v1/workflow-templates');
   const entities = useOrg('legal-entities');
   const [adding, setAdding] = React.useState(false);
+  const [editing, setEditing] = React.useState<string | null>(null);
   const entityName = (id: string | null) =>
     id ? ((entities.data ?? []).find((e) => e.id === id)?.name ?? null) : null;
   return (
@@ -424,9 +477,25 @@ export default function WorkflowsPage() {
           body={t('admin.workflows.noneBody')}
         />
       ) : (
-        templates.data.map((tpl) => (
-          <TemplateCard key={tpl.id} tpl={tpl} entityName={entityName(tpl.entityId)} />
-        ))
+        templates.data.map((tpl) =>
+          editing === tpl.id ? (
+            <TemplateEditor
+              key={tpl.id}
+              template={tpl}
+              onDone={(saved) => {
+                setEditing(null);
+                if (saved) templates.reload();
+              }}
+            />
+          ) : (
+            <TemplateCard
+              key={tpl.id}
+              tpl={tpl}
+              entityName={entityName(tpl.entityId)}
+              onEdit={has('workflows.manage') && !adding && !editing ? () => setEditing(tpl.id) : undefined}
+            />
+          ),
+        )
       )}
     </>
   );

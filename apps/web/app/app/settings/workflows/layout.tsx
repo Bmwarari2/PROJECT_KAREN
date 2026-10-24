@@ -1,5 +1,5 @@
 import { Messages } from '@/lib/i18n-scope';
 
 export default function WorkflowsLayout({ children }: { children: React.ReactNode }) {
-  return <Messages ns={['admin.workflows']}>{children}</Messages>;
+  return <Messages ns={['admin.workflows', 'taskActions.editor', 'taskActions.kind']}>{children}</Messages>;
 }

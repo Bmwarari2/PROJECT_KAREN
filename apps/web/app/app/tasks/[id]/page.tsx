@@ -1,11 +1,10 @@
 'use client';
 import * as React from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowRight, CheckCircle2, ListChecks } from 'lucide-react';
-import { Badge, Button, buttonVariants, Card, EmptyState, Skeleton, useToast } from '@thapsus/ui';
+import { ListChecks } from 'lucide-react';
+import { Badge, Card, EmptyState, Skeleton } from '@thapsus/ui';
 import { formatDate, formatDateTime } from '@thapsus/core/i18n';
 import { compareDates, today as todayIn } from '@thapsus/core/time';
-import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/zone';
@@ -14,40 +13,22 @@ import { DetailList, type DetailItem } from '@/components/detail-list';
 import { IntentLink } from '@/components/intent-link';
 import { PersonLink } from '@/components/person-link';
 import { PageTitle, useSession } from '../../shell';
-
-interface TaskDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  source: string;
-  status: string;
-  dueOn: string | null;
-  createdAt: string;
-  completedAt: string | null;
-  completedByName: string | null;
-  subject: { id: string; name: string } | null;
-  assigneeRole: string | null;
-  assigneeName: string | null;
-  workflow: { id: string; kind: string; name: string } | null;
-  href: string;
-  canComplete: boolean;
-}
+import { TaskWork } from './task-work';
+import type { TaskDetail } from './types';
 
 const statusTone = { open: 'warning', done: 'success', cancelled: 'neutral' } as const;
 
 /**
- * One task (ADR-0160): what it asks, when it is due, who it is about and where to do it. Tasks whose
- * work happens on another page (a request, a document, an onboarding step) link there; the rest are
- * marked done here.
+ * One task (ADR-0160, ADR-0191 to ADR-0193): what it asks and why, a main button that opens the work with
+ * the person already chosen, the live status of the record it is linked to, where it comes from, and
+ * Mark as done as an audited fallback with a note. Text comes from the API in the reader's locale.
  */
 export default function TaskPage() {
   const t = useT();
   const locale = useLocale();
-  const toast = useToast();
   const session = useSession();
   const { id } = useParams<{ id: string }>();
-  const { data, error, reload } = useApi<TaskDetail>(`/v1/tasks/${id}`);
-  const [busy, setBusy] = React.useState(false);
+  const { data, error, reload } = useApi<TaskDetail>(`/v1/tasks/${id}?locale=${locale}`);
   const crumbs = [{ label: t('tasks.title'), href: '/app/tasks' }];
 
   if (error)
@@ -61,24 +42,9 @@ export default function TaskPage() {
       </div>
     );
   if (!data) return <Skeleton className="h-64 w-full" />;
-  const today = todayIn(viewerZone(session?.timeZone));
-  const overdue = data.status === 'open' && !!data.dueOn && compareDates(data.dueOn, today) < 0;
-  const elsewhere = data.href !== `/app/tasks/${data.id}`;
-  const roleName = (r: string) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`));
   const zone = viewerZone(session?.timeZone);
-
-  async function complete() {
-    setBusy(true);
-    try {
-      await api(`/v1/tasks/${id}/complete`, { method: 'POST' });
-      toast({ title: t('actionable.task.completed'), tone: 'success' });
-      reload();
-    } catch (err) {
-      toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
-    } finally {
-      setBusy(false);
-    }
-  }
+  const overdue = data.status === 'open' && !!data.dueOn && compareDates(data.dueOn, todayIn(zone)) < 0;
+  const roleName = (r: string) => (t(`roles.${r}`) === `roles.${r}` ? r : t(`roles.${r}`));
 
   const facts: DetailItem[] = [
     {
@@ -103,10 +69,17 @@ export default function TaskPage() {
       label: t('actionable.task.assignee'),
       value: data.assigneeName ?? (data.assigneeRole ? roleName(data.assigneeRole) : '—'),
     },
-    { key: 'source', label: t('actionable.task.source'), value: t(`tasks.source.${data.source}`) },
-    ...(data.workflow
-      ? [{ key: 'workflow', label: t('actionable.task.workflow'), value: data.workflow.name }]
-      : []),
+    {
+      key: 'source',
+      label: t('actionable.task.source'),
+      value: data.origin.href ? (
+        <IntentLink href={data.origin.href} data-testid="task-origin">
+          {data.origin.label}
+        </IntentLink>
+      ) : (
+        <span data-testid="task-origin">{data.origin.label}</span>
+      ),
+    },
     {
       key: 'created',
       label: t('actionable.task.created'),
@@ -126,42 +99,42 @@ export default function TaskPage() {
           },
         ]
       : []),
+    ...(data.status === 'done' && data.completedVia
+      ? [
+          {
+            key: 'how',
+            label: t('taskActions.page.how'),
+            value: t(`taskActions.page.via.${data.completedVia}`),
+          },
+        ]
+      : []),
+    ...(data.completionNote
+      ? [
+          {
+            key: 'note',
+            label: t('taskActions.page.noteFact'),
+            value: <span className="whitespace-pre-line">{data.completionNote}</span>,
+          },
+        ]
+      : []),
   ];
 
   return (
     <div className="flex max-w-[var(--prose-width)] flex-col gap-4" data-testid="task-detail">
       <Breadcrumbs items={[...crumbs, { label: data.title }]} />
-      <Card className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start gap-3">
-          <div className="mr-auto flex min-w-0 flex-col gap-2">
-            <PageTitle className="text-title-2 break-words">{data.title}</PageTitle>
-            <div className="flex flex-wrap gap-2">
-              <Badge tone={statusTone[data.status as keyof typeof statusTone] ?? 'neutral'}>
-                {t(`actionable.task.status.${data.status}`)}
-              </Badge>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {elsewhere ? (
-              <IntentLink
-                href={data.href}
-                className={`${buttonVariants({ variant: data.canComplete ? 'secondary' : 'primary', size: 'md' })} no-underline`}
-              >
-                {t(`actionable.task.go.${data.source}`)}
-                <ArrowRight aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              </IntentLink>
-            ) : null}
-            {data.canComplete ? (
-              <Button loading={busy} onClick={complete}>
-                <CheckCircle2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                {t('actionable.task.markDone')}
-              </Button>
-            ) : null}
+      <Card className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-2">
+          <PageTitle className="text-title-2 break-words">{data.title}</PageTitle>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone={statusTone[data.status as keyof typeof statusTone] ?? 'neutral'}>
+              {t(`actionable.task.status.${data.status}`)}
+            </Badge>
           </div>
         </div>
-        <p className="whitespace-pre-line text-body text-text-secondary">
+        <p className="whitespace-pre-line text-body text-text-secondary" data-testid="task-description">
           {data.description ?? t('actionable.task.noDescription')}
         </p>
+        <TaskWork data={data} onChanged={reload} />
         <DetailList items={facts} />
       </Card>
     </div>

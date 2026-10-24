@@ -1,18 +1,19 @@
 'use client';
 import * as React from 'react';
 import {
+  ArrowRight,
   BadgeCheck,
-  CheckCircle2,
   ClipboardCheck,
   FileSignature,
+  HeartPulse,
+  Laptop,
   ListChecks,
   MessageSquare,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { Button, EmptyState, ListItem, Skeleton } from '@thapsus/ui';
+import { buttonVariants, EmptyState, ListItem, Skeleton } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
-import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
@@ -39,12 +40,12 @@ interface Task {
   subjectEmployeeId: string | null;
   subjectName: string | null;
   status: string;
-  /** What the task is about (ADR-0160): its request, document, onboarding step or its own page. */
+  /** The row's page (ADR-0191): a request, a document, a joiner's step, or the task's own page. */
   href: string;
+  /** The main button: the page that does the work, with the person already chosen. */
+  action: { label: string; href: string } | null;
 }
 
-/** Requests and signatures close their tasks when they are decided or signed, not with "Complete". */
-const CLOSED_BY_ACTION = new Set(['approval', 'document']);
 const SOURCE_ICON: Record<string, LucideIcon> = {
   approval: ClipboardCheck,
   document: FileSignature,
@@ -52,12 +53,18 @@ const SOURCE_ICON: Record<string, LucideIcon> = {
   workflow: ListChecks,
   automation: Zap,
   hr_request: MessageSquare,
+  absence: HeartPulse,
+  asset: Laptop,
+};
+const sourceName = (t: (key: string) => string, source: string) => {
+  const key = `taskActions.sourceName.${source}`;
+  return t(key) === key ? source : t(key);
 };
 
 export default function TasksPage() {
   const t = useT();
   const locale = useLocale();
-  const { data, reload } = useApi<Task[]>('/v1/tasks');
+  const { data } = useApi<Task[]>(`/v1/tasks?locale=${locale}`);
   const [query, setQuery] = React.useState('');
   // the home dashboard opens the list on its overdue tasks: /app/tasks?overdue=1 (ADR-0161)
   const [source, setSource] = React.useState('');
@@ -90,7 +97,7 @@ export default function TasksPage() {
       ? [
           {
             key: 'source',
-            label: t('tasks.list.sourceChip', { source: t(`tasks.source.${source}`) }),
+            label: t('tasks.list.sourceChip', { source: sourceName(t, source) }),
             clear: () => setSource(''),
           },
         ]
@@ -130,7 +137,7 @@ export default function TasksPage() {
                   onChange={setSource}
                   label={t('tasks.list.source')}
                   anyLabel={t('tasks.list.anySource')}
-                  options={sources.map((s) => ({ value: s, label: t(`tasks.source.${s}`) }))}
+                  options={sources.map((s) => ({ value: s, label: sourceName(t, s) }))}
                 />
               ) : null}
               <label className="inline-flex h-10 items-center gap-2 text-callout">
@@ -182,7 +189,7 @@ export default function TasksPage() {
                         {' · '}
                       </>
                     ) : null}
-                    {t(`tasks.source.${task.source}`)}
+                    {sourceName(t, task.source)}
                   </>
                 }
                 meta={
@@ -193,21 +200,20 @@ export default function TasksPage() {
                   ) : undefined
                 }
                 actions={
-                  CLOSED_BY_ACTION.has(task.source) ? undefined : (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="min-h-11 sm:min-h-8"
-                      aria-label={t('actionable.task.completeNamed', { title: task.title })}
-                      onClick={async () => {
-                        await api(`/v1/tasks/${task.id}/complete`, { method: 'POST' });
-                        reload();
-                      }}
+                  // the main button, when it opens a page other than the row's own (ADR-0191)
+                  task.action && task.action.href !== task.href ? (
+                    <IntentLink
+                      href={task.action.href}
+                      className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} relative z-10 min-h-11 no-underline sm:min-h-8`}
+                      aria-label={t('taskActions.list.actionNamed', {
+                        action: task.action.label,
+                        title: task.title,
+                      })}
                     >
-                      <CheckCircle2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                      {t('tasks.complete')}
-                    </Button>
-                  )
+                      {task.action.label}
+                      <ArrowRight aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                    </IntentLink>
+                  ) : undefined
                 }
               />
             );

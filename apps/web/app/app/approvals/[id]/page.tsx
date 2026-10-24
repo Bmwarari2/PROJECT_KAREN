@@ -41,6 +41,8 @@ interface ApprovalDetail {
   currentStep: number;
   payload: Record<string, unknown>;
   requestedBy: { userId: string; name: string } | null;
+  /** Who asked (ADR-0193): a person, an automation rule, or not recorded (older requests). */
+  askedBy?: { kind: 'person' | 'automation' | 'unrecorded'; name: string | null; employeeId: string | null };
   steps: Array<{
     index: number;
     status: string;
@@ -121,7 +123,15 @@ export default function ApprovalPage() {
     {
       key: 'requestedBy',
       label: t('actionable.approval.requestedBy'),
-      value: data.requestedBy?.name ?? t('actionable.approval.system'),
+      // "The system" only for automations; a person is named (ADR-0193)
+      value:
+        data.askedBy?.kind === 'person' && data.askedBy.name ? (
+          <PersonLink id={data.askedBy.employeeId} name={data.askedBy.name} />
+        ) : data.askedBy?.kind === 'automation' ? (
+          t('taskActions.approval.automation')
+        ) : (
+          (data.requestedBy?.name ?? t('taskActions.approval.unrecorded'))
+        ),
     },
     { key: 'requested', label: t('approvals.col.requested'), value: when(data.requestedAt) },
     ...(data.decidedAt

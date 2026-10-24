@@ -20,6 +20,8 @@ interface HrRequestDetail {
   createdAt: string;
   completedAt: string | null;
   completedByName: string | null;
+  /** HR's reply when they resolved the request (ADR-0192). */
+  reply?: string | null;
 }
 
 const tone = { open: 'warning', done: 'success', cancelled: 'neutral' } as const;
@@ -88,6 +90,12 @@ export default function HrRequestPage() {
         <CardTitle as={sec.heading}>{t('actionable.hr.message')}</CardTitle>
         <p className="whitespace-pre-wrap break-words text-body">{data.message}</p>
       </Card>
+      {data.reply ? (
+        <Card className="flex flex-col gap-2" data-testid="hr-request-reply">
+          <CardTitle as={sec.heading}>{t('taskActions.hrReply.title')}</CardTitle>
+          <p className="whitespace-pre-wrap break-words text-body">{data.reply}</p>
+        </Card>
+      ) : null}
     </div>
   );
 }

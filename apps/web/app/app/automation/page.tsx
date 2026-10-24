@@ -10,6 +10,7 @@ import {
   Input,
   ListItem,
   Skeleton,
+  Textarea,
   useToast,
   PageSection,
 } from '@thapsus/ui';
@@ -33,6 +34,7 @@ export default function AutomationPage() {
   const [name, setName] = React.useState('');
   const [trigger, setTrigger] = React.useState('record.created');
   const [title, setTitle] = React.useState('');
+  const [description, setDescription] = React.useState('');
   const [dry, setDry] = React.useState<Record<string, string>>({});
 
   async function create(e: React.FormEvent) {
@@ -49,11 +51,21 @@ export default function AutomationPage() {
         json: {
           name,
           trigger: trig,
-          actions: [{ type: 'task', title, assignee: { type: 'role', value: 'hr_admin' }, dueInDays: 7 }],
+          actions: [
+            {
+              type: 'task',
+              title,
+              // what the task asks, shown on its page (ADR-0191)
+              ...(description.trim() ? { description: description.trim() } : {}),
+              assignee: { type: 'role', value: 'hr_admin' },
+              dueInDays: 7,
+            },
+          ],
         },
       });
       setName('');
       setTitle('');
+      setDescription('');
       reload();
     } catch (err) {
       toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
@@ -101,6 +113,22 @@ export default function AutomationPage() {
             </Field>
             <Field id="title" label={t('automation.taskTitle')}>
               {(p) => <Input {...p} required value={title} onChange={(e) => setTitle(e.target.value)} />}
+            </Field>
+            <Field
+              id="task-description"
+              label={t('taskActions.automation.description')}
+              hint={t('taskActions.automation.descriptionHint')}
+              className="md:col-span-3"
+            >
+              {(p) => (
+                <Textarea
+                  {...p}
+                  maxLength={2000}
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              )}
             </Field>
             <Button type="submit">{t('common.add')}</Button>
           </form>

@@ -386,7 +386,7 @@ test('opening a notification marks it read and opens what it is about', async ()
   ).toHaveCount(before - 1);
 });
 
-test('a task without a screen of its own opens its page, and HR marks it done there', async () => {
+test('a request to HR opens its task page, and HR resolves it there with a reply', async () => {
   const hr = ws.pages.hr_admin;
   await hr.goto('/app/tasks');
   await settle(hr);
@@ -396,7 +396,11 @@ test('a task without a screen of its own opens its page, and HR marks it done th
   await expect(
     hr.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Tasks' }),
   ).toBeVisible();
-  await hr.getByRole('button', { name: 'Mark as done' }).click();
+  // HR resolves it with a reply (ADR-0192); the reply is what the person sees
+  await hr.getByRole('button', { name: 'Reply and mark as done' }).click();
+  const reply = hr.getByRole('dialog', { name: 'Reply to Eli Evans' });
+  await reply.getByLabel('Your reply').fill('Your notice period is in your statement of terms. Fictional.');
+  await reply.getByRole('button', { name: 'Send and mark as done' }).click();
   await expect(hr.getByText('Task marked as done').first()).toBeVisible();
   // the employee sees the request done on Contact HR
   const e = ws.pages.employee;
@@ -416,6 +420,9 @@ test('a task without a screen of its own opens its page, and HR marks it done th
   await expect(e.getByTestId('hr-request-detail')).toBeVisible();
   await expect(e.getByTestId('hr-request-detail').getByText('Fictional details only.')).toBeVisible();
   await expect(e.getByTestId('hr-request-detail').getByText('Done', { exact: true }).first()).toBeVisible();
+  await expect(e.getByTestId('hr-request-reply')).toContainText(
+    'Your notice period is in your statement of terms.',
+  );
 });
 
 test('an approver decides on the request’s own page', async () => {
