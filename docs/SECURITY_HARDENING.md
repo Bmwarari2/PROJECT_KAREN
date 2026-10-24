@@ -39,15 +39,15 @@ Success criteria: CIS AWS Foundations ≥ 95%, Security Hub AFSBP ≥ 95%; ASVS 
 2. ASVS L3 review of authentication, sessions, authorisation and the back office.
 3. Browser hardening: Trusted Types, Subresource Integrity, COOP/COEP/CORP, strict Permissions-Policy, HSTS preload.
 4. API: short-lived OAuth tokens by default, per-key IP allowlists, mandatory key expiry, scoped keys; per-key and per-tenant adaptive rate limits; GitHub secret-scanning partner pattern for `thr_sk_` keys.
-5. Authorisation tests: generated IDOR/BOLA suite that calls every route as every built-in role against another tenant's and another team's IDs (extends the isolation suite to the HTTP layer).
+5. Authorisation tests: generated IDOR/BOLA suite that calls every route as every built-in role against another tenant's and another team's IDs (extends the isolation suite to the HTTP layer). _Status: **done** (Phase 15.17): `apps/api/test/bola.isolation.test.ts` walks every id-addressed operation in the OpenAPI document as every built-in role against another workspace's ids, and as the scoped roles against people outside their scope; it is part of the isolation step of `pnpm verify` and found seven real bugs, which are fixed._
 6. Uploads: malware scanning (GuardDuty Malware Protection for S3), image re-encoding, PDF sanitising; quarantine bucket until clean (closes V5.4.3).
 7. Business-logic abuse tests: self-approval, approval-chain bypass, privilege escalation through role editing, payroll export tampering.
 
 ### 2.4 AI — defending Ask HR and defending against AI attackers
 
 1. Ask HR: keep it tool-less; Bedrock Guardrails (in-region) on input and output; PII-leak output filter; per-user and per-tenant token and cost caps; prompt-injection canaries in the retrieval set; red-team suite (jailbreaks, injection via uploaded documents) in CI; full invocation audit without personal data.
-2. Honeytokens: fake employee records, fake API keys in docs and repos, honey endpoints and decoy S3 objects; any touch is a critical alert.
-3. Behavioural detection of automated attackers: enumeration patterns, high `authz.denied` / `input.rejected` rates, sequential ID probing, abnormal pagination; responses are tarpit, challenge and block.
+2. Honeytokens: fake employee records, fake API keys in docs and repos, honey endpoints and decoy S3 objects; any touch is a critical alert. _Status: **done except fake employees** (Phase 15.16, ADR-0179): decoy API key in the docs, honey endpoints and decoy object keys raise detections; fake employees are deliberately not put in customer workspaces._
+3. Behavioural detection of automated attackers: enumeration patterns, high `authz.denied` / `input.rejected` rates, sequential ID probing, abnormal pagination; responses are tarpit, challenge and block. _Status: **partly done** (Phase 15.13): rules for enumeration, `authz.denied` / `input.rejected` bursts and probing raise incidents and can block the address in the app; tarpit and challenge at the edge (WAF or Cloud Armor) are P1._
 4. Social engineering: support never acts on voice, video or email requests to change access; only customer-initiated, time-boxed grants (already the model); deepfake-aware staff training; out-of-band verification for any billing or owner change.
 
 ### 2.5 Data layer
@@ -75,7 +75,7 @@ Success criteria: CIS AWS Foundations ≥ 95%, Security Hub AFSBP ≥ 95%; ASVS 
 
 ### 2.8 Supply chain and SDLC
 
-1. Dependency cooldown: new versions only after 7 days (AI-generated malicious packages are usually caught within days); install scripts allowed only for an allowlist; registry provenance checks; lockfile lint.
+1. Dependency cooldown: new versions only after 7 days (AI-generated malicious packages are usually caught within days); install scripts allowed only for an allowlist; registry provenance checks; lockfile lint. _Status: **partly done** (Phase 15.18): 7-day `minimumReleaseAge` and an install-script allowlist (`strictDepBuilds`), enforced by `pnpm verify`; registry provenance checks and lockfile lint are still to do._
 2. Patch windows: critical 48 h, high 7 days; Renovate PRs through `pnpm verify`.
 3. SAST (CodeQL), IaC scanning (cdk-nag in the synth step), DAST (OWASP ZAP authenticated scan of staging every night), container scanning.
 4. GitHub: signed commits, required reviews, `main` ruleset, actions pinned by SHA, least-privilege `GITHUB_TOKEN`, runner egress allowlist.
@@ -87,6 +87,8 @@ DMARC `p=reject`, SPF, DKIM, MTA-STS, TLS-RPT; DNSSEC; CAA records; lookalike-do
 ## 3. Thapsus admin security operations
 
 ### 3.1 Unauthorised activity monitoring
+
+_Status: **done in the app** (Phase 15.13–15.14, ADR-0177, ADR-0178): signals, 21 active rules with fixtures (cloud rules planned), incidents with dedupe and containment; cloud sources (GuardDuty, CloudTrail, Security Hub) are P1._
 
 **Pipeline (per region, residency-safe):**
 
@@ -122,6 +124,8 @@ DMARC `p=reject`, SPF, DKIM, MTA-STS, TLS-RPT; DNSSEC; CAA records; lookalike-do
 
 ### 3.2 Security dashboard (back office "Security" module)
 
+_Status: **done (v1)** (Phase 15.14): overview, incidents, rules and decoys for `security_analyst` and super admin; customers get a Security centre in Settings. Live region tabs work for the cell the console runs in; posture scores need the P1 cloud services._
+
 **Access:** new staff role `security_analyst`, plus super admin.
 
 **Overview screen:**
@@ -155,6 +159,8 @@ DMARC `p=reject`, SPF, DKIM, MTA-STS, TLS-RPT; DNSSEC; CAA records; lookalike-do
 **Customer side:** a "Security centre" in Settings with their workspace's suspicious sign-ins, admin changes, MFA adoption and alert recipients.
 
 ### 3.3 Email alerts
+
+_Status: **done** (Phase 15.15) through the cell's mailer; SES from an `alerts.` subdomain, SMS and paging are owner steps (HUMAN_TODO)._
 
 **Delivery:** SES in each cell region from a dedicated `alerts.` subdomain with DMARC reject; SNS SMS for critical; an optional paging tool (needs a SUBPROCESSORS entry).
 

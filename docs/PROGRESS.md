@@ -421,14 +421,62 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (AC met) · `[h]` d
   - _Evidence:_ `packages/db/test/managed-migrator.int.test.ts`.
 - [x] 13.4 Fictional test organisation `kestrel`: about 300 employees in UK, Ireland and US entities, activity in every module, and five role sign-ins whose passwords come from Secret Manager.
   - _Evidence:_ `apps/api/test/seed-staging.int.test.ts` (sign-in per role, manager scope, employee refusal, encryption at rest, idempotent re-run) and `apps/api/test/seed-staging.test.ts`.
-- [ ] 13.5 The web, API and worker images build, start and resolve every import.
-  - _Evidence so far:_ checked by hand on 2026-10-23. Two existing bugs were found and fixed: the API and worker images could not start (/etc/ssl permissions, nested dependencies), and the web image did not build. Proven on each deploy by the workflow's "The image starts" step; ticked after the first deploy.
-- [ ] 13.6 Deploys apply only an owner-approved plan, through Workload Identity Federation (`.github/workflows/deploy-gcp-staging.yml`). Ticked after the first deploy.
-- [ ] 13.7 Staging is deployed and smoke-tested. Needs the owner: `docs/HUMAN_TODO.md` §9.
+- [x] 13.5 The web, API and worker images build, start and resolve every import.
+  - _Evidence:_ the deploy run of 2026-10-23 (https://github.com/Bmwarari2/PROJECT_KAREN/actions/runs/40034922405): the "The image starts" step passed for the web, API and worker images before they were pushed. Two existing bugs had been fixed on the way (the API and worker images could not start because of /etc/ssl permissions and nested dependencies, and the web image did not build).
+- [x] 13.6 Deploys apply only an owner-approved plan, through Workload Identity Federation (`.github/workflows/deploy-gcp-staging.yml`).
+  - _Evidence:_ the same run, which signed in to Google Cloud through Workload Identity Federation (no keys) and applied only the change set the owner approved on the `staging-gcp` environment. The first run failed safely in its first apply step (secret values not yet written), and PR #21 fixed that, with `infra/gcp/staging/tests/first-deploy.tftest.hcl` guarding against a repeat.
+- [x] 13.7 Staging is deployed and smoke-tested.
+  - _Evidence:_ the same run's smoke test (`/health` and `/signin` answer 200); the owner then tested the app on an iPhone (2026-10-23/24), which led to Phase 14.
+
+## Phase 14 — Staging feedback, round 1 (owner testing on an iPhone, 2026-10-23/24)
+
+The owner tested the staging app on an iPhone and asked for these fixes (ADR-0160 to ADR-0169, ADR-0180 to ADR-0182 and ADR-0185; migrations 0021 to 0023):
+
+- [x] **14.1 Everything that names a thing opens it.**
+  - Notifications carry a target and open it.
+  - The top bar's bell shows the recent ones.
+  - Inbox tasks and approvals open their item (with task and approval pages, approve and decline).
+  - A person's name opens their profile when the viewer may see it.
+  - List rows open their record, through new detail pages for right-to-work checks, assets, pay periods, timesheets and leave requests, with breadcrumbs.
+  - Home tiles and charts open the list behind them.
+  - _Evidence:_ `packages/core/test/links.test.ts`, `apps/api/test/actionable.int.test.ts` and `apps/web/e2e/actionable.spec.ts`. The e2e test signs in as each role and checks that names, notifications, tasks, approvals and rows are links, that they open real pages, and that no role is linked to a page it cannot open.
+- [x] **14.2 Help and support by role.**
+  - Help articles have an audience and are filtered everywhere (list, pages, search, contextual links).
+  - Employees and managers contact their own HR team (a task in the HR inbox, with a page for its status).
+  - Only admin roles contact Thapsus-HR support.
+  - _Evidence:_ `packages/core/test/help.test.ts`, `apps/api/test/support.int.test.ts` ("shows each reader only the articles about what they may do (ADR-0162)") and `apps/web/test/workspace.test.ts`.
+- [x] **14.3 Documents open in the app for review and signature, and download from there.**
+  - PDFs render in the app with PDF.js (self-hosted, its own policy) on desktops and phones.
+  - Every view and download is audited.
+  - The documents list, onboarding and inbox tasks open the viewer.
+  - _Evidence:_ `apps/web/e2e/documents-sign.spec.ts` ("the employee opens a document to sign, reads it in the app, signs it and downloads the signed copy"), `apps/web/e2e/security-asvs.spec.ts` (the page policy still blocks nothing) and `apps/web/test/pdfjs.test.ts`.
+- [x] **14.4 Signing needs the company's approval.**
+  - Contracts, offers and policies go to a countersigner through the approvals service, configurable per template.
+  - The document is complete only after countersigning, and its copy carries both signatures.
+  - _Evidence:_ `apps/web/e2e/documents-sign.spec.ts` ("a contract waits for the company: HR reviews it in the viewer and countersigns, then it is complete") and `apps/api/test/documents-attach.int.test.ts`.
+- [x] **14.5 HR attaches documents to a person.**
+  - Uploads are checked by their bytes, with a size limit and a scan hook.
+  - Visibility is HR only, or HR and the person.
+  - Right-to-work evidence is sealed with the regional key in the vault, with every view audited.
+  - Expiry reminders.
+  - _Evidence:_ `apps/api/test/documents-attach.int.test.ts`, `apps/api/test/documents-units.test.ts`, `apps/api/test/documents.residency.test.ts` (every region pair) and `apps/web/e2e/documents-sign.spec.ts` ("HR attaches right-to-work evidence and a driving licence; the employee sees only what was shared with them").
+- [x] **14.6 Payslips with the provider's full content.**
+  - Structured statements from the payroll provider: payments, deductions, employer contributions, year to date and net pay in minor units. A statement whose lines do not add up is refused.
+  - A printable payslip page, and payslips listed by year.
+  - Staging data comes from a clearly labelled fictional sample provider; Thapsus-HR never calculates tax.
+  - _Evidence:_ `apps/api/test/payslip-statements.int.test.ts` and `apps/web/e2e/phase6.spec.ts` (payslip page and download).
+- [x] **14.7 A phone-first UI on Apple's design principles.**
+  - Grouped lists, tables that become lists on phones, one large title, segmented section controls, a light translucent bar and a phone tab bar (ADR-0180).
+  - Settings as an index with back links (ADR-0181), and phone rules for every page (ADR-0182).
+  - Every page fits a 320 px screen without sideways scrolling.
+  - _Evidence:_ `apps/web/e2e/a11y-sweep.spec.ts` (all 12 areas, WCAG 2.2 AA), the visual baselines (light and dark, phone and desktop, re-baselined with this phase), `apps/web/test/workspace.test.ts` ("phone tab bar"), the Lighthouse step of `pnpm verify` and `scripts/phone-tour.mjs`.
+- [x] **14.8 The staging test company can be rebuilt.**
+  - `reset_test_data` on the deploy deletes the seeded fictional workspace through the verified purge and seeds it again. It never touches another workspace (ADR-0185).
+  - _Evidence:_ `apps/api/test/seed-staging-reset.int.test.ts`.
 
 ## Phase 15 — Security hardening P0 (plan approved 2026-10-23: `docs/SECURITY_HARDENING.md`)
 
-Identity half (plan §2.1, §2.2, §2.3.1; ADR-0170 to ADR-0174; migrations 0024 and 0025). The monitoring half (detection pipeline and rules, email alerts, security dashboard, honeytokens, IDOR suite, dependency cooldown) is tracked as its own items when it lands; it consumes the `auth.*` and `staff.*` security events of `apps/api/src/lib/security-events.ts`.
+Identity half (plan §2.1, §2.2, §2.3.1; ADR-0170 to ADR-0174; migrations 0024 and 0025). The monitoring half (ADR-0175 to ADR-0179; migrations 0026 and 0027) is items 15.11 to 15.18. It covers the founder's console, detections, alerts, the security dashboard, honeytokens, the IDOR suite and the dependency cooldown, and it consumes the `auth.*` and `staff.*` security events of `apps/api/src/lib/security-events.ts`.
 
 - [x] **15.1 Forgotten password**
   - Anyone can ask for a reset link from the sign-in page. The answer and its timing are the same whether or not the account exists; requests are throttled per account, per workspace and per IP.
@@ -462,6 +510,43 @@ Identity half (plan §2.1, §2.2, §2.3.1; ADR-0170 to ADR-0174; migrations 0024
 - [h] **15.10 Inviting the first staff member on Google Cloud staging**
   - The job `thapsus-stg-<cell>-staff-invite` creates a `super_admin` for the address in the repository variables (never in the code), writes the one-time link only to the London-only secret `thapsus-stg-<cell>-staff-invite` that only the jobs service account can use, never logs it, and runs once while no staff account exists (or by hand with `staff_invite`). Running it needs the owner: HUMAN_TODO §9.8.
   - _Evidence:_ `apps/api/test/staff-invite.int.test.ts` ("validates the invitee from the repository variables and skips when none is configured"; "creates the account once, writes only the link to the secret, and reissues on request"; "writes the secret version with the job identity, never with the link in the URL"); `infra/gcp/staging/tests/staging.tftest.hcl` (`uk_cell_stays_in_london`, `nothing_is_open_that_should_not_be`) and `first-deploy.tftest.hcl` (`the_first_deploy_step_writes_the_secret_values`).
+
+- [x] **15.11 The founder's console: business overview and customers.**
+  - Per cell: sign-ups, trials, conversion, churn, billing status, plans, MRR and ARR per currency, active users, employees under management, two-step adoption, support and incidents.
+  - Across regions: counts from the global directory only.
+  - Customers are searchable and filterable, with a health signal. Counts only, never personal data (ADR-0175).
+  - _Evidence:_ `apps/api/test/founder-console.int.test.ts` ("counts sign-ups, trials, conversions, churn, usage and MRR/ARR per currency from the snapshot"; "holds counts only: no names, emails, slugs or tenant ids"; "companies in every region from the global directory only"; "filters this cell by plan, status, trial and health, sorts, and shows activity per row"); `packages/core/test/metrics.test.ts`; `apps/web/e2e/backoffice.spec.ts`.
+- [x] **15.12 Platform performance per cell.**
+  - Requests, server errors and 95th-percentile latency by route group, flushed once a minute without ids or paths.
+  - Queue depth, oldest job, failures and database size (ADR-0176).
+  - _Evidence:_ `apps/api/test/founder-console.int.test.ts` ("aggregates requests, server errors and latency per route group without any ids or paths"; "samples queue depth, oldest job age, failures and database size for every database of the cell").
+- [x] **15.13 Detections and incidents.**
+  - Security signals are kept in the cell with keyed pseudonyms only.
+  - A versioned rule catalogue: 21 active rules (8 more planned for cloud sources), each with a severity, a MITRE ATT&CK id, a fixture and a near miss.
+  - Incidents with dedupe windows (ADR-0177).
+  - _Evidence:_ `packages/core/test/security-catalogue.test.ts`; `apps/api/test/security-engine.int.test.ts` ("every active rule fires once on its fixture and never on its near miss"; "records a detection and incident once, blocks the address, and extends rather than repeats within the dedupe window"; "stores pseudonymous values only").
+- [x] **15.14 Containment, the back-office Security module and the customer's Security centre.**
+  - Containment: block an address, end a person's sessions, suspend an API key, freeze a staff account. Unfreezing needs a second person; every action is audited and reversible.
+  - The Security module is for security analysts and super admins.
+  - Customer admins get a Security centre in Settings (ADR-0178).
+  - _Evidence:_ `apps/api/test/security-module.int.test.ts` ("containment from the incident view"; "the Security module"; "the customer's Security centre"); `apps/web/e2e/security-centre.spec.ts`.
+- [x] **15.15 Security alert emails.**
+  - Critical and high alerts go at once, medium in an hourly digest and low daily.
+  - Alerts carry no personal data, secrets or sign-in links.
+  - A daily test alert, and a dead-man switch after 10 minutes without a detection run.
+  - _Evidence:_ `apps/api/test/security-alerts.int.test.ts`.
+- [x] **15.16 Honeytokens outside customer data.**
+  - A decoy API key in the docs, honey endpoints that answer slowly, and decoy object keys.
+  - Any touch raises a detection. No fake employees in customer workspaces (ADR-0179).
+  - _Evidence:_ `apps/api/test/security-module.int.test.ts` ("honeytokens and blocks").
+- [x] **15.17 IDOR/BOLA suite generated from the OpenAPI document.**
+  - Every id-addressed operation is called as every built-in role with another workspace's real ids, and as the scoped roles with people outside their scope. The other workspace's rows must be unchanged afterwards. It runs in the isolation step of `pnpm verify`.
+  - It found and fixed seven real bugs.
+  - _Evidence:_ `apps/api/test/bola.isolation.test.ts`.
+- [x] **15.18 Supply-chain cooldown.**
+  - New dependency versions are installed only after 7 days (`minimumReleaseAge`), and install scripts only for an allowlist (`strictDepBuilds`).
+  - `pnpm verify` fails if either setting is removed.
+  - _Evidence:_ `scripts/test/supply-chain.test.ts` and the security step of `pnpm verify` (`scripts/supply-chain.mjs`).
 
 ## Documentation (brief §9)
 
