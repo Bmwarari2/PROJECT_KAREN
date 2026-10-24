@@ -1781,6 +1781,13 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
   - Churn = cancelled subscriptions plus workspaces closing or deleted; "in 30 days" uses the cancellation time or the registry's last change.
   - Weeks are ISO weeks (Monday) in UTC; 12 weeks are shown.
 - **Screen.** The back-office home is a region selector (All regions, UK, EU, US; a segmented control of links, `?region=`). This cell's region shows its figures in four sections (companies, revenue, usage, support and incidents) of `KpiTile`s, a sign-ups column chart, a billing-status donut and a plan bar list, each chart with a "Show as a table" twin and six columns on phones. All regions and other regions show directory counts and a link to that region's own back office for the rest.
+- **Companies list.** `GET /v1/backoffice/tenants` filters by plan, status (including cancelled), trial (on a trial, ending within 14 days, ended) and health, and sorts by name, newest, recent activity or "needs attention first". Each row carries the plan, billing status, sign-up date, headcount, active users this week, last activity and a health signal (`companyHealth`):
+  - risk: closing, suspended, cancelled, payment overdue, or no sign-in for 30 days;
+  - watch: a trial that ended without a plan or ends within 14 days, awaiting payment details, no sign-in for 14 days, or overdue support tickets;
+  - unknown: no usage snapshot yet.
+
+  The list is a grouped list (ADR-0180) with the filters in the URL, so the overview's tiles open it filtered. Other regions' rows come from the directory and open that region's own back office (`detailUrl`).
+
 - **Access.** Support, billing and super admins. The routes declare `noElevation` (read-only aggregates), so after the just-in-time elevation work a super admin sees the home without elevating.
 
 **Consequences.**

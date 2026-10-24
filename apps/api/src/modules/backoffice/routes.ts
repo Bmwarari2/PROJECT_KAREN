@@ -10,6 +10,7 @@ import {
 } from '@thapsus/core/billing';
 import { HOME_REGIONS, REGIONS } from '@thapsus/core';
 import { addDays, compareDates, instantToDate } from '@thapsus/core/time';
+import { companyHealth, HEALTH_TRIAL_ENDING_DAYS } from '@thapsus/core/metrics';
 import { rules, RULE_KEYS } from '@thapsus/rules';
 import { withTenant, writeAudit, TenantNotFoundError } from '@thapsus/db';
 import { ApiError } from '../../http/errors';
@@ -147,6 +148,10 @@ export async function backofficeRoutes(app: FastifyInstance) {
     storageBytes: Type.Integer(),
     computedAt: Type.String(),
   });
+  const HealthT = Type.Object({
+    level: Type.Union(['good', 'watch', 'risk', 'unknown'].map((l) => Type.Literal(l))),
+    reasons: Type.Array(Type.String()),
+  });
   const CellTenantT = Type.Object({
     tenantId: Uuid,
     slug: Type.String(),
@@ -158,6 +163,25 @@ export async function backofficeRoutes(app: FastifyInstance) {
     billingStatus: Nullable(Type.String()),
     usage: Nullable(UsageT),
     contractReference: Nullable(Type.String()),
+    trialEndsAt: Nullable(Type.String()),
+    lastActivityAt: Nullable(Type.String()),
+    activeUsers7d: Nullable(Type.Integer()),
+    breachedTickets: Type.Integer(),
+    health: HealthT,
+  });
+  const TenantListQ = Type.Object({
+    q: Type.Optional(Type.String({ maxLength: 60 })),
+    plan: Type.Optional(Type.String({ pattern: '^[a-z0-9_-]{1,40}$' })),
+    status: Type.Optional(
+      Type.Union(
+        ['all', 'active', 'moving', 'suspended', 'closing', 'deleted', 'cancelled'].map((x) =>
+          Type.Literal(x),
+        ),
+      ),
+    ),
+    trial: Type.Optional(Type.Union(['active', 'ending', 'ended'].map((x) => Type.Literal(x)))),
+    health: Type.Optional(Type.Union(['good', 'watch', 'risk', 'unknown'].map((x) => Type.Literal(x)))),
+    sort: Type.Optional(Type.Union(['slug', 'created', 'activity', 'health'].map((x) => Type.Literal(x)))),
   });
   app.get(
     '/v1/backoffice/tenants',
@@ -165,13 +189,17 @@ export async function backofficeRoutes(app: FastifyInstance) {
       ...staff('support', 'billing'),
       schema: {
         tags: ['backoffice'],
-        summary: "This cell's customers with usage aggregates (counts and bytes only)",
-        querystring: Type.Object({ q: Type.Optional(Type.String({ maxLength: 60 })) }),
+        summary:
+          "This cell's customers with usage aggregates (counts and bytes only), filtered by plan, status, trial and health",
+        querystring: TenantListQ,
         response: { 200: Type.Array(CellTenantT), 401: Problem, 403: Problem },
       },
     },
     async (req) => {
-      const q = (req.query as { q?: string }).q?.toLowerCase() ?? '';
+      const f = req.query as Static<typeof TenantListQ>;
+      const q = f.q?.toLowerCase() ?? '';
+      const at = now();
+      const status = f.status ?? 'all';
       const { rows } = await backofficePool(app).query<{
         tenant_id: string;
         slug: string;
@@ -181,19 +209,50 @@ export async function backofficeRoutes(app: FastifyInstance) {
         created_at: string;
         headcount: number | null;
         active_users: number | null;
+        active_users_7d: number | null;
         storage_bytes: string | null;
         plan_id: string | null;
         billing_status: string | null;
         computed_at: string | null;
+        trial_ends_at: string | null;
+        last_activity_at: string | null;
         reference: string | null;
+        breached: number;
       }>(
-        `SELECT r.tenant_id, r.slug, r.home_region, r.status, r.db_key, r.created_at, u.headcount, u.active_users, u.storage_bytes, u.plan_id, u.billing_status, u.computed_at, c.reference
+        `SELECT r.tenant_id, r.slug, r.home_region, r.status, r.db_key, r.created_at, u.headcount, u.active_users, u.active_users_7d, u.storage_bytes, u.plan_id, u.billing_status, u.computed_at,
+                u.trial_ends_at, u.last_activity_at, c.reference, coalesce(b.breached, 0)::int AS breached
            FROM registry.tenants r LEFT JOIN backoffice.tenant_usage u ON u.subject_tenant_id = r.tenant_id
            LEFT JOIN backoffice.contracts c ON c.subject_tenant_id = r.tenant_id AND c.status = 'active'
-          WHERE r.home_region = $1 AND ($2 = '' OR r.slug LIKE '%' || $2 || '%') ORDER BY r.slug LIMIT 500`,
-        [deps.config.cell, q],
+           LEFT JOIN (SELECT subject_tenant_id, count(*) AS breached FROM backoffice.support_queue
+                       WHERE status IN ('open', 'awaiting_customer') AND ((first_responded_at IS NULL AND first_response_due_at < $3) OR resolution_due_at < $3)
+                       GROUP BY 1) b ON b.subject_tenant_id = r.tenant_id
+          WHERE r.home_region = $1 AND ($2 = '' OR r.slug LIKE '%' || $2 || '%')
+            AND CASE $4::text
+                  WHEN 'all' THEN r.status <> 'deleted'
+                  WHEN 'cancelled' THEN u.billing_status = 'canceled' OR r.status IN ('closing', 'deleted')
+                  ELSE r.status = $4::text END
+            AND ($5::text IS NULL OR ($5 = 'none' AND u.plan_id IS NULL) OR u.plan_id = $5)
+            AND CASE $6::text
+                  WHEN 'active' THEN u.billing_status = 'trialing'
+                  WHEN 'ending' THEN u.billing_status = 'trialing' AND u.trial_ends_at >= $3 AND u.trial_ends_at <= $3::timestamptz + make_interval(days => $7)
+                  WHEN 'ended' THEN u.billing_status = 'trial_expired'
+                  ELSE true END
+          ORDER BY CASE WHEN $8 = 'created' THEN r.created_at END DESC,
+                   CASE WHEN $8 = 'activity' THEN u.last_activity_at END DESC NULLS LAST,
+                   r.slug
+          LIMIT 500`,
+        [
+          deps.config.cell,
+          q,
+          at,
+          status,
+          f.plan ?? null,
+          f.trial ?? null,
+          HEALTH_TRIAL_ENDING_DAYS,
+          f.sort ?? 'slug',
+        ],
       );
-      return rows.map((r) => ({
+      const out = rows.map((r) => ({
         tenantId: r.tenant_id,
         slug: r.slug,
         region: r.home_region,
@@ -211,10 +270,39 @@ export async function backofficeRoutes(app: FastifyInstance) {
             }
           : null,
         contractReference: r.reference,
+        trialEndsAt: r.trial_ends_at,
+        lastActivityAt: r.last_activity_at,
+        activeUsers7d: r.active_users_7d,
+        breachedTickets: r.breached,
+        health: companyHealth(
+          {
+            status: r.status,
+            billingStatus: r.billing_status,
+            trialEndsAt: r.trial_ends_at,
+            lastActivityAt: r.last_activity_at,
+            snapshotAt: r.computed_at,
+            breachedTickets: r.breached,
+          },
+          at,
+        ),
       }));
+      const filtered = f.health ? out.filter((r) => r.health.level === f.health) : out;
+      if (f.sort === 'health') {
+        const rank = { risk: 0, watch: 1, unknown: 2, good: 3 } as const;
+        filtered.sort((a, b) => rank[a.health.level] - rank[b.health.level] || a.slug.localeCompare(b.slug));
+      }
+      return filtered;
     },
   );
 
+  const DirectoryQ = Type.Object({
+    q: Type.Optional(Type.String({ maxLength: 60 })),
+    region: Type.Optional(Type.Union(HOME_REGIONS.map((r) => Type.Literal(r)))),
+    plan: Type.Optional(Type.String({ pattern: '^[a-z0-9_-]{1,40}$' })),
+    status: Type.Optional(
+      Type.Union(['all', 'active', 'suspended', 'closing', 'deleted'].map((x) => Type.Literal(x))),
+    ),
+  });
   app.get(
     '/v1/backoffice/tenants/all-regions',
     {
@@ -222,7 +310,8 @@ export async function backofficeRoutes(app: FastifyInstance) {
       schema: {
         tags: ['backoffice'],
         summary:
-          'Every region, from the global tenant directory only (ids, slugs, regions, plan, status; no personal data)',
+          'Every region, from the global tenant directory only (ids, slugs, regions, plan, status, sign-up time; no personal data)',
+        querystring: DirectoryQ,
         response: {
           200: Type.Array(
             Type.Object({
@@ -231,6 +320,9 @@ export async function backofficeRoutes(app: FastifyInstance) {
               region: Type.String(),
               status: Type.String(),
               planRef: Nullable(Type.String()),
+              createdAt: Nullable(Type.String()),
+              /** Where the detail page is: this back office, or the home region's own. */
+              detailUrl: Type.String(),
             }),
           ),
           401: Problem,
@@ -238,14 +330,31 @@ export async function backofficeRoutes(app: FastifyInstance) {
         },
       },
     },
-    async () =>
-      (await deps.directory.list()).map((e) => ({
-        tenantId: e.tenantId,
-        slug: e.slug,
-        region: e.homeRegion,
-        status: e.status,
-        planRef: e.planRef,
-      })),
+    async (req) => {
+      const f = req.query as Static<typeof DirectoryQ>;
+      const q = f.q?.toLowerCase() ?? '';
+      const status = f.status ?? 'all';
+      return (await deps.directory.list())
+        .filter(
+          (e) =>
+            (!q || e.slug.includes(q)) &&
+            (!f.region || e.homeRegion === f.region) &&
+            (!f.plan || (f.plan === 'none' ? !e.planRef : e.planRef === f.plan)) &&
+            (status === 'all' ? e.status !== 'deleted' : e.status === status),
+        )
+        .map((e) => ({
+          tenantId: e.tenantId,
+          slug: e.slug,
+          region: e.homeRegion,
+          status: e.status,
+          planRef: e.planRef,
+          createdAt: e.createdAt ?? null,
+          detailUrl:
+            e.homeRegion === deps.config.cell
+              ? `/backoffice/tenants/${e.tenantId}`
+              : `${deps.regionalAppUrls[e.homeRegion]}/backoffice/tenants/${e.tenantId}`,
+        }));
+    },
   );
 
   const AccountStructureT = Type.Object({

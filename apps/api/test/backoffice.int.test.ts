@@ -118,9 +118,19 @@ describe('tenants, regions and usage', () => {
       region: 'uk',
       status: 'active',
       planRef: 'trial',
+      createdAt: expect.any(String),
+      detailUrl: `/backoffice/tenants/${owner.tenantId}`,
     });
     for (const e of all)
-      expect(Object.keys(e).sort()).toEqual(['planRef', 'region', 'slug', 'status', 'tenantId']);
+      expect(Object.keys(e).sort()).toEqual([
+        'createdAt',
+        'detailUrl',
+        'planRef',
+        'region',
+        'slug',
+        'status',
+        'tenantId',
+      ]);
     expect(DIRECTORY_FIELDS).not.toContain('name');
   });
 

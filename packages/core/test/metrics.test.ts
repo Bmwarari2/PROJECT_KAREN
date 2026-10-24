@@ -3,6 +3,7 @@ import {
   HISTOGRAM_BOUNDS_MS,
   addHistograms,
   bucketIndex,
+  companyHealth,
   conversionBasisPoints,
   histogramQuantile,
   recurringRevenue,
@@ -122,5 +123,54 @@ describe('route groups never carry ids or personal data', () => {
     expect(routeGroup(undefined)).toBe('unmatched');
     expect(routeGroup('/v1/:weird')).toBe('other');
     expect(routeGroup('/')).toBe('other');
+  });
+});
+
+describe('company health (a simple signal for the companies list)', () => {
+  const now = '2026-10-24T12:00:00.000Z';
+  const base = {
+    status: 'active',
+    billingStatus: 'active',
+    trialEndsAt: null,
+    lastActivityAt: '2026-10-23T09:00:00.000Z',
+    snapshotAt: '2026-10-24T01:00:00.000Z',
+    breachedTickets: 0,
+  };
+  it('is good for an active, paying, recently used workspace', () => {
+    expect(companyHealth(base, now)).toEqual({ level: 'good', reasons: [] });
+  });
+  it('watches trials ending within 14 days, quiet workspaces and overdue support tickets', () => {
+    expect(
+      companyHealth({ ...base, billingStatus: 'trialing', trialEndsAt: '2026-11-01T00:00:00.000Z' }, now),
+    ).toEqual({ level: 'watch', reasons: ['trialEndingSoon'] });
+    expect(
+      companyHealth({ ...base, billingStatus: 'trialing', trialEndsAt: '2026-11-20T00:00:00.000Z' }, now),
+    ).toEqual({ level: 'good', reasons: [] });
+    expect(companyHealth({ ...base, lastActivityAt: '2026-10-05T00:00:00.000Z' }, now)).toEqual({
+      level: 'watch',
+      reasons: ['quiet'],
+    });
+    expect(companyHealth({ ...base, breachedTickets: 2 }, now).reasons).toEqual(['supportOverdue']);
+  });
+  it('flags risk for overdue payment, cancellation, closing and a month without activity, worst first', () => {
+    expect(companyHealth({ ...base, billingStatus: 'past_due' }, now)).toEqual({
+      level: 'risk',
+      reasons: ['paymentOverdue'],
+    });
+    expect(
+      companyHealth({ ...base, billingStatus: 'canceled', lastActivityAt: '2026-08-01T00:00:00.000Z' }, now),
+    ).toEqual({ level: 'risk', reasons: ['cancelled', 'inactive'] });
+    expect(companyHealth({ ...base, status: 'closing' }, now).reasons).toEqual(['closing']);
+    expect(companyHealth({ ...base, lastActivityAt: null }, now).reasons).toEqual(['inactive']);
+    expect(companyHealth({ ...base, billingStatus: 'trial_expired' }, now)).toEqual({
+      level: 'watch',
+      reasons: ['trialEnded'],
+    });
+  });
+  it('is unknown without a usage snapshot', () => {
+    expect(companyHealth({ ...base, snapshotAt: null }, now)).toEqual({
+      level: 'unknown',
+      reasons: ['noSnapshot'],
+    });
   });
 });

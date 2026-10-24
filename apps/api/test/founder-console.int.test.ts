@@ -190,3 +190,112 @@ describe('companies in every region from the global directory only', () => {
     expect(JSON.stringify(after)).not.toMatch(/eu-fictional|@/);
   });
 });
+
+describe('companies list: search, filters and a health signal', () => {
+  type Row = {
+    tenantId: string;
+    slug: string;
+    planId: string | null;
+    createdAt: string;
+    lastActivityAt: string | null;
+    activeUsers7d: number | null;
+    usage: { headcount: number; activeUsers: number } | null;
+    health: { level: string; reasons: string[] };
+  };
+  const list = async (query: string) => {
+    const r = await api('GET', `/v1/backoffice/tenants?${query}`, undefined, support.cookie);
+    expect(r.statusCode, r.body).toBe(200);
+    return r.json() as Row[];
+  };
+  const ids = (rows: Row[]) => rows.map((r) => r.tenantId);
+
+  it('filters this cell by plan, status, trial and health, sorts, and shows activity per row', async () => {
+    const day = 86_400_000;
+    const tag = `fc${Math.random().toString(36).slice(2, 6)}`;
+    const ending = await signup(ctx, `${tag}-ending`);
+    const paying = await signup(ctx, `${tag}-paying`);
+    const overdue = await signup(ctx, `${tag}-overdue`);
+    const gone = await signup(ctx, `${tag}-gone`);
+    await setSubscription(ending.tenantId, {
+      status: 'trialing',
+      trialEndsAt: new Date(ctx.clock.now.getTime() + 3 * day).toISOString(),
+    });
+    await setSubscription(paying.tenantId, { status: 'active', amountMinor: 4500, planId: 'core' });
+    await setSubscription(overdue.tenantId, { status: 'past_due', amountMinor: 4500, planId: 'core' });
+    await setSubscription(gone.tenantId, { status: 'canceled' });
+
+    const mine = await list(`q=${tag}`);
+    expect(mine.map((r) => r.slug).sort()).toEqual(
+      [`${tag}-ending`, `${tag}-gone`, `${tag}-overdue`, `${tag}-paying`].sort(),
+    );
+    const row = mine.find((r) => r.tenantId === paying.tenantId)!;
+    expect(row).toMatchObject({ planId: 'core', activeUsers7d: 1, usage: { headcount: 0, activeUsers: 1 } });
+    expect(row.lastActivityAt).toBeTruthy();
+    expect(row.health).toEqual({ level: 'good', reasons: [] });
+    expect(mine.find((r) => r.tenantId === ending.tenantId)!.health).toEqual({
+      level: 'watch',
+      reasons: ['trialEndingSoon'],
+    });
+
+    expect(ids(await list(`q=${tag}&trial=ending`))).toEqual([ending.tenantId]);
+    expect(ids(await list(`q=${tag}&status=cancelled`))).toEqual([gone.tenantId]);
+    expect(ids(await list(`q=${tag}&plan=core`)).sort()).toEqual([overdue.tenantId, paying.tenantId].sort());
+    expect(ids(await list(`q=${tag}&health=risk`)).sort()).toEqual([gone.tenantId, overdue.tenantId].sort());
+    // risk first, then watch, then good
+    expect((await list(`q=${tag}&sort=health`)).map((r) => r.health.level)).toEqual([
+      'risk',
+      'risk',
+      'watch',
+      'good',
+    ]);
+    const byCreated = await list(`q=${tag}&sort=created`);
+    expect(byCreated[0]!.tenantId).toBe(gone.tenantId); // newest first
+    expect(
+      (await api('GET', '/v1/backoffice/tenants?status=bogus', undefined, support.cookie)).statusCode,
+    ).toBe(400);
+  });
+
+  it('filters every region by region and plan; rows in other regions link to their own back office', async () => {
+    const tenantId = crypto.randomUUID();
+    const slug = `us-fictional-${Math.random().toString(36).slice(2, 7)}`;
+    await ctx.directory.register({
+      tenantId,
+      slug,
+      homeRegion: 'us',
+      status: 'active',
+      planRef: 'plus',
+      verifiedDomains: [],
+    });
+    const r = await api(
+      'GET',
+      `/v1/backoffice/tenants/all-regions?region=us&q=${slug}`,
+      undefined,
+      support.cookie,
+    );
+    expect(r.json()).toEqual([
+      {
+        tenantId,
+        slug,
+        region: 'us',
+        status: 'active',
+        planRef: 'plus',
+        createdAt: expect.any(String),
+        detailUrl: `https://app.us.thapsus-hr.test/backoffice/tenants/${tenantId}`,
+      },
+    ]);
+    const none = await api(
+      'GET',
+      `/v1/backoffice/tenants/all-regions?region=eu&q=${slug}`,
+      undefined,
+      support.cookie,
+    );
+    expect(none.json()).toEqual([]);
+    const plan = await api(
+      'GET',
+      `/v1/backoffice/tenants/all-regions?plan=core&q=${slug}`,
+      undefined,
+      support.cookie,
+    );
+    expect(plan.json()).toEqual([]);
+  });
+});

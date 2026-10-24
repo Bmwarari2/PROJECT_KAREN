@@ -127,3 +127,75 @@ export function routeGroup(pattern: string | undefined): string {
   if (!first || first.startsWith(':') || !/^[a-z0-9][a-z0-9_-]{0,39}$/i.test(first)) return 'other';
   return first.toLowerCase();
 }
+
+// ---- company health ----------------------------------------------------------------------------------------
+export type HealthLevel = 'good' | 'watch' | 'risk' | 'unknown';
+export type HealthReason =
+  | 'closing'
+  | 'suspended'
+  | 'cancelled'
+  | 'paymentOverdue'
+  | 'inactive'
+  | 'trialEnded'
+  | 'awaitingPayment'
+  | 'trialEndingSoon'
+  | 'quiet'
+  | 'supportOverdue'
+  | 'noSnapshot';
+export interface HealthInput {
+  /** Registry status of the workspace. */
+  status: string;
+  /** Status of the default billing account's newest subscription (snapshot). */
+  billingStatus: string | null;
+  trialEndsAt: string | null;
+  lastActivityAt: string | null;
+  /** When the usage snapshot was taken; null when there is none yet. */
+  snapshotAt: string | null;
+  breachedTickets: number;
+}
+
+const RISK: HealthReason[] = ['closing', 'suspended', 'cancelled', 'paymentOverdue', 'inactive'];
+export const HEALTH_TRIAL_ENDING_DAYS = 14;
+export const HEALTH_QUIET_DAYS = 14;
+export const HEALTH_INACTIVE_DAYS = 30;
+
+/**
+ * A simple, explainable health signal per company (ADR-0175): risk for a workspace that is closing,
+ * suspended, cancelled, behind on payment or unused for a month; watch for a trial that ended or ends
+ * within two weeks, a quiet fortnight or overdue support tickets; unknown without a usage snapshot.
+ * The reasons come worst first, so the list can show the first one.
+ */
+export function companyHealth(h: HealthInput, now: string): { level: HealthLevel; reasons: HealthReason[] } {
+  const t = new Date(now).getTime();
+  const days = (iso: string) => (t - new Date(iso).getTime()) / 86_400_000;
+  const reasons: HealthReason[] = [];
+  if (h.status === 'closing' || h.status === 'deleted') reasons.push('closing');
+  if (h.status === 'suspended') reasons.push('suspended');
+  if (!h.snapshotAt)
+    return reasons.length ? { level: 'risk', reasons } : { level: 'unknown', reasons: ['noSnapshot'] };
+  if (h.billingStatus === 'canceled') reasons.push('cancelled');
+  if (h.billingStatus === 'past_due') reasons.push('paymentOverdue');
+  if (!h.lastActivityAt || days(h.lastActivityAt) > HEALTH_INACTIVE_DAYS) reasons.push('inactive');
+  if (h.billingStatus === 'trial_expired') reasons.push('trialEnded');
+  if (h.billingStatus === 'incomplete') reasons.push('awaitingPayment');
+  if (
+    h.billingStatus === 'trialing' &&
+    h.trialEndsAt &&
+    -days(h.trialEndsAt) >= 0 &&
+    -days(h.trialEndsAt) <= HEALTH_TRIAL_ENDING_DAYS
+  )
+    reasons.push('trialEndingSoon');
+  if (
+    h.lastActivityAt &&
+    days(h.lastActivityAt) > HEALTH_QUIET_DAYS &&
+    days(h.lastActivityAt) <= HEALTH_INACTIVE_DAYS
+  )
+    reasons.push('quiet');
+  if (h.breachedTickets > 0) reasons.push('supportOverdue');
+  const level: HealthLevel = reasons.some((r) => RISK.includes(r))
+    ? 'risk'
+    : reasons.length
+      ? 'watch'
+      : 'good';
+  return { level, reasons };
+}

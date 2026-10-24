@@ -97,4 +97,39 @@ test.describe("founder's console", () => {
     await expect(page.getByRole('link', { name: 'Open the EU back office' })).toBeVisible();
     await expectAccessible(page);
   });
+  test('companies are searchable and filterable, with a health signal, and every row opens its detail', async ({
+    page,
+    browser,
+  }) => {
+    const customer = await browser.newContext();
+    const owner = await signUpAndEnrol(await customer.newPage());
+    await customer.close();
+
+    await staffSignIn(page, createStaff('support'));
+    await page.getByRole('link', { name: 'Customers' }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Customers' })).toBeVisible();
+    await page.getByLabel('Search by workspace').fill(owner.slug);
+    const row = page.getByRole('listitem').filter({ hasText: owner.slug });
+    await expect(row).toContainText('No data yet');
+    await expectAccessible(page);
+
+    // the detail page is one tap away; refreshing the usage snapshot fills the row
+    await row.getByRole('link', { name: owner.slug }).click();
+    await expect(page.getByRole('heading', { level: 1, name: `Fictional ${owner.slug} Ltd` })).toBeVisible();
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.getByText('Usage refreshed', { exact: true })).toBeVisible();
+    await page.goBack();
+    await page.getByLabel('Search by workspace').fill(owner.slug);
+    await expect(row).toContainText('Healthy');
+    await expect(row).toContainText(/active this week/);
+
+    // filters narrow the list and live in the address
+    await page.getByLabel('Health').selectOption('risk');
+    await expect(page).toHaveURL(/health=risk/);
+    await expect(page.getByText('No company matches these filters.')).toBeVisible();
+    await page.getByLabel('Health').selectOption('');
+    await page.getByLabel('Region', { exact: true }).selectOption('all');
+    await expect(page.getByRole('listitem').filter({ hasText: owner.slug })).toContainText('UK');
+    await expectAccessible(page);
+  });
 });
