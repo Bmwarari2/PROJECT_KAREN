@@ -47,6 +47,11 @@ const ALL_PAGES = [
   { path: '/app/settings', label: 'Settings (signed in)', auth: true },
   { path: '/app/notifications', label: 'Notifications and preferences (signed in)', auth: true },
   { path: '/app/security', label: 'App security (signed in)', auth: true },
+  // Opened last, after the owner is linked to a fictional employee record with a contract and a payslip
+  // (ADR-0167, ADR-0168), so the pages above keep measuring a fresh workspace.
+  { path: '/app/payslips', label: 'Payslips (signed in)', auth: true, records: true },
+  { path: '/app/payslips/:payslip', label: 'Payslip (signed in)', auth: true, records: true },
+  { path: '/app/documents/:document', label: 'Document viewer (signed in)', auth: true, records: true },
 ];
 // LIGHTHOUSE_ONLY=/app/me,/signin limits a run to some pages (debugging); verify always runs them all.
 const PAGES = process.env.LIGHTHOUSE_ONLY
@@ -114,8 +119,10 @@ const stopAll = () => {
   }
 };
 
+let ownerEmail = '';
 async function sessionCookie() {
   const slug = `lh-${Date.now().toString(36)}`;
+  ownerEmail = `owner@${slug}.example.test`;
   const r = await fetch(`${base}/v1/signup`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -124,7 +131,7 @@ async function sessionCookie() {
       slug,
       region: 'uk',
       ownerName: 'Lee Lighthouse',
-      ownerEmail: `owner@${slug}.example.test`,
+      ownerEmail,
       password: 'Correct-Horse-Battery-9',
       acceptDpa: true,
     }),
@@ -151,6 +158,126 @@ async function sessionCookie() {
   return cookie;
 }
 
+/** A small, valid one-page PDF with a line of fictional text, so the viewer renders a real page and its text layer. */
+function onePagePdf(text) {
+  const stream = `BT /F1 18 Tf 72 770 Td (${text}) Tj ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets = objects.map((o, i) => {
+    const at = out.length;
+    out += `${i + 1} 0 obj\n${o}\nendobj\n`;
+    return at;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  out += offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
+
+/**
+ * Fictional records for the payslip and document pages: the owner becomes Lee Lighthouse's employee record, with a
+ * contract shared with them and a September payslip as a (fictional) payroll provider sent it.
+ */
+async function records(cookie) {
+  const call = async (method, path, body) => {
+    const form = body instanceof FormData;
+    const r = await fetch(base + path, {
+      method,
+      headers: {
+        cookie,
+        accept: 'application/json',
+        ...(body && !form ? { 'content-type': 'application/json' } : {}),
+      },
+      body: form ? body : body ? JSON.stringify(body) : undefined,
+    });
+    if (r.status >= 300) throw new Error(`${method} ${path} failed ${r.status}`);
+    return r.status === 204 ? undefined : r.json();
+  };
+  const entity = await call('POST', '/v1/org/legal-entities', {
+    name: 'Fictional Lighthouse Ltd',
+    country: 'GB',
+    regionCode: 'GB-ENG',
+    currency: 'GBP',
+    timeZone: 'Europe/London',
+  });
+  const employee = await call('POST', '/v1/employees', {
+    startDate: '2025-01-06',
+    legalFirstName: 'Lee',
+    legalLastName: 'Lighthouse',
+    jobTitle: 'Office manager',
+    entityId: entity.id,
+    contractType: 'permanent',
+    employeeNumber: 'LH-1',
+  });
+  const db = new pg.Client({ connectionString: `${OWNER}/${DB}` });
+  await db.connect();
+  try {
+    await db.query('UPDATE app.users SET employee_id = $1 WHERE lower(email) = lower($2)', [
+      employee.id,
+      ownerEmail,
+    ]);
+  } finally {
+    await db.end();
+  }
+  const doc = new FormData();
+  doc.set('attachmentType', 'contract');
+  doc.set('visibility', 'employee');
+  doc.set(
+    'file',
+    new Blob([onePagePdf('Fictional statement of terms')], { type: 'application/pdf' }),
+    'contract.pdf',
+  );
+  const document = await call('POST', `/v1/employees/${employee.id}/documents`, doc);
+  const statement = {
+    employeeNumber: 'LH-1',
+    currency: 'GBP',
+    employer: { name: 'Fictional Lighthouse Ltd', address: ['1 Example Street', 'London'] },
+    employee: { name: 'Lee Lighthouse', taxCode: 'SAMPLE1', nationalId: 'QQ 12 34 56 C' },
+    period: {
+      start: '2026-09-01',
+      end: '2026-09-30',
+      payDate: '2026-09-30',
+      frequency: 'monthly',
+      taxYear: '2026-27',
+    },
+    payment: { method: 'bank_transfer', account: '12345678' },
+    payments: [
+      { kind: 'basic', label: 'Basic salary', amountMinor: 250_000 },
+      { kind: 'overtime', label: 'Overtime', quantity: '4.00', rateMinor: 2_250, amountMinor: 9_000 },
+    ],
+    deductions: [
+      { kind: 'income_tax', label: 'Income tax', amountMinor: 31_000 },
+      { kind: 'pension', label: 'Pension', amountMinor: 7_500 },
+    ],
+    employerContributions: [{ kind: 'pension', label: 'Employer pension', amountMinor: 4_500 }],
+    totals: { grossMinor: 259_000, deductionsMinor: 38_500, netMinor: 220_500 },
+    ytd: [
+      { key: 'gross', label: 'Gross pay to date', amountMinor: 1_554_000 },
+      { key: 'net', label: 'Net pay to date', amountMinor: 1_323_000 },
+    ],
+  };
+  const batchForm = new FormData();
+  batchForm.set('kind', 'payslip');
+  batchForm.set('label', 'September 2026');
+  batchForm.set(
+    'statements',
+    new Blob([JSON.stringify({ provider: { name: 'Fictional Payroll Bureau' }, statements: [statement] })], {
+      type: 'application/json',
+    }),
+    'statements.json',
+  );
+  const batch = await call('POST', '/v1/payslips/batches', batchForm);
+  await call('POST', `/v1/payslips/batches/${batch.id}/publish`);
+  return { ':payslip': batch.items[0].id, ':document': document.id };
+}
+
 mkdirSync('.verify', { recursive: true });
 let failed = false;
 const report = [];
@@ -174,7 +301,12 @@ try {
     chromeFlags: ['--headless=new', '--no-sandbox'],
   });
   try {
-    for (const p of PAGES) {
+    let ids;
+    for (const page of PAGES) {
+      if (page.records && !ids) ids = await records(cookie);
+      const p = page.records
+        ? { ...page, path: page.path.replace(/:\w+/g, (token) => ids[token] ?? token) }
+        : page;
       await fetch(base + p.path).catch(() => undefined); // warm the server
       const scores = [];
       // median of three runs smooths noise on small machines
