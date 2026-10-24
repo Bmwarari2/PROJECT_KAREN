@@ -1895,3 +1895,28 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 
 - The back office's calls for containment go through `securityCall` (apps/web/app/backoffice/security/nav.tsx). Once the identity work is merged it becomes `useStaffApi`, so the browser asks for the staff key when the API wants a fresh proof.
 - Blocking is at the app (Fastify `onRequest`), not at the WAF or Cloud Armor, so blocked requests still reach the cell; the WAF IP set is P1.
+
+## ADR-0179 — Honeytokens outside customer data, and no fake employees in customer workspaces (2026-10-24)
+
+**Context.** The plan (§5, P0) asks for deception: decoys that nobody legitimate ever touches, so any touch is a high-confidence signal with almost no false positives. A common pattern elsewhere is to plant fake people ("canary employees") in the HR data and alert when one is viewed or exported.
+
+**Decision.**
+
+- **No fake employees, or any other decoy record, in customer workspaces.** Thapsus-HR is the processor; each customer is the controller of its workspace. Planting records there would:
+  - put data in the controller's dataset that it did not instruct us to process, and make that dataset inaccurate (UK and EU GDPR Art. 5(1)(d) and 28(3)(a));
+  - leak into what customers rely on: headcount and per-employee billing, reports, statutory reports (gender pay gap, EEO-1), payroll exports, integrations and SCIM provisioning to other systems, subject access and erasure requests;
+  - alert on the customer's own admins doing legitimate exports, which is noise rather than signal.
+
+  Every decoy therefore lives outside customer data. Exfiltration inside a workspace is caught by the exfiltration and privilege rules (ADR-0177) instead.
+
+- **The registry** is `security.honeytokens` (migration 0027): kind (`api_key`, `endpoint`, `object_key`), a label, where it is planted, and the SHA-256 fingerprint of the decoy. The decoy itself is never stored in the database. Back office → Security → Honeytokens lists each one with its touches in 30 days and when it was last touched. Labels are English reference data, like the rule tuning notes.
+- **Decoy API key.** `docs/api.md` shows a key with the real format (`thr_sk_<uuid>.<secret>`), so a scraper or a leaked-docs search finds it and tries it. Its id is in no workspace. The API recognises it from its fingerprint before any key lookup and raises THR-DECEPT-001 (critical, MITRE T1552.001), which blocks the caller's address for a day. The caller then waits (below) and gets the ordinary `401`.
+- **Honey endpoints:** `/.env`, `/wp-login.php`, `/.git/config`, `/v1/admin/export-all` and `/v1/internal/debug`, for any method. No client of Thapsus-HR calls them, and they are hidden from the OpenAPI document. A request raises THR-DECEPT-002 (high, T1595.003), which blocks the address for an hour. The web host's proxy forwards its own copies of these paths to the API, so both hosts catch scanners.
+- **Slowing the caller.** Honey endpoints and the decoy key wait `HONEY_TARPIT_MS` (3 seconds by default, at most 10) and then answer like any unknown path or bad key, so the caller learns nothing.
+- **Decoy object keys:** `exports/backup/all-employees-full.csv` and `payroll/archive/payroll-all-tenants.zip`. They are outside every workspace's prefix, so no customer action can produce them. The API wraps its object store, and a request for either key raises THR-DECEPT-001 before anything is served. Catching a direct bucket read with stolen cloud credentials needs the decoy files and storage data-access logs. That is an optional human step (HUMAN_TODO 9.11) because the logs are a small recurring cost.
+
+**Consequences.**
+
+- The decoy key is public by design. The secret scan does not match the `thr_sk_` format, and `docs/api.md` says the key is an example that never works.
+- Each honey request holds an API connection for up to the tarpit time. The address block that follows stops a scanner after its first hit.
+- A new decoy is a registry row (fingerprint only) plus, for an endpoint, an entry in `HONEY_PATHS`. Injection canaries for Ask HR (THR-AI-002) are planned, not built.

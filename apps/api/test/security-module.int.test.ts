@@ -36,7 +36,9 @@ const from = (
   payload?: object,
 ) => ctx.app.inject({ method: method as 'GET', url, headers, payload, remoteAddress: ip });
 
+const TARPIT_MS = 150;
 beforeAll(async () => {
+  process.env.HONEY_TARPIT_MS = String(TARPIT_MS);
   ctx = await startTestApp({ listen: false });
   api = injector(ctx);
   analyst = await staffSession(ctx, 'security_analyst');
@@ -45,6 +47,7 @@ beforeAll(async () => {
   await detect(); // everything before this suite has been seen
 });
 afterAll(async () => {
+  delete process.env.HONEY_TARPIT_MS;
   await ctx.close();
   await closeDb();
 });
@@ -164,7 +167,10 @@ describe('honeytokens and blocks', () => {
 
   it('honey endpoints answer 404 slowly, raise a detection and show on the registry', async () => {
     const ip = randomIp();
+    const started = performance.now();
     expect((await from(ip, 'GET', '/.env')).statusCode).toBe(404);
+    // the caller waits (a tarpit) before the ordinary 404
+    expect(performance.now() - started).toBeGreaterThanOrEqual(TARPIT_MS - 5);
     expect((await from(ip, 'POST', '/wp-login.php')).statusCode).toBe(404);
     expect((await from(ip, 'GET', '/v1/honey/git-config')).statusCode).toBe(404);
     const run = await detect();
