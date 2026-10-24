@@ -2,14 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Inbox, UserRoundCheck } from 'lucide-react';
-import {
-  Button,
-  buttonVariants,
-  EmptyState,
-  ListItem,
-  Skeleton,
-  useToast,
-} from '@thapsus/ui';
+import { Button, buttonVariants, EmptyState, ListItem, Skeleton, useToast } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';

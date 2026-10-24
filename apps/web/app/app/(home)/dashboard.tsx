@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import { IntentLink as Link } from '@/components/intent-link';
 import {
   ChevronDown,
-  ChevronRight,
   CircleCheck,
   ClipboardCheck,
   FileSignature,

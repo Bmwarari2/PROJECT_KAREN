@@ -21,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         'actionable.crumbs',
         'actionable.bell',
         'actionable.common',
+        'actionable.hr.tab',
       ]}
     >
       <AppShell theme={theme} initialSession={session}>

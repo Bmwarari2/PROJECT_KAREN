@@ -7,7 +7,13 @@ import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
 import { loadTarget } from '../employees/service';
 import { ruleBook } from '../rules/routes';
-import { complianceSettings, EMPLOYEE_COLUMNS, EMPLOYEE_FROM, jurisdictionOf, type EmployeeRow } from './service';
+import {
+  complianceSettings,
+  EMPLOYEE_COLUMNS,
+  EMPLOYEE_FROM,
+  jurisdictionOf,
+  type EmployeeRow,
+} from './service';
 import { i9Statuses, matrixCells, rtwStatuses, type ReqRow } from './status';
 
 const Check = Type.Object({
@@ -86,7 +92,8 @@ export async function personComplianceRoutes(app: FastifyInstance) {
           [employeeId],
         );
         if (!e) throw new ApiError('notFound');
-        if (!can(auth.principal, 'compliance.read', await loadTarget(tx, e.id))) throw new ApiError('forbidden');
+        if (!can(auth.principal, 'compliance.read', await loadTarget(tx, e.id)))
+          throw new ApiError('forbidden');
         const settings = await complianceSettings(tx);
         const jurisdiction = jurisdictionOf(e);
         let rightToWork = null;

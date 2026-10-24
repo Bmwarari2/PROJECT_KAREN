@@ -26,7 +26,7 @@ import { useApi } from '@/lib/use-api';
 import { useSession } from '../../shell';
 import { PageIntro } from '@/components/module-page';
 import { selectClass, StatusBadge } from '../ui';
-import { PersonLink } from '@/components/person-link';
+import { PersonLink, ROW_LINK } from '@/components/person-link';
 
 const KINDS = ['licence', 'certification', 'background_check', 'training', 'other'] as const;
 const STATUSES = ['missing', 'expired', 'expiring', 'compliant'] as const;
@@ -254,18 +254,26 @@ export default function MatrixPage() {
               {matrix.data.rows.map((r) => (
                 <TR key={`${r.employeeId}:${r.requirementId}`}>
                   <TD>
-                    <PersonLink id={r.employeeId} name={r.employeeName} tab="compliance" />
+                    <PersonLink
+                      id={r.employeeId}
+                      name={r.employeeName}
+                      tab="compliance"
+                      className={ROW_LINK}
+                    />
                     {r.jobTitle ? (
-                      <span className="block text-footnote text-text-secondary">{r.jobTitle}</span>
+                      <span className="block text-footnote font-normal text-text-secondary">
+                        {r.jobTitle}
+                      </span>
                     ) : null}
                   </TD>
                   <TD>
-                    {r.requirementName} <Badge className="ml-1">{t(`compliance.kind.${r.kind}`)}</Badge>
+                    {r.requirementName}{' '}
+                    <Badge className="ml-1 max-sm:hidden">{t(`compliance.kind.${r.kind}`)}</Badge>
                   </TD>
-                  <TD>
+                  <TD phone="inline">
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>
+                  <TD phone="inline">
                     {r.expiresOn
                       ? `${formatDate(r.expiresOn, locale)}${r.daysLeft !== null && r.daysLeft >= 0 ? ` · ${t('compliance.matrix.daysLeft', { days: r.daysLeft, count: r.daysLeft })}` : ''}`
                       : '—'}

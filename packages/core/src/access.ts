@@ -147,6 +147,8 @@ export const PERMISSION_CATALOGUE: PermissionArea[] = [
   { area: 'roles', permissions: [p('roles.read', true), p('roles.manage', true), p('roles.assign', true)] },
   { area: 'settings', permissions: [p('settings.read', true), p('settings.manage', true)] },
   { area: 'support', permissions: [p('support.ticket'), p('support.manage', true)] },
+  // asking the company's own HR team (ADR-0163); support.ticket contacts Thapsus-HR's support
+  { area: 'hr', permissions: [p('hr.contact')] },
   { area: 'help', permissions: [p('help.read')] },
   { area: 'ai', permissions: [p('ai.ask')] },
   {

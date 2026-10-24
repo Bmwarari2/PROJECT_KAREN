@@ -273,7 +273,13 @@ export const MODULES: WorkspaceModule[] = [
     group: 'support',
     tabs: [
       { href: '/app/help', label: 'app.nav.help', show: always },
+      // admins contact Thapsus-HR support; employees and managers ask their own HR team (ADR-0163)
       { href: '/app/support', label: 'app.nav.support', show: any('support.ticket') },
+      {
+        href: '/app/contact-hr',
+        label: 'actionable.hr.tab',
+        show: (v) => v.has('hr.contact') && !v.has('support.ticket'),
+      },
       { href: '/app/ask', label: 'app.nav.askHr', show: (v) => v.askHr },
     ],
   },

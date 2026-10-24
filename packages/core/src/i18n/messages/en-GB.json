@@ -745,7 +745,8 @@
       "automation": "Automation",
       "document": "Document",
       "manual": "Task",
-      "compliance": "Compliance"
+      "compliance": "Compliance",
+      "hr_request": "Request to HR"
     },
     "lead": "Open tasks assigned to you or your roles, earliest due date first.",
     "list": {
@@ -5014,7 +5015,8 @@
       "integrations": "IT integrations",
       "webhooks": "Webhooks",
       "billing": "Billing",
-      "account": "Workspace account"
+      "account": "Workspace account",
+      "hr": "Requests to HR"
     },
     "perm": {
       "self": {
@@ -5182,6 +5184,9 @@
         "dpa": "Accept the data processing agreement",
         "export": "Export all company data",
         "close": "Close the workspace"
+      },
+      "hr": {
+        "contact": "Ask the HR team a question or make a request"
       }
     },
     "section": {
@@ -5529,8 +5534,10 @@
         "automation": "Open",
         "document": "Open the document",
         "manual": "Open",
-        "compliance": "Open the record"
-      }
+        "compliance": "Open the record",
+        "hr_request": "Open"
+      },
+      "due": "Due {date}"
     },
     "approval": {
       "title": "Request",
@@ -5562,7 +5569,8 @@
         "leave_request": "Open the leave request",
         "timesheet": "Open the timesheet",
         "employee": "Open the profile"
-      }
+      },
+      "forName": "for {name}"
     },
     "leave": {
       "title": "Leave request",
@@ -5648,6 +5656,31 @@
         "starters": "Starters",
         "leavers": "Leavers"
       }
+    },
+    "notify": {
+      "hrRequest": "New request to HR from {name}",
+      "hrRequestDone": "HR marked your request as done"
+    },
+    "hr": {
+      "tab": "Contact HR",
+      "contact": "Contact HR",
+      "title": "Contact HR",
+      "lead": "Ask your HR team a question or make a request. They get it in their inbox with your name on it.",
+      "subject": "Subject",
+      "message": "Your question or request",
+      "messageHint": "Do not include medical or other sensitive details here. HR will ask for them in the right place if they need them.",
+      "send": "Send to HR",
+      "sent": "Sent to HR",
+      "mine": "Your requests",
+      "none": "You have not sent HR anything yet.",
+      "sentOn": "Sent {date}",
+      "doneOn": "Done {date}",
+      "status": {
+        "open": "With HR",
+        "done": "Done",
+        "cancelled": "Closed"
+      },
+      "noEmployee": "Only people with an employee record can contact HR here."
     }
   }
 }

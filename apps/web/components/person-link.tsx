@@ -13,6 +13,12 @@ import { useSession } from '@/app/app/shell';
  */
 export const ENTITY_LINK =
   'rounded-sm font-semibold text-accent underline decoration-1 underline-offset-2 hover:decoration-2';
+/**
+ * For the title link of a table row: on phones, where a table shows as a list (ADR-0180), the link
+ * covers its row so the whole row is one tap target. Other links and buttons in the row need
+ * `relative z-10` to stay above it.
+ */
+export const ROW_LINK = "max-sm:after:absolute max-sm:after:inset-0 max-sm:after:content-['']";
 /** A quieter look for places where every row is a name (the org chart): text colour, underlined on hover. */
 export const QUIET_LINK = 'rounded-sm text-text no-underline hover:text-accent hover:underline';
 

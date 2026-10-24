@@ -1,7 +1,15 @@
 'use client';
 import * as React from 'react';
 import { CheckCheck, Inbox } from 'lucide-react';
-import { Button, ListItem, Popover, PopoverClose, PopoverContent, PopoverTrigger, Skeleton } from '@thapsus/ui';
+import {
+  Button,
+  ListItem,
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+  Skeleton,
+} from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { IntentLink } from '@/components/intent-link';
 import { useNotificationHref, type NotificationItem } from '@/components/notification-link';

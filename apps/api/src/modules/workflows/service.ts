@@ -175,8 +175,18 @@ export interface TaskView {
 }
 
 /** Stored links that only name a list (or no page at all), so the task's own page is more useful. */
-const GENERIC_TASK_LINKS = new Set(['/app', '/app/tasks', '/app/approvals', '/app/documents', '/app/absence']);
-const COMPLIANCE_LISTS = new Set(['/app/compliance/right-to-work', '/app/compliance/i9', '/app/compliance/matrix']);
+const GENERIC_TASK_LINKS = new Set([
+  '/app',
+  '/app/tasks',
+  '/app/approvals',
+  '/app/documents',
+  '/app/absence',
+]);
+const COMPLIANCE_LISTS = new Set([
+  '/app/compliance/right-to-work',
+  '/app/compliance/i9',
+  '/app/compliance/matrix',
+]);
 
 /** What a task opens (ADR-0160). `documentId` is the signature request's document for e-signature tasks. */
 export function taskHref(r: {

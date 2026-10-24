@@ -336,7 +336,11 @@ export default function WelcomePage() {
 
       {data.tasks.length ? (
         // a grouped list (ADR-0180); tasks and notifications link to a step as #task-<id>
-        <ListSection id="onboarding-checklist" title={t('onboarding.checklistTitle')} headingLevel={sec.level}>
+        <ListSection
+          id="onboarding-checklist"
+          title={t('onboarding.checklistTitle')}
+          headingLevel={sec.level}
+        >
           {data.tasks.map((k) => (
             <ListItem
               key={k.id}
@@ -354,7 +358,9 @@ export default function WelcomePage() {
                 </span>
               }
               subtitle={k.dueOn ? t('onboarding.due', { date: formatDate(k.dueOn, locale) }) : undefined}
-              accessory={k.status === 'done' ? <Badge tone="success">{t('onboarding.done')}</Badge> : undefined}
+              accessory={
+                k.status === 'done' ? <Badge tone="success">{t('onboarding.done')}</Badge> : undefined
+              }
               actions={
                 k.status === 'done' ? undefined : (
                   <Button
@@ -363,7 +369,9 @@ export default function WelcomePage() {
                     className="min-h-11 sm:min-h-8"
                     loading={busy === k.id}
                     aria-label={t('onboarding.markDone', { title: k.title })}
-                    onClick={() => void run(k.id, () => api(`/v1/tasks/${k.id}/complete`, { method: 'POST' }))}
+                    onClick={() =>
+                      void run(k.id, () => api(`/v1/tasks/${k.id}/complete`, { method: 'POST' }))
+                    }
                   >
                     {t('onboarding.markDoneShort')}
                   </Button>
@@ -375,7 +383,11 @@ export default function WelcomePage() {
       ) : (
         <Card>
           <CardTitle as={sec.heading}>{t('onboarding.checklistTitle')}</CardTitle>
-          <EmptyState level={sec.level} icon={<ListChecks aria-hidden />} title={t('onboarding.checklistEmpty')} />
+          <EmptyState
+            level={sec.level}
+            icon={<ListChecks aria-hidden />}
+            title={t('onboarding.checklistEmpty')}
+          />
         </Card>
       )}
     </div>

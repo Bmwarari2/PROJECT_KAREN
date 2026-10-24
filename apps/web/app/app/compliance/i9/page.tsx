@@ -23,7 +23,7 @@ import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
 import { StatusBadge } from '../ui';
-import { PersonLink } from '@/components/person-link';
+import { PersonLink, ROW_LINK } from '@/components/person-link';
 
 interface Row {
   employeeId: string;
@@ -141,15 +141,24 @@ export default function I9Page() {
               {rows.data.map((r) => (
                 <TR key={r.employeeId}>
                   <TD>
-                    <PersonLink id={r.employeeId} name={r.employeeName} tab="compliance" />
+                    <PersonLink
+                      id={r.employeeId}
+                      name={r.employeeName}
+                      tab="compliance"
+                      className={ROW_LINK}
+                    />
                   </TD>
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>{d(r.firstDayOfEmployment)}</TD>
-                  <TD>{d(r.section2DueOn)}</TD>
-                  <TD>{d(r.reverificationDueOn)}</TD>
-                  <TD>
+                  <TD phone="hide">{d(r.firstDayOfEmployment)}</TD>
+                  <TD phone="inline" label={t('compliance.i9.section2Due')}>
+                    {d(r.section2DueOn)}
+                  </TD>
+                  <TD phone="inline" label={t('compliance.i9.reverificationDue')}>
+                    {d(r.reverificationDueOn)}
+                  </TD>
+                  <TD phone="hide">
                     {r.retainUntil
                       ? d(r.retainUntil)
                       : r.retainAtLeastUntil

@@ -22,6 +22,7 @@ export const TARGET_TYPES = [
   'payroll_period',
   'payslip',
   'law_change',
+  'hr_request',
 ] as const;
 export type TargetType = (typeof TARGET_TYPES)[number];
 
@@ -59,6 +60,8 @@ const ROUTES: Record<TargetType, (id: string) => string> = {
   payroll_period: (id) => `/app/payroll/periods/${id}`,
   payslip: () => '/app/payslips',
   law_change: () => '/app/compliance/law-changes',
+  // the asker's view of a request to their HR team (HR open the task itself)
+  hr_request: (id) => `/app/contact-hr?request=${id}`,
 };
 
 export function isTargetType(v: unknown): v is TargetType {

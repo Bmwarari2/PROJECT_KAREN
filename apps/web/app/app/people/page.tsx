@@ -46,6 +46,7 @@ import { useStatusCounts } from '@/lib/dashboard-data';
 import { Avatar } from '@/components/dashboard/parts';
 import { ExportLinks } from '@/components/export-links';
 import { ModuleFrameContext, hasPermission, useSession } from '../shell';
+import { ROW_LINK } from '@/components/person-link';
 
 interface Row {
   id: string;
@@ -535,19 +536,20 @@ export default function PeoplePage() {
                   <TR key={r.id}>
                     <TD className="py-2">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="hidden sm:inline-flex">
-                          <Avatar name={r.displayName ?? ''} size="sm" />
-                        </span>
+                        <Avatar name={r.displayName ?? ''} size="sm" />
                         <div className="flex min-w-0 flex-col">
+                          {/* on phones the whole row is the link (ADR-0180) */}
                           <Link
                             href={`/app/people/${r.id}`}
-                            className="font-semibold text-text no-underline hover:text-accent hover:underline"
+                            className={`font-semibold text-text no-underline hover:text-accent hover:underline ${ROW_LINK}`}
                           >
                             {r.displayName}
                           </Link>
-                          {/* phones show the job title here instead of in its own column */}
-                          {r.jobTitle ? (
-                            <span className="text-footnote text-text-secondary sm:hidden">{r.jobTitle}</span>
+                          {/* phones: job title · location on one line instead of their own columns */}
+                          {r.jobTitle || r.location ? (
+                            <span className="text-footnote font-normal text-text-secondary sm:hidden">
+                              {[r.jobTitle, r.location].filter(Boolean).join(' · ')}
+                            </span>
                           ) : null}
                           {r.employeeNumber ? (
                             <span className="hidden text-footnote text-text-secondary sm:inline">
@@ -557,10 +559,16 @@ export default function PeoplePage() {
                         </div>
                       </div>
                     </TD>
-                    <TD className="hidden sm:table-cell">{r.jobTitle}</TD>
-                    <TD className="hidden md:table-cell">{r.department}</TD>
-                    <TD className="hidden lg:table-cell">{r.location}</TD>
-                    <TD className="hidden text-text-secondary xl:table-cell">
+                    <TD phone="hide" className="hidden sm:table-cell">
+                      {r.jobTitle}
+                    </TD>
+                    <TD phone="hide" className="hidden md:table-cell">
+                      {r.department}
+                    </TD>
+                    <TD phone="hide" className="hidden lg:table-cell">
+                      {r.location}
+                    </TD>
+                    <TD phone="hide" className="hidden text-text-secondary xl:table-cell">
                       {r.startDate ? formatDate(r.startDate, locale) : null}
                     </TD>
                     <TD>

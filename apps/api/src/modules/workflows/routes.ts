@@ -5,7 +5,7 @@ import { enqueueJob } from '@thapsus/db';
 import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
-import { notify } from '../../lib/notify';
+import { notify, userForEmployee } from '../../lib/notify';
 import { loadTarget } from '../employees/service';
 import { periodic, registerJob, subscribe } from '../../jobs/registry';
 import {
@@ -305,6 +305,7 @@ export async function workflowRoutes(app: FastifyInstance) {
           assignee_role: string | null;
           source: string;
           source_id: string | null;
+          subject_employee_id: string | null;
         }>('SELECT * FROM app.tasks WHERE id = $1 FOR UPDATE', [id]);
         if (!task) throw new ApiError('notFound');
         const mine =
@@ -316,6 +317,19 @@ export async function workflowRoutes(app: FastifyInstance) {
           [id, auth.userId],
         );
         if (task.source === 'workflow' && task.source_id) await maybeCompleteInstance(tx, task.source_id);
+        // the person who asked HR is told their request is done (ADR-0163)
+        if (task.source === 'hr_request') {
+          const asker = await userForEmployee(tx, task.subject_employee_id);
+          if (asker && asker !== auth.userId)
+            await notify(tx, {
+              userIds: [asker],
+              kind: 'task.hr_request_done',
+              titleKey: 'actionable.notify.hrRequestDone',
+              params: { subject: '' },
+              target: { type: 'hr_request', id },
+              dedupeKey: `hr-request-done:${id}`,
+            });
+        }
         await app.audit(tx, req, { action: 'task.completed', targetType: 'task', targetId: id });
         return { id, status: 'done' };
       });

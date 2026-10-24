@@ -22,7 +22,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { PageIntro } from '@/components/module-page';
-import { EntityLink, PersonLink } from '@/components/person-link';
+import { EntityLink, PersonLink, ROW_LINK } from '@/components/person-link';
 import { targetHref } from '@thapsus/core/links';
 import { selectClass, SourceLink, StatusBadge } from '../ui';
 
@@ -140,15 +140,21 @@ export default function RightToWorkPage() {
               {rows.data.map((r) => (
                 <TR key={r.employeeId}>
                   <TD>
-                    <PersonLink id={r.employeeId} name={r.employeeName} tab="compliance" />
+                    <PersonLink
+                      id={r.employeeId}
+                      name={r.employeeName}
+                      tab="compliance"
+                      className={ROW_LINK}
+                    />
                   </TD>
                   <TD>
                     <StatusBadge status={r.status} />
                   </TD>
-                  <TD>
+                  <TD phone="inline" label={t('compliance.rtw.checked')}>
                     {r.checkedOn && r.checkId ? (
                       <>
                         <EntityLink
+                          className="relative z-10"
                           href={targetHref({ type: 'rtw_check', id: r.checkId })!}
                           aria-label={t('actionable.rtw.openCheck', {
                             date: d(r.checkedOn),
@@ -165,8 +171,10 @@ export default function RightToWorkPage() {
                       '—'
                     )}
                   </TD>
-                  <TD>{d(r.followUpDueOn)}</TD>
-                  <TD>{d(r.retainUntil)}</TD>
+                  <TD phone="inline" label={t('compliance.rtw.followUp')}>
+                    {d(r.followUpDueOn)}
+                  </TD>
+                  <TD phone="hide">{d(r.retainUntil)}</TD>
                   <TD className="text-right">
                     {r.status !== 'retention' ? (
                       <Button

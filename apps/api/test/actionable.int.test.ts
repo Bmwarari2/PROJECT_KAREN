@@ -42,7 +42,9 @@ beforeAll(async () => {
   expect(r.statusCode, r.body).toBe(201);
   leaveId = r.json().id;
   const mine = (await w.api('GET', '/v1/approvals?view=mine', undefined, mona.cookie)).json();
-  approvalId = mine.find((a: { payload: { leaveRequestId: string } }) => a.payload.leaveRequestId === leaveId).id;
+  approvalId = mine.find(
+    (a: { payload: { leaveRequestId: string } }) => a.payload.leaveRequestId === leaveId,
+  ).id;
 });
 afterAll(async () => {
   await ctx.close();
@@ -186,7 +188,9 @@ describe('tasks open what they are about', () => {
 
   it('gives a task without a screen of its own its own page', async () => {
     const tasks = (await w.api('GET', '/v1/tasks', undefined, mona.cookie)).json();
-    expect(tasks.find((t: { id: string }) => t.id === taskId)).toMatchObject({ href: `/app/tasks/${taskId}` });
+    expect(tasks.find((t: { id: string }) => t.id === taskId)).toMatchObject({
+      href: `/app/tasks/${taskId}`,
+    });
     const r = await w.api('GET', `/v1/tasks/${taskId}`, undefined, mona.cookie);
     expect(r.statusCode, r.body).toBe(200);
     expect(r.json()).toMatchObject({
@@ -284,18 +288,79 @@ describe("a person's compliance for their profile", () => {
     );
     expect(audited?.sensitive).toBe(true);
     // the check's own page: the manager sees it without the vault details
-    const check = await w.api('GET', `/v1/compliance/right-to-work/checks/${rec.json().id}`, undefined, mona.cookie);
+    const check = await w.api(
+      'GET',
+      `/v1/compliance/right-to-work/checks/${rec.json().id}`,
+      undefined,
+      mona.cookie,
+    );
     expect(check.statusCode, check.body).toBe(200);
     expect(check.json()).toMatchObject({ employeeName: 'Ada Fictional', current: true, details: null });
   });
 
   it('refuses people outside the caller’s compliance scope', async () => {
-    expect((await w.api('GET', `/v1/compliance/people/${w.people.ada}`, undefined, ada.cookie)).statusCode).toBe(
-      403,
-    );
-    expect((await w.api('GET', `/v1/compliance/people/${w.people.dan}`, undefined, mona.cookie)).statusCode).toBe(
-      403,
-    );
+    expect(
+      (await w.api('GET', `/v1/compliance/people/${w.people.ada}`, undefined, ada.cookie)).statusCode,
+    ).toBe(403);
+    expect(
+      (await w.api('GET', `/v1/compliance/people/${w.people.dan}`, undefined, mona.cookie)).statusCode,
+    ).toBe(403);
     expect(UUID.test(w.people.dan)).toBe(true);
+  });
+});
+
+describe('Contact HR (ADR-0163)', () => {
+  it('an employee asks HR; it lands as a task in the HR queue with the person linked, and they follow its status', async () => {
+    const sent = await w.api(
+      'POST',
+      '/v1/hr-requests',
+      { subject: 'Fictional question about my contract', message: 'Fictional details only.' },
+      ada.cookie,
+    );
+    expect(sent.statusCode, sent.body).toBe(201);
+    const id = sent.json().id as string;
+    expect((await w.api('GET', '/v1/hr-requests', undefined, ada.cookie)).json()).toEqual([
+      expect.objectContaining({ id, subject: 'Fictional question about my contract', status: 'open' }),
+    ]);
+    // the owner works the HR queue (this company has no HR admin) and is told about it
+    const queue = (await w.api('GET', '/v1/tasks')).json();
+    expect(queue.find((t: { id: string }) => t.id === id)).toMatchObject({
+      source: 'hr_request',
+      subjectEmployeeId: w.people.ada,
+      href: `/app/tasks/${id}`,
+    });
+    const task = (await w.api('GET', `/v1/tasks/${id}`)).json();
+    expect(task).toMatchObject({
+      description: 'Fictional details only.',
+      subject: { id: w.people.ada, name: 'Ada Fictional' },
+      canComplete: true,
+    });
+    const ownerNotes = (await w.api('GET', '/v1/me/notifications')).json().data;
+    const note = ownerNotes.find((n: { kind: string }) => n.kind === 'task.hr_request');
+    expect(note).toMatchObject({ href: `/app/tasks/${id}` });
+    expect(note.title).not.toContain('Fictional details only'); // the message is never in a notification
+    // done: the person is told, and their list shows it
+    expect((await w.api('POST', `/v1/tasks/${id}/complete`)).statusCode).toBe(200);
+    const mine = (await w.api('GET', '/v1/hr-requests', undefined, ada.cookie)).json();
+    expect(mine[0]).toMatchObject({ id, status: 'done' });
+    const adaNotes = (await w.api('GET', '/v1/me/notifications', undefined, ada.cookie)).json().data;
+    expect(adaNotes.find((n: { kind: string }) => n.kind === 'task.hr_request_done')).toMatchObject({
+      href: `/app/contact-hr?request=${id}`,
+    });
+  });
+
+  it('employees and managers contact HR, not Thapsus-HR support', async () => {
+    for (const who of [ada, mona]) {
+      expect((await w.api('GET', '/v1/hr-requests', undefined, who.cookie)).statusCode).toBe(200);
+      const t = await w.api(
+        'POST',
+        '/v1/support/tickets',
+        { subject: 'Fictional', body: 'Fictional', category: 'question', priority: 'low' },
+        who.cookie,
+      );
+      expect(t.statusCode).toBe(403);
+    }
+    // nobody sees another person's requests
+    expect((await w.api('GET', '/v1/hr-requests', undefined, dan.cookie)).json()).toEqual([]);
   });
 });

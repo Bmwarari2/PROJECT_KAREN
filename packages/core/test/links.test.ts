@@ -47,9 +47,9 @@ describe('deep links (ADR-0160)', () => {
   });
 
   it('opens a notification at its target, a refining link, a legacy key, its link or its list', () => {
-    expect(notificationHref({ kind: 'task.assigned', targetType: 'task', targetId: ID, link: '/app/tasks' })).toBe(
-      `/app/tasks/${ID}`,
-    );
+    expect(
+      notificationHref({ kind: 'task.assigned', targetType: 'task', targetId: ID, link: '/app/tasks' }),
+    ).toBe(`/app/tasks/${ID}`);
     // a stored link that refines the target page wins (open the document at its signature request)
     expect(
       notificationHref({
@@ -60,9 +60,9 @@ describe('deep links (ADR-0160)', () => {
       }),
     ).toBe(`/app/documents/${ID}?sign=abc`);
     // older notifications: the dedupe key names the request or the task
-    expect(notificationHref({ kind: 'approval.requested', link: '/app/approvals', dedupeKey: `appr:${ID}:0` })).toBe(
-      `/app/approvals/${ID}`,
-    );
+    expect(
+      notificationHref({ kind: 'approval.requested', link: '/app/approvals', dedupeKey: `appr:${ID}:0` }),
+    ).toBe(`/app/approvals/${ID}`);
     expect(notificationHref({ kind: 'task.overdue', link: '/app/tasks', dedupeKey: `overdue:${ID}` })).toBe(
       `/app/tasks/${ID}`,
     );
@@ -72,7 +72,9 @@ describe('deep links (ADR-0160)', () => {
     expect(notificationHref({ kind: 'compliance.rtw_missing', link: null })).toBe(
       '/app/compliance/right-to-work',
     );
-    expect(notificationHref({ kind: 'something.else', link: 'https://evil.example' })).toBe('/app/notifications');
+    expect(notificationHref({ kind: 'something.else', link: 'https://evil.example' })).toBe(
+      '/app/notifications',
+    );
   });
 
   it('only reads ids from the dedupe keys of kinds that carry one', () => {
