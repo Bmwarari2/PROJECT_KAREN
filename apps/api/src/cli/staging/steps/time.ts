@@ -237,13 +237,21 @@ export async function seedTime(ctx: SeedCtx) {
       `INSERT INTO app.shift_swaps (tenant_id, shift_id, from_employee_id, kind, note, created_at) VALUES (app.current_tenant(), $1, $2, 'claim_open', $3, $4) RETURNING id`,
       [claimed.id, ids.employee[claimer.idx], 'Happy to pick this up', `${addDays(anchor, -1)}T12:10:00Z`],
     );
-    const approvalId = await requestApproval(tx, 'shift.claim', ids.employee[claimer.idx]!, null, {
-      swapId: sw.id,
-      shiftId: claimed.id,
-      date: claimed.shift_date,
-      start: String(claimed.start_local).slice(11),
-      end: String(claimed.end_local).slice(11),
-    });
+    // the claimer asked (they have no sign-in on staging, so their employee record is the asker)
+    const approvalId = await requestApproval(
+      tx,
+      'shift.claim',
+      ids.employee[claimer.idx]!,
+      null,
+      {
+        swapId: sw.id,
+        shiftId: claimed.id,
+        date: claimed.shift_date,
+        start: String(claimed.start_local).slice(11),
+        end: String(claimed.end_local).slice(11),
+      },
+      { employeeId: ids.employee[claimer.idx]! },
+    );
     await tx.exec('UPDATE app.shift_swaps SET approval_request_id = $2 WHERE id = $1', [sw.id, approvalId]);
     if (approvalId) await backdateApproval(ctx, approvalId, `${addDays(anchor, -1)}T12:10:00Z`, null);
   }
@@ -265,13 +273,20 @@ export async function seedTime(ctx: SeedCtx) {
         `${addDays(anchor, -2)}T09:00:00Z`,
       ],
     );
-    const approvalId = await requestApproval(tx, 'shift.swap', ids.employee[a.idx]!, null, {
-      swapId: sw.id,
-      shiftId: from.id,
-      toShiftId: null,
-      toEmployeeId: ids.employee[b.idx],
-      date: from.shift_date,
-    });
+    const approvalId = await requestApproval(
+      tx,
+      'shift.swap',
+      ids.employee[a.idx]!,
+      null,
+      {
+        swapId: sw.id,
+        shiftId: from.id,
+        toShiftId: null,
+        toEmployeeId: ids.employee[b.idx],
+        date: from.shift_date,
+      },
+      { employeeId: ids.employee[a.idx]! },
+    );
     await tx.exec('UPDATE app.shift_swaps SET approval_request_id = $2 WHERE id = $1', [sw.id, approvalId]);
     if (approvalId) await backdateApproval(ctx, approvalId, `${addDays(anchor, -1)}T18:00:00Z`, null);
   }
@@ -417,6 +432,8 @@ export async function seedTime(ctx: SeedCtx) {
         overtimeMinutes: s.overtime,
         violations: s.violations,
       },
+      // the person submitted their own timesheet
+      { employeeId: ids.employee[s.p.idx]! },
     );
     await tx.exec('UPDATE app.timesheets SET approval_request_id = $2 WHERE id = $1', [s.id, approvalId]);
     if (approvalId) await backdateApproval(ctx, approvalId, `${addDays(s.week, 7)}T08:30:00Z`, null);

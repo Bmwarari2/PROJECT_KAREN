@@ -12,6 +12,7 @@ import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { objectKey } from '../../lib/object-store';
 import { createTask, notify, userForEmployee } from '../../lib/notify';
+import { completeTasksFor } from '../tasks/completion';
 import { loadTarget, scopePredicate } from '../employees/service';
 import { appendCertificate, mergeFields, renderTextPdf, sha256 } from './pdf';
 import { certificateLabels, requestCountersign } from './countersign';
@@ -343,13 +344,22 @@ async function requestSignature(
       link: `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`,
       dedupeKey: `sign:${sr.id}`,
     });
+    const doc = await tx.one<{ title: string }>('SELECT title FROM app.documents WHERE id = $1', [
+      documentId,
+    ]);
+    const signHref = `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`;
     await createTask(tx, {
       source: 'document',
       sourceId: sr.id,
-      title: 'Sign document',
+      titleKey: 'taskActions.text.document.sign.title',
+      descriptionKey: 'taskActions.text.document.sign.description',
+      textParams: { title: doc.title },
       subjectEmployeeId: employeeId,
       assigneeUserId: user,
-      link: `${targetHref({ type: 'document', id: documentId })}?sign=${sr.id}`,
+      // opens the viewer at the signature request; signing closes it (ADR-0191, ADR-0192)
+      action: { kind: 'open_link', params: { href: signHref, label: 'sign' } },
+      record: { type: 'signature_request', id: sr.id },
+      link: signHref,
       dedupeKey: `sign:${sr.id}`,
     });
   }
@@ -986,11 +996,13 @@ export async function documentRoutes(app: FastifyInstance) {
             signedDoc?.id ?? null,
           ],
         );
-        // the signing task, and any "sign again" task after a return
-        await tx.exec(
-          `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE (dedupe_key = $1 OR dedupe_key LIKE $1 || ':%') AND status = 'open'`,
-          [`sign:${id}`, auth.userId],
-        );
+        // the signing task, and any "sign again" task after a return (ADR-0192)
+        await completeTasksFor(tx, {
+          recordType: 'signature_request',
+          recordId: id,
+          by: auth.userId,
+          reason: 'document.signed',
+        });
         await app.audit(tx, req, {
           action: 'document.signed',
           targetType: 'signature_request',

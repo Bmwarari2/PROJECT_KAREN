@@ -1,22 +1,35 @@
 import type { FastifyInstance } from 'fastify';
 import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
+import { closesItself, parseDueRule, parseTaskAction } from '@thapsus/core/task-actions';
 import { enqueueJob } from '@thapsus/db';
 import { authorize, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
-import { notify, userForEmployee } from '../../lib/notify';
+import { notify } from '../../lib/notify';
 import { loadTarget } from '../employees/service';
 import { periodic, registerJob, subscribe } from '../../jobs/registry';
+import { ruleBook } from '../rules/routes';
+import { refreshTaskDueDates } from '../tasks/due';
+import {
+  taskActionView,
+  taskDescription,
+  taskOrigin,
+  taskRecordStatus,
+  taskTitle,
+  TASK_VIEW_COLUMNS,
+  TASK_VIEW_JOINS,
+  type TaskRow,
+} from '../tasks/view';
+import { resolveHrRequest } from './hr-requests';
 import {
   autoStart,
   DEFAULT_REMINDER_DAYS_BEFORE,
   hrefOfRow,
+  legacyHrefOfRow,
   listTasks,
   maybeCompleteInstance,
   startWorkflow,
-  TASK_HREF_COLUMNS,
-  TASK_HREF_JOINS,
   taskRoles,
 } from './service';
 
@@ -30,8 +43,52 @@ const TaskDef = Type.Object({
     type: Type.Union(['role', 'manager', 'employee', 'user'].map((t) => Type.Literal(t))),
     value: Type.Optional(Type.String()),
   }),
-  dueOffsetDays: Type.Integer({ minimum: -365, maximum: 365 }),
+  dueOffsetDays: Type.Integer({
+    minimum: -365,
+    maximum: 365,
+    description:
+      'Calendar days from the workflow date (start, leaving or transfer date); used when `due` is absent',
+  }),
+  due: Type.Optional(
+    Type.Object(
+      {
+        anchor: Type.Union(
+          ['anchor', 'start', 'end', 'probation_end'].map((a) => Type.Literal(a)),
+          {
+            description:
+              "The workflow's own date, or the person's start date, leaving date or probation end date",
+          },
+        ),
+        offsetDays: Type.Integer({ minimum: -365, maximum: 365 }),
+        businessDays: Type.Optional(Type.Boolean()),
+        packDeadline: Type.Optional(
+          Type.Literal('i9_section2', { description: 'The deadline comes from the jurisdiction pack' }),
+        ),
+      },
+      { additionalProperties: false, description: 'When the task is due (ADR-0193)' },
+    ),
+  ),
   reminderDaysBefore: Type.Optional(Type.Integer({ minimum: 0, maximum: 60 })),
+  action: Type.Optional(
+    Type.Object(
+      {
+        kind: Type.String({ pattern: '^[a-z][a-z0-9_]{1,40}$' }),
+        params: Type.Optional(Type.Record(Type.String({ maxLength: 40 }), Type.Any(), { maxProperties: 10 })),
+      },
+      { additionalProperties: false, description: "The task's main button (ADR-0191)" },
+    ),
+  ),
+});
+const TaskActionOut = Type.Object({
+  kind: Type.String({ description: 'The action kind the task asks for' }),
+  opens: Type.String({
+    description: 'The kind whose page the button opens (its fallback until the kind lands)',
+  }),
+  label: Type.String(),
+  href: Type.String(),
+  landed: Type.Boolean({
+    description: "False while the kind's own page is not built and a fallback page opens",
+  }),
 });
 const Task = Type.Object({
   id: Uuid,
@@ -45,6 +102,7 @@ const Task = Type.Object({
   assigneeRole: Nullable(Type.String()),
   link: Nullable(Type.String()),
   href: Type.String({ description: 'The page the task is about (its request, document or its own page)' }),
+  action: Nullable(TaskActionOut),
 });
 const TaskDetail = Type.Object({
   id: Uuid,
@@ -62,7 +120,42 @@ const TaskDetail = Type.Object({
   workflow: Nullable(Type.Object({ id: Uuid, kind: Type.String(), name: Type.String() })),
   href: Type.String(),
   canComplete: Type.Boolean(),
+  action: Nullable(TaskActionOut),
+  recordStatus: Nullable(
+    Type.Object({
+      text: Type.String({ description: 'The live status of the record the task is linked to' }),
+      tone: Type.String(),
+    }),
+  ),
+  origin: Type.Object({
+    source: Type.String(),
+    label: Type.String({ description: '"Comes from": the real source of the task' }),
+    href: Nullable(Type.String()),
+  }),
+  closesItself: Type.Boolean({ description: 'The task closes when its linked record is complete' }),
+  completedVia: Nullable(Type.String()),
+  completionNote: Nullable(Type.String()),
 });
+
+/** Validates template tasks against the action registry and the due-date model (ADR-0191, ADR-0193). */
+function checkTemplateTasks(tasks: Array<{ action?: unknown; due?: unknown; key: string }>) {
+  const keys = new Set<string>();
+  for (const [i, task] of tasks.entries()) {
+    if (keys.has(task.key))
+      throw new ApiError('validation', `Task ${i + 1}: the key ${task.key} is used twice`);
+    keys.add(task.key);
+    if (task.action !== undefined && !parseTaskAction(task.action))
+      throw new ApiError('validation', `Task ${i + 1}: unknown action or invalid parameters`);
+    if (task.due !== undefined && !parseDueRule(task.due))
+      throw new ApiError('validation', `Task ${i + 1}: invalid due rule`);
+  }
+}
+const normaliseTasks = <T extends { action?: unknown; due?: unknown }>(tasks: T[]) =>
+  tasks.map((task) => ({
+    ...task,
+    ...(task.action !== undefined ? { action: parseTaskAction(task.action) } : {}),
+    ...(task.due !== undefined ? { due: parseDueRule(task.due) } : {}),
+  }));
 
 export async function workflowRoutes(app: FastifyInstance) {
   app.get(
@@ -102,14 +195,15 @@ export async function workflowRoutes(app: FastifyInstance) {
       const b = req.body as {
         kind: string;
         name: string;
-        tasks: unknown[];
+        tasks: Array<{ key: string; action?: unknown; due?: unknown }>;
         autoStart?: boolean;
         entityId?: string | null;
       };
+      checkTemplateTasks(b.tasks);
       const row = await app.tenantTx(req, async (tx) => {
         const r = await tx.one<{ id: string }>(
           `INSERT INTO app.workflow_templates (tenant_id, kind, name, tasks, auto_start, entity_id) VALUES (app.current_tenant(), $1, $2, $3, $4, $5) RETURNING id`,
-          [b.kind, b.name, JSON.stringify(b.tasks), b.autoStart ?? true, b.entityId ?? null],
+          [b.kind, b.name, JSON.stringify(normaliseTasks(b.tasks)), b.autoStart ?? true, b.entityId ?? null],
         );
         await app.audit(tx, req, {
           action: 'workflow_template.created',
@@ -120,6 +214,66 @@ export async function workflowRoutes(app: FastifyInstance) {
         return r;
       });
       return reply.status(201).send(row);
+    },
+  );
+
+  app.put(
+    '/v1/workflow-templates/:id',
+    {
+      config: { selfAudited: true },
+      schema: {
+        tags: ['workflows'],
+        summary:
+          "Edit a workflow template's name, tasks, actions and due dates. Workflows already started keep their tasks.",
+        params: Type.Object({ id: Uuid }),
+        body: Type.Object({
+          name: Type.String({ minLength: 1, maxLength: 120 }),
+          tasks: Type.Array(TaskDef, { minItems: 1, maxItems: 100 }),
+          autoStart: Type.Optional(Type.Boolean()),
+          entityId: Type.Optional(Nullable(Uuid)),
+        }),
+        response: { 200: Type.Object({ id: Uuid }), 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      authorize(req, 'workflows.manage');
+      const { id } = req.params as { id: string };
+      const b = req.body as {
+        name: string;
+        tasks: Array<{ key: string; action?: unknown; due?: unknown }>;
+        autoStart?: boolean;
+        entityId?: string | null;
+      };
+      checkTemplateTasks(b.tasks);
+      return app.tenantTx(req, async (tx) => {
+        const before = await tx.maybe<{ name: string; tasks: unknown[] }>(
+          'SELECT name, tasks FROM app.workflow_templates WHERE id = $1 FOR UPDATE',
+          [id],
+        );
+        if (!before) throw new ApiError('notFound');
+        await tx.exec(
+          `UPDATE app.workflow_templates SET name = $2, tasks = $3, auto_start = coalesce($4, auto_start),
+                  entity_id = CASE WHEN $5::boolean THEN $6::uuid ELSE entity_id END WHERE id = $1`,
+          [
+            id,
+            b.name,
+            JSON.stringify(normaliseTasks(b.tasks)),
+            b.autoStart ?? null,
+            b.entityId !== undefined,
+            b.entityId ?? null,
+          ],
+        );
+        await app.audit(tx, req, {
+          action: 'workflow_template.updated',
+          targetType: 'workflow_template',
+          targetId: id,
+          diff: {
+            name: { from: before.name, to: b.name },
+            tasks: { from: before.tasks.length, to: b.tasks.length },
+          },
+        });
+        return { id };
+      });
     },
   );
 
@@ -139,7 +293,9 @@ export async function workflowRoutes(app: FastifyInstance) {
       const id = await app.tenantTx(req, async (tx) => {
         if (!can(auth.principal, 'workflows.start', await loadTarget(tx, b.employeeId)))
           throw new ApiError('forbidden');
-        const instance = await startWorkflow(tx, b.templateId, b.employeeId, b.anchorDate, auth.userId);
+        const instance = await startWorkflow(tx, b.templateId, b.employeeId, b.anchorDate, auth.userId, {
+          book: await ruleBook(app),
+        });
         await app.audit(tx, req, {
           action: 'workflow.started',
           targetType: 'employee',
@@ -206,6 +362,8 @@ export async function workflowRoutes(app: FastifyInstance) {
             auth.userId,
             auth.principal.grants.map((g) => g.roleKey),
             status,
+            500,
+            req.ctx.locale,
           ),
         { readOnly: true },
       );
@@ -230,15 +388,14 @@ export async function workflowRoutes(app: FastifyInstance) {
       return app.tenantTx(
         req,
         async (tx) => {
-          const r = await tx.maybe<Record<string, string | null>>(
+          const r = await tx.maybe<TaskRow & Record<string, string | null>>(
             `SELECT k.*, e.display_name AS subject_name, a.display_name AS assignee_name, c.display_name AS completed_by_name,
-                    wt.name AS workflow_name, ${TASK_HREF_COLUMNS}
+                    ${TASK_VIEW_COLUMNS}
                FROM app.tasks k
                LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
                LEFT JOIN app.users a ON a.tenant_id = k.tenant_id AND a.id = k.assignee_user_id
                LEFT JOIN app.users c ON c.tenant_id = k.tenant_id AND c.id = k.completed_by
-               ${TASK_HREF_JOINS}
-               LEFT JOIN app.workflow_templates wt ON wt.tenant_id = wi.tenant_id AND wt.id = wi.template_id
+               ${TASK_VIEW_JOINS}
               WHERE k.id = $1`,
             [id],
           );
@@ -253,12 +410,13 @@ export async function workflowRoutes(app: FastifyInstance) {
               can(auth.principal, 'workflows.read', await loadTarget(tx, r.subject_employee_id));
             if (!readable) throw new ApiError('forbidden');
           }
+          const locale = req.ctx.locale;
           return {
-            id: r.id!,
-            title: r.title!,
-            description: r.description ?? null,
-            source: r.source!,
-            status: r.status!,
+            id: r.id,
+            title: taskTitle(r, locale),
+            description: taskDescription(r, locale),
+            source: r.source,
+            status: r.status,
             dueOn: r.due_on ?? null,
             createdAt: r.created_at!,
             completedAt: r.completed_at ?? null,
@@ -277,6 +435,12 @@ export async function workflowRoutes(app: FastifyInstance) {
             // requests and signatures close their tasks when they are decided or signed
             canComplete:
               r.status === 'open' && (mine || manages) && r.source !== 'approval' && r.source !== 'document',
+            action: r.status === 'open' ? taskActionView(r, legacyHrefOfRow(r), locale) : null,
+            recordStatus: await taskRecordStatus(tx, r, locale),
+            origin: taskOrigin(r, auth.principal, locale, auth.principal.employeeId ?? null),
+            closesItself: !!r.record_id && r.source !== 'hr_request' && closesItself(r.record_type),
+            completedVia: r.completed_via ?? null,
+            completionNote: r.completion_note ?? null,
           };
         },
         { readOnly: true },
@@ -288,15 +452,35 @@ export async function workflowRoutes(app: FastifyInstance) {
     '/v1/tasks/:id/complete',
     {
       config: { selfAudited: true },
+      // the body is optional: a joiner's checklist marks a step done without one
+      preValidation: async (req) => {
+        if (req.body === undefined || req.body === null) req.body = {};
+      },
       schema: {
         tags: ['tasks'],
+        summary:
+          'Mark a task as done by hand, with a short note (audited). Tasks linked to a record close themselves when the record is complete; this is the fallback.',
         params: Type.Object({ id: Uuid }),
+        body: Type.Object(
+          {
+            note: Type.Optional(
+              Type.String({
+                minLength: 1,
+                maxLength: 500,
+                description:
+                  'What was done, or why the task is closed by hand. For a request to HR, the reply the person sees.',
+              }),
+            ),
+          },
+          { additionalProperties: false, description: 'Optional' },
+        ),
         response: { 200: Type.Object({ id: Uuid, status: Type.String() }), 403: Problem, 404: Problem },
       },
     },
     async (req) => {
       const auth = requireAuth(req);
       const { id } = req.params as { id: string };
+      const note = (req.body as { note?: string } | undefined)?.note?.trim() || null;
       const roles = taskRoles(auth.principal.grants.map((g) => g.roleKey));
       return app.tenantTx(req, async (tx) => {
         const task = await tx.maybe<{
@@ -312,25 +496,31 @@ export async function workflowRoutes(app: FastifyInstance) {
           task.assignee_user_id === auth.userId ||
           (!task.assignee_user_id && task.assignee_role && roles.includes(task.assignee_role));
         if (!mine && !canSome(auth.principal, 'workflows.manage')) throw new ApiError('forbidden');
-        await tx.exec(
-          `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE id = $1 AND status = 'open'`,
-          [id, auth.userId],
+        // a request to HR is resolved: closed through its record, the reply kept, the person told (ADR-0163)
+        if (task.source === 'hr_request') {
+          await resolveHrRequest(tx, id, auth.userId, note);
+          await app.audit(tx, req, {
+            action: 'hr_request.resolved',
+            targetType: 'task',
+            targetId: id,
+            diff: { reply: note !== null },
+          });
+          return { id, status: 'done' };
+        }
+        const done = await tx.maybe(
+          `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2, completed_via = 'manual', completion_note = $3
+            WHERE id = $1 AND status = 'open' RETURNING id`,
+          [id, auth.userId, note],
         );
         if (task.source === 'workflow' && task.source_id) await maybeCompleteInstance(tx, task.source_id);
-        // the person who asked HR is told their request is done (ADR-0163)
-        if (task.source === 'hr_request') {
-          const asker = await userForEmployee(tx, task.subject_employee_id);
-          if (asker && asker !== auth.userId)
-            await notify(tx, {
-              userIds: [asker],
-              kind: 'task.hr_request_done',
-              titleKey: 'actionable.notify.hrRequestDone',
-              params: { subject: '' },
-              target: { type: 'hr_request', id },
-              dedupeKey: `hr-request-done:${id}`,
-            });
-        }
-        await app.audit(tx, req, { action: 'task.completed', targetType: 'task', targetId: id });
+        // by hand: the note says what was done instead of the work its record would have recorded
+        if (done)
+          await app.audit(tx, req, {
+            action: 'task.completed',
+            targetType: 'task',
+            targetId: id,
+            diff: { via: 'manual', note },
+          });
         return { id, status: 'done' };
       });
     },
@@ -365,8 +555,26 @@ registerJob('workflows.autostart', async (ctx) => {
     employeeId: string;
     anchorDate: string;
   };
-  const started = await ctx.tx((tx) => autoStart(tx, kind, employeeId, anchorDate));
+  const book = await ruleBook({ deps: ctx.deps } as unknown as FastifyInstance);
+  const started = await ctx.tx((tx) => autoStart(tx, kind, employeeId, anchorDate, { book }));
   return { started: started.length };
+});
+
+// ---- due dates follow the person's own dates (ADR-0193) ------------------------------------------------
+const DUE_FIELDS = ['startDate', 'endDate', 'probationEndDate'];
+subscribe('employee.changed', async (tx, ev) => {
+  const fields = (ev.payload.fields as string[] | undefined) ?? [];
+  if (fields.some((f) => DUE_FIELDS.includes(f)))
+    await enqueueJob(tx, 'tasks.refresh_due', `ev:${ev.id}`, { employeeId: ev.payload.employeeId });
+});
+subscribe('employee.terminated', async (tx, ev) => {
+  await enqueueJob(tx, 'tasks.refresh_due', `ev:${ev.id}`, { employeeId: ev.payload.employeeId });
+});
+registerJob('tasks.refresh_due', async (ctx) => {
+  const { employeeId } = ctx.job.input as { employeeId: string };
+  const book = await ruleBook({ deps: ctx.deps } as unknown as FastifyInstance);
+  const changed = await ctx.tx((tx) => refreshTaskDueDates(tx, employeeId, book));
+  return { changed };
 });
 
 // ---- reminders: one "due soon" reminder per task at its own lead time, one "overdue" reminder ----------

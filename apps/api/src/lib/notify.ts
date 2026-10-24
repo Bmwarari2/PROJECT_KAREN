@@ -1,5 +1,14 @@
 import { enqueueJob, type Tx } from '@thapsus/db';
+import { isLocale, t as translate, type Locale } from '@thapsus/core/i18n';
 import { targetHref, type LinkTarget } from '@thapsus/core/links';
+import {
+  parseTaskAction,
+  taskActionRecord,
+  type TaskAction,
+  type TaskRecordRef,
+  type TaskSource,
+} from '@thapsus/core/task-actions';
+import type { StoredDueRule } from '../modules/tasks/due';
 
 export interface NotifyInput {
   userIds: string[];
@@ -71,34 +80,69 @@ export async function userForEmployee(
   )?.id;
 }
 
-export async function createTask(
-  tx: Tx,
-  t: {
-    source: string;
-    sourceId?: string | null;
-    title: string;
-    description?: string;
-    subjectEmployeeId?: string | null;
-    assigneeUserId?: string | null;
-    assigneeRole?: string | null;
-    /** The person the task is for, kept so it can be handed to their sign-in once they have one. */
-    assigneeEmployeeId?: string | null;
-    dueOn?: string | null;
-    /** Days before dueOn to send the "due soon" reminder (null = the default lead time). */
-    reminderDaysBefore?: number | null;
-    link?: string;
-    dedupeKey?: string;
-  },
-): Promise<string | undefined> {
+/** A new task (ADR-0191 to ADR-0193). Text is either the source's own words or catalogue keys. */
+export interface NewTask {
+  source: TaskSource;
+  sourceId?: string | null;
+  /** The task's own words (a template's or a person's); required unless `titleKey` is given. */
+  title?: string;
+  description?: string;
+  /** System-made tasks: catalogue keys, rendered in each reader's locale (`textParams` fill them in). */
+  titleKey?: string;
+  descriptionKey?: string;
+  textParams?: Record<string, string | number>;
+  subjectEmployeeId?: string | null;
+  assigneeUserId?: string | null;
+  assigneeRole?: string | null;
+  /** The person the task is for, kept so it can be handed to their sign-in once they have one. */
+  assigneeEmployeeId?: string | null;
+  dueOn?: string | null;
+  /** How `dueOn` was worked out, so it follows the person's dates when they change. */
+  dueRule?: StoredDueRule | null;
+  /** Days before dueOn to send the "due soon" reminder (null = the default lead time). */
+  reminderDaysBefore?: number | null;
+  /** The main button (packages/core/src/task-actions.ts). */
+  action?: TaskAction | null;
+  /** The record that closes the task (ADR-0192); defaults to the record the action's kind links. */
+  record?: TaskRecordRef | null;
+  link?: string;
+  dedupeKey?: string;
+}
+
+async function workspaceLocale(tx: Tx): Promise<Locale> {
+  const row = await tx.maybe<{ default_locale: string }>('SELECT default_locale FROM app.tenants');
+  return isLocale(row?.default_locale) ? row.default_locale : 'en-GB';
+}
+
+/**
+ * Creates a task (idempotent per dedupe key). A title or description given as catalogue keys is also
+ * stored rendered in the workspace's locale, for exports, e-mails and older clients.
+ */
+export async function createTask(tx: Tx, t: NewTask): Promise<string | undefined> {
+  const locale = t.titleKey || t.descriptionKey ? await workspaceLocale(tx) : 'en-GB';
+  const params = t.textParams ?? {};
+  const title = t.title ?? (t.titleKey ? translate(locale, t.titleKey, params) : '');
+  if (!title.trim()) throw new Error('A task needs a title or a title key');
+  const description =
+    t.description ?? (t.descriptionKey ? translate(locale, t.descriptionKey, params) : null);
+  const action = t.action ? parseTaskAction(t.action) : null;
+  if (t.action && !action) throw new Error(`Invalid task action ${t.action.kind}`);
+  const record =
+    t.record === undefined
+      ? action
+        ? taskActionRecord(action, { taskId: '', subjectEmployeeId: t.subjectEmployeeId ?? null })
+        : null
+      : t.record;
   const row = await tx.maybe<{ id: string }>(
-    `INSERT INTO app.tasks (tenant_id, source, source_id, title, description, subject_employee_id, assignee_user_id, assignee_role, due_on, link, dedupe_key, assignee_employee_id, reminder_days_before)
-     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `INSERT INTO app.tasks (tenant_id, source, source_id, title, description, subject_employee_id, assignee_user_id, assignee_role, due_on, link, dedupe_key,
+                            assignee_employee_id, reminder_days_before, action_kind, action_params, record_type, record_id, title_key, description_key, text_params, due_rule)
+     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
      ON CONFLICT (tenant_id, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING RETURNING id`,
     [
       t.source,
       t.sourceId ?? null,
-      t.title,
-      t.description ?? null,
+      title,
+      description,
       t.subjectEmployeeId ?? null,
       t.assigneeUserId ?? null,
       t.assigneeRole ?? null,
@@ -107,7 +151,18 @@ export async function createTask(
       t.dedupeKey ?? null,
       t.assigneeEmployeeId ?? null,
       t.reminderDaysBefore ?? null,
+      action?.kind ?? null,
+      JSON.stringify(action?.params ?? {}),
+      record?.type ?? null,
+      record?.id ?? null,
+      t.titleKey ?? null,
+      t.descriptionKey ?? null,
+      JSON.stringify(params),
+      t.dueRule ? JSON.stringify(t.dueRule) : null,
     ],
   );
+  // a request to HR is its own record: it closes when HR resolves it
+  if (row && t.source === 'hr_request' && t.record === undefined)
+    await tx.exec(`UPDATE app.tasks SET record_type = 'hr_request', record_id = id WHERE id = $1`, [row.id]);
   return row?.id;
 }

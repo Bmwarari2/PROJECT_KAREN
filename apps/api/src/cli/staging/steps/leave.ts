@@ -9,7 +9,7 @@ import {
   minDate,
 } from '@thapsus/core/time';
 import { writeAudit } from '@thapsus/db';
-import { createTask } from '../../../lib/notify';
+import { createReturnToWorkTask } from '../../../modules/leave/rtw-task';
 import { decide, requestApproval } from '../../../modules/approvals/service';
 import { computeBalance, dailyHours, requestAmount, type LeavePolicy } from '../../../modules/leave/engine';
 import { ensureLeaveDefaults } from '../../../modules/leave/service';
@@ -477,13 +477,21 @@ export async function seedLeave(ctx: SeedCtx) {
         user(q.p),
       ],
     );
-    const approvalId = await requestApproval(tx, 'leave.request', ids.employee[q.p.idx]!, user(q.p), {
-      leaveRequestId: lr.id,
-      leaveType: q.type,
-      startDate: q.start,
-      endDate: q.end,
-      amountDays: q.days,
-    });
+    // the person asked for their own time off (most staging people have no sign-in)
+    const approvalId = await requestApproval(
+      tx,
+      'leave.request',
+      ids.employee[q.p.idx]!,
+      user(q.p),
+      {
+        leaveRequestId: lr.id,
+        leaveType: q.type,
+        startDate: q.start,
+        endDate: q.end,
+        amountDays: q.days,
+      },
+      { employeeId: ids.employee[q.p.idx]! },
+    );
     await tx.exec('UPDATE app.leave_requests SET approval_request_id = $2 WHERE id = $1', [
       lr.id,
       approvalId,
@@ -662,15 +670,9 @@ async function seedSickness(ctx: SeedCtx, h: Helpers) {
     );
     await tx.exec('UPDATE app.sickness_records SET reason_vault_id = $2 WHERE id = $1', [rec.id, vid]);
     const manager = managerUserOf(sp.p);
+    // as the sickness route makes it: from Absence, with what to do, closed by recording the conversation
     if (manager && sp.end && rtw === 'due')
-      await createTask(tx, {
-        source: 'manual',
-        title: 'Return-to-work conversation',
-        subjectEmployeeId: employeeId,
-        assigneeUserId: manager,
-        dueOn: addDays(sp.end, 2),
-        dedupeKey: `rtw:${rec.id}`,
-      });
+      await createReturnToWorkTask(tx, rec.id, employeeId, manager, sp.end);
     await writeAudit(tx, {
       actorType: 'system',
       action: 'sickness.recorded',

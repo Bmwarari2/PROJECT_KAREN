@@ -18856,12 +18856,87 @@
                         "dueOffsetDays": {
                           "type": "integer",
                           "minimum": -365,
-                          "maximum": 365
+                          "maximum": 365,
+                          "description": "Calendar days from the workflow date (start, leaving or transfer date); used when `due` is absent"
+                        },
+                        "due": {
+                          "type": "object",
+                          "required": [
+                            "anchor",
+                            "offsetDays"
+                          ],
+                          "properties": {
+                            "anchor": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "anchor"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "start"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "end"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "probation_end"
+                                  ]
+                                }
+                              ],
+                              "description": "The workflow's own date, or the person's start date, leaving date or probation end date"
+                            },
+                            "offsetDays": {
+                              "type": "integer",
+                              "minimum": -365,
+                              "maximum": 365
+                            },
+                            "businessDays": {
+                              "type": "boolean"
+                            },
+                            "packDeadline": {
+                              "type": "string",
+                              "description": "The deadline comes from the jurisdiction pack",
+                              "enum": [
+                                "i9_section2"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "When the task is due (ADR-0193)"
                         },
                         "reminderDaysBefore": {
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 60
+                        },
+                        "action": {
+                          "type": "object",
+                          "required": [
+                            "kind"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "pattern": "^[a-z][a-z0-9_]{1,40}$"
+                            },
+                            "params": {
+                              "type": "object",
+                              "maxProperties": 10,
+                              "additionalProperties": {}
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "The task's main button (ADR-0191)"
                         }
                       }
                     },
@@ -18908,6 +18983,354 @@
             }
           },
           "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/workflow-templates/{id}": {
+      "put": {
+        "summary": "Edit a workflow template's name, tasks, actions and due dates. Workflows already started keep their tasks.",
+        "tags": [
+          "workflows"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "tasks"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "tasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "key",
+                        "title",
+                        "assignee",
+                        "dueOffsetDays"
+                      ],
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "assignee": {
+                          "type": "object",
+                          "required": [
+                            "type"
+                          ],
+                          "properties": {
+                            "type": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "role"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "manager"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "employee"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "user"
+                                  ]
+                                }
+                              ]
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "dueOffsetDays": {
+                          "type": "integer",
+                          "minimum": -365,
+                          "maximum": 365,
+                          "description": "Calendar days from the workflow date (start, leaving or transfer date); used when `due` is absent"
+                        },
+                        "due": {
+                          "type": "object",
+                          "required": [
+                            "anchor",
+                            "offsetDays"
+                          ],
+                          "properties": {
+                            "anchor": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "anchor"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "start"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "end"
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "probation_end"
+                                  ]
+                                }
+                              ],
+                              "description": "The workflow's own date, or the person's start date, leaving date or probation end date"
+                            },
+                            "offsetDays": {
+                              "type": "integer",
+                              "minimum": -365,
+                              "maximum": 365
+                            },
+                            "businessDays": {
+                              "type": "boolean"
+                            },
+                            "packDeadline": {
+                              "type": "string",
+                              "description": "The deadline comes from the jurisdiction pack",
+                              "enum": [
+                                "i9_section2"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "When the task is due (ADR-0193)"
+                        },
+                        "reminderDaysBefore": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 60
+                        },
+                        "action": {
+                          "type": "object",
+                          "required": [
+                            "kind"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "pattern": "^[a-z][a-z0-9_]{1,40}$"
+                            },
+                            "params": {
+                              "type": "object",
+                              "maxProperties": 10,
+                              "additionalProperties": {}
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "The task's main button (ADR-0191)"
+                        }
+                      }
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  },
+                  "autoStart": {
+                    "type": "boolean"
+                  },
+                  "entityId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "code"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "appUrl": {
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -19186,7 +19609,8 @@
                       "subjectName",
                       "assigneeRole",
                       "link",
-                      "href"
+                      "href",
+                      "action"
                     ],
                     "properties": {
                       "id": {
@@ -19265,6 +19689,43 @@
                       "href": {
                         "type": "string",
                         "description": "The page the task is about (its request, document or its own page)"
+                      },
+                      "action": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "opens",
+                              "label",
+                              "href",
+                              "landed"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "description": "The action kind the task asks for"
+                              },
+                              "opens": {
+                                "type": "string",
+                                "description": "The kind whose page the button opens (its fallback until the kind lands)"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "href": {
+                                "type": "string"
+                              },
+                              "landed": {
+                                "type": "boolean",
+                                "description": "False while the kind's own page is not built and a fallback page opens"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -19314,7 +19775,13 @@
                     "assigneeName",
                     "workflow",
                     "href",
-                    "canComplete"
+                    "canComplete",
+                    "action",
+                    "recordStatus",
+                    "origin",
+                    "closesItself",
+                    "completedVia",
+                    "completionNote"
                   ],
                   "properties": {
                     "id": {
@@ -19448,6 +19915,117 @@
                     },
                     "canComplete": {
                       "type": "boolean"
+                    },
+                    "action": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "opens",
+                            "label",
+                            "href",
+                            "landed"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "description": "The action kind the task asks for"
+                            },
+                            "opens": {
+                              "type": "string",
+                              "description": "The kind whose page the button opens (its fallback until the kind lands)"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "href": {
+                              "type": "string"
+                            },
+                            "landed": {
+                              "type": "boolean",
+                              "description": "False while the kind's own page is not built and a fallback page opens"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "recordStatus": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "text",
+                            "tone"
+                          ],
+                          "properties": {
+                            "text": {
+                              "type": "string",
+                              "description": "The live status of the record the task is linked to"
+                            },
+                            "tone": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "origin": {
+                      "type": "object",
+                      "required": [
+                        "source",
+                        "label",
+                        "href"
+                      ],
+                      "properties": {
+                        "source": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string",
+                          "description": "\"Comes from\": the real source of the task"
+                        },
+                        "href": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "closesItself": {
+                      "type": "boolean",
+                      "description": "The task closes when its linked record is complete"
+                    },
+                    "completedVia": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "completionNote": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }
@@ -19579,9 +20157,31 @@
     },
     "/v1/tasks/{id}/complete": {
       "post": {
+        "summary": "Mark a task as done by hand, with a short note (audited). Tasks linked to a record close themselves when the record is complete; this is the fallback.",
         "tags": [
           "tasks"
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "description": "What was done, or why the task is closed by hand. For a request to HR, the reply the person sees."
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Optional"
+              }
+            }
+          },
+          "description": "Optional"
+        },
         "parameters": [
           {
             "schema": {
@@ -20083,7 +20683,8 @@
                     "createdAt",
                     "completedAt",
                     "message",
-                    "completedByName"
+                    "completedByName",
+                    "reply"
                   ],
                   "properties": {
                     "id": {
@@ -20116,6 +20717,17 @@
                       "anyOf": [
                         {
                           "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "reply": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "HR's reply when they resolved the request"
                         },
                         {
                           "type": "null"
@@ -21770,6 +22382,7 @@
                     "currentStep",
                     "payload",
                     "requestedBy",
+                    "askedBy",
                     "steps",
                     "related",
                     "canDecide"
@@ -21848,6 +22461,60 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "askedBy": {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "name",
+                        "employeeId"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "person"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "automation"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "unrecorded"
+                              ]
+                            }
+                          ]
+                        },
+                        "name": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "employeeId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "description": "Who asked: a person, or an automation rule (\"The system\")"
                     },
                     "steps": {
                       "type": "array",
@@ -23342,6 +24009,11 @@
                               "type": "string",
                               "minLength": 1,
                               "maxLength": 200
+                            },
+                            "description": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "description": "What the task asks, shown on its page"
                             },
                             "assignee": {
                               "type": "object",

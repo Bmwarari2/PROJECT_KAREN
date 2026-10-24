@@ -1,7 +1,13 @@
-import { addDays } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
+import type { Locale } from '@thapsus/core/i18n';
 import { personHref, safeAppLink, targetHref } from '@thapsus/core/links';
+import { dueRuleOf, parseTaskAction, type DueRule, type TaskAction } from '@thapsus/core/task-actions';
+import { rules, type RuleBook } from '@thapsus/rules';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
+import { completeWorkflowInstanceIfDone } from '../tasks/completion';
+import { loadDuePerson, dueDateFor } from '../tasks/due';
+import { complianceSettings } from '../compliance/service';
+import { taskActionView, taskTitle, type TaskActionView, type TaskRow } from '../tasks/view';
 
 /** Reminder lead time for tasks whose template does not set `reminderDaysBefore`. */
 export const DEFAULT_REMINDER_DAYS_BEFORE = 2;
@@ -11,8 +17,13 @@ export interface WorkflowTaskDef {
   title: string;
   description?: string;
   assignee: { type: 'role' | 'manager' | 'employee' | 'user'; value?: string };
+  /** Calendar days from the workflow's own date; kept working when `due` is absent (ADR-0193). */
   dueOffsetDays: number;
+  /** When it is due: from the workflow's date or the person's own dates, in calendar or business days. */
+  due?: DueRule;
   reminderDaysBefore?: number;
+  /** The main button of the tasks it creates (packages/core/src/task-actions.ts, ADR-0191). */
+  action?: TaskAction;
 }
 
 /**
@@ -36,6 +47,7 @@ export async function startWorkflow(
   employeeId: string,
   anchorDate: string,
   startedBy: string | null,
+  opts: { book?: RuleBook } = {},
 ) {
   const tpl = await tx.maybe<{ id: string; kind: string; name: string; tasks: WorkflowTaskDef[] }>(
     'SELECT id, kind, name, tasks FROM app.workflow_templates WHERE id = $1',
@@ -54,6 +66,10 @@ export async function startWorkflow(
         AND r.valid_from <= $2 AND (r.valid_to IS NULL OR r.valid_to > $2) LIMIT 1), e.manager_id) AS manager_id FROM app.employees e WHERE e.id = $1`,
     [employeeId, anchorDate],
   );
+  // due dates follow the person's own dates and the packs (ADR-0193)
+  const book = opts.book ?? rules();
+  const duePerson = await loadDuePerson(tx, employeeId, anchorDate);
+  const { businessWeekdays } = await complianceSettings(tx);
   for (const task of tpl.tasks) {
     let assignees: string[] = [];
     let role: string | null = null;
@@ -67,7 +83,9 @@ export async function startWorkflow(
       role = task.assignee.value;
       assignees = await usersWithRole(tx, task.assignee.value);
     }
-    const dueOn = addDays(anchorDate, task.dueOffsetDays);
+    const rule = dueRuleOf(task);
+    const dueOn = dueDateFor(rule, { person: duePerson, anchorDate, book, businessWeekdays });
+    const action = task.action ? parseTaskAction(task.action) : null;
     // Role tasks are one shared task visible to the role; person tasks are assigned individually.
     const targets = role ? [null] : assignees.length ? assignees : [null];
     const created = new Map<string | null, string>();
@@ -82,6 +100,8 @@ export async function startWorkflow(
         assigneeRole: role,
         assigneeEmployeeId: person,
         dueOn,
+        dueRule: { ...rule, anchorDate },
+        action,
         reminderDaysBefore: task.reminderDaysBefore ?? null,
         // person tasks dedupe on the person, so a sign-in created later does not duplicate them
         dedupeKey: `wf:${inst.id}:${task.key}:${person ? `emp:${person}` : (user ?? role ?? 'unassigned')}`,
@@ -108,23 +128,14 @@ export async function startWorkflow(
 }
 
 /** Completes the instance once all of its tasks are done or cancelled. */
-export async function maybeCompleteInstance(tx: Tx, instanceId: string) {
-  const open = await tx.maybe(
-    `SELECT 1 FROM app.tasks WHERE source = 'workflow' AND source_id = $1 AND status = 'open' LIMIT 1`,
-    [instanceId],
-  );
-  if (!open)
-    await tx.exec(
-      `UPDATE app.workflow_instances SET status = 'completed', completed_at = now() WHERE id = $1 AND status = 'active'`,
-      [instanceId],
-    );
-}
+export const maybeCompleteInstance = completeWorkflowInstanceIfDone;
 
 export async function autoStart(
   tx: Tx,
   kind: 'onboarding' | 'offboarding' | 'transfer',
   employeeId: string,
   anchorDate: string,
+  opts: { book?: RuleBook } = {},
 ) {
   const emp = await tx.maybe<{ entity_id: string | null }>(
     'SELECT entity_id FROM app.employees WHERE id = $1',
@@ -136,7 +147,7 @@ export async function autoStart(
   );
   const started: string[] = [];
   for (const t of templates) {
-    const id = await startWorkflow(tx, t.id, employeeId, anchorDate, null);
+    const id = await startWorkflow(tx, t.id, employeeId, anchorDate, null, opts);
     if (id) started.push(id);
   }
   return started;
@@ -170,8 +181,13 @@ export interface TaskView {
   subjectName: string | null;
   assigneeRole: string | null;
   link: string | null;
-  /** The page the task is about (ADR-0160): its request, document, onboarding step or its own page. */
+  /**
+   * The page a task's row opens: an approval's request, a signature's document, a joiner's own step, and
+   * otherwise the task's own page, which explains it and holds its main button (ADR-0191).
+   */
   href: string;
+  /** The main button (ADR-0191): its label in the reader's locale and the page that does the work. */
+  action: TaskActionView | null;
 }
 
 /** Stored links that only name a list (or no page at all), so the task's own page is more useful. */
@@ -229,17 +245,28 @@ export const TASK_HREF_JOINS = `LEFT JOIN app.signature_requests sr ON k.source 
   LEFT JOIN app.workflow_instances wi ON k.source = 'workflow' AND wi.tenant_id = k.tenant_id AND wi.id = k.source_id`;
 export const TASK_HREF_COLUMNS = `sr.document_id AS href_document_id, wi.kind AS href_workflow_kind`;
 
-export const hrefOfRow = (r: Record<string, string | null>) =>
+export const legacyHrefOfRow = (r: Record<string, unknown>) =>
   taskHref({
-    id: r.id!,
-    source: r.source!,
-    sourceId: r.source_id ?? null,
-    link: r.link ?? null,
-    documentId: r.href_document_id ?? null,
-    workflowKind: r.href_workflow_kind ?? null,
-    subjectEmployeeId: r.subject_employee_id ?? null,
-    assigneeEmployeeId: r.assignee_employee_id ?? null,
+    id: r.id as string,
+    source: r.source as string,
+    sourceId: (r.source_id as string | null) ?? null,
+    link: (r.link as string | null) ?? null,
+    documentId: (r.href_document_id as string | null) ?? null,
+    workflowKind: (r.href_workflow_kind as string | null) ?? null,
+    subjectEmployeeId: (r.subject_employee_id as string | null) ?? null,
+    assigneeEmployeeId: (r.assignee_employee_id as string | null) ?? null,
   });
+
+/**
+ * The page a task's row opens (ADR-0191): work that has a page of its own (deciding a request, signing a
+ * document, a joiner's own step) opens it; every other task opens its own page, with its main button.
+ */
+export function hrefOfRow(r: Record<string, unknown>): string {
+  const legacy = legacyHrefOfRow(r);
+  const own = `/app/tasks/${r.id as string}`;
+  if (r.source === 'approval' || r.source === 'document' || legacy.startsWith('/app/welcome#')) return legacy;
+  return own;
+}
 
 /** The caller's tasks: assigned to them, or to a role queue they work from. Shared by the list and export. */
 export async function listTasks(
@@ -248,8 +275,9 @@ export async function listTasks(
   roleKeys: string[],
   status: string,
   limit = 500,
+  locale: Locale = 'en-GB',
 ): Promise<TaskView[]> {
-  const rows = await tx.query<Record<string, string | null>>(
+  const rows = await tx.query<TaskRow & Record<string, string | null>>(
     `SELECT k.*, e.display_name AS subject_name, ${TASK_HREF_COLUMNS} FROM app.tasks k LEFT JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
       ${TASK_HREF_JOINS}
       WHERE (k.assignee_user_id = $1 OR (k.assignee_user_id IS NULL AND k.assignee_role = ANY($2::text[])))
@@ -257,16 +285,17 @@ export async function listTasks(
     [userId, taskRoles(roleKeys), status],
   );
   return rows.map((r) => ({
-    id: r.id!,
-    title: r.title!,
+    id: r.id,
+    title: taskTitle(r, locale),
     description: r.description ?? null,
-    source: r.source!,
-    status: r.status!,
+    source: r.source,
+    status: r.status,
     dueOn: r.due_on ?? null,
     subjectEmployeeId: r.subject_employee_id ?? null,
     subjectName: r.subject_name ?? null,
     assigneeRole: r.assignee_role ?? null,
     link: r.link ?? null,
     href: hrefOfRow(r),
+    action: r.status === 'open' ? taskActionView(r, legacyHrefOfRow(r), locale) : null,
   }));
 }

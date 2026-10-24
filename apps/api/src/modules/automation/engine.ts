@@ -21,6 +21,8 @@ export type Action =
   | {
       type: 'task';
       title: string;
+      /** What the task asks, shown on its page (ADR-0191). */
+      description?: string;
       assignee: { type: 'manager' | 'role' | 'user' | 'employee'; value?: string };
       dueInDays?: number;
     }
@@ -109,7 +111,16 @@ export async function runRule(
               source: 'automation',
               sourceId: rule.id,
               title: action.title,
+              ...(action.description?.trim() ? { description: action.description.trim() } : {}),
               subjectEmployeeId: subject.employeeId,
+              // the person the rule fired for, when the assignees may open their profile (themselves,
+              // their manager or HR), as for the rule's notifications
+              ...(subject.employeeId &&
+              (['employee', 'manager'].includes(action.assignee.type) ||
+                (action.assignee.type === 'role' &&
+                  ['hr_admin', 'owner'].includes(action.assignee.value ?? '')))
+                ? { action: { kind: 'open_person' as const, params: {} } }
+                : {}),
               assigneeUserId: u,
               assigneeRole: action.assignee.type === 'role' ? action.assignee.value : null,
               dueOn: action.dueInDays !== undefined ? addDays(subject.date, action.dueInDays) : null,

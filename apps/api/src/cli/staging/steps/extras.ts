@@ -373,6 +373,8 @@ export async function seedSettings(ctx: SeedCtx) {
           {
             type: 'task',
             title: 'Prepare the probation review',
+            description:
+              'Their probation period ends in two weeks. Look back over their objectives and the feedback from the team, note what went well and anything to improve, and book the review meeting before the probation end date.',
             assignee: { type: 'manager' },
             dueInDays: 10,
           },

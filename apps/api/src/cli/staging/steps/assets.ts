@@ -1,4 +1,3 @@
-import { t } from '@thapsus/core/i18n';
 import { addDays, maxDate } from '@thapsus/core/time';
 import { createTask, notify } from '../../../lib/notify';
 import { insertRows, seedUuid, type SeedCtx } from '../context';
@@ -191,13 +190,17 @@ export async function seedAssets(ctx: SeedCtx) {
   await insertRows(tx, 'app.assets', assets, { json: ['return_checklist'] });
   await insertRows(tx, 'app.asset_assignments', assignments, { json: ['checklist'] });
   const user = ids.user.employee;
-  const title = t('en-GB', 'assets.ackTaskTitle', { asset: COST.headset[0] });
+  // as the assign route makes it (ADR-0191): from the asset register, closed by acknowledging
   const taskId = await createTask(tx, {
-    source: 'manual',
+    source: 'asset',
     sourceId: String(pending.id),
-    title,
+    titleKey: 'assets.ackTaskTitle',
+    descriptionKey: 'taskActions.text.asset.acknowledge',
+    textParams: { asset: COST.headset[0] },
     subjectEmployeeId: ids.employee[emp.idx],
     assigneeUserId: user,
+    action: { kind: 'open_record', params: { type: 'asset_assignment', id: String(pending.id) } },
+    record: { type: 'asset_acknowledgement', id: String(pending.id) },
     link: `/app/assets?ack=${pending.id}`,
     dedupeKey: `asset-ack:${pending.id}`,
   });

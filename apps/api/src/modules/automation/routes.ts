@@ -48,6 +48,9 @@ const ActionSchema = Type.Union([
   Type.Object({
     type: Type.Literal('task'),
     title: Type.String({ minLength: 1, maxLength: 200 }),
+    description: Type.Optional(
+      Type.String({ maxLength: 2000, description: 'What the task asks, shown on its page' }),
+    ),
     assignee: Recipient,
     dueInDays: Type.Optional(Type.Integer({ minimum: 0, maximum: 365 })),
   }),

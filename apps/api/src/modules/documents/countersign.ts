@@ -61,12 +61,20 @@ export async function requestCountersign(
 ) {
   await ensureCountersignPolicy(tx);
   const link = `/app/documents/${sr.document_id}`;
-  const approvalId = await requestApproval(tx, COUNTERSIGN_SUBJECT, sr.signer_employee_id, requestedBy, {
-    signatureRequestId: sr.id,
-    documentId: sr.document_id,
-    documentTitle: sr.title,
-    link,
-  });
+  const approvalId = await requestApproval(
+    tx,
+    COUNTERSIGN_SUBJECT,
+    sr.signer_employee_id,
+    requestedBy,
+    {
+      signatureRequestId: sr.id,
+      documentId: sr.document_id,
+      documentTitle: sr.title,
+      link,
+    },
+    // the signer's signature asks for the company's (ADR-0193), also when it was recorded for them
+    requestedBy ? {} : { employeeId: sr.signer_employee_id },
+  );
   if (!approvalId) throw new ApiError('unprocessable', 'No approval chain for countersignatures is in use');
   await tx.exec(
     `UPDATE app.signature_requests SET approval_status = 'pending', approval_request_id = $2, returned_reason = NULL WHERE id = $1`,
@@ -242,8 +250,13 @@ export async function returnToSigner(tx: Tx, approvalRequestId: string) {
       source: 'document',
       sourceId: sr.id,
       title: t(await tenantLocale(tx), 'docSign.taskSignAgain', { title: sr.title }),
+      titleKey: 'docSign.taskSignAgain',
+      descriptionKey: 'taskActions.text.document.signAgain',
+      textParams: { title: sr.title },
       subjectEmployeeId: sr.signer_employee_id,
       assigneeUserId: signer,
+      action: { kind: 'open_link', params: { href: link, label: 'sign' } },
+      record: { type: 'signature_request', id: sr.id },
       link,
       dedupeKey: `sign:${sr.id}:returned:${approvalRequestId}`,
     });

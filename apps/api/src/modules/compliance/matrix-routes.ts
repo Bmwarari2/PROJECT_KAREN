@@ -9,6 +9,7 @@ import { scopePredicate } from '../employees/service';
 import { recordExpiry, type MatrixStatus } from './engine';
 import { matrixCells, type ReqRow } from './status';
 import { complianceSettings, EMPLOYEE_COLUMNS, EMPLOYEE_FROM, targetOf, type EmployeeRow } from './service';
+import { completeTasksFor } from '../tasks/completion';
 
 const KINDS = ['licence', 'certification', 'background_check', 'training', 'other'] as const;
 const Scope = Type.Object(
@@ -252,14 +253,20 @@ export async function matrixRoutes(app: FastifyInstance) {
           [e.id, r.id, row.id, b.issuedOn],
         );
         for (const o of older)
-          await tx.exec(
-            `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE dedupe_key LIKE $1 AND status = 'open'`,
-            [`matrix:${o.id}:%`, auth.userId],
-          );
-        await tx.exec(
-          `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE dedupe_key = $1 AND status = 'open'`,
-          [`matrix-missing:${r.id}:${e.id}`, auth.userId],
-        );
+          await completeTasksFor(tx, {
+            recordType: 'compliance_record',
+            recordId: o.id,
+            by: auth.userId,
+            reason: 'compliance.record_added',
+          });
+        // the missing-requirement task, and any renewal task asking for this requirement (ADR-0192)
+        await completeTasksFor(tx, {
+          recordType: 'compliance_requirement',
+          recordId: r.id,
+          subjectEmployeeId: e.id,
+          by: auth.userId,
+          reason: 'compliance.record_added',
+        });
         await app.audit(tx, req, {
           action: 'compliance.record_added',
           targetType: 'employee',

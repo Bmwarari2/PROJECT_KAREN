@@ -15,7 +15,6 @@ import {
   EMPLOYEE_FROM,
   tenantJurisdictionCodes,
   tenantLocale,
-  text,
   type EmployeeRow,
 } from './service';
 import { i9Statuses, matrixCells, rtwStatuses, serviceAlerts, type ReqRow } from './status';
@@ -61,10 +60,14 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
         await task({
           source: 'compliance',
           sourceId: r.check.id,
-          title: text(locale, 'compliance.task.rtwFollowUp', { name }),
+          titleKey: 'compliance.task.rtwFollowUp',
+          descriptionKey: 'taskActions.text.compliance.rtwFollowUp',
+          textParams: { name },
           subjectEmployeeId: r.employee.id,
           assigneeRole: 'hr_admin',
           dueOn: due,
+          // the check's own page; a newer check for the person closes it (ADR-0192)
+          action: { kind: 'open_record', params: { type: 'rtw_check', id: r.check.id } },
           link: targetHref({ type: 'rtw_check', id: r.check.id })!,
           dedupeKey: `rtwcheck:${r.check.id}:task`,
         });
@@ -83,10 +86,15 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
       ).length;
       await task({
         source: 'compliance',
-        title: text(locale, 'compliance.task.rtwCheck', { name }),
+        titleKey: 'compliance.task.rtwCheck',
+        descriptionKey: 'taskActions.text.compliance.rtwCheck',
+        textParams: { name },
         subjectEmployeeId: r.employee.id,
         assigneeRole: 'hr_admin',
         dueOn: r.employee.start_date,
+        // the person's compliance tab (part E's check dialog later); any check recorded closes it
+        action: { kind: 'open_person', params: { tab: 'compliance' } },
+        record: { type: 'right_to_work', id: r.employee.id },
         link: personHref(r.employee.id, 'compliance'),
         dedupeKey: `rtw-missing:${r.employee.id}`,
       });
@@ -132,10 +140,14 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
         await task({
           source: 'compliance',
           sourceId: r.record.id,
-          title: text(locale, 'compliance.task.i9Reverify', { name }),
+          titleKey: 'compliance.task.i9Reverify',
+          descriptionKey: 'taskActions.text.compliance.i9Reverify',
+          textParams: { name },
           subjectEmployeeId: r.employee.id,
           assigneeRole: 'hr_admin',
           dueOn: due,
+          action: { kind: 'open_person', params: { tab: 'compliance' } },
+          record: { type: 'i9_reverify', id: r.employee.id },
           link: personHref(r.employee.id, 'compliance'),
           dedupeKey: `i9-rev:${r.record.id}:${due}:task`,
         });
@@ -167,10 +179,14 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
         await task({
           source: 'compliance',
           sourceId: c.record.id,
-          title: text(locale, 'compliance.task.renew', { name, requirement: c.requirement.name }),
+          titleKey: 'compliance.task.renew',
+          descriptionKey: 'taskActions.text.compliance.renew',
+          textParams: { name, requirement: c.requirement.name },
           subjectEmployeeId: c.employee.id,
           assigneeRole: 'hr_admin',
           dueOn: c.expiresOn,
+          action: { kind: 'open_person', params: { tab: 'compliance' } },
+          record: { type: 'compliance_record', id: c.record.id },
           link: personHref(c.employee.id, 'compliance'),
           dedupeKey: `matrix:${c.record.id}:task`,
         });
@@ -192,9 +208,13 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
       await task({
         source: 'compliance',
         sourceId: c.requirement.id,
-        title: text(locale, 'compliance.task.missing', { name, requirement: c.requirement.name }),
+        titleKey: 'compliance.task.missing',
+        descriptionKey: 'taskActions.text.compliance.missing',
+        textParams: { name, requirement: c.requirement.name },
         subjectEmployeeId: c.employee.id,
         assigneeRole: 'hr_admin',
+        action: { kind: 'open_person', params: { tab: 'compliance' } },
+        record: { type: 'compliance_requirement', id: c.requirement.id },
         link: personHref(c.employee.id, 'compliance'),
         dedupeKey: `matrix-missing:${c.requirement.id}:${c.employee.id}`,
       });
@@ -267,10 +287,13 @@ export async function runComplianceDaily(deps: Deps, tx: Tx, date: string) {
       await task({
         source: 'document',
         sourceId: d.id,
-        title: text(locale, 'compliance.task.renewDocument', params),
+        titleKey: 'compliance.task.renewDocument',
+        descriptionKey: 'taskActions.text.document.renew',
+        textParams: params,
         subjectEmployeeId: d.employee_id,
         assigneeRole: 'hr_admin',
         dueOn: d.expires_on,
+        action: { kind: 'open_record', params: { type: 'document', id: d.id } },
         link: `/app/documents/${d.id}`,
         dedupeKey: `attachment:${d.id}:task`,
       });

@@ -3,8 +3,9 @@ import { Type } from 'typebox';
 import { authorizeSome } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { Nullable, Problem, Uuid } from '../../http/schemas';
-import { createTask, notify, usersWithRole } from '../../lib/notify';
+import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 import type { Tx } from '@thapsus/db';
+import { completeTasksFor } from '../tasks/completion';
 
 /** The HR admins' queue a request lands in (owners also work from it, see taskRoles). */
 export const HR_QUEUE = 'hr_admin';
@@ -59,10 +60,47 @@ export async function raiseHrRequest(
   return id;
 }
 
+/**
+ * HR resolves a request (ADR-0192): its task closes through its record, HR's reply (optional) is kept for
+ * the person who asked, and they are told. Returns false when it was already closed.
+ */
+export async function resolveHrRequest(
+  tx: Tx,
+  taskId: string,
+  by: string,
+  reply: string | null,
+): Promise<boolean> {
+  const task = await tx.maybe<{ subject_employee_id: string | null }>(
+    `SELECT subject_employee_id FROM app.tasks WHERE id = $1 AND source = 'hr_request' AND status = 'open'`,
+    [taskId],
+  );
+  if (!task) return false;
+  await tx.exec('UPDATE app.tasks SET completion_note = $2 WHERE id = $1', [taskId, reply]);
+  const closed = await completeTasksFor(tx, {
+    recordType: 'hr_request',
+    recordId: taskId,
+    by,
+    reason: 'hr_request.resolved',
+  });
+  if (!closed.length) return false;
+  const asker = await userForEmployee(tx, task.subject_employee_id);
+  if (asker && asker !== by)
+    await notify(tx, {
+      userIds: [asker],
+      kind: 'task.hr_request_done',
+      titleKey: 'actionable.notify.hrRequestDone',
+      params: { subject: '' },
+      target: { type: 'hr_request', id: taskId },
+      dedupeKey: `hr-request-done:${taskId}`,
+    });
+  return true;
+}
+
 const HrRequestDetail = Type.Object({
   ...HrRequest.properties,
   message: Type.String(),
   completedByName: Nullable(Type.String()),
+  reply: Nullable(Type.String({ description: "HR's reply when they resolved the request" })),
 });
 
 export async function hrRequestRoutes(app: FastifyInstance) {
@@ -177,8 +215,9 @@ export async function hrRequestRoutes(app: FastifyInstance) {
             created_at: string;
             completed_at: string | null;
             completed_by_name: string | null;
+            completion_note: string | null;
           }>(
-            `SELECT k.id, k.title, k.description, k.status, k.created_at, k.completed_at, c.display_name AS completed_by_name
+            `SELECT k.id, k.title, k.description, k.status, k.created_at, k.completed_at, c.display_name AS completed_by_name, k.completion_note
                FROM app.tasks k
                LEFT JOIN app.users c ON c.tenant_id = k.tenant_id AND c.id = k.completed_by
               WHERE k.id = $1 AND k.source = 'hr_request' AND k.subject_employee_id = $2`,
@@ -195,6 +234,7 @@ export async function hrRequestRoutes(app: FastifyInstance) {
         createdAt: r.created_at,
         completedAt: r.completed_at,
         completedByName: r.completed_by_name,
+        reply: r.status === 'done' ? r.completion_note : null,
       };
     },
   );

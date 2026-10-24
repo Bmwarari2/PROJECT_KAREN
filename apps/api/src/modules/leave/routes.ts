@@ -19,7 +19,9 @@ import { enqueueJob, withTenant, writeAudit, type Tx } from '@thapsus/db';
 import { authorize, authorizeSome, requireAuth } from '../../http/context';
 import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
-import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
+import { notify, userForEmployee, usersWithRole } from '../../lib/notify';
+import { completeTasksFor } from '../tasks/completion';
+import { createReturnToWorkTask } from './rtw-task';
 import { objectKey } from '../../lib/object-store';
 import { periodic, registerJob } from '../../jobs/registry';
 import { composeToken, hashToken, newToken, parseToken } from '../auth/tokens';
@@ -1428,15 +1430,7 @@ export async function leaveRoutes(app: FastifyInstance) {
             )
           )?.manager_id,
         );
-        if (manager && b.endDate)
-          await createTask(tx, {
-            source: 'manual',
-            title: 'Return-to-work conversation',
-            subjectEmployeeId: employeeId,
-            assigneeUserId: manager,
-            dueOn: addDays(b.endDate, 2),
-            dedupeKey: `rtw:${rec.id}`,
-          });
+        if (manager && b.endDate) await createReturnToWorkTask(tx, rec.id, employeeId, manager, b.endDate);
         await app.audit(tx, req, {
           action: 'sickness.recorded',
           targetType: 'sickness_record',
@@ -1725,10 +1719,13 @@ export async function leaveRoutes(app: FastifyInstance) {
           `UPDATE app.sickness_records SET rtw_status = 'completed', rtw_vault_id = $2 WHERE id = $1`,
           [id, vid],
         );
-        await tx.exec(
-          `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE dedupe_key = $1`,
-          [`rtw:${id}`, auth.userId],
-        );
+        // the manager's return-to-work task closes with the record (ADR-0192)
+        await completeTasksFor(tx, {
+          recordType: 'return_to_work',
+          recordId: id,
+          by: auth.userId,
+          reason: 'sickness.rtw_recorded',
+        });
         req.auditWritten = true;
         return { id, rtwStatus: 'completed' };
       });

@@ -2,6 +2,51 @@ import { writeAudit, type Tx } from '@thapsus/db';
 import { targetHref, type LinkTarget } from '@thapsus/core/links';
 import { createTask, notify, userForEmployee, usersWithRole } from '../../lib/notify';
 import { ApiError } from '../../http/errors';
+import { completeTasksFor } from '../tasks/completion';
+
+/** Approval subjects whose tasks explain themselves with their own description (taskActions.text.approval.*). */
+const DESCRIBED_SUBJECTS = new Set([
+  'leave.request',
+  'shift.claim',
+  'shift.swap',
+  'employee.change',
+  'employee.self_change',
+  'timesheet',
+  'document.countersign',
+]);
+
+/** The task an approver gets for one step: the request opens with the decision, and it closes on deciding. */
+async function createApprovalTask(
+  tx: Tx,
+  a: {
+    requestId: string;
+    subject: string;
+    title: string;
+    subjectEmployeeId: string | null;
+    user: string;
+    step: number;
+  },
+) {
+  const name = a.subjectEmployeeId
+    ? ((
+        await tx.maybe<{ display_name: string }>('SELECT display_name FROM app.employees WHERE id = $1', [
+          a.subjectEmployeeId,
+        ])
+      )?.display_name ?? '')
+    : '';
+  await createTask(tx, {
+    source: 'approval',
+    sourceId: a.requestId,
+    title: a.title,
+    descriptionKey: `taskActions.text.approval.${DESCRIBED_SUBJECTS.has(a.subject) ? a.subject.replace('.', '_') : 'other'}`,
+    textParams: { name, policy: a.title },
+    subjectEmployeeId: a.subjectEmployeeId,
+    assigneeUserId: a.user,
+    action: { kind: 'open_record', params: { type: 'approval_request', id: a.requestId } },
+    link: targetHref({ type: 'approval_request', id: a.requestId })!,
+    dedupeKey: `appr:${a.requestId}:${a.step}:${a.user}`,
+  });
+}
 
 export interface ApproverSpec {
   type: 'manager' | 'skip_level' | 'role' | 'user';
@@ -85,6 +130,7 @@ async function openStep(
   step: StepSpec,
   subjectEmployeeId: string | null,
   title: string,
+  subject: string,
 ) {
   const approvers = await resolveApprovers(tx, step.approver, subjectEmployeeId);
   const due = step.timeoutHours ? new Date(Date.now() + step.timeoutHours * 3_600_000) : null;
@@ -93,17 +139,8 @@ async function openStep(
     [requestId, index, approvers, due],
   );
   await tx.exec('UPDATE app.approval_requests SET current_step = $2 WHERE id = $1', [requestId, index]);
-  for (const user of approvers) {
-    await createTask(tx, {
-      source: 'approval',
-      sourceId: requestId,
-      title,
-      subjectEmployeeId,
-      assigneeUserId: user,
-      link: targetHref({ type: 'approval_request', id: requestId })!,
-      dedupeKey: `appr:${requestId}:${index}:${user}`,
-    });
-  }
+  for (const user of approvers)
+    await createApprovalTask(tx, { requestId, subject, title, subjectEmployeeId, user, step: index });
   await notify(tx, {
     userIds: approvers,
     kind: 'approval.requested',
@@ -138,6 +175,11 @@ export async function requestApproval(
   subjectEmployeeId: string | null,
   requestedBy: string | null,
   payload: Record<string, unknown>,
+  /**
+   * Who asked (ADR-0193): the person's employee record when they have no sign-in (it is otherwise taken
+   * from `requestedBy`), and whether an automation made the request ("The system" is shown only then).
+   */
+  asker: { employeeId?: string | null; via?: 'person' | 'automation' } = {},
 ): Promise<string | undefined> {
   const policies = await tx.query<{
     id: string;
@@ -153,10 +195,19 @@ export async function requestApproval(
   const steps = policy.steps.filter((s) => evaluate(s.condition, payload));
   if (!steps.length) return undefined;
   const req = await tx.one<{ id: string }>(
-    `INSERT INTO app.approval_requests (tenant_id, policy_id, subject, subject_employee_id, payload, requested_by) VALUES (app.current_tenant(), $1, $2, $3, $4, $5) RETURNING id`,
-    [policy.id, subject, subjectEmployeeId, JSON.stringify({ ...payload, __steps: steps }), requestedBy],
+    `INSERT INTO app.approval_requests (tenant_id, policy_id, subject, subject_employee_id, payload, requested_by, requested_by_employee_id, requested_via)
+     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, coalesce($6::uuid, (SELECT u.employee_id FROM app.users u WHERE u.id = $5::uuid)), $7) RETURNING id`,
+    [
+      policy.id,
+      subject,
+      subjectEmployeeId,
+      JSON.stringify({ ...payload, __steps: steps }),
+      requestedBy,
+      asker.employeeId ?? null,
+      asker.via ?? 'person',
+    ],
   );
-  await openStep(tx, req.id, 0, steps[0]!, subjectEmployeeId, policy.name);
+  await openStep(tx, req.id, 0, steps[0]!, subjectEmployeeId, policy.name, subject);
   return req.id;
 }
 
@@ -193,10 +244,13 @@ export async function decide(
     `UPDATE app.approval_steps SET status = $2, decided_by = $3, decided_at = now(), comment = $4 WHERE id = $1`,
     [step.id, decision === 'approve' ? 'approved' : 'rejected', userId, comment ?? null],
   );
-  await tx.exec(
-    `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE source = 'approval' AND source_id = $1 AND status = 'open'`,
-    [requestId, userId],
-  );
+  // the approvers' tasks for this step close with the decision (ADR-0192)
+  await completeTasksFor(tx, {
+    recordType: 'approval_request',
+    recordId: requestId,
+    by: userId,
+    reason: `approval.${decision}d`,
+  });
   await writeAudit(tx, {
     actorType: 'user',
     actorId: userId,
@@ -216,6 +270,7 @@ export async function decide(
       steps[req.current_step + 1]!,
       req.subject_employee_id,
       req.policy_name,
+      req.subject,
     );
   else status = 'approved';
   if (status !== 'pending') {
@@ -265,8 +320,9 @@ export async function escalateOverdue(tx: Tx, now: Date): Promise<number> {
     payload: { __steps: StepSpec[] };
     subject_employee_id: string | null;
     name: string;
+    subject: string;
   }>(
-    `SELECT s.id, s.request_id, s.step_index, s.approver_user_ids, r.payload, r.subject_employee_id, p.name
+    `SELECT s.id, s.request_id, s.step_index, s.approver_user_ids, r.payload, r.subject_employee_id, p.name, r.subject
        FROM app.approval_steps s JOIN app.approval_requests r ON r.tenant_id = s.tenant_id AND r.id = s.request_id
        JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
       WHERE s.status = 'pending' AND r.status = 'pending' AND s.due_at IS NOT NULL AND s.due_at < $1`,
@@ -290,14 +346,13 @@ export async function escalateOverdue(tx: Tx, now: Date): Promise<number> {
       diff: { step: s.step_index, added: extra.length },
     });
     for (const u of extra)
-      await createTask(tx, {
-        source: 'approval',
-        sourceId: s.request_id,
+      await createApprovalTask(tx, {
+        requestId: s.request_id,
+        subject: s.subject,
         title: s.name,
         subjectEmployeeId: s.subject_employee_id,
-        assigneeUserId: u,
-        link: targetHref({ type: 'approval_request', id: s.request_id })!,
-        dedupeKey: `appr:${s.request_id}:${s.step_index}:${u}`,
+        user: u,
+        step: s.step_index,
       });
     await notify(tx, {
       userIds: extra,
@@ -378,6 +433,12 @@ export function relatedTarget(
 
 export interface ApprovalDetail extends ApprovalView {
   requestedBy: { userId: string; name: string } | null;
+  /**
+   * Who asked (ADR-0193): a person (with their profile when they have an employee record), an automation
+   * rule, or — for requests stored before askers were recorded — not recorded. Never "the system" for a
+   * request a person made.
+   */
+  askedBy: { kind: 'person' | 'automation' | 'unrecorded'; name: string | null; employeeId: string | null };
   decidedAt: string | null;
   steps: Array<{
     index: number;
@@ -411,16 +472,21 @@ export async function approvalDetail(
     subject_name: string | null;
     requested_by: string | null;
     requester_name: string | null;
+    requested_by_employee_id: string | null;
+    asker_employee_name: string | null;
+    requested_via: string;
     created_at: string;
     decided_at: string | null;
     current_step: number;
     payload: Record<string, unknown>;
   }>(
     `SELECT r.id, r.subject, r.status, p.name AS policy, r.subject_employee_id, e.display_name AS subject_name, r.requested_by,
-            u.display_name AS requester_name, r.created_at, r.decided_at, r.current_step, r.payload
+            u.display_name AS requester_name, r.requested_by_employee_id, ae.display_name AS asker_employee_name, r.requested_via,
+            r.created_at, r.decided_at, r.current_step, r.payload
        FROM app.approval_requests r JOIN app.approval_policies p ON p.tenant_id = r.tenant_id AND p.id = r.policy_id
        LEFT JOIN app.employees e ON e.tenant_id = r.tenant_id AND e.id = r.subject_employee_id
        LEFT JOIN app.users u ON u.tenant_id = r.tenant_id AND u.id = r.requested_by
+       LEFT JOIN app.employees ae ON ae.tenant_id = r.tenant_id AND ae.id = r.requested_by_employee_id
       WHERE r.id = $1`,
     [id],
   );
@@ -462,6 +528,16 @@ export async function approvalDetail(
     currentStep: r.current_step,
     payload,
     requestedBy: r.requested_by ? { userId: r.requested_by, name: r.requester_name ?? '' } : null,
+    askedBy:
+      r.requested_via === 'automation'
+        ? { kind: 'automation', name: null, employeeId: null }
+        : r.requested_by_employee_id || r.requested_by
+          ? {
+              kind: 'person',
+              name: r.asker_employee_name ?? r.requester_name ?? null,
+              employeeId: r.requested_by_employee_id,
+            }
+          : { kind: 'unrecorded', name: null, employeeId: null },
     decidedAt: r.decided_at,
     steps: steps.map((s) => ({
       index: s.step_index,

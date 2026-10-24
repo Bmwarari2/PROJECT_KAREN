@@ -9080,8 +9080,28 @@ export interface paths {
                                 type: "role" | "manager" | "employee" | "user";
                                 value?: string;
                             };
+                            /** @description Calendar days from the workflow date (start, leaving or transfer date); used when `due` is absent */
                             dueOffsetDays: number;
+                            /** @description When the task is due (ADR-0193) */
+                            due?: {
+                                /** @description The workflow's own date, or the person's start date, leaving date or probation end date */
+                                anchor: "anchor" | "start" | "end" | "probation_end";
+                                offsetDays: number;
+                                businessDays?: boolean;
+                                /**
+                                 * @description The deadline comes from the jurisdiction pack
+                                 * @enum {string}
+                                 */
+                                packDeadline?: "i9_section2";
+                            };
                             reminderDaysBefore?: number;
+                            /** @description The task's main button (ADR-0191) */
+                            action?: {
+                                kind: string;
+                                params?: {
+                                    [key: string]: unknown;
+                                };
+                            };
                         }[];
                         autoStart?: boolean;
                         entityId?: string | null;
@@ -9128,6 +9148,136 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a workflow template's name, tasks, actions and due dates. Workflows already started keep their tasks. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        tasks: {
+                            key: string;
+                            title: string;
+                            description?: string;
+                            assignee: {
+                                type: "role" | "manager" | "employee" | "user";
+                                value?: string;
+                            };
+                            /** @description Calendar days from the workflow date (start, leaving or transfer date); used when `due` is absent */
+                            dueOffsetDays: number;
+                            /** @description When the task is due (ADR-0193) */
+                            due?: {
+                                /** @description The workflow's own date, or the person's start date, leaving date or probation end date */
+                                anchor: "anchor" | "start" | "end" | "probation_end";
+                                offsetDays: number;
+                                businessDays?: boolean;
+                                /**
+                                 * @description The deadline comes from the jurisdiction pack
+                                 * @enum {string}
+                                 */
+                                packDeadline?: "i9_section2";
+                            };
+                            reminderDaysBefore?: number;
+                            /** @description The task's main button (ADR-0191) */
+                            action?: {
+                                kind: string;
+                                params?: {
+                                    [key: string]: unknown;
+                                };
+                            };
+                        }[];
+                        autoStart?: boolean;
+                        entityId?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9267,6 +9417,16 @@ export interface paths {
                             link: string | null;
                             /** @description The page the task is about (its request, document or its own page) */
                             href: string;
+                            action: {
+                                /** @description The action kind the task asks for */
+                                kind: string;
+                                /** @description The kind whose page the button opens (its fallback until the kind lands) */
+                                opens: string;
+                                label: string;
+                                href: string;
+                                /** @description False while the kind's own page is not built and a fallback page opens */
+                                landed: boolean;
+                            } | null;
                         }[];
                     };
                 };
@@ -9331,6 +9491,31 @@ export interface paths {
                             } | null;
                             href: string;
                             canComplete: boolean;
+                            action: {
+                                /** @description The action kind the task asks for */
+                                kind: string;
+                                /** @description The kind whose page the button opens (its fallback until the kind lands) */
+                                opens: string;
+                                label: string;
+                                href: string;
+                                /** @description False while the kind's own page is not built and a fallback page opens */
+                                landed: boolean;
+                            } | null;
+                            recordStatus: {
+                                /** @description The live status of the record the task is linked to */
+                                text: string;
+                                tone: string;
+                            } | null;
+                            origin: {
+                                source: string;
+                                /** @description "Comes from": the real source of the task */
+                                label: string;
+                                href: string | null;
+                            };
+                            /** @description The task closes when its linked record is complete */
+                            closesItself: boolean;
+                            completedVia: string | null;
+                            completionNote: string | null;
                         };
                     };
                 };
@@ -9403,6 +9588,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Mark a task as done by hand, with a short note (audited). Tasks linked to a record close themselves when the record is complete; this is the fallback. */
         post: {
             parameters: {
                 query?: never;
@@ -9412,7 +9598,15 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            /** @description Optional */
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description What was done, or why the task is closed by hand. For a request to HR, the reply the person sees. */
+                        note?: string;
+                    };
+                };
+            };
             responses: {
                 /** @description Default Response */
                 200: {
@@ -9671,6 +9865,7 @@ export interface paths {
                             completedAt: string | null;
                             message: string;
                             completedByName: string | null;
+                            reply: string | null;
                         };
                     };
                 };
@@ -10137,6 +10332,12 @@ export interface paths {
                                 userId: string;
                                 name: string;
                             } | null;
+                            /** @description Who asked: a person, or an automation rule ("The system") */
+                            askedBy: {
+                                kind: "person" | "automation" | "unrecorded";
+                                name: string | null;
+                                employeeId: string | null;
+                            };
                             steps: {
                                 index: number;
                                 status: string;
@@ -10843,6 +11044,8 @@ export interface paths {
                             /** @enum {string} */
                             type: "task";
                             title: string;
+                            /** @description What the task asks, shown on its page */
+                            description?: string;
                             assignee: {
                                 type: "manager" | "role" | "user" | "employee";
                                 value?: string;

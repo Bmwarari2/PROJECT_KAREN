@@ -1,4 +1,5 @@
 import { addDays, compareDates } from '@thapsus/core/time';
+import type { DueRule, FormKind, TaskAction } from '@thapsus/core/task-actions';
 import {
   maybeCompleteInstance,
   startWorkflow,
@@ -11,18 +12,37 @@ const task = (
   title: string,
   assignee: WorkflowTaskDef['assignee'],
   dueOffsetDays: number,
-  reminderDaysBefore?: number,
+  extra: {
+    reminderDaysBefore?: number;
+    description: string;
+    action?: TaskAction;
+    due?: DueRule;
+  },
 ): WorkflowTaskDef => ({
   key,
   title,
+  description: extra.description,
   assignee,
   dueOffsetDays,
-  ...(reminderDaysBefore !== undefined ? { reminderDaysBefore } : {}),
+  ...(extra.due ? { due: extra.due } : {}),
+  ...(extra.reminderDaysBefore !== undefined ? { reminderDaysBefore: extra.reminderDaysBefore } : {}),
+  ...(extra.action ? { action: extra.action } : {}),
 });
 const HR = { type: 'role' as const, value: 'hr_admin' };
 const PAYROLL = { type: 'role' as const, value: 'payroll_admin' };
 const MANAGER = { type: 'manager' as const };
 const EMPLOYEE = { type: 'employee' as const };
+const form = (formKind: FormKind): TaskAction => ({ kind: 'form', params: { formKind } });
+const kind = (
+  k:
+    | 'rtw_check'
+    | 'i9_section1'
+    | 'i9_section2'
+    | 'payroll_starter'
+    | 'payroll_leaver'
+    | 'it_request'
+    | 'access_removal',
+): TaskAction => ({ kind: k, params: {} }) as TaskAction;
 
 /**
  * Onboarding, offboarding and transfer workflows: templates per entity and instances started by the
@@ -31,6 +51,9 @@ const EMPLOYEE = { type: 'employee' as const };
  */
 export async function seedWorkflows(ctx: SeedCtx) {
   const { tx, plan, ids, anchor } = ctx;
+  // the fictional company's own checklists: every task says what to do, opens the work for the person and,
+  // where the law sets the deadline (Form I-9 Section 2), takes it from the jurisdiction pack (ADR-0191, ADR-0193)
+  const statementUk = seedUuid('template', 'contract_uk');
   const templates = [
     {
       key: 'onboarding_uk',
@@ -38,14 +61,53 @@ export async function seedWorkflows(ctx: SeedCtx) {
       name: 'Onboarding (UK)',
       entity: ids.entity.uk,
       tasks: [
-        task('rtw', 'Check right to work before day one', HR, -3, 5),
-        task('contract', 'Send the statement of main terms', HR, -7, 3),
-        task('details', 'Complete your personal details and emergency contacts', EMPLOYEE, -2),
-        task('kit', 'Order laptop, phone or site access card', MANAGER, -5, 3),
-        task('payroll', 'Set up on payroll (starter checklist)', PAYROLL, 5),
-        task('buddy', 'Introduce a buddy and plan the first week', MANAGER, 0),
-        task('checkin', '30-day check-in', MANAGER, 30, 5),
-        task('probation', 'Probation review', MANAGER, 180, 14),
+        task('rtw', 'Check right to work before day one', HR, -3, {
+          reminderDaysBefore: 5,
+          action: kind('rtw_check'),
+          description:
+            'Before their first day, check that the new starter has the right to work in the UK and record the check on their compliance record. The method and the evidence it needs come from the UK rules; recording the check closes this task.',
+        }),
+        task('contract', 'Send the statement of main terms', HR, -7, {
+          reminderDaysBefore: 3,
+          action: { kind: 'send_document', params: { templateId: statementUk } },
+          description:
+            'Prepare the written statement of main terms from the UK template, check the job title, pay, hours, holiday and notice, then send it to the new starter to sign before they start.',
+        }),
+        task('details', 'Complete your personal details and emergency contacts', EMPLOYEE, -2, {
+          description:
+            'Check your name, address and contact details, and add at least one emergency contact, so HR and payroll have what they need before your first day.',
+        }),
+        task('kit', 'Order laptop, phone or site access card', MANAGER, -5, {
+          reminderDaysBefore: 3,
+          action: kind('it_request'),
+          description:
+            'Ask IT for what the new starter needs on day one: a laptop or phone, the accounts for their role and a site access card if they work on site.',
+        }),
+        task('payroll', 'Set up on payroll (starter checklist)', PAYROLL, 5, {
+          action: kind('payroll_starter'),
+          description:
+            'Give the payroll provider what it needs for the new starter: personal details, start date, pay and the tax and pension information they gave. Thapsus-HR does not run payroll; this hands the starter over to your provider.',
+        }),
+        task('buddy', 'Introduce a buddy and plan the first week', MANAGER, 0, {
+          action: form('first_week_plan'),
+          description:
+            'Pick a buddy from the team, introduce them, and plan the first week: who they meet, what they learn and what they will have done by Friday.',
+        }),
+        task('checkin', '30-day check-in', MANAGER, 30, {
+          reminderDaysBefore: 5,
+          action: form('check_in'),
+          due: { anchor: 'start', offsetDays: 30 },
+          description:
+            'A month in, ask how they are settling in, what is going well and what would help, and agree what to focus on next.',
+        }),
+        task('probation', 'Probation review', MANAGER, 180, {
+          reminderDaysBefore: 14,
+          action: form('probation_review'),
+          // the week before their probation period ends, whatever its length in their contract
+          due: { anchor: 'probation_end', offsetDays: -7 },
+          description:
+            'Review their probation in the week before it ends: their objectives, the evidence and feedback, and your recommendation to pass, extend or not pass. HR approves the outcome.',
+        }),
       ],
     },
     {
@@ -54,10 +116,26 @@ export async function seedWorkflows(ctx: SeedCtx) {
       name: 'Onboarding (Ireland)',
       entity: ids.entity.ie,
       tasks: [
-        task('contract', 'Send the written statement of terms', HR, -7),
-        task('details', 'Complete your personal details', EMPLOYEE, -2),
-        task('payroll', 'Register the employment with payroll', PAYROLL, 3),
-        task('checkin', '30-day check-in', MANAGER, 30),
+        task('contract', 'Send the written statement of terms', HR, -7, {
+          action: { kind: 'send_document', params: {} },
+          description:
+            'Prepare the written statement of terms of employment from your Irish template, check the details, and send it to the new starter to sign.',
+        }),
+        task('details', 'Complete your personal details', EMPLOYEE, -2, {
+          description:
+            'Check your name, address and contact details so HR and payroll have what they need before your first day.',
+        }),
+        task('payroll', 'Register the employment with payroll', PAYROLL, 3, {
+          action: kind('payroll_starter'),
+          description:
+            'Give the payroll provider what it needs to register the new employment: personal details, start date, pay and the tax details they gave. Thapsus-HR does not run payroll.',
+        }),
+        task('checkin', '30-day check-in', MANAGER, 30, {
+          action: form('check_in'),
+          due: { anchor: 'start', offsetDays: 30 },
+          description:
+            'A month in, ask how they are settling in, what is going well and what would help, and agree what to focus on next.',
+        }),
       ],
     },
     {
@@ -66,11 +144,35 @@ export async function seedWorkflows(ctx: SeedCtx) {
       name: 'Onboarding (US)',
       entity: ids.entity.us,
       tasks: [
-        task('i9s1', 'Complete Form I-9 Section 1', EMPLOYEE, 0, 2),
-        task('i9s2', 'Complete Form I-9 Section 2 (within three business days)', HR, 3, 1),
-        task('w4', 'Submit federal and state tax withholding forms', EMPLOYEE, 0),
-        task('payroll', 'Add to the US payroll', PAYROLL, 2),
-        task('checkin', '30-day check-in', MANAGER, 30),
+        task('i9s1', 'Complete Form I-9 Section 1', EMPLOYEE, 0, {
+          reminderDaysBefore: 2,
+          action: kind('i9_section1'),
+          description:
+            'Fill in Section 1 of Form I-9 (Employment Eligibility Verification) no later than your first day of work. HR then checks your documents for Section 2.',
+        }),
+        task('i9s2', 'Complete Form I-9 Section 2', HR, 0, {
+          reminderDaysBefore: 1,
+          action: kind('i9_section2'),
+          // the deadline is the US pack's (business days after the first day), never a number written here
+          due: { anchor: 'start', offsetDays: 0, packDeadline: 'i9_section2' },
+          description:
+            "Examine the employee's documents and complete Section 2 of Form I-9. The due date is the deadline in the US rules, counted in business days from the first day of work.",
+        }),
+        task('w4', 'Submit federal and state tax withholding forms', EMPLOYEE, 0, {
+          description:
+            'Fill in your federal Form W-4 and any state withholding form, so the payroll provider withholds the right tax from your first paycheck.',
+        }),
+        task('payroll', 'Add to the US payroll', PAYROLL, 2, {
+          action: kind('payroll_starter'),
+          description:
+            'Give the payroll provider what it needs for the new hire: personal details, start date, pay and their withholding forms. Thapsus-HR does not run payroll.',
+        }),
+        task('checkin', '30-day check-in', MANAGER, 30, {
+          action: form('check_in'),
+          due: { anchor: 'start', offsetDays: 30 },
+          description:
+            'A month in, ask how they are settling in, what is going well and what would help, and agree what to focus on next.',
+        }),
       ],
     },
     {
@@ -79,10 +181,26 @@ export async function seedWorkflows(ctx: SeedCtx) {
       name: 'Offboarding',
       entity: null,
       tasks: [
-        task('exit', 'Hold an exit interview', HR, -5),
-        task('handover', 'Agree a handover plan', MANAGER, -10),
-        task('final_pay', 'Calculate final pay and holiday pay owed', PAYROLL, -3),
-        task('access', 'Remove system and building access', HR, 0),
+        task('exit', 'Hold an exit interview', HR, -5, {
+          action: form('exit_interview'),
+          description:
+            'Offer the leaver an exit interview before their last day and record what they tell you. They may decline; the answers are seen only by HR.',
+        }),
+        task('handover', 'Agree a handover plan', MANAGER, -10, {
+          action: form('handover'),
+          description:
+            'Agree with the leaver what they hand over, to whom and by when, so nothing is lost when they go.',
+        }),
+        task('final_pay', 'Send the leaver summary to payroll', PAYROLL, -3, {
+          action: kind('payroll_leaver'),
+          description:
+            'Send the payroll provider what it needs for the final pay: the last day, notice dates, holiday owed or taken in advance, unpaid absence and late pay changes. The provider works out the final pay.',
+        }),
+        task('access', 'Remove system and building access', HR, 0, {
+          action: kind('access_removal'),
+          description:
+            "On their last day, end the leaver's access to company systems and buildings, collect their equipment, and note anything done by hand.",
+        }),
       ],
     },
     {
@@ -91,8 +209,16 @@ export async function seedWorkflows(ctx: SeedCtx) {
       name: 'Internal transfer',
       entity: null,
       tasks: [
-        task('handover', 'Hand over current work', MANAGER, -5),
-        task('welcome', 'Welcome to the new team', MANAGER, 0),
+        task('handover', 'Hand over current work', MANAGER, -5, {
+          action: form('handover'),
+          description:
+            'Before the move, agree what they hand over in their current team, to whom and by when.',
+        }),
+        task('welcome', 'Welcome to the new team', MANAGER, 0, {
+          action: form('transfer_welcome'),
+          description:
+            'On their first day in the new team, introduce them, explain how the team works and plan their first weeks.',
+        }),
       ],
     },
   ];
@@ -122,6 +248,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
       ids.employee[p.idx]!,
       p.startDate,
       ids.user.hr_admin,
+      { book: ctx.book },
     );
     if (!id) continue;
     started++;
@@ -156,6 +283,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
       ids.employee[done.idx]!,
       done.startDate,
       ids.user.hr_admin,
+      { book: ctx.book },
     );
     if (id) {
       await tx.exec(
@@ -178,6 +306,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
       ids.employee[p.idx]!,
       p.endDate!,
       ids.user.hr_admin,
+      { book: ctx.book },
     );
     if (id) started++;
   }
@@ -190,6 +319,7 @@ export async function seedWorkflows(ctx: SeedCtx) {
       ids.employee[transfer.personIdx]!,
       transfer.effectiveDate,
       ids.user.hr_admin,
+      { book: ctx.book },
     );
     if (id) started++;
   }

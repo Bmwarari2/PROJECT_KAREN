@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { can, canSome } from '@thapsus/core/permissions';
-import { isLocale, t } from '@thapsus/core/i18n';
 import { compareDates } from '@thapsus/core/time';
 import type { Tx } from '@thapsus/db';
 import { requireAuth } from '../../http/context';
@@ -9,7 +8,8 @@ import { ApiError } from '../../http/errors';
 import { CivilDate, Nullable, Problem, Uuid } from '../../http/schemas';
 import { createTask, notify, userForEmployee } from '../../lib/notify';
 import { loadTarget } from '../employees/service';
-import { maybeCompleteInstance, workflowStartHooks } from '../workflows/service';
+import { workflowStartHooks } from '../workflows/service';
+import { completeTasksFor } from '../tasks/completion';
 
 /**
  * Asset register (PROGRESS 6.5): assets with purchase cost in integer minor units, assignment to an
@@ -248,12 +248,6 @@ function need(req: FastifyRequest, action: string) {
   if (!canSome(auth.principal, action)) throw new ApiError('forbidden');
   return auth;
 }
-async function tenantLocale(tx: Tx) {
-  const l = (await tx.one<{ default_locale: string }>('SELECT default_locale FROM app.tenants'))
-    .default_locale;
-  return isLocale(l) ? l : 'en-GB';
-}
-
 export async function assetRoutes(app: FastifyInstance) {
   const deps = app.deps;
 
@@ -508,13 +502,17 @@ export async function assetRoutes(app: FastifyInstance) {
         await tx.exec(`UPDATE app.assets SET status = 'assigned' WHERE id = $1`, [a.id]);
         const user = await userForEmployee(tx, b.employeeId);
         if (user) {
-          const locale = await tenantLocale(tx);
           const taskId = await createTask(tx, {
-            source: 'manual',
+            source: 'asset',
             sourceId: s.id,
-            title: t(locale, 'assets.ackTaskTitle', { asset: a.name }),
+            titleKey: 'assets.ackTaskTitle',
+            descriptionKey: 'taskActions.text.asset.acknowledge',
+            textParams: { asset: a.name },
             subjectEmployeeId: b.employeeId,
             assigneeUserId: user,
+            // the holder's own view of the handover; acknowledging closes the task (ADR-0192)
+            action: { kind: 'open_record', params: { type: 'asset_assignment', id: s.id } },
+            record: { type: 'asset_acknowledgement', id: s.id },
             link: `/app/assets?ack=${s.id}`,
             dedupeKey: `asset-ack:${s.id}`,
           });
@@ -578,11 +576,13 @@ export async function assetRoutes(app: FastifyInstance) {
           `UPDATE app.asset_assignments SET acknowledged_at = $2, acknowledged_by = $3, acknowledged_ip = $4, acknowledged_user_agent = $5, acknowledgement_statement = $6 WHERE id = $1`,
           [id, at, auth.userId, req.ctx.ip, req.ctx.userAgent?.slice(0, 512) ?? null, ACK_STATEMENT],
         );
-        if (s.acknowledgement_task_id)
-          await tx.exec(
-            `UPDATE app.tasks SET status = 'done', completed_at = $2, completed_by = $3 WHERE id = $1 AND status = 'open'`,
-            [s.acknowledgement_task_id, at, auth.userId],
-          );
+        await completeTasksFor(tx, {
+          recordType: 'asset_acknowledgement',
+          recordId: id,
+          by: auth.userId,
+          reason: 'asset.acknowledged',
+          at,
+        });
         await app.audit(tx, req, {
           action: 'asset.acknowledged',
           targetType: 'asset_assignment',
@@ -655,17 +655,23 @@ export async function assetRoutes(app: FastifyInstance) {
           s.asset_id,
           outcome === 'lost' ? 'lost' : (b.assetStatus ?? 'in_stock'),
         ]);
-        if (s.return_task_id) {
-          const task = await tx.maybe<{ source: string; source_id: string | null }>(
-            `UPDATE app.tasks SET status = 'done', completed_at = $2, completed_by = $3 WHERE id = $1 AND status = 'open' RETURNING source, source_id`,
-            [s.return_task_id, at, auth.userId],
-          );
-          if (task?.source === 'workflow' && task.source_id) await maybeCompleteInstance(tx, task.source_id);
-        }
-        if (s.acknowledgement_task_id)
-          await tx.exec(`UPDATE app.tasks SET status = 'cancelled' WHERE id = $1 AND status = 'open'`, [
-            s.acknowledgement_task_id,
-          ]);
+        // the return task closes (and its offboarding workflow when it was the last step); an
+        // acknowledgement still waiting is no longer needed (ADR-0192)
+        await completeTasksFor(tx, {
+          recordType: 'asset_return',
+          recordId: id,
+          by: auth.userId,
+          reason: outcome === 'lost' ? 'asset.lost' : 'asset.returned',
+          at,
+        });
+        await completeTasksFor(tx, {
+          recordType: 'asset_acknowledgement',
+          recordId: id,
+          by: auth.userId,
+          reason: outcome === 'lost' ? 'asset.lost' : 'asset.returned',
+          status: 'cancelled',
+          at,
+        });
         await app.audit(tx, req, {
           action: outcome === 'lost' ? 'asset.lost' : 'asset.returned',
           targetType: 'asset_assignment',
@@ -755,19 +761,22 @@ workflowStartHooks.push(async (tx, inst) => {
     [inst.employeeId],
   );
   if (!active.length) return;
-  const settings = await tx.one<{ assets: { returnAssigneeRole?: string } | null; default_locale: string }>(
-    `SELECT features->'assets' AS assets, default_locale FROM app.tenants`,
+  const settings = await tx.one<{ assets: { returnAssigneeRole?: string } | null }>(
+    `SELECT features->'assets' AS assets FROM app.tenants`,
   );
-  const locale = isLocale(settings.default_locale) ? settings.default_locale : 'en-GB';
   const role = settings.assets?.returnAssigneeRole ?? 'hr_admin';
   for (const s of active) {
     const taskId = await createTask(tx, {
       source: 'workflow',
       sourceId: inst.id,
-      title: t(locale, 'assets.returnTaskTitle', { asset: s.name, tag: s.asset_tag }),
+      titleKey: 'assets.returnTaskTitle',
+      descriptionKey: 'taskActions.text.asset.return',
+      textParams: { asset: s.name, tag: s.asset_tag },
       subjectEmployeeId: inst.employeeId,
       assigneeRole: role,
       dueOn: inst.anchorDate,
+      // the register's return checklist for this assignment; recording the return closes the task
+      action: { kind: 'open_record', params: { type: 'asset_return', id: s.id } },
       link: `/app/assets?return=${s.id}`,
       dedupeKey: `asset-return:${s.id}`,
     });

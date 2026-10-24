@@ -387,6 +387,52 @@ describe('staging seed', () => {
     expect((await get(owner, '/v1/employees?limit=200')).json().data.length).toBe(200);
   });
 
+  it('seeds tasks that explain themselves, name their source and asker, and follow the packs (ADR-0191 to ADR-0193)', async () => {
+    const tasks = await tx((t) =>
+      t.query<{ source: string; description: string | null; title: string; action_kind: string | null }>(
+        `SELECT source, description, title, action_kind FROM app.tasks`,
+      ),
+    );
+    expect(tasks.length).toBeGreaterThan(20);
+    // every task the seed made says what to do (requests to HR carry the person's own message)
+    expect(tasks.filter((k) => !k.description?.trim()).map((k) => `${k.source}: ${k.title}`)).toEqual([]);
+    // the return-to-work conversation comes from Absence; nothing claims to be a hand-made task
+    expect(tasks.filter((k) => k.source === 'manual')).toEqual([]);
+    if (tasks.some((k) => k.title.startsWith('Return-to-work conversation')))
+      expect(
+        tasks.filter((k) => k.title.startsWith('Return-to-work conversation')).map((k) => k.source),
+      ).toEqual(expect.arrayContaining(['absence']));
+    // every seeded workflow template task explains itself; most open the work
+    const templates = await tx((t) =>
+      t.query<{
+        name: string;
+        tasks: Array<{ title: string; description?: string; action?: { kind: string } }>;
+      }>('SELECT name, tasks FROM app.workflow_templates'),
+    );
+    for (const tpl of templates)
+      for (const k of tpl.tasks) expect(k.description?.trim(), `${tpl.name}: ${k.title}`).toBeTruthy();
+    expect(templates.flatMap((tpl) => tpl.tasks).filter((k) => k.action).length).toBeGreaterThan(15);
+    // the US Form I-9 Section 2 tasks are due on the US pack's deadline (business days), never on a weekend
+    const i9 = await tx((t) =>
+      t.query<{ due_on: string; start_date: string; dow: number }>(
+        `SELECT k.due_on::text, e.start_date::text, extract(isodow FROM k.due_on)::int AS dow FROM app.tasks k
+           JOIN app.employees e ON e.tenant_id = k.tenant_id AND e.id = k.subject_employee_id
+          WHERE k.action_kind = 'i9_section2' AND k.due_on IS NOT NULL`,
+      ),
+    );
+    for (const r of i9) {
+      expect(r.dow, `${r.start_date} → ${r.due_on}`).toBeLessThan(6);
+      expect(r.due_on > r.start_date).toBe(true);
+    }
+    // every seeded approval names who asked
+    const unasked = await tx((t) =>
+      t.query(
+        `SELECT id FROM app.approval_requests WHERE requested_by IS NULL AND requested_by_employee_id IS NULL AND requested_via = 'person'`,
+      ),
+    );
+    expect(unasked).toEqual([]);
+  });
+
   it('keeps every booked annual leave within the employee’s balance (leave engine, packs)', async () => {
     const book = rules();
     const asOf = today('Europe/London');

@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { matchesMagic } from '../../lib/file-types';
+import type { Tx } from '@thapsus/db';
 import { Type } from 'typebox';
 import { can } from '@thapsus/core/permissions';
 import { instantToDate } from '@thapsus/core/time';
@@ -30,6 +31,7 @@ import {
 } from './service';
 import { loadTarget, scopePredicate } from '../employees/service';
 import { i9Statuses, rtwStatuses } from './status';
+import { completeTasksFor } from '../tasks/completion';
 
 const Source = Type.Object({ url: Type.String(), title: Type.String() });
 const RtwRow = Type.Object({
@@ -79,6 +81,25 @@ const I9Row = Type.Object({
 const EVIDENCE_TYPES = ['application/pdf', 'image/png', 'image/jpeg'];
 
 /** UK right-to-work checks and US Form I-9 records. Documents, share codes and attestations live only in the vault (category immigration). */
+/**
+ * Form I-9 tasks close themselves (ADR-0192): Section 1 and Section 2 tasks when the record says those
+ * sections are complete, reverification tasks when Supplement B is completed.
+ */
+async function closeI9Tasks(tx: Tx, recordId: string, employeeId: string, by: string) {
+  const r = await tx.one<{ s1: boolean; s2: boolean; sb: boolean }>(
+    `SELECT section1_completed_on IS NOT NULL AS s1, section2_completed_on IS NOT NULL AS s2,
+            supplement_b_completed_on IS NOT NULL AS sb FROM app.i9_records WHERE id = $1`,
+    [recordId],
+  );
+  const done = [
+    ...(r.s1 ? (['i9_section1'] as const) : []),
+    ...(r.s2 ? (['i9_section2'] as const) : []),
+    ...(r.sb ? (['i9_reverify'] as const) : []),
+  ];
+  for (const recordType of done)
+    await completeTasksFor(tx, { recordType, recordId: employeeId, by, reason: 'compliance.i9_recorded' });
+}
+
 export async function immigrationRoutes(app: FastifyInstance) {
   const deps = app.deps;
   const vault = new Vault(deps.keys);
@@ -304,12 +325,21 @@ export async function immigrationRoutes(app: FastifyInstance) {
           `UPDATE app.rtw_checks SET superseded_by = $2 WHERE employee_id = $1 AND superseded_by IS NULL AND id <> $2 RETURNING id`,
           [e.id, row.id],
         );
-        // a new check closes the follow-up tasks raised for the checks it replaces
+        // a new check closes the follow-up tasks of the checks it replaces, and any task asking for a
+        // check of this person (the missing-check reminder, an onboarding step), ADR-0192
         for (const p of previous)
-          await tx.exec(
-            `UPDATE app.tasks SET status = 'done', completed_at = now(), completed_by = $2 WHERE dedupe_key LIKE $1 AND status = 'open'`,
-            [`rtwcheck:${p.id}:%`, auth.userId],
-          );
+          await completeTasksFor(tx, {
+            recordType: 'rtw_check',
+            recordId: p.id,
+            by: auth.userId,
+            reason: 'compliance.rtw_check_recorded',
+          });
+        await completeTasksFor(tx, {
+          recordType: 'right_to_work',
+          recordId: e.id,
+          by: auth.userId,
+          reason: 'compliance.rtw_check_recorded',
+        });
         if (b.documentType || b.documentReference || b.shareCode) {
           const vid = await vault.put(
             tx,
@@ -680,6 +710,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
             `i9_attestation:${row.id}`,
             b.citizenshipAttestation,
           );
+        await closeI9Tasks(tx, row.id, e.id, auth.userId);
         await app.audit(tx, req, {
           action: 'compliance.i9_recorded',
           targetType: 'employee',
@@ -781,6 +812,7 @@ export async function immigrationRoutes(app: FastifyInstance) {
             `i9_attestation:${id}`,
             b.citizenshipAttestation,
           );
+        await closeI9Tasks(tx, id, e.id, auth.userId);
         await app.audit(tx, req, {
           action: 'compliance.i9_updated',
           targetType: 'employee',

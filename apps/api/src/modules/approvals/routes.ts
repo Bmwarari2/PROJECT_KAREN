@@ -259,6 +259,18 @@ export async function approvalRoutes(app: FastifyInstance) {
             currentStep: Type.Integer(),
             payload: Type.Any(),
             requestedBy: Nullable(Type.Object({ userId: Uuid, name: Type.String() })),
+            askedBy: Type.Object(
+              {
+                kind: Type.Union([
+                  Type.Literal('person'),
+                  Type.Literal('automation'),
+                  Type.Literal('unrecorded'),
+                ]),
+                name: Nullable(Type.String()),
+                employeeId: Nullable(Uuid),
+              },
+              { description: 'Who asked: a person, or an automation rule ("The system")' },
+            ),
             steps: Type.Array(
               Type.Object({
                 index: Type.Integer(),
