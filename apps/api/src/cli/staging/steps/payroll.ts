@@ -345,7 +345,8 @@ export async function seedPayroll(ctx: SeedCtx) {
           end: sp.end,
           payDate: sp.pay,
           frequency: sp.frequency,
-          ...(currency === 'GBP' ? { number: `Month ${monthsBetween(ty.start, sp.start) + 1}` } : {}),
+          // the tax month the pay date falls in (tax month 1 starts on the tax year's first day)
+          ...(currency === 'GBP' ? { number: `Month ${monthsBetween(ty.start, sp.pay) + 1}` } : {}),
           taxYear: ty.label,
         },
         payments: paymentsFor(p, sp),
