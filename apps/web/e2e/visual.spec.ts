@@ -49,7 +49,6 @@ const NOT_CAPTURED: Array<[match: (r: string) => boolean, reason: string]> = [
         '/app/documents/[id]',
         '/app/payroll/periods/[id]',
         '/app/payslips/[id]',
-        '/app/tasks/[id]',
         '/app/time-off/[id]',
         '/app/timesheets/[id]',
       ].includes(r),
@@ -229,8 +228,38 @@ test('app screens', async ({ page }, testInfo) => {
     '/app/settings/users/[id]': `/app/settings/users/${session.userId}`,
   };
   for (const route of APP) {
+    // the task page (ADR-0191): a checklist task about Ada with a description and a main button, made just
+    // before its screen so the screens captured earlier (home, lists, settings) keep their baselines
+    if (route === '/app/tasks/[id]') {
+      const tpl = await apiCall<{ id: string }>(page.request, 'POST', '/v1/workflow-templates', {
+        kind: 'custom',
+        name: 'Fictional review',
+        tasks: [
+          {
+            key: 'records',
+            title: 'Check the compliance record',
+            description: 'Look over the compliance record before the review meeting. Fictional.',
+            assignee: { type: 'role', value: 'hr_admin' },
+            dueOffsetDays: 5,
+            action: { kind: 'open_person', params: { tab: 'compliance' } },
+          },
+        ],
+      });
+      await apiCall(page.request, 'POST', '/v1/workflows', {
+        templateId: tpl.id,
+        employeeId: employee.id,
+        anchorDate: '2026-03-09',
+      });
+      const tasks = await apiCall<Array<{ id: string; title: string }>>(page.request, 'GET', '/v1/tasks');
+      concrete[route] = `/app/tasks/${tasks.find((x) => x.title === 'Check the compliance record')!.id}`;
+    }
     const path = route.includes('[') ? concrete[route] : route;
     expect(path, `no fictional record opens ${route}`).toBeTruthy();
     await capture(page, route, path);
+    // closed again, so the Inbox count on the screens after it stays as it was
+    if (route === '/app/tasks/[id]')
+      await apiCall(page.request, 'POST', `/v1/tasks/${path!.split('/').pop()}/complete`, {
+        note: 'Fictional fixture closed after its screenshot.',
+      });
   }
 });

@@ -58,6 +58,8 @@ const ALL_PAGES = [
   { path: '/app/payslips', label: 'Payslips (signed in)', auth: true, records: true },
   { path: '/app/payslips/:payslip', label: 'Payslip (signed in)', auth: true, records: true },
   { path: '/app/documents/:document', label: 'Document viewer (signed in)', auth: true, records: true },
+  // A task with a description, a main button and the live status of its record (ADR-0191)
+  { path: '/app/tasks/:task', label: 'Task (signed in)', auth: true, records: true },
   // The founder's console home (ADR-0175), as a support staff member (no elevation needed to read it).
   { path: '/backoffice', label: 'Back office home (staff)', staff: true },
 ];
@@ -284,7 +286,16 @@ async function records(cookie) {
   );
   const batch = await call('POST', '/v1/payslips/batches', batchForm);
   await call('POST', `/v1/payslips/batches/${batch.id}/publish`);
-  return { ':payslip': batch.items[0].id, ':document': document.id };
+  // a laptop handed to Lee: a task from the asset register to confirm receipt (ADR-0191)
+  const laptop = await call('POST', '/v1/assets', {
+    assetTag: 'LH-0001',
+    type: 'laptop',
+    name: 'Fictional Book 14',
+  });
+  await call('POST', `/v1/assets/${laptop.id}/assign`, { employeeId: employee.id, assignedOn: '2026-10-01' });
+  const tasks = await call('GET', '/v1/tasks');
+  const task = tasks.find((t) => t.title.includes('Fictional Book 14'));
+  return { ':payslip': batch.items[0].id, ':document': document.id, ':task': task.id };
 }
 
 /** A support staff member's session: the operator CLI's enrolment link, then a passkey registration. */
