@@ -457,11 +457,7 @@ export default function NewDocumentPage() {
               <Field id="send-due" label={t('docSend.dueOn')} hint={t('admin.optional')}>
                 {(p) => <Input {...p} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />}
               </Field>
-              <Field
-                id="send-message"
-                label={t('docSend.message')}
-                hint={t('docSend.messageHint', { name })}
-              >
+              <Field id="send-message" label={t('docSend.message')} hint={t('docSend.messageHint', { name })}>
                 {(p) => (
                   <Textarea
                     {...p}
