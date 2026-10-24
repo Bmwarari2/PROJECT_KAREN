@@ -171,7 +171,8 @@ export default function RightToWorkPage() {
                       '—'
                     )}
                   </TD>
-                  <TD phone="inline" label={t('compliance.rtw.followUp')}>
+                  {/* its own labelled line on phones, and left out there when there is none */}
+                  <TD phone={r.followUpDueOn ? undefined : 'hide'} label={t('compliance.rtw.followUp')}>
                     {d(r.followUpDueOn)}
                   </TD>
                   <TD phone="hide">{d(r.retainUntil)}</TD>

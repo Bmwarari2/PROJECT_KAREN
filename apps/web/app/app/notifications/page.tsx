@@ -238,7 +238,7 @@ function Preferences() {
             return (
               <TR key={c}>
                 <TD>{name}</TD>
-                <TD className="text-center">
+                <TD className="text-center" label={t('ess.notifications.email')}>
                   <input
                     type="checkbox"
                     className={box}
@@ -248,7 +248,7 @@ function Preferences() {
                     onChange={(e) => save({ categories: { [c]: { email: e.target.checked } } })}
                   />
                 </TD>
-                <TD className="text-center">
+                <TD className="text-center" label={t('ess.notifications.push')}>
                   <input
                     type="checkbox"
                     className={box}

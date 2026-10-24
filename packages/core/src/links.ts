@@ -61,7 +61,7 @@ const ROUTES: Record<TargetType, (id: string) => string> = {
   payslip: () => '/app/payslips',
   law_change: () => '/app/compliance/law-changes',
   // the asker's view of a request to their HR team (HR open the task itself)
-  hr_request: (id) => `/app/contact-hr?request=${id}`,
+  hr_request: (id) => `/app/contact-hr/${id}`,
 };
 
 export function isTargetType(v: unknown): v is TargetType {

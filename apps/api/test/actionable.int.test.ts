@@ -345,8 +345,20 @@ describe('Contact HR (ADR-0163)', () => {
     expect(mine[0]).toMatchObject({ id, status: 'done' });
     const adaNotes = (await w.api('GET', '/v1/me/notifications', undefined, ada.cookie)).json().data;
     expect(adaNotes.find((n: { kind: string }) => n.kind === 'task.hr_request_done')).toMatchObject({
-      href: `/app/contact-hr?request=${id}`,
+      href: `/app/contact-hr/${id}`,
     });
+    // the request's own page: what they asked, and who closed it
+    const own = await w.api('GET', `/v1/hr-requests/${id}`, undefined, ada.cookie);
+    expect(own.statusCode, own.body).toBe(200);
+    expect(own.json()).toMatchObject({
+      id,
+      subject: 'Fictional question about my contract',
+      message: 'Fictional details only.',
+      status: 'done',
+    });
+    expect(own.json().completedByName).toBeTruthy();
+    // someone else's request reads as missing, even to a manager
+    expect((await w.api('GET', `/v1/hr-requests/${id}`, undefined, mona.cookie)).statusCode).toBe(404);
   });
 
   it('employees and managers contact HR, not Thapsus-HR support', async () => {

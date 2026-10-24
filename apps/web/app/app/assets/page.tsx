@@ -372,8 +372,8 @@ export default function AssetsPage() {
           <Table dense scrollLabel={t('assets.register')}>
             <THead>
               <tr>
-                <TH>{t('assets.tag')}</TH>
                 <TH>{t('assets.name')}</TH>
+                <TH>{t('assets.tag')}</TH>
                 <TH>{t('assets.type')}</TH>
                 <TH className="text-right">{t('assets.cost')}</TH>
                 <TH>{t('common.status')}</TH>
@@ -386,12 +386,15 @@ export default function AssetsPage() {
             <tbody>
               {shown.map((a) => (
                 <TR key={a.id}>
-                  <TD className="font-mono text-footnote">{a.assetTag}</TD>
+                  {/* the name first: on phones it is the row's title and the whole row opens the asset */}
                   <TD>
                     <EntityLink href={`/app/assets/${a.id}`}>{a.name}</EntityLink>
                   </TD>
-                  <TD>{t(`assets.types.${a.type}`)}</TD>
-                  <TD className="text-right">
+                  <TD className="font-mono text-footnote" phone="inline">
+                    {a.assetTag}
+                  </TD>
+                  <TD phone="inline">{t(`assets.types.${a.type}`)}</TD>
+                  <TD className="text-right" phone="inline">
                     {a.costMinor !== null && a.currency
                       ? formatMoney(money(BigInt(a.costMinor), a.currency), locale)
                       : ''}
@@ -403,7 +406,7 @@ export default function AssetsPage() {
                   </TD>
                   <TD>
                     {a.holder ? (
-                      <span>
+                      <span className="relative z-10">
                         <PersonLink id={a.holder.employeeId} name={a.holder.employeeName} />
                         <span className="block text-footnote text-text-secondary">
                           {a.holder.acknowledgedAt ? t('assets.signedFor') : t('assets.awaitingSignOff')}

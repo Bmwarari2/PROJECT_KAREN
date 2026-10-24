@@ -19,6 +19,7 @@ import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { viewerZone } from '@/lib/week';
+import { IntentLink } from '@/components/intent-link';
 import { PageIntro, useInModule } from '@/components/module-page';
 import { useSession } from '../shell';
 
@@ -35,7 +36,7 @@ const tone = { open: 'warning', done: 'success', cancelled: 'neutral' } as const
 /**
  * Contact HR (ADR-0163): employees and managers ask their own HR team. The request lands as a task in
  * the HR admins' inbox with the person's name on it; its status shows here, and a notification says
- * when it is done (`?request=<id>` marks that one).
+ * when it is done. Each request opens its own page.
  */
 export default function ContactHrPage() {
   const t = useT();
@@ -48,8 +49,6 @@ export default function ContactHrPage() {
   const [subject, setSubject] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [busy, setBusy] = React.useState(false);
-  const [focus, setFocus] = React.useState<string | null>(null);
-  React.useEffect(() => setFocus(new URLSearchParams(window.location.search).get('request')), []);
 
   if (session && !session.employeeId)
     return (
@@ -118,15 +117,16 @@ export default function ContactHrPage() {
             mine.data.map((r) => (
               <ListItem
                 key={r.id}
+                href={`/app/contact-hr/${r.id}`}
+                linkAs={IntentLink}
                 leading={<MessageSquare aria-hidden />}
                 title={r.subject}
-                unread={focus === r.id}
                 subtitle={
                   r.completedAt
                     ? t('actionable.hr.doneOn', { date: formatDateTime(r.completedAt, locale, zone) })
                     : t('actionable.hr.sentOn', { date: formatDateTime(r.createdAt, locale, zone) })
                 }
-                accessory={<Badge tone={tone[r.status]}>{t(`actionable.hr.status.${r.status}`)}</Badge>}
+                meta={<Badge tone={tone[r.status]}>{t(`actionable.hr.status.${r.status}`)}</Badge>}
               />
             ))
           ) : (

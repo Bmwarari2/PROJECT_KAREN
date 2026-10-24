@@ -169,7 +169,8 @@ export default function TasksPage() {
                 title={task.title}
                 subtitle={
                   <>
-                    {task.subjectName ? (
+                    {/* a task about the viewer does not repeat their own name */}
+                    {task.subjectName && task.subjectEmployeeId !== session?.employeeId ? (
                       <>
                         {/* above the row's link, so the name opens the person's profile */}
                         <PersonLink

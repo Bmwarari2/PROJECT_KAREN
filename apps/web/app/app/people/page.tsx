@@ -556,6 +556,14 @@ export default function PeoplePage() {
                               {r.employeeNumber}
                             </span>
                           ) : null}
+                          {/* phones: the status under the text, in line with the name (not under the avatar) */}
+                          {r.status ? (
+                            <span className="mt-1 sm:hidden">
+                              <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
+                                {t(`people.status.${r.status}`)}
+                              </Badge>
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </TD>
@@ -571,7 +579,7 @@ export default function PeoplePage() {
                     <TD phone="hide" className="hidden text-text-secondary xl:table-cell">
                       {r.startDate ? formatDate(r.startDate, locale) : null}
                     </TD>
-                    <TD>
+                    <TD phone="hide">
                       {r.status ? (
                         <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
                           {t(`people.status.${r.status}`)}

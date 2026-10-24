@@ -59,6 +59,12 @@ export async function raiseHrRequest(
   return id;
 }
 
+const HrRequestDetail = Type.Object({
+  ...HrRequest.properties,
+  message: Type.String(),
+  completedByName: Nullable(Type.String()),
+});
+
 export async function hrRequestRoutes(app: FastifyInstance) {
   app.post(
     '/v1/hr-requests',
@@ -141,6 +147,55 @@ export async function hrRequestRoutes(app: FastifyInstance) {
         createdAt: r.created_at,
         completedAt: r.completed_at,
       }));
+    },
+  );
+
+  app.get(
+    '/v1/hr-requests/:id',
+    {
+      schema: {
+        tags: ['tasks'],
+        summary: 'One of my questions or requests to HR: what I asked, its status and when it was done',
+        params: Type.Object({ id: Uuid }),
+        response: { 200: HrRequestDetail, 403: Problem, 404: Problem },
+      },
+    },
+    async (req) => {
+      const auth = authorizeSome(req, 'hr.contact');
+      const me = auth.principal.employeeId;
+      const { id } = req.params as { id: string };
+      // only the person who asked: anyone else's request reads as missing
+      if (!me) throw new ApiError('notFound');
+      const r = await app.tenantTx(
+        req,
+        (tx) =>
+          tx.maybe<{
+            id: string;
+            title: string;
+            description: string | null;
+            status: string;
+            created_at: string;
+            completed_at: string | null;
+            completed_by_name: string | null;
+          }>(
+            `SELECT k.id, k.title, k.description, k.status, k.created_at, k.completed_at, c.display_name AS completed_by_name
+               FROM app.tasks k
+               LEFT JOIN app.users c ON c.tenant_id = k.tenant_id AND c.id = k.completed_by
+              WHERE k.id = $1 AND k.source = 'hr_request' AND k.subject_employee_id = $2`,
+            [id, me],
+          ),
+        { readOnly: true },
+      );
+      if (!r) throw new ApiError('notFound');
+      return {
+        id: r.id,
+        subject: r.title,
+        message: r.description ?? '',
+        status: r.status,
+        createdAt: r.created_at,
+        completedAt: r.completed_at,
+        completedByName: r.completed_by_name,
+      };
     },
   );
 }

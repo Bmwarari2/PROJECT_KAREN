@@ -5680,10 +5680,21 @@
         "done": "Done",
         "cancelled": "Closed"
       },
-      "noEmployee": "Only people with an employee record can contact HR here."
+      "noEmployee": "Only people with an employee record can contact HR here.",
+      "request": "Request to HR",
+      "sentLabel": "Sent",
+      "doneLabel": "Done",
+      "doneBy": "{date} by {name}",
+      "openNote": "HR has your request. You will get a notification when they mark it done.",
+      "doneNote": "HR marked this done. If you still need help, send them a new request."
     },
     "automation": {
       "dryRunNamed": "Dry run {name}"
+    },
+    "support": {
+      "adminsOnly": "Thapsus-HR support is for your workspace’s administrators",
+      "askHr": "Your HR team can help with questions about your job, pay, time off and documents.",
+      "noHr": "Ask an administrator in your organisation for help."
     }
   }
 }

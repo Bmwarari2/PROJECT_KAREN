@@ -391,7 +391,9 @@ export default function TimeOffPage() {
                       <TD>
                         {formatDate(r.startDate, locale)} – {formatDate(r.endDate, locale)}
                       </TD>
-                      <TD className="text-right">{r.amountDays}</TD>
+                      <TD className="text-right" label={t('timeOff.days')}>
+                        {r.amountDays}
+                      </TD>
                       <TD>
                         <Badge tone={statusTone[r.status as keyof typeof statusTone] ?? 'neutral'}>
                           {t(`timeOff.status.${r.status}`)}

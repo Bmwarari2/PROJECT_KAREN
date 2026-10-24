@@ -259,7 +259,8 @@ export function HomeDashboard({ initial }: { initial: HomeData }) {
               leading={a.icon}
               title={a.label}
               subtitle={a.hint}
-              accessory={a.badge}
+              // under the text on phones, so the hint keeps the row's width (ADR-0180)
+              meta={a.badge}
             />
           ))}
         </ListSection>

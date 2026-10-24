@@ -200,10 +200,11 @@ export default function ApprovalsPage() {
                         className="relative z-10"
                         plainClassName="text-text"
                       />
-                      {details(a.payload) ? ' · ' : ''}
+                      {details(a.payload) ? <span className="max-sm:hidden"> · </span> : null}
                     </>
                   ) : null}
-                  {details(a.payload)}
+                  {/* on a phone the details take two lines at most: the request's page has them all */}
+                  <span className="max-sm:line-clamp-2">{details(a.payload)}</span>
                 </>
               }
               meta={formatDate(a.requestedAt.slice(0, 10), locale)}

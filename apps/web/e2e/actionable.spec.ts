@@ -253,7 +253,10 @@ const LISTS: Record<Role, Array<{ path: string; rows: string; link: RegExp }>> =
   ],
   payroll_admin: [{ path: '/app/people', rows: 'main tbody tr', link: /^\/app\/people\/[0-9a-f-]{36}/ }],
   manager: [{ path: '/app/people', rows: 'main tbody tr', link: /^\/app\/people\/[0-9a-f-]{36}/ }],
-  employee: [{ path: '/app/time-off', rows: 'main tbody tr', link: /^\/app\/time-off\/[0-9a-f-]{36}/ }],
+  employee: [
+    { path: '/app/time-off', rows: 'main tbody tr', link: /^\/app\/time-off\/[0-9a-f-]{36}/ },
+    { path: '/app/contact-hr', rows: '#hr-requests li', link: /^\/app\/contact-hr\/[0-9a-f-]{36}/ },
+  ],
 };
 
 /** What each role must find to act on (at least one item each). */
@@ -405,6 +408,14 @@ test('a task without a screen of its own opens its page, and HR marks it done th
       .filter({ hasText: 'Fictional question about my notice period' })
       .getByText('Done', { exact: true }),
   ).toBeVisible();
+  // and opens it: what they asked, done
+  await e
+    .locator('#hr-requests')
+    .getByRole('link', { name: 'Fictional question about my notice period' })
+    .click();
+  await expect(e.getByTestId('hr-request-detail')).toBeVisible();
+  await expect(e.getByTestId('hr-request-detail').getByText('Fictional details only.')).toBeVisible();
+  await expect(e.getByTestId('hr-request-detail').getByText('Done', { exact: true }).first()).toBeVisible();
 });
 
 test('an approver decides on the request’s own page', async () => {

@@ -114,6 +114,8 @@ function concrete(route: string, f: Fixture): string {
   const map: Record<string, string> = {
     '/app/people/[id]': `/app/people/${f.employeeId}`,
     '/app/tasks/[id]': `/app/tasks/${f.taskId}`,
+    // the owner's own request to HR: the same record HR opens as a task
+    '/app/contact-hr/[id]': `/app/contact-hr/${f.taskId}`,
     '/app/approvals/[id]': `/app/approvals/${f.approvalId}`,
     '/app/time-off/[id]': `/app/time-off/${f.leaveId}`,
     '/app/timesheets/[id]': `/app/timesheets/${f.timesheetId}`,
