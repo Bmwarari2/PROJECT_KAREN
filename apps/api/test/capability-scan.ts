@@ -247,3 +247,35 @@ export function routeBlocks(): RouteBlock[] {
   }
   return out;
 }
+
+export interface CheckLiteral {
+  file: string;
+  line: number;
+  callee: string;
+  value: string;
+}
+
+/** Every string literal passed to a permission check (authorize, can, need…) anywhere in the API's source. */
+export function checkCallLiterals(): CheckLiteral[] {
+  const out: CheckLiteral[] = [];
+  for (const file of walk(join(REPO, 'apps', 'api', 'src'))) {
+    const src = parse(file);
+    const visit = (n: ts.Node) => {
+      if (ts.isCallExpression(n)) {
+        const callee = n.expression.getText(src);
+        if (CHECK_CALL.test(callee))
+          for (const a of n.arguments)
+            if (ts.isStringLiteral(a))
+              out.push({
+                file: relative(REPO, file),
+                line: src.getLineAndCharacterOfPosition(a.getStart(src)).line + 1,
+                callee,
+                value: a.text,
+              });
+      }
+      ts.forEachChild(n, visit);
+    };
+    visit(src);
+  }
+  return out;
+}

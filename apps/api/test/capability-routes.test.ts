@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CAPABILITIES, isCapabilityKey, namedPermissions } from '@thapsus/core/capabilities';
 import { PERMISSION_KEYS } from '@thapsus/core/access';
-import { routeBlocks } from './capability-scan';
+import { checkCallLiterals, routeBlocks } from './capability-scan';
 
 /**
  * The API side of the permission map (ADR-0188). A route that declares a capability is enforced with
@@ -55,6 +55,16 @@ describe('routes that declare a capability (ADR-0188)', () => {
             `${b.file}:${b.line} ${b.method} ${b.url}: checks ${p} company-wide; mark ${b.capability} workspace`,
           );
     }
+    expect(problems).toEqual([]);
+  });
+
+  it('pass permissions to permission checks, never a capability key', () => {
+    // can(principal, 'documents.signOwn') would refuse everyone: the capability is not a permission
+    const literals = checkCallLiterals();
+    expect(literals.length).toBeGreaterThan(300);
+    const problems = literals
+      .filter((l) => isCapabilityKey(l.value) && !PERMISSION_KEYS.includes(l.value))
+      .map((l) => `${l.file}:${l.line} ${l.callee}('${l.value}'): a capability key, not a permission`);
     expect(problems).toEqual([]);
   });
 
