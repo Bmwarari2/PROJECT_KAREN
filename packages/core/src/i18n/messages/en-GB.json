@@ -4882,7 +4882,11 @@
         "report": "Reports"
       }
     },
-    "intro": "Your details, time off, shifts, documents and pay, in one place."
+    "intro": "Your details, time off, shifts, documents and pay, in one place.",
+    "section": {
+      "work": "You and your time",
+      "inbox": "Documents, tasks and pay"
+    }
   },
   "onboarding": {
     "inviteSubject": "Your sign-in for {company} on Thapsus-HR",

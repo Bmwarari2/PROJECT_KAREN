@@ -18,6 +18,8 @@ import {
   buttonVariants,
   Card,
   CardTitle,
+  ListItem,
+  ListSection,
   cn,
   EmptyState,
   Input,
@@ -207,58 +209,56 @@ export default function ReportsPage() {
                 </select>
               }
             />
-            <div className="flex flex-col gap-6 p-5">
-              {groups.length ? (
-                groups.map((g) => (
-                  <section key={g.key} aria-labelledby={`cat-${g.key}`} className="flex flex-col gap-3">
-                    <h3 id={`cat-${g.key}`} className="flex items-center gap-3 text-callout font-semibold">
-                      <span
-                        aria-hidden
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-accent-subtle text-accent [&_svg]:h-4 [&_svg]:w-4 [&_svg]:stroke-[1.5]"
-                      >
-                        {ICONS[g.key] ?? <BarChart3 aria-hidden />}
-                      </span>
-                      {t(`reports.ui.category.${g.key}`)}
-                      <span className="font-normal text-text-secondary">
-                        {t('reports.ui.reportCount', { count: g.reports.length })}
-                      </span>
-                    </h3>
-                    <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                      {g.reports.map((r) => (
-                        <li
-                          key={r.id}
-                          className="flex h-full flex-col gap-2 rounded-md border border-border p-4 transition-colors duration-[var(--duration-fast)] hover:border-border-strong"
-                        >
-                          <Link
-                            href={`/app/reports/ready/${r.id}`}
-                            className="text-callout font-semibold text-text no-underline hover:underline"
-                          >
-                            {t(r.titleKey)}
-                          </Link>
-                          <p className="text-footnote text-text-secondary">{t(r.descriptionKey)}</p>
-                          <div className="mt-auto flex flex-wrap gap-2 pt-1">
-                            {r.jurisdictions
-                              .filter((j) => j !== '*')
-                              .map((j) => (
-                                <Badge key={j}>{t(`reports.jurisdiction.${j}`)}</Badge>
-                              ))}
-                            {r.sensitivity === 'special' ? (
-                              <Badge tone="warning">{t('reports.sensitiveBadge')}</Badge>
-                            ) : null}
-                            {!r.applicable ? <Badge>{t('reports.notApplicable')}</Badge> : null}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))
-              ) : (
-                <p role="status" className="text-callout text-text-secondary">
-                  {t('reports.ui.noMatches')}
-                </p>
-              )}
-            </div>
           </Card>
+          {groups.length ? (
+            groups.map((g) => (
+              <ListSection
+                key={g.key}
+                id={`cat-${g.key}`}
+                title={
+                  <span className="flex items-center gap-2">
+                    {t(`reports.ui.category.${g.key}`)}
+                    <span className="text-callout font-normal text-text-secondary">
+                      {t('reports.ui.reportCount', { count: g.reports.length })}
+                    </span>
+                  </span>
+                }
+              >
+                {g.reports.map((r) => {
+                  const badges = [
+                    ...r.jurisdictions
+                      .filter((j) => j !== '*')
+                      .map((j) => <Badge key={j}>{t(`reports.jurisdiction.${j}`)}</Badge>),
+                    r.sensitivity === 'special' ? (
+                      <Badge key="sensitive" tone="warning">
+                        {t('reports.sensitiveBadge')}
+                      </Badge>
+                    ) : null,
+                    !r.applicable ? <Badge key="na">{t('reports.notApplicable')}</Badge> : null,
+                  ].filter(Boolean);
+                  return (
+                    <ListItem
+                      key={r.id}
+                      href={`/app/reports/ready/${r.id}`}
+                      linkAs={Link}
+                      leading={ICONS[g.key] ?? <BarChart3 aria-hidden />}
+                      title={t(r.titleKey)}
+                      subtitle={
+                        <span className="flex flex-col gap-1.5">
+                          {t(r.descriptionKey)}
+                          {badges.length ? <span className="flex flex-wrap gap-1.5">{badges}</span> : null}
+                        </span>
+                      }
+                    />
+                  );
+                })}
+              </ListSection>
+            ))
+          ) : (
+            <p role="status" className="text-callout text-text-secondary">
+              {t('reports.ui.noMatches')}
+            </p>
+          )}
 
           <Card className="overflow-hidden p-0">
             <TableToolbar

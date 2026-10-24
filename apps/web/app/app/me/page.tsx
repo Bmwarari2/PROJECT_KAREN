@@ -5,14 +5,13 @@ import {
   Bell,
   CalendarClock,
   CalendarDays,
-  ChevronRight,
   Clock,
   FileSignature,
   ListChecks,
   Receipt,
   UserRound,
 } from 'lucide-react';
-import { Badge, Card, EmptyState, Skeleton } from '@thapsus/ui';
+import { Badge, EmptyState, ListItem, ListSection, Skeleton } from '@thapsus/ui';
 import { formatDate, formatInstantTime, formatTimeOfDay, numberFormat } from '@thapsus/core/i18n';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -43,7 +42,7 @@ interface Summary {
   changeRequests: { pending: number };
 }
 
-/** A hub tile: the whole card is one link (large touch target), with a short status line. */
+/** A hub row (ADR-0180): the whole row is one link, with a short status line under the title. */
 function Tile({
   href,
   icon,
@@ -58,29 +57,7 @@ function Tile({
   badge?: React.ReactNode;
 }) {
   return (
-    <li>
-      <Link
-        href={href}
-        className="group block h-full rounded-lg no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <Card className="flex h-full items-start gap-3 transition-shadow duration-[var(--duration-fast)] group-hover:shadow-md motion-reduce:transition-none">
-          <span
-            aria-hidden
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-accent-subtle text-accent [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-[1.5]"
-          >
-            {icon}
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="flex items-center gap-2 text-body font-semibold text-text">
-              {title}
-              {badge}
-            </span>
-            <span className="text-callout text-text-secondary">{status}</span>
-          </span>
-          <ChevronRight aria-hidden className="mt-2 h-5 w-5 shrink-0 stroke-[1.5] text-text-secondary" />
-        </Card>
-      </Link>
-    </li>
+    <ListItem href={href} linkAs={Link} leading={icon} title={title} subtitle={status} accessory={badge} />
   );
 }
 
@@ -153,105 +130,109 @@ export default function MePage() {
             : t('ess.noEmployee')}
         </p>
       </PageIntro>
-      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {data.employee ? (
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <ListSection title={t('ess.section.work')}>
+          {data.employee ? (
+            <Tile
+              href="/app/me/details"
+              icon={<UserRound />}
+              title={t('ess.details.title')}
+              status={
+                data.changeRequests.pending
+                  ? t('ess.details.pending', { n: count(data.changeRequests.pending) })
+                  : t('ess.details.status')
+              }
+            />
+          ) : null}
+          {data.leave ? (
+            <Tile
+              href="/app/time-off"
+              icon={<CalendarDays />}
+              title={t('ess.leave.title')}
+              status={leaveStatus()}
+            />
+          ) : null}
+          {data.rota ? (
+            <Tile
+              href="/app/rota"
+              icon={<CalendarClock />}
+              title={t('ess.rota.title')}
+              status={shiftStatus()}
+            />
+          ) : null}
+          {data.clock ? (
+            <Tile
+              href="/app/clock"
+              icon={<Clock />}
+              title={t('ess.clock.title')}
+              status={
+                data.clock.clockedIn && data.clock.since
+                  ? t('ess.clock.inSince', { time: formatInstantTime(data.clock.since, locale, zone) })
+                  : t('ess.clock.out')
+              }
+              badge={data.clock.clockedIn ? <Badge tone="success">{t('ess.clock.in')}</Badge> : undefined}
+            />
+          ) : null}
+        </ListSection>
+        <ListSection title={t('ess.section.inbox')}>
           <Tile
-            href="/app/me/details"
-            icon={<UserRound />}
-            title={t('ess.details.title')}
+            href="/app/documents"
+            icon={<FileSignature />}
+            title={t('ess.documents.title')}
             status={
-              data.changeRequests.pending
-                ? t('ess.details.pending', { n: count(data.changeRequests.pending) })
-                : t('ess.details.status')
+              data.documents.toSign
+                ? t('ess.documents.toSign', { n: count(data.documents.toSign) })
+                : t('ess.documents.none')
             }
-          />
-        ) : null}
-        {data.leave ? (
-          <Tile
-            href="/app/time-off"
-            icon={<CalendarDays />}
-            title={t('ess.leave.title')}
-            status={leaveStatus()}
-          />
-        ) : null}
-        {data.rota ? (
-          <Tile
-            href="/app/rota"
-            icon={<CalendarClock />}
-            title={t('ess.rota.title')}
-            status={shiftStatus()}
-          />
-        ) : null}
-        {data.clock ? (
-          <Tile
-            href="/app/clock"
-            icon={<Clock />}
-            title={t('ess.clock.title')}
-            status={
-              data.clock.clockedIn && data.clock.since
-                ? t('ess.clock.inSince', { time: formatInstantTime(data.clock.since, locale, zone) })
-                : t('ess.clock.out')
-            }
-            badge={data.clock.clockedIn ? <Badge tone="success">{t('ess.clock.in')}</Badge> : undefined}
-          />
-        ) : null}
-        <Tile
-          href="/app/documents"
-          icon={<FileSignature />}
-          title={t('ess.documents.title')}
-          status={
-            data.documents.toSign
-              ? t('ess.documents.toSign', { n: count(data.documents.toSign) })
-              : t('ess.documents.none')
-          }
-          badge={
-            data.documents.toSign ? <Badge tone="warning">{count(data.documents.toSign)}</Badge> : undefined
-          }
-        />
-        <Tile
-          href="/app/tasks"
-          icon={<ListChecks />}
-          title={t('ess.tasks.title')}
-          status={
-            data.tasks.open
-              ? t('ess.tasks.open', { n: count(data.tasks.open), overdue: count(data.tasks.overdue) })
-              : t('ess.tasks.none')
-          }
-          badge={
-            data.tasks.overdue ? (
-              <Badge tone="danger">{t('ess.tasks.overdue', { n: count(data.tasks.overdue) })}</Badge>
-            ) : undefined
-          }
-        />
-        <Tile
-          href="/app/notifications"
-          icon={<Bell />}
-          title={t('ess.notifications.title')}
-          status={
-            data.notifications.unread
-              ? t('ess.notifications.unread', { n: count(data.notifications.unread) })
-              : t('ess.notifications.none')
-          }
-          badge={
-            data.notifications.unread ? (
-              <Badge tone="accent">{count(data.notifications.unread)}</Badge>
-            ) : undefined
-          }
-        />
-        {data.payslips ? (
-          <Tile
-            href="/app/payslips"
-            icon={<Receipt />}
-            title={t('ess.payslips.title')}
-            status={payslipStatus()}
             badge={
-              data.payslips.unviewed ? (
-                <Badge tone="accent">{t('ess.payslips.new', { n: count(data.payslips.unviewed) })}</Badge>
+              data.documents.toSign ? <Badge tone="warning">{count(data.documents.toSign)}</Badge> : undefined
+            }
+          />
+          <Tile
+            href="/app/tasks"
+            icon={<ListChecks />}
+            title={t('ess.tasks.title')}
+            status={
+              data.tasks.open
+                ? t('ess.tasks.open', { n: count(data.tasks.open), overdue: count(data.tasks.overdue) })
+                : t('ess.tasks.none')
+            }
+            badge={
+              data.tasks.overdue ? (
+                <Badge tone="danger">{t('ess.tasks.overdue', { n: count(data.tasks.overdue) })}</Badge>
               ) : undefined
             }
           />
-        ) : null}
-      </ul>
+          <Tile
+            href="/app/notifications"
+            icon={<Bell />}
+            title={t('ess.notifications.title')}
+            status={
+              data.notifications.unread
+                ? t('ess.notifications.unread', { n: count(data.notifications.unread) })
+                : t('ess.notifications.none')
+            }
+            badge={
+              data.notifications.unread ? (
+                <Badge tone="accent">{count(data.notifications.unread)}</Badge>
+              ) : undefined
+            }
+          />
+          {data.payslips ? (
+            <Tile
+              href="/app/payslips"
+              icon={<Receipt />}
+              title={t('ess.payslips.title')}
+              status={payslipStatus()}
+              badge={
+                data.payslips.unviewed ? (
+                  <Badge tone="accent">{t('ess.payslips.new', { n: count(data.payslips.unviewed) })}</Badge>
+                ) : undefined
+              }
+            />
+          ) : null}
+        </ListSection>
+      </div>
     </div>
   );
 }
