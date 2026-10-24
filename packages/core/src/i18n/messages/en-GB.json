@@ -456,7 +456,11 @@
       "myProfile": "My profile",
       "notificationSettings": "Notification settings",
       "notificationsUnread_one": "Notifications, {count} unread",
-      "notificationsUnread_other": "Notifications, {count} unread"
+      "notificationsUnread_other": "Notifications, {count} unread",
+      "dock": {
+        "label": "Main sections",
+        "me": "Me"
+      }
     }
   },
   "gallery": {
