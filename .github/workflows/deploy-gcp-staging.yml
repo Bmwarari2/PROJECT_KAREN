@@ -25,6 +25,10 @@ on:
         description: Send a new back-office enrolment link to GCP_STAFF_OWNER_EMAIL (one is sent by itself after the first deploy)
         type: boolean
         default: false
+      reset_test_data:
+        description: Reset the test company - delete the fictional workspace and seed it again (anything changed while testing is lost; the sign-ins stay the same)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -209,7 +213,11 @@ jobs:
           job="thapsus-stg-$CELL-seed"
           seeded="$(gcloud run jobs executions list --job "$job" --region "$REGION" \
             --filter='status.succeededCount>0' --limit 1 --format='value(name)')"
-          if [[ "${{ inputs.seed }}" == "true" || -z "$seeded" ]]; then
+          if [[ "${{ inputs.reset_test_data }}" == "true" ]]; then
+            # ADR-0185: the seed deletes the workspace it made (verified purge) and builds it again
+            gcloud run jobs execute "$job" --region "$REGION" --wait \
+              --update-env-vars STAGING_RESET=delete-fictional-test-workspace
+          elif [[ "${{ inputs.seed }}" == "true" || -z "$seeded" ]]; then
             gcloud run jobs execute "$job" --region "$REGION" --wait
           else
             echo "The test organisation is already seeded (run the workflow by hand with 'seed' ticked to re-run it)."

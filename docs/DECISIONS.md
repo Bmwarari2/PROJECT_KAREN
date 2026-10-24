@@ -1837,3 +1837,19 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - Every phone screenshot baseline changes once (visual regression is re-baselined with this change).
 - Screens move to `ListSection`/`ListItem` as they are touched; the agents of this round convert the screens they own, and the rest follow in the same release.
 - Two colour tokens (`segment-track`, `segment-selected`) and two layout values (`large-title`, `--dock-height`) are added. The chrome tokens change value, with their contrast pairs still tested.
+
+## ADR-0185 — The staging test company can be reset through the verified purge (2026-10-24)
+
+**Context.** The staging seed (ADR-0158) fills an empty workspace once and then only updates the sign-ins. This round adds new sample data: documents to sign and countersign, provider payslips, right-to-work evidence, HR requests and targeted notifications. New-workspace defaults also changed (two-step verification for everyone, ADR-0170). None of it reaches a staging workspace seeded earlier. The product owner approved deleting and recreating the fictional test company on 2026-10-24.
+
+**Decision.**
+
+- **The trigger.** `STAGING_RESET=delete-fictional-test-workspace` makes the seed delete the workspace it made, then seed it from scratch (`apps/api/src/cli/staging/reset.ts`). The deploy workflow sets it for one run of the seed job when the owner ticks **reset_test_data**. Any other value is refused.
+- **Only the seed's own workspace.** The reset refuses a workspace whose audit trail has no `staging.seed_completed` marker. The seed refuses production as before.
+- **The same verified purge as a customer's account closure** (`purgeTenant`): every tenant table, the audit trail, files with their versions and cache keys are deleted and verified empty, and a deletion certificate is stored in the registry. No deletion code is specific to staging.
+- **Retiring the name.** The deleted workspace keeps its registry and directory rows (status deleted) under a retired name, `kestrel-r<UTC minute>`, so `kestrel` is free for the new one. The Postgres directory gains slug updates for this. The DynamoDB directory refuses them, because production never renames workspaces.
+
+**Consequences.**
+
+- Anything a tester changed in the test company is lost on a reset. The sign-in passwords stay as they are, from the Secret Manager secret, but every login enrols two-step verification again.
+- `apps/api/test/seed-staging-reset.int.test.ts` covers three cases: a workspace the seed did not create is refused, the purge is certified and empty, and the workspace is rebuilt under the same name with working sign-ins.

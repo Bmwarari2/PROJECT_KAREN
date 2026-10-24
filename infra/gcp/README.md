@@ -60,6 +60,8 @@ The workspace requires two-step verification for everyone (ADR-0170), so **every
 
 To change the passwords, bump `test_login_generation` in `staging/variables.tf` and deploy with **seed** ticked. The seed resets the test users' passwords to the new secret.
 
+To rebuild the test company with the current sample data, run the deploy by hand with **reset_test_data** ticked (ADR-0185). The seed job then deletes the fictional workspace it made, through the same verified purge as a customer's account closure, and seeds it again. Anything changed while testing is lost; the passwords stay the same.
+
 ## Reading staging email
 
 Staging has no email provider: every message (sign-in links, password-reset links, notifications) is an `.eml` object in the mail bucket, kept 14 days. The seeded logins use `.example.test` addresses that receive nothing, so this is the only way to read, for example, a password-reset link. Console → Cloud Storage → `<project>-thapsus-stg-uk-mail`, or:

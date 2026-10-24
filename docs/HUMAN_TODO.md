@@ -277,6 +277,7 @@ This replaces the AWS staging steps in §1 for testing. It is one UK cell in Lon
   2. When the run pauses, open it and read the plan table in the summary.
   3. Click **Review deployments → staging-gcp → Approve**. The first run takes about 25 minutes, mostly creating the database.
   4. When it finishes, the summary shows the app URL. Later pushes to `main` deploy after CI passes; each one again waits for your approval.
+  5. **Reset the test company** (owner approved 2026-10-24; ADR-0185). The seed only fills an empty workspace, so new sample data (and new-workspace defaults such as two-step verification for everyone) reach staging only when the test company is rebuilt. Run the workflow by hand with **reset_test_data** ticked and approve as usual. It deletes the fictional `kestrel` workspace through the verified purge and seeds it again. Anything changed while testing is lost. The sign-ins keep their passwords, but everyone sets up two-step verification again. It never touches a workspace the seed did not create, and staff accounts are untouched.
 - [ ] 9.7 **Sign in.**
   1. In Cloud Shell, run:
      `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`.
