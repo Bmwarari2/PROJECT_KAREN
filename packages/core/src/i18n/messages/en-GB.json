@@ -3835,7 +3835,8 @@
       "globalNote": "Counts from the global directory: region, plan, status and sign-up date only.",
       "privacy": "Customer personal data is only visible through support access that the customer grants, and every access is logged in their audit log and in the staff trail.",
       "other": "Other",
-      "mrrIn": "Monthly recurring revenue ({currency})"
+      "mrrIn": "Monthly recurring revenue ({currency})",
+      "notForRole": "Business figures are for support and billing staff. The menu opens the areas your role works in."
     },
     "performance": {
       "title": "Performance",

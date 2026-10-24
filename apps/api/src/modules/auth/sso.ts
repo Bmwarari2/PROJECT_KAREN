@@ -620,6 +620,7 @@ export async function ssoRoutes(app: FastifyInstance) {
             }),
           ),
           403: Problem,
+          404: Problem,
         },
       },
     },
@@ -628,13 +629,16 @@ export async function ssoRoutes(app: FastifyInstance) {
       const { userId } = req.params as { userId: string };
       const rows = await app.tenantTx(
         req,
-        (tx) =>
-          tx.query<{ connection_id: string; name: string; created_at: string; last_used_at: string }>(
+        async (tx) => {
+          if (!(await tx.maybe('SELECT 1 FROM app.users WHERE id = $1', [userId])))
+            throw new ApiError('notFound');
+          return tx.query<{ connection_id: string; name: string; created_at: string; last_used_at: string }>(
             `SELECT i.connection_id, c.name, i.created_at, i.last_used_at FROM app.sso_identities i
                JOIN app.sso_connections c ON c.tenant_id = i.tenant_id AND c.id = i.connection_id
               WHERE i.user_id = $1 ORDER BY i.created_at`,
             [userId],
-          ),
+          );
+        },
         { readOnly: true },
       );
       return rows.map((r) => ({

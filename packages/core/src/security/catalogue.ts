@@ -626,7 +626,7 @@ export const DETECTION_RULES: DetectionRule[] = [
       ],
     },
     tuning: created(
-      'Five failed sign-in, second-factor or re-authentication steps for one staff account in fifteen minutes. Freezes the account; unfreezing needs two people. Never freezes the last active super admin.',
+      'Five failed steps that name one staff account in fifteen minutes: with passkey-only staff sign-in (ADR-0173) these are mostly re-authentications with a key that is not theirs, from a session someone else holds. Freezes the account; unfreezing needs two people. Never freezes the last active super admin.',
     ),
   },
   {

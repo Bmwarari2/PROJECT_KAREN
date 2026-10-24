@@ -23,7 +23,7 @@ import { Panel } from '@/components/dashboard/parts';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { ChartWithTable, DashboardSection } from '../charts';
-import { PageTitle, useStaff } from '../ui';
+import { PageTitle, staffCan, useStaff } from '../ui';
 
 /** Counts the API returns per key (plan, status, region); `key` null means "none yet". */
 interface Count {
@@ -128,8 +128,10 @@ export default function BackofficeHome() {
   const region =
     asked === 'all' || (REGIONS as readonly string[]).includes(asked ?? '') ? (asked as string) : cell;
   const local = region === cell;
-  const m = useApi<CellMetrics>(local ? '/v1/backoffice/metrics' : null);
-  const g = useApi<GlobalMetrics>(local ? null : '/v1/backoffice/metrics/global');
+  // business figures are for support, billing and super admins; other roles get their areas from the menu
+  const figures = staffCan(staff, 'support', 'billing');
+  const m = useApi<CellMetrics>(figures && local ? '/v1/backoffice/metrics' : null);
+  const g = useApi<GlobalMetrics>(figures && !local ? '/v1/backoffice/metrics/global' : null);
 
   const tabs = [
     { key: 'all', label: t('backoffice.metrics.allRegions') },
@@ -140,27 +142,33 @@ export default function BackofficeHome() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
         <PageTitle title={t('backoffice.metrics.title')} lead={t('backoffice.metrics.lead')} />
-        <TabNav
-          tabs={tabs}
-          label={t('backoffice.metrics.regionsLabel')}
-          renderLink={(tab, className, children) => (
-            <Link
-              href={tab.href}
-              className={className}
-              aria-current={tab.active ? 'page' : undefined}
-              scroll={false}
-            >
-              {children}
-            </Link>
-          )}
-        />
-        {local ? (
-          <p className="text-footnote text-text-secondary">
-            {t('backoffice.metrics.thisCell', { region: t(`regions.${cell}`) })}
-          </p>
-        ) : null}
+        {staff && !figures ? null : (
+          <>
+            <TabNav
+              tabs={tabs}
+              label={t('backoffice.metrics.regionsLabel')}
+              renderLink={(tab, className, children) => (
+                <Link
+                  href={tab.href}
+                  className={className}
+                  aria-current={tab.active ? 'page' : undefined}
+                  scroll={false}
+                >
+                  {children}
+                </Link>
+              )}
+            />
+            {local ? (
+              <p className="text-footnote text-text-secondary">
+                {t('backoffice.metrics.thisCell', { region: t(`regions.${cell}`) })}
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
-      {local ? (
+      {staff && !figures ? (
+        <p className="text-callout text-text-secondary">{t('backoffice.metrics.notForRole')}</p>
+      ) : local ? (
         m.data ? (
           <CellOverview m={m.data} />
         ) : (

@@ -5,6 +5,8 @@ import { insertSignals } from '../src/modules/security/signals';
 import { pseudonym } from '../src/modules/security/pseudonym';
 import { closeDb, ownerSession, signup, startTestApp, type TestContext } from './helpers';
 import { injector, staffSession, userSession } from './phase10-helpers';
+import { SoftAuthenticator } from './soft-authenticator';
+import { staffRelyingParty } from '../src/modules/backoffice/auth';
 
 /**
  * Security monitoring end to end (ADR-0177 to ADR-0179): signals from requests and the audit trails,
@@ -308,21 +310,27 @@ describe('containment from the incident view', () => {
 
   it('freezes a staff account under attack automatically; unfreezing needs a second staff member', async () => {
     const victim = await staffSession(ctx, 'support');
-    // four wrong passwords (the account throttle allows five sign-ins in 15 minutes) and a wrong code
-    for (let i = 0; i < 4; i++)
-      await ctx.app.inject({
-        method: 'POST',
-        url: '/v1/backoffice/auth/login',
-        payload: { email: victim.email, password: 'Fictional-wrong-password-1' },
-        remoteAddress: randomIp(),
+    // someone holding the victim's session but not their key: five failed re-authentications (staff sign in
+    // only with passkeys, so these are the failures that name the account)
+    const rp = staffRelyingParty(ctx.deps);
+    for (let i = 0; i < 5; i++) {
+      const options = await from(randomIp(), 'POST', '/v1/backoffice/auth/reauth/options', {
+        cookie: victim.cookie,
       });
-    await ctx.app.inject({
-      method: 'POST',
-      url: '/v1/backoffice/auth/totp',
-      headers: { cookie: victim.cookie },
-      payload: { code: '000000' },
-      remoteAddress: randomIp(),
-    });
+      const { challengeId, options: o } = options.json();
+      const wrong = new SoftAuthenticator(rp.rpID, rp.origin).assert(o);
+      expect(
+        (
+          await from(
+            randomIp(),
+            'POST',
+            '/v1/backoffice/auth/reauth/verify',
+            { cookie: victim.cookie },
+            { challengeId, response: wrong },
+          )
+        ).statusCode,
+      ).toBe(401);
+    }
     const o = (await detect()).outcomes.find(
       (x) => x.hit.rule.id === 'THR-STAFF-001' && x.hit.staffId === victim.staffId,
     )!;

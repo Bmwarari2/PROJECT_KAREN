@@ -89,7 +89,14 @@ describe('the detection run', () => {
       'SELECT kind FROM security.incident_events WHERE incident_id = $1 ORDER BY id',
       [mine[0]!.incidentId],
     );
-    expect(timeline.rows.map((r) => r.kind)).toEqual(['opened', 'detection', 'containment', 'detection']);
+    // the high detection also raised an immediate alert (recorded even with no recipients configured)
+    expect(timeline.rows.map((r) => r.kind)).toEqual([
+      'opened',
+      'detection',
+      'containment',
+      'alert',
+      'detection',
+    ]);
   });
 
   it('runs in one worker at a time', async () => {
