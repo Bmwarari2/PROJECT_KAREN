@@ -290,7 +290,7 @@ test.describe("founder's console", () => {
     await expect(page.getByRole('region', { name: 'Cloud' })).toContainText('Planned');
     await expectAccessible(page);
 
-    await sections.getByRole('link', { name: 'Honeytokens' }).click();
+    await sections.getByRole('link', { name: 'Decoys' }).click();
     const key = page.getByRole('region', { name: 'Decoy API key' }).getByRole('listitem').first();
     await expect(key).toContainText(/touch(es)? in 30 days/);
     await expect(key).not.toContainText('0 touches');

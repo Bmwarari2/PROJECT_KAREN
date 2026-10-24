@@ -100,6 +100,8 @@ function useFormat() {
       pct: (bp: number) =>
         numberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(bp / 10000),
       weekShort: date({ day: 'numeric', month: 'short' }),
+      // on phones: "14/09" (en-GB), "9/14" (en-US)
+      weekNumeric: date({ day: 'numeric', month: 'numeric' }),
       weekLong: date({ day: 'numeric', month: 'long', year: 'numeric' }),
       planLabel: (k: string | null) =>
         k === null
@@ -185,7 +187,7 @@ export default function BackofficeHome() {
 }
 
 function CellOverview({ m }: { m: CellMetrics }) {
-  const { t, locale, n, pct, weekShort, weekLong, planLabel } = useFormat();
+  const { t, locale, n, pct, weekShort, weekNumeric, weekLong, planLabel } = useFormat();
   const plans: ChartDatum[] = m.companies.byPlan.map((c) => ({ label: planLabel(c.key), value: c.count }));
   const billing: ChartDatum[] = foldOther(
     [...m.companies.byBillingStatus]
@@ -274,6 +276,7 @@ function CellOverview({ m }: { m: CellMetrics }) {
                   to: weekLong(m.signups[m.signups.length - 1]!.weekStart),
                 })}
                 categories={m.signups.map((w) => weekShort(w.weekStart))}
+                phoneCategories={m.signups.map((w) => weekNumeric(w.weekStart))}
                 tableCategories={m.signups.map((w) => weekLong(w.weekStart))}
                 series={[
                   {
@@ -411,7 +414,7 @@ function CellOverview({ m }: { m: CellMetrics }) {
 }
 
 function GlobalOverview({ g, region }: { g: GlobalMetrics; region: string }) {
-  const { t, n, weekShort, weekLong, planLabel, regionShort } = useFormat();
+  const { t, n, weekShort, weekNumeric, weekLong, planLabel, regionShort } = useFormat();
   const shown = region === 'all' ? g.regions : g.regions.filter((r) => r.region === region);
   const sum = (k: 'total' | 'new7d' | 'new30d') => shown.reduce((s, r) => s + r[k], 0);
   const weeks = g.regions[0]?.signups.map((w) => w.weekStart) ?? [];
@@ -468,6 +471,7 @@ function GlobalOverview({ g, region }: { g: GlobalMetrics; region: string }) {
                   to: weekLong(weeks[weeks.length - 1]!),
                 })}
                 categories={weeks.map(weekShort)}
+                phoneCategories={weeks.map(weekNumeric)}
                 tableCategories={weeks.map(weekLong)}
                 // one series per region in a fixed order (UK, EU, US), so a region keeps its colour
                 series={shown.map((r) => ({

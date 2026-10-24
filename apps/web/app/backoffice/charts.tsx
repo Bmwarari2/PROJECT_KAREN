@@ -6,12 +6,14 @@ import { ColumnChart, Table, TD, TH, THead, TR, cn, focusRing, type BarSeries } 
 /**
  * A column chart with its table twin (DESIGN.md §6 charts, ADR-0154): the chart is an image to assistive
  * technology, so every value is also in a table behind "Show as a table". On phones only the last
- * `phoneColumns` categories are drawn, because twelve labels do not fit at 320px; the table keeps them all.
+ * `phoneColumns` categories are drawn, with the shorter `phoneCategories` labels when given, because twelve
+ * labels do not fit at 320px; the table keeps them all.
  */
 export function ChartWithTable({
   label,
   categories,
   tableCategories,
+  phoneCategories,
   series,
   format,
   integer,
@@ -25,6 +27,8 @@ export function ChartWithTable({
   categories: string[];
   /** Longer category names for the table (defaults to the chart's). */
   tableCategories?: string[];
+  /** Shorter labels for the phone chart (defaults to `categories`). */
+  phoneCategories?: string[];
   series: BarSeries[];
   format: (n: number) => string;
   integer?: boolean;
@@ -34,10 +38,10 @@ export function ChartWithTable({
   phoneColumns?: number;
   height?: number;
 }) {
-  const chart = (from: number) => (
+  const chart = (from: number, labels = categories) => (
     <ColumnChart
       label={label}
-      categories={categories.slice(from)}
+      categories={labels.slice(from)}
       series={series.map((s) => ({ ...s, values: s.values.slice(from) }))}
       format={format}
       integer={integer}
@@ -48,7 +52,9 @@ export function ChartWithTable({
   const names = tableCategories ?? categories;
   return (
     <>
-      <div className="sm:hidden">{chart(Math.max(0, categories.length - phoneColumns))}</div>
+      <div className="sm:hidden">
+        {chart(Math.max(0, categories.length - phoneColumns), phoneCategories ?? categories)}
+      </div>
       <div className="hidden sm:block">{chart(0)}</div>
       <details className="group">
         <summary

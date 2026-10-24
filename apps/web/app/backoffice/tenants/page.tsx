@@ -236,9 +236,11 @@ export default function TenantsPage() {
                           .filter(Boolean)
                           .join(' · ')}
                       </span>
-                      {r.health.reasons.length ? (
+                      {/* "no snapshot" is already the row's meta */}
+                      {r.health.reasons.some((x) => x !== 'noSnapshot') ? (
                         <span className="block">
                           {r.health.reasons
+                            .filter((x) => x !== 'noSnapshot')
                             .map((x) => t(`backoffice.tenants.health.reason.${x}`))
                             .join(' · ')}
                         </span>

@@ -138,6 +138,12 @@ function Body({ p }: { p: Performance }) {
         ? { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }
         : { weekday: 'short', day: 'numeric', timeZone: 'UTC' },
     ).format(new Date(iso));
+  // on phones: the hour ("22", "10 PM") or the day of the month
+  const tiny = (iso: string) =>
+    dateTimeFormat(
+      locale,
+      hourly ? { hour: 'numeric', timeZone: 'UTC' } : { day: 'numeric', timeZone: 'UTC' },
+    ).format(new Date(iso));
   const long = (iso: string) =>
     dateTimeFormat(locale, {
       dateStyle: 'medium',
@@ -162,12 +168,13 @@ function Body({ p }: { p: Performance }) {
         label={t(labelKey, span)}
         categories={p.series.map((s) => short(s.start))}
         tableCategories={p.series.map((s) => long(s.start))}
+        phoneCategories={p.series.map((s) => tiny(s.start))}
         series={[{ key, label: t(`backoffice.performance.series.${key}`), values }]}
         format={format}
         integer={integer}
         showTable={t('backoffice.performance.showTable')}
         categoryHeading={t(`backoffice.performance.slot.${p.bucket}`)}
-        phoneColumns={hourly ? 8 : 7}
+        phoneColumns={hourly ? 6 : 7}
       />
     </Panel>
   );

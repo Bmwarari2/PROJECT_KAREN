@@ -1,7 +1,7 @@
-// Lighthouse (mobile, default throttling) against a production build: marketing pages, auth pages
-// and signed-in app screens. Fails if performance < 90 or accessibility < 95 on any page.
+// Lighthouse (mobile, default throttling) against a production build: marketing pages, auth pages,
+// signed-in app screens and the back-office home. Fails if performance < 90 or accessibility < 95 on any page.
 // Results are written to .verify/lighthouse.json and summarised for docs/PERFORMANCE.md.
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
@@ -20,6 +20,11 @@ const OTPAuth = await import(
 const { migrate } = await import(pathToFileURL(`${process.cwd()}/packages/db/src/migrate.ts`).href).catch(
   () => ({ migrate: null }),
 );
+// Staff sign in only with a passkey (ADR-0173): the API tests' software authenticator registers one through
+// the enrolment link, the same WebAuthn ceremony a browser runs.
+const { SoftAuthenticator } = await import(
+  pathToFileURL(`${process.cwd()}/apps/api/test/soft-authenticator.ts`).href
+).catch(() => ({ SoftAuthenticator: null }));
 
 const OWNER = process.env.TEST_PG_OWNER_URL ?? 'postgres://thapsus_owner:owner_dev_password@127.0.0.1:5432';
 const DB = 'thapsus_lighthouse';
@@ -53,6 +58,8 @@ const ALL_PAGES = [
   { path: '/app/payslips', label: 'Payslips (signed in)', auth: true, records: true },
   { path: '/app/payslips/:payslip', label: 'Payslip (signed in)', auth: true, records: true },
   { path: '/app/documents/:document', label: 'Document viewer (signed in)', auth: true, records: true },
+  // The founder's console home (ADR-0175), as a support staff member (no elevation needed to read it).
+  { path: '/backoffice', label: 'Back office home (staff)', staff: true },
 ];
 // LIGHTHOUSE_ONLY=/app/me,/signin limits a run to some pages (debugging); verify always runs them all.
 const PAGES = process.env.LIGHTHOUSE_ONLY
@@ -82,6 +89,7 @@ const env = {
   API_BASE_URL: base,
   GLOBAL_BASE_URL: base,
   DATABASE_URL: `postgres://thapsus_app:${PW}@${host}/${DB}`,
+  BACKOFFICE_DATABASE_URL: `postgres://thapsus_backoffice:${PW}@${host}/${DB}`,
   LOCAL_KMS_KEY: '33'.repeat(32),
   OTEL_SDK_DISABLED: 'true',
   LOG_LEVEL: 'warn',
@@ -279,6 +287,46 @@ async function records(cookie) {
   return { ':payslip': batch.items[0].id, ':document': document.id };
 }
 
+/** A support staff member's session: the operator CLI's enrolment link, then a passkey registration. */
+async function staffCookie() {
+  if (!SoftAuthenticator) throw new Error('run with tsx-capable node (node --import tsx)');
+  const out = execFileSync(
+    'npx',
+    [
+      'tsx',
+      'src/cli/create-staff.ts',
+      'support.lighthouse@thapsus.example.test',
+      'Fictional Staff Member',
+      'support',
+    ],
+    { cwd: 'apps/api', env, encoding: 'utf8' },
+  );
+  const token = /#token=(\S+)/.exec(out)?.[1];
+  if (!token) throw new Error('create-staff printed no enrolment link');
+  const key = new SoftAuthenticator(new URL(base).hostname, base);
+  const post = (url, body) =>
+    fetch(`${base}${url}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  const o = await post('/v1/backoffice/auth/enrol/options', { token });
+  if (o.status !== 200) throw new Error(`staff enrolment options failed ${o.status}`);
+  const { challengeId, options } = await o.json();
+  const v = await post('/v1/backoffice/auth/enrol/verify', {
+    token,
+    challengeId,
+    response: key.register(options),
+  });
+  if (v.status !== 204) throw new Error(`staff enrolment failed ${v.status}`);
+  const c = v.headers
+    .getSetCookie()
+    .map((x) => x.split(';')[0])
+    .find((x) => /^(__Host-)?thr_staff=/.test(x));
+  if (!c) throw new Error('no staff cookie');
+  return c;
+}
+
 mkdirSync('.verify', { recursive: true });
 let failed = false;
 const report = [];
@@ -297,6 +345,7 @@ try {
   await waitFor(`http://127.0.0.1:${API}/health`);
   await waitFor(`${base}/health`);
   const cookie = await sessionCookie();
+  const staff = PAGES.some((p) => p.staff) ? await staffCookie() : undefined;
   const chrome = await chromeLauncher.launch({
     chromePath: process.env.PW_CHROMIUM_PATH ?? chromium.executablePath(),
     chromeFlags: ['--headless=new', '--no-sandbox'],
@@ -318,7 +367,7 @@ try {
           logLevel: 'error',
           onlyCategories: ['performance', 'accessibility', 'best-practices'],
           formFactor: 'mobile',
-          extraHeaders: p.auth ? { Cookie: cookie } : undefined,
+          extraHeaders: p.auth ? { Cookie: cookie } : p.staff ? { Cookie: staff } : undefined,
           disableStorageReset: false,
         });
         // LIGHTHOUSE_DUMP=<dir> keeps every full report (debugging page weight and main-thread work).

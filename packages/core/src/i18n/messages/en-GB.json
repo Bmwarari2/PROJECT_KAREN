@@ -4066,7 +4066,7 @@
         "overview": "Overview",
         "incidents": "Incidents",
         "rules": "Rules",
-        "honeytokens": "Honeytokens"
+        "honeytokens": "Decoys"
       },
       "severity": {
         "low": "Low",
@@ -4236,7 +4236,7 @@
         "appliedList": "Applied"
       },
       "honeytokens": {
-        "title": "Honeytokens",
+        "title": "Decoys (honeytokens)",
         "lead": "Decoys that nobody has a reason to touch: a fake API key in the documentation, trap addresses and decoy file names. Only their fingerprints are stored; any touch is a detection.",
         "kind": {
           "api_key": "Decoy API key",

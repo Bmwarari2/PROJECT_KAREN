@@ -102,6 +102,17 @@ The forgot-password page joined the audited pages. Measured on 2026-10-24 with `
 | Settings `/app/settings`           | 94          | 100           | 100            | 3,065 ms | 0.000 | 46 ms  |
 | Security `/app/security`           | 93          | 100           | 100            | 3,076 ms | 0.000 | 124 ms |
 
+#### The founder's console home (ADR-0175)
+
+`scripts/lighthouse.mjs` also audits the back-office home as a support staff member. The script registers the staff member's passkey through the operator CLI's enrolment link with the API tests' software authenticator (the real WebAuthn ceremony), then sends the staff session cookie. Measured on 2026-10-24 with `LIGHTHOUSE_ONLY=/backoffice,/app/settings` on the shared build machine at a load average of about 1.5:
+
+| Page                              | Performance | Accessibility | Best practices | LCP      | CLS   | TBT    |
+| --------------------------------- | ----------- | ------------- | -------------- | -------- | ----- | ------ |
+| Back office home `/backoffice`    | 91          | 100           | 100            | 3,355 ms | 0.061 | 105 ms |
+| Settings `/app/settings` (re-run) | 93          | 100           | 100            | 3,097 ms | 0.000 | 131 ms |
+
+The home's largest paint is its lead paragraph; the figures arrive after it in skeleton-sized cards, which keeps CLS low. Settings scored 87 in the first of the two runs: its second Lighthouse pass spent about 4.4 s of main thread in the settings chunk both times (passes one and three: under 2 s), so the median depends on that pass. That is worth a look by whoever next changes the settings frame.
+
 #### Message catalogue in the page payload (Phase 12, ADR-0150)
 
 Client components used to receive the whole flattened catalogue (about 5,000 messages) on every page. Each route segment's layout now sends only the namespaces its pages use. Measured on 2026-10-19 with a production build (`next start`) and a fresh, signed-in fictional workspace owner: HTML is `GET` with `Accept: text/html`, RSC is `GET` with `RSC: 1` (the full tree, as on a hard navigation; a client-side navigation between features sends only the changed segments). gz is gzip at the default level. Lighthouse was not re-run for this change.
