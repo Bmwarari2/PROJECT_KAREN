@@ -14,6 +14,42 @@ import { cn } from './primitives';
  * - `actions` (text buttons) move under the text on phones and sit at the end of the row from `sm` up.
  * - `accessory` (a chevron, a count, a switch or an icon button) always stays at the end of the row.
  */
+/** The heading row shared by `ListSection` and `PageSection`: a `title-3` heading, an action and a lead. */
+function SectionHead({
+  title,
+  description,
+  action,
+  headingLevel,
+  headingId,
+}: {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  headingLevel: 2 | 3 | 4;
+  headingId?: string;
+}) {
+  const Heading = `h${headingLevel}` as const;
+  return (
+    <>
+      {title || action ? (
+        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 px-1">
+          {title ? (
+            <Heading id={headingId} className="min-w-0 text-title-3 text-text">
+              {title}
+            </Heading>
+          ) : (
+            <span />
+          )}
+          {action ? <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div> : null}
+        </div>
+      ) : null}
+      {description ? (
+        <div className="max-w-[var(--prose-width)] px-1 text-callout text-text-secondary">{description}</div>
+      ) : null}
+    </>
+  );
+}
+
 export function ListSection({
   title,
   description,
@@ -31,29 +67,66 @@ export function ListSection({
   footer?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  headingLevel?: 2 | 3;
+  headingLevel?: 2 | 3 | 4;
   id?: string;
 }) {
-  const Heading = `h${headingLevel}` as const;
   const headingId = id ? `${id}-title` : undefined;
   return (
     <section className={cn('flex flex-col gap-2', className)} aria-labelledby={headingId} id={id}>
-      {title || action ? (
-        <div className="flex items-end justify-between gap-3 px-1">
-          {title ? (
-            <Heading id={headingId} className="text-title-3 text-text">
-              {title}
-            </Heading>
-          ) : (
-            <span />
-          )}
-          {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
-        </div>
-      ) : null}
-      {description ? <p className="px-1 text-callout text-text-secondary">{description}</p> : null}
+      <SectionHead
+        title={title}
+        description={description}
+        action={action}
+        headingLevel={headingLevel}
+        headingId={headingId}
+      />
       <ul role="list" className="overflow-hidden rounded-lg bg-surface-raised shadow-sm">
         {children}
       </ul>
+      {footer ? <div className="px-1 text-footnote text-text-secondary">{footer}</div> : null}
+    </section>
+  );
+}
+
+/**
+ * A titled part of a page (`PageSection`) whose body is not a list: a table, a form card or a chart (DESIGN.md §6).
+ * It has the same heading as `ListSection` (above the container, never inside a card), so a page reads
+ * as one column of grouped sections. The heading names the region for screen readers.
+ */
+export function PageSection({
+  title,
+  description,
+  action,
+  footer,
+  children,
+  className,
+  headingLevel = 2,
+  headingId,
+  id,
+}: {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  footer?: React.ReactNode;
+  children?: React.ReactNode;
+  className?: string;
+  headingLevel?: 2 | 3 | 4;
+  /** The heading's id (defaults to a generated one), which also names the region. */
+  headingId?: string;
+  id?: string;
+}) {
+  const generated = React.useId();
+  const hid = title ? (headingId ?? `${generated}-title`) : undefined;
+  return (
+    <section className={cn('flex min-w-0 flex-col gap-2', className)} aria-labelledby={hid} id={id}>
+      <SectionHead
+        title={title}
+        description={description}
+        action={action}
+        headingLevel={headingLevel}
+        headingId={hid}
+      />
+      {children}
       {footer ? <div className="px-1 text-footnote text-text-secondary">{footer}</div> : null}
     </section>
   );

@@ -169,6 +169,7 @@
   }
   .thr-stack > tbody > tr > td[data-label]::before {
     content: attr(data-label) ': ';
+    color: var(--color-text-secondary);
   }
   .thr-stack > tbody > tr > td[data-phone='hide'],
   .thr-stack > thead th[data-phone='hide'] {
@@ -181,6 +182,16 @@
     content: '·' / '';
     margin-inline-end: var(--space-2);
   }
+  /* a labelled cell joined to the line keeps its label after the dot */
+  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='inline'][data-label]::before {
+    content: '·\00a0\00a0' attr(data-label) ': ' / attr(data-label) ': ';
+    margin-inline-end: 0;
+  }
+  /* hidden cells do not break a run of inline cells */
+  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='hide'] + td[data-phone='inline']::before {
+    content: '·' / '';
+    margin-inline-end: var(--space-2);
+  }
   /* buttons go under the text, above the row's stretched link */
   .thr-stack > tbody > tr > td:not(:first-child):has(button, [role='button'], form) {
     order: 99;
@@ -189,11 +200,39 @@
     position: relative;
     z-index: 1;
   }
+  /* inside a card or list card that already draws the container, the list draws none of its own */
+  [data-flush] > .thr-stack-wrap {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: transparent;
+    box-shadow: none;
+  }
   /* a row whose title cell is one link is tapped as a whole */
   .thr-stack > tbody > tr > :first-child > a:only-of-type::after,
   .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * > a:only-of-type::after {
     content: '';
     position: absolute;
     inset: 0;
+  }
+}
+
+/* Forms in the app on phones (ADR-0181, DESIGN.md §6): every control is at least 44px tall, and fields
+   and the submit button take the full width, so a form reads as one column of large touch targets. */
+@media (max-width: 639px) {
+  :is([data-shell='app'], [role='dialog'])
+    form
+    :is(
+      input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='hidden'], [type='file']),
+      select,
+      textarea
+    ) {
+    min-height: 44px;
+    width: 100%;
+    max-width: 100%;
+  }
+  :is([data-shell='app'], [role='dialog']) form button {
+    min-height: 44px;
+  }
+  :is([data-shell='app'], [role='dialog']) form:not([role='search']) button[type='submit'] {
+    width: 100%;
   }
 }

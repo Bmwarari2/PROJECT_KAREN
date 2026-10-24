@@ -14,6 +14,7 @@ const twMerge = extendTailwindMerge({
             'display',
             'headline',
             'title-1',
+            'large-title',
             'title-2',
             'title-3',
             'body-lg',
@@ -126,11 +127,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
 });
 
 // ---- Inputs ---------------------------------------------------------------------------------
+// Below `sm` fields are 44px tall (a touch target, DESIGN.md §1 principle 4); 40px from `sm` up.
 const fieldBase = `w-full rounded-sm border border-border-strong bg-surface-raised px-3 text-callout text-text placeholder:text-text-secondary transition-[border-color,box-shadow] duration-[var(--duration-fast)] ${focusRing} aria-[invalid=true]:border-danger`;
+
+/** The class of a native `<select>` that looks like an Input (filters, short choices in forms). */
+export const nativeSelectClass = cn(fieldBase, 'h-10 px-2 max-sm:h-11');
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...props }, ref) {
-    return <input ref={ref} className={cn(fieldBase, 'h-10', className)} {...props} />;
+    return <input ref={ref} className={cn(fieldBase, 'h-10 max-sm:h-11', className)} {...props} />;
   },
 );
 
@@ -253,7 +258,8 @@ export function EmptyState({
 }) {
   const Heading = `h${level}` as const;
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg bg-surface px-6 py-12 text-center">
+    // no box of its own: it sits in the card or section that has nothing to show (never a card in a card)
+    <div className="flex flex-col items-center gap-3 rounded-lg px-6 py-10 text-center">
       {icon ? (
         <div className="text-text-secondary [&_svg]:h-8 [&_svg]:w-8 [&_svg]:stroke-[1.5]">{icon}</div>
       ) : null}
@@ -290,7 +296,8 @@ export function Table({
   return (
     <div
       className={cn(
-        'w-full overflow-x-auto rounded-lg border border-border',
+        // its own container (a table is never put inside a card): white with a hairline border
+        'w-full overflow-x-auto rounded-lg border border-border bg-surface-raised',
         stack && 'thr-stack-wrap',
         scrollLabel && focusRing,
       )}
