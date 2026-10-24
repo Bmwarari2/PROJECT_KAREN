@@ -7463,6 +7463,13 @@ export interface paths {
                             status: string;
                             expiresOn: string | null;
                             createdAt: string;
+                            attachmentType?: string | null;
+                            visibility?: string | null;
+                            issuedOn?: string | null;
+                            note?: string | null;
+                            sensitive?: boolean;
+                            scanStatus?: string;
+                            expiryStatus?: string | null;
                         }[];
                     };
                 };
@@ -7631,6 +7638,13 @@ export interface paths {
                             status: string;
                             expiresOn: string | null;
                             createdAt: string;
+                            attachmentType?: string | null;
+                            visibility?: string | null;
+                            issuedOn?: string | null;
+                            note?: string | null;
+                            sensitive?: boolean;
+                            scanStatus?: string;
+                            expiryStatus?: string | null;
                         };
                     };
                 };
@@ -7809,6 +7823,7 @@ export interface paths {
                             name: string;
                             locale: string;
                             category: string;
+                            requiresCountersign: boolean;
                         }[];
                     };
                 };
@@ -7829,6 +7844,7 @@ export interface paths {
                         body: string;
                         locale?: string;
                         category?: string;
+                        requiresCountersign?: boolean;
                     };
                 };
             };
@@ -7903,6 +7919,7 @@ export interface paths {
                         /** Format: uuid */
                         employeeId: string;
                         requireSignature?: boolean;
+                        requireCountersign?: boolean;
                         title?: string;
                     };
                 };
@@ -8162,6 +8179,11 @@ export interface paths {
                             status: string;
                             requestedAt: string;
                             signedAt: string | null;
+                            requiresCountersign: boolean;
+                            approvalStatus: string | null;
+                            returnedReason: string | null;
+                            completedAt: string | null;
+                            signedDocumentId: string | null;
                         }[];
                     };
                 };
@@ -8184,6 +8206,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Sign a document (consent and typed name). It is complete straight away, or goes to the approver when it needs a countersignature. */
         post: {
             parameters: {
                 query?: never;
@@ -8210,8 +8233,8 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** Format: uuid */
-                            signedDocumentId: string;
+                            status: string;
+                            signedDocumentId: string | null;
                             documentSha256: string;
                             signedSha256: string;
                         };
@@ -8330,6 +8353,9 @@ export interface paths {
                             signerName: string | null;
                             documentSha256: string | null;
                             signedSha256: string | null;
+                            countersignerName: string | null;
+                            countersignedAt: string | null;
+                            completedAt: string | null;
                         };
                     };
                 };
@@ -8409,6 +8435,547 @@ export interface paths {
                 };
                 /** @description Default Response */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/employees/{id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach a document to a person (multipart: file + attachmentType, visibility, optional evidenceType, title, issuedOn, expiresOn, note, rtwCheckId). Right-to-work evidence is sealed and kept in the vault. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            title: string;
+                            category: string;
+                            employeeId: string | null;
+                            folderId: string | null;
+                            fileName: string;
+                            contentType: string;
+                            sizeBytes: string | null;
+                            sha256: string | null;
+                            status: string;
+                            expiresOn: string | null;
+                            createdAt: string;
+                            attachmentType?: string | null;
+                            visibility?: string | null;
+                            issuedOn?: string | null;
+                            note?: string | null;
+                            sensitive?: boolean;
+                            scanStatus?: string;
+                            expiryStatus?: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One document for the viewer: its details, whether the browser can show it, and the signature request waiting for the caller */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            document: {
+                                /** Format: uuid */
+                                id: string;
+                                title: string;
+                                category: string;
+                                employeeId: string | null;
+                                folderId: string | null;
+                                fileName: string;
+                                contentType: string;
+                                sizeBytes: string | null;
+                                sha256: string | null;
+                                status: string;
+                                expiresOn: string | null;
+                                createdAt: string;
+                                attachmentType?: string | null;
+                                visibility?: string | null;
+                                issuedOn?: string | null;
+                                note?: string | null;
+                                sensitive?: boolean;
+                                scanStatus?: string;
+                                expiryStatus?: string | null;
+                            };
+                            employeeName: string | null;
+                            viewable: boolean;
+                            canManage: boolean;
+                            evidence: {
+                                evidenceType: string;
+                                fileName: string;
+                                note: string | null;
+                                issuedOn: string | null;
+                            } | null;
+                            signature: {
+                                /** Format: uuid */
+                                id: string;
+                                status: string;
+                                requestedAt: string;
+                                signedAt: string | null;
+                                signedDocumentId: string | null;
+                                requiresCountersign: boolean;
+                                approvalStatus: string | null;
+                                returnedReason: string | null;
+                                completedAt: string | null;
+                            } | null;
+                            countersign: {
+                                /** Format: uuid */
+                                signatureRequestId: string;
+                                signerName: string | null;
+                                signedAt: string | null;
+                                documentSha256: string | null;
+                                signedSha256: string | null;
+                            } | null;
+                            signedCopyOf: {
+                                /** Format: uuid */
+                                documentId: string;
+                                signerName: string | null;
+                                signedAt: string | null;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The file itself, for the viewer (inline) or as a download (download=true). Every view and download is audited; right-to-work evidence is opened from its sealed copy and audited in the vault. */
+        get: {
+            parameters: {
+                query?: {
+                    download?: boolean;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/signature-requests/{id}/countersign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The approver countersigns a signed document (consent and typed name, like the signer) or returns it to the signer with a reason */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "approve";
+                        /** @enum {boolean} */
+                        consent: true;
+                        typedName: string;
+                    } | {
+                        /** @enum {string} */
+                        decision: "return";
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            status: string;
+                            signedDocumentId: string | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -19876,6 +20443,7 @@ export interface paths {
                             matrixReminderDays: number[];
                             probationReminderDays: number[];
                             serviceReminderDays: number[];
+                            documentReminderDays: number[];
                             smallCellThreshold: number;
                             businessWeekdays: number[];
                             gpgSector: "privateAndVoluntary" | "publicAuthority";
@@ -19924,6 +20492,7 @@ export interface paths {
                         matrixReminderDays?: number[];
                         probationReminderDays?: number[];
                         serviceReminderDays?: number[];
+                        documentReminderDays?: number[];
                         smallCellThreshold?: number;
                         businessWeekdays?: number[];
                         gpgSector?: "privateAndVoluntary" | "publicAuthority";
@@ -19943,6 +20512,7 @@ export interface paths {
                             matrixReminderDays: number[];
                             probationReminderDays: number[];
                             serviceReminderDays: number[];
+                            documentReminderDays: number[];
                             smallCellThreshold: number;
                             businessWeekdays: number[];
                             gpgSector: "privateAndVoluntary" | "publicAuthority";
@@ -20332,6 +20902,7 @@ export interface paths {
                             excuseEndsOn: string | null;
                             retainUntil: string | null;
                             hasEvidence: boolean;
+                            evidenceDocuments?: number;
                         }[];
                     };
                 };
@@ -27890,6 +28461,9 @@ export interface paths {
                             matchedCount: number;
                             createdAt: string;
                             publishedAt: string | null;
+                            source: string;
+                            providerName: string | null;
+                            sample: boolean;
                         }[];
                     };
                 };
@@ -27921,7 +28495,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Bulk upload payslips or year-end documents (PDFs or a zip of PDFs); returns the matching preview */
+        /** Bulk upload payslips or year-end documents (PDFs or a zip of PDFs) and/or the payroll provider’s structured statements (a JSON file in the `statements` part, StatementImport); returns the matching preview */
         post: {
             parameters: {
                 query?: never;
@@ -27951,12 +28525,18 @@ export interface paths {
                             matchedCount: number;
                             createdAt: string;
                             publishedAt: string | null;
+                            source: string;
+                            providerName: string | null;
+                            sample: boolean;
                             items: {
                                 /** Format: uuid */
                                 id: string;
-                                fileName: string;
-                                sizeBytes: number;
-                                sha256: string;
+                                fileName: string | null;
+                                sizeBytes: number | null;
+                                sha256: string | null;
+                                hasStatement: boolean;
+                                currency: string | null;
+                                netMinor: string | null;
                                 matchStatus: string;
                                 employeeId: string | null;
                                 employeeNumber: string | null;
@@ -28069,12 +28649,18 @@ export interface paths {
                             matchedCount: number;
                             createdAt: string;
                             publishedAt: string | null;
+                            source: string;
+                            providerName: string | null;
+                            sample: boolean;
                             items: {
                                 /** Format: uuid */
                                 id: string;
-                                fileName: string;
-                                sizeBytes: number;
-                                sha256: string;
+                                fileName: string | null;
+                                sizeBytes: number | null;
+                                sha256: string | null;
+                                hasStatement: boolean;
+                                currency: string | null;
+                                netMinor: string | null;
                                 matchStatus: string;
                                 employeeId: string | null;
                                 employeeNumber: string | null;
@@ -28261,9 +28847,12 @@ export interface paths {
                         "application/json": {
                             /** Format: uuid */
                             id: string;
-                            fileName: string;
-                            sizeBytes: number;
-                            sha256: string;
+                            fileName: string | null;
+                            sizeBytes: number | null;
+                            sha256: string | null;
+                            hasStatement: boolean;
+                            currency: string | null;
+                            netMinor: string | null;
                             matchStatus: string;
                             employeeId: string | null;
                             employeeNumber: string | null;
@@ -28581,10 +29170,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** My payslips and year-end documents */
+        /** My payslips and year-end documents (optionally one calendar year of pay dates) */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    year?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -28605,9 +29196,24 @@ export interface paths {
                             label: string;
                             payDate: string | null;
                             taxYear: string | null;
-                            fileName: string;
+                            fileName: string | null;
                             publishedAt: string;
                             viewed: boolean;
+                            hasStatement: boolean;
+                            hasFile: boolean;
+                            periodStart: string | null;
+                            periodEnd: string | null;
+                            currency: string | null;
+                            grossMinor: string | null;
+                            netMinor: string | null;
+                            providerName: string | null;
+                            sample: boolean;
+                            ytd: {
+                                key: string;
+                                label: string;
+                                amountMinor: string;
+                            }[] | null;
+                            ytdTaxYear: string | null;
                         }[];
                     };
                 };
@@ -28630,7 +29236,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    year?: number;
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -28653,9 +29261,24 @@ export interface paths {
                             label: string;
                             payDate: string | null;
                             taxYear: string | null;
-                            fileName: string;
+                            fileName: string | null;
                             publishedAt: string;
                             viewed: boolean;
+                            hasStatement: boolean;
+                            hasFile: boolean;
+                            periodStart: string | null;
+                            periodEnd: string | null;
+                            currency: string | null;
+                            grossMinor: string | null;
+                            netMinor: string | null;
+                            providerName: string | null;
+                            sample: boolean;
+                            ytd: {
+                                key: string;
+                                label: string;
+                                amountMinor: string;
+                            }[] | null;
+                            ytdTaxYear: string | null;
                         }[];
                     };
                 };
@@ -28719,6 +29342,279 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/payslips/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One payslip with the provider’s structured statement (every view is audited as sensitive); amounts are the provider’s */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            kind: string;
+                            docType: string;
+                            label: string;
+                            payDate: string | null;
+                            taxYear: string | null;
+                            fileName: string | null;
+                            publishedAt: string;
+                            viewed: boolean;
+                            hasStatement: boolean;
+                            hasFile: boolean;
+                            periodStart: string | null;
+                            periodEnd: string | null;
+                            currency: string | null;
+                            grossMinor: string | null;
+                            netMinor: string | null;
+                            providerName: string | null;
+                            sample: boolean;
+                            ytd: {
+                                key: string;
+                                label: string;
+                                amountMinor: string;
+                            }[] | null;
+                            ytdTaxYear: string | null;
+                            /** Format: uuid */
+                            employeeId: string;
+                            employeeName: string | null;
+                            statement: {
+                                employeeNumber: string;
+                                currency: string;
+                                employer: {
+                                    name: string;
+                                    address?: string[];
+                                    taxReference?: string;
+                                };
+                                employee: {
+                                    name: string;
+                                    address?: string[];
+                                    department?: string;
+                                    jobTitle?: string;
+                                    taxCode?: string;
+                                    nationalId?: string;
+                                };
+                                period: {
+                                    start: string;
+                                    end: string;
+                                    payDate: string;
+                                    /** @enum {unknown} */
+                                    frequency: "weekly" | "fortnightly" | "four_weekly" | "semi_monthly" | "monthly" | "other";
+                                    number?: string;
+                                    taxYear?: string;
+                                };
+                                payment: {
+                                    /** @enum {unknown} */
+                                    method: "bank_transfer" | "cheque" | "cash" | "other";
+                                    account?: string;
+                                };
+                                payments: {
+                                    /** @enum {unknown} */
+                                    kind: "basic" | "overtime" | "bonus" | "commission" | "allowance" | "holiday" | "sick" | "parental" | "back_pay" | "expenses" | "other";
+                                    label: string;
+                                    code?: string;
+                                    quantity?: string;
+                                    rateMinor?: number;
+                                    amountMinor: number;
+                                }[];
+                                deductions: {
+                                    /** @enum {unknown} */
+                                    kind: "income_tax" | "social_security" | "pension" | "student_loan" | "benefit" | "union" | "attachment_of_earnings" | "other";
+                                    label: string;
+                                    code?: string;
+                                    quantity?: string;
+                                    rateMinor?: number;
+                                    amountMinor: number;
+                                }[];
+                                employerContributions?: {
+                                    /** @enum {unknown} */
+                                    kind: "pension" | "social_security" | "benefit" | "other";
+                                    label: string;
+                                    code?: string;
+                                    quantity?: string;
+                                    rateMinor?: number;
+                                    amountMinor: number;
+                                }[];
+                                totals: {
+                                    grossMinor: number;
+                                    deductionsMinor: number;
+                                    netMinor: number;
+                                };
+                                ytd?: {
+                                    /** @enum {unknown} */
+                                    key: "gross" | "taxable_pay" | "income_tax" | "social_security" | "pension_employee" | "pension_employer" | "student_loan" | "net" | "other";
+                                    label: string;
+                                    amountMinor: number;
+                                }[];
+                                notes?: string[];
+                                illustrative?: boolean;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The payroll provider’s PDF, for the in-app viewer (inline) or as a download (download=true) */
+        get: {
+            parameters: {
+                query?: {
+                    download?: boolean;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payslips/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A PDF of the provider’s statement, for payslips that came without the provider’s own PDF (the provider’s figures, laid out; nothing is calculated) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            requestId?: string;
+                            errors?: {
+                                path?: string;
+                                message?: string;
+                            }[];
+                            region?: string;
+                            appUrl?: string;
+                            retryAfter?: number;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payslips/{id}/download": {
         parameters: {
             query?: never;
@@ -28726,6 +29622,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** A download link: the provider’s PDF when there is one, otherwise a PDF of the provider’s statement */
         get: {
             parameters: {
                 query?: never;

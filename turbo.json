@@ -1,7 +1,10 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**", "!.next/cache/**", "cdk.out/**"] },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "cdk.out/**", "public/pdfjs/**"]
+    },
     "typecheck": { "dependsOn": ["^build"] },
     "dev": { "cache": false, "persistent": true }
   }

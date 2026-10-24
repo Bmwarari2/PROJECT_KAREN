@@ -61,12 +61,18 @@ async function signIn(l: StagingLogin) {
     payload: { tenant: 'kestrel', email: l.email, password: l.password },
   });
 }
+// One session per role: the staging workspace asks everyone for a second step (ADR-0170), so a second
+// sign-in after the test-only enrolment below would stop at the code prompt.
+const sessions = new Map<LoginRole, string>();
 async function session(role: LoginRole) {
+  const known = sessions.get(role);
+  if (known) return known;
   const res = await signIn(login(role));
   expect(res.statusCode, res.body).toBe(200);
   const cookie = cookieFrom(res);
-  // admins enrol MFA at first sign-in (the seed never creates a factor); a test-only enrolment here
+  // the seed never creates a factor, so each login enrols at first sign-in; a test-only enrolment here
   if (res.json().mfaEnrollmentRequired) await enrolTotp(ctx, cookie);
+  sessions.set(role, cookie);
   return cookie;
 }
 const get = (cookie: string, url: string) => ctx.app.inject({ method: 'GET', url, headers: { cookie } });
@@ -250,6 +256,92 @@ describe('staging seed', () => {
     ).toBe(true);
   });
 
+  it('gives the employee documents in every signing state, documents HR shared, and twelve months of sample payslips', async () => {
+    const cookie = await session('employee');
+    const me = (await get(cookie, '/v1/auth/session')).json() as { employeeId: string };
+    const sigs = (await get(cookie, '/v1/signature-requests')).json() as Array<{
+      documentId: string;
+      status: string;
+      approvalStatus: string | null;
+      completedAt: string | null;
+    }>;
+    const pending = sigs.filter((x) => x.status === 'pending');
+    expect(pending.length).toBeGreaterThanOrEqual(2);
+    expect(sigs.some((x) => x.status === 'signed' && x.approvalStatus === 'pending')).toBe(true); // awaiting approval
+    expect(sigs.some((x) => x.status === 'signed' && x.completedAt)).toBe(true); // completed
+    // one waiting document is a multi-page PDF, opened in the viewer
+    const pageCounts = await Promise.all(
+      pending.map(async (x) => {
+        const pdf = await get(cookie, `/v1/documents/${x.documentId}/content`);
+        expect(pdf.statusCode).toBe(200);
+        return (pdf.rawPayload.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+      }),
+    );
+    expect(Math.max(...pageCounts)).toBeGreaterThan(1);
+    const docs = (await get(cookie, `/v1/documents?employeeId=${me.employeeId}`)).json() as Array<{
+      attachmentType: string | null;
+      visibility: string | null;
+    }>;
+    const shared = docs.filter((d) => d.attachmentType).map((d) => d.attachmentType);
+    expect(shared).toEqual(expect.arrayContaining(['contract', 'driving_licence']));
+    expect(shared).not.toContain('background_check'); // HR keeps that one to itself
+    const slips = (await get(cookie, '/v1/me/payslips')).json() as Array<{
+      kind: string;
+      hasStatement: boolean;
+      sample: boolean;
+      providerName: string | null;
+      periodStart: string | null;
+      ytd: unknown[] | null;
+      id: string;
+    }>;
+    const monthly = slips.filter((x) => x.kind === 'payslip' && x.hasStatement);
+    expect(new Set(monthly.map((x) => x.periodStart)).size).toBeGreaterThanOrEqual(12);
+    expect(monthly.every((x) => x.sample && x.providerName === 'Sample Payroll Provider (fictional)')).toBe(
+      true,
+    );
+    expect(monthly.every((x) => x.ytd?.length)).toBe(true);
+    const lines = await Promise.all(
+      monthly.map(
+        async (x) =>
+          (await get(cookie, `/v1/payslips/${x.id}`)).json() as {
+            statement: { payments: Array<{ kind: string }>; deductions: unknown[]; illustrative: boolean };
+          },
+      ),
+    );
+    expect(lines.some((x) => x.statement.payments.some((l) => l.kind === 'overtime'))).toBe(true);
+    expect(lines.some((x) => x.statement.payments.some((l) => l.kind === 'bonus'))).toBe(true);
+    expect(lines.every((x) => x.statement.deductions.length >= 3 && x.statement.illustrative)).toBe(true);
+    // the payslip notification names the period only: "Your payslip for <Month year> is ready"
+    const notes = (await get(cookie, '/v1/me/notifications')).json() as { data: Array<{ title: string }> };
+    const ready = notes.data.find((n) => /^Your payslip for /.test(n.title));
+    expect(ready?.title).toMatch(/^Your payslip for [A-Z][a-z]+ \d{4} is ready$/);
+  });
+
+  it('shows HR right-to-work evidence in the vault for several people, one expiring soon and one expired, and a countersignature to give', async () => {
+    // checked in the database: signing HR in here would enrol a factor the next test does not expect
+    const rtw = await tx((x) =>
+      x.query<{ employee_id: string; expires_on: string | null; vault_record_id: string; category: string }>(
+        `SELECT employee_id, expires_on::text AS expires_on, vault_record_id, category FROM app.documents WHERE attachment_type = 'right_to_work'`,
+      ),
+    );
+    expect(new Set(rtw.map((r) => r.employee_id)).size).toBeGreaterThanOrEqual(4);
+    expect(rtw.every((r) => r.vault_record_id && r.category === 'immigration')).toBe(true);
+    const anchor = today('Europe/London');
+    expect(rtw.some((r) => r.expires_on && r.expires_on < anchor)).toBe(true);
+    expect(
+      rtw.some((r) => r.expires_on && r.expires_on >= anchor && r.expires_on <= addDays(anchor, 60)),
+    ).toBe(true);
+    const waiting = await tx((x) =>
+      x.query(
+        `SELECT 1 FROM app.approval_requests r JOIN app.approval_steps s ON s.tenant_id = r.tenant_id AND s.request_id = r.id AND s.step_index = r.current_step
+           JOIN app.users u ON u.tenant_id = r.tenant_id AND u.id = ANY(s.approver_user_ids)
+          WHERE r.subject = 'document.countersign' AND r.status = 'pending' AND lower(u.email) = lower($1)`,
+        [login('hr_admin').email],
+      ),
+    );
+    expect(waiting.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('gives the admin logins data on every screen they own', async () => {
     const anchor = today('Europe/London');
     const hr = await session('hr_admin');
@@ -378,7 +470,7 @@ describe('staging seed', () => {
   it('stores generated files through the object store under the tenant’s prefix', async () => {
     const keysInDb = await tx((x) =>
       x.query<{ k: string }>(
-        `SELECT file_key AS k FROM app.documents UNION ALL SELECT file_key FROM app.payslips UNION ALL SELECT file_key FROM app.payroll_exports`,
+        `SELECT file_key AS k FROM app.documents UNION ALL SELECT file_key FROM app.payslips WHERE file_key IS NOT NULL UNION ALL SELECT file_key FROM app.payroll_exports`,
       ),
     );
     expect(keysInDb.length).toBeGreaterThan(300);

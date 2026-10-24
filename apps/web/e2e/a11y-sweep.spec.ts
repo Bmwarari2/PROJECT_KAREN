@@ -107,12 +107,16 @@ interface Fixture {
   runId: string;
   tenantId: string;
   kioskToken: string;
+  documentId: string;
+  payslipId: string;
   owner: { slug: string; email: string; secret: string; employeeNumber: string };
 }
 
 function concrete(route: string, f: Fixture): string {
   const map: Record<string, string> = {
     '/app/people/[id]': `/app/people/${f.employeeId}`,
+    '/app/documents/[id]': `/app/documents/${f.documentId}`,
+    '/app/payslips/[id]': `/app/payslips/${f.payslipId}`,
     '/app/tasks/[id]': `/app/tasks/${f.taskId}`,
     // the owner's own request to HR: the same record HR opens as a task
     '/app/contact-hr/[id]': `/app/contact-hr/${f.taskId}`,
@@ -138,6 +142,29 @@ function concrete(route: string, f: Fixture): string {
   return path;
 }
 
+/** A small, valid one-page PDF with a line of fictional text, so the viewer renders a real page and its text layer. */
+function onePagePdf(text: string): Buffer {
+  const stream = `BT /F1 18 Tf 72 770 Td (${text}) Tj ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets = objects.map((o, i) => {
+    const at = out.length;
+    out += `${i + 1} 0 obj\n${o}\nendobj\n`;
+    return at;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  out += offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
+
 /** A Wednesday about five weeks ahead, away from the Christmas and New Year bank holidays. */
 function futureWorkingDay() {
   const d = new Date(
@@ -156,7 +183,7 @@ function thisMonday() {
   return d.toISOString().slice(0, 10);
 }
 
-/** A fictional UK workspace: three staff and an invited manager, pending leave, a published day of shifts, a paired kiosk, a support ticket and a report run. */
+/** A fictional UK workspace: three staff and an invited manager, pending leave, a published day of shifts, a paired kiosk, a shared contract, a payslip, a support ticket and a report run. */
 async function seedWorkspace(page: Page): Promise<Fixture> {
   const co = await companyWithStaff(page, 3);
   // a second sign-in user: a store manager invited from her employee record
@@ -233,6 +260,50 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
     source: { kind: 'ready', reportId: 'headcount', params: { asOf: monday } },
     format: 'csv',
   });
+  // documents and pay: a contract shared with Ada (the owner's record) and her payslip as a provider sent it
+  const doc = await page.request.post(`/v1/employees/${co.staff[0]}/documents`, {
+    multipart: {
+      attachmentType: 'contract',
+      visibility: 'employee',
+      file: {
+        name: 'contract.pdf',
+        mimeType: 'application/pdf',
+        buffer: onePagePdf('Fictional statement of terms'),
+      },
+    },
+  });
+  expect(doc.status(), await doc.text()).toBe(201);
+  const statement = {
+    employeeNumber: co.employeeNumber,
+    currency: 'GBP',
+    employer: { name: 'Fictional Shops Ltd', address: ['1 Example Street', 'London'] },
+    employee: { name: 'Ada Fictional', taxCode: 'SAMPLE1', nationalId: 'QQ 12 34 56 C' },
+    period: { start: '2026-09-01', end: '2026-09-30', payDate: '2026-09-30', frequency: 'monthly' },
+    payment: { method: 'bank_transfer', account: '12345678' },
+    payments: [
+      { kind: 'basic', label: 'Basic pay', quantity: '160.00', rateMinor: 1_500, amountMinor: 240_000 },
+    ],
+    deductions: [{ kind: 'income_tax', label: 'Income tax', amountMinor: 30_000 }],
+    employerContributions: [{ kind: 'pension', label: 'Employer pension', amountMinor: 7_200 }],
+    totals: { grossMinor: 240_000, deductionsMinor: 30_000, netMinor: 210_000 },
+    ytd: [{ key: 'gross', label: 'Gross pay to date', amountMinor: 1_440_000 }],
+  };
+  const batch = await page.request.post('/v1/payslips/batches', {
+    multipart: {
+      kind: 'payslip',
+      label: 'September 2026',
+      statements: {
+        name: 'statements.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          JSON.stringify({ provider: { name: 'Fictional Payroll Bureau' }, statements: [statement] }),
+        ),
+      },
+    },
+  });
+  expect(batch.status(), await batch.text()).toBe(201);
+  const imported = (await batch.json()) as { id: string; items: Array<{ id: string }> };
+  await apiCall(page.request, 'POST', `/v1/payslips/batches/${imported.id}/publish`);
   // records for the detail pages (ADR-0161): a request to HR (a task), Ben's leave approval, last week's
   // timesheet, a right-to-work check, an asset and a pay period
   const hrRequest = await apiCall<{ id: string }>(page.request, 'POST', '/v1/hr-requests', {
@@ -295,6 +366,8 @@ async function seedWorkspace(page: Page): Promise<Fixture> {
     runId: run.id,
     tenantId: session.tenantId,
     kioskToken: kiosk.token,
+    documentId: ((await doc.json()) as { id: string }).id,
+    payslipId: imported.items[0]!.id,
     owner: { slug: co.slug, email: co.email, secret: co.secret, employeeNumber: co.employeeNumber },
   };
 }

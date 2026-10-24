@@ -63,7 +63,9 @@ const PAGES = {
     '/app/tasks',
     '/app/approvals',
     '/app/documents',
+    ':toSign',
     '/app/payslips',
+    ':payslip',
     '/app/time-off',
     '/app/rota',
     '/app/assets',
@@ -76,6 +78,9 @@ const PAGES = {
     '/app/people',
     ':person',
     '/app/compliance',
+    '/app/compliance/right-to-work',
+    ':countersign',
+    ':evidence',
     '/app/approvals',
     '/app/tasks',
     '/app/documents',
@@ -228,7 +233,33 @@ async function colleagueProfile(cookie) {
   return list[1]?.id ? `/app/people/${list[1].id}` : null;
 }
 
-const slugOf = (path) => path.replace(/^\/app\/?/, '').replace(/[/:]+/g, '-') || 'home';
+/**
+ * A document waiting for the employee's signature, their latest payslip, one waiting for HR's countersignature, or a
+ * person's documents with right-to-work evidence.
+ */
+async function seededPage(token, cookie) {
+  const get = async (url) => (await fetch(`${base}${url}`, { headers: { cookie } })).json();
+  if (token === ':toSign') {
+    const sr = (await get('/v1/signature-requests')).filter((x) => x.status === 'pending');
+    return sr.length ? `/app/documents/${sr.at(-1).documentId}` : null;
+  }
+  if (token === ':payslip') {
+    const p = (await get('/v1/me/payslips')).find((x) => x.hasStatement);
+    return p ? `/app/payslips/${p.id}` : null;
+  }
+  if (token === ':evidence') {
+    // a person with right-to-work evidence, on their profile's Documents tab
+    const d = (await get('/v1/documents')).find((x) => x.attachmentType === 'right_to_work');
+    return d ? `/app/people/${d.employeeId}?tab=documents` : null;
+  }
+  if (token === ':countersign') {
+    const a = (await get('/v1/approvals?view=mine')).find((x) => x.subject === 'document.countersign');
+    return a ? `/app/documents/${a.payload.documentId}` : null;
+  }
+  return null;
+}
+
+const slugOf = (path) => path.replace(/^\/app\/?/, '').replace(/[/:?=&]+/g, '-') || 'home';
 
 try {
   for (const port of [WEB, API]) {
@@ -266,6 +297,11 @@ try {
       mkdirSync(dir, { recursive: true });
       for (let path of PAGES[role]) {
         if (path === ':person') path = (await colleagueProfile(cookie)) ?? '/app/people';
+        else if (path.startsWith(':')) {
+          const resolved = await seededPage(path, cookie);
+          if (!resolved) continue;
+          path = resolved;
+        }
         if (only && !only.includes(path)) continue;
         const res = await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
         await page.waitForTimeout(300);

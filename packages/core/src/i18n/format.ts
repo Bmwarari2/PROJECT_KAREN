@@ -48,8 +48,30 @@ export function lookupMessage(
   return messages[key] ?? messages[`${key}_other`];
 }
 
-export function interpolate(template: string, vars: MessageVars): string {
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? `{${name}}`));
+const monthFormats = new Map<string, Intl.DateTimeFormat>();
+/** A calendar date's month and year in the locale ("August 2026"), in UTC so the civil date never shifts. */
+export function formatMonthYear(date: string, locale: Locale): string {
+  let f = monthFormats.get(locale);
+  if (!f)
+    monthFormats.set(
+      locale,
+      (f = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' })),
+    );
+  return f.format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
+}
+
+/**
+ * Replaces `{name}` with the variable as it is. `{name:month}` formats a calendar date variable (YYYY-MM-DD) as its
+ * month and year in the locale, so a stored notification renders in each reader's own locale.
+ */
+export function interpolate(template: string, vars: MessageVars, locale: Locale = 'en-GB'): string {
+  return template.replace(/\{(\w+)(?::(month))?\}/g, (whole, name: string, kind?: string) => {
+    const v = vars[name];
+    if (v === undefined || v === null) return whole;
+    if (kind === 'month' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v))
+      return formatMonthYear(v, locale);
+    return String(v);
+  });
 }
 
 /** Translates a key from a flat catalogue; a missing key renders as the key itself. */
@@ -60,5 +82,5 @@ export function formatMessage(
   locale: Locale = 'en-GB',
 ): string {
   const template = lookupMessage(messages, key, vars, locale);
-  return template === undefined ? key : interpolate(template, vars);
+  return template === undefined ? key : interpolate(template, vars, locale);
 }

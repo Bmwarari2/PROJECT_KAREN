@@ -106,7 +106,7 @@ export const SUBJECT_TABLES: Record<string, TableRule> = {
   'app.documents': { subject: [E()], actor: ['created_by'], category: 'personnel_records', erase: DEL },
   'app.signature_requests': {
     subject: [E('signer_employee_id'), U('signer_user_id')],
-    actor: ['requested_by'],
+    actor: ['requested_by', 'countersigner_user_id'],
     category: 'personnel_records',
     erase: DEL,
   },

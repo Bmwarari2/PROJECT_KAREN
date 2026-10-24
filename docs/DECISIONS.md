@@ -1737,6 +1737,118 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 
 **Consequences.** Every row stays one tap target with a real link inside for keyboard and screen-reader users, while names in it remain separately reachable.
 
+## ADR-0165 — HR attaches documents to a person; expiry reminders come from settings (2026-10-23)
+
+**Context.** HR had no way to keep a person's right-to-work evidence, driving licence, contract, qualifications or background checks with their record, or to be told before one runs out. Uploads are an attack surface (ASVS V5/V12): the file name and the declared type are both under the uploader's control.
+
+**Decision.**
+
+- **One route attaches a file to a person:** `POST /v1/employees/:id/documents` (multipart, one file of at most 20 MB). It takes a type (right-to-work evidence, driving licence, contract, qualification or certificate, background check, other), optional issue and expiry dates, a note (at most 1,000 characters) and a visibility: **HR only** or **HR and the person**. It needs `documents.manage` over that person (HR admins). Attachments follow their own visibility, never folder rules, so managers never see them or their notes.
+- **The bytes decide the type.** `lib/file-sniff.ts` allow-lists PDF, PNG, JPEG, WebP and DOCX by their signatures. A zip that is not a Word document, text, HTML, SVG and anything else is refused. The stored name is sanitised: last path segment, no control, reserved, zero-width or bidi characters, at most 120 characters, and the extension of the detected type.
+- **A scan hook runs before anything is stored** (`lib/upload-scan.ts`). No scanner is configured yet (HUMAN_TODO 1.7), so the verdict is `not_scanned` and is recorded on the row (`scan_status`). A later scanner can then sweep what was stored before it. An `infected` verdict refuses the upload and stores nothing.
+- **Storage.** Files go to the cell's residency-guarded object store under the tenant's prefix (`<tenant>/employees/<person>/…`). Right-to-work evidence goes to the vault instead (ADR-0166). The content is always streamed by the API (`/v1/documents/:id/content`), never through a presigned link, so every view and download is audited.
+- **Migration 0022 is expand only.** It adds nullable columns to `app.documents` (`attachment_type`, `visibility`, `issued_on`, `note`, `vault_record_id`, `scan_status`, `rtw_check_id`) with check constraints. A NULL `attachment_type` is a library, template or signed document, as before.
+- **Expiry reminders reuse the right-to-work follow-up job.** The daily compliance job (`runComplianceDaily`) also looks at attachments with an expiry date. Right-to-work evidence uses the existing `rtwReminderDays`. Every other type uses a new setting, `documentReminderDays` (default 60, 30, 7 and 0 days before expiry), editable with the other compliance settings. Each reminder is a task for HR (`compliance.task.renewDocument`), and its key makes it idempotent. The viewer, lists and the person's Documents tab show "Expiring soon" or "Expired" from the same windows.
+- **The upload dialog** offers drag and drop plus a file button (a real `<input type="file">` with its label), shows upload progress with a labelled `<progress>` and a status message, and announces errors with `role="alert"`. The drop zone follows EasyUI's `animated-file-upload` idea (MIT, © 2026 Suraj Maurya; reference only, rebuilt from our tokens without motion libraries).
+
+**Consequences.**
+
+- Attachments appear in the person's Documents tab (HR) and, when shared, in the person's own documents. The right-to-work page links evidence to its check.
+- Until a scanner is configured, uploads are stored unscanned and marked as such. HUMAN_TODO 1.7 remains open.
+- A new upload type means extending the allow-list and its unit tests, not trusting a new MIME type.
+
+## ADR-0166 — Right-to-work evidence is immigration data: sealed files in the vault (2026-10-23)
+
+**Context.** CLAUDE.md puts immigration and work-authorisation documents in the sensitive store, field-level encrypted with per-region KMS keys, visible only to roles that need them, with every access audit-logged. The existing right-to-work check evidence route already used the vault for the check's details. HR now attaches passports, BRPs or eVisas, share-code results and birth certificates from the person's record as well.
+
+**Decision.**
+
+- **Classification:** an attachment of type `right_to_work` is always `immigration`, whatever its evidence kind. Every other attachment type is ordinary personnel data, including driving licences, contracts, qualifications and background-check outcomes.
+- **The file is sealed** (`lib/sealed-file.ts`, format `THRSEAL1`): a fresh 256-bit data key per file, wrapped by the cell's regional KMS key with the file's context (tenant, person, category, field) as the encryption context, and AES-256-GCM over the bytes with the same context as additional data. The header holds ids and the category only. It is stored under `<tenant>/vault/immigration/<person>/<uuid>.sealed` in the home cell. The object store, the backups and the company export see ciphertext only. The export's tooling opens it with the same key provider.
+- **The details live in the vault** (category `immigration`): evidence kind, original file name, note, issue date and SHA-256. The `app.documents` row keeps a generic title ("Right to work evidence"), a generic file name, the expiry date (needed for reminders) and a pointer to the vault record. It holds no immigration detail.
+- **Access.** Uploading needs `documents.manage` and `vault.write:immigration` over the person; reading needs `vault.read:immigration` (HR admins hold both by default). The person sees their own evidence only when HR shared it with them, through the self-disclosure path (`withSelfDisclosure`). Every view and download is an audited vault read, and a refusal is audited too.
+- **Residency.** The sealed object and the vault row stay in the tenant's home cell. `documents.residency.test.ts` proves it for every region pair.
+
+**Consequences.**
+
+- Opening right-to-work evidence costs a KMS decrypt per view, which is acceptable for how often HR opens it.
+- Search, previews and lists never show what kind of evidence a person holds. HR opens it to see.
+- If the classification of another type changes (for example, a customer's background checks), only the `sensitive` rule in `attachments.ts` and its tests change. Rows already stored stay where they are until a migration job moves them.
+
+## ADR-0167 — Payslips as the payroll provider supplies them: structured statements, a sample provider fixture and locale-formatted months (2026-10-23)
+
+**Context.** Payslips were PDFs only, with a payroll-entered label. The product owner wants an accessible, printable payslip with the provider's figures and year-to-date totals, and a staging workspace with twelve months of them. CLAUDE.md keeps running payroll and calculating tax out of scope. The notification read "Your payslip for Payslips August 2026 is ready".
+
+**Decision.**
+
+- **A statement format** (`modules/payslips/statement.ts`, documented in `docs/integrations.md`):
+  - parties and period: employer and employee, period, pay date and payment method;
+  - pay details: tax code, national identifier, payment and deduction lines (with quantities and rates when the provider gives them), employer contributions, year to date, totals and notes;
+  - money: every amount in integer minor units with an ISO 4217 currency.
+- **Import uses the existing payslip batch upload.** A `statements` JSON part sits beside the provider's PDFs, and statements are matched to people by employee number, like file names. The only arithmetic is a check that the provider's lines add up to the provider's totals. A statement that does not add up is refused and reported, never shown. Nothing is calculated.
+- **What is kept.** The national identifier is stored masked (last four characters) and the bank account as its last four digits; the provider's full values are not kept. The provider's PDF is kept unchanged when it is sent.
+- **Migration 0023 is expand only.** It adds nullable statement columns to `app.payslips` (`statement`, `pay_date`, `period_start`, `period_end`, `currency`, `gross_minor`, `net_minor`) and `source`, `provider_name` and `sample` to batches. File columns become nullable, so a statement can arrive without a PDF.
+- **The app.**
+  - **List:** one year at a time, each row named by its period, with the pay date and net pay, plus the year to date as printed on the year's latest payslip.
+  - **Payslip page:** net pay first, then payments, deductions, employer contributions and year to date as grouped lists. It has a print style sheet and opens the provider's PDF in the viewer on request.
+  - **Download:** the provider's PDF, or a PDF of the same statement when there is none (`/v1/payslips/:id/pdf`).
+  - **Audit:** every view and download is audited as sensitive.
+- **The sample payroll provider** (`cli/staging/sample-payroll-provider.ts`) is the only source of staging payslips. It is a fixture: its deductions are hand-written, illustrative figures per gross-pay band, never derived from a tax rule. Gross pay is the fictional person's contracted pay. Every statement is `illustrative`, every batch `sample`, and the app shows a "Sample data" marker and banner with the provider's name.
+- **Months are formatted in the reader's locale.** Catalogue templates gain a `{name:month}` placeholder (`interpolate` in `@thapsus/core/i18n`), which formats a stored calendar date as month and year in the reader's locale. Notifications store the period start date, not a label, and now read "Your payslip for August 2026 is ready". They target the payslip, whose own page (`@thapsus/core/links`) is `/app/payslips/<id>`.
+
+**Consequences.**
+
+- A provider integration that pushes statements (HUMAN_TODO partner programmes) reuses the same format and checks.
+- The masked identifier is all the platform can show. A person who needs the full number uses the provider's PDF.
+- Year-to-date figures are only as current as the latest statement the provider sent.
+
+## ADR-0168 — An in-app document viewer with review and sign (2026-10-23)
+
+**Context.** Documents were downloads. Signing happened in a dialog without the document in view, and lists that asked for a signature did not open the document. The viewer must work on low-cost phones and under the strict CSP (no third-party code, `worker-src 'self'`), and it must keep `e2e/security-asvs.spec.ts` green.
+
+**Decision.**
+
+- **`/app/documents/[id]` is the one place a document opens.** The documents list, onboarding, the inbox and tasks, the Me hub and notifications link to it. Old `?sign=` links redirect to it.
+  - **PDFs** render with PDF.js (`pdfjs-dist` 6.4.299, Apache-2.0) with page navigation, zoom, fit to width and a selectable text layer.
+  - **Images** show inline.
+  - **Other types** (DOCX) show their details and a download.
+  - **Download** is always offered.
+  - **Audit:** every view and download is audited. Right-to-work evidence goes through the vault (ADR-0166).
+- **Loading.** PDF.js is loaded only on the pages that show a document (`next/dynamic`, `ssr: false`). It uses the **legacy build** for both library and worker, because the modern build calls built-ins that phone browsers in our support range lack (`getOrInsertComputed`).
+- **The worker is self-hosted.** `scripts/copy-pdfjs.mjs` copies the worker, standard fonts, CMaps and wasm into `public/pdfjs/<version>/` before `next dev` and `next build` (the folder is git-ignored). Those files are served with their own policy (`PDF_WORKER_CSP`: `default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'`) and long-lived caching. They are public library code with no personal data. The document bytes always come from the API with `Cache-Control: private, no-store`. `useWorkerFetch: false` keeps font fetches in the page's `connect-src 'self'`. The text-layer CSS follows PDF.js `web/pdf_viewer.css` (Apache-2.0, Mozilla Foundation).
+- **Review and sign** is a panel beside the document (below it on phones) with four steps: review, confirm, sign, done.
+  - It reuses the existing e-signature method: consent, a typed name, and the time, IP address, device and SHA-256 recorded.
+  - It reuses the existing certificate page (`documents/pdf.ts`).
+  - After signing, the viewer shows the signed copy.
+  - The stepper follows EasyUI's `stepper` (MIT, © 2026 Suraj Maurya; reference only, rebuilt from our tokens).
+- **First data in the HTML.** The viewer and the payslip pages fetch their first data on the web server with the viewer's own cookie (`serverApiView` in `apps/web/lib/server-api.ts`), so the title and details arrive with the page. The API audits that fetch as the view, so a router prefetch (someone pointing at a link) fetches nothing: a hover is never recorded as a view or marks a payslip as seen.
+- **No layout shift.** While PDF.js loads, the viewer shows its page controls (disabled) over a page-shaped placeholder. It draws the first page out of the flow and only then swaps it in, so nothing around the document moves.
+- **Mobile layout** follows ADR-0180. Titles take the width, with dates and badges under them and buttons below them at 44 px or more. Lists are `ListSection` rows.
+
+**Consequences.**
+
+- PDF.js loads on the first document view only: about 150 KB gzipped of library in the page and about 380 KB gzipped of worker, both cached for good after that. Other pages are unaffected. Evaluating the library is one long task of about 350 ms on the build machine, so the viewer is the app screen closest to the Lighthouse performance threshold (79 to 89 under load, docs/PERFORMANCE.md).
+- A PDF.js upgrade changes the versioned folder and the pinned version together. The copy script re-copies when the version or build changes.
+- The CSP unit test covers the worker route's policy and the proxy exclusion, and `documents-sign.spec.ts` fails on any CSP violation while a PDF renders and is signed.
+
+## ADR-0169 — Countersignature through the approvals service (2026-10-23)
+
+**Context.** Contracts and some policies need a company signature after the person signs. Until now they counted as complete as soon as the person signed. The product owner asked for a countersign step that shows in the approver's inbox and approvals, and is configurable.
+
+**Decision.**
+
+- **Where it is set.** Templates carry `requires_countersign`, and each signature request keeps its own copy of the setting. A new template defaults to on for the contract, offer and policy categories and off otherwise; HR can set it when creating the template, and override it per document when sending (`requireCountersign`).
+- **Routing.** When the person signs a document that needs it, the request becomes `approval_status = 'pending'` and an approval request with subject `document.countersign` is raised through the approvals service. The default chain is created on first use: HR admins, or the owner when there are none; nobody approves their own document, and the chain escalates to the owner after 72 hours. A customer names an authorised signatory by editing that chain, like any other.
+- **The approver's view.** The approval's own page (ADR-0160) offers "Open the document to countersign". The approver reviews the document in the same viewer. They either countersign with the same e-signature method, or return it with a reason, and the person then signs again.
+- **Completion.** Countersigning appends a second certificate to the copy the person signed, so the completed copy records both signatures with their timestamps and hashes. The request is complete (`completed_at`) only then, and the person is notified. A return notifies them too, and the viewer shows the reason. Every step is audited (`document.signed`, `document.countersigned`, `document.returned`).
+- **Migration 0022** adds the countersign columns to `app.signature_requests` and `app.document_templates` (expand only). It backfills `completed_at` for signatures made before countersignatures existed, lifting forced RLS for the migrator inside the migration's transaction only.
+
+**Consequences.**
+
+- A contract shows as awaiting approval in the person's documents until it is countersigned.
+- Approver changes are approval-chain configuration, with no code change.
+- The staging seed has one document in each state: awaiting the employee, awaiting approval, and completed.
+
 ## ADR-0170 — Two-step verification for everyone in new workspaces, versioned sign-in defaults, and shorter admin sessions (2026-10-24)
 
 **Context.** The approved hardening plan (docs/SECURITY_HARDENING.md 2.1.2, 2.1.5) asks for a tenant setting "require two-step verification for everyone", on by default for new workspaces, closing the accepted risk ASVS V6.3.3. Existing workspaces must keep their behaviour. The sign-in policy lives in the `app.tenants.security` JSON, filled from code defaults, so changing a default would silently change every existing workspace. A data migration cannot fix that reliably: with forced row level security, a managed-Postgres migrator (Cloud SQL, RDS) sees no tenant rows, so an `UPDATE` would quietly change nothing. Admin sessions used the workspace's limits (30 idle minutes and 12 hours by default). The plan also asks admins to re-authenticate when their network (ASN) changes.

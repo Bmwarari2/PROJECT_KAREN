@@ -58,7 +58,8 @@ const ROUTES: Record<TargetType, (id: string) => string> = {
   privacy_incident: () => '/app/privacy/incidents',
   timesheet: (id) => `/app/timesheets/${id}`,
   payroll_period: (id) => `/app/payroll/periods/${id}`,
-  payslip: () => '/app/payslips',
+  // the payslip's own page (ADR-0167)
+  payslip: (id) => `/app/payslips/${id}`,
   law_change: () => '/app/compliance/law-changes',
   // the asker's view of a request to their HR team (HR open the task itself)
   hr_request: (id) => `/app/contact-hr/${id}`,

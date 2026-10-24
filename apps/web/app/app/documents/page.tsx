@@ -1,31 +1,15 @@
 'use client';
 import * as React from 'react';
-import { useSearchParams } from 'next/navigation';
-import { FileSignature, FileText } from 'lucide-react';
-import {
-  Badge,
-  Button,
-  Card,
-  CardTitle,
-  Dialog,
-  DialogContent,
-  EmptyState,
-  Field,
-  Input,
-  Skeleton,
-  Table,
-  TD,
-  TH,
-  THead,
-  TR,
-  useToast,
-} from '@thapsus/ui';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FileClock, FileSignature, FileText, PenLine } from 'lucide-react';
+import { Badge, EmptyState, ListItem, ListSection, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
-import { api, ApiProblem } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
-import { useSession } from '../shell';
+import { hasPermission, useSession } from '../shell';
 import { ExportLinks } from '@/components/export-links';
+import { IntentLink } from '@/components/intent-link';
+import { categoryLabel, kindLabel } from '@/components/documents/labels';
 import {
   ListCard,
   ListFilter,
@@ -42,67 +26,66 @@ interface SigReq {
   title: string;
   status: string;
   requestedAt: string;
+  signedAt: string | null;
+  approvalStatus: string | null;
+  returnedReason: string | null;
+  completedAt: string | null;
 }
 interface Doc {
   id: string;
   title: string;
   createdAt: string;
   category: string;
+  attachmentType: string | null;
+  expiryStatus: string | null;
+  expiresOn: string | null;
+}
+interface Approval {
+  id: string;
+  subject: string;
+  subjectName: string | null;
+  requestedAt: string;
+  payload: { documentId?: string; documentTitle?: string };
 }
 
+/**
+ * Documents: what waits for the viewer's signature (or countersignature), then every document they may see.
+ * Each one opens in the viewer (ADR-0168); nothing downloads until they ask for it there.
+ */
 export default function DocumentsPage() {
   const t = useT();
   const locale = useLocale();
-  const toast = useToast();
+  const router = useRouter();
   const session = useSession();
   const params = useSearchParams();
   const sigs = useApi<SigReq[]>('/v1/signature-requests');
   const docs = useApi<Doc[]>(
     session?.employeeId ? `/v1/documents?employeeId=${session.employeeId}` : '/v1/documents',
   );
-  const [signing, setSigning] = React.useState<SigReq | null>(null);
-  const [name, setName] = React.useState('');
-  const [consent, setConsent] = React.useState(false);
-  const [busy, setBusy] = React.useState(false);
+  const approvals = useApi<Approval[]>(
+    hasPermission(session, 'approvals.act') ? '/v1/approvals?view=mine' : null,
+  );
   const [query, setQuery] = React.useState('');
   const [category, setCategory] = React.useState('');
 
+  // links from before the viewer (/app/documents?sign=<request>) open the document in the viewer
   React.useEffect(() => {
     const id = params.get('sign');
-    if (id && sigs.data) setSigning(sigs.data.find((s) => s.id === id && s.status === 'pending') ?? null);
-  }, [params, sigs.data]);
+    const sr = id && sigs.data?.find((s) => s.id === id);
+    if (sr) router.replace(`/app/documents/${sr.documentId}`);
+  }, [params, sigs.data, router]);
 
-  const open = async (documentId: string) =>
-    window.open(
-      (await api<{ url: string }>(`/v1/documents/${documentId}/download`)).url,
-      '_blank',
-      'noopener',
-    );
-
-  async function sign(e: React.FormEvent) {
-    e.preventDefault();
-    if (!signing) return;
-    setBusy(true);
-    try {
-      await api(`/v1/signature-requests/${signing.id}/sign`, {
-        method: 'POST',
-        json: { consent: true, typedName: name },
-      });
-      toast({ title: t('documents.signed'), tone: 'success' });
-      setSigning(null);
-      sigs.reload();
-      docs.reload();
-    } catch (err) {
-      toast({ title: err instanceof ApiProblem ? err.title : t('common.error'), tone: 'danger' });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const pending = (sigs.data ?? []).filter((s) => s.status === 'pending');
+  const day = (iso: string) => formatDate(iso.slice(0, 10), locale);
+  const toSign = (sigs.data ?? []).filter((s) => s.status === 'pending');
+  const awaiting = (sigs.data ?? []).filter((s) => s.status === 'signed' && s.approvalStatus === 'pending');
+  const toCountersign = (approvals.data ?? []).filter(
+    (a) => a.subject === 'document.countersign' && a.payload.documentId,
+  );
   // The documents are filtered on the page: the API returns every one the viewer may see.
   const rows = docs.data ?? [];
-  const categories = [...new Set(rows.map((d) => d.category))].sort((a, b) => a.localeCompare(b, locale));
+  const categories = [...new Set(rows.map((d) => d.category))].sort((a, b) =>
+    categoryLabel(t, a).localeCompare(categoryLabel(t, b), locale),
+  );
   const shown = rows.filter((d) => (!category || d.category === category) && matches(query, d.title));
   const filtered = !!category || !!query.trim();
   return (
@@ -112,26 +95,54 @@ export default function DocumentsPage() {
         titleIsTab
         actions={<ExportLinks list="documents" params={{ employeeId: session?.employeeId ?? undefined }} />}
       />
-      {pending.length ? (
-        <Card>
-          <CardTitle>{t('documents.toSign')}</CardTitle>
-          <ul className="mt-3 flex flex-col gap-2">
-            {pending.map((s) => (
-              <li key={s.id} className="flex items-center gap-3">
-                <FileSignature aria-hidden className="h-5 w-5 stroke-[1.5] text-accent" />
-                <span className="min-w-0 flex-1 text-callout">
-                  <EntityLink href={`/app/documents/${s.documentId}?sign=${s.id}`}>{s.title}</EntityLink>
-                </span>
-                <Button size="sm" variant="secondary" onClick={() => open(s.documentId)}>
-                  {t('documents.read')}
-                </Button>
-                <Button size="sm" onClick={() => setSigning(s)}>
-                  {t('documents.sign')}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </Card>
+      {toSign.length ? (
+        <ListSection title={t('documents.toSign')} id="to-sign">
+          {toSign.map((s) => (
+            <ListItem
+              key={s.id}
+              href={`/app/documents/${s.documentId}`}
+              linkAs={IntentLink}
+              leading={<FileSignature />}
+              title={<span className="wrap-anywhere">{s.title}</span>}
+              subtitle={
+                s.approvalStatus === 'returned'
+                  ? t('docSign.returnedShort')
+                  : t('docSign.requested', { date: day(s.requestedAt) })
+              }
+              // the badge goes under the text on phones, so a long title keeps the width (ADR-0180)
+              meta={<Badge tone="accent">{t('docSign.signAction')}</Badge>}
+            />
+          ))}
+        </ListSection>
+      ) : null}
+      {toCountersign.length ? (
+        <ListSection title={t('docSign.toCountersign')} id="to-countersign">
+          {toCountersign.map((a) => (
+            <ListItem
+              key={a.id}
+              href={`/app/documents/${a.payload.documentId}`}
+              linkAs={IntentLink}
+              leading={<PenLine />}
+              title={a.payload.documentTitle ?? t('documents.title')}
+              subtitle={t('docSign.signedBy', { name: a.subjectName ?? '', date: day(a.requestedAt) })}
+              meta={<Badge tone="accent">{t('docSign.countersignAction')}</Badge>}
+            />
+          ))}
+        </ListSection>
+      ) : null}
+      {awaiting.length ? (
+        <ListSection title={t('docSign.waitingList')} id="awaiting">
+          {awaiting.map((s) => (
+            <ListItem
+              key={s.id}
+              href={`/app/documents/${s.documentId}`}
+              linkAs={IntentLink}
+              leading={<FileClock />}
+              title={<span className="wrap-anywhere">{s.title}</span>}
+              subtitle={t('docSign.signedOn', { date: day(s.signedAt ?? s.requestedAt) })}
+            />
+          ))}
+        </ListSection>
       ) : null}
       <ListCard
         title={session?.employeeId ? t('documents.list.mine') : t('documents.list.all')}
@@ -154,7 +165,7 @@ export default function DocumentsPage() {
               onChange={setCategory}
               label={t('documents.list.category')}
               anyLabel={t('documents.list.anyCategory')}
-              options={categories.map((c) => ({ value: c, label: c }))}
+              options={categories.map((c) => ({ value: c, label: categoryLabel(t, c) }))}
             />
           ) : undefined
         }
@@ -163,7 +174,7 @@ export default function DocumentsPage() {
             ? [
                 {
                   key: 'category',
-                  label: t('documents.list.categoryChip', { category }),
+                  label: t('documents.list.categoryChip', { category: categoryLabel(t, category) }),
                   clear: () => setCategory(''),
                 },
               ]
@@ -196,61 +207,30 @@ export default function DocumentsPage() {
             {shown.map((d) => (
               <TR key={d.id}>
                 <TD>
-                  <span className="flex items-center gap-3">
+                  <span className="flex min-w-0 items-center gap-3">
                     <FileText aria-hidden className="h-5 w-5 shrink-0 stroke-[1.5] text-accent" />
                     {/* the document's own page (the in-app viewer, ADR-0161) */}
-                    <EntityLink href={`/app/documents/${d.id}`} className="text-callout">
+                    <EntityLink href={`/app/documents/${d.id}`} className="min-w-0 break-words text-callout">
                       {d.title}
                     </EntityLink>
                   </span>
                 </TD>
                 <TD>
-                  <Badge>{d.category}</Badge>
+                  <span className="flex flex-wrap gap-1">
+                    <Badge>{kindLabel(t, d)}</Badge>
+                    {d.expiryStatus === 'expired' ? (
+                      <Badge tone="danger">{t('docView.expiredShort')}</Badge>
+                    ) : d.expiryStatus === 'expiring' ? (
+                      <Badge tone="warning">{t('docView.expiringShort')}</Badge>
+                    ) : null}
+                  </span>
                 </TD>
-                <TD className="text-footnote text-text-secondary">
-                  {formatDate(d.createdAt.slice(0, 10), locale)}
-                </TD>
+                <TD className="text-footnote text-text-secondary">{day(d.createdAt)}</TD>
               </TR>
             ))}
           </tbody>
         </Table>
       </ListCard>
-      <Dialog open={!!signing} onOpenChange={(o) => !o && setSigning(null)}>
-        {signing ? (
-          <DialogContent
-            title={t('documents.signTitle', { title: signing.title })}
-            description={t('documents.signBody')}
-            closeLabel={t('common.close')}
-          >
-            <form onSubmit={sign} className="flex flex-col gap-4">
-              <Field id="typedName" label={t('documents.typedName')}>
-                {(p) => (
-                  <Input
-                    {...p}
-                    required
-                    minLength={2}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoComplete="name"
-                  />
-                )}
-              </Field>
-              <label className="flex items-start gap-3 text-callout">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-1 accent-[var(--color-accent)]"
-                />
-                <span>{t('documents.consent')}</span>
-              </label>
-              <Button type="submit" disabled={!consent} loading={busy}>
-                {t('documents.signNow')}
-              </Button>
-            </form>
-          </DialogContent>
-        ) : null}
-      </Dialog>
     </div>
   );
 }
