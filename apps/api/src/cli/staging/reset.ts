@@ -1,6 +1,5 @@
 import { withRegistry, withTenant } from '@thapsus/db';
-import type { Deps } from '../../deps';
-import { purgeTenant } from '../../modules/privacy/company';
+import { purgeTenant, type PurgeDeps } from '../../modules/privacy/company';
 import { StagingConfigError } from './config';
 import { SEED_MARKER } from './seed';
 
@@ -17,7 +16,7 @@ export type ResetOutcome = 'nothing to reset' | 'reset';
  * then retires the old name in the registry and the directory so the workspace name is free again.
  */
 export async function resetStagingWorkspace(
-  deps: Deps,
+  deps: PurgeDeps,
   slug: string,
   log: (m: string) => void,
 ): Promise<ResetOutcome> {

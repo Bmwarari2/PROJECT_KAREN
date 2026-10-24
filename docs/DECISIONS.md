@@ -2152,6 +2152,14 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - Anything a tester changed in the test company is lost on a reset. The sign-in passwords stay as they are, from the Secret Manager secret, but every login enrols two-step verification again.
 - `apps/api/test/seed-staging-reset.int.test.ts` covers three cases: a workspace the seed did not create is refused, the purge is certified and empty, and the workspace is rebuilt under the same name with working sign-ins.
 
+**Correction (2026-10-24).** The first staging reset failed before it deleted anything. The reset built the API's full dependency set (`depsFromEnv`), and that needs `INTERNAL_TOKEN`, a secret the seed job is not given. The integration test had passed because it used the test app's dependencies.
+
+- The purge now takes only what it uses (`PurgeDeps`: router, directory, file store, rate limiter, mailer, clock, environment).
+- The seed job builds those from its own environment (`cli/staging/deps.ts`), so it is still not given the API's secrets.
+- The reset test uses the narrow set.
+- `seed-staging-deps.test.ts` builds the dependencies from the seed job's environment without `INTERNAL_TOKEN`.
+- Seed then reset was checked end to end as a process, against an S3-compatible store and the Postgres directory.
+
 ## ADR-0186 — Overlays start light, and the app shell no longer loads the time library (2026-10-24)
 
 **Context.** After the phone-app UI round (ADR-0180–0182) and the new features of this release, the Lighthouse gate failed in CI on the report builder (87), the document viewer (88) and the back-office home (88), and locally on People (84–88). On the same machine at the same time, `main` scored 91–93 on those pages, so this was a real regression of about 200 ms of total blocking time, not noise. A CPU profile of People at 4× slowdown with source maps found three causes:

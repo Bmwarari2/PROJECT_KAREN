@@ -301,11 +301,23 @@ export interface PurgeResult {
 const addDaysInstant = (iso: string, days: number) => addMinutes(iso, days * 24 * 60);
 
 /**
+ * What the purge uses. The account-closure job passes the API's dependencies; the staging reset (ADR-0185)
+ * builds only these, so it runs without the API's own secrets.
+ */
+export type PurgeDeps = Pick<Deps, 'router' | 'directory' | 'objects' | 'limiter' | 'mailer' | 'now'> & {
+  config: Pick<Deps['config'], 'env'>;
+};
+
+/**
  * Deletes a closed tenant everywhere it lives in its cell, verifies each store is empty and issues a
  * deletion certificate (stored in the regional registry and emailed to the requester). The global
  * directory keeps only the routing entry, marked deleted.
  */
-export async function purgeTenant(deps: Deps, tenantId: string, closureId: string): Promise<PurgeResult> {
+export async function purgeTenant(
+  deps: PurgeDeps,
+  tenantId: string,
+  closureId: string,
+): Promise<PurgeResult> {
   const now = () => deps.now().toISOString();
   const pre = await withTenant(deps.router, tenantId, async (tx) => {
     const c = await tx.maybe<{
