@@ -17,22 +17,79 @@ export interface TenantSecurity {
   sessionAbsoluteHours: number;
   lockoutThreshold: number;
   lockoutMinutes: number;
+  /** Count an SSO sign-in as two-step only when the identity provider asserts it (amr/acr). */
   trustIdpMfa: boolean;
+  /** Everyone, not only admins, must set up and use a second factor (plan 2.1.2, ASVS V6.3.3). */
+  requireMfaForEveryone: boolean;
   geofenceAllowedCountries?: string[];
 }
 
-export const DEFAULT_SECURITY: TenantSecurity = {
-  ssoEnforced: false,
-  sessionIdleMinutes: 30,
-  sessionAbsoluteHours: 12,
-  lockoutThreshold: 5,
-  lockoutMinutes: 15,
-  trustIdpMfa: true,
+/**
+ * Sign-in policy defaults by `app.tenants.security_defaults_version` (migration 0024, ADR-0170). A tenant's
+ * `security` JSON holds only what its admins chose; everything else comes from its version's defaults.
+ * Version 1 is every workspace created before 2026-10-23 and keeps its behaviour until then; version 2 is
+ * every workspace created since, with two-step verification for everyone and "Trust IdP MFA" off.
+ */
+export const SECURITY_DEFAULTS: Record<1 | 2, TenantSecurity> = {
+  1: {
+    ssoEnforced: false,
+    sessionIdleMinutes: 30,
+    sessionAbsoluteHours: 12,
+    lockoutThreshold: 5,
+    lockoutMinutes: 15,
+    trustIdpMfa: true,
+    requireMfaForEveryone: false,
+  },
+  2: {
+    ssoEnforced: false,
+    sessionIdleMinutes: 30,
+    sessionAbsoluteHours: 12,
+    lockoutThreshold: 5,
+    lockoutMinutes: 15,
+    trustIdpMfa: false,
+    requireMfaForEveryone: true,
+  },
+};
+/** The defaults new workspaces get. */
+export const DEFAULT_SECURITY: TenantSecurity = SECURITY_DEFAULTS[2];
+export const CURRENT_SECURITY_DEFAULTS_VERSION = 2;
+/** Written explicitly by every path that creates a workspace (sign-up, the provisioning CLI, the staging seed). */
+export const NEW_WORKSPACE_SECURITY: Partial<TenantSecurity> = {
+  requireMfaForEveryone: true,
+  trustIdpMfa: false,
 };
 
+export function securityFrom(
+  security: Partial<TenantSecurity> | null | undefined,
+  version: number | null | undefined,
+): TenantSecurity {
+  const defaults = SECURITY_DEFAULTS[version === 1 ? 1 : 2];
+  return { ...defaults, ...(security ?? {}) };
+}
+
 export async function loadSecurity(tx: Tx): Promise<TenantSecurity> {
-  const row = await tx.maybe<{ security: Partial<TenantSecurity> }>('SELECT security FROM app.tenants');
-  return { ...DEFAULT_SECURITY, ...(row?.security ?? {}) };
+  const row = await tx.maybe<{ security: Partial<TenantSecurity>; security_defaults_version: number }>(
+    'SELECT security, security_defaults_version FROM app.tenants',
+  );
+  return securityFrom(row?.security, row?.security_defaults_version);
+}
+
+/**
+ * Admin sessions are shorter than the workspace's (plan 2.1.5, ADR-0170): at most 15 idle minutes and 8
+ * hours in all, whatever the sign-in policy allows, because an admin session can change everyone's data.
+ */
+export const ADMIN_IDLE_MINUTES = 15;
+export const ADMIN_ABSOLUTE_HOURS = 8;
+
+export function sessionLimits(security: TenantSecurity, admin: boolean) {
+  return {
+    idleMinutes: admin
+      ? Math.min(ADMIN_IDLE_MINUTES, security.sessionIdleMinutes)
+      : security.sessionIdleMinutes,
+    absoluteHours: admin
+      ? Math.min(ADMIN_ABSOLUTE_HOURS, security.sessionAbsoluteHours)
+      : security.sessionAbsoluteHours,
+  };
 }
 
 export type AuthMethod =
@@ -57,6 +114,13 @@ export interface AuthContext {
   hasMfaFactor: boolean;
   /** When this session last proved the user's identity (sign-in or re-authentication). */
   authenticatedAt: Date;
+  /** The workspace requires everyone to use a second factor (not only admins). */
+  requireMfaForEveryone?: boolean;
+  /**
+   * An admin session whose network (autonomous system) differs from the one it last authenticated
+   * from; it must re-authenticate before anything else (ADR-0170). Only set when the cell has the signal.
+   */
+  networkChanged?: boolean;
   principal: Principal;
   user: {
     email: string;
@@ -77,17 +141,20 @@ export async function createSession(
     mfaVerified: boolean;
     ip?: string;
     userAgent?: string;
+    /** The client's network (autonomous system), when the cell has that signal. */
+    network?: string;
     now: Date;
   },
 ): Promise<string> {
   const security = await loadSecurity(tx);
+  const limits = sessionLimits(security, isAdmin(await loadPrincipal(tx, opts.userId)));
   const secret = newToken();
-  const idle = new Date(opts.now.getTime() + security.sessionIdleMinutes * 60_000);
-  const absolute = new Date(opts.now.getTime() + security.sessionAbsoluteHours * 3_600_000);
+  const idle = new Date(opts.now.getTime() + limits.idleMinutes * 60_000);
+  const absolute = new Date(opts.now.getTime() + limits.absoluteHours * 3_600_000);
   await tx.exec(
     `INSERT INTO app.sessions (tenant_id, user_id, token_hash, auth_method, mfa_verified_at, created_at, last_seen_at,
-       idle_expires_at, absolute_expires_at, ip, user_agent)
-     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $5, $6, $7, $8, $9)`,
+       idle_expires_at, absolute_expires_at, ip, user_agent, network)
+     VALUES (app.current_tenant(), $1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10)`,
     [
       opts.userId,
       hashToken(secret),
@@ -98,6 +165,7 @@ export async function createSession(
       absolute,
       opts.ip ?? null,
       opts.userAgent?.slice(0, 512) ?? null,
+      opts.network ?? null,
     ],
   );
   await tx.exec(
@@ -115,6 +183,7 @@ export async function resolveSession(
   router: TenantRouter,
   token: string | undefined,
   now: Date,
+  client: { network?: string } = {},
 ): Promise<AuthContext | undefined> {
   const parsed = parseToken(SESSION_PREFIX, token);
   if (!parsed) return undefined;
@@ -137,35 +206,51 @@ export async function resolveSession(
         time_zone: string | null;
         employee_id: string | null;
         status: string;
+        network: string | null;
+        security: Partial<TenantSecurity> | null;
+        security_defaults_version: number;
       }>(
         `SELECT s.id, s.user_id, s.auth_method, s.mfa_verified_at, s.last_seen_at, s.idle_expires_at, s.absolute_expires_at,
-                s.revoked_at, s.created_at, s.reauthenticated_at, u.email, u.display_name, u.locale, u.time_zone, u.employee_id, u.status
+                s.revoked_at, s.created_at, s.reauthenticated_at, s.network, u.email, u.display_name, u.locale, u.time_zone,
+                u.employee_id, u.status, t.security, t.security_defaults_version
            FROM app.sessions s JOIN app.users u ON u.tenant_id = s.tenant_id AND u.id = s.user_id
+           JOIN app.tenants t ON t.tenant_id = s.tenant_id
           WHERE s.token_hash = $1`,
         [hashToken(parsed.secret)],
       );
       if (!s || s.revoked_at || s.status !== 'active') return undefined;
       if (now >= new Date(s.idle_expires_at) || now >= new Date(s.absolute_expires_at)) return undefined;
-      if (now.getTime() - new Date(s.last_seen_at).getTime() > 60_000) {
-        const security = await loadSecurity(tx);
-        const idle = new Date(
-          Math.min(
-            now.getTime() + security.sessionIdleMinutes * 60_000,
-            new Date(s.absolute_expires_at).getTime(),
-          ),
-        );
-        await tx.exec('UPDATE app.sessions SET last_seen_at = $2, idle_expires_at = $3 WHERE id = $1', [
-          s.id,
-          now,
-          idle,
-        ]);
+      const principal = await loadPrincipal(tx, s.user_id);
+      const admin = isAdmin(principal);
+      const security = securityFrom(s.security, s.security_defaults_version);
+      const limits = sessionLimits(security, admin);
+      // Someone who became an admin during the session gets the admin limits from now on.
+      const lastSeen = new Date(s.last_seen_at).getTime();
+      if (admin) {
+        if (now.getTime() - lastSeen >= limits.idleMinutes * 60_000) return undefined;
+        if (now.getTime() - new Date(s.created_at).getTime() >= limits.absoluteHours * 3_600_000)
+          return undefined;
       }
+      if (now.getTime() - lastSeen > 60_000) {
+        const absolute = Math.min(
+          new Date(s.absolute_expires_at).getTime(),
+          new Date(s.created_at).getTime() + limits.absoluteHours * 3_600_000,
+        );
+        const idle = new Date(Math.min(now.getTime() + limits.idleMinutes * 60_000, absolute));
+        await tx.exec(
+          'UPDATE app.sessions SET last_seen_at = $2, idle_expires_at = $3, absolute_expires_at = $4 WHERE id = $1',
+          [s.id, now, idle, new Date(absolute)],
+        );
+      }
+      // The first request that carries a network signal records it; a later change matters for admins.
+      if (client.network && !s.network)
+        await tx.exec('UPDATE app.sessions SET network = $2 WHERE id = $1', [s.id, client.network]);
+      const networkChanged = admin && !!client.network && !!s.network && client.network !== s.network;
       const factor = await tx.maybe(
         `SELECT 1 FROM app.totp_factors WHERE user_id = $1 AND verified_at IS NOT NULL
          UNION ALL SELECT 1 FROM app.passkeys WHERE user_id = $1 LIMIT 1`,
         [s.user_id],
       );
-      const principal = await loadPrincipal(tx, s.user_id);
       return {
         tenantId: parsed.tenantId,
         userId: s.user_id,
@@ -179,6 +264,8 @@ export async function resolveSession(
             s.reauthenticated_at ? new Date(s.reauthenticated_at).getTime() : 0,
           ),
         ),
+        requireMfaForEveryone: security.requireMfaForEveryone,
+        networkChanged: networkChanged || undefined,
         principal,
         user: {
           email: s.email,
@@ -207,14 +294,37 @@ export function recentlyAuthenticated(auth: AuthContext, now: Date): boolean {
   return now.getTime() - auth.authenticatedAt.getTime() <= REAUTH_WINDOW_MINUTES * 60_000;
 }
 
+/** Whether this person must have and use a second factor: every admin, and everyone when the workspace says so. */
+export function mustUseMfa(principal: Principal, security: Pick<TenantSecurity, 'requireMfaForEveryone'>) {
+  return isAdmin(principal) || security.requireMfaForEveryone;
+}
+
 /**
  * The second-factor gate, applied to every route except MFA setup (ASVS V6.3.3, V6.4.3):
  *  - anyone with a verified second factor must use it in this session, whatever the sign-in path
- *    (password, magic link or SSO without trusted IdP MFA), so no path skips an enabled factor;
- *  - admins without a factor must enrol one first.
+ *    (password, magic link, a password reset, or SSO without IdP-asserted MFA), so no path skips it;
+ *  - admins without a factor, and everyone when the workspace requires it, must enrol one first.
  */
 export function mfaGate(auth: AuthContext): 'ok' | 'mfaRequired' | 'mfaEnrollmentRequired' {
   if (auth.mfaVerified) return 'ok';
   if (auth.hasMfaFactor) return 'mfaRequired';
-  return isAdmin(auth.principal) ? 'mfaEnrollmentRequired' : 'ok';
+  return mustUseMfa(auth.principal, { requireMfaForEveryone: !!auth.requireMfaForEveryone })
+    ? 'mfaEnrollmentRequired'
+    : 'ok';
+}
+
+/** What a fresh sign-in still has to do before the app opens (returned by every sign-in route). */
+export async function signInNextStep(
+  tx: Tx,
+  userId: string,
+  mfaVerified = false,
+): Promise<{ mfaRequired: boolean; mfaEnrollmentRequired: boolean }> {
+  if (mfaVerified) return { mfaRequired: false, mfaEnrollmentRequired: false };
+  const factor = await tx.maybe(
+    `SELECT 1 FROM app.totp_factors WHERE user_id = $1 AND verified_at IS NOT NULL UNION ALL SELECT 1 FROM app.passkeys WHERE user_id = $1 LIMIT 1`,
+    [userId],
+  );
+  if (factor) return { mfaRequired: true, mfaEnrollmentRequired: false };
+  const must = mustUseMfa(await loadPrincipal(tx, userId), await loadSecurity(tx));
+  return { mfaRequired: false, mfaEnrollmentRequired: must };
 }

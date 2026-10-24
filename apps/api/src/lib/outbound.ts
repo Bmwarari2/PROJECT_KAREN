@@ -146,6 +146,14 @@ export interface OutboundResponse {
   durationMs: number;
 }
 
+/** postOutbound's signature: the one way customer-configured destinations are called (tests record calls). */
+export type OutboundPost = (
+  rawUrl: string,
+  body: string | Buffer,
+  headers: Record<string, string>,
+  opts?: { policy?: OutboundPolicy; timeoutMs?: number; maxResponseBytes?: number },
+) => Promise<OutboundResponse>;
+
 /**
  * POSTs a body and resolves with the status code and duration. Network failures reject with an error
  * whose message is a short, non-sensitive class (timeout, connection refused, blocked address…).

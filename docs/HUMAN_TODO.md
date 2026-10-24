@@ -167,7 +167,11 @@ Things only a person with the right accounts or authority can do. The build runs
 
 ## 5. Accounts and access for staff
 
-- [ ] 5.1 Create the first Thapsus back-office super admin in each cell: `pnpm --filter @thapsus/api exec tsx src/cli/create-staff.ts <email> "<name>" super_admin`. Store the printed one-time password and TOTP secret in a password manager.
+- [ ] 5.1 **Create the first Thapsus back-office staff in each cell** (staff sign in only with a passkey or security key; [runbook](runbooks/staff-access.md)):
+  1. With the cell's back-office database credentials, run `pnpm --filter @thapsus/api exec tsx src/cli/create-staff.ts <email> "<name>" super_admin`. It prints a one-time enrolment link (valid 2 hours).
+  2. Give the link to that person over a channel you trust. They open it on the device that holds their passkey (Face ID, Touch ID, Windows Hello) or with their FIDO2 security key, and choose **Register key**.
+  3. Create a **second** super admin the same way: super-admin actions need a time-boxed elevation approved by another staff member, so one super admin alone cannot use them.
+  4. Buy two FIDO2 hardware keys per staff member if you want hardware-only keys (plan 2.2.1); register both (`staff-enrolment-link <email>` gives the second link).
 - [ ] 5.2 **Independent penetration test before production (ASVS review follow-up).** `docs/ASVS.md` is a self-assessment against OWASP ASVS 5.0 level 2. Before the first production customer:
   1. Commission a CREST- or equivalent-accredited tester for the staging stacks (all three regions), scoped to the app, API, SCIM, SSO, public API (API keys and OAuth) and back office, with fictional data only.
   2. Share `docs/ASVS.md`, `docs/SECURITY.md` and the OpenAPI document (`/openapi.json`) with them.
@@ -277,7 +281,19 @@ This replaces the AWS staging steps in §1 for testing. It is one UK cell in Lon
   1. In Cloud Shell, run:
      `gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --project=<project-id>`.
      It prints the URL, the workspace `kestrel`, and the email and password for each role (owner, HR admin, payroll admin, manager, employee).
-  2. Sign in at `<url>/signin`. The owner, HR admin and payroll admin are asked to set up an authenticator app the first time.
+  2. Sign in at `<url>/signin`. The workspace requires two-step verification for everyone (ADR-0170), so **every** login (owner, HR admin, payroll admin, manager and employee) is asked to set up an authenticator app or a passkey the first time. Add one entry per login to your authenticator app. This is intended: it is what new customer workspaces get.
   3. Keep these passwords private. The site is reachable from the internet, though the data is fictional.
-- [ ] 9.8 **(Optional, if the project is in a Google Cloud organisation) location policy.** Go to IAM & Admin → Organization policies → "Resource Location Restriction" (`gcp.resourceLocations`). On the project, allow only `in:europe-west2-locations`. This is the Google Cloud equivalent of the AWS region allow-list. A personal project without an organisation cannot set it; the OpenTofu tests check locations instead.
-- [ ] 9.9 **(Optional) restrict who can reach the app.** The sign-in page is public; the app's sign-in, MFA, lockout and rate limits protect it. To limit it to named Google accounts, set `public_access = false` in `infra/gcp/staging/variables.tf` (ask engineering). People then need the Cloud Run Invoker role, or an Identity-Aware Proxy, which adds a step.
+  4. **Reading staging email (password resets, sign-in links).** The seeded logins use `.example.test` addresses that receive nothing; staging writes every email to the mail bucket instead (`MAIL_TRANSPORT=bucket`). To try **Forgot your password?**:
+     1. Request the reset on `<url>/forgot-password` for one of the logins.
+     2. In Cloud Shell, list today's messages: `gcloud storage ls gs://<project-id>-thapsus-stg-uk-mail/mail/$(date -u +%F)/`.
+     3. Print the newest: `gcloud storage cat gs://<project-id>-thapsus-stg-uk-mail/mail/<date>/<object>.eml`. Check the `To:` line, copy the link and open it within 30 minutes.
+- [ ] 9.8 **Your back-office sign-in (staff passkey).** Thapsus staff sign in only with a passkey or a security key (ADR-0173, ADR-0174).
+  1. GitHub → Settings → Secrets and variables → Actions → Variables: add `GCP_STAFF_OWNER_EMAIL` (your work email) and `GCP_STAFF_OWNER_NAME` (your name). Do not use a personal address; never put a real address in the repository.
+  2. GitHub → Actions → **Deploy staging (Google Cloud)** → Run workflow (branch `main`), and approve the plan as usual. After the seed, the job creates your super-admin staff account and stores a one-time enrolment link in Secret Manager (valid 2 hours; nothing is printed).
+  3. In Cloud Shell: `gcloud secrets versions access latest --secret=thapsus-stg-uk-staff-invite --project=<project-id>`.
+  4. Open the `enrolmentUrl` from that output in Safari on your iPhone. Choose **Register key** and confirm with Face ID or Touch ID: that registers your passkey (it syncs through iCloud Keychain to your other Apple devices).
+  5. Sign in from then on at `<url>/backoffice/signin` → **Sign in with a passkey or security key**.
+  6. If the link expired, or for another device, run the workflow with **staff_invite** ticked and repeat steps 3 and 4.
+  7. Super-admin actions need a time-boxed elevation approved by a second staff member. To invite a second person, set the two variables to their details, run the workflow with **staff_invite** ticked, and give them the new link over a channel you trust. Runbook: `docs/runbooks/staff-access.md`.
+- [ ] 9.9 **(Optional, if the project is in a Google Cloud organisation) location policy.** Go to IAM & Admin → Organization policies → "Resource Location Restriction" (`gcp.resourceLocations`). On the project, allow only `in:europe-west2-locations`. This is the Google Cloud equivalent of the AWS region allow-list. A personal project without an organisation cannot set it; the OpenTofu tests check locations instead.
+- [ ] 9.10 **(Optional) restrict who can reach the app.** The sign-in page is public; the app's sign-in, MFA, lockout and rate limits protect it. To limit it to named Google accounts, set `public_access = false` in `infra/gcp/staging/variables.tf` (ask engineering). People then need the Cloud Run Invoker role, or an Identity-Aware Proxy, which adds a step.

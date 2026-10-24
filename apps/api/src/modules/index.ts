@@ -11,6 +11,7 @@ import { exportRoutes } from './exports/routes';
 import { onboardingRoutes } from './onboarding/routes';
 import { rulesRoutes } from './rules/routes';
 import { backofficeAuthRoutes } from './backoffice/auth';
+import { elevationRoutes } from './backoffice/elevations';
 import { leaveRoutes } from './leave/routes';
 import { timeRoutes } from './time/routes';
 import { complianceRoutes } from './compliance/routes';
@@ -46,6 +47,7 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(onboardingRoutes);
   await app.register(rulesRoutes);
   await app.register(backofficeAuthRoutes);
+  await app.register(elevationRoutes);
   await app.register(leaveRoutes);
   await app.register(timeRoutes);
   await app.register(complianceRoutes);

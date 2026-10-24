@@ -16,10 +16,10 @@ import {
   useToast,
 } from '@thapsus/ui';
 import { formatDate, type Locale } from '@thapsus/core/i18n';
-import { api, ApiProblem } from '@/lib/api';
+import { ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { PageTitle, selectClass, staffCan, useStaff } from '../ui';
+import { PageTitle, selectClass, staffCan, useStaff, useStaffApi } from '../ui';
 
 interface Entry {
   id: string;
@@ -36,6 +36,7 @@ interface Entry {
 /** Law-changes feed (phase 5 API: /v1/backoffice/law-changes). Customers see published entries for their jurisdictions. */
 export default function LawChangesAdmin() {
   const t = useT();
+  const call = useStaffApi();
   const locale = useLocale() as Locale;
   const staff = useStaff();
   const toast = useToast();
@@ -107,7 +108,7 @@ export default function LawChangesAdmin() {
                       onClick={() =>
                         run(
                           () =>
-                            api(`/v1/backoffice/law-changes/${e.id}`, {
+                            call(`/v1/backoffice/law-changes/${e.id}`, {
                               method: 'PATCH',
                               json: { status: 'published' },
                             }),
@@ -125,7 +126,7 @@ export default function LawChangesAdmin() {
                       onClick={() =>
                         run(
                           () =>
-                            api(`/v1/backoffice/law-changes/${e.id}`, {
+                            call(`/v1/backoffice/law-changes/${e.id}`, {
                               method: 'PATCH',
                               json: { status: 'withdrawn' },
                             }),
@@ -151,7 +152,7 @@ export default function LawChangesAdmin() {
               e.preventDefault();
               void run(
                 () =>
-                  api('/v1/backoffice/law-changes', {
+                  call('/v1/backoffice/law-changes', {
                     method: 'POST',
                     json: {
                       jurisdiction: f.jurisdiction.toUpperCase(),

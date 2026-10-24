@@ -22,7 +22,7 @@ import { formatDateTime, formatNumber, type Locale } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
 import { useLocale, useT } from '@/lib/i18n-client';
-import { PageTitle, selectClass, staffCan, useStaff } from '../../ui';
+import { PageTitle, selectClass, staffCan, useStaff, useStaffApi } from '../../ui';
 
 interface Detail {
   tenantId: string;
@@ -65,6 +65,7 @@ interface Flag {
 
 export default function TenantDetail() {
   const t = useT();
+  const call = useStaffApi();
   const locale = useLocale() as Locale;
   const staff = useStaff();
   const toast = useToast();
@@ -433,7 +434,7 @@ export default function TenantDetail() {
                       const v = e.target.value;
                       void run(
                         () =>
-                          api(`/v1/backoffice/tenants/${id}/features/${f.key}`, {
+                          call(`/v1/backoffice/tenants/${id}/features/${f.key}`, {
                             method: 'PUT',
                             json: { enabled: v === 'default' ? null : v === 'on' },
                           }),

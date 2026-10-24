@@ -40,9 +40,10 @@ The deploy runs after CI passes on `main`, or when started by hand.
 3. **Approve.** You approve the `staging-gcp` deployment.
 4. **Deploy:**
    - re-plan, and stop if the change set differs from the approved one;
-   - apply the migrate and seed jobs and their dependencies;
+   - apply the migrate, seed and staff-invite jobs and their dependencies (secret values included);
    - run the migrations;
    - apply the rest (app, worker, schedule), then run the seed if it has never succeeded;
+   - when `GCP_STAFF_OWNER_EMAIL` is set, run the staff invite if it has never succeeded (or when **staff_invite** is ticked);
    - smoke-test `/health` and `/signin`.
 
    Each apply uses a saved plan that must fall inside the approved change set.
@@ -55,18 +56,31 @@ gcloud secrets versions access latest --secret=thapsus-stg-uk-test-logins --proj
 
 This prints the app URL, the workspace (`kestrel`) and one email and password per role: owner, HR admin, payroll admin, manager and employee.
 
-Admin roles must set up an authenticator app at first sign-in.
+The workspace requires two-step verification for everyone (ADR-0170), so **every** login (owner, HR admin, payroll admin, manager and employee) sets up an authenticator app or a passkey at its first sign-in. Use one authenticator app entry per login.
 
 To change the passwords, bump `test_login_generation` in `staging/variables.tf` and deploy with **seed** ticked. The seed resets the test users' passwords to the new secret.
 
 ## Reading staging email
 
-Console → Cloud Storage → `<project>-thapsus-stg-uk-mail`, or:
+Staging has no email provider: every message (sign-in links, password-reset links, notifications) is an `.eml` object in the mail bucket, kept 14 days. The seeded logins use `.example.test` addresses that receive nothing, so this is the only way to read, for example, a password-reset link. Console → Cloud Storage → `<project>-thapsus-stg-uk-mail`, or:
 
 ```sh
-gcloud storage ls gs://<project>-thapsus-stg-uk-mail/
-gcloud storage cat gs://<project>-thapsus-stg-uk-mail/<object>
+gcloud storage ls gs://<project>-thapsus-stg-uk-mail/mail/$(date -u +%F)/   # today's messages, oldest first
+gcloud storage cat gs://<project>-thapsus-stg-uk-mail/mail/<date>/<object>.eml
 ```
+
+To find a password-reset email for one login, list today's folder and read the newest objects; the `To:` and `Subject:` lines are at the top ("Reset your Thapsus-HR password"). Open the link it contains within 30 minutes; it works once.
+
+## The back office (Thapsus staff)
+
+Staff sign in only with a passkey or a security key ([runbook](../../docs/runbooks/staff-access.md), ADR-0173, ADR-0174). To invite yourself:
+
+1. Set the repository variables `GCP_STAFF_OWNER_EMAIL` (your work email) and `GCP_STAFF_OWNER_NAME`. They are passed to OpenTofu as sensitive values, so plans in the public workflow logs never show them.
+2. Re-run **Deploy staging (Google Cloud)**. After the seed, the job `thapsus-stg-uk-staff-invite` creates a super-admin staff account and writes a one-time enrolment link (valid 2 hours) to Secret Manager. Nothing is logged.
+3. Read it: `gcloud secrets versions access latest --secret=thapsus-stg-uk-staff-invite --project=<project-id>`.
+4. Open the `enrolmentUrl` on your iPhone (or Mac), choose **Register key** and confirm with Face ID or Touch ID: that is your passkey. Then sign in at `<url>/backoffice/signin` with **Sign in with a passkey or security key**.
+
+The job runs by itself only while the back office has no staff. For a new link, run the workflow by hand with **staff_invite** ticked. Super-admin actions need a time-boxed elevation approved by a second staff member: invite a second person the same way (change the two variables, tick **staff_invite**).
 
 ## Local checks
 

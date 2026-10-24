@@ -129,7 +129,8 @@ export async function privacyBackofficeRoutes(app: FastifyInstance) {
     '/v1/backoffice/breaches/:id/notify-controllers',
     {
       config: { auth: 'public' },
-      preHandler: requireStaff(app, ['support']),
+      // it emails every affected customer's admins: a fresh key assertion first (plan 2.2.5)
+      preHandler: requireStaff(app, ['support'], { reauth: true }),
       schema: {
         tags: ['backoffice'],
         summary: 'Notify every affected controller (opens an incident in each tenant log)',

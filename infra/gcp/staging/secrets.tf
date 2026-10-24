@@ -51,6 +51,12 @@ locals {
     {
       "internal-token"          = random_password.internal_token.result
       "integration-signing-key" = random_password.integration_signing_key.result
+      # Read by the staff-invite job only (STAFF_INVITEE): who to invite to the back office (ADR-0174).
+      "staff-invitee" = jsonencode({
+        email = var.staff_owner_email
+        name  = var.staff_owner_name
+        role  = "super_admin"
+      })
       # Read by the seed job (STAGING_LOGINS) and by the owner to sign in: see ../README.md.
       "test-logins" = jsonencode({
         url       = local.app_url
@@ -76,6 +82,7 @@ locals {
     "internal-token"          = ["app", "worker"]
     "integration-signing-key" = ["app", "worker"]
     "test-logins"             = ["jobs"]
+    "staff-invitee"           = ["jobs"]
   }
 }
 
@@ -109,4 +116,28 @@ resource "google_secret_manager_secret_iam_member" "readers" {
   secret_id = google_secret_manager_secret.this[each.value.secret].id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${each.value.member}"
+}
+
+# The one-time back-office enrolment link for the invited staff member, written by the staff-invite job
+# (never by OpenTofu, so it has no version until the job runs; no workload reads it as an environment
+# value). London only like every other secret. The owner reads it with gcloud: ../README.md.
+resource "google_secret_manager_secret" "staff_invite" {
+  secret_id = "${local.prefix}-staff-invite"
+
+  replication {
+    user_managed {
+      replicas {
+        location = local.region
+      }
+    }
+  }
+
+  depends_on = [google_project_service.this]
+}
+
+resource "google_secret_manager_secret_iam_member" "staff_invite" {
+  for_each  = toset(["roles/secretmanager.secretVersionAdder", "roles/secretmanager.secretAccessor"])
+  secret_id = google_secret_manager_secret.staff_invite.id
+  role      = each.value
+  member    = "serviceAccount:${google_service_account.jobs.email}"
 }

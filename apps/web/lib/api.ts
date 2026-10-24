@@ -65,7 +65,11 @@ export interface SessionInfo {
   mfaVerified: boolean;
   hasMfaFactor: boolean;
   hasPassword: boolean;
+  /** A new password can be set without the current one (emailed-link sign-in, within 10 minutes). */
+  passwordWithoutCurrent?: boolean;
   isAdmin: boolean;
+  /** Must set up and use a second factor (admins; everyone when the workspace requires it). */
+  mustUseMfa?: boolean;
   roles: string[];
   permissions: string[];
 }
