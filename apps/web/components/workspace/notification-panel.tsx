@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
-import { CheckCheck, ChevronRight, Inbox } from 'lucide-react';
-import { Button, Popover, PopoverClose, PopoverContent, PopoverTrigger, Skeleton, cn } from '@thapsus/ui';
+import { CheckCheck, Inbox } from 'lucide-react';
+import { Button, ListItem, Popover, PopoverClose, PopoverContent, PopoverTrigger, Skeleton } from '@thapsus/ui';
 import { formatDateTime } from '@thapsus/core/i18n';
 import { IntentLink } from '@/components/intent-link';
 import { useNotificationHref, type NotificationItem } from '@/components/notification-link';
@@ -9,37 +9,26 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useSession } from '@/app/app/shell';
 import { BELL_TRIGGER, BellFace, useBellLabel } from './notification-bell-button';
+import { RowLink, RowLinkContext } from '@/components/row-link';
 
 /** How many recent notifications the panel shows; the notifications page has the rest. */
 const RECENT = 8;
 
-function Row({ n, onOpen }: { n: NotificationItem; onOpen: (n: NotificationItem) => void }) {
+function Row({ n }: { n: NotificationItem }) {
   const t = useT();
   const locale = useLocale();
   const session = useSession();
   const zone = session?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const href = useNotificationHref(n);
   return (
-    <li>
-      <IntentLink
-        href={href}
-        onClick={() => onOpen(n)}
-        className="flex min-h-11 items-start gap-3 rounded-md px-3 py-2 text-text no-underline hover:bg-surface"
-      >
-        <span
-          aria-hidden
-          className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-accent')}
-        />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          {!n.read ? <span className="sr-only">{t('actionable.bell.new')}</span> : null}
-          <span className={cn('break-words text-callout', !n.read && 'font-semibold')}>{n.title}</span>
-          <span className="text-footnote text-text-secondary">
-            {formatDateTime(n.createdAt, locale, zone)}
-          </span>
-        </span>
-        <ChevronRight aria-hidden className="mt-0.5 h-4 w-4 shrink-0 stroke-[1.5] text-text-secondary" />
-      </IntentLink>
-    </li>
+    <ListItem
+      href={href}
+      linkAs={RowLink}
+      title={<span className="break-words text-callout">{n.title}</span>}
+      subtitle={<span className="text-footnote">{formatDateTime(n.createdAt, locale, zone)}</span>}
+      unread={!n.read}
+      unreadLabel={t('actionable.bell.new')}
+    />
   );
 }
 
@@ -90,8 +79,10 @@ export function NotificationPanel({
     );
     onUnreadChange(ids === 'all' ? 0 : Math.max(0, unread - ids.length));
   };
-  const openItem = (n: NotificationItem) => {
-    if (!n.read) markRead([n.id]);
+  // following a row marks what it is about as read and closes the panel
+  const followed = (href: string) => {
+    const ids = (items ?? []).filter((n) => !n.read && n.href === href).map((n) => n.id);
+    if (ids.length) markRead(ids);
     setOpen(false);
   };
 
@@ -128,11 +119,13 @@ export function NotificationPanel({
               <Skeleton className="h-12 w-full" />
             </div>
           ) : items.length ? (
-            <ul className="flex flex-col gap-1" aria-label={t('actionable.bell.recent')}>
-              {items.map((n) => (
-                <Row key={n.id} n={n} onOpen={openItem} />
-              ))}
-            </ul>
+            <RowLinkContext.Provider value={followed}>
+              <ul role="list" className="-mx-2" aria-label={t('actionable.bell.recent')}>
+                {items.map((n) => (
+                  <Row key={n.id} n={n} />
+                ))}
+              </ul>
+            </RowLinkContext.Provider>
           ) : (
             <div className="flex flex-col items-center gap-2 px-3 py-8 text-center">
               <Inbox aria-hidden className="h-8 w-8 stroke-[1.5] text-text-secondary" />

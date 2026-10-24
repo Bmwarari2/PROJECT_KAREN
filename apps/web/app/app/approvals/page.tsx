@@ -6,12 +6,8 @@ import {
   Button,
   buttonVariants,
   EmptyState,
+  ListItem,
   Skeleton,
-  Table,
-  TD,
-  TH,
-  THead,
-  TR,
   useToast,
 } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
@@ -19,7 +15,8 @@ import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
-import { EntityLink, PersonLink } from '@/components/person-link';
+import { IntentLink } from '@/components/intent-link';
+import { PersonLink } from '@/components/person-link';
 import { useApprovalDetails } from './details';
 import {
   ListCard,
@@ -163,54 +160,63 @@ export default function ApprovalsPage() {
           ) : undefined
         }
       >
-        <Table scrollLabel={t('approvals.list.title')}>
-          <THead>
-            <tr>
-              <TH className="w-10">
-                <input
-                  type="checkbox"
-                  aria-label={t('approvals.selectAll')}
-                  checked={shown.length > 0 && picked.length === shown.length}
-                  onChange={(e) =>
-                    setSelected(e.target.checked ? new Set(shown.map((d) => d.id)) : new Set())
-                  }
-                />
-              </TH>
-              <TH>{t('approvals.col.request')}</TH>
-              <TH>{t('approvals.col.person')}</TH>
-              <TH>{t('approvals.col.details')}</TH>
-              <TH>{t('approvals.col.requested')}</TH>
-            </tr>
-          </THead>
-          <tbody>
-            {shown.map((a) => (
-              <TR key={a.id}>
-                <TD>
+        {/* a grouped list (ADR-0180): each row opens the request; the boxes pick rows for bulk decisions */}
+        <label className="flex min-h-11 items-center gap-3 border-b border-border px-4 text-callout">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-[var(--color-accent)]"
+            checked={shown.length > 0 && picked.length === shown.length}
+            onChange={(e) => setSelected(e.target.checked ? new Set(shown.map((d) => d.id)) : new Set())}
+          />
+          {t('approvals.selectAll')}
+        </label>
+        <ul role="list" aria-label={t('approvals.list.title')} data-testid="approval-list">
+          {shown.map((a) => (
+            <ListItem
+              key={a.id}
+              href={`/app/approvals/${a.id}`}
+              linkAs={IntentLink}
+              leadingTile={false}
+              leading={
+                <span className="relative z-10 flex h-8 w-8 items-center justify-center">
                   <input
                     type="checkbox"
+                    className="h-5 w-5 accent-[var(--color-accent)]"
                     aria-label={t('approvals.select', { name: a.subjectName ?? a.policy })}
                     checked={selected.has(a.id)}
                     onChange={() => toggle(a.id)}
                   />
-                </TD>
-                <TD>
-                  <EntityLink
-                    href={`/app/approvals/${a.id}`}
-                    aria-label={t('actionable.approval.openNamed', {
-                      request: a.policy,
-                      name: a.subjectName ?? '—',
-                    })}
-                  >
-                    {a.policy}
-                  </EntityLink>
-                </TD>
-                <TD>{a.subjectName ? <PersonLink id={a.subjectEmployeeId} name={a.subjectName} /> : '—'}</TD>
-                <TD className="text-footnote text-text-secondary">{details(a.payload)}</TD>
-                <TD>{formatDate(a.requestedAt.slice(0, 10), locale)}</TD>
-              </TR>
-            ))}
-          </tbody>
-        </Table>
+                </span>
+              }
+              title={
+                <>
+                  {a.policy}
+                  <span className="sr-only">
+                    {' '}
+                    {t('actionable.approval.forName', { name: a.subjectName ?? '—' })}
+                  </span>
+                </>
+              }
+              subtitle={
+                <>
+                  {a.subjectName ? (
+                    <>
+                      <PersonLink
+                        id={a.subjectEmployeeId}
+                        name={a.subjectName}
+                        className="relative z-10"
+                        plainClassName="text-text"
+                      />
+                      {details(a.payload) ? ' · ' : ''}
+                    </>
+                  ) : null}
+                  {details(a.payload)}
+                </>
+              }
+              meta={formatDate(a.requestedAt.slice(0, 10), locale)}
+            />
+          ))}
+        </ul>
       </ListCard>
     </div>
   );

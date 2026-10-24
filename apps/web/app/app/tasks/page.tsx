@@ -1,14 +1,23 @@
 'use client';
 import * as React from 'react';
-import { ArrowRight, CheckCircle2, ListChecks } from 'lucide-react';
-import { Badge, Button, buttonVariants, EmptyState, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  BadgeCheck,
+  CheckCircle2,
+  ClipboardCheck,
+  FileSignature,
+  ListChecks,
+  MessageSquare,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { Button, EmptyState, ListItem, Skeleton } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api } from '@/lib/api';
 import { useLocale, useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
 import { ExportLinks } from '@/components/export-links';
 import { IntentLink } from '@/components/intent-link';
-import { EntityLink, PersonLink } from '@/components/person-link';
+import { PersonLink } from '@/components/person-link';
 import {
   ListCard,
   ListFilter,
@@ -36,6 +45,14 @@ interface Task {
 
 /** Requests and signatures close their tasks when they are decided or signed, not with "Complete". */
 const CLOSED_BY_ACTION = new Set(['approval', 'document']);
+const SOURCE_ICON: Record<string, LucideIcon> = {
+  approval: ClipboardCheck,
+  document: FileSignature,
+  compliance: BadgeCheck,
+  workflow: ListChecks,
+  automation: Zap,
+  hr_request: MessageSquare,
+};
 
 export default function TasksPage() {
   const t = useT();
@@ -139,54 +156,47 @@ export default function TasksPage() {
           ) : undefined
         }
       >
-        <Table scrollLabel={t('tasks.list.title')}>
-          <THead>
-            <tr>
-              <TH>{t('tasks.col.task')}</TH>
-              <TH>{t('tasks.col.person')}</TH>
-              <TH>{t('tasks.col.due')}</TH>
-              <TH>
-                <span className="sr-only">{t('common.actions')}</span>
-              </TH>
-            </tr>
-          </THead>
-          <tbody>
-            {shown.map((task) => (
-              <TR key={task.id}>
-                <TD>
-                  <EntityLink href={task.href}>{task.title}</EntityLink>{' '}
-                  <Badge className="ml-2">{t(`tasks.source.${task.source}`)}</Badge>
-                </TD>
-                <TD>
-                  {task.subjectName ? (
-                    <PersonLink id={task.subjectEmployeeId} name={task.subjectName} />
-                  ) : (
-                    '—'
-                  )}
-                </TD>
-                <TD>
-                  {task.dueOn ? (
-                    <span className={overdue(task) ? 'font-semibold text-danger' : ''}>
-                      {formatDate(task.dueOn, locale)}
+        {/* a grouped list (ADR-0180): each row opens what the task is about */}
+        <ul role="list" aria-label={t('tasks.list.title')} data-testid="task-list">
+          {shown.map((task) => {
+            const Icon = SOURCE_ICON[task.source] ?? ListChecks;
+            return (
+              <ListItem
+                key={task.id}
+                href={task.href}
+                linkAs={IntentLink}
+                leading={<Icon aria-hidden />}
+                title={task.title}
+                subtitle={
+                  <>
+                    {task.subjectName ? (
+                      <>
+                        {/* above the row's link, so the name opens the person's profile */}
+                        <PersonLink
+                          id={task.subjectEmployeeId}
+                          name={task.subjectName}
+                          className="relative z-10"
+                          plainClassName="text-text"
+                        />
+                        {' · '}
+                      </>
+                    ) : null}
+                    {t(`tasks.source.${task.source}`)}
+                  </>
+                }
+                meta={
+                  task.dueOn ? (
+                    <span className={overdue(task) ? 'font-semibold text-danger' : undefined}>
+                      {t('actionable.task.due', { date: formatDate(task.dueOn, locale) })}
                     </span>
-                  ) : (
-                    '—'
-                  )}
-                </TD>
-                <TD className="text-right">
-                  {CLOSED_BY_ACTION.has(task.source) ? (
-                    <IntentLink
-                      href={task.href}
-                      className={`${buttonVariants({ variant: 'secondary', size: 'sm' })} no-underline`}
-                      aria-label={t('actionable.task.openNamed', { title: task.title })}
-                    >
-                      {t('actionable.task.open')}
-                      <ArrowRight aria-hidden className="h-4 w-4 stroke-[1.5]" />
-                    </IntentLink>
-                  ) : (
+                  ) : undefined
+                }
+                actions={
+                  CLOSED_BY_ACTION.has(task.source) ? undefined : (
                     <Button
                       size="sm"
                       variant="secondary"
+                      className="min-h-11 sm:min-h-8"
                       aria-label={t('actionable.task.completeNamed', { title: task.title })}
                       onClick={async () => {
                         await api(`/v1/tasks/${task.id}/complete`, { method: 'POST' });
@@ -196,12 +206,12 @@ export default function TasksPage() {
                       <CheckCircle2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
                       {t('tasks.complete')}
                     </Button>
-                  )}
-                </TD>
-              </TR>
-            ))}
-          </tbody>
-        </Table>
+                  )
+                }
+              />
+            );
+          })}
+        </ul>
       </ListCard>
     </div>
   );

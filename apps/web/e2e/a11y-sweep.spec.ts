@@ -581,9 +581,10 @@ test.describe('accessibility sweep (WCAG 2.2 AA)', () => {
     const page = ownerPage!;
     await page.goto('/app/approvals');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    const row = page.getByRole('row').filter({ hasText: 'Ben Fictional' }).first();
+    // the requests are a grouped list (ADR-0180): each row's box picks it for a bulk decision
+    const row = page.getByTestId('approval-list').getByRole('listitem').filter({ hasText: 'Ben Fictional' }).first();
     await expect(row).toBeVisible();
-    await tabTo(page, 'main tbody input[type="checkbox"]');
+    await tabTo(page, 'main [data-testid="approval-list"] input[type="checkbox"]');
     await page.keyboard.press('Space');
     await expect(page.getByRole('button', { name: 'Approve selected' })).toBeEnabled();
     await tabTo(page, 'main button', { text: 'Approve selected', back: true });
