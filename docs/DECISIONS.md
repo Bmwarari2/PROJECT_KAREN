@@ -2246,7 +2246,8 @@ The owner's defaults (2026-10-24):
 
 - Later parts plug in by building the page in the table above, closing tasks through ADR-0192 and setting `landed: true`; no task page or migration change is needed (the kind column is not an enum).
 - `permission` on a kind names what its page asks for, for part A's permission map.
-- Tests: `packages/core/test/task-actions.test.ts` (unit), `apps/web/test/task-actions-routes.test.ts` (unit), `apps/api/test/task-actions.int.test.ts` (integration), `apps/web/e2e/task-actions.spec.ts` (e2e with axe).
+- **The task page stays light** (ADR-0186): the web server renders its first data with the viewer's cookie, locale and account zone (`page.tsx` → `task-page.tsx`, as the document and payslip pages do); the API returns `overdue` (in the zone asked for, else the account's, else the workspace's), so the page does not load the time library; and the note dialog loads only when someone reaches for it. Lighthouse measures the page (`/app/tasks/:task`, a task from the asset register).
+- Tests: `packages/core/test/task-actions.test.ts` (unit), `apps/web/test/task-actions-routes.test.ts` (unit), `apps/api/test/task-actions.int.test.ts` (integration), `apps/web/e2e/task-actions.spec.ts` (e2e with axe, phone width), visual baselines for `/app/tasks/[id]` (its fixture task is created just before its screen and closed after it, so the Inbox count on later screens does not change).
 
 ## ADR-0192 — Tasks close themselves when their record completes (2026-10-24)
 
