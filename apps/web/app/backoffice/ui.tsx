@@ -6,7 +6,7 @@ export interface StaffSession {
   staffId: string;
   email: string;
   displayName: string;
-  role: 'super_admin' | 'support' | 'rules_editor' | 'billing';
+  role: 'super_admin' | 'support' | 'rules_editor' | 'billing' | 'security_analyst';
   cell: string;
 }
 export const StaffContext = React.createContext<StaffSession | null>(null);
@@ -29,7 +29,7 @@ export function PageTitle({
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-title-2">{title}</h1>
+        <h1 className="text-large-title">{title}</h1>
         {lead ? (
           <p className="mt-1 max-w-[var(--prose-width)] text-callout text-text-secondary">{lead}</p>
         ) : null}

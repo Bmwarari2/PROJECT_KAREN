@@ -18,7 +18,7 @@ import { staffCookie, STAFF_COOKIE_DEV } from '../../http/security';
 export const STAFF_COOKIE = STAFF_COOKIE_DEV;
 export const STAFF_IDLE_MINUTES = 30;
 export const STAFF_ABSOLUTE_HOURS = 8;
-export type StaffRole = 'super_admin' | 'support' | 'rules_editor' | 'billing';
+export type StaffRole = 'super_admin' | 'support' | 'rules_editor' | 'billing' | 'security_analyst';
 
 export interface StaffAuth {
   staffId: string;
@@ -58,8 +58,18 @@ export async function staffAudit(
   );
 }
 
+/**
+ * Extra checks a route can ask for. The just-in-time elevation work (Agent C, ADR-0173) enforces them; until
+ * it is merged they are accepted and ignored here, so routes can already declare what they need:
+ * `noElevation` for read-only aggregate screens every staff member may open, `reauth` for destructive actions.
+ */
+export interface StaffGuard {
+  reauth?: boolean;
+  noElevation?: boolean;
+}
+
 /** preHandler: requires a staff session with MFA and one of the roles. */
-export function requireStaff(app: FastifyInstance, roles: StaffRole[]) {
+export function requireStaff(app: FastifyInstance, roles: StaffRole[], _guard: StaffGuard = {}) {
   const cookie = staffCookie(app.deps.config);
   return async (req: FastifyRequest) => {
     const token = req.cookies?.[cookie.name];
@@ -221,7 +231,7 @@ export async function backofficeAuthRoutes(app: FastifyInstance) {
     '/v1/backoffice/auth/session',
     {
       config: { auth: 'public' },
-      preHandler: requireStaff(app, ['support', 'rules_editor', 'billing']),
+      preHandler: requireStaff(app, ['support', 'rules_editor', 'billing', 'security_analyst']),
       schema: {
         tags: ['backoffice'],
         response: {

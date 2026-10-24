@@ -1764,3 +1764,27 @@ They asked for Apple's design principles and the EasyUI collection (ADR-0154 fol
 - Every phone screenshot baseline changes once (visual regression is re-baselined with this change).
 - Screens move to `ListSection`/`ListItem` as they are touched; the agents of this round convert the screens they own, and the rest follow in the same release.
 - Two colour tokens (`segment-track`, `segment-selected`) and two layout values (`large-title`, `--dock-height`) are added. The chrome tokens change value, with their contrast pairs still tested.
+
+## ADR-0175 — The founder's console: business figures per cell, cross-region counts from the directory (2026-10-24)
+
+**Context.** The product owner asked how, as the owner of Thapsus-HR, to see the overall performance, the companies that have signed up and security issues. The back-office home showed seven counts. The figures must stay aggregates (no employee or customer personal data) and respect residency: a cell holds only its own region's customers, and the global layer holds no personal data.
+
+**Decision.**
+
+- **Two sources, never mixed.**
+  - `GET /v1/backoffice/metrics` (this cell): companies, sign-ups by ISO week, trials, conversion, churn, usage, MRR/ARR, the support SLA, contracts and incidents. It reads the regional registry, the back-office usage snapshot, the support queue index, contracts and status incidents. Counts only.
+  - `GET /v1/backoffice/metrics/global` (every region): totals, sign-ups by week and region, plan and status, from the global tenant directory only (region, plan, status and sign-up time). The directory list now returns the `createdAt` it already stored (`DIRECTORY_FIELDS` is unchanged).
+- **The usage snapshot grows** (migration 0026, nullable columns on `backoffice.tenant_usage`): active users in the last 7 and 30 days (a sign-in or a session used), users with a second factor, last activity, the default account's trial end and cancellation time, and the live paid subscription lines. `billing.daily` refreshes it per customer, and staff can refresh one customer. The billing status is now that of the default account's newest subscription, so a cancelled customer shows as cancelled instead of blank.
+- **Definitions** (all in `@thapsus/core/metrics`, unit-tested first):
+  - MRR and ARR are integer minor units per currency, never converted between currencies. ARR is twelve monthly amounts or one annual amount; MRR is ARR / 12 rounded half up. Amounts come from the subscriptions the billing module priced from the billing config or a contract; nothing is priced here.
+  - Trial to paid = paying (`active` or `past_due`) over ended trials (paying, `trial_expired`, `incomplete` or `canceled`), in basis points. Every workspace starts on the sign-up trial (`ensureBillingDefaults`).
+  - Churn = cancelled subscriptions plus workspaces closing or deleted; "in 30 days" uses the cancellation time or the registry's last change.
+  - Weeks are ISO weeks (Monday) in UTC; 12 weeks are shown.
+- **Screen.** The back-office home is a region selector (All regions, UK, EU, US; a segmented control of links, `?region=`). This cell's region shows its figures in four sections (companies, revenue, usage, support and incidents) of `KpiTile`s, a sign-ups column chart, a billing-status donut and a plan bar list, each chart with a "Show as a table" twin and six columns on phones. All regions and other regions show directory counts and a link to that region's own back office for the rest.
+- **Access.** Support, billing and super admins. The routes declare `noElevation` (read-only aggregates), so after the just-in-time elevation work a super admin sees the home without elevating.
+
+**Consequences.**
+
+- The snapshot is at most a day old; the page says when it was taken and how many customers have none yet.
+- The directory `list()` is bounded (5,000 entries) and scanned per request; past a few thousand workspaces the global figures should move to counters kept by the directory (recorded here, not built).
+- On the one-region Google Cloud staging cell only the UK has data; EU and US show zero and a link.

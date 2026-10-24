@@ -3,7 +3,7 @@ import { createStaff, type StaffRole } from '../modules/backoffice/auth';
 
 /** Creates a Thapsus back-office staff account and prints its one-time password and TOTP secret. */
 const [email, name, role] = process.argv.slice(2);
-const roles: StaffRole[] = ['super_admin', 'support', 'rules_editor', 'billing'];
+const roles: StaffRole[] = ['super_admin', 'support', 'rules_editor', 'billing', 'security_analyst'];
 if (!email || !name || !roles.includes(role as StaffRole)) {
   console.error(`usage: create-staff <email> "<name>" <${roles.join('|')}>`);
   process.exit(2);

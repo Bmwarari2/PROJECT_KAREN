@@ -26,7 +26,8 @@
     "./api-scopes": "./src/api-scopes.ts",
     "./ai-models": "./src/ai-models.ts",
     "./trust": "./src/trust/index.ts",
-    "./links": "./src/links.ts"
+    "./links": "./src/links.ts",
+    "./metrics": "./src/metrics.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -5,7 +5,9 @@ import { e2eEnv } from './env';
 import { totp } from './helpers';
 
 /** Creates a fictional Thapsus staff account with the real CLI (prints a one-time password and TOTP secret). */
-export function createStaff(role: 'support' | 'billing' | 'rules_editor' | 'super_admin') {
+export function createStaff(
+  role: 'support' | 'billing' | 'rules_editor' | 'super_admin' | 'security_analyst',
+) {
   const email = `${role}.${Math.random().toString(36).slice(2, 7)}@thapsus.example.test`;
   const api = join(import.meta.dirname, '..', '..', 'api');
   const out = execFileSync('npx', ['tsx', 'src/cli/create-staff.ts', email, 'Fictional Staff Member', role], {

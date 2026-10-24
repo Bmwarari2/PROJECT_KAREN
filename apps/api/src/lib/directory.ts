@@ -33,6 +33,8 @@ export interface DirectoryEntry {
   status: 'active' | 'suspended' | 'closing' | 'deleted';
   planRef: string | null;
   verifiedDomains: string[];
+  /** When the workspace signed up (set by the directory; for sign-up counts by region and week). */
+  createdAt?: string;
 }
 
 export interface TenantDirectory {
@@ -56,7 +58,7 @@ export class InMemoryDirectory implements TenantDirectory {
   async register(e: DirectoryEntry) {
     for (const x of this.entries.values())
       if (x.slug === e.slug && x.tenantId !== e.tenantId) throw new SlugTakenError();
-    this.entries.set(e.tenantId, { ...e });
+    this.entries.set(e.tenantId, { ...e, createdAt: e.createdAt ?? new Date().toISOString() });
   }
   async bySlug(slug: string) {
     return [...this.entries.values()].find((e) => e.slug === slug);
@@ -99,6 +101,7 @@ export class PgDirectory implements TenantDirectory {
       status: r.status as DirectoryEntry['status'],
       planRef: (r.plan_ref as string) ?? null,
       verifiedDomains: (r.verified_domains as string[]) ?? [],
+      createdAt: r.created_at ? new Date(r.created_at as string).toISOString() : undefined,
     };
   }
   async register(e: DirectoryEntry) {
@@ -165,6 +168,7 @@ export class DynamoDirectory implements TenantDirectory {
       status: item.status!.S! as DirectoryEntry['status'],
       planRef: item.planRef?.S ?? null,
       verifiedDomains: item.verifiedDomains?.SS ?? [],
+      createdAt: item.createdAt?.S,
     };
   }
   async register(e: DirectoryEntry) {
