@@ -1669,6 +1669,73 @@ Pack content hashes ignore formatting (ADR-0024), so formatting the pack JSON ch
 - The first open of either menu can wait for one small chunk on a very slow connection; pointing at the button usually covers that time. A keyboard user who opens it waits for the same chunk, and the menu takes the focus when it opens.
 - When the platform ships Temporal natively everywhere we support, the import in `time.ts` is the one line to remove.
 
+## ADR-0160 — Notifications and tasks name what they are about, and open it (2026-10-24)
+
+**Context.** The product owner tested staging and reported that tasks in the inbox and most notifications could not be clicked, or opened a list rather than the thing they were about. Notifications stored a free-text `link` (usually a list page such as `/app/approvals`), tasks a `link` that was often `/app/tasks` (or `/app/absence`, a page that does not exist), and e-mails and web push used the same list links.
+
+**Decision.**
+
+- **One deep-link map.** `packages/core/src/links.ts` (`@thapsus/core/links`) maps a target type (approval request, task, leave request, employee, document, asset, asset assignment, right-to-work check, report run, support ticket, privacy request or incident, timesheet, pay period, payslip, law change, request to HR) and its id to the page that shows it. The API, the worker's e-mail and push delivery and the web app all use it.
+- **Notifications carry a target.** Migration 0021 adds `target_type` and `target_id` to `app.notifications` (nullable, expand only). `notify()` takes a `target` (or a function of the recipient, so each assignee of a workflow task is sent to their own task). Every notification call site passes one where a record exists. A stored `link` that refines the target's page (`/app/documents/<id>?sign=<request>`) is kept.
+- **The page is computed when read.** `GET /v1/me/notifications` returns `target` and `href`: the target's page, else the request or task an older notification's dedupe key names, else its stored link (only relative `/app` paths), else the list page for its kind. Older notifications on staging therefore open something sensible without a data migration. E-mails and web push link to the same `href`.
+- **Tasks report the page they are about** (`href` on `GET /v1/tasks`): approval tasks open the request, e-signature tasks the document (Agent B's viewer at `/app/documents/[id]`), a joiner's own onboarding steps the welcome page at the step (`#task-<id>`), compliance reminders the check or the person's compliance tab, and everything else its own page `/app/tasks/[id]` (new `GET /v1/tasks/:id`, visible to the assignee, the role queue and people who manage or read workflows for the person). Approval and signature tasks are closed by deciding or signing, so their pages offer the way there instead of "Done".
+- **The bell.** The top bar's bell opens a panel of the eight latest notifications as links (Radix Popover, our tokens, no animation library; the idea of EasyUI's notification bell and stack, MIT). Opening one marks it read. Its code loads on pointer enter, touch start, click, Enter or Space, never on focus alone (as ADR-0159), so it adds nothing to first load.
+- **Approval requests have a page.** `GET /v1/approvals/:id` returns the request, its steps with approvers and decisions, the record it is about and whether the caller may decide. It is visible to the approvers of any step, the person who made the request and people who manage approvals; the person a change is about does not see a change someone else proposed until it is decided. The page decides with an optional comment.
+
+**Consequences.**
+
+- Every notification and task opens a page; a person-profile target the viewer may not open falls back to the list for its kind (ADR-0161).
+- Rota notifications open the rota at the shift's week (`/app/rota?week=`); workspace-level privacy notices (closure, exports, DPA, sub-processors) keep their page links, because there is no single record to open.
+- Integration tests: `apps/api/test/actionable.int.test.ts`; unit tests of the map: `packages/core/test/links.test.ts`.
+
+## ADR-0161 — A name opens the person, a row opens its record (2026-10-24)
+
+**Context.** Names on the right-to-work list, approvals, time off, the rota and other lists were plain text, and many list rows had no detail page. A link must also never lead somewhere the viewer may not go: a manager may open their team's profiles only, an employee only their own.
+
+**Decision.**
+
+- **`PersonLink`** (`apps/web/components/person-link.tsx`) renders a name (optionally with initials) as a link to `/app/people/[id]`, on a given tab where that helps, when the viewer may open that profile, and as text otherwise. The answer comes from **`POST /v1/people/visibility`**: the names on a page are asked about together (one request per tick, at most 200 ids; `lib/person-visibility.ts`). It applies the same scope as `GET /v1/employees/:id`, returns only the ids the caller may open (no personal data, so it is not audited), and answers `all: true` for callers who may open every profile so later names need no request. Global search and the notification links use it too.
+- **Profile tabs are in the address** (`?tab=overview|history|documents|time-off|compliance`). A new **Compliance** tab (for `compliance.read`) shows the person's right-to-work checks, Form I-9 and matrix requirements from **`GET /v1/compliance/people/:employeeId`**, which is loaded only when the tab opens and audited as a sensitive view.
+- **Detail pages from read endpoints**, each with a breadcrumb trail (the idea of EasyUI's breadcrumb, our tokens): tasks, approval requests, leave requests (new `GET /v1/leave/requests/:id`; sensitive kinds show as "away" without absence access), timesheets (new `GET /v1/timesheets/:id`), right-to-work checks (the existing endpoint now returns the person and check facts, and leaves the vault details out instead of failing for viewers without immigration access), assets and pay periods. Document rows link to Agent B's `/app/documents/[id]`.
+- **Rows.** In tables, the record's name is the link; on phones (ADR-0180) the title link covers the row (`ROW_LINK`), and other links in the row sit above it. The people directory, compliance lists, tasks, approvals, notifications, the equipment list and the onboarding checklist follow the phone row rules of ADR-0180.
+- **Home.** Every tile, chart segment and list item opens what is behind it: one pending request or task opens itself; joiners open the directory filtered by start month, employment-type slices by type and department bars by department. `GET /v1/employees` gains `startFrom`/`startTo` and `employmentType` filters; the type filter is honoured only for callers who may read employment types for everyone, so filtering never reveals a field the caller cannot read.
+- **Reports** that list people return `rowEmployeeIds`, so the name column links to profiles.
+
+**Consequences.**
+
+- One small extra request on pages that name people, answered from memory for the rest of the session.
+- Not built: an audit-event viewer (there is no audit list screen to link from) and import detail pages (imports have no list of past runs).
+- e2e: `apps/web/e2e/actionable.spec.ts` signs in as each built-in role and follows the links; the a11y sweep covers every new page.
+
+## ADR-0162 — Help articles are for the readers who can use them (2026-10-24)
+
+**Context.** The product owner asked for help articles to be limited to roles: employees saw articles about billing, adding people and support access.
+
+**Decision.** Each article in `packages/core/src/help/articles.json` has an `audience`: the permissions a reader needs (any one of them); an empty list means everyone signed in. `validateHelpArticles` checks every entry against the access catalogue. `helpArticle`, `helpArticles`, `articlesForContext` and `searchHelp` take the reader's permission test, and the help API, the help centre, article pages (404 when not allowed), global search and the contextual help link all pass it. A contextual link on a page with no article for the reader falls back to the closest parent path with one. Five articles for everyone in self-service were added: payslips, signing documents, updating your details, notifications and asking HR.
+
+**Consequences.** Without a session the help pages show only the articles for everyone. Changing an article's audience is a content change like any other (bump its version).
+
+## ADR-0163 — Employees and managers contact their own HR team; admins contact Thapsus-HR support (2026-10-24)
+
+**Context.** Every role could raise a ticket with Thapsus-HR (the vendor) through `support.ticket` in the self-service permissions. Employees and managers should go to their own HR team; only the customer's administrators should contact the vendor.
+
+**Decision.**
+
+- `support.ticket` leaves `SELF_SERVICE`; the owner (`*`), HR admins (`support.*`), entity HR admins and payroll admins keep it, as do custom roles that are granted it.
+- A new permission **`hr.contact`** (area "Requests to HR" in the access catalogue) is given to the built-in employee and manager roles. Migration 0021 updates existing tenants' built-in role rows the same way (custom roles are untouched).
+- **Contact HR** (`/app/contact-hr`, a tab of Help for those with `hr.contact` and without `support.ticket`): `POST /v1/hr-requests` files a task with source `hr_request` (the task source check gains the value) in the HR admins' queue, about the person who asked, and notifies the HR admins (or the owners when there are none) with the task as the target. The message is kept in the task's description and never put into a notification or e-mail. `GET /v1/hr-requests` lists the caller's own requests with their status; when HR marks one done the person is notified.
+- The help centre's "Contact support" action and "Still stuck?" link go to Contact HR for these readers; the role tests in `apps/web/test/workspace.test.ts` pin who sees which.
+
+**Consequences.** Existing support tickets raised by employees stay readable by their workspace admins. The staging seed gives the employee login one answered and one waiting request.
+
+## ADR-0164 — Row links that also do something (2026-10-24)
+
+**Context.** `ListItem` (ADR-0180) renders its own link, but a notification row must also mark the notification read when it is followed, and a task or approval row names a person who should open their profile.
+
+**Decision.** `RowLink` (`apps/web/components/row-link.tsx`) is the `linkAs` of such rows; the list provides `RowLinkContext` with what to do when a row's link is followed (the notifications page and the bell mark what was opened as read). Links inside a row's subtitle (a `PersonLink`) carry `relative z-10` so they stay above the row's stretched link and keep their own target.
+
+**Consequences.** Every row stays one tap target with a real link inside for keyboard and screen-reader users, while names in it remain separately reachable.
+
 ## ADR-0180 — The app follows phone-app conventions: grouped lists, large titles, a light translucent bar and a bottom tab bar (2026-10-24)
 
 **Context.** The product owner tested staging on an iPhone and found the UI bad. The screenshots (notifications, equipment) showed three problems:

@@ -5681,6 +5681,9 @@
         "cancelled": "Closed"
       },
       "noEmployee": "Only people with an employee record can contact HR here."
+    },
+    "automation": {
+      "dryRunNamed": "Dry run {name}"
     }
   }
 }
