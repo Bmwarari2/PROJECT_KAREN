@@ -133,7 +133,7 @@ test('HR opens the task and prepares and sends the statement: missing values blo
   await expect(preview).toContainText('Your continuous employment began on 6 January 2025.');
   await expect(preview).toContainText('Signatures');
   // the company signs too (the template's default), after Ben
-  await expect(page.getByLabel('Ben Fictional signs')).toBeChecked();
+  await expect(page.getByLabel('Ask Ben Fictional to sign')).toBeChecked();
   await expect(page.getByLabel('The company signs')).toBeChecked();
   await expect(page.getByLabel('Ben Fictional first')).toBeChecked();
   await page.getByLabel(/^Message/).fill('Please read and sign your statement (fictional).');

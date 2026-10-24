@@ -291,11 +291,11 @@ export function patternInWords(pattern: WeekPattern, locale: Loc, tr: Translate)
     );
   const list = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(days.map(name));
   const hours = days.reduce((s, d) => s + (pattern[d] ?? 0), 0);
-  return tr('docFields.value.pattern', { days: list, hours: num(hours, locale) });
+  return tr('docFields.value.pattern', { days: list, hours: num(hours, locale), count: hours });
 }
 
 export function hoursInWords(hours: number, locale: Loc, tr: Translate): string {
-  return tr('docFields.value.weeklyHours', { hours: num(hours, locale) });
+  return tr('docFields.value.weeklyHours', { hours: num(hours, locale), count: hours });
 }
 
 /** Annual holiday entitlement from the leave policy: days or hours a year, or an accrual rate. */

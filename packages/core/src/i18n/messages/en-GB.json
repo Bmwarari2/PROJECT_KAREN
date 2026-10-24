@@ -872,8 +872,10 @@
     },
     "today": "Today’s date",
     "value": {
-      "pattern": "{days} ({hours} hours a week)",
-      "weeklyHours": "{hours} hours a week",
+      "pattern_one": "{days} ({hours} hour a week)",
+      "pattern_other": "{days} ({hours} hours a week)",
+      "weeklyHours_one": "{hours} hour a week",
+      "weeklyHours_other": "{hours} hours a week",
       "perYear": "{amount} a year",
       "accrual": "{percent}% of the hours worked",
       "rate": {
@@ -958,7 +960,7 @@
     "removeBox": "Remove box {n}",
     "noBoxes": "No boxes placed: a signature page will be added.",
     "signingSection": "Signing",
-    "employeeSigns": "{name} signs",
+    "employeeSigns": "Ask {name} to sign",
     "companySigns": "The company signs",
     "companySignsHint": "An authorised signatory signs for the company in the viewer.",
     "order": "Who signs first",
