@@ -13,6 +13,7 @@ export const TARGET_TYPES = [
   'document',
   'asset',
   'asset_assignment',
+  'asset_return',
   'rtw_check',
   'report_run',
   'support_ticket',
@@ -51,6 +52,8 @@ const ROUTES: Record<TargetType, (id: string) => string> = {
   asset: (id) => `/app/assets/${id}`,
   // the holder's view: their own assets, opened at the handover to acknowledge
   asset_assignment: (id) => `/app/assets?ack=${id}`,
+  // the register's view of the same assignment, opened at its return checklist (ADR-0191)
+  asset_return: (id) => `/app/assets?return=${id}`,
   rtw_check: (id) => `/app/compliance/right-to-work/${id}`,
   report_run: (id) => `/app/reports/runs/${id}`,
   support_ticket: (id) => `/app/support/${id}`,

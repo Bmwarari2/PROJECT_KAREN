@@ -984,6 +984,301 @@
       "overdue": "Overdue"
     }
   },
+  "taskActions": {
+    "kind": {
+      "open_link": "Open a page of Thapsus-HR",
+      "open_person": "Open the person’s profile",
+      "open_record": "Open the record",
+      "send_document": "Prepare and send a document",
+      "rtw_check": "Record a right-to-work check",
+      "i9_section1": "Form I-9 Section 1 (the employee)",
+      "i9_section2": "Form I-9 Section 2 (HR)",
+      "i9_reverify": "Form I-9 reverification",
+      "compliance_renewal": "Renew a compliance requirement",
+      "payroll_starter": "Payroll starter checklist",
+      "payroll_leaver": "Payroll leaver summary",
+      "form": "Fill in a form",
+      "it_request": "Request equipment or access from IT",
+      "access_removal": "Remove the leaver’s access"
+    },
+    "button": {
+      "link": {
+        "open": "Open",
+        "sign": "Review and sign",
+        "review": "Review",
+        "details": "Open the details"
+      },
+      "person": {
+        "overview": "Open their profile",
+        "history": "Open their history",
+        "documents": "Open their documents",
+        "time-off": "Open their time off",
+        "compliance": "Open their compliance record"
+      },
+      "record": {
+        "approval_request": "Review the request",
+        "task": "Open the task",
+        "leave_request": "Open the leave request",
+        "employee": "Open their profile",
+        "document": "Open the document",
+        "asset": "Open the asset",
+        "asset_assignment": "Confirm you received it",
+        "asset_return": "Record the return",
+        "rtw_check": "Open the check",
+        "report_run": "Open the report",
+        "support_ticket": "Open the ticket",
+        "privacy_request": "Open the request",
+        "privacy_incident": "Open the incident",
+        "timesheet": "Open the timesheet",
+        "payroll_period": "Open the pay period",
+        "payslip": "Open the payslip",
+        "law_change": "Open the law change",
+        "hr_request": "Open the request"
+      },
+      "send_document": "Prepare and send",
+      "rtw_check": "Record the check",
+      "i9_section1": "Complete Section 1",
+      "i9_section2": "Complete Section 2",
+      "i9_reverify": "Reverify",
+      "compliance_renewal": "Record the renewal",
+      "payroll_starter": "Open the starter checklist",
+      "payroll_leaver": "Open the leaver summary",
+      "form": {
+        "return_to_work": "Hold the conversation",
+        "exit_interview": "Start the exit interview",
+        "probation_review": "Start the review",
+        "check_in": "Start the check-in",
+        "first_week_plan": "Plan the first week",
+        "handover": "Plan the handover",
+        "transfer_welcome": "Welcome them to the team"
+      },
+      "it_request": "Request from IT",
+      "access_removal": "Open the access checklist"
+    },
+    "source": {
+      "workflow": {
+        "onboarding": "Onboarding workflow: {name}",
+        "offboarding": "Offboarding workflow: {name}",
+        "transfer": "Transfer workflow: {name}",
+        "custom": "Workflow: {name}"
+      },
+      "approval": "Approval: {name}",
+      "automation": "Automation rule: {name}",
+      "document": "Documents",
+      "compliance": "Compliance",
+      "asset": "Asset register",
+      "absence": "Absence",
+      "hr_request": "Request to HR",
+      "manual": "Added by hand"
+    },
+    "sourceName": {
+      "workflow": "Workflow",
+      "approval": "Approval",
+      "automation": "Automation rule",
+      "document": "Documents",
+      "manual": "Added by hand",
+      "compliance": "Compliance",
+      "hr_request": "Request to HR",
+      "absence": "Absence",
+      "asset": "Asset register"
+    },
+    "status": {
+      "approval": {
+        "pending": "Waiting for a decision",
+        "approved": "Approved",
+        "rejected": "Declined",
+        "cancelled": "Cancelled"
+      },
+      "signature": {
+        "pending": "Waiting to be signed",
+        "countersign": "Signed, waiting for the company’s signature",
+        "returned": "Returned to be signed again",
+        "signed": "Signed on {date}",
+        "closed": "No longer waiting for a signature"
+      },
+      "asset": {
+        "awaitingAck": "Not confirmed yet",
+        "acknowledged": "Confirmed on {date}",
+        "returned": "The asset has been returned",
+        "stillIssued": "Still issued",
+        "dueBack": "Still issued, due back {date}",
+        "returnedOn": "Returned on {date}",
+        "lost": "Recorded as lost on {date}"
+      },
+      "rtw": {
+        "missing": "No check recorded yet",
+        "recorded": "Check recorded on {date}",
+        "current": "This is the current check",
+        "followUp": "Follow-up check due {date}",
+        "replaced": "Replaced by a newer check on {date}"
+      },
+      "i9": {
+        "noRecord": "No Form I-9 recorded yet",
+        "section1Waiting": "Section 1 not recorded yet",
+        "section1Done": "Section 1 completed on {date}",
+        "section2Waiting": "Section 2 not recorded yet",
+        "section2Due": "Section 2 due by {date}",
+        "section2Done": "Section 2 completed on {date}",
+        "reverifyDue": "Reverification due by {date}",
+        "reverified": "Reverified on {date}"
+      },
+      "matrix": {
+        "missing": "Not recorded yet",
+        "recorded": "Recorded on {date}",
+        "expires": "Expires {date}",
+        "renewed": "Renewed"
+      },
+      "document": {
+        "expires": "Expires {date}",
+        "expired": "Expired on {date}"
+      },
+      "absence": {
+        "due": "Conversation not recorded yet",
+        "recorded": "Conversation recorded"
+      }
+    },
+    "text": {
+      "asset": {
+        "acknowledge": "You have been given {asset}. Check that you have it and that it works, then confirm you received it. Your confirmation is kept with the handover record.",
+        "return": "Collect {asset} ({tag}) from the leaver by their last day and record the return against the checklist, or record it as lost."
+      },
+      "absence": {
+        "returnToWork": {
+          "title": "Return-to-work conversation: {name}",
+          "description": "{name} is back after a sickness absence. Hold a short, private conversation: check they are fit to return, whether they need any adjustments or a phased return, and agree a review date. Record it when you have spoken. Medical details stay private."
+        }
+      },
+      "compliance": {
+        "rtwFollowUp": "{name}’s permission to work has an end date. Make a follow-up right-to-work check on or before the date due, and record it. A newer check closes this task.",
+        "rtwCheck": "No right-to-work check is recorded for {name}. Check their right to work before their first day and record the check on their compliance record.",
+        "i9Reverify": "{name}’s employment authorisation is due to expire. Reverify it on Form I-9 (Supplement B) on or before the date due, and record it.",
+        "renew": "{name}’s {requirement} expires soon. Record the renewal on their compliance record, with the new evidence.",
+        "missing": "{name} needs {requirement} for their role, and none is recorded. Record it on their compliance record, with the evidence."
+      },
+      "document": {
+        "renew": "{title} for {name} expires on {date}. Ask for the new document, attach it to their profile, and record the new expiry date.",
+        "sign": {
+          "title": "Sign {title}",
+          "description": "Read {title} in full, then sign it with your name. Your signature, the date and a fingerprint of the document are kept with it, and you can download the signed copy."
+        },
+        "signAgain": "{title} was returned to you. Read it again and sign it, so the company can countersign it."
+      },
+      "approval": {
+        "leave_request": "{name} asked for time off. Check the dates, their balance and who else is off, then approve or decline it.",
+        "shift_claim": "{name} asked to work an open shift. Check it fits their hours and rest, then approve or decline the claim.",
+        "shift_swap": "{name} asked to swap a shift with a colleague. Check both people can work the new shifts, then approve or decline the swap.",
+        "employee_change": "A change to {name}’s record is waiting for your decision. Check the current and proposed values and the date it takes effect, then approve or decline it.",
+        "employee_self_change": "{name} asked to change their own details. Check the change, then approve or decline it.",
+        "timesheet": "{name} submitted a timesheet. Check the hours against their shifts, then approve or decline it.",
+        "document_countersign": "{name} has signed a document that needs the company’s signature. Review it, then countersign it or return it.",
+        "other": "A request about {name} is waiting for your decision ({policy}). Review it, then approve or decline it."
+      }
+    },
+    "page": {
+      "statusPrefix": "Status:",
+      "closesItself": "This task closes by itself when the work is recorded.",
+      "fallback": "Mark as done instead",
+      "note": {
+        "title": "Mark this task as done",
+        "body": "Use this when the work was done another way. Say briefly what was done: the note is kept with the task and in the audit trail.",
+        "label": "What was done",
+        "hint": "A short note, up to 500 characters.",
+        "submit": "Mark as done"
+      },
+      "reply": {
+        "button": "Reply and mark as done",
+        "title": "Reply to {name}",
+        "body": "Write your answer. They see it with their request and are told it is done.",
+        "label": "Your reply",
+        "submit": "Send and mark as done"
+      },
+      "noteFact": "Note",
+      "how": "How it was closed",
+      "via": {
+        "record": "By itself, when the work was recorded",
+        "manual": "Marked as done by hand"
+      }
+    },
+    "list": {
+      "actionNamed": "{action}: {title}"
+    },
+    "editor": {
+      "action": "What the task opens",
+      "actionHint": "The task’s main button opens this, with the person already chosen.",
+      "none": "Nothing: the task is marked as done",
+      "template": "Document template",
+      "anyTemplate": "Choose when sending",
+      "formKind": "Form",
+      "form": {
+        "return_to_work": "Return-to-work conversation",
+        "exit_interview": "Exit interview",
+        "probation_review": "Probation review",
+        "check_in": "Check-in",
+        "first_week_plan": "Buddy and first-week plan",
+        "handover": "Handover plan",
+        "transfer_welcome": "Welcome to a new team"
+      },
+      "tab": "Profile tab",
+      "tabs": {
+        "overview": "Overview",
+        "history": "History",
+        "documents": "Documents",
+        "time-off": "Time off",
+        "compliance": "Compliance"
+      },
+      "link": "Page",
+      "linkHint": "A page of Thapsus-HR, starting with /app/",
+      "linkInvalid": "Enter a page of Thapsus-HR, starting with /app/.",
+      "dueFrom": "Due date counted from",
+      "dueFromHint": "Count from the workflow’s date or from one of the person’s own dates.",
+      "from": {
+        "anchor": "Days from the {anchor}",
+        "start": "Days from their start date",
+        "end": "Days from their leaving date",
+        "probation_end": "Days from their probation end date",
+        "i9_section2": "The Form I-9 Section 2 deadline (US rules)"
+      },
+      "offset": "Days",
+      "offsetHint": "Use a negative number for days before, 0 for the day itself.",
+      "businessDays": "Count business days",
+      "businessDaysHint": "Skips weekends and the public holidays where the person works.",
+      "anchorText": {
+        "start": "their start date",
+        "end": "their leaving date",
+        "probation_end": "their probation end date"
+      },
+      "businessDayCount_one": "{count} business day",
+      "businessDayCount_other": "{count} business days",
+      "packDeadline": {
+        "i9_section2": "Form I-9 Section 2 deadline (US rules)"
+      },
+      "opensCol": "Opens",
+      "edit": "Edit",
+      "editNamed": "Edit {name}",
+      "editTitle": "Edit {name}",
+      "editHint": "Changes apply to workflows started from now on. Tasks already created keep their details.",
+      "offsetFrom": "Due (days from {anchor})",
+      "offsetFromBusiness": "Due (business days from {anchor})",
+      "offsetFromWorkflowBusiness": "Due (business days from the {anchor})",
+      "dueText": {
+        "on": "On {anchor}",
+        "before": "{amount} before {anchor}",
+        "after": "{amount} after {anchor}"
+      },
+      "actionParams": "Details for {kind}"
+    },
+    "automation": {
+      "description": "Task description",
+      "descriptionHint": "Optional. Shown on the task’s page so the person knows what to do."
+    },
+    "approval": {
+      "automation": "The system (an automation rule)",
+      "unrecorded": "Not recorded"
+    },
+    "hrReply": {
+      "title": "HR’s reply"
+    }
+  },
   "approvals": {
     "title": "Approvals",
     "empty": "Nothing waiting for you",

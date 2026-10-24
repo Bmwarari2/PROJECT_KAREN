@@ -83,6 +83,41 @@ export function eachDay(start: CivilDate, end: CivilDate): CivilDate[] {
   }
   return out;
 }
+/**
+ * A business-day test from a calendar: the ISO weekdays that are worked (1 = Monday … 7 = Sunday) and
+ * dates that are closed (for example a jurisdiction pack's public holidays). The calendar is always passed
+ * in: which days count is a workspace setting or pack data, never decided here (ADR-0193).
+ */
+export function businessDayTest(
+  weekdays: readonly number[],
+  closedDates: Iterable<CivilDate> = [],
+): (d: CivilDate) => boolean {
+  const days = new Set(weekdays.filter((w) => Number.isInteger(w) && w >= 1 && w <= 7));
+  if (!days.size) throw new RangeError('A business calendar needs at least one business weekday');
+  const closed = new Set(closedDates);
+  return (d) => days.has(dayOfWeek(d)) && !closed.has(d);
+}
+
+/**
+ * The date `n` business days after `d` (before it when `n` is negative), stepping one day at a time and
+ * counting only days `isBusinessDay` accepts; `d` itself is never counted, and `n = 0` returns `d`.
+ */
+export function addBusinessDays(
+  d: CivilDate,
+  n: number,
+  isBusinessDay: (d: CivilDate) => boolean,
+): CivilDate {
+  if (!Number.isInteger(n)) throw new RangeError(`Business days must be a whole number: ${n}`);
+  const step = n < 0 ? -1 : 1;
+  let cur = pd(d);
+  for (let counted = 0, guard = 0; counted < Math.abs(n); guard++) {
+    if (guard > 3700) throw new RangeError('No business day found within ten years');
+    cur = cur.add({ days: step });
+    if (isBusinessDay(cur.toString())) counted++;
+  }
+  return cur.toString();
+}
+
 /** Half-open range overlap test for [aFrom, aTo) and [bFrom, bTo); null `to` means open-ended. */
 export function rangesOverlap(
   aFrom: CivilDate,

@@ -27,6 +27,7 @@
     "./ai-models": "./src/ai-models.ts",
     "./trust": "./src/trust/index.ts",
     "./links": "./src/links.ts",
+    "./task-actions": "./src/task-actions.ts",
     "./metrics": "./src/metrics.ts",
     "./security": "./src/security/index.ts"
   },
