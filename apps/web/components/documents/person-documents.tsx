@@ -48,7 +48,8 @@ export function PersonDocuments({
   ) : null;
   const subtitle = (d: Doc) =>
     [
-      kindLabel(t, d),
+      // the type, unless the title already is the type (right-to-work evidence keeps a generic title)
+      kindLabel(t, d) === d.title ? null : kindLabel(t, d),
       d.expiresOn
         ? t(d.expiryStatus === 'expired' ? 'docView.expired' : 'docView.expiresOnShort', {
             date: date(d.expiresOn),
@@ -56,7 +57,9 @@ export function PersonDocuments({
         : d.issuedOn
           ? t('docView.issuedOnShort', { date: date(d.issuedOn) })
           : t('docView.addedOn', { date: date(d.createdAt) }),
-    ].join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
   return (
     <>
       {!docs.data ? (
