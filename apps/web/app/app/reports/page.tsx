@@ -215,6 +215,8 @@ export default function ReportsPage() {
               <ListSection
                 key={g.key}
                 id={`cat-${g.key}`}
+                // the categories sit under "Ready-made reports" (h2)
+                headingLevel={3}
                 title={
                   <span className="flex items-center gap-2">
                     {t(`reports.ui.category.${g.key}`)}
