@@ -11,6 +11,7 @@ import { useApi } from '@/lib/use-api';
 import { ModuleFrameContext, PageTitle } from '../../../shell';
 import { GROUPS, type WorkspaceModule } from '../../../workspace';
 import { SETTINGS_GROUPS } from '../../sections';
+import { sectionMessages } from '../../section-text';
 import { selectClass } from '../../kit';
 import { RolesNav } from '../nav';
 import { rolePreview } from '../preview';
@@ -588,7 +589,7 @@ function PreviewAsRole({ roles, role, onRole }: { roles: Role[]; role: Role; onR
                   </p>
                   <ul className="flex flex-col gap-1 text-callout">
                     {items.map((s) => (
-                      <li key={s.key}>{t(`admin.section.${s.key}.title`)}</li>
+                      <li key={s.key}>{t(`${sectionMessages(s)}.title`)}</li>
                     ))}
                   </ul>
                 </div>
@@ -597,7 +598,7 @@ function PreviewAsRole({ roles, role, onRole }: { roles: Role[]; role: Role; onR
           ) : (
             <p className="text-callout text-text-secondary">{t('access.compare.noSettings')}</p>
           )}
-          <NotShown items={p.hiddenSections.map((s) => t(`admin.section.${s.key}.title`))} />
+          <NotShown items={p.hiddenSections.map((s) => t(`${sectionMessages(s)}.title`))} />
         </section>
       </div>
       <p className="text-footnote text-text-secondary">{t('access.compare.previewFoot')}</p>

@@ -14,6 +14,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
@@ -208,87 +209,88 @@ export default function AuditStreamsPage() {
       {created ? (
         <SecretOnce title={created.title} items={created.items} onDone={() => setCreated(null)} />
       ) : null}
-      <Card>
-        <CardTitle as={sec.heading}>{t('platform.streams.createTitle')}</CardTitle>
-        <form onSubmit={create} className="mt-4 flex flex-col gap-4">
-          <fieldset className="flex flex-wrap gap-4">
-            <legend className="mb-2 text-callout font-semibold">{t('platform.streams.destination')}</legend>
-            {(['https', 's3'] as const).map((k) => (
-              <label key={k} className="flex items-center gap-2 text-callout">
-                <input
-                  type="radio"
-                  name="stream-kind"
-                  value={k}
-                  checked={kind === k}
-                  onChange={() => setKind(k)}
-                  className="h-5 w-5 accent-[var(--color-accent)]"
-                />
-                {t(`platform.streams.kind_${k}`)}
-              </label>
-            ))}
-          </fieldset>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field id="st-name" label={t('platform.api.name')}>
-              {(p) => <Input {...p} required maxLength={120} value={form.name} onChange={set('name')} />}
-            </Field>
-            {kind === 'https' ? (
-              <Field id="st-url" label={t('platform.webhooks.url')} hint={t('platform.webhooks.urlHint')}>
-                {(p) => <Input {...p} type="url" required value={form.url} onChange={set('url')} />}
+      <PageSection headingLevel={sec.level} title={t('platform.streams.createTitle')}>
+        <Card>
+          <form onSubmit={create} className="flex flex-col gap-4">
+            <fieldset className="flex flex-wrap gap-4">
+              <legend className="mb-2 text-callout font-semibold">{t('platform.streams.destination')}</legend>
+              {(['https', 's3'] as const).map((k) => (
+                <label key={k} className="flex items-center gap-2 text-callout">
+                  <input
+                    type="radio"
+                    name="stream-kind"
+                    value={k}
+                    checked={kind === k}
+                    onChange={() => setKind(k)}
+                    className="h-5 w-5 accent-[var(--color-accent)]"
+                  />
+                  {t(`platform.streams.kind_${k}`)}
+                </label>
+              ))}
+            </fieldset>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field id="st-name" label={t('platform.api.name')}>
+                {(p) => <Input {...p} required maxLength={120} value={form.name} onChange={set('name')} />}
               </Field>
-            ) : (
-              <>
-                <Field
-                  id="st-bucket"
-                  label={t('platform.streams.bucket')}
-                  hint={t('platform.streams.bucketHint')}
-                >
-                  {(p) => <Input {...p} required value={form.bucket} onChange={set('bucket')} />}
+              {kind === 'https' ? (
+                <Field id="st-url" label={t('platform.webhooks.url')} hint={t('platform.webhooks.urlHint')}>
+                  {(p) => <Input {...p} type="url" required value={form.url} onChange={set('url')} />}
                 </Field>
-                <Field id="st-prefix" label={t('platform.streams.prefix')}>
-                  {(p) => <Input {...p} value={form.prefix} onChange={set('prefix')} />}
-                </Field>
-                <Field
-                  id="st-role"
-                  label={t('platform.streams.roleArn')}
-                  hint={t('platform.streams.roleArnHint')}
-                >
-                  {(p) => <Input {...p} required value={form.roleArn} onChange={set('roleArn')} />}
-                </Field>
-              </>
-            )}
-            <Field
-              id="st-actions"
-              label={t('platform.streams.actions')}
-              hint={t('platform.streams.actionsHint')}
-            >
-              {(p) => <Input {...p} value={form.actions} onChange={set('actions')} />}
-            </Field>
-          </div>
-          <label className="flex items-center gap-2 text-callout">
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-[var(--color-accent)]"
-              checked={form.sensitiveOnly}
-              onChange={set('sensitiveOnly')}
-            />
-            {t('platform.streams.sensitiveOnly')}
-          </label>
-          <label className="flex items-center gap-2 text-callout">
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-[var(--color-accent)]"
-              checked={form.backfill}
-              onChange={set('backfill')}
-            />
-            {t('platform.streams.backfill')}
-          </label>
-          <div>
-            <Button type="submit" loading={busy}>
-              {t('platform.streams.create')}
-            </Button>
-          </div>
-        </form>
-      </Card>
+              ) : (
+                <>
+                  <Field
+                    id="st-bucket"
+                    label={t('platform.streams.bucket')}
+                    hint={t('platform.streams.bucketHint')}
+                  >
+                    {(p) => <Input {...p} required value={form.bucket} onChange={set('bucket')} />}
+                  </Field>
+                  <Field id="st-prefix" label={t('platform.streams.prefix')}>
+                    {(p) => <Input {...p} value={form.prefix} onChange={set('prefix')} />}
+                  </Field>
+                  <Field
+                    id="st-role"
+                    label={t('platform.streams.roleArn')}
+                    hint={t('platform.streams.roleArnHint')}
+                  >
+                    {(p) => <Input {...p} required value={form.roleArn} onChange={set('roleArn')} />}
+                  </Field>
+                </>
+              )}
+              <Field
+                id="st-actions"
+                label={t('platform.streams.actions')}
+                hint={t('platform.streams.actionsHint')}
+              >
+                {(p) => <Input {...p} value={form.actions} onChange={set('actions')} />}
+              </Field>
+            </div>
+            <label className="flex items-center gap-2 text-callout">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[var(--color-accent)]"
+                checked={form.sensitiveOnly}
+                onChange={set('sensitiveOnly')}
+              />
+              {t('platform.streams.sensitiveOnly')}
+            </label>
+            <label className="flex items-center gap-2 text-callout">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[var(--color-accent)]"
+                checked={form.backfill}
+                onChange={set('backfill')}
+              />
+              {t('platform.streams.backfill')}
+            </label>
+            <div>
+              <Button type="submit" loading={busy}>
+                {t('platform.streams.create')}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </PageSection>
 
       {streams.data && !streams.data.data.length ? (
         <EmptyState level={sec.level} icon={<Radio aria-hidden />} title={t('platform.streams.none')} />

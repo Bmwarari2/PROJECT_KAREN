@@ -1240,6 +1240,11 @@
       "timeZone": "Time zone",
       "code": "Code",
       "regionCode": "Region code"
+    },
+    "add": {
+      "legal-entities": "Add a legal entity",
+      "departments": "Add a department",
+      "locations": "Add a location"
     }
   },
   "admin": {
@@ -1275,6 +1280,10 @@
       "time": {
         "title": "Time and attendance",
         "body": "Working-time rules, geofencing and clocking."
+      },
+      "platform": {
+        "title": "Integrations and platform",
+        "body": "API access, webhooks, audit streaming, sandboxes, branding and features."
       }
     },
     "section": {
@@ -1375,7 +1384,9 @@
     },
     "domains": {
       "hint": "For example, fictional-company.example",
-      "verifyLabel": "Verify {domain}"
+      "verifyLabel": "Verify {domain}",
+      "listTitle": "Your domains",
+      "addTitle": "Add a domain"
     },
     "sso": {
       "lead": "Let people sign in with your identity provider. Test a connection before you require it.",
@@ -5418,7 +5429,8 @@
       "list": {
         "count_one": "{count} person",
         "count_other": "{count} people",
-        "countMore": "First {count} shown"
+        "countMore": "First {count} shown",
+        "title": "Everyone who can sign in"
       },
       "problem": {
         "ownAccount": "You cannot do this for your own account.",

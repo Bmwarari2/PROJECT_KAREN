@@ -4,12 +4,13 @@ import { Copy } from 'lucide-react';
 import {
   Button,
   Card,
-  CardTitle,
   cn,
   Dialog,
   DialogContent,
   DialogTrigger,
   Input,
+  nativeSelectClass,
+  PageSection,
   useToast,
 } from '@thapsus/ui';
 import { BUILT_IN_ROLES } from '@thapsus/core/roles';
@@ -24,8 +25,8 @@ import { hasPermission, PageTitle, useSession } from '../shell';
 
 /** Shared building blocks for the settings screens (tokens and @thapsus/ui components only). */
 
-export const selectClass =
-  'h-10 w-full rounded-sm border border-border-strong bg-surface-raised px-2 text-callout text-text';
+/** A native select that matches the inputs (44px tall on phones). */
+export const selectClass = nativeSelectClass;
 const choiceClass = 'mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)]';
 
 /** `has(permission)` for the signed-in user (the API enforces the same keys and their scope). */
@@ -116,7 +117,12 @@ export function PageHeader({
   );
 }
 
-/** A titled card that is also a labelled region, so screen-reader users can jump between sections. */
+/**
+ * A titled section of a settings page that is also a labelled region, so screen-reader users can jump
+ * between sections. The heading sits above the content (DESIGN.md §6, grouped sections), and the
+ * content is one card (`container="card"`, forms and summaries) or stands on its own
+ * (`container="none"`: a table or a list of cards, which draw their own): never a card inside a card.
+ */
 export function SettingsCard({
   id,
   title,
@@ -124,31 +130,35 @@ export function SettingsCard({
   actions,
   children,
   className,
+  container = 'card',
 }: {
   id: string;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   actions?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
+  container?: 'card' | 'none';
 }) {
   // a section of the page: one level below the page title
   const sec = useSectionLevel();
+  const content =
+    children == null || children === false ? null : container === 'card' ? (
+      <Card className={cn('flex flex-col gap-4', className)}>{children}</Card>
+    ) : (
+      <div className={cn('flex min-w-0 flex-col gap-4', className)}>{children}</div>
+    );
   return (
-    <section aria-labelledby={`${id}-title`}>
-      <Card className={cn('flex flex-col gap-4', className)}>
-        <div className="flex flex-wrap items-start gap-3">
-          <div className="mr-auto max-w-[var(--prose-width)]">
-            <CardTitle id={`${id}-title`} as={sec.heading}>
-              {title}
-            </CardTitle>
-            {description ? <p className="mt-1 text-callout text-text-secondary">{description}</p> : null}
-          </div>
-          {actions}
-        </div>
-        {children}
-      </Card>
-    </section>
+    <PageSection
+      headingId={`${id}-title`}
+      headingLevel={sec.level}
+      title={title}
+      description={description}
+      action={actions}
+      className="gap-3"
+    >
+      {content}
+    </PageSection>
   );
 }
 

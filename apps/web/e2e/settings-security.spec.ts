@@ -150,26 +150,32 @@ test.describe('sign-in and security settings', () => {
     await expect(page.getByRole('row', { name: /fictional-shops\.example/ })).toContainText('Pending');
   });
 
-  test('on a phone the settings sub-navigation is a disclosure and pages fit the screen', async ({
+  test('on a phone the settings index is the navigation and each section goes back to it; pages fit the screen', async ({
     page,
   }) => {
     await signUpAndEnrol(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/app/settings/sso');
-    const subnav = page.getByRole('navigation', { name: 'Settings sections' });
-    const toggle = subnav.getByRole('button', { name: 'Single sign-on', exact: true });
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(subnav.getByRole('link', { name: 'Leave policies' })).toBeHidden();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await subnav.getByRole('link', { name: 'Leave policies' }).click();
+    // no side list on a phone: the section has a back link and its own title
+    await expect(page.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
+    await expectPageTitle(page, 'Settings', 'Single sign-on');
+    const back = page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Settings' });
+    await back.click();
+    await page.waitForURL(/\/app\/settings$/);
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
+    await page
+      .getByRole('region', { name: 'Time off and absence', exact: true })
+      .getByRole('link', { name: 'Leave policies' })
+      .click();
     await expectPageTitle(page, 'Settings', 'Leave policies');
-    await expect(subnav.getByRole('button', { name: 'Leave policies', exact: true })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await axeBoth(page);
+    // a platform page goes back to Settings too
+    await page.goto('/app/settings/features');
+    await expectPageTitle(page, 'Settings', 'Features');
+    await expect(
+      page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Settings' }),
+    ).toBeVisible();
   });
 
   test('two-step verification for everyone is on in a new workspace; turning it off asks the admin to confirm it is them', async ({

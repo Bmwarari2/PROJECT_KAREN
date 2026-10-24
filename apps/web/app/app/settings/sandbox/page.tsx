@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { FlaskConical } from 'lucide-react';
-import { Button, Card, CardTitle, EmptyState, Field, Input, useToast } from '@thapsus/ui';
+import { Button, Card, CardTitle, EmptyState, Field, Input, useToast, PageSection } from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -83,34 +83,39 @@ export default function SandboxPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('platform.sandbox.title')} lead={t('platform.sandbox.lead')} />
-      <Card>
-        <CardTitle as={sec.heading}>{t('platform.sandbox.whatTitle')}</CardTitle>
-        <ul className="mt-3 list-disc pl-5 text-callout text-text-secondary">
-          <li>{t('platform.sandbox.copied')}</li>
-          <li>{t('platform.sandbox.notCopied')}</li>
-          <li>{t('platform.sandbox.synthetic')}</li>
-          <li>{t('platform.sandbox.region')}</li>
-        </ul>
-        <form onSubmit={create} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Field id="sb-people" label={t('platform.sandbox.people')} hint={t('platform.sandbox.peopleHint')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                min={0}
-                max={200}
-                required
-                value={people}
-                onChange={(e) => setPeople(Number(e.target.value))}
-                className="w-32"
-              />
-            )}
-          </Field>
-          <Button type="submit" loading={busy}>
-            {t('platform.sandbox.create')}
-          </Button>
-        </form>
-      </Card>
+      <PageSection headingLevel={sec.level} title={t('platform.sandbox.whatTitle')}>
+        <Card>
+          <ul className="list-disc pl-5 text-callout text-text-secondary">
+            <li>{t('platform.sandbox.copied')}</li>
+            <li>{t('platform.sandbox.notCopied')}</li>
+            <li>{t('platform.sandbox.synthetic')}</li>
+            <li>{t('platform.sandbox.region')}</li>
+          </ul>
+          <form onSubmit={create} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <Field
+              id="sb-people"
+              label={t('platform.sandbox.people')}
+              hint={t('platform.sandbox.peopleHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="number"
+                  min={0}
+                  max={200}
+                  required
+                  value={people}
+                  onChange={(e) => setPeople(Number(e.target.value))}
+                  className="w-32"
+                />
+              )}
+            </Field>
+            <Button type="submit" loading={busy}>
+              {t('platform.sandbox.create')}
+            </Button>
+          </form>
+        </Card>
+      </PageSection>
       {link ? (
         <div className="flex flex-col gap-2">
           <SecretOnce
