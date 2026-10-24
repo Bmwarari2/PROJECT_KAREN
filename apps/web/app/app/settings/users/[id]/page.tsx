@@ -7,7 +7,7 @@ import {
   Badge,
   Button,
   Card,
-  CardTitle,
+  PageSection,
   EmptyState,
   Field,
   ListItem,
@@ -278,22 +278,20 @@ export default function UserAccessPage() {
           </span>
         </div>
       </div>
-      <Link href="/app/settings/users" className="text-callout">
-        {t('access.users.back')}
-      </Link>
 
       {hasPermission(session, 'settings.manage') && user.id !== session?.userId ? (
         <SignInControls user={user} onChanged={reload} />
       ) : null}
 
-      <Card className="flex flex-col gap-4">
-        <CardTitle as={sec.heading}>{t('access.users.assignmentsTitle')}</CardTitle>
+      <PageSection headingLevel={sec.level} title={t('access.users.assignmentsTitle')}>
         {assignments.length === 0 ? (
-          <EmptyState
-            level={sec.level}
-            icon={<ShieldCheck aria-hidden />}
-            title={t('access.users.noAssignments')}
-          />
+          <Card>
+            <EmptyState
+              level={sec.level}
+              icon={<ShieldCheck aria-hidden />}
+              title={t('access.users.noAssignments')}
+            />
+          </Card>
         ) : (
           <Table>
             <THead>
@@ -317,8 +315,8 @@ export default function UserAccessPage() {
                         {a.isAdmin ? <Badge tone="warning">{t('access.roles.admin')}</Badge> : null}
                       </span>
                     </TD>
-                    <TD>{scopeSummary(t, a)}</TD>
-                    <TD className="hidden text-text-secondary md:table-cell">
+                    <TD label={t('access.users.colScope')}>{scopeSummary(t, a)}</TD>
+                    <TD className="hidden text-text-secondary md:table-cell" phone="hide">
                       {formatDateTime(a.createdAt, locale, zone)}
                     </TD>
                     <TD className="text-right">
@@ -343,95 +341,96 @@ export default function UserAccessPage() {
             </tbody>
           </Table>
         )}
-      </Card>
+      </PageSection>
 
       {canAssign ? (
-        <Card className="flex flex-col gap-4">
-          <CardTitle as={sec.heading}>{t('access.users.assignTitle')}</CardTitle>
-          <form onSubmit={assign} className="flex flex-col gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field id="assign-role" label={t('access.users.role')}>
-                {(p) => (
-                  <select
-                    {...p}
-                    required
-                    value={roleId}
-                    onChange={(e) => setRoleId(e.target.value)}
-                    className={selectClass}
-                  >
-                    <option value="">{t('access.users.chooseRole')}</option>
-                    {(roles.data ?? []).map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {roleName(t, r)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-              <Field id="assign-scope" label={t('access.users.scopeType')}>
-                {(p) => (
-                  <select
-                    {...p}
-                    value={scopeType}
-                    onChange={(e) => {
-                      setScopeType(e.target.value as ScopeType);
-                      setValues([]);
-                    }}
-                    className={selectClass}
-                  >
-                    {SCOPES.map((s) => (
-                      <option key={s} value={s}>
-                        {t(`access.scope.${s}`)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-            </div>
-            {VALUED.includes(scopeType) ? (
-              <fieldset className="flex flex-col gap-2">
-                <legend className="text-callout font-semibold">{t('access.users.scopeValues')}</legend>
-                {!options ? (
-                  <Skeleton className="h-10 w-64" />
-                ) : options.length === 0 ? (
-                  <p className="text-callout text-text-secondary">{t('access.users.noScopeValues')}</p>
-                ) : (
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    {options.map((o) => (
-                      <label key={o.value} className="flex items-center gap-2 text-callout">
-                        <input
-                          type="checkbox"
-                          className="h-5 w-5 accent-[var(--color-accent)]"
-                          checked={values.includes(o.value)}
-                          onChange={(e) =>
-                            setValues((v) =>
-                              e.target.checked ? [...v, o.value] : v.filter((x) => x !== o.value),
-                            )
-                          }
-                        />
-                        {o.label}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-            ) : null}
-            {chosen?.isAdmin && !user.hasMfa ? (
-              <p role="status" className="max-w-[var(--prose-width)] text-callout text-warning">
-                {t('access.users.adminNoMfa')}
-              </p>
-            ) : null}
-            <div>
-              <Button
-                type="submit"
-                loading={busy}
-                disabled={!roleId || (VALUED.includes(scopeType) && values.length === 0)}
-              >
-                {t('access.users.assign')}
-              </Button>
-            </div>
-          </form>
-        </Card>
+        <PageSection headingLevel={sec.level} title={t('access.users.assignTitle')}>
+          <Card>
+            <form onSubmit={assign} className="flex flex-col gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field id="assign-role" label={t('access.users.role')}>
+                  {(p) => (
+                    <select
+                      {...p}
+                      required
+                      value={roleId}
+                      onChange={(e) => setRoleId(e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value="">{t('access.users.chooseRole')}</option>
+                      {(roles.data ?? []).map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {roleName(t, r)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <Field id="assign-scope" label={t('access.users.scopeType')}>
+                  {(p) => (
+                    <select
+                      {...p}
+                      value={scopeType}
+                      onChange={(e) => {
+                        setScopeType(e.target.value as ScopeType);
+                        setValues([]);
+                      }}
+                      className={selectClass}
+                    >
+                      {SCOPES.map((s) => (
+                        <option key={s} value={s}>
+                          {t(`access.scope.${s}`)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              </div>
+              {VALUED.includes(scopeType) ? (
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="text-callout font-semibold">{t('access.users.scopeValues')}</legend>
+                  {!options ? (
+                    <Skeleton className="h-10 w-64" />
+                  ) : options.length === 0 ? (
+                    <p className="text-callout text-text-secondary">{t('access.users.noScopeValues')}</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                      {options.map((o) => (
+                        <label key={o.value} className="flex items-center gap-2 text-callout">
+                          <input
+                            type="checkbox"
+                            className="h-5 w-5 accent-[var(--color-accent)]"
+                            checked={values.includes(o.value)}
+                            onChange={(e) =>
+                              setValues((v) =>
+                                e.target.checked ? [...v, o.value] : v.filter((x) => x !== o.value),
+                              )
+                            }
+                          />
+                          {o.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
+              ) : null}
+              {chosen?.isAdmin && !user.hasMfa ? (
+                <p role="status" className="max-w-[var(--prose-width)] text-callout text-warning">
+                  {t('access.users.adminNoMfa')}
+                </p>
+              ) : null}
+              <div>
+                <Button
+                  type="submit"
+                  loading={busy}
+                  disabled={!roleId || (VALUED.includes(scopeType) && values.length === 0)}
+                >
+                  {t('access.users.assign')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </PageSection>
       ) : null}
     </div>
   );

@@ -73,6 +73,10 @@ export function TabNav({
 /**
  * The top of a module page (ADR-0180): its name as one bold large title (the page's h1) on the page
  * background, with a small icon tile from `sm` up, optional actions and the sections control.
+ *
+ * `drilled` is for a page one step into a module whose index lists its pages (Settings, ADR-0181):
+ * below `lg` the page shows its own back link and large title, so the module's name stays the h1 for
+ * screen readers but is not shown, and the header takes no space.
  */
 export function ModuleHeader({
   icon,
@@ -80,24 +84,34 @@ export function ModuleHeader({
   description,
   actions,
   tabs,
+  drilled = false,
 }: {
   icon: React.ReactNode;
   title: string;
   description?: string;
   actions?: React.ReactNode;
   tabs?: React.ReactNode;
+  drilled?: boolean;
 }) {
   return (
     <div className="bg-surface">
-      <div className="mx-auto flex w-full max-w-[var(--app-width)] flex-col gap-4 px-4 pt-5 md:px-8 md:pt-8">
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-[var(--app-width)] flex-col gap-4 px-4 pt-5 md:px-8 md:pt-8',
+          drilled && 'max-lg:pt-0',
+        )}
+      >
         <div className="flex flex-wrap items-center gap-3">
           <span
             aria-hidden
-            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent-subtle text-accent sm:inline-flex [&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:stroke-[1.75]"
+            className={cn(
+              'hidden h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-accent-subtle text-accent sm:inline-flex [&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:stroke-[1.75]',
+              drilled && 'max-lg:!hidden',
+            )}
           >
             {icon}
           </span>
-          <div className="min-w-0 flex-1">
+          <div className={cn('min-w-0 flex-1', drilled && 'max-lg:sr-only')}>
             <h1 className="text-large-title text-text">{title}</h1>
             {description ? <p className="text-callout text-text-secondary">{description}</p> : null}
           </div>

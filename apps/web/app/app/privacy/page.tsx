@@ -17,6 +17,7 @@ import {
   THead,
   TR,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -137,133 +138,141 @@ export default function PrivacyRequestsPage() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <Card>
-        <CardTitle>{t('privacy.ui.form.title')}</CardTitle>
-        <p className="mt-1 text-footnote text-text-secondary">{t('privacy.ui.form.lead')}</p>
-        <form onSubmit={create} className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Field id="dsr-kind" label={t('privacy.ui.form.kind')}>
-            {(p) => (
-              <select
-                {...p}
-                className={`${SELECT_CLASS} w-full`}
-                value={form.kind}
-                onChange={(e) => setForm({ ...form, kind: e.target.value as (typeof KINDS)[number] })}
-              >
-                {KINDS.map((k) => (
-                  <option key={k} value={k}>
-                    {t(`privacy.ui.kind.${k}`)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field id="dsr-search" label={t('privacy.ui.form.findPerson')} hint={t('privacy.ui.form.findHint')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoComplete="off"
-              />
-            )}
-          </Field>
-          <Field id="dsr-subject" label={t('privacy.ui.form.subject')}>
-            {(p) => (
-              <select
-                {...p}
-                className={`${SELECT_CLASS} w-full`}
-                value={form.subjectEmployeeId}
-                onChange={(e) => setForm({ ...form, subjectEmployeeId: e.target.value })}
-              >
-                <option value="">{t('privacy.ui.form.choose')}</option>
-                {(people.data?.data ?? []).map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.displayName}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field id="dsr-received" label={t('privacy.ui.form.received')}>
-            {(p) => (
-              <Input
-                {...p}
-                type="date"
-                required
-                max={today}
-                value={form.receivedOn}
-                onChange={(e) => setForm({ ...form, receivedOn: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="dsr-channel" label={t('privacy.ui.form.channel')}>
-            {(p) => (
-              <select
-                {...p}
-                className={`${SELECT_CLASS} w-full`}
-                value={form.channel}
-                onChange={(e) => setForm({ ...form, channel: e.target.value })}
-              >
-                {CHANNELS.map((k) => (
-                  <option key={k} value={k}>
-                    {t(`privacy.ui.channel.${k}`)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field id="dsr-identity" label={t('privacy.ui.form.identity')}>
-            {(p) => (
-              <select
-                {...p}
-                className={`${SELECT_CLASS} w-full`}
-                value={form.identityMethod}
-                onChange={(e) => setForm({ ...form, identityMethod: e.target.value })}
-              >
-                <option value="">{t('privacy.ui.form.notYet')}</option>
-                {IDENTITY.map((k) => (
-                  <option key={k} value={k}>
-                    {t(`privacy.ui.identity.${k}`)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field
-            id="dsr-identity-note"
-            label={t('privacy.ui.form.identityNote')}
-            hint={t('privacy.ui.form.identityNoteHint')}
-            className="md:col-span-3"
-          >
-            {(p) => (
-              <Input
-                {...p}
-                maxLength={1000}
-                value={form.identityNote}
-                onChange={(e) => setForm({ ...form, identityNote: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field id="dsr-details" label={t('privacy.ui.form.details')} className="md:col-span-3">
-            {(p) => (
-              <Textarea
-                {...p}
-                rows={2}
-                maxLength={4000}
-                value={form.details}
-                onChange={(e) => setForm({ ...form, details: e.target.value })}
-              />
-            )}
-          </Field>
-          <div className="md:col-span-3">
-            <Button type="submit" loading={busy}>
-              <FilePlus2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
-              {t('privacy.ui.form.submit')}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <PageSection
+        headingLevel={2}
+        title={t('privacy.ui.form.title')}
+        description={t('privacy.ui.form.lead')}
+      >
+        <Card>
+          <form onSubmit={create} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Field id="dsr-kind" label={t('privacy.ui.form.kind')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={`${SELECT_CLASS} w-full`}
+                  value={form.kind}
+                  onChange={(e) => setForm({ ...form, kind: e.target.value as (typeof KINDS)[number] })}
+                >
+                  {KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {t(`privacy.ui.kind.${k}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field
+              id="dsr-search"
+              label={t('privacy.ui.form.findPerson')}
+              hint={t('privacy.ui.form.findHint')}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoComplete="off"
+                />
+              )}
+            </Field>
+            <Field id="dsr-subject" label={t('privacy.ui.form.subject')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={`${SELECT_CLASS} w-full`}
+                  value={form.subjectEmployeeId}
+                  onChange={(e) => setForm({ ...form, subjectEmployeeId: e.target.value })}
+                >
+                  <option value="">{t('privacy.ui.form.choose')}</option>
+                  {(people.data?.data ?? []).map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.displayName}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field id="dsr-received" label={t('privacy.ui.form.received')}>
+              {(p) => (
+                <Input
+                  {...p}
+                  type="date"
+                  required
+                  max={today}
+                  value={form.receivedOn}
+                  onChange={(e) => setForm({ ...form, receivedOn: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="dsr-channel" label={t('privacy.ui.form.channel')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={`${SELECT_CLASS} w-full`}
+                  value={form.channel}
+                  onChange={(e) => setForm({ ...form, channel: e.target.value })}
+                >
+                  {CHANNELS.map((k) => (
+                    <option key={k} value={k}>
+                      {t(`privacy.ui.channel.${k}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field id="dsr-identity" label={t('privacy.ui.form.identity')}>
+              {(p) => (
+                <select
+                  {...p}
+                  className={`${SELECT_CLASS} w-full`}
+                  value={form.identityMethod}
+                  onChange={(e) => setForm({ ...form, identityMethod: e.target.value })}
+                >
+                  <option value="">{t('privacy.ui.form.notYet')}</option>
+                  {IDENTITY.map((k) => (
+                    <option key={k} value={k}>
+                      {t(`privacy.ui.identity.${k}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field
+              id="dsr-identity-note"
+              label={t('privacy.ui.form.identityNote')}
+              hint={t('privacy.ui.form.identityNoteHint')}
+              className="md:col-span-3"
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  maxLength={1000}
+                  value={form.identityNote}
+                  onChange={(e) => setForm({ ...form, identityNote: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field id="dsr-details" label={t('privacy.ui.form.details')} className="md:col-span-3">
+              {(p) => (
+                <Textarea
+                  {...p}
+                  rows={2}
+                  maxLength={4000}
+                  value={form.details}
+                  onChange={(e) => setForm({ ...form, details: e.target.value })}
+                />
+              )}
+            </Field>
+            <div className="md:col-span-3">
+              <Button type="submit" loading={busy}>
+                <FilePlus2 aria-hidden className="h-4 w-4 stroke-[1.5]" />
+                {t('privacy.ui.form.submit')}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </PageSection>
 
       <Card>
         <div className="flex flex-wrap items-center gap-3">
@@ -308,8 +317,10 @@ export default function PrivacyRequestsPage() {
                       <PersonLink id={r.subjectEmployeeId} name={r.subjectName} />
                     </TD>
                     <TD>{t(`privacy.ui.kind.${r.kind}`)}</TD>
-                    <TD className="tabular-nums">{formatDate(r.receivedOn, locale)}</TD>
-                    <TD className="tabular-nums">
+                    <TD className="tabular-nums" label={t('privacy.ui.col.received')}>
+                      {formatDate(r.receivedOn, locale)}
+                    </TD>
+                    <TD className="tabular-nums" label={t('privacy.ui.col.due')}>
                       <span className="mr-2">
                         {r.effectiveDueOn ? formatDate(r.effectiveDueOn, locale) : '—'}
                       </span>

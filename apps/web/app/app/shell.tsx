@@ -69,6 +69,8 @@ export function useFeature(key: FeatureKey): boolean {
  * own title becomes a section heading (`PageTitle` reads this).
  */
 export const ModuleFrameContext = React.createContext(false);
+/** True on a page inside a drill-down module (Settings, ADR-0181): its title is large on phones. */
+export const DrilledContext = React.createContext(false);
 /**
  * Whether the current tab's name is already on screen: in the tab bar, or as the module name when the
  * module's only tab shares it. A page title that only repeats the tab name is dropped only then, so a
@@ -79,8 +81,12 @@ export const ModuleTabVisibleContext = React.createContext(false);
 /** A page's title: the h1 outside modules, a section heading under a module header. */
 export function PageTitle({ children, className }: { children: React.ReactNode; className?: string }) {
   const inModule = React.useContext(ModuleFrameContext);
+  // in a drill-down module the page's own title is the large title on phones (the module's is hidden)
+  const drilled = React.useContext(DrilledContext);
   return inModule ? (
-    <h2 className={className ?? 'text-title-3'}>{children}</h2>
+    <h2 className={className ?? (drilled ? 'text-large-title lg:text-title-2' : 'text-title-3')}>
+      {children}
+    </h2>
   ) : (
     <h1 className={className ?? 'text-title-2'}>{children}</h1>
   );
@@ -290,6 +296,8 @@ export function AppShell({
   };
   // The module header and tab bar frame every module page except Home, which is its own dashboard.
   const framed = !!current && current.key !== 'home' && !mfaSetupPending;
+  // a page inside a drill-down module (Settings): on phones it shows a back link and its own title
+  const drilled = framed && !!current.drillDown && path.replace(/\/$/, '') !== current.href;
   const tabs: TabLink[] =
     framed && current.tabs.length > 1
       ? current.tabs.map((tab) => ({
@@ -301,6 +309,7 @@ export function AppShell({
       : [];
   const tabNameVisible =
     framed &&
+    !drilled &&
     (tabs.length > 1 || (current.tabs.length === 1 && t(current.tabs[0]!.label) === t(current.label)));
   const renderTab = (tab: TabLink, className: string, kids: React.ReactNode) => (
     <Link href={tab.href} className={className} aria-current={tab.active ? 'page' : undefined}>
@@ -314,7 +323,7 @@ export function AppShell({
       <ExperienceContext.Provider value={experienceValue}>
         {experience?.branding.palette ? <style>{brandingCss(experience.branding.palette)}</style> : null}
         <div className="flex min-h-dvh flex-col bg-surface">
-          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/80 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
+          <header className="sticky top-0 z-40 flex h-[calc(var(--topbar-height)+env(safe-area-inset-top))] items-center gap-2 border-b border-border bg-chrome px-3 pt-[env(safe-area-inset-top)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 md:gap-4 md:px-4">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -448,6 +457,7 @@ export function AppShell({
                 <ModuleHeader
                   icon={<CurrentIcon aria-hidden />}
                   title={t(current.label)}
+                  drilled={drilled}
                   tabs={
                     tabs.length ? (
                       <TabNav
@@ -461,11 +471,14 @@ export function AppShell({
               ) : null}
               <main
                 id="main"
+                data-shell="app"
                 className="mx-auto w-full max-w-[var(--app-width)] flex-1 px-4 pb-[calc(var(--dock-height)+env(safe-area-inset-bottom)+var(--space-6))] pt-5 md:px-8 md:pt-8 lg:pb-8"
               >
                 <ModuleFrameContext.Provider value={framed}>
                   <ModuleTabVisibleContext.Provider value={tabNameVisible}>
-                    {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
+                    <DrilledContext.Provider value={drilled}>
+                      {session && !mfaSetupPending ? children : <Skeleton className="h-64 w-full" />}
+                    </DrilledContext.Provider>
                   </ModuleTabVisibleContext.Provider>
                 </ModuleFrameContext.Provider>
               </main>
@@ -476,7 +489,7 @@ export function AppShell({
           // the phone tab bar (ADR-0180): the viewer's main modules, one tap away
           <nav
             aria-label={t('app.ws.dock.label')}
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/80 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-chrome pb-[env(safe-area-inset-bottom)] text-on-chrome supports-[backdrop-filter]:bg-chrome/90 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 lg:hidden"
           >
             <ul className="mx-auto flex h-[var(--dock-height)] max-w-lg items-stretch">
               {dock.map((m) => {

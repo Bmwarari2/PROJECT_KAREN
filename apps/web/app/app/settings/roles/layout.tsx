@@ -13,6 +13,7 @@ export default function RolesLayout({ children }: { children: React.ReactNode })
         'access.errors',
         'access.compare',
         'access.scope',
+        'listView',
       ]}
     >
       {children}

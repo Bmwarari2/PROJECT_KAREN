@@ -19,7 +19,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         'platform.secretOnce',
         'platform.errors',
         'platform.featureOff',
-        'platform.backToSettings',
       ]}
     >
       <SettingsFrame>{children}</SettingsFrame>

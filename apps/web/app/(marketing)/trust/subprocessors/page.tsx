@@ -82,7 +82,7 @@ export default async function SubprocessorsPage({
                 <h3 id={sectionId} className="text-title-3">
                   {title}
                 </h3>
-                <div className="mt-3 rounded-lg bg-surface-raised">
+                <div className="mt-3">
                   <Table dense scrollLabel={t('admin.tableScroll', { name: title })}>
                     <THead>
                       <tr>
@@ -96,8 +96,8 @@ export default async function SubprocessorsPage({
                     <tbody>
                       {s.rows.map((row) => (
                         <TR key={row[0]}>
-                          {keep.map(({ c, i }) => (
-                            <TD key={c} className="align-top">
+                          {keep.map(({ c, i }, k) => (
+                            <TD key={c} className="align-top" label={k > 0 ? col(c) : undefined}>
                               {row[i]}
                             </TD>
                           ))}
@@ -126,8 +126,10 @@ export default async function SubprocessorsPage({
                   {changes.map((c) => (
                     <TR key={c.id}>
                       <TD className="tabular-nums">{formatDate(c.announced, locale)}</TD>
-                      <TD className="tabular-nums">{formatDate(c.effectiveFrom, locale)}</TD>
-                      <TD>{c.change}</TD>
+                      <TD className="tabular-nums" label={t('trust.sub.effective')}>
+                        {formatDate(c.effectiveFrom, locale)}
+                      </TD>
+                      <TD label={t('trust.sub.change')}>{c.change}</TD>
                     </TR>
                   ))}
                 </tbody>

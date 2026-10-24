@@ -102,6 +102,22 @@
   }
 }
 
+/* A table placed directly in a card (with the standard padding) runs to the card's edges: the card is
+   its container, never a box inside a box (ADR-0181). */
+[data-card] > .thr-table {
+  width: auto;
+  margin-inline: calc(-1 * var(--space-5));
+  border-inline: 0;
+  border-radius: 0;
+  background: transparent;
+}
+[data-card] > .thr-table:last-child {
+  margin-bottom: calc(-1 * var(--space-5));
+  border-bottom: 0;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
 /* Tables as lists on phones (ADR-0180, `Table`). Unlayered, so it wins over the cells' utilities. */
 @media (max-width: 639px) {
   .thr-stack-wrap {
@@ -169,6 +185,7 @@
   }
   .thr-stack > tbody > tr > td[data-label]::before {
     content: attr(data-label) ': ';
+    color: var(--color-text-secondary);
   }
   .thr-stack > tbody > tr > td[data-phone='hide'],
   .thr-stack > thead th[data-phone='hide'] {
@@ -177,9 +194,13 @@
   .thr-stack > tbody > tr > td[data-phone='inline'] {
     flex: 0 1 auto;
   }
-  .thr-stack > tbody > tr > td[data-phone='inline'] + td[data-phone='inline']::before {
-    content: '·' / '';
-    margin-inline-end: var(--space-2);
+  /* the dot between joined cells ends the earlier value, so a wrapped line never starts with it */
+  .thr-stack > tbody > tr > td[data-phone='inline']:has(+ td[data-phone='inline']:not(:empty))::after,
+  .thr-stack
+    > tbody
+    > tr
+    > td[data-phone='inline']:has(+ td[data-phone='hide'] + td[data-phone='inline']:not(:empty))::after {
+    content: '\00a0·' / '';
   }
   /* buttons go under the text, above the row's stretched link */
   .thr-stack > tbody > tr > td:not(:first-child):has(button, [role='button'], form) {
@@ -189,11 +210,50 @@
     position: relative;
     z-index: 1;
   }
+  /* inside a card or list card that already draws the container, the list draws none of its own */
+  [data-card] > .thr-stack-wrap {
+    box-shadow: none;
+    background: transparent;
+  }
+  [data-flush] > .thr-stack-wrap {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: transparent;
+    box-shadow: none;
+  }
   /* a row whose title cell is one link is tapped as a whole */
   .thr-stack > tbody > tr > :first-child > a:only-of-type::after,
   .thr-stack > tbody > tr > :first-child:has(> input[type='checkbox']) + * > a:only-of-type::after {
     content: '';
     position: absolute;
     inset: 0;
+  }
+}
+
+/* Forms in the app on phones (ADR-0181, DESIGN.md §6): every control is at least 44px tall, and fields
+   and the submit button take the full width, so a form reads as one column of large touch targets. */
+@media (max-width: 639px) {
+  :is([data-shell='app'], [role='dialog'])
+    form
+    :is(
+      input:not(
+        [type='checkbox'],
+        [type='radio'],
+        [type='range'],
+        [type='color'],
+        [type='hidden'],
+        [type='file']
+      ),
+      select,
+      textarea
+    ) {
+    min-height: 44px;
+    width: 100%;
+    max-width: 100%;
+  }
+  :is([data-shell='app'], [role='dialog']) form button {
+    min-height: 44px;
+  }
+  :is([data-shell='app'], [role='dialog']) form:not([role='search']) button[type='submit'] {
+    width: 100%;
   }
 }

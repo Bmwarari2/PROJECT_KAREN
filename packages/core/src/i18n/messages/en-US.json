@@ -29,12 +29,21 @@
     }
   },
   "orgSettings": {
-    "title": "Organization"
+    "title": "Organization",
+    "add": {
+      "legal-entities": "Add a legal entity",
+      "departments": "Add a department",
+      "locations": "Add a location"
+    }
   },
   "admin": {
     "group": {
       "workspace": {
         "body": "Your organization’s structure."
+      },
+      "platform": {
+        "title": "Integrations and platform",
+        "body": "API access, webhooks, audit streaming, sandboxes, branding and features."
       }
     },
     "section": {
@@ -94,6 +103,10 @@
       "requireMfaForEveryone": "Require two-step verification for everyone",
       "requireMfaForEveryoneHint": "Everyone sets up an authenticator app or a passkey the first time they sign in. When this is off, only administrators must. Turning it off asks you to confirm it is you.",
       "trustIdpMfaHint": "Count a single sign-on as two-step verification only when your identity provider confirms it used more than one factor. Otherwise people also use their own authenticator here."
+    },
+    "domains": {
+      "listTitle": "Your domains",
+      "addTitle": "Add a domain"
     }
   },
   "timeOff": {
@@ -1041,7 +1054,8 @@
     "ui": {
       "noChart": {
         "list": "Choose Summarize and group the rows to see a chart."
-      }
+      },
+      "moreRows": "Show more rows"
     }
   },
   "ess": {
@@ -1120,6 +1134,9 @@
       "problem": {
         "ownAccount": "You cannot do this for your own account.",
         "companyWideSettingsRequired": "This needs a company-wide role that manages settings."
+      },
+      "list": {
+        "title": "Everyone who can sign in"
       }
     }
   },

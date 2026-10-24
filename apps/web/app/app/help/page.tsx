@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BookOpen, Search } from 'lucide-react';
 import { articlesForContext, helpArticles, searchHelp } from '@thapsus/core/help';
-import { buttonVariants, Card, EmptyState, Input } from '@thapsus/ui';
+import { buttonVariants, EmptyState, Input, ListItem, ListSection } from '@thapsus/ui';
 import { serverContext } from '@/lib/server';
 import { PageIntro } from '@/components/module-page';
 import { serverSession } from '@/lib/server-session';
@@ -42,7 +42,7 @@ export default async function HelpPage({
           ) : undefined
         }
       />
-      <form role="search" action="/app/help" className="flex max-w-xl gap-2">
+      <form role="search" action="/app/help" className="flex max-w-xl gap-2 max-sm:flex-col">
         <label htmlFor="help-q" className="sr-only">
           {t('help.searchLabel')}
         </label>
@@ -59,51 +59,50 @@ export default async function HelpPage({
         </button>
       </form>
       {contextual.length && !query ? (
-        <section aria-labelledby="help-context">
-          <h2 id="help-context" className="text-title-3">
-            {t('help.forThisPage')}
-          </h2>
-          <ul className="mt-3 grid gap-3 md:grid-cols-2">
-            {contextual.map((a) => (
-              <li key={a.slug}>
-                <Card>
-                  <Link href={`/app/help/${a.slug}`} className="text-callout font-semibold">
-                    {a.title}
-                  </Link>
-                  <p className="mt-1 text-callout text-text-secondary">{a.summary}</p>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-      <section aria-labelledby="help-results">
-        <h2 id="help-results" className="text-title-3">
-          {query ? t('help.resultsFor', { query }) : t('help.allArticles')}
-        </h2>
-        {results.length ? (
-          <ul className="mt-3 grid gap-3 md:grid-cols-2" data-testid="help-results">
-            {results.map((a) => (
-              <li key={a.slug}>
-                <Card>
-                  <Link href={`/app/help/${a.slug}`} className="text-callout font-semibold">
-                    {a.title}
-                  </Link>
-                  <p className="mt-1 text-callout text-text-secondary">{a.summary}</p>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="mt-3">
-            <EmptyState
-              icon={<BookOpen aria-hidden />}
-              title={t('help.noResults')}
-              body={t('help.noResultsBody')}
+        <ListSection id="help-context" title={t('help.forThisPage')}>
+          {contextual.map((a) => (
+            <ListItem
+              key={a.slug}
+              href={`/app/help/${a.slug}`}
+              linkAs={Link}
+              leading={<BookOpen aria-hidden />}
+              title={a.title}
+              subtitle={a.summary}
             />
-          </div>
-        )}
-      </section>
+          ))}
+        </ListSection>
+      ) : null}
+      {results.length ? (
+        <div data-testid="help-results" className="contents">
+          <ListSection
+            id="help-results"
+            title={query ? t('help.resultsFor', { query }) : t('help.allArticles')}
+          >
+            {results.map((a) => (
+              <ListItem
+                key={a.slug}
+                href={`/app/help/${a.slug}`}
+                linkAs={Link}
+                leading={<BookOpen aria-hidden />}
+                title={a.title}
+                subtitle={a.summary}
+              />
+            ))}
+          </ListSection>
+        </div>
+      ) : (
+        <section aria-labelledby="help-results-title" className="flex flex-col gap-2">
+          <h2 id="help-results-title" className="px-1 text-title-3">
+            {t('help.resultsFor', { query })}
+          </h2>
+          <EmptyState
+            level={3}
+            icon={<BookOpen aria-hidden />}
+            title={t('help.noResults')}
+            body={t('help.noResultsBody')}
+          />
+        </section>
+      )}
     </div>
   );
 }

@@ -58,12 +58,26 @@ export function LeaveBalancesTable({
                 </Badge>
               ) : null}
             </TD>
-            <TD className="text-right">{amount(b, b.entitlement)}</TD>
-            <TD className="text-right">{amount(b, b.carriedOver)}</TD>
-            <TD className="text-right">{amount(b, b.adjustments)}</TD>
-            <TD className="text-right">{amount(b, b.taken)}</TD>
-            <TD className="text-right">{amount(b, b.booked + b.pending)}</TD>
-            <TD className="text-right font-semibold" data-testid={`balance-${b.leaveType}`}>
+            <TD className="text-right" phone="inline" label={t('timeOff.entitlement')}>
+              {amount(b, b.entitlement)}
+            </TD>
+            <TD className="text-right" phone="inline" label={t('timeOff.carriedOver')}>
+              {amount(b, b.carriedOver)}
+            </TD>
+            <TD className="text-right" phone="inline" label={t('admin.balances.adjustments')}>
+              {amount(b, b.adjustments)}
+            </TD>
+            <TD className="text-right" phone="inline" label={t('timeOff.taken')}>
+              {amount(b, b.taken)}
+            </TD>
+            <TD className="text-right" phone="inline" label={t('timeOff.booked')}>
+              {amount(b, b.booked + b.pending)}
+            </TD>
+            <TD
+              className="text-right font-semibold"
+              label={t('admin.balances.available')}
+              data-testid={`balance-${b.leaveType}`}
+            >
               {amount(b, b.available)}
             </TD>
           </TR>

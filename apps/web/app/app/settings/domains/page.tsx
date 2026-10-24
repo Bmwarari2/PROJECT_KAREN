@@ -1,7 +1,20 @@
 'use client';
 import * as React from 'react';
 import { Globe } from 'lucide-react';
-import { Badge, Button, EmptyState, Field, Input, Skeleton, Table, TD, TH, THead, TR } from '@thapsus/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Input,
+  Skeleton,
+  Table,
+  TD,
+  TH,
+  THead,
+  TR,
+} from '@thapsus/ui';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n-client';
 import { useApi } from '@/lib/use-api';
@@ -41,39 +54,14 @@ export default function DomainsPage() {
   return (
     <>
       <PageHeader title={t('admin.section.domains.title')} lead={t('app.settings.domainsBody')} />
-      <SettingsCard id="domains" title={t('app.settings.domainsTitle')}>
-        {canManage ? (
-          <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field
-              id="domain"
-              label={t('app.settings.domainLabel')}
-              hint={t('admin.domains.hint')}
-              className="flex-1"
-            >
-              {(p) => (
-                <Input
-                  {...p}
-                  required
-                  inputMode="url"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                />
-              )}
-            </Field>
-            <Button type="submit" loading={add.busy}>
-              {t('common.add')}
-            </Button>
-          </form>
-        ) : (
-          <ReadOnlyNote />
-        )}
+      <SettingsCard id="domains" title={t('admin.domains.listTitle')} container="none">
         <FormError message={add.error ?? verify.error} />
         {!domains.data ? (
           <Skeleton className="h-24" />
         ) : domains.data.length === 0 ? (
-          <EmptyState level={sec.level} icon={<Globe aria-hidden />} title={t('app.settings.noDomains')} />
+          <Card>
+            <EmptyState level={sec.level} icon={<Globe aria-hidden />} title={t('app.settings.noDomains')} />
+          </Card>
         ) : (
           <Table dense scrollLabel={t('admin.tableScroll', { name: t('app.settings.domainsTitle') })}>
             <THead>
@@ -90,7 +78,10 @@ export default function DomainsPage() {
               {domains.data.map((d) => (
                 <TR key={d.id}>
                   <TD className="font-semibold">{d.domain}</TD>
-                  <TD className="break-all text-footnote text-text-secondary">
+                  <TD
+                    className="break-all text-footnote text-text-secondary"
+                    label={t('app.settings.txtRecord')}
+                  >
                     {d.txtName} → {d.txtValue}
                   </TD>
                   <TD>
@@ -122,6 +113,37 @@ export default function DomainsPage() {
               ))}
             </tbody>
           </Table>
+        )}
+      </SettingsCard>
+      <SettingsCard id="domain-add" title={t('admin.domains.addTitle')} container="none">
+        {canManage ? (
+          <Card>
+            <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <Field
+                id="domain"
+                label={t('app.settings.domainLabel')}
+                hint={t('admin.domains.hint')}
+                className="flex-1"
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    required
+                    inputMode="url"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Button type="submit" loading={add.busy}>
+                {t('common.add')}
+              </Button>
+            </form>
+          </Card>
+        ) : (
+          <ReadOnlyNote />
         )}
       </SettingsCard>
     </>

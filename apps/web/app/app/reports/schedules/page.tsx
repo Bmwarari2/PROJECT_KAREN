@@ -408,9 +408,13 @@ export default function SchedulesPage() {
                 {rows.map((s) => (
                   <TR key={s.id}>
                     <TD>{s.savedReportName}</TD>
-                    <TD>{when(s)}</TD>
-                    <TD className="uppercase">{s.format}</TD>
-                    <TD className="text-right tabular-nums">{s.recipientUserIds.length}</TD>
+                    <TD label={t('reports.schedules.when')}>{when(s)}</TD>
+                    <TD phone="inline" label={t('reports.schedules.format')}>
+                      {t(`reports.format.${s.format}`)}
+                    </TD>
+                    <TD className="text-right tabular-nums" label={t('reports.schedules.recipients')}>
+                      {s.recipientUserIds.length}
+                    </TD>
                     <TD>
                       <Badge tone={s.enabled ? 'success' : 'neutral'}>
                         {t(s.enabled ? 'reports.schedules.on' : 'reports.schedules.off')}

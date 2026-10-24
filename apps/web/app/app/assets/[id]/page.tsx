@@ -155,8 +155,8 @@ export default function AssetPage() {
                     <TD>
                       <PersonLink id={a.employeeId} name={a.employeeName} />
                     </TD>
-                    <TD>{d(a.assignedOn)}</TD>
-                    <TD>
+                    <TD label={t('assets.issuedOn')}>{d(a.assignedOn)}</TD>
+                    <TD label={t('actionable.asset.returnedOn')}>
                       {a.returnedOn
                         ? d(a.returnedOn)
                         : a.status === 'active'

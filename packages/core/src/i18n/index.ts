@@ -86,6 +86,15 @@ export function formatNumber(value: number, locale: Locale, opts: Intl.NumberFor
   return new Intl.NumberFormat(locale, opts).format(value);
 }
 
+/** A country's or region's name in the locale ("GB" → "United Kingdom"); the code itself when unknown. */
+export function regionName(code: string, locale: Locale): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 /** Formats integer minor units without converting to floating point. */
 /** A count with its unit, pluralised for the locale: "1 day", "2.5 days", "1 hour". */
 export function formatUnit(value: number, unit: 'day' | 'hour', locale: Locale): string {

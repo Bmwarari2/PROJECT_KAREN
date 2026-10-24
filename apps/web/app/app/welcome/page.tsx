@@ -14,6 +14,7 @@ import {
   ListSection,
   Skeleton,
   useToast,
+  PageSection,
 } from '@thapsus/ui';
 import { formatDate } from '@thapsus/core/i18n';
 import { api, ApiProblem } from '@/lib/api';
@@ -206,13 +207,9 @@ export default function WelcomePage() {
         </div>
       </header>
 
-      {data.documents.length ? (
-        <ListSection
-          title={t('onboarding.documentsTitle')}
-          headingLevel={sec.level}
-          id="onboarding-documents"
-        >
-          {data.documents.map((d) => (
+      <ListSection headingLevel={sec.level} title={t('onboarding.documentsTitle')} id="onboarding-documents">
+        {data.documents.length ? (
+          data.documents.map((d) => (
             <ListItem
               key={d.id}
               href={`/app/documents/${d.documentId}`}
@@ -226,14 +223,11 @@ export default function WelcomePage() {
               }
               meta={d.status === 'signed' ? undefined : <Badge tone="accent">{t('documents.sign')}</Badge>}
             />
-          ))}
-        </ListSection>
-      ) : (
-        <Card>
-          <CardTitle as={sec.heading}>{t('onboarding.documentsTitle')}</CardTitle>
-          <p className="mt-2 text-callout text-text-secondary">{t('onboarding.documentsEmpty')}</p>
-        </Card>
-      )}
+          ))
+        ) : (
+          <ListItem leading={<FileSignature />} title={t('onboarding.documentsEmpty')} />
+        )}
+      </ListSection>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -380,14 +374,15 @@ export default function WelcomePage() {
           ))}
         </ListSection>
       ) : (
-        <Card>
-          <CardTitle as={sec.heading}>{t('onboarding.checklistTitle')}</CardTitle>
-          <EmptyState
-            level={sec.level}
-            icon={<ListChecks aria-hidden />}
-            title={t('onboarding.checklistEmpty')}
-          />
-        </Card>
+        <PageSection headingLevel={sec.level} title={t('onboarding.checklistTitle')}>
+          <Card>
+            <EmptyState
+              level={sec.level}
+              icon={<ListChecks aria-hidden />}
+              title={t('onboarding.checklistEmpty')}
+            />
+          </Card>
+        </PageSection>
       )}
     </div>
   );

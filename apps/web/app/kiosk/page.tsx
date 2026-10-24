@@ -154,7 +154,9 @@ export default function KioskPage() {
                 />
               )}
             </Field>
-            <Button type="submit">{t('kiosk.pair')}</Button>
+            <Button type="submit" className="max-sm:h-11 max-sm:w-full">
+              {t('kiosk.pair')}
+            </Button>
           </form>
         </Card>
       ) : (
