@@ -11,13 +11,8 @@ import { useApi } from '@/lib/use-api';
 import { IntentLink } from '@/components/intent-link';
 import { PdfViewerPlaceholder } from '@/components/documents/pdf-toolbar';
 import { byteSize, kindLabel } from '@/components/documents/labels';
-import {
-  CountersignPanel,
-  SignPanel,
-  type Countersign,
-  type Signature,
-} from '@/components/documents/sign-panel';
-import { SigningStatus, type Signing } from '@/components/documents/signing-status';
+import type { Countersign, Signature } from '@/components/documents/sign-panel';
+import type { Signing } from '@/components/documents/signing-status';
 import { newDocumentHref } from '@thapsus/core/documents';
 import { PageTitle, useSession } from '../../shell';
 
@@ -26,6 +21,15 @@ const PdfViewer = dynamic(() => import('@/components/documents/pdf-viewer'), {
   ssr: false,
   loading: () => <PdfViewerPlaceholder />,
 });
+// Signing (the panels, the signature pad, step-up and the timeline) loads only for documents being signed: they
+// are server-rendered with the page when shown, and documents that are not in signing never load them (ADR-0197).
+const SignPanel = dynamic(() => import('@/components/documents/sign-panel').then((m) => m.SignPanel));
+const CountersignPanel = dynamic(() =>
+  import('@/components/documents/sign-panel').then((m) => m.CountersignPanel),
+);
+const SigningStatus = dynamic(() =>
+  import('@/components/documents/signing-status').then((m) => m.SigningStatus),
+);
 
 interface Doc {
   id: string;
