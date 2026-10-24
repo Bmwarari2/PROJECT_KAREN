@@ -544,7 +544,34 @@
       "categoryChip": "Category: {category}",
       "colTitle": "Document",
       "colAdded": "Added"
+    },
+    "countersignCertificate": {
+      "title": "Countersignature certificate",
+      "signer": "Countersigned by",
+      "signedAt": "Countersigned at (UTC)",
+      "ip": "IP address",
+      "userAgent": "Device",
+      "hash": "SHA-256 of the signed copy countersigned",
+      "reference": "Signature reference",
+      "statement": "The countersigner confirmed they had reviewed the document and the signature above and agreed to countersign it electronically for the company. Thapsus-HR recorded the countersigner, time, IP address, device and a SHA-256 fingerprint of the signed copy they countersigned. Any change to it changes its fingerprint.",
+      "notRecorded": "Not recorded",
+      "viaApprovals": "Approved in the approvals list"
     }
+  },
+  "docAttach": {
+    "type": {
+      "right_to_work": "Right-to-work evidence",
+      "driving_licence": "Driving licence",
+      "contract": "Contract",
+      "qualification": "Qualification or certificate",
+      "background_check": "Background check",
+      "other": "Other document"
+    }
+  },
+  "docSign": {
+    "policyName": "Countersign signed documents",
+    "signedTitle": "{title} (signed)",
+    "taskSignAgain": "Sign again: {title}"
   },
   "notify": {
     "signatureRequested": "You have a document to sign",
@@ -603,7 +630,15 @@
     "yearEndAvailable": "Your year-end document for {label} is ready",
     "assetAssigned": "Please confirm you received {asset}",
     "reportReady": "A scheduled report is ready. Sign in to download it.",
-    "taskOverdue": "Task overdue: {title}"
+    "taskOverdue": "Task overdue: {title}",
+    "documentShared": "HR shared a document with you: {title}",
+    "attachmentExpiring_one": "{title} for {name} expires in {days} day",
+    "attachmentExpiring_other": "{title} for {name} expires in {days} days",
+    "attachmentExpiresToday": "{title} for {name} expires today",
+    "attachmentExpired": "{title} for {name} has expired",
+    "documentCompleted": "{title} is signed and complete",
+    "documentReturned": "{title} was returned to you. Read the note, then sign again",
+    "payslipReady": "Your payslip for {period:month} is ready"
   },
   "people": {
     "title": "People",
@@ -1479,7 +1514,8 @@
         "employee.change": "Changes to employee records",
         "timesheet": "Timesheets",
         "shift.claim": "Open shift claims",
-        "shift.swap": "Shift swaps"
+        "shift.swap": "Shift swaps",
+        "document.countersign": "Countersignatures on signed documents"
       },
       "priority": "Priority",
       "priorityHint": "Lower numbers are checked first.",
@@ -1522,7 +1558,8 @@
         "violations": "Working-time issues",
         "weekStart": "Week",
         "date": "Shift date",
-        "warnings": "Working-time warnings"
+        "warnings": "Working-time warnings",
+        "documentTitle": "Document"
       },
       "conditionText": "{field} {op} {value}",
       "conditionPresent": "{field} is set",
@@ -2625,7 +2662,8 @@
       "rtwCheck": "Right-to-work check before the first day: {name}",
       "i9Reverify": "Form I-9 reverification: {name}",
       "renew": "Renew {requirement}: {name}",
-      "missing": "Record {requirement}: {name}"
+      "missing": "Record {requirement}: {name}",
+      "renewDocument": "Renew {title}: {name}"
     },
     "coverage": {
       "title": "Statutory leave where you employ people",

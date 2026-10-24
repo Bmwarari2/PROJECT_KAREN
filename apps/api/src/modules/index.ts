@@ -3,6 +3,8 @@ import '../jobs/core';
 import { employeeRoutes } from './employees/routes';
 import { orgRoutes } from './org/routes';
 import { documentRoutes } from './documents/routes';
+import { attachmentRoutes } from './documents/attachments';
+import { countersignRoutes } from './documents/countersign';
 import { workflowRoutes } from './workflows/routes';
 import { approvalRoutes } from './approvals/routes';
 import { automationRoutes } from './automation/routes';
@@ -36,6 +38,9 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(employeeRoutes);
   await app.register(orgRoutes);
   await app.register(documentRoutes);
+  // documents HR attaches to a person, and the in-app viewer (ADR-0165, ADR-0168)
+  await app.register(attachmentRoutes);
+  await app.register(countersignRoutes);
   await app.register(workflowRoutes);
   await app.register(approvalRoutes);
   await app.register(automationRoutes);

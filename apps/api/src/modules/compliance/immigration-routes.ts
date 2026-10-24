@@ -48,6 +48,8 @@ const RtwRow = Type.Object({
   excuseEndsOn: Nullable(Type.String()),
   retainUntil: Nullable(Type.String()),
   hasEvidence: Type.Boolean(),
+  /** Right-to-work evidence documents attached to the person (kept in the vault, ADR-0166). */
+  evidenceDocuments: Type.Optional(Type.Integer()),
 });
 const I9Row = Type.Object({
   employeeId: Uuid,
@@ -157,6 +159,14 @@ export async function immigrationRoutes(app: FastifyInstance) {
           params,
         );
         const statuses = await rtwStatuses(tx, book, emps, asOf, await complianceSettings(tx));
+        const attached = new Map(
+          (
+            await tx.query<{ employee_id: string; n: number }>(
+              `SELECT employee_id, count(*)::int AS n FROM app.documents WHERE attachment_type = 'right_to_work' AND status = 'ready' AND employee_id = ANY($1::uuid[]) GROUP BY employee_id`,
+              [emps.map((e) => e.id)],
+            )
+          ).map((r) => [r.employee_id, r.n]),
+        );
         const rows = statuses.map(({ employee: e, status, check: c, retainUntil }) => ({
           employeeId: e.id,
           employeeName: e.display_name,
@@ -170,7 +180,8 @@ export async function immigrationRoutes(app: FastifyInstance) {
           followUpDueOn: c?.follow_up_due_on ?? null,
           excuseEndsOn: c?.excuse_ends_on ?? null,
           retainUntil,
-          hasEvidence: !!c?.evidence_vault_id,
+          hasEvidence: !!c?.evidence_vault_id || (attached.get(e.id) ?? 0) > 0,
+          evidenceDocuments: attached.get(e.id) ?? 0,
         }));
         // Follow-up dates reveal time-limited immigration permission: the list view is audited as sensitive.
         await app.audit(tx, req, {

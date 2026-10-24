@@ -18,6 +18,8 @@ export interface ComplianceSettings {
   matrixReminderDays: number[];
   probationReminderDays: number[];
   serviceReminderDays: number[];
+  /** Days before a document's expiry date to remind (library documents, and documents HR attached to a person other than right-to-work evidence, which uses rtwReminderDays). ADR-0169. */
+  documentReminderDays: number[];
   smallCellThreshold: number;
   businessWeekdays: number[];
   gpgSector: 'privateAndVoluntary' | 'publicAuthority';
@@ -29,6 +31,7 @@ export const COMPLIANCE_DEFAULTS: ComplianceSettings = {
   matrixReminderDays: [60, 30, 7, 0],
   probationReminderDays: [14, 0],
   serviceReminderDays: [30, 0],
+  documentReminderDays: [60, 30, 7, 0],
   smallCellThreshold: 5,
   businessWeekdays: [1, 2, 3, 4, 5],
   gpgSector: 'privateAndVoluntary',

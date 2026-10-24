@@ -30,6 +30,7 @@ const Settings = Type.Object({
   matrixReminderDays: Offsets,
   probationReminderDays: Offsets,
   serviceReminderDays: Offsets,
+  documentReminderDays: Offsets,
   smallCellThreshold: Type.Integer({ minimum: 3, maximum: 50 }),
   businessWeekdays: Type.Array(Type.Integer({ minimum: 1, maximum: 7 }), { minItems: 1, maxItems: 7 }),
   gpgSector: Type.Union([Type.Literal('privateAndVoluntary'), Type.Literal('publicAuthority')]),

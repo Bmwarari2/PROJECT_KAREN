@@ -9,6 +9,7 @@ export const DEFAULT_LOCALE: Locale = 'en-GB';
 export { CATALOGUES, flatten, t, type Messages } from './catalogues';
 export {
   formatMessage,
+  formatMonthYear,
   interpolate,
   lookupMessage,
   pluralBase,

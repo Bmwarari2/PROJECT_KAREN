@@ -126,7 +126,8 @@
     "timesheetApproved": "Your timesheet for the week of {week} was approved",
     "timesheetRejected": "Your timesheet for the week of {week} was returned",
     "supportReply": "Thapsus-HR support replied to ticket {reference}",
-    "payslipAvailable": "Your pay stub for {label} is ready"
+    "payslipAvailable": "Your pay stub for {label} is ready",
+    "payslipReady": "Your pay stub for {period:month} is ready"
   },
   "platform": {
     "errors": {
@@ -1035,6 +1036,12 @@
     },
     "org": {
       "titleCompany": "Your organization"
+    }
+  },
+  "docAttach": {
+    "type": {
+      "right_to_work": "Work authorization evidence",
+      "driving_licence": "Driver’s license"
     }
   }
 }
